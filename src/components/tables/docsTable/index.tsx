@@ -1,5 +1,7 @@
 import { memo, useMemo } from 'react'
-import { Link } from '@tanstack/react-router'
+import type { TFunction } from 'i18next'
+import { Link, type LinkProps } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { TrashIcon } from '@phosphor-icons/react'
 import { VirtualTable } from '../VirtualTable'
 import type { ColumnConfig } from '../types'
@@ -7,64 +9,60 @@ import type { Asset, Tag } from '@/types/content'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { statusToBadge } from '@/lib/assetStatus'
+import { AssetKindMark } from '@/components/content/AssetKindMark'
+import { VerdictPill } from '@/components/content/VerdictPill'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { useCampaigns } from '@/hooks/useCampaigns'
+import { useIdeas } from '@/hooks/useIdeas'
+import { cn } from '@/lib'
+import { extentLabel } from '@/lib/assetExtent'
 import {
-  campaignsLabel,
-  elsewhereLabel,
-  postsLabel,
-  NO_USAGE,
-  type AssetUsage,
-} from '@/lib/assetUsage'
-import { useAssetUsage } from '@/hooks/useAssetUsage'
-import { AssetGlyph } from '@/components/content/AssetGlyph'
-import { AssetPreview } from '@/components/content/AssetPreview'
-import { AssetExtent } from '@/components/content/AssetExtent'
-import { pageUrlLabel } from '@/lib/webPageUrl'
-import { relativeTime } from '@/lib/relativeTime'
-import { cn, formatTitle } from '@/lib'
-import { tableDate } from '../utils'
+  formatDuration,
+  ideaCountsByAsset,
+  listDate,
+  listKind,
+  listTitle,
+  type VerdictKey,
+} from '@/lib/assetList'
+import { statusToBadge } from '@/lib/assetStatus'
+import { assetCampaignIndex } from '@/lib/assetUsage'
+import type { IdeaCounts } from '@/lib/ideas'
 
 /*
- * The campaign's document list.
+ * The Assets list (CON-210, CON-370) — what each document *offers*, not its
+ * storage record.
  *
- * One table, where there used to be two: this one and `AssetPoolTable`, whose
- * own header comment said it was deliberately identical to it. With the
- * workspace bank gone there is one place assets are listed, so there is one
- * component that lists them (CON-210).
+ * A row is the asset's title, written as words; under it, when there is one,
+ * a sentence of what it says or where its reading has got to; under that, a
+ * quiet line of facts. Then the ideas its analysis distilled, as a verdict
+ * pill; when it last changed; the campaigns holding it; its tags.
  *
- * A row also carries where a document came from, when that is a question with
- * an answer: a scraped web page shows its address under its title (CON-222).
- * Nothing else has provenance worth a line — a note was written here, and an
- * upload's filename is already its title.
+ * Quiet by default. An empty cell is a faint dash, never "Not used" or "No
+ * tags" on every row, and a status is shown only when it isn't Ready — so the
+ * rows that need attention are the ones that look different. The bin shows on
+ * hover and focus only: the one always-visible action used to be the
+ * destructive one.
  *
- * Two lines rather than six columns. The old row was built for a
- * workspace-wide file list, where the job is finding one document among
- * hundreds; a campaign holds four to twenty, and the job becomes *what have I
- * given this campaign, and can it actually read it*. So `type` and `created`
- * stop being columns — the kind is the glyph, and nothing here has ever been
- * decided by when a document was first uploaded — and the width goes to the
- * title and to what is under it.
+ * Titles wrap rather than truncate, so rows take the height of their content
+ * (`measureRows`), and the title column gives up width to Campaign and Tags so
+ * a campaign's name fits whole.
  */
 
-/** Row box and text block: 32px of icon, two 16px lines, 12px of air. */
-const ROW_HEIGHT = 56
+/** The shortest row: a 32px mark and two lines, with air. */
+const ROW_HEIGHT = 60
 
 /**
  * The cell fills the box the table gives it and adds the inset — no height of
  * its own, and no hairline: `VirtualTable` already draws `border-b-2` on the
  * wrapper around every custom cell.
  */
-const CELL = 'flex h-full items-center px-3'
+const CELL = 'flex h-full items-center px-3 py-2.5'
 
 type AssetRow = Asset & Record<string, unknown>
 
 /**
- * A tag on a row, in the row's own voice.
- *
- * `table-text` rather than the smaller, heavier type `TagsInput` uses: in a
- * field a tag is a control and wants to look like one, but in a table it is
- * data, and data that shouts a size down from the title next to it reads as a
- * badge. The surface is two steps of the grey ramp and nothing else.
+ * A tag on a row, in the row's own voice: data rather than a control, so the
+ * table's text size on two steps of the grey ramp.
  */
 function TagPill({ tag }: { tag: Tag }) {
   return (
@@ -74,100 +72,100 @@ function TagPill({ tag }: { tag: Tag }) {
   )
 }
 
-/**
- * Who is using this document — the column that answers *is any of this doing
- * anything*, which a bank of files otherwise cannot be asked.
- *
- * It reads differently in the two scopes, because the question does. In the
- * bank the document could be anywhere, so the first line places it: the
- * campaign that holds it, or how many hold it. On a campaign's own page that
- * line would say "this campaign" on every row, so the first line is what the
- * campaign got out of it — the posts here that wrote from it — and the second
- * says whether anyone else is reading it too.
- *
- * Unused says so in words, greyed rather than dashed. A dash is a hole in the
- * table for the reader to interpret, and the two holes here mean different
- * things: nothing holds this document at all, or a campaign holds it and no
- * post has written from it yet. The second is the more useful sentence on the
- * screen — it is a document that was filed and then never read — so it is
- * worth spelling out rather than leaving as a mark.
- */
-function UsedIn({ usage, scoped }: { usage: AssetUsage; scoped: boolean }) {
-  if (scoped) {
-    // Held by this campaign by definition — the page is its membership list —
-    // so the only question left is whether anything wrote from it.
-    return (
-      <Lines
-        lead={
-          usage.postsHere > 0
-            ? postsLabel(usage.postsHere)
-            : 'Not used in posts'
-        }
-        faded={usage.postsHere === 0}
-        under={elsewhereLabel(usage, true)}
-      />
-    )
-  }
-
-  const campaigns = campaignsLabel(usage)
-  if (!campaigns) return <Lines lead="Not used" faded />
+/** An empty cell: a faint mark for the eye, a word for a screen reader. */
+function Nothing() {
+  const { t } = useTranslation()
   return (
-    <Lines
-      lead={campaigns}
-      under={usage.posts > 0 ? postsLabel(usage.posts) : 'Not used in posts'}
-    />
+    <>
+      <span aria-hidden className="table-text text-quaternary-foreground">
+        –
+      </span>
+      <span className="sr-only">{t('content.list.none')}</span>
+    </>
   )
 }
 
-/** The column's two lines: the fact, and the smaller one qualifying it. */
-function Lines({
-  lead,
-  faded,
-  under,
-}: {
-  lead: string
-  faded?: boolean
-  under?: string | null
-}) {
+/** What went wrong or is still happening; nothing at all when it is Ready. */
+function statusLabel(t: TFunction, row: Asset): string | null {
+  switch (row.status) {
+    case 'ready':
+      return null
+    case 'partial': {
+      const kind = listKind(row)
+      return kind === 'page'
+        ? t('content.list.status.partialPage')
+        : kind === 'audio'
+          ? t('content.list.status.partialAudio')
+          : t('content.list.status.partial')
+    }
+    default:
+      return t(`content.list.status.${row.status}`)
+  }
+}
+
+/** The facts line: where a page is from, how much there is, any status. */
+function Facts({ row }: { row: Asset }) {
+  const { t, i18n } = useTranslation()
+  const domain = row.type === 'URL' ? hostOf(row.source_url) : null
+  const settling = row.status === 'pending' || row.status === 'processing'
+  const extent = settling ? null : extentLabel(t, row, i18n.language)
+  const ms = row.file?.duration_ms ?? 0
+  const status = statusLabel(t, row)
+  const badge = statusToBadge(row.status)
+  const facts = [domain, ms > 0 ? formatDuration(t, ms) : null, extent]
+    .filter(Boolean)
+    .join(' · ')
   return (
-    <span className="flex min-w-0 flex-col gap-0.5">
-      <span
-        className={cn(
-          'table-text truncate',
-          faded && 'text-tertiary-foreground',
-        )}
-      >
-        {lead}
-      </span>
-      {under && (
-        <span className="truncate text-xs text-tertiary-foreground">
-          {under}
-        </span>
+    <span className="flex flex-wrap items-center gap-x-2 text-xs text-secondary-foreground">
+      {facts && <span className="tabular-nums">{facts}</span>}
+      {status && (
+        <StatusBadge
+          tone={badge.tone}
+          label={status}
+          className={cn(
+            'text-secondary-foreground',
+            row.status === 'partial' && 'text-warning',
+          )}
+        />
       )}
     </span>
+  )
+}
+
+/** "infoq.com" — the domain alone, the path being noise in a list. */
+function hostOf(url: string | null | undefined): string | null {
+  if (!url) return null
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+}
+
+/** Ingest or analysis still under way: the row says so in place. */
+function isReading(row: Asset): boolean {
+  return (
+    row.status === 'pending' ||
+    row.status === 'processing' ||
+    row.analysis_status === 'pending' ||
+    row.analysis_status === 'running'
   )
 }
 
 type AssetsTableProps = {
   assets: Asset[]
   /**
-   * The campaign whose page this is — rows open its copy of the editor. Null in
-   * the workspace bank, where a document is opened without one.
+   * The campaign whose page this is — rows open its copy of the asset page.
+   * Null in the workspace bank, where a document is opened without one.
    */
   campaignId: string | null
   /**
    * Asks for the row's document to be deleted — it does not delete it. The
-   * list answers with a confirmation naming the document (CON-246 follow-up);
-   * the whole asset goes up rather than its id because that dialog needs the
-   * title to name it.
+   * list answers with a confirmation naming the document; the whole asset
+   * goes up rather than its id because that dialog needs the title.
    */
   onDelete: (asset: Asset) => void
-  /**
-   * Offered by the shared empty state as RESET FILTERS. There is no
-   * `emptyStateMessage` here on purpose: `TableEmptyState` draws its own
-   * words, and this table is only ever empty because a filter emptied it —
-   * the scope's own empty state is a different screen entirely.
-   */
+  /** Offered by the shared empty state as RESET FILTERS. */
   onEmptyStateAction?: () => void
   /** Ids currently ticked. Omitted entirely turns the select column off. */
   selectedIds?: Set<string>
@@ -188,17 +186,27 @@ function AssetsTableComponent({
   onToggleAll,
   className,
 }: AssetsTableProps) {
+  const { t, i18n } = useTranslation()
   const data = assets as AssetRow[]
+  const showGist = useFeatureFlag('asset-list-gist')
 
-  // Usage spans the whole workspace either way — a document on a campaign's
-  // page may be read by posts in another one, and the bank has no scope of
-  // its own to count within.
-  const { usage, ready: usageReady } = useAssetUsage(campaignId)
+  const campaigns = useCampaigns()
+  const held = useMemo(
+    () => assetCampaignIndex(campaigns.data ?? []),
+    [campaigns.data],
+  )
+
+  // The whole backlog, grouped by source asset here rather than asked for
+  // per row; the Ideas inbox reads the same cache.
+  const ideas = useIdeas(null)
+  const ideaCounts = useMemo(
+    () => ideaCountsByAsset(ideas.ideas, new Date()),
+    [ideas.ideas],
+  )
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
   // Against the rows on screen, not the whole selection: while a filter is
-  // narrowing the list the header answers "is everything here ticked?", and
-  // ids ticked before the filter must not make it claim otherwise.
+  // narrowing the list the header answers "is everything here ticked?".
   const visibleSelected = useMemo(
     () =>
       selectedIds ? assets.filter((a) => selectedIds.has(a.id)).length : 0,
@@ -207,8 +215,31 @@ function AssetsTableComponent({
   const allVisibleSelected =
     assets.length > 0 && visibleSelected === assets.length
 
-  const columnConfigs = useMemo<ColumnConfig<AssetRow>[]>(
-    () => [
+  const columnConfigs = useMemo<ColumnConfig<AssetRow>[]>(() => {
+    const untitled = t('content.list.untitled')
+    const titleOf = (row: Asset) => listTitle(row, untitled)
+    // Same row, two pages: the campaign's copy keeps the campaign in the URL
+    // so its back caret and its delete know where they are.
+    const open = (row: Asset, verdict?: VerdictKey): LinkProps =>
+      campaignId
+        ? {
+            to: '/campaigns/$campaignId/assets/$assetId',
+            params: { campaignId, assetId: row.id },
+            search: verdict ? { verdict } : {},
+          }
+        : {
+            to: '/assets/$assetId',
+            params: { assetId: row.id },
+            search: verdict ? { verdict } : {},
+          }
+    // On a campaign's own page every row is in that campaign, so the column
+    // names the others.
+    const campaignsOf = (row: Asset) =>
+      (held.get(row.id) ?? []).filter((c) => c.id !== campaignId)
+    const countsOf = (row: Asset): IdeaCounts | undefined =>
+      ideaCounts.get(row.id)
+
+    return [
       ...(selectable
         ? [
             {
@@ -226,8 +257,8 @@ function AssetsTableComponent({
                     onCheckedChange={onToggleAll}
                     aria-label={
                       allVisibleSelected
-                        ? 'Clear selection'
-                        : 'Select all documents'
+                        ? t('content.list.clearSelection')
+                        : t('content.list.selectAll')
                     }
                   />
                 </div>
@@ -241,7 +272,9 @@ function AssetsTableComponent({
                   <Checkbox
                     checked={selectedIds!.has(row.id)}
                     onCheckedChange={() => onToggleRow!(row.id)}
-                    aria-label={`Select ${formatTitle(row.title)}`}
+                    aria-label={t('content.list.selectRow', {
+                      title: titleOf(row),
+                    })}
                   />
                 </div>
               ),
@@ -250,134 +283,128 @@ function AssetsTableComponent({
         : []),
       {
         id: 'title',
-        accessorKey: 'title',
-        header: 'Title',
+        accessorFn: (row) => titleOf(row).toLocaleLowerCase(),
+        header: t('content.list.title'),
         isAutoSize: true,
         cell: (_value, row) => {
-          const badge = statusToBadge(row.status)
-          // A page keeps its URL as a stand-in title until the scrape reads the
-          // real one, and showing the raw address twice — once as the title,
-          // once as provenance — states nothing twice. So while it is still
-          // provisional the address *is* the title, tidied.
-          const provisional = row.type === 'URL' && row.source_url === row.title
-          const source = provisional ? null : row.source_url
-          // Same row, two editors: the campaign's copy keeps the campaign in
-          // the URL so its back caret and its delete know where they are.
-          const open = campaignId
-            ? ({
-                to: '/campaigns/$campaignId/assets/$assetId',
-                params: { campaignId, assetId: row.id },
-              } as const)
-            : ({
-                to: '/assets/$assetId',
-                params: { assetId: row.id },
-              } as const)
+          const gist = showGist ? row.gist?.trim() : ''
           return (
-            <Link {...open} className={cn(CELL, 'gap-3')}>
-              <AssetGlyph asset={row} />
+            <Link {...open(row)} className={cn(CELL, 'gap-3')}>
+              <span className="flex size-8 shrink-0 items-center justify-center">
+                <AssetKindMark asset={row} />
+              </span>
               <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="table-text truncate hover:underline">
-                  {provisional
-                    ? pageUrlLabel(row.title)
-                    : formatTitle(row.title)}
+                <span className="table-text break-words whitespace-normal hover:underline">
+                  {titleOf(row)}
                 </span>
-                {/* How much of it there is, then whether the campaign can read
-                    it. Both are properties of the thing named above, which is
-                    why they sit under it rather than in columns of their own. */}
-                <span className="flex items-center gap-2 text-xs text-tertiary-foreground">
-                  {source && (
-                    <span className="truncate">{pageUrlLabel(source)}</span>
-                  )}
-                  <span className="shrink-0 tabular-nums">
-                    <AssetExtent asset={row} />
+                {isReading(row) ? (
+                  <span className="text-xs text-secondary-foreground">
+                    {t('content.list.reading')}
                   </span>
-                  <StatusBadge tone={badge.tone} label={badge.label} />
-                </span>
+                ) : (
+                  gist && (
+                    <span className="text-[13px] leading-5 text-secondary-foreground">
+                      {gist}
+                    </span>
+                  )
+                )}
+                <Facts row={row} />
               </span>
             </Link>
           )
         },
       },
       {
-        // Neither sortable nor filterable, and not because it was left out of
-        // either: there is no order to put pictures in, and nothing to type
-        // that would name one. The column is here to be looked at.
-        id: 'preview',
-        header: 'Preview',
-        size: 76,
-        minSize: 76,
-        sortable: false,
-        cell: (_value, row) => (
-          <div className={cn(CELL, 'justify-center')}>
-            <AssetPreview asset={row} />
-          </div>
-        ),
+        // Sorted by what is left to decide, most first.
+        id: 'ideas',
+        header: t('content.list.ideas'),
+        size: 196,
+        minSize: 160,
+        sortDescFirst: true,
+        accessorFn: (row) => countsOf(row)?.waiting ?? -1,
+        cell: (_value, row) => {
+          const counts = countsOf(row)
+          return (
+            <div className={CELL}>
+              {/* Blank while the ideas or the reading are still coming —
+                  "none" is a claim, and it must not be made a beat early. */}
+              {ideas.isLoading || isReading(row) ? null : counts ? (
+                <VerdictPill
+                  counts={counts}
+                  link={(verdict) => open(row, verdict)}
+                />
+              ) : (
+                <Nothing />
+              )}
+            </div>
+          )
+        },
       },
       {
         id: 'updated_at',
         accessorKey: 'updated_at',
-        header: 'Updated',
-        size: 150,
-        minSize: 130,
-        cell: (_value, row) => (
-          <div className={CELL}>
-            <span className="flex flex-col gap-0.5">
-              {/* The exact date for reconciling against something outside the
-                  app, the distance for the question people actually ask. */}
-              <span className="table-text tabular-nums">
-                {tableDate(row.updated_at)}
-              </span>
-              <span className="text-xs text-tertiary-foreground">
-                {relativeTime(row.updated_at)}
-              </span>
-            </span>
-          </div>
-        ),
+        header: t('content.list.updated'),
+        size: 130,
+        minSize: 120,
+        sortDescFirst: true,
+        cell: (_value, row) => {
+          const date = listDate(t, row.updated_at, new Date(), i18n.language)
+          return (
+            <div className={CELL}>
+              {date && (
+                <span title={date.exact} className="table-text tabular-nums">
+                  {date.label}
+                </span>
+              )}
+            </div>
+          )
+        },
       },
       {
-        // Sorted by the number on its first line — campaigns in the bank, posts
-        // in a campaign — which is the one thing in it that has an order. It
-        // means the ties among "1 campaign" rows fall wherever the previous
-        // sort left them, and that is better than ordering the column by a
-        // campaign name the reader did not ask about.
-        id: 'used_in',
-        header: 'Used in',
-        size: 170,
-        minSize: 140,
-        accessorFn: (row) => {
-          const used = usage.get(row.id) ?? NO_USAGE
-          return campaignId ? used.postsHere : used.campaigns.length
+        id: 'campaign',
+        header: campaignId
+          ? t('content.list.alsoIn')
+          : t('content.list.campaign'),
+        size: 230,
+        minSize: 160,
+        accessorFn: (row) =>
+          campaignsOf(row)[0]?.name.toLocaleLowerCase() ?? '',
+        cell: (_value, row) => {
+          const names = campaignsOf(row)
+          return (
+            <div className={CELL}>
+              {/* Blank until the campaigns land, rather than a dash that
+                  claims "in no campaign" for one frame. */}
+              {!campaigns.data ? null : names.length === 0 ? (
+                <Nothing />
+              ) : (
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  {names.map((c) => (
+                    <span
+                      key={c.id}
+                      className="table-text break-words whitespace-normal"
+                    >
+                      {c.name}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </div>
+          )
         },
-        cell: (_value, row) => (
-          <div className={CELL}>
-            {/* Blank until the counts land, rather than a dash: "nothing uses
-                this" is a claim about the document, and a table that makes it
-                a beat early is a table that lies for one frame. */}
-            {usageReady && (
-              <UsedIn
-                usage={usage.get(row.id) ?? NO_USAGE}
-                scoped={!!campaignId}
-              />
-            )}
-          </div>
-        ),
       },
       {
         id: 'tags',
-        header: 'Tags',
+        header: t('content.list.tags'),
         size: 200,
-        minSize: 160,
+        minSize: 150,
         sortable: false,
         cell: (_value, row) => (
-          <div className={cn(CELL, 'justify-start gap-1.5')}>
+          <div className={cn(CELL, 'flex-wrap justify-start gap-1.5')}>
             {row.tags.length === 0 ? (
-              <span className="table-text text-tertiary-foreground">
-                No tags
-              </span>
+              <Nothing />
             ) : (
-              row.tags
-                .slice(0, 2)
-                .map((tag) => <TagPill key={tag.id} tag={tag} />)
+              row.tags.map((tag) => <TagPill key={tag.id} tag={tag} />)
             )}
           </div>
         ),
@@ -385,47 +412,55 @@ function AssetsTableComponent({
       {
         id: 'actions',
         header: '',
-        size: 60,
-        minSize: 60,
+        size: 52,
+        minSize: 52,
         sortable: false,
         cell: (_value, row) => (
           <div className={cn(CELL, 'justify-center')}>
+            {/* Out of sight until the row is pointed at or the bin is
+                focused — still a tab stop, still the same confirmation. A
+                screen with no hover shows it. */}
             <Button
               variant="ghost"
               size="xsIcon"
-              aria-label={`Delete ${formatTitle(row.title)}`}
+              aria-label={t('content.list.deleteRow', { title: titleOf(row) })}
+              className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
               onClick={(e) => {
                 e.stopPropagation()
                 onDelete(row)
               }}
             >
-              <TrashIcon className="size-4 text-tertiary-foreground hover:text-destructive" />
+              <TrashIcon className="size-4 text-secondary-foreground hover:text-destructive" />
             </Button>
           </div>
         ),
       },
-    ],
-    [
-      campaignId,
-      usage,
-      usageReady,
-      onDelete,
-      selectable,
-      selectedIds,
-      onToggleRow,
-      onToggleAll,
-      visibleSelected,
-      allVisibleSelected,
-    ],
-  )
+    ]
+  }, [
+    t,
+    i18n.language,
+    campaignId,
+    held,
+    campaigns.data,
+    ideaCounts,
+    ideas.isLoading,
+    showGist,
+    onDelete,
+    selectable,
+    selectedIds,
+    onToggleRow,
+    onToggleAll,
+    visibleSelected,
+    allVisibleSelected,
+  ])
 
   const activeColumns = useMemo(
     () => [
       ...(selectable ? ['select'] : []),
       'title',
-      'preview',
+      'ideas',
       'updated_at',
-      'used_in',
+      'campaign',
       'tags',
       'actions',
     ],
@@ -439,6 +474,7 @@ function AssetsTableComponent({
       activeColumns={activeColumns}
       initialSorting={[{ id: 'updated_at', desc: true }]}
       estimatedRowHeight={ROW_HEIGHT}
+      measureRows
       overscan={6}
       showFooter={false}
       fillHeight={false}

@@ -315,7 +315,7 @@ const FEATURE_FLAGS = {
    * What it is waiting on now is **a range**. The endpoint takes no
    * parameters, so the grid pulls every post in the workspace — bodies,
    * campaigns, platforms and assets — however few weeks are on screen. That is
-   * the same cost `useAssetUsage` already pays and documents, and fine at
+   * the same cost the auto-publish allowlist already pays, and fine at
    * today's scale; on a workspace with thousands of posts it is a calendar
    * that opens slowly, which is worse than one that isn't offered. So the flag
    * stays off until either `?from=&to=` lands (filed in
@@ -418,6 +418,17 @@ const FEATURE_FLAGS = {
    * that way.
    */
   'content-formats': false,
+
+  /**
+   * The Assets list's gist line (CON-370): one sentence of each asset's
+   * workspace analysis under its title, so a row says what the document
+   * offers without opening it.
+   *
+   * **Waiting on** the list payload carrying it (`gist` on each asset) —
+   * fetching every asset's analyses from the list would be one request per
+   * row. Until then the line has nothing to show.
+   */
+  'asset-list-gist': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

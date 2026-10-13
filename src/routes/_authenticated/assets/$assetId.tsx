@@ -1,17 +1,12 @@
 import { useCallback } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { AssetDocument } from '@/components/content/AssetDocument'
-
-/**
- * `?lens=` names the reading the Insights tab opens on — a campaign id or
- * `workspace` (CON-366) — so a link reopens the reading it was copied from.
- */
-type AssetSearch = { lens?: string }
+import { parseAssetSearch } from '@/lib/assetSearch'
 
 export const Route = createFileRoute('/_authenticated/assets/$assetId')({
   component: BankDocument,
-  validateSearch: (search: Record<string, unknown>): AssetSearch =>
-    typeof search.lens === 'string' && search.lens ? { lens: search.lens } : {},
+  // `?lens=` and `?verdict=` — see `lib/assetSearch`.
+  validateSearch: parseAssetSearch,
 })
 
 /**
@@ -34,7 +29,10 @@ function BankDocument() {
   // Stable, so the page's stale-lens effect does not re-run on every render.
   const onLensChange = useCallback(
     (next: string) =>
-      void navigate({ search: next ? { lens: next } : {}, replace: true }),
+      void navigate({
+        search: (prev) => ({ ...prev, lens: next || undefined }),
+        replace: true,
+      }),
     [navigate],
   )
   return (

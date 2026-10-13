@@ -93,6 +93,11 @@ export type AssetFile = {
   height: number
   /** A GIF with more than one frame. Nothing extracts them. */
   is_animated: boolean
+  /**
+   * A recording's length, when the list payload carries it (CON-370) — the
+   * row leads with it. Not sent yet; until it is, a recording shows words.
+   */
+  duration_ms?: number | null
   /** What the server dedupes uploads by, within a workspace. */
   checksum_sha256?: string
 }
@@ -144,6 +149,11 @@ export type Asset = {
    * that is never analysed (images) or one not queued yet.
    */
   analysis_status?: AssetAnalysisStatus | null
+  /**
+   * One sentence of the workspace analysis, for the list's second line
+   * (CON-370). Not sent yet; the line is behind `asset-list-gist`.
+   */
+  gist?: string | null
   created_by: string
   created_at: string
   updated_at: string
