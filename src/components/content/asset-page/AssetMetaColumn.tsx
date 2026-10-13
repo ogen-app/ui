@@ -90,9 +90,11 @@ export function AssetMetaColumn({
   const language = languageName(workspaceLens?.language, i18n.language)
 
   return (
+    // `top-20` is the sticky PageHeader's height (pt-6 + h-10 + pb-4), which
+    // is where the column sits on load — so it pins without moving.
     <aside
       ref={ref}
-      className="flex w-full flex-col bg-primary lg:sticky lg:top-4 lg:w-[360px] lg:shrink-0"
+      className="flex w-full flex-col bg-primary lg:sticky lg:top-20 lg:w-[360px] lg:shrink-0"
     >
       {/* Never cropped or squeezed from out here: each stage crops itself, so
           its fade always sits on the foot of what is shown, whatever the
@@ -111,7 +113,7 @@ export function AssetMetaColumn({
               initialTitle={readableTitle(asset.title)}
               onChange={onTitleChange}
               onDirty={onDirty}
-              className="text-[28px] leading-tight"
+              className="text-[21px] leading-tight"
             />
             <PencilSimpleIcon
               aria-hidden
