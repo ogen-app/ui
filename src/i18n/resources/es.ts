@@ -261,6 +261,7 @@ export const es: Translation = {
     },
     cover: {
       zoom: 'Ver la portada a tamaño completo',
+      zoomImage: 'Ver la imagen a tamaño completo',
       close: 'Cerrar',
     },
     arrived_one: 'Análisis listo: {{count}} idea añadida',

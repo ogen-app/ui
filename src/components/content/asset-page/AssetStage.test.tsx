@@ -63,6 +63,32 @@ describe('AssetStage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('draws an image faded at its foot, whole on a click', () => {
+    const base = pdf()
+    renderStage({
+      ...base,
+      type: 'IMG',
+      alt_text: 'A launch poster',
+      file: {
+        ...base.file!,
+        original_name: 'poster.png',
+        mime_type: 'image/png',
+        url: 'https://cdn/poster.png',
+        thumbnail_url: undefined,
+        width: 1200,
+        height: 1600,
+      },
+    })
+    expect(screen.getByAltText('A launch poster')).toHaveAttribute(
+      'src',
+      'https://cdn/poster.png',
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: 'View the image full size' }),
+    )
+    expect(screen.getAllByAltText('A launch poster').length).toBeGreaterThan(1)
+  })
+
   it('falls back to the tile when the cover will not load', () => {
     const { container } = renderStage(pdf())
     fireEvent.error(container.querySelector('img')!)

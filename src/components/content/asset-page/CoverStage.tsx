@@ -5,12 +5,14 @@ import { MagnifyingGlassPlusIcon, XIcon } from '@phosphor-icons/react'
 import { ZIndex } from '@/config/zIndex'
 
 /**
- * A PDF's first page on the stage, and the whole of it on demand (CON-366).
+ * A PDF's first page, or an image, on the stage — and the whole of it on
+ * demand (CON-366, CON-373).
  *
  * On the stage it is cropped from the top — the title of a document is where
- * its first page starts — and its foot fades into the column, so the crop
- * reads as the page going on rather than being cut. The crop is the stage's
- * own, so the fade always sits on the foot of what is *shown*.
+ * its first page starts — and its foot always fades into the column, at every
+ * width, so the crop reads as the page going on rather than being cut. The
+ * crop is the stage's own, so the fade always sits on the foot of what is
+ * *shown*, and nothing outside it squeezes it.
  *
  * Hovering shows a zoom mark in the corner; a click (or Enter) opens the page
  * whole, over a dark full-screen backdrop. Escape, a click anywhere or the
@@ -19,11 +21,17 @@ import { ZIndex } from '@/config/zIndex'
 export function CoverStage({
   src,
   title,
+  alt = '',
+  image = false,
   onError,
 }: {
   src: string
   /** The asset's title — the overlay's accessible name. */
   title: string
+  /** An image's own alt text; a PDF's cover is decoration under its title. */
+  alt?: string
+  /** An image rather than a cover — only the zoom control's name differs. */
+  image?: boolean
   onError: () => void
 }) {
   const { t } = useTranslation()
@@ -34,18 +42,22 @@ export function CoverStage({
       <Dialog.Trigger asChild>
         <button
           type="button"
-          aria-label={t('assetInsights.cover.zoom')}
+          aria-label={
+            image
+              ? t('assetInsights.cover.zoomImage')
+              : t('assetInsights.cover.zoom')
+          }
           className="group relative block max-h-80 w-full cursor-zoom-in overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset lg:max-h-[560px]"
         >
           <img
             src={src}
-            alt=""
+            alt={alt}
             onError={onError}
             className="block w-full bg-secondary"
           />
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-b from-transparent to-primary"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-b from-transparent to-primary lg:h-24"
           />
           <span
             aria-hidden
@@ -70,7 +82,7 @@ export function CoverStage({
           <Dialog.Title className="sr-only">{title}</Dialog.Title>
           <img
             src={src}
-            alt={title}
+            alt={alt || title}
             className="max-h-full max-w-full bg-primary object-contain shadow-2xl"
           />
           <Dialog.Close asChild>
