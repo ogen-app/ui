@@ -6,11 +6,17 @@ import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { TagsInput } from '@/components/ui/tags-input'
 import { cn } from '@/lib'
-import type { Asset, Tag } from '@/types/content'
+import type { Tag } from '@/types/content'
 
 type Props = {
-  /** The documents the tags are being filed onto — the live rows, not ids. */
-  assets: Asset[]
+  /** How many documents the tags are being filed onto. */
+  count: number
+  /**
+   * The tags the selection carries, each with how many of its documents have
+   * it — or null where that isn't known, for a selection of every match that
+   * reaches past the loaded rows.
+   */
+  present: { tag: Tag; count: number | null }[]
   isOpen: boolean
   onClose: () => void
   onConfirm: (change: { add: string[]; remove: string[] }) => void
@@ -34,7 +40,8 @@ type Props = {
  * being added is left alone rather than refused.
  */
 export function TagDocumentsDialog({
-  assets,
+  count,
+  present: carried,
   isOpen,
   onClose,
   onConfirm,
@@ -52,22 +59,11 @@ export function TagDocumentsDialog({
     setRemove([])
   }, [isOpen])
 
-  /** Every tag on the selection, with how many documents carry it. */
-  const present = useMemo(() => {
-    const counts = new Map<string, { tag: Tag; count: number }>()
-    for (const asset of assets) {
-      for (const tag of asset.tags) {
-        const seen = counts.get(tag.id)
-        if (seen) seen.count += 1
-        else counts.set(tag.id, { tag, count: 1 })
-      }
-    }
-    return [...counts.values()].sort((a, b) =>
-      a.tag.name.localeCompare(b.tag.name),
-    )
-  }, [assets])
+  const present = useMemo(
+    () => [...carried].sort((a, b) => a.tag.name.localeCompare(b.tag.name)),
+    [carried],
+  )
 
-  const count = assets.length
   const dirty = add.length > 0 || remove.length > 0
 
   const toggleRemove = (id: string) =>
@@ -130,12 +126,14 @@ export function TagDocumentsDialog({
                       )}
                     >
                       <span className="max-w-40 truncate">{tag.name}</span>
-                      <span className="tabular-nums text-tertiary-foreground">
-                        {t('content.tagging.onCount', {
-                          count: on,
-                          total: count,
-                        })}
-                      </span>
+                      {on !== null && (
+                        <span className="tabular-nums text-tertiary-foreground">
+                          {t('content.tagging.onCount', {
+                            count: on,
+                            total: count,
+                          })}
+                        </span>
+                      )}
                       {marked && <XIcon className="size-3 shrink-0" />}
                     </button>
                   )

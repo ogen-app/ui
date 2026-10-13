@@ -149,11 +149,6 @@ export type Asset = {
    * that is never analysed (images) or one not queued yet.
    */
   analysis_status?: AssetAnalysisStatus | null
-  /**
-   * One sentence of the workspace analysis, for the list's second line
-   * (CON-370). Not sent yet; the line is behind `asset-list-gist`.
-   */
-  gist?: string | null
   created_by: string
   created_at: string
   updated_at: string

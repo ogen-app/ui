@@ -28,10 +28,20 @@ import type { Post } from '@/types/posts'
  */
 
 /** The post's documents, in the order they were attached. */
+/**
+ * What a source row needs of a document: enough to name it and say whether it
+ * can be read. A full asset (hydrated on the post) and a list row (picked from
+ * the bank) are both one.
+ */
+export type SourceAsset = Pick<
+  Asset,
+  'id' | 'title' | 'type' | 'status' | 'source_url'
+>
+
 export function postAssets(
   ids: string[],
-  known: Map<string, Asset>,
-): { id: string; asset: Asset | null }[] {
+  known: Map<string, SourceAsset>,
+): { id: string; asset: SourceAsset | null }[] {
   return ids.map((id) => ({ id, asset: known.get(id) ?? null }))
 }
 
@@ -48,10 +58,10 @@ export function postAssets(
  * would appear blank for one autosave round-trip.
  */
 export function indexAssets(
-  hydrated: Asset[],
-  extra: Asset[] = [],
-): Map<string, Asset> {
-  const map = new Map<string, Asset>()
+  hydrated: SourceAsset[],
+  extra: SourceAsset[] = [],
+): Map<string, SourceAsset> {
+  const map = new Map<string, SourceAsset>()
   for (const asset of extra) map.set(asset.id, asset)
   for (const asset of hydrated) map.set(asset.id, asset)
   return map

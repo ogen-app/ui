@@ -418,17 +418,6 @@ const FEATURE_FLAGS = {
    * that way.
    */
   'content-formats': false,
-
-  /**
-   * The Assets list's gist line (CON-370): one sentence of each asset's
-   * workspace analysis under its title, so a row says what the document
-   * offers without opening it.
-   *
-   * **Waiting on** the list payload carrying it (`gist` on each asset) —
-   * fetching every asset's analyses from the list would be one request per
-   * row. Until then the line has nothing to show.
-   */
-  'asset-list-gist': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

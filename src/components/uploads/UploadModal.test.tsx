@@ -3,7 +3,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { sha256Hex } from '@/lib/fileChecksum'
-import type { Asset, AssetFile } from '@/types/content'
+import type { AssetListItem } from '@/types/assetList'
 import { UploadModal } from './UploadModal'
 
 /**
@@ -19,41 +19,53 @@ import { UploadModal } from './UploadModal'
 
 const BYTES = 'the same picture'
 
-function imageAsset(title: string, checksum: string): Asset {
+function imageAsset(title: string, checksum: string): AssetListItem {
   return {
     id: 'a1',
     title,
-    content: '',
-    status: 'ready',
     type: 'IMG',
-    alt_text: '',
-    tag_ids: [],
+    kind: 'image',
+    status: 'ready',
+    failure_code: '',
+    source_url: null,
+    analysis_status: null,
+    file: { mime_type: 'image/png', duration_ms: 0, checksum_sha256: checksum },
     tags: [],
-    file: {
-      id: 'f1',
-      original_name: 'logo.png',
-      mime_type: 'image/png',
-      size_bytes: 16,
-      width: 10,
-      height: 10,
-      is_animated: false,
-      checksum_sha256: checksum,
-    } satisfies AssetFile,
-    created_by: 'u1',
+    campaign_ids: [],
+    idea_counts: { waiting: 0, yes: 0, later: 0, no: 0 },
+    gist: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   }
 }
 
-/** Seeds `GET /api/content-bank/assets` with whatever the workspace holds. */
-function bank(assets: Asset[]) {
+/**
+ * Seeds the workspace. The modal asks `GET /api/content-bank/assets` by
+ * `checksum=` (CON-374), and this answers as the server would: the assets
+ * whose file has one of the sums asked about, and nothing else.
+ */
+function bank(assets: AssetListItem[]) {
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(assets), {
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    ),
+    vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), 'http://localhost')
+      const sums = (url.searchParams.get('checksum') ?? '')
+        .split(',')
+        .filter(Boolean)
+      const hits = assets.filter((a) =>
+        sums.includes(a.file?.checksum_sha256 ?? ''),
+      )
+      return new Response(
+        JSON.stringify({
+          assets: hits.map(({ idea_counts: _, ...row }) => row),
+          next_cursor: null,
+          total: hits.length,
+          total_unfiltered: assets.length,
+          facets: {},
+        }),
+        { headers: { 'Content-Type': 'application/json' } },
+      )
+    }),
   )
 }
 

@@ -29,12 +29,12 @@ import {
   detachFromPost,
   indexAssets,
   postAssets,
+  type SourceAsset,
 } from '@/lib/postSources'
 import { addToCampaign } from '@/lib/campaignMembership'
 import { retrievability } from '@/lib/campaignSources'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 import { cn, formatTitle } from '@/lib'
-import type { Asset } from '@/types/content'
 import type { Post } from '@/types/posts'
 
 /**
@@ -97,7 +97,7 @@ export function PostSourcesControl({
    * have an id and no title. Kept rather than cleared, because the map below
    * lets the hydrated copy win anyway.
    */
-  const [pending, setPending] = useState<Asset[]>([])
+  const [pending, setPending] = useState<SourceAsset[]>([])
   const known = indexAssets(post.used_assets, pending)
   const rows = postAssets(post.used_asset_ids, known)
 
@@ -109,7 +109,7 @@ export function PostSourcesControl({
    * into the cache, because a keystroke within the debounce clones the *pending*
    * copy, and a cache-only edit would be dropped the moment the user typed.
    */
-  const attach = (assets: Asset[]) => {
+  const attach = (assets: SourceAsset[]) => {
     const ids = assets.map((a) => a.id)
     // What this attach actually adds to the post, as distinct from what it
     // re-picked: only these are taken back if the campaign refuses below.
@@ -302,7 +302,7 @@ function SourceRow({
   onDetach,
 }: {
   id: string
-  asset: Asset | null
+  asset: SourceAsset | null
   campaignId: string
   layout: SourcesLayout
   locked: boolean

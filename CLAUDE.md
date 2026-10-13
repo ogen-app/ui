@@ -121,6 +121,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `lib/campaignReadiness` rules over it. Never reintroduce a per-card fetch —
   that was the N+1 CON-152 removed. See
   `docs/technical-decisions.md#batched-summaries`.
+- **The asset list is the server's answer to the URL, a page at a time**
+  (CON-371/374). `GET /api/content-bank/assets` filters, counts (`facets`),
+  sorts and pages; the client never narrows, counts or re-sorts a list of
+  assets, and nothing may load "every asset" to look something up — ask the
+  query instead (`checksum=` for duplicates, `ids_only=true` for a whole
+  match or a whole-bank pin, `scope_campaign` + `facets` for a campaign's
+  tally). The Assets pages keep their filter in search params named exactly as
+  the endpoint's (`lib/assetFilter`), so the address is the request. Rows are
+  slim — no `content` — and live under `ASSET_LIST_KEY` (`['assets','list']`),
+  which anything changing what a row shows must invalidate: idea verdicts,
+  analysis events and campaign membership already do. See
+  [`docs/assets-list.md`](./docs/assets-list.md).
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,
   600ms debounce, generation-counter guarded, flush-on-unmount). Campaign forms
   autosave similarly. Prefer these patterns over new local edit stores.

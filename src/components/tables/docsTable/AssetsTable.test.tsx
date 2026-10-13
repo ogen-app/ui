@@ -1,9 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { i18next, loadLocaleResources } from '@/i18n'
-import type { Idea } from '@/lib/ideas'
-import type { Asset } from '@/types/content'
+import type { AssetListItem } from '@/types/assetList'
 
 // jsdom measures every box at zero, so the real virtualiser would draw no
 // rows; this one draws them all, at their estimated height.
@@ -30,55 +30,46 @@ vi.mock('@tanstack/react-virtual', () => ({
 const campaigns = vi.hoisted(() => ({ current: [] as unknown[] }))
 vi.mock('@/hooks/useCampaigns', () => ({
   useCampaigns: () => ({ data: campaigns.current }),
-}))
-const ideas = vi.hoisted(() => ({ current: [] as Idea[] }))
-vi.mock('@/hooks/useIdeas', () => ({
-  useIdeas: () => ({ ideas: ideas.current, isLoading: false, isError: false }),
+  useArchivedCampaigns: () => ({ data: [] }),
 }))
 
 const { AssetsTable } = await import('./index')
 
-const asset = (over: Partial<Asset>): Asset => ({
+const NO_IDEAS = { waiting: 0, yes: 0, later: 0, no: 0 }
+
+const asset = (over: Partial<AssetListItem>): AssetListItem => ({
   id: 'a1',
   title: 'Positioning',
-  content: 'one two three',
-  status: 'ready',
   type: 'MD',
-  alt_text: '',
-  tag_ids: [],
-  tags: [],
+  kind: 'note',
+  status: 'ready',
+  failure_code: '',
+  source_url: null,
   analysis_status: 'ready',
-  created_by: 'u1',
+  file: null,
+  tags: [],
+  campaign_ids: [],
+  idea_counts: NO_IDEAS,
+  gist: null,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
   ...over,
 })
 
-const idea = (over: Partial<Idea>): Idea => ({
-  id: Math.random().toString(36),
-  title: 'An idea',
-  note: '',
-  campaignId: null,
-  verdict: null,
-  createdAt: '2026-10-01T00:00:00Z',
-  createdBy: null,
-  decidedAt: null,
-  decidedBy: null,
-  remindAt: null,
-  origin: 'asset_analysis',
-  sourceAsset: { id: 'a1', title: 'Positioning' },
-  ...over,
-})
-
-function show(assets: Asset[], campaignId: string | null = null) {
+function show(assets: AssetListItem[], campaignId: string | null = null) {
   return renderWithProviders(
-    <AssetsTable assets={assets} campaignId={campaignId} onDelete={() => {}} />,
+    <AssetsTable
+      assets={assets}
+      campaignId={campaignId}
+      onDelete={() => {}}
+      sort="-updated_at"
+      onSortChange={() => {}}
+    />,
   )
 }
 
 beforeEach(() => {
   campaigns.current = []
-  ideas.current = []
 })
 
 describe('AssetsTable', () => {
@@ -97,20 +88,14 @@ describe('AssetsTable', () => {
       asset({
         id: 'a1',
         type: 'AUDIO',
+        kind: 'audio',
         title: 'riverside_olena_talks%20studio_0070.m4a',
-        file: {
-          id: 'f',
-          original_name: 'x.m4a',
-          mime_type: 'audio/mp4',
-          size_bytes: 1,
-          width: 0,
-          height: 0,
-          is_animated: false,
-        },
+        file: { mime_type: 'audio/mp4', duration_ms: 0 },
       }),
       asset({
         id: 'a2',
         type: 'URL',
+        kind: 'web',
         title: 'Design Patterns for Serverless Systems - InfoQ',
         source_url: 'https://www.infoq.com/articles/serverless/',
       }),
@@ -129,6 +114,7 @@ describe('AssetsTable', () => {
       asset({
         id: 'a1',
         type: 'URL',
+        kind: 'web',
         status: 'partial',
         source_url: 'https://acme.com/a',
       }),
@@ -139,21 +125,20 @@ describe('AssetsTable', () => {
   })
 
   it('reads in place while the analysis runs, with no ideas yet', async () => {
-    ideas.current = [idea({})]
-    await show([asset({ analysis_status: 'running' })])
+    await show([
+      asset({
+        analysis_status: 'running',
+        idea_counts: { ...NO_IDEAS, waiting: 1 },
+      }),
+    ])
     expect(await screen.findByText('Reading the document…')).toBeInTheDocument()
     expect(screen.queryByRole('group')).not.toBeInTheDocument()
   })
 
   it('draws the ideas as a verdict pill, each segment opening that pile', async () => {
-    ideas.current = [
-      idea({}),
-      idea({}),
-      idea({ verdict: 'yes' }),
-      idea({ verdict: 'no' }),
-      idea({ origin: 'manual' }),
-    ]
-    await show([asset({})])
+    await show([
+      asset({ idea_counts: { waiting: 2, yes: 1, later: 0, no: 1 } }),
+    ])
     const pill = await screen.findByRole('group', {
       name: '2 undecided · 1 yes · 1 no',
     })
@@ -165,18 +150,63 @@ describe('AssetsTable', () => {
 
   it('names the campaigns holding it, the others on a campaign’s own list', async () => {
     campaigns.current = [
-      { id: 'c1', name: 'Beekeeping in Ukraine', asset_ids: ['a1'] },
-      { id: 'c2', name: 'Finance Q4', asset_ids: ['a1'] },
+      { id: 'c1', name: 'Beekeeping in Ukraine' },
+      { id: 'c2', name: 'Finance Q4' },
     ]
-    const { unmount } = await show([asset({})])
+    const held = asset({ campaign_ids: ['c1', 'c2'] })
+    const { unmount } = await show([held])
     expect(await screen.findByText('Beekeeping in Ukraine')).toBeInTheDocument()
     expect(screen.getByText('Finance Q4')).toBeInTheDocument()
     unmount()
 
-    await show([asset({})], 'c1')
+    await show([held], 'c1')
     expect(await screen.findByText('Also in')).toBeInTheDocument()
     expect(screen.queryByText('Beekeeping in Ukraine')).not.toBeInTheDocument()
     expect(screen.getByText('Finance Q4')).toBeInTheDocument()
+  })
+
+  it('shows where a text search matched, with the words marked', async () => {
+    await show([
+      asset({
+        gist: 'A gist that the match replaces',
+        match: {
+          matches: 2,
+          snippet: '…how bees &amp; <mark>overwintering</mark> colonies…',
+          source_label: 'Page 14',
+          chunk_index: 3,
+        },
+      }),
+    ])
+    const marked = await screen.findByText('overwintering')
+    expect(marked.tagName).toBe('MARK')
+    expect(screen.getByText('…how bees &')).toBeInTheDocument()
+    expect(screen.getByText('Page 14 ·')).toBeInTheDocument()
+    expect(
+      screen.queryByText('A gist that the match replaces'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('asks the server for another order rather than re-sorting the page', async () => {
+    const onSortChange = vi.fn()
+    await renderWithProviders(
+      <AssetsTable
+        // Deliberately out of title order: the table must not reorder them.
+        assets={[
+          asset({ id: 'b', title: 'Zebra' }),
+          asset({ id: 'a', title: 'Apple' }),
+        ]}
+        campaignId={null}
+        onDelete={() => {}}
+        sort="-updated_at"
+        onSortChange={onSortChange}
+      />,
+    )
+    const titles = await screen.findAllByText(/^(Zebra|Apple)$/)
+    expect(titles.map((el) => el.textContent)).toEqual(['Zebra', 'Apple'])
+    await userEvent.click(screen.getByRole('button', { name: 'Title' }))
+    expect(onSortChange).toHaveBeenCalledWith('title')
+    await userEvent.click(screen.getByRole('button', { name: 'Ideas' }))
+    expect(onSortChange).toHaveBeenCalledWith('-ideas_undecided')
   })
 
   it('keeps the bin out of sight until the row is pointed at', async () => {
@@ -195,11 +225,7 @@ describe('AssetsTable in Spanish', () => {
   it('reads its columns and the pill from the catalogue', async () => {
     await loadLocaleResources('es')
     await i18next.changeLanguage('es')
-    ideas.current = [
-      idea({}),
-      idea({ verdict: 'later', remindAt: '2099-01-01T00:00:00Z' }),
-    ]
-    await show([asset({})])
+    await show([asset({ idea_counts: { ...NO_IDEAS, waiting: 1, later: 1 } })])
     expect(await screen.findByText('Título')).toBeInTheDocument()
     expect(screen.getByText('Campaña')).toBeInTheDocument()
     expect(

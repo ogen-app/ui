@@ -8,11 +8,13 @@ import {
   it,
   vi,
 } from 'vitest'
+import { useState } from 'react'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { i18next, loadLocaleResources } from '@/i18n'
-import type { Asset } from '@/types/content'
+import { EMPTY_FILTER, withToken, type AssetFilter } from '@/lib/assetFilter'
+import type { AssetListItem } from '@/types/assetList'
 
 /**
  * The table is stood in for, and only here.
@@ -32,8 +34,8 @@ vi.mock('@/components/tables/docsTable', () => ({
     onToggleRow,
     selectedIds,
   }: {
-    assets: Asset[]
-    onDelete: (asset: Asset) => void
+    assets: AssetListItem[]
+    onDelete: (asset: AssetListItem) => void
     onToggleRow?: (id: string) => void
     selectedIds?: Set<string>
   }) => (
@@ -51,19 +53,30 @@ vi.mock('@/components/tables/docsTable', () => ({
   ),
 }))
 
+/** "Select all N matching" asks the server for ids; nothing else here does. */
+const ids = vi.hoisted(() => ({ fn: vi.fn() }))
+vi.mock('@/services/api/content', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/api/content')>()),
+  queryAssetIds: ids.fn,
+}))
+
 const { ContentList } = await import('./ContentList')
 
-function asset(id: string, title: string): Asset {
+function asset(id: string, title: string): AssetListItem {
   return {
     id,
     title,
-    content: '',
-    status: 'ready',
     type: 'MD',
-    alt_text: '',
-    tag_ids: [],
+    kind: 'note',
+    status: 'ready',
+    failure_code: '',
+    source_url: null,
+    analysis_status: null,
+    file: null,
     tags: [],
-    created_by: 'u1',
+    campaign_ids: [],
+    idea_counts: { waiting: 0, yes: 0, later: 0, no: 0 },
+    gist: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   }
@@ -72,13 +85,50 @@ function asset(id: string, title: string): Asset {
 const POSITIONING = asset('a1', 'Positioning')
 const TRANSCRIPT = asset('a2', 'Interview transcript')
 
-function show(onDeleteMany = vi.fn().mockResolvedValue(undefined)) {
+/** The list as `useAssetList` answers it: a page of rows and the totals. */
+function listOf(
+  rows: AssetListItem[],
+  total = rows.length,
+  unfiltered = total,
+) {
+  return {
+    query: {
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isError: false,
+      fetchNextPage: vi.fn(),
+    },
+    rows,
+    total,
+    totalUnfiltered: unfiltered,
+    facets: {},
+  } as never
+}
+
+function show(
+  onDeleteMany = vi.fn().mockResolvedValue(undefined),
+  {
+    total = 2,
+    filter = EMPTY_FILTER,
+    params = {},
+  }: {
+    total?: number
+    filter?: AssetFilter
+    params?: Record<string, string>
+  } = {},
+) {
   return {
     onDeleteMany,
     ui: (
       <ContentList
         campaignId={null}
-        assets={[POSITIONING, TRANSCRIPT]}
+        list={listOf([POSITIONING, TRANSCRIPT], total, Math.max(total, 5))}
+        params={params}
+        filter={filter}
+        onFilterChange={() => {}}
+        sort="-updated_at"
+        onSortChange={() => {}}
+        paramsFor={() => ({})}
         uploads={[]}
         onDeleteMany={onDeleteMany}
         onWrite={() => {}}
@@ -90,7 +140,9 @@ function show(onDeleteMany = vi.fn().mockResolvedValue(undefined)) {
 }
 
 beforeEach(() => {
-  // The filter reads the workspace's tags; nothing here is about them.
+  ids.fn.mockReset()
+  // The filter reads the workspace's tags and campaigns; nothing here is
+  // about them.
   vi.stubGlobal(
     'fetch',
     vi
@@ -183,6 +235,96 @@ describe('deleting a selection', () => {
 
     expect(onDeleteMany).toHaveBeenCalledWith(['a1', 'a2'])
     expect(screen.getByText('ticked:')).toBeInTheDocument()
+  })
+})
+
+describe('every match', () => {
+  /*
+   * The list is fifty rows at a time, so "select all" in the header can only
+   * mean the rows on screen. The whole match is a second, explicit step — and
+   * the delete it leads to has to name the count it will act on.
+   */
+  it('offers all N matching once the loaded rows are ticked, and deletes all N', async () => {
+    ids.fn.mockResolvedValue(['a1', 'a2', 'a3', 'a4', 'a5'])
+    const { ui, onDeleteMany } = show(undefined, {
+      total: 5,
+      params: { kind: 'pdf', sort: '-updated_at' },
+    })
+    await renderWithProviders(ui)
+
+    await userEvent.click(screen.getByText('tick a1'))
+    expect(screen.queryByRole('button', { name: /matching/ })).toBeNull()
+    await userEvent.click(screen.getByText('tick a2'))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Select all 5 matching' }),
+    )
+
+    expect(ids.fn).toHaveBeenCalledWith({ kind: 'pdf', sort: '-updated_at' })
+    expect(await screen.findByText('5 selected')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /DELETE$/ }))
+    expect(
+      screen.getByRole('heading', { name: 'Delete 5 documents?' }),
+    ).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'DELETE 5 DOCUMENTS' }),
+    )
+    expect(onDeleteMany).toHaveBeenCalledWith(['a1', 'a2', 'a3', 'a4', 'a5'])
+  })
+
+  it('does not offer it when the rows on screen are the whole match', async () => {
+    const { ui } = show(undefined, { total: 2 })
+    await renderWithProviders(ui)
+    await userEvent.click(screen.getByText('tick a1'))
+    await userEvent.click(screen.getByText('tick a2'))
+    expect(screen.queryByRole('button', { name: /matching/ })).toBeNull()
+  })
+
+  /* A set picked under one question must not be deleted under another. */
+  it('empties the selection when the question changes', async () => {
+    function Harness() {
+      const [params, setParams] = useState<Record<string, string>>({
+        kind: 'pdf',
+      })
+      return (
+        <>
+          <button onClick={() => setParams({ kind: 'pdf', sort: 'title' })}>
+            resort
+          </button>
+          <button onClick={() => setParams({ kind: 'web' })}>refilter</button>
+          {show(undefined, { params }).ui}
+        </>
+      )
+    }
+    await renderWithProviders(<Harness />)
+    await userEvent.click(screen.getByText('tick a1'))
+    expect(screen.getByText('ticked:a1')).toBeInTheDocument()
+
+    // Another order is the same question.
+    await userEvent.click(screen.getByText('resort'))
+    expect(screen.getByText('ticked:a1')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByText('refilter'))
+    expect(screen.getByText('ticked:')).toBeInTheDocument()
+  })
+})
+
+describe('the filter bar', () => {
+  it('answers with the count and offers to clear once something is filtered', async () => {
+    const filter = withToken(EMPTY_FILTER, {
+      field: 'kind',
+      negated: false,
+      values: ['pdf'],
+    })
+    const { ui } = show(undefined, { filter, total: 2 })
+    await renderWithProviders(ui)
+    expect(screen.getByText('2 of 5')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Clear all' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Remove filter: Type is PDF' }),
+    ).toBeInTheDocument()
   })
 })
 

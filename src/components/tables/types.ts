@@ -70,6 +70,8 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
   emptyStateMessage?: string
   emptyStateActionLabel?: string
   onEmptyStateAction?: () => void
+  /** Drawn instead of the generic empty state, for a table that can say why. */
+  emptyState?: ReactNode
   /**
    * Rows haven't arrived yet. The header and its column widths are the real
    * ones, so the table doesn't move when they do; the body simply stays empty
@@ -79,4 +81,11 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
    * answers.
    */
   loading?: boolean
+  /**
+   * The rows arrive already sorted — by a server — so the table draws them in
+   * that order and the header only reports clicks through `onSortingChange`.
+   */
+  manualSorting?: boolean
+  /** The last rows are on screen: load more, if there are more. */
+  onEndReached?: () => void
 }

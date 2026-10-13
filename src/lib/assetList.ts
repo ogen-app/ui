@@ -1,49 +1,17 @@
 import type { TFunction } from 'i18next'
 import { readableTitle } from '@/lib/assetAnalysis'
 import { formatDate } from '@/lib/intl'
-import { countIdeas, type Idea, type IdeaCounts } from '@/lib/ideas'
+import type { IdeaCounts } from '@/lib/ideas'
 import { relativeTime } from '@/lib/relativeTime'
-import { isSpreadsheet } from '@/lib/sheetChunks'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 import type { Asset } from '@/types/content'
 
 /**
  * The rules behind the Assets list's rows (CON-370), pure so they can be
- * tested without a table: what a row is called, what kind of thing it is,
- * when it last changed, and how its ideas have been answered.
+ * tested without a table: what a row is called, when it last changed, and
+ * how its ideas have been answered. What kind of thing a row is comes from the
+ * server (`kind`, CON-374), which owns that classification.
  */
-
-/** What the list draws in the kind slot — finer than `AssetKind`. */
-export type ListKind =
-  | 'pdf'
-  | 'document'
-  | 'spreadsheet'
-  | 'csv'
-  | 'page'
-  | 'audio'
-  | 'image'
-  | 'note'
-
-export function listKind(asset: Pick<Asset, 'type' | 'file'>): ListKind {
-  switch (asset.type) {
-    case 'PDF':
-      return 'pdf'
-    case 'URL':
-      return 'page'
-    case 'AUDIO':
-      return 'audio'
-    case 'IMG':
-      return 'image'
-    case 'DOC': {
-      const name = asset.file?.original_name.toLowerCase() ?? ''
-      if (name.endsWith('.csv') || asset.file?.mime_type === 'text/csv')
-        return 'csv'
-      return isSpreadsheet(asset) ? 'spreadsheet' : 'document'
-    }
-    default:
-      return 'note'
-  }
-}
 
 /** A short trailing " - Publisher" / " | Publisher": four words at most. */
 const PUBLISHER_SUFFIX = /\s+[-–—|·]\s+([^-–—|·]{1,40})$/
@@ -58,7 +26,10 @@ const PUBLISHER_SUFFIX = /\s+[-–—|·]\s+([^-–—|·]{1,40})$/
  * - A page's " - InfoQ" suffix goes when the row already shows its domain.
  */
 export function listTitle(
-  asset: Pick<Asset, 'title' | 'type' | 'source_url' | 'file'>,
+  asset: Pick<Asset, 'title' | 'type'> & {
+    source_url?: string | null
+    file?: object | null
+  },
   fallback: string,
 ): string {
   const raw = asset.title.trim()
@@ -128,33 +99,6 @@ export function formatDuration(t: TFunction, ms: number): string {
   const seconds = Math.round(ms / 1000)
   if (seconds < 60) return `0:${String(seconds).padStart(2, '0')}`
   return t('content.list.minutes', { count: Math.round(seconds / 60) })
-}
-
-/**
- * How an asset's distilled ideas have been answered, per asset (CON-370).
- *
- * From the whole ideas backlog, which already names each idea's source asset
- * — grouped here rather than fetched per row. Only ideas an analysis wrote
- * count. A "later" whose reminder has come due is counted as waiting, the
- * rule the Ideas inbox uses (`countIdeas`), so the four figures always add up
- * to the asset's ideas.
- */
-export function ideaCountsByAsset(
-  ideas: readonly Idea[],
-  now: Date,
-): Map<string, IdeaCounts> {
-  const byAsset = new Map<string, Idea[]>()
-  for (const idea of ideas) {
-    const assetId = idea.sourceAsset?.id
-    if (idea.origin !== 'asset_analysis' || !assetId) continue
-    const list = byAsset.get(assetId)
-    if (list) list.push(idea)
-    else byAsset.set(assetId, [idea])
-  }
-  const counts = new Map<string, IdeaCounts>()
-  for (const [assetId, list] of byAsset)
-    counts.set(assetId, countIdeas(list, now))
-  return counts
 }
 
 /** The order the pill draws verdicts in — always the same, so icons stay put. */

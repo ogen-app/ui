@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import type { Asset } from '@/types/content'
+import type { AssetListItem } from '@/types/assetList'
 
 /**
  * What the page is allowed to say about an empty bank.
@@ -13,7 +13,7 @@ import type { Asset } from '@/types/content'
  * and the bug this suite pins is the read that never got an answer at all
  * being mistaken for one.
  *
- * `useAssets` is stood in for rather than driven through a query client,
+ * `useAssetList` is stood in for rather than driven through a query client,
  * because the state under test is not reachable by failing a `fetch`: a
  * paused query is what TanStack parks a retry in when the tab is hidden or
  * the browser is offline, and jsdom has neither. The four shapes below are
@@ -23,15 +23,23 @@ import type { Asset } from '@/types/content'
 const state = vi.hoisted(() => ({
   status: 'pending' as 'pending' | 'error' | 'success',
   fetchStatus: 'fetching' as 'fetching' | 'paused' | 'idle',
-  data: undefined as Asset[] | undefined,
+  data: undefined as { pages: unknown[] } | undefined,
   isError: false,
   /** Derived exactly as TanStack derives it, so the trap is reproduced here. */
   isLoading: true,
 }))
 
+const page = vi.hoisted(() => ({ rows: [] as unknown[], totalUnfiltered: 0 }))
+
 vi.mock('@/hooks/useContent', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/useContent')>()),
-  useAssets: () => state,
+  useAssetList: () => ({
+    query: state,
+    rows: page.rows,
+    total: page.rows.length,
+    totalUnfiltered: page.totalUnfiltered,
+    facets: {},
+  }),
 }))
 
 /**
@@ -40,7 +48,7 @@ vi.mock('@/hooks/useContent', async (importOriginal) => ({
  * from the empty state this suite is about. See `ContentList.test.tsx`.
  */
 vi.mock('@/components/tables/docsTable', () => ({
-  AssetsTable: ({ assets }: { assets: Asset[] }) => (
+  AssetsTable: ({ assets }: { assets: AssetListItem[] }) => (
     <p>{`rows:${assets.length}`}</p>
   ),
 }))
@@ -66,7 +74,7 @@ describe('ContentPage', () => {
     given({})
     await renderWithProviders(
       <SidebarProvider>
-        <ContentPage campaign={null} />
+        <ContentPage campaign={null} search={{}} onSearchChange={() => {}} />
       </SidebarProvider>,
     )
     expect(screen.getByText('LOADING')).toBeInTheDocument()
@@ -81,7 +89,7 @@ describe('ContentPage', () => {
     given({ fetchStatus: 'paused' })
     await renderWithProviders(
       <SidebarProvider>
-        <ContentPage campaign={null} />
+        <ContentPage campaign={null} search={{}} onSearchChange={() => {}} />
       </SidebarProvider>,
     )
     expect(screen.queryByText(EMPTY_STATE)).not.toBeInTheDocument()
@@ -92,7 +100,7 @@ describe('ContentPage', () => {
     given({ status: 'error', fetchStatus: 'idle', isError: true })
     await renderWithProviders(
       <SidebarProvider>
-        <ContentPage campaign={null} />
+        <ContentPage campaign={null} search={{}} onSearchChange={() => {}} />
       </SidebarProvider>,
     )
     expect(
@@ -102,10 +110,10 @@ describe('ContentPage', () => {
   })
 
   it('offers to file the first document once the server has said there are none', async () => {
-    given({ status: 'success', fetchStatus: 'idle', data: [] })
+    given({ status: 'success', fetchStatus: 'idle', data: { pages: [] } })
     await renderWithProviders(
       <SidebarProvider>
-        <ContentPage campaign={null} />
+        <ContentPage campaign={null} search={{}} onSearchChange={() => {}} />
       </SidebarProvider>,
     )
     expect(screen.getByText(EMPTY_STATE)).toBeInTheDocument()

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react'
 import { ModalContainer } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -6,19 +7,19 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { AssetGlyph } from '@/components/content/AssetGlyph'
-import { useAssets } from '@/hooks/useContent'
+import { useAssetList } from '@/hooks/useContent'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { retrievability } from '@/lib/campaignSources'
-import { AssetExtent } from '@/components/content/AssetExtent'
 import { pageUrlLabel } from '@/lib/webPageUrl'
 import { cn, formatTitle } from '@/lib'
-import type { Asset } from '@/types/content'
+import type { AssetListItem } from '@/types/assetList'
 import { awaiting } from '@/lib/fetched'
 
 type Props = {
   onClose: () => void
   /** Already on the post — listed, ticked, and inert. */
   attachedIds: string[]
-  onAdd: (assets: Asset[]) => void
+  onAdd: (assets: AssetListItem[]) => void
 }
 
 /**
@@ -31,43 +32,53 @@ type Props = {
  * post. One truth is worth more than the tidiness of keeping the bank out of a
  * campaign's reach.
  *
- * It is mounted only while open — hence no `isOpen` prop — and that is load
- * bearing rather than tidiness. The asset list carries every document's full
- * markdown, so a post editor holding this component closed-but-mounted would
- * fetch a whole workspace to render a card that needs nothing from it: the
- * server hydrates a post's own documents onto the post. Mounting per opening
- * also means the search box and the ticks start empty every time, with no
- * effect to reset them.
+ * It is mounted only while open — hence no `isOpen` prop — so a post editor
+ * never reads the bank for a card that needs nothing from it (the server
+ * hydrates a post's own documents onto the post), and the search box and the
+ * ticks start empty every time, with no effect to reset them.
+ *
+ * The search is the Assets query's `title` (CON-374), a page at a time, so
+ * the picker reaches a bank of thousands without loading it. What has been
+ * ticked is remembered as rows, because a later search can scroll a ticked
+ * document out of the list before ADD is pressed.
  */
 export function AddSourcesModal({ onClose, attachedIds, onAdd }: Props) {
-  const assetsQuery = useAssets()
-  const assets = assetsQuery.data
   const [query, setQuery] = useState('')
-  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const search = useDebouncedValue(query.trim(), 250)
+  const list = useAssetList(
+    useMemo(
+      () => ({
+        ...(search ? { title: search } : {}),
+        sort: '-updated_at',
+      }),
+      [search],
+    ),
+  )
+  const assetsQuery = list.query
+  const visible = list.rows
+  const [picked, setPicked] = useState<Map<string, AssetListItem>>(new Map())
+  const scroller = useRef<HTMLDivElement>(null)
 
   const held = useMemo(() => new Set(attachedIds), [attachedIds])
 
-  const visible = useMemo(() => {
-    const all = assets ?? []
-    const q = query.trim().toLowerCase()
-    if (q === '') return all
-    return all.filter(
-      (a) =>
-        a.title.toLowerCase().includes(q) ||
-        (a.source_url ?? '').toLowerCase().includes(q),
-    )
-  }, [assets, query])
+  const onScroll = () => {
+    const el = scroller.current
+    if (!el) return
+    if (el.scrollHeight - el.scrollTop - el.clientHeight > 200) return
+    if (assetsQuery.hasNextPage && !assetsQuery.isFetchingNextPage)
+      void assetsQuery.fetchNextPage()
+  }
 
-  const toggle = (id: string) =>
+  const toggle = (asset: AssetListItem) =>
     setPicked((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      const next = new Map(prev)
+      if (next.has(asset.id)) next.delete(asset.id)
+      else next.set(asset.id, asset)
       return next
     })
 
   const handleAdd = () => {
-    const chosen = (assets ?? []).filter((a) => picked.has(a.id))
+    const chosen = [...picked.values()]
     if (chosen.length === 0) return
     onAdd(chosen)
     onClose()
@@ -113,7 +124,11 @@ export function AddSourcesModal({ onClose, attachedIds, onAdd }: Props) {
           )}
         </div>
 
-        <div className="max-h-[50vh] min-h-30 overflow-y-auto">
+        <div
+          ref={scroller}
+          onScroll={onScroll}
+          className="max-h-[50vh] min-h-30 overflow-y-auto"
+        >
           {/* `awaiting`, not `isLoading` — see `lib/fetched`. "There is
               nothing in the content bank yet", below, is the claim this
               branch protects. */}
@@ -139,7 +154,7 @@ export function AddSourcesModal({ onClose, attachedIds, onAdd }: Props) {
                   asset={asset}
                   attached={held.has(asset.id)}
                   checked={held.has(asset.id) || picked.has(asset.id)}
-                  onToggle={() => toggle(asset.id)}
+                  onToggle={() => toggle(asset)}
                 />
               ))}
             </ul>
@@ -177,11 +192,12 @@ function AssetChoice({
   checked,
   onToggle,
 }: {
-  asset: Asset
+  asset: AssetListItem
   attached: boolean
   checked: boolean
   onToggle: () => void
 }) {
+  const { t } = useTranslation()
   const reach = retrievability(asset.status)
   const provisional = asset.type === 'URL' && asset.source_url === asset.title
   const label = provisional
@@ -212,7 +228,7 @@ function AssetChoice({
               <span className="truncate">{pageUrlLabel(asset.source_url)}</span>
             )}
             <span className="shrink-0">
-              <AssetExtent asset={asset} />
+              {t(`content.list.kind.${asset.kind}`)}
             </span>
           </span>
         </span>

@@ -14,30 +14,44 @@ import { AssetsTable } from '@/components/tables/docsTable'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
 import { ZIndex } from '@/config/zIndex'
-import { useBulkTagAssets } from '@/hooks/useContent'
+import { useBulkTagAssets, type useAssetList } from '@/hooks/useContent'
+import {
+  isFilterActive,
+  NONE,
+  type AssetFilter,
+  type AssetSort,
+} from '@/lib/assetFilter'
+import { formatNumber } from '@/lib/intl'
 import { uploadErrorMessage } from '@/lib/uploadError'
+import { queryAssetIds } from '@/services/api/content'
 import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
-import type { Asset } from '@/types/content'
-import {
-  EMPTY_FILTER,
-  filterAssets,
-  isFilterActive,
-  type ContentFilter as Filter,
-} from '@/lib/contentFilter'
-import { ContentFilter } from './ContentFilter'
+import type { Tag } from '@/types/content'
+import type { AssetListItem, AssetQueryParams } from '@/types/assetList'
+import { AssetFilterBar } from './smartFilter/AssetFilterBar'
+import { NoMatches } from './smartFilter/NoMatches'
+import { useFilterVocabulary } from './smartFilter/useFilterVocabulary'
 import { DeleteDocumentsDialog } from './DeleteDocumentsDialog'
 import { TagDocumentsDialog } from './TagDocumentsDialog'
 
 type Props = {
   /** The campaign whose documents these are, or null for the whole workspace. */
   campaignId: string | null
-  assets: Asset[]
+  /** The Assets query for this page's filter (`useAssetList`). */
+  list: ReturnType<typeof useAssetList>
+  /** The request behind it — what "select all matching" asks again for ids. */
+  params: AssetQueryParams
+  filter: AssetFilter
+  onFilterChange: (next: AssetFilter) => void
+  sort: AssetSort
+  onSortChange: (next: AssetSort) => void
+  /** The request another filter would make, for counts the bar shows. */
+  paramsFor: (filter: AssetFilter) => AssetQueryParams
   /** Files still in transit to this scope, or refused on the way. */
   uploads: UploadItem[]
   /**
    * Deletes documents, and resolves once every one has settled. One path for
-   * both ways in: the row's bin confirms the same dialog the selection does,
+   * every way in: the row's bin confirms the same dialog the selection does,
    * so a single row is a selection of one rather than a second code path that
    * skips the asking.
    */
@@ -47,123 +61,182 @@ type Props = {
   onAddWebPage: () => void
 }
 
+/** What the delete dialog is asking about, and which gesture asked. */
+type Confirming = {
+  ids: string[]
+  /** Named in the title when it is one document. */
+  title: string | null
+  fromSelection: boolean
+}
+
 /**
  * What a campaign writes from — or, in the bank, everything there is — as a
  * list.
  *
  * The three-tile source picker that used to sit above this is gone (CON-210),
  * and nothing replaces it: the campaign's sources are the documents on the
- * page. There is nothing to choose, so there is nothing to misunderstand — and
- * a sentence restating what the list already shows was the same claim twice.
- * Per-document facts (how much text, whether it can be read) stay where they
- * are true, on the row.
+ * page. Per-document facts (how much there is, whether it can be read) stay
+ * where they are true, on the row.
  *
  * Only the empty state and the filter's own words change with scope. The
- * table doesn't: a document is the same object wherever it is listed, and a
- * second row design for the same rows is how this screen came to have two
- * tables that their own comments admitted were identical.
+ * table doesn't: a document is the same object wherever it is listed.
+ *
+ * **The list is a window onto the server's answer** (CON-371/374): fifty rows
+ * at a time, the next fifty as the end comes into view. So the selection is
+ * ids, and has two sizes — the rows ticked, and "all N matching", which asks
+ * the server for every id the same filter matches. That is what bulk tagging
+ * and delete act on, and the delete confirmation names the count. A changed
+ * filter clears the selection: a set picked under one question must not be
+ * deleted under another.
  */
 export function ContentList({
   campaignId,
-  assets,
+  list,
+  params,
+  filter,
+  onFilterChange,
+  sort,
+  onSortChange,
+  paramsFor,
   uploads,
   onDeleteMany,
   onWrite,
   onUpload,
   onAddWebPage,
 }: Props) {
-  const { t } = useTranslation()
-  const [filter, setFilter] = useState<Filter>(EMPTY_FILTER)
+  const { t, i18n } = useTranslation()
+  const { rows, total, totalUnfiltered, facets, query } = list
+  const vocabulary = useFilterVocabulary({ facets, scoped: !!campaignId })
   const [ticked, setTicked] = useState<Set<string>>(new Set())
-  /**
-   * What the dialog is currently asking about, and which gesture asked.
-   *
-   * The documents rather than their ids, because the dialog names a single one
-   * — and held here rather than read back off `ticked`, because the row's bin
-   * confirms a document that may not be ticked at all. `fromSelection` is what
-   * keeps a row delete from quietly clearing a selection somebody built.
-   */
-  const [confirming, setConfirming] = useState<{
-    assets: Asset[]
-    fromSelection: boolean
-  } | null>(null)
+  /** The selection is every id the filter matches, not only loaded rows. */
+  const [allMatching, setAllMatching] = useState(false)
+  const [resolving, setResolving] = useState(false)
+  const [confirming, setConfirming] = useState<Confirming | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [tagging, setTagging] = useState(false)
 
   // Held here rather than passed down from the page, unlike the delete: filing
   // a tag is the same act in both scopes, with nothing for a campaign to also
-  // do about it. The delete has to detach, which is why that one belongs up
-  // there with the campaign.
+  // do about it.
   const bulkTag = useBulkTagAssets()
 
-  const visible = useMemo(() => filterAssets(assets, filter), [assets, filter])
+  // A new question empties the selection. Sort and time zone change the order
+  // and nothing about which documents match, so they leave it alone.
+  const question = useMemo(() => {
+    const { sort: _sort, tz: _tz, ...rest } = params
+    return JSON.stringify(rest)
+  }, [params])
+  useEffect(() => {
+    setTicked(new Set())
+    setAllMatching(false)
+  }, [question])
+
   const narrowed = isFilterActive(filter)
 
-  // The selection is ids, and the documents behind them can go: deleted here,
-  // deleted in another tab, or left behind by switching scope. Resolving it
-  // against what is actually in this scope is what keeps "3 selected" from
-  // counting rows that no longer exist — and from carrying a campaign's
-  // selection into the bank.
-  const selected = useMemo(
-    () => assets.filter((a) => ticked.has(a.id)),
-    [assets, ticked],
-  )
-
-  // Not merely cosmetic: a stale id would still be handed to the delete.
-  useEffect(() => {
-    setTicked((prev) => {
-      if (prev.size === 0) return prev
-      const live = new Set(assets.map((a) => a.id))
-      const next = new Set([...prev].filter((id) => live.has(id)))
-      return next.size === prev.size ? prev : next
-    })
-  }, [assets])
-
-  const toggleRow = (id: string) =>
+  const toggleRow = (id: string) => {
+    setAllMatching(false)
     setTicked((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
+  }
 
-  // Over the rows the filter has left on screen, matching what the header
-  // checkbox claims: "select all" cannot mean documents the user filtered out.
-  const toggleAll = () =>
+  // Over the loaded rows, matching what the header checkbox claims; "all N
+  // matching" is offered separately, on the bar, once these are ticked.
+  const toggleAll = () => {
+    setAllMatching(false)
     setTicked((prev) => {
       const next = new Set(prev)
-      const all = visible.length > 0 && visible.every((a) => next.has(a.id))
-      for (const asset of visible) {
+      const all = rows.length > 0 && rows.every((a) => next.has(a.id))
+      for (const asset of rows) {
         if (all) next.delete(asset.id)
         else next.add(asset.id)
       }
       return next
     })
+  }
+
+  const selectAllMatching = async () => {
+    setResolving(true)
+    try {
+      const ids = await queryAssetIds(params)
+      setTicked(new Set(ids))
+      setAllMatching(true)
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t('content.selection.failed'),
+      )
+    } finally {
+      setResolving(false)
+    }
+  }
+
+  const loadedTicked = rows.length > 0 && rows.every((a) => ticked.has(a.id))
+  const canSelectMatching = !allMatching && loadedTicked && total > ticked.size
 
   const handleDeleteConfirmed = async () => {
     if (!confirming) return
     setDeleting(true)
-    await onDeleteMany(confirming.assets.map((a) => a.id))
+    await onDeleteMany(confirming.ids)
     setDeleting(false)
-    // Only the selection's own delete empties it. A row's bin leaves the ticks
-    // where they are — the effect above drops the one that is now gone, if it
-    // was among them.
-    if (confirming.fromSelection) setTicked(new Set())
+    if (confirming.fromSelection) {
+      setTicked(new Set())
+      setAllMatching(false)
+    } else {
+      const [gone] = confirming.ids
+      setTicked((prev) => {
+        if (!prev.has(gone)) return prev
+        const next = new Set(prev)
+        next.delete(gone)
+        return next
+      })
+    }
     setConfirming(null)
   }
 
   /**
-   * One request for the whole selection, and the selection survives it.
-   *
-   * Unlike the delete, the documents are all still there afterwards — and the
-   * usual next move is another tag on the same set — so the ticks stay. The
-   * count in the toast comes from what the server says it touched, not from
-   * what was asked: an asset another tab deleted a moment ago is skipped
-   * server-side, and the toast should not claim it.
+   * The tags the selection carries, and on how many of its documents — read
+   * off the rows when every ticked document is loaded. "All N matching" can
+   * reach past what is loaded, so then the list is the tags the match carries
+   * (the tag facet) without a per-tag count it cannot know.
+   */
+  const present = useMemo(() => {
+    const loaded = rows.filter((row) => ticked.has(row.id))
+    if (loaded.length === ticked.size) {
+      const counts = new Map<string, { tag: Tag; count: number | null }>()
+      for (const row of loaded) {
+        for (const tag of row.tags) {
+          const seen = counts.get(tag.id)
+          if (seen) seen.count = (seen.count ?? 0) + 1
+          else counts.set(tag.id, { tag, count: 1 })
+        }
+      }
+      return [...counts.values()]
+    }
+    const names = new Map(rows.flatMap((row) => row.tags).map((g) => [g.id, g]))
+    return (facets.tag ?? [])
+      .filter((f) => f.value !== NONE && f.count > 0)
+      .map((f) => ({
+        tag: names.get(f.value) ?? {
+          id: f.value,
+          name: vocabulary.valueLabel('tag', f.value),
+          color: '',
+        },
+        count: null,
+      }))
+  }, [rows, ticked, facets.tag, vocabulary])
+
+  /**
+   * One request for the whole selection, and the selection survives it — the
+   * documents are all still there afterwards, and the usual next move is
+   * another tag on the same set. The toast's count is what the server says
+   * it touched: an asset another tab deleted a moment ago is skipped.
    */
   const handleTagSelected = (change: { add: string[]; remove: string[] }) => {
     bulkTag.mutate(
-      { asset_ids: selected.map((a) => a.id), ...change },
+      { asset_ids: [...ticked], ...change },
       {
         onSuccess: (assets) => {
           setTagging(false)
@@ -173,7 +246,7 @@ export function ContentList({
     )
   }
 
-  if (assets.length === 0 && uploads.length === 0) {
+  if (totalUnfiltered === 0 && !narrowed && uploads.length === 0) {
     return (
       <EmptyBank
         campaignId={campaignId}
@@ -186,11 +259,13 @@ export function ContentList({
 
   return (
     <div className="relative flex min-h-0 flex-col gap-3 py-4">
-      <ContentFilter
-        assets={assets}
-        value={filter}
-        onChange={setFilter}
-        scopeLabel={campaignId ? "this campaign's content" : 'the content bank'}
+      <AssetFilterBar
+        filter={filter}
+        onChange={onFilterChange}
+        vocabulary={vocabulary}
+        total={total}
+        totalUnfiltered={totalUnfiltered}
+        paramsFor={paramsFor}
       />
 
       {uploads.length > 0 && <UploadingRows uploads={uploads} />}
@@ -198,14 +273,38 @@ export function ContentList({
       <div
         className={cn(
           'grid min-h-0 flex-1 overflow-hidden',
-          visible.length === 0 && 'min-h-50',
+          rows.length === 0 && 'min-h-50',
         )}
       >
         <AssetsTable
-          assets={visible}
+          assets={rows}
           campaignId={campaignId}
-          onDelete={(asset) =>
-            setConfirming({ assets: [asset], fromSelection: false })
+          onDelete={(asset: AssetListItem) =>
+            setConfirming({
+              ids: [asset.id],
+              title: asset.title.trim() || null,
+              fromSelection: false,
+            })
+          }
+          sort={sort}
+          onSortChange={onSortChange}
+          onEndReached={() => {
+            if (query.hasNextPage && !query.isFetchingNextPage)
+              void query.fetchNextPage()
+          }}
+          emptyState={
+            query.isError ? (
+              <p className="px-6 py-12 text-center text-sm text-destructive">
+                {t('content.filter.loadFailed')}
+              </p>
+            ) : narrowed ? (
+              <NoMatches
+                filter={filter}
+                vocabulary={vocabulary}
+                paramsFor={paramsFor}
+                onChange={onFilterChange}
+              />
+            ) : undefined
           }
           selectedIds={ticked}
           onToggleRow={toggleRow}
@@ -216,29 +315,51 @@ export function ContentList({
           // in between would take that role and leave it to grow past the
           // window.
           className="page-content-motion"
-          // The table is only ever empty here because the filter emptied it —
-          // an empty scope shows `EmptyBank` instead — so the way out is to
-          // undo the filter, which is what the shared empty state offers.
-          onEmptyStateAction={
-            narrowed ? () => setFilter(EMPTY_FILTER) : undefined
-          }
         />
       </div>
 
-      {selected.length > 0 && (
+      {query.isFetchingNextPage && (
+        <p className="shrink-0 text-center text-xs text-tertiary-foreground">
+          {t('content.filter.loadingMore')}
+        </p>
+      )}
+
+      {ticked.size > 0 && (
         <SelectionBar
-          count={selected.length}
-          busy={deleting || bulkTag.isPending}
-          onClear={() => setTicked(new Set())}
-          onTag={() => setTagging(true)}
-          onDelete={() =>
-            setConfirming({ assets: selected, fromSelection: true })
+          count={ticked.size}
+          busy={deleting || bulkTag.isPending || resolving}
+          matching={
+            canSelectMatching
+              ? {
+                  label: t('content.selection.selectAllMatching', {
+                    count: total,
+                    formatted: formatNumber(total, {}, i18n.language),
+                  }),
+                  onSelect: () => void selectAllMatching(),
+                }
+              : null
           }
+          onClear={() => {
+            setTicked(new Set())
+            setAllMatching(false)
+          }}
+          onTag={() => setTagging(true)}
+          onDelete={() => {
+            const ids = [...ticked]
+            const only =
+              ids.length === 1 ? rows.find((r) => r.id === ids[0]) : undefined
+            setConfirming({
+              ids,
+              title: only?.title.trim() || null,
+              fromSelection: true,
+            })
+          }}
         />
       )}
 
       <TagDocumentsDialog
-        assets={selected}
+        count={ticked.size}
+        present={present}
         isOpen={tagging}
         onClose={() => setTagging(false)}
         onConfirm={handleTagSelected}
@@ -246,7 +367,8 @@ export function ContentList({
       />
 
       <DeleteDocumentsDialog
-        assets={confirming?.assets ?? []}
+        count={confirming?.ids.length ?? 0}
+        title={confirming?.title ?? null}
         campaignId={campaignId}
         isOpen={confirming !== null}
         onClose={() => setConfirming(null)}
@@ -283,12 +405,15 @@ export function ContentList({
 function SelectionBar({
   count,
   busy,
+  matching,
   onClear,
   onTag,
   onDelete,
 }: {
   count: number
   busy: boolean
+  /** Offered once every loaded row is ticked and the match is larger. */
+  matching: { label: string; onSelect: () => void } | null
   onClear: () => void
   onTag: () => void
   onDelete: () => void
@@ -307,6 +432,17 @@ function SelectionBar({
         <span className="shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap">
           {t('content.selection.count', { count })}
         </span>
+        {matching && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-accent"
+            onClick={matching.onSelect}
+            disabled={busy}
+          >
+            {matching.label}
+          </Button>
+        )}
         <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
         <Button
           variant="ghost"
