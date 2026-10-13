@@ -116,7 +116,10 @@ export function AssetList({
   )
 
   // The foot coming into view is the cue for the next page. A ref to the
-  // callback, so a new one each render doesn't re-observe.
+  // callback, so a new one each render doesn't re-observe. The observer is
+  // attached again whenever the list goes from empty to not, because the
+  // empty state mounts neither the scroller nor the foot it watches.
+  const hasRows = rows.length > 0
   const endReached = useRef(onEndReached)
   useLayoutEffect(() => {
     endReached.current = onEndReached
@@ -133,7 +136,7 @@ export function AssetList({
     )
     observer.observe(foot)
     return () => observer.disconnect()
-  }, [])
+  }, [hasRows])
 
   if (rows.length === 0) {
     return (
