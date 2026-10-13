@@ -21,7 +21,7 @@ export function OutlineStage({
   const { t } = useTranslation()
   const Icon = ASSET_KIND_ICON.document
   return (
-    <div className="relative flex aspect-[16/10] w-full flex-col gap-4 overflow-hidden border-b border-quaternary bg-secondary px-7 py-6">
+    <div className="relative flex aspect-[16/10] max-h-56 w-full flex-col gap-4 overflow-hidden border-b border-quaternary bg-secondary px-7 py-6 lg:max-h-none">
       <div className="flex min-w-0 items-center gap-2 text-xs text-secondary-foreground">
         <Icon className="size-4 shrink-0" aria-hidden />
         {format && <span className="shrink-0 font-medium">{format}</span>}

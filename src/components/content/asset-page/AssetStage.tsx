@@ -51,11 +51,12 @@ export function AssetStage({ asset, audioRef, onAudioTime }: Props) {
     const src = asset.file?.normalized_url ?? asset.file?.url
     if (usable(src)) {
       return (
-        <img
+        <CoverStage
           src={src}
+          title={asset.title}
           alt={asset.alt_text}
+          image
           onError={onError(src)}
-          className="block max-h-[480px] w-full bg-secondary object-contain"
         />
       )
     }
@@ -64,12 +65,16 @@ export function AssetStage({ asset, audioRef, onAudioTime }: Props) {
     const hero = asset.images?.[0]?.url
     const domain = asset.source_url ? pageUrlLabel(asset.source_url) : null
     return usable(hero) ? (
-      <div className="relative">
+      <div className="relative max-h-56 overflow-hidden lg:max-h-none">
         <img
           src={hero}
           alt=""
           onError={onError(hero)}
           className="block aspect-[16/9] w-full bg-secondary object-cover"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-b from-transparent to-primary lg:h-24"
         />
         {domain && (
           // Where the picture is from, on the picture: a page's lead image
@@ -102,7 +107,7 @@ export function AssetStage({ asset, audioRef, onAudioTime }: Props) {
  */
 function NoteTile({ lines }: { lines: string[] }) {
   return (
-    <div className="relative flex aspect-[16/9] w-full flex-col gap-1.5 overflow-hidden bg-secondary px-8 py-6">
+    <div className="relative flex aspect-[16/9] max-h-56 w-full flex-col gap-1.5 overflow-hidden bg-secondary px-8 py-6 lg:max-h-none">
       {lines.map((line, i) => (
         <p
           key={i}
@@ -145,7 +150,7 @@ function Tile({
 }) {
   const Icon = ASSET_KIND_ICON[assetKind(asset)]
   return (
-    <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-2 bg-secondary text-secondary-foreground">
+    <div className="flex aspect-[16/9] max-h-56 w-full flex-col items-center justify-center gap-2 bg-secondary text-secondary-foreground lg:max-h-none">
       <Icon className="size-12" weight="light" aria-hidden />
       {caption && (
         <span className="max-w-[80%] truncate text-xs font-medium">

@@ -358,6 +358,7 @@ export const en = {
     /** A PDF's first page on the stage, and opened whole. */
     cover: {
       zoom: 'View the cover full size',
+      zoomImage: 'View the image full size',
       close: 'Close',
     },
     /** Shown for a moment when a reading lands while the page is open. */
