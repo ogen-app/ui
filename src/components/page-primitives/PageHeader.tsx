@@ -3,6 +3,7 @@ import { ListIcon } from '@phosphor-icons/react'
 import { useSidebar } from '@/components/ui/sidebar'
 import { ZIndex } from '@/config/zIndex'
 import { cn } from '@/lib'
+import { findScrollParent } from '@/lib/scrollParent'
 import { Button } from '@/components/ui/button.tsx'
 import { useIsMobile } from '@/hooks/use-mobile.ts'
 
@@ -27,15 +28,6 @@ type PageHeaderProps = {
    * ancestor (the header must sit inside the page's scroll container).
    */
   fadeOnScroll?: boolean
-}
-
-/** The nearest ancestor that actually scrolls vertically. */
-function findScrollParent(el: HTMLElement | null): HTMLElement | null {
-  for (let node = el?.parentElement ?? null; node; node = node.parentElement) {
-    const { overflowY } = getComputedStyle(node)
-    if (overflowY === 'auto' || overflowY === 'scroll') return node
-  }
-  return null
 }
 
 /**

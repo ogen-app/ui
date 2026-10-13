@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { DownloadSimpleIcon, PencilSimpleIcon } from '@phosphor-icons/react'
@@ -36,6 +36,8 @@ type Props = {
   sheets?: SheetSummary[]
   onTitleChange: (title: string) => void
   onDirty: () => void
+  /** The aside itself — `useStickyColumns` measures and pins it. */
+  ref?: Ref<HTMLElement>
 }
 
 const STATUS_DOT: Record<MetaStatus, string> = {
@@ -55,7 +57,9 @@ const STATUS_DOT: Record<MetaStatus, string> = {
  * campaigns it serves and its tags.
  *
  * Sticky beside the right column on a wide screen, so the player and the
- * title stay in reach while the insights scroll. Narrower, it stacks above
+ * title stay in reach while the insights scroll — pinned, with no scroll of
+ * its own; a column taller than the screen shows the rest of itself once the
+ * reading has ended (`useStickyColumns`, CON-373). Narrower, it stacks above
  * them, its picture cropped and its campaigns and tags side by side, so the
  * insights are not a screen away.
  */
@@ -67,6 +71,7 @@ export function AssetMetaColumn({
   sheets,
   onTitleChange,
   onDirty,
+  ref,
 }: Props) {
   const { t, i18n } = useTranslation()
   const members = useWorkspaceMembers()
@@ -85,16 +90,14 @@ export function AssetMetaColumn({
   const language = languageName(workspaceLens?.language, i18n.language)
 
   return (
-    <aside className="flex w-full flex-col bg-primary lg:sticky lg:top-4 lg:max-h-[calc(100vh-7rem)] lg:w-[360px] lg:shrink-0 lg:overflow-y-auto">
-      <div
-        className={cn(
-          'overflow-hidden lg:max-h-none',
-          // A PDF cover crops itself (so its fade stays on what is shown).
-          kind !== 'audio' && kind !== 'pdf' && 'max-h-56',
-        )}
-      >
-        {stage}
-      </div>
+    <aside
+      ref={ref}
+      className="flex w-full flex-col bg-primary lg:sticky lg:top-4 lg:w-[360px] lg:shrink-0"
+    >
+      {/* Never cropped or squeezed from out here: each stage crops itself, so
+          its fade always sits on the foot of what is shown, whatever the
+          length of the title under it. */}
+      <div className="shrink-0">{stage}</div>
       <div className="flex flex-col gap-6 px-8 pt-6 pb-8">
         <div className="flex flex-col gap-3">
           <p className="flex items-center gap-1.5 text-xs font-medium text-secondary-foreground">

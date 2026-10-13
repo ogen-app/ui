@@ -9,6 +9,7 @@ import {
 } from '@/hooks/useAssetAnalyses'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { useLensArrival } from '@/hooks/useLensArrival'
+import { useStickyColumns } from '@/hooks/useStickyColumns'
 import { useAssetChunks } from '@/hooks/useContent'
 import { SheetCiteContext, type SheetCite } from '@/hooks/useSheetCite'
 import {
@@ -166,6 +167,11 @@ export function AssetPage({
 
   const arrived = useLensArrival(current)
 
+  const rowRef = useRef<HTMLDivElement | null>(null)
+  const leftRef = useRef<HTMLElement | null>(null)
+  const rightRef = useRef<HTMLElement | null>(null)
+  useStickyColumns(rowRef, leftRef, rightRef)
+
   // One player for the page: the stage draws it, the right column drives it.
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [nowMs, setNowMs] = useState<number | null>(null)
@@ -267,8 +273,12 @@ export function AssetPage({
   return (
     <AudioSeekContext.Provider value={player}>
       <SheetCiteContext.Provider value={citer}>
-        <div className="flex w-full max-w-[1180px] flex-col items-start gap-6 px-6 lg:flex-row">
+        <div
+          ref={rowRef}
+          className="flex w-full max-w-[1180px] flex-col items-start gap-6 px-6 lg:flex-row"
+        >
           <AssetMetaColumn
+            ref={leftRef}
             asset={asset}
             lenses={lenses}
             openCampaignId={current?.campaign_id ?? null}
@@ -298,7 +308,10 @@ export function AssetPage({
             onDirty={onDirty}
           />
 
-          <main className="flex w-full min-w-0 flex-1 flex-col bg-primary">
+          <main
+            ref={rightRef}
+            className="flex w-full min-w-0 flex-1 flex-col bg-primary"
+          >
             {!analyzable ? (
               sourceBody
             ) : (

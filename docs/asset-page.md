@@ -18,8 +18,20 @@ line, the editable title, a status line, facts (added by, added, file or
 source, sheets, language), Download (a quiet link), campaigns with their fit —
 the one whose reading is open marked — and **Add to campaign**, tags. A title
 that is still a file name (`q3_pipeline_review.xlsx`) shows as words until it
-is renamed (`readableTitle`); a dotted rule and a pencil say it is editable. Sticky beside the right column on `lg+`; stacked and cropped
-below it.
+is renamed (`readableTitle`); a dotted rule and a pencil say it is editable. Stacked and cropped below `lg`.
+
+On `lg+` it sits beside the right column with no scroll of its own
+(CON-373): pinned while the reading scrolls; a column taller than the screen
+waits until the reading's foot reaches the bottom of the screen, then the
+reading holds there while the column moves up by what it overflows, until its
+own foot shows. `lib/stickyColumns.ts` is the arithmetic (a negative sticky
+`top` on the reading, a `min-height` on the row for the extra scroll);
+`hooks/useStickyColumns.ts` measures with a `ResizeObserver` and does nothing
+on scroll. Tabbing into the column's hidden foot scrolls to the end.
+
+Each stage crops itself and owns its fade, so nothing outside a stage cuts it:
+the PDF cover and an image (both open whole on a click) and a page's hero fade
+to the column's white at every width; a recording's player has no fade.
 
 ## Right column
 
@@ -93,4 +105,8 @@ The CON-369 design pass (from a design critique):
 ![Proposal: ideas first](asset-page/11-proposal-ideas-first.png)
 ![Proposal: a campaign reading](asset-page/12-proposal-campaign-reading.png)
 
-Illustrative copy; the PRDs are CON-366 and CON-369 in Linear.
+The left column's scroll and the stages' fades (CON-373):
+
+![Left column scroll and cover fade](asset-page/13-left-column-scroll.png)
+
+Illustrative copy; the PRDs are CON-366, CON-369 and CON-373 in Linear.
