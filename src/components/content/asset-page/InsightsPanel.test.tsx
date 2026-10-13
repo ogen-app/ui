@@ -110,6 +110,40 @@ describe('InsightsPanel', () => {
     expect(screen.getByText('Open in Ideas')).toBeInTheDocument()
   })
 
+  it('narrows the ideas to a verdict pile, the answered-no ones included', async () => {
+    await renderPanel(
+      'ready',
+      lens({
+        ideas: [
+          idea(1),
+          idea(2),
+          idea(3, { verdict: 'yes' }),
+          idea(4, { verdict: 'no' }),
+        ],
+      }),
+    )
+    const no = screen.getByRole('button', { name: '1 No' })
+    expect(
+      screen.getByRole('button', { name: '2 Undecided' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Not now/ }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText('Idea 4')).not.toBeInTheDocument()
+
+    fireEvent.click(no)
+    expect(await screen.findByText('Idea 4')).toBeInTheDocument()
+    expect(screen.queryByText('Idea 1')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '1 No' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '1 No' }))
+    expect(await screen.findByText('Idea 1')).toBeInTheDocument()
+    expect(screen.queryByText('Idea 4')).not.toBeInTheDocument()
+  })
+
   it('says so when a lens distilled nothing', async () => {
     await renderPanel('ready', lens({ ideas: [] }))
     expect(screen.getByText('No ideas from this one')).toBeInTheDocument()

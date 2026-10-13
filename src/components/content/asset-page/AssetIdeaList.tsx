@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { useTranslation } from 'react-i18next'
 import {
   CaretDownIcon,
@@ -8,9 +9,11 @@ import {
   ClockIcon,
   LightbulbIcon,
 } from '@phosphor-icons/react'
+import { VERDICT_ICON } from '@/components/content/verdictIcons'
 import { cn } from '@/lib'
 import { mergePageRefs, parseIdeaNote, refLabel } from '@/lib/assetAnalysis'
-import type { Idea } from '@/lib/ideas'
+import { VERDICT_ORDER, type VerdictKey } from '@/lib/assetList'
+import { countIdeas, isWaiting, type Idea } from '@/lib/ideas'
 import { ideaFromWire } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { SourceChip } from './SourceChip'
@@ -26,6 +29,11 @@ const FIRST_IDEAS = 5
  * angle in full, why it fits and where in the source it comes from, with the
  * way to the inbox under it. An idea someone has already said no to is left
  * out — it was answered, and this list is what is still worth making.
+ *
+ * The piles above the list (CON-370) narrow it to one verdict — "No"
+ * included, the one way to see those again. `?verdict=` picks one, which is
+ * where the Assets list's verdict pill sends a click; choosing it again shows
+ * everything still worth making.
  */
 export function AssetIdeaList({
   lens,
@@ -41,10 +49,30 @@ export function AssetIdeaList({
   const { t } = useTranslation()
   const [showAll, setShowAll] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
-  const ideas = useMemo(
-    () => lens.ideas.map(ideaFromWire).filter((idea) => idea.verdict !== 'no'),
-    [lens.ideas],
-  )
+  const { verdict: asked } = useSearch({ strict: false })
+  const navigate = useNavigate()
+  const all = useMemo(() => lens.ideas.map(ideaFromWire), [lens.ideas])
+  const counts = useMemo(() => countIdeas(all, new Date()), [all])
+  // A pile this reading has none of (a link from another lens) shows them all.
+  const pile = asked && counts[asked] > 0 ? asked : undefined
+  const ideas = useMemo(() => {
+    const now = new Date()
+    if (!pile) return all.filter((idea) => idea.verdict !== 'no')
+    return all.filter((idea) =>
+      pile === 'waiting'
+        ? isWaiting(idea, now)
+        : idea.verdict === pile && !isWaiting(idea, now),
+    )
+  }, [all, pile])
+  const choosePile = (next: VerdictKey) =>
+    void navigate({
+      to: '.',
+      search: (prev) => ({
+        ...prev,
+        verdict: next === pile ? undefined : next,
+      }),
+      replace: true,
+    })
   const shown = showAll ? ideas : ideas.slice(0, FIRST_IDEAS)
   const hidden = ideas.length - shown.length
 
@@ -81,6 +109,9 @@ export function AssetIdeaList({
               : t('assetInsights.ideas.waiting')}
             {spreadsheet && ` ${t('assetInsights.sheet.footnote')}`}
           </p>
+        )}
+        {all.length > 0 && (
+          <Piles counts={counts} active={pile} onChoose={choosePile} />
         )}
       </header>
 
@@ -125,6 +156,61 @@ export function AssetIdeaList({
         </>
       )}
     </section>
+  )
+}
+
+/**
+ * The ideas by verdict, labelled — the Assets list's pill with room for the
+ * words (CON-370). A verdict with none is left out.
+ */
+function Piles({
+  counts,
+  active,
+  onChoose,
+}: {
+  counts: Record<VerdictKey, number>
+  active: VerdictKey | undefined
+  onChoose: (pile: VerdictKey) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {VERDICT_ORDER.filter((v) => counts[v] > 0).map((v) => (
+        <button
+          key={v}
+          type="button"
+          aria-pressed={active === v}
+          aria-label={`${counts[v]} ${t(`assetInsights.ideas.pile.${v}`)}`}
+          onClick={() => onChoose(v)}
+          className={cn(
+            'flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs tabular-nums transition-colors',
+            active === v
+              ? 'border-accent bg-accent/10 text-foreground'
+              : 'border-quaternary text-secondary-foreground hover:border-tertiary-foreground hover:text-foreground',
+          )}
+        >
+          <HugeiconsIcon
+            icon={VERDICT_ICON[v]}
+            size={14}
+            strokeWidth={1.8}
+            aria-hidden
+            className={cn(
+              v === 'waiting' && 'text-accent',
+              v === 'yes' && 'text-positive',
+            )}
+          />
+          <span
+            className={cn(
+              'font-semibold',
+              v === 'waiting' ? 'text-accent' : 'text-foreground',
+            )}
+          >
+            {counts[v]}
+          </span>
+          {t(`assetInsights.ideas.pile.${v}`)}
+        </button>
+      ))}
+    </div>
   )
 }
 
