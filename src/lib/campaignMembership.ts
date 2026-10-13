@@ -68,9 +68,17 @@ async function wholeBankIds(campaignId: string): Promise<string[] | null> {
 function land(campaign: Campaign): void {
   queryClient.setQueryData(campaignKey(campaign.id), campaign)
   queryClient.invalidateQueries({ queryKey: ['campaigns'] })
-  // The rows say which campaigns hold them, and a campaign's page is scoped
-  // to its set (CON-374), so every asset list is stale too.
-  queryClient.invalidateQueries({ queryKey: ['assets', 'list'] })
+}
+
+/**
+ * The rows say which campaigns hold them, and a campaign's page is scoped to
+ * its set (CON-374), so every asset list is stale after a membership write.
+ * Once per operation rather than per `land`: a detach is one request per id,
+ * and after "delete all N matching" that would refetch every loaded page of
+ * the list N times over.
+ */
+function staleLists(): void {
+  void queryClient.invalidateQueries({ queryKey: ['assets', 'list'] })
 }
 
 /**
@@ -99,6 +107,7 @@ export async function addToCampaign(
         bank ? [...bank, ...assetIds] : assetIds,
       ),
     )
+    staleLists()
     return true
   } catch (error: unknown) {
     toast.error('Unable to add to this campaign', {
@@ -157,6 +166,8 @@ export async function removeFromCampaign(
     }
   } catch {
     // See the doc comment: the delete the caller already ran owns the toast.
+  } finally {
+    staleLists()
   }
 }
 
@@ -179,6 +190,7 @@ export async function seedFromWholeBank(campaignId: string): Promise<void> {
     // claim — which is exactly when the distinction starts to matter.
     if (!bank || bank.length === 0) return
     land(await addCampaignAssets(campaignId, bank))
+    staleLists()
   } catch {
     // Silent: the user did not ask for this, and the page behind the toast
     // would be showing them an empty campaign either way. The next visit

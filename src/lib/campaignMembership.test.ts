@@ -182,6 +182,19 @@ describe('detaching documents', () => {
     expect(removeCampaignAsset).toHaveBeenCalledWith('c1', 'a2')
   })
 
+  // After "delete all N matching" this runs with N ids; a refetch of every
+  // loaded list page per id is what the bulk delete was written to avoid.
+  it('marks the asset lists stale once, however many documents it detaches', async () => {
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    await removeFromCampaign('c1', ['a1', 'a2', 'a3'])
+
+    const lists = invalidate.mock.calls.filter(
+      ([filters]) => JSON.stringify(filters?.queryKey) === '["assets","list"]',
+    )
+    expect(lists).toHaveLength(1)
+    invalidate.mockRestore()
+  })
+
   it('swallows a failure, because the delete beside it owns the toast', async () => {
     vi.mocked(removeCampaignAsset).mockRejectedValueOnce(new Error('nope'))
 
