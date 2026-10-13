@@ -53,14 +53,38 @@ function renderPanel(
 }
 
 describe('InsightsPanel', () => {
-  it('reads a campaign lens: fit, summary, points and mentions', async () => {
-    await renderPanel('ready', lens())
+  it('reads a campaign lens: fit, a summary at rest, mentions by kind', async () => {
+    await renderPanel('ready', lens({ ideas: [idea(1), idea(2)] }))
     expect(screen.getByText('Read for Spring launch')).toBeInTheDocument()
     expect(screen.getByText('Settles the launch date.')).toBeInTheDocument()
+    // At rest: the lead paragraph only, the rest a click away.
+    expect(screen.getByText('First paragraph.')).toBeInTheDocument()
+    expect(screen.queryByText('Second paragraph.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Point one')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: '2 post ideas for Spring launch' }),
+    ).toBeInTheDocument()
+    // Mentions are text, grouped under their kind — no tooltip.
+    expect(screen.getByText('Organisations')).toBeInTheDocument()
+    expect(screen.getByText('Acme')).not.toHaveAttribute('title')
+  })
+
+  it('reads the full summary in place, and folds it back', async () => {
+    await renderPanel('ready', lens())
+    const more = screen.getByRole('button', { name: /Read the full summary/ })
+    expect(more).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(more)
     expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
     expect(screen.getByText('Point one')).toBeInTheDocument()
-    expect(screen.getByText('Acme')).toBeInTheDocument()
-    expect(screen.getByText('Ideas for Spring launch')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Show less/ }))
+    expect(screen.queryByText('Second paragraph.')).not.toBeInTheDocument()
+  })
+
+  it('offers no "read more" when the lead already says everything', async () => {
+    await renderPanel('ready', lens({ summary: 'Short.', key_points: [] }))
+    expect(
+      screen.queryByRole('button', { name: /Read the full summary/ }),
+    ).not.toBeInTheDocument()
   })
 
   it('shows five ideas, hides the ones answered no, and opens one in place', async () => {
@@ -69,6 +93,9 @@ describe('InsightsPanel', () => {
       idea(8, { verdict: 'no' }),
     ]
     await renderPanel('ready', lens({ ideas }))
+    expect(
+      screen.getByRole('heading', { name: '7 post ideas for Spring launch' }),
+    ).toBeInTheDocument()
     expect(screen.getByText('Idea 5')).toBeInTheDocument()
     expect(screen.queryByText('Idea 6')).not.toBeInTheDocument()
     expect(screen.queryByText('Idea 8')).not.toBeInTheDocument()
@@ -158,6 +185,9 @@ describe('InsightsPanel', () => {
       'ready',
       lens({ summary: '## Small models **win**\n\nThe position.' }),
     )
+    fireEvent.click(
+      screen.getByRole('button', { name: /Read the full summary/ }),
+    )
     expect(
       screen.getByRole('heading', { name: 'Small models win' }),
     ).toBeInTheDocument()
@@ -174,16 +204,31 @@ describe('InsightsPanel', () => {
   it('keeps a reading on screen while it is read again', async () => {
     await renderPanel('ready', lens({ status: 'running' }))
     expect(screen.getByText(/Re-reading for Spring launch/)).toBeInTheDocument()
-    expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
+    expect(screen.getByText('First paragraph.')).toBeInTheDocument()
   })
 
-  it('reads the summary as light Markdown, mentions with their kind', async () => {
+  it('reads the summary as light Markdown', async () => {
     await renderPanel(
       'ready',
       lens({ summary: 'Lead with **the chart**.\n\n- one\n- two' }),
     )
+    // The lead keeps its own marks at rest.
     expect(screen.getByText('the chart').tagName).toBe('STRONG')
+    fireEvent.click(
+      screen.getByRole('button', { name: /Read the full summary/ }),
+    )
     expect(screen.getByText('two').tagName).toBe('LI')
-    expect(screen.getByText('Acme')).toHaveAttribute('title', 'Organisation')
+  })
+
+  it('shows page references merged and sorted, as plain text', async () => {
+    await renderPanel(
+      'ready',
+      lens({
+        ideas: [
+          idea(1, { note: 'Angle\n\nWhy\n\nSources: pp. 57–59, pp. 55–57' }),
+        ],
+      }),
+    )
+    expect(screen.getByText('pp. 55–59')).toBeInTheDocument()
   })
 })

@@ -12,6 +12,7 @@ import {
 import { assetAnalysesKey } from '@/hooks/useAssetAnalyses'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { addToCampaign } from '@/lib/campaignMembership'
+import { cn } from '@/lib'
 import { formatNumber } from '@/lib/intl'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { CampaignMark } from './CampaignMark'
@@ -21,7 +22,9 @@ const FIRST_CAMPAIGNS = 5
 
 /**
  * The campaigns an asset serves, each with how well it fits that campaign
- * when its lens has said, and the way to add it to another.
+ * when its lens has said, and the way to add it to another. The campaign whose
+ * reading is open on the right is marked, so the fit beside it is the one the
+ * ideas were read for.
  *
  * Adding goes through the same membership write the Content page uses
  * (`addToCampaign`), and the server answers it by queueing that campaign's
@@ -31,9 +34,11 @@ const FIRST_CAMPAIGNS = 5
 export function MetaCampaigns({
   assetId,
   lenses,
+  openCampaignId,
 }: {
   assetId: string
   lenses: AssetAnalysis[]
+  openCampaignId: string | null
 }) {
   const { t, i18n } = useTranslation()
   const qc = useQueryClient()
@@ -56,11 +61,11 @@ export function MetaCampaigns({
 
   return (
     <section className="flex flex-col gap-3 border-t border-quaternary pt-5">
-      <h2 className="text-xs font-medium uppercase tracking-wide text-tertiary-foreground">
+      <h2 className="text-sm font-semibold text-secondary-foreground">
         {t('assetInsights.meta.campaigns')}
       </h2>
       {memberOf.length === 0 ? (
-        <p className="text-sm text-tertiary-foreground">
+        <p className="text-sm text-secondary-foreground">
           {t('assetInsights.meta.noCampaigns')}
         </p>
       ) : (
@@ -68,17 +73,22 @@ export function MetaCampaigns({
           {shown.map((c) => {
             const score = lenses.find((l) => l.campaign_id === c.id)?.relevance
               ?.score
+            const open = c.id === openCampaignId
             return (
               <li key={c.id}>
                 <Link
                   to="/campaigns/$campaignId/assets/$assetId"
                   params={{ campaignId: c.id, assetId }}
-                  className="flex items-center gap-3 rounded-md py-1 text-sm text-foreground hover:text-primary-foreground"
+                  aria-current={open ? 'true' : undefined}
+                  className={cn(
+                    '-mx-2 flex items-center gap-3 rounded-md px-2 py-1 text-sm text-foreground hover:text-primary-foreground',
+                    open && 'bg-accent/10 font-medium',
+                  )}
                 >
                   <CampaignMark id={c.id} name={c.name} />
                   <span className="min-w-0 flex-1 truncate">{c.name}</span>
                   {score !== undefined && (
-                    <span className="shrink-0 text-xs tabular-nums text-tertiary-foreground">
+                    <span className="shrink-0 text-xs tabular-nums text-secondary-foreground">
                       {t('assetInsights.fit', {
                         score: formatNumber(score, {}, i18n.language),
                       })}
@@ -94,7 +104,7 @@ export function MetaCampaigns({
         <button
           type="button"
           onClick={() => setShowAll(true)}
-          className="cursor-pointer self-start text-sm text-tertiary-foreground hover:text-foreground"
+          className="cursor-pointer self-start text-sm text-secondary-foreground hover:text-foreground"
         >
           {t('assetInsights.meta.moreCampaigns', { count: hidden })}
         </button>

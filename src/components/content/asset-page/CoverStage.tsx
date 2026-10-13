@@ -35,7 +35,7 @@ export function CoverStage({
         <button
           type="button"
           aria-label={t('assetInsights.cover.zoom')}
-          className="group relative block max-h-80 w-full cursor-zoom-in overflow-hidden outline-none lg:max-h-[560px]"
+          className="group relative block max-h-80 w-full cursor-zoom-in overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset lg:max-h-[560px]"
         >
           <img
             src={src}

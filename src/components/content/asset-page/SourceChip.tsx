@@ -2,23 +2,11 @@ import { useTranslation } from 'react-i18next'
 import { PlayIcon, TableIcon } from '@phosphor-icons/react'
 import { useAudioSeek } from '@/hooks/useAudioSeek'
 import { useSheetCite } from '@/hooks/useSheetCite'
-import { timeLabelSeconds } from '@/lib/assetAnalysis'
+import { refLabel, timeLabelSeconds } from '@/lib/assetAnalysis'
 import { parseSheetLabel, shortSheetLabel } from '@/lib/sheetChunks'
 
 const CHIP =
   'inline-flex max-w-[220px] items-center gap-1 rounded-full border border-quaternary px-2.5 py-0.5 text-xs tabular-nums'
-
-/**
- * What a chip says for a label: a sheet range shortened, a heading path
- * ("Process overview › SDLC methodology") down to its last heading. The full
- * label is always the chip's tooltip.
- */
-function chipText(label: string): string {
-  const sheet = shortSheetLabel(label)
-  if (sheet) return sheet
-  const path = label.split(' › ')
-  return path[path.length - 1] || label
-}
 
 /**
  * A source label as a chip, and where it can take you.
@@ -84,8 +72,8 @@ export function SourceChip({
   }
 
   return (
-    <span title={label} className={`${CHIP} text-tertiary-foreground`}>
-      <span className="truncate">{chipText(label)}</span>
+    <span title={label} className={`${CHIP} text-secondary-foreground`}>
+      <span className="truncate">{refLabel(label)}</span>
     </span>
   )
 }

@@ -39,7 +39,7 @@ export function LensPicker({ lenses, current, onChange }: Props) {
           type="button"
           className="flex h-10 max-w-full cursor-pointer items-center gap-2 rounded-md border border-quaternary px-3 text-sm hover:bg-secondary"
         >
-          <span className="shrink-0 text-tertiary-foreground">
+          <span className="shrink-0 text-secondary-foreground">
             {t('assetInsights.lens.readingFor')}
           </span>
           <LensName lens={current} />
@@ -96,7 +96,7 @@ function LensName({
       <CampaignMark id={lens.campaign_id} name={name} />
       <span className="truncate font-medium text-foreground">{name}</span>
       {withFit && lens.relevance && (
-        <span className="shrink-0 text-tertiary-foreground">
+        <span className="shrink-0 text-secondary-foreground">
           · <Fit lens={lens} />
         </span>
       )}
@@ -108,7 +108,7 @@ function Fit({ lens }: { lens: AssetAnalysis }) {
   const { i18n } = useTranslation()
   if (!lens.relevance) return null
   return (
-    <span className="text-xs tabular-nums text-tertiary-foreground">
+    <span className="text-xs tabular-nums text-secondary-foreground">
       {formatNumber(
         lens.relevance.score / 100,
         { style: 'percent' },

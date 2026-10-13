@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react'
 
-/** One labelled block of the Insights tab: "SUMMARY", "KEY POINTS", … */
+/**
+ * One labelled block of the Insights tab — "Summary", "Key points". Sentence
+ * case in the readable grey (CON-369): no all-caps labels on the page.
+ */
 export function Section({
   title,
   children,
@@ -10,7 +13,7 @@ export function Section({
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-xs font-medium uppercase tracking-wide text-tertiary-foreground">
+      <h3 className="text-sm font-semibold text-secondary-foreground">
         {title}
       </h3>
       {children}

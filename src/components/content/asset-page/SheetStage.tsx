@@ -38,7 +38,7 @@ export function SheetStage({
       <div className="relative overflow-hidden px-5 pt-6" aria-hidden>
         <table className="w-full table-fixed border-collapse text-[11px]">
           <thead>
-            <tr className="bg-secondary text-tertiary-foreground">
+            <tr className="bg-secondary text-secondary-foreground">
               <th className="w-7 border border-quaternary" />
               {columns.map((_, i) => (
                 <th
@@ -97,7 +97,7 @@ export function SheetStage({
               'shrink-0 cursor-pointer border-b-2 px-3 py-2 text-xs font-medium',
               i === 0
                 ? 'border-accent bg-secondary text-foreground'
-                : 'border-transparent text-tertiary-foreground hover:text-foreground',
+                : 'border-transparent text-secondary-foreground hover:text-foreground',
             )}
           >
             {sheet.name || fallbackName}
@@ -110,7 +110,7 @@ export function SheetStage({
 
 function RowNumber({ n }: { n: number | null }) {
   return (
-    <td className="border border-quaternary bg-secondary py-1 text-center text-tertiary-foreground tabular-nums">
+    <td className="border border-quaternary bg-secondary py-1 text-center text-secondary-foreground tabular-nums">
       {n ?? ''}
     </td>
   )

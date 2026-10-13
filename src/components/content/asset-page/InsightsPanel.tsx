@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
@@ -8,7 +8,7 @@ import {
   CircleIcon,
   FileDashedIcon,
   NotePencilIcon,
-  TableIcon,
+  TargetIcon,
   FileXIcon,
   LockSimpleIcon,
   WarningIcon,
@@ -19,17 +19,14 @@ import { cn } from '@/lib'
 import {
   hasMeetingNotes,
   isLensWaiting,
-  summaryParts,
   type InsightState,
 } from '@/lib/assetAnalysis'
-import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
-import { formatNumber } from '@/lib/intl'
 import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { AssetIdeaList } from './AssetIdeaList'
-import { FadingScroll } from './FadingScroll'
-import { Section } from './InsightSection'
-import { Bullets, MeetingNotes } from './MeetingNotes'
+import { ReadingSummary } from './ReadingSummary'
+import { WhatItCovers } from './WhatItCovers'
+import { MeetingNotes } from './MeetingNotes'
 
 /**
  * `InsightState`, plus the two answers only the page can give: the analyses
@@ -197,6 +194,12 @@ export function InsightsPanel({
   }
 }
 
+/**
+ * A settled reading, in the order someone mining it reads (CON-369): what it
+ * is in four lines, the post ideas it gave, then — for a recording — what was
+ * agreed, and last what it covers. The ideas come second because they are
+ * what the page is for; everything after them is context.
+ */
 function Reading({
   lens,
   sheets,
@@ -204,223 +207,55 @@ function Reading({
   lens: AssetAnalysis
   sheets?: SheetSummary[]
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const lensName =
     lens.campaign_id && lens.campaign_name
       ? lens.campaign_name
       : t('assetInsights.lens.theWorkspace')
 
   return (
-    <div className="flex flex-col gap-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150">
+    <div className="flex flex-col gap-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150">
       {isLensWaiting(lens) && (
         // A re-read in flight (a brief edit, a retry): the reading below
         // stays until the new one replaces it.
-        <p className="flex items-center gap-2 text-xs text-tertiary-foreground">
+        <p className="-mb-4 flex items-center gap-2 text-xs text-secondary-foreground">
           <CircleDashedIcon className="size-4 animate-spin" aria-hidden />
           {t('assetInsights.state.refreshing', { lens: lensName })}
         </p>
       )}
 
       {lens.campaign_id && lens.relevance && (
-        <div className="border-l-3 border-accent bg-accent/10 px-5 py-3">
-          <p className="text-sm font-medium text-accent">
-            {t('assetInsights.relevance.title', {
-              campaign: lens.campaign_name ?? '',
-            })}
-          </p>
-          <p className="text-sm text-secondary-foreground">
-            {lens.relevance.why}
-          </p>
+        // A tinted panel with a leading mark — not a coloured side stripe.
+        <div className="flex items-start gap-3 rounded-md bg-accent/10 px-5 py-4">
+          <TargetIcon
+            className="mt-0.5 size-5 shrink-0 text-accent"
+            aria-hidden
+          />
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-semibold text-foreground">
+              {t('assetInsights.relevance.title', {
+                campaign: lens.campaign_name ?? '',
+              })}
+            </p>
+            <p className="text-sm text-secondary-foreground">
+              {lens.relevance.why}
+            </p>
+          </div>
         </div>
       )}
 
-      {(lens.summary.trim() || lens.key_points.length > 0) && (
-        // The reading itself, capped: a long summary scrolls in place rather
-        // than pushing the ideas a screen away, its edges fading as it does.
-        <FadingScroll className="-mr-2 flex max-h-[600px] flex-col gap-8 pr-2">
-          {lens.summary.trim() && (
-            <Section title={t('assetInsights.summary')}>
-              <SummaryText text={lens.summary} />
-              {(lens.partial_source || lens.truncated) && (
-                <p className="text-xs text-warning">
-                  {lens.partial_source
-                    ? t('assetInsights.partialSource')
-                    : t('assetInsights.truncated')}
-                </p>
-              )}
-            </Section>
-          )}
-
-          {lens.key_points.length > 0 && (
-            <Section title={t('assetInsights.keyPoints')}>
-              <Bullets items={lens.key_points} />
-            </Section>
-          )}
-        </FadingScroll>
-      )}
-
-      {hasMeetingNotes(lens) && <MeetingNotes lens={lens} />}
-
-      {sheets && sheets.length > 0 && (
-        <Section title={t('assetInsights.sheet.read')}>
-          <ul className="flex flex-wrap gap-2">
-            {sheets.map((sheet) => (
-              <li
-                key={sheet.name}
-                className="inline-flex items-center gap-2 rounded-full border border-quaternary px-3 py-1 text-sm text-secondary-foreground"
-              >
-                <TableIcon className="size-4 text-accent" aria-hidden />
-                {sheet.rows === null
-                  ? sheet.name
-                  : t('assetInsights.sheet.chip', {
-                      name: sheet.name,
-                      count: sheet.rows,
-                      formatted: formatNumber(sheet.rows, {}, i18n.language),
-                    })}
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {(lens.topics.length > 0 || lens.entities.length > 0) && (
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
-          {lens.topics.length > 0 && (
-            <Section title={t('assetInsights.topics')}>
-              <Pills
-                items={lens.topics.map((topic) => ({ text: topic }))}
-                filled
-              />
-            </Section>
-          )}
-          {lens.entities.length > 0 && (
-            <Section title={t('assetInsights.mentions')}>
-              <Pills
-                items={lens.entities.map((entity) => ({
-                  text: entity.name,
-                  title: t(`assetInsights.entityKind.${entity.kind}`, {
-                    defaultValue: t('assetInsights.entityKind.other'),
-                  }),
-                }))}
-              />
-            </Section>
-          )}
-        </div>
-      )}
+      <ReadingSummary lens={lens} />
 
       <AssetIdeaList lens={lens} spreadsheet={sheets !== undefined} />
+
+      {hasMeetingNotes(lens) && (
+        <div className="flex flex-col gap-8 border-t border-quaternary pt-8">
+          <MeetingNotes lens={lens} />
+        </div>
+      )}
+
+      <WhatItCovers lens={lens} sheets={sheets} />
     </div>
-  )
-}
-
-function Pills({
-  items,
-  filled = false,
-}: {
-  /** `title` is the hover text — a mention's kind. */
-  items: { text: string; title?: string }[]
-  filled?: boolean
-}) {
-  return (
-    <ul className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <li
-          key={item.text}
-          title={item.title}
-          className={
-            filled
-              ? 'rounded-full bg-tertiary px-3 py-1 text-sm text-secondary-foreground'
-              : 'rounded-full border border-quaternary px-3 py-1 text-sm text-secondary-foreground'
-          }
-        >
-          {item.text}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-/**
- * The summary, as the light Markdown the model writes it in: paragraphs,
- * lists, bold — read with the assistant's own parser rather than an editor.
- */
-function SummaryText({ text }: { text: string }) {
-  return (
-    <div className="flex flex-col gap-3 text-[15px] leading-7 text-foreground">
-      {summaryParts(text).map((part, i) =>
-        part.kind === 'heading' ? (
-          <p
-            key={i}
-            role="heading"
-            aria-level={Math.min(part.level + 2, 6)}
-            className={cn(
-              'font-semibold text-foreground',
-              part.level <= 2 ? 'text-base' : 'text-[15px]',
-            )}
-          >
-            <HeadingSpans text={part.text} />
-          </p>
-        ) : (
-          <MarkupBlocks key={i} text={part.text} />
-        ),
-      )}
-    </div>
-  )
-}
-
-/** A heading's own inline markup — `## **Bold** title` — read like a line. */
-function HeadingSpans({ text }: { text: string }) {
-  const [block] = parseAssistantMarkup(text)
-  return block?.kind === 'paragraph' ? (
-    <Spans spans={block.spans} />
-  ) : (
-    <>{text}</>
-  )
-}
-
-function MarkupBlocks({ text }: { text: string }) {
-  return (
-    <>
-      {parseAssistantMarkup(text).map((block, i) =>
-        block.kind === 'paragraph' ? (
-          <p key={i}>
-            <Spans spans={block.spans} />
-          </p>
-        ) : block.ordered ? (
-          <ol key={i} className="flex list-decimal flex-col gap-1 pl-5">
-            {block.items.map((item, j) => (
-              <li key={j}>
-                <Spans spans={item} />
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <ul key={i} className="flex list-disc flex-col gap-1 pl-5">
-            {block.items.map((item, j) => (
-              <li key={j}>
-                <Spans spans={item} />
-              </li>
-            ))}
-          </ul>
-        ),
-      )}
-    </>
-  )
-}
-
-function Spans({ spans }: { spans: InlineSpan[] }) {
-  return (
-    <>
-      {spans.map((span, i) =>
-        span.bold ? (
-          <strong key={i} className="font-semibold">
-            {span.text}
-          </strong>
-        ) : (
-          <Fragment key={i}>{span.text}</Fragment>
-        ),
-      )}
-    </>
   )
 }
 
@@ -448,7 +283,7 @@ function StepTracker({ step }: { step: 'extract' | 'analyse' }) {
                 ? 'text-foreground'
                 : active.includes(name)
                   ? 'font-medium text-accent'
-                  : 'text-tertiary-foreground',
+                  : 'text-secondary-foreground',
             )}
           >
             {done.includes(name) ? (
@@ -481,10 +316,10 @@ function Waiting({
 }) {
   return (
     <div className="flex flex-col gap-8" aria-busy>
-      <div className="flex flex-col gap-4 border-l-3 border-accent bg-accent/5 px-5 py-4">
+      <div className="flex flex-col gap-4 rounded-md bg-accent/5 px-5 py-4">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-medium text-foreground">{title}</p>
-          <p className="text-sm text-tertiary-foreground">{body}</p>
+          <p className="text-sm text-secondary-foreground">{body}</p>
         </div>
         <StepTracker step={step} />
       </div>
@@ -527,7 +362,7 @@ function Notice({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-medium text-foreground">{title}</p>
-          <p className="text-sm text-tertiary-foreground">{body}</p>
+          <p className="text-sm text-secondary-foreground">{body}</p>
         </div>
         {children && <div className="flex flex-wrap gap-2">{children}</div>}
       </div>

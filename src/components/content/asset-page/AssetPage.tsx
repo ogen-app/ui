@@ -271,6 +271,7 @@ export function AssetPage({
           <AssetMetaColumn
             asset={asset}
             lenses={lenses}
+            openCampaignId={current?.campaign_id ?? null}
             sheets={sheetSummaries}
             stage={
               spreadsheet && sheets.length > 0 ? (
@@ -311,15 +312,24 @@ export function AssetPage({
                       {t('assetInsights.tabs.source')}
                     </TabsTrigger>
                   </TabsList>
-                  {tab === 'insights' && current && (
-                    <div className="mb-2">
-                      <LensPicker
-                        lenses={lensOptions}
-                        current={current}
-                        onChange={onLensChange}
-                      />
-                    </div>
-                  )}
+                  {/* A picker only when there is a reading to switch to: an
+                      asset in no campaign has the workspace's alone, and a
+                      one-item dropdown is a control with no choice in it. */}
+                  {tab === 'insights' &&
+                    current &&
+                    (lensOptions.some((l) => l.campaign_id !== null) ? (
+                      <div className="mb-2">
+                        <LensPicker
+                          lenses={lensOptions}
+                          current={current}
+                          onChange={onLensChange}
+                        />
+                      </div>
+                    ) : (
+                      <p className="mb-3 text-xs text-secondary-foreground">
+                        {t('assetInsights.lens.workspaceOnly')}
+                      </p>
+                    ))}
                 </div>
                 <TabsContent
                   value="insights"

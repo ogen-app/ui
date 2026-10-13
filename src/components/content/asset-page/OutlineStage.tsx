@@ -22,17 +22,13 @@ export function OutlineStage({
   const Icon = ASSET_KIND_ICON.document
   return (
     <div className="relative flex aspect-[16/10] w-full flex-col gap-4 overflow-hidden border-b border-quaternary bg-secondary px-7 py-6">
-      <div className="flex min-w-0 items-center gap-2 text-xs text-tertiary-foreground">
+      <div className="flex min-w-0 items-center gap-2 text-xs text-secondary-foreground">
         <Icon className="size-4 shrink-0" aria-hidden />
-        {format && (
-          <span className="shrink-0 font-medium uppercase tracking-wide">
-            {format}
-          </span>
-        )}
+        {format && <span className="shrink-0 font-medium">{format}</span>}
         {fileName && <span className="truncate">{fileName}</span>}
       </div>
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-tertiary-foreground">
+        <p className="text-[11px] font-medium text-secondary-foreground">
           {outline.kind === 'slides'
             ? t('assetInsights.outline.slides')
             : t('assetInsights.outline.contents')}
@@ -50,7 +46,7 @@ export function OutlineStage({
               style={{ paddingLeft: `${Math.min(item.depth, 3) * 14}px` }}
             >
               {item.number !== undefined && (
-                <span className="w-5 shrink-0 text-right text-xs tabular-nums text-tertiary-foreground">
+                <span className="w-5 shrink-0 text-right text-xs tabular-nums text-secondary-foreground">
                   {item.number}
                 </span>
               )}
