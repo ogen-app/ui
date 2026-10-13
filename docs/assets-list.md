@@ -1,7 +1,9 @@
-# The Assets list (CON-370, CON-371)
+# The Assets list (CON-370, CON-371, CON-378)
 
-`/assets` and `/campaigns/:id/assets` (`ContentList` → `tables/docsTable`).
-The list describes what each document *offers* rather than its storage record.
+`/assets` and `/campaigns/:id/assets` (`ContentList` → `AssetList` →
+`AssetListRow`). The list describes what each document *offers* rather than
+its storage record, and since CON-378 it leads with the ideas: which
+documents still have some waiting, and what the next one is.
 
 ## Where the rows come from
 
@@ -17,18 +19,49 @@ sorts a list itself.
   - a custom range is two days.
   `toRequestParams` turns both into absolute bounds in the viewer's time zone,
   at request time. The filter is per tab and never goes in `/api/settings`.
-- **Paging:** `useAssetList` fetches 50 rows at a time, and the table asks for
-  the next cursor as its end comes into view (`VirtualTable`'s
-  `onEndReached`). The previous rows stay on screen while a new question
-  loads.
-- **Sorting** is a server parameter. A header click asks for another order and
-  the table draws rows as they came (`manualSorting`). The options are
-  Updated, Title, and Ideas (most undecided first). Searching inside the
-  documents sorts by relevance.
+- **Paging:** `useAssetList` fetches 50 rows at a time, and the list asks for
+  the next cursor as its foot comes into view (an `IntersectionObserver` in
+  `AssetList`). The previous rows stay on screen while a new question loads.
+- **Not virtualised.** The group bands are `position: sticky` inside the
+  list's own scroller, and a virtual window would not mount the band of a run
+  that began above it. Rows are fifty to a page, so the DOM stays small.
+- **Sorting** is a server parameter, chosen from the Sort menu (there are no
+  column headers). Most undecided first is the default (`-ideas_undecided`);
+  the others are updated and added, newest or oldest, and title A–Z or Z–A.
+  Searching inside the documents adds and defaults to Best match.
+- **Grouping** is a server parameter too (`group=`, CON-379); see below.
 - **On a campaign's page** the request carries `scope_campaign`. Totals and
   counts are then the campaign's, and Campaign is not offered as a field.
 - **The rows are slim:** no `content`. So a note or a page no longer states its
   word count; the full asset stays at `GET /:id`.
+
+## The view bar and grouping
+
+Between the filter bar and the list (`AssetViewBar`):
+
+- **"29 ideas in these documents are waiting for a verdict."** It counts ideas,
+  not documents: the response's `ideas_undecided_total`, summed by the server
+  over the whole match. The figure links to Ideas (the campaign's, on a
+  campaign's page). With none waiting, the sentence is left out.
+- **Group by:** Ideas (the default), Date added, Campaign, Tag, Type, or No
+  grouping. Kept in the URL as `group`; the default is left out of it, and
+  `none` is ours and never sent. A campaign's own page has no Campaign
+  grouping.
+- **Sort:** as above.
+
+The server orders rows by group first, adds `group_key` to each row, and
+answers `groups`: every group's key and count over the whole match, in display
+order. So a band says how many it holds even when its rows run onto the next
+page.
+
+- **Ideas** groups are Undecided, All answered and No ideas yet.
+- **Date added** groups are Today, Past week, Past month and Earlier: disjoint
+  bands, unlike the `updated` presets.
+- **Tag** lists a document once per tag, so the same row can appear under two
+  bands, and `groups` counts appearances while `total` counts documents.
+- A grouping that produces a single group draws no band.
+- Bands are `<h2>`s, sticky, and fold on a click. What is folded is kept per
+  device (`settingsStore.collapsedAssetBands`), never in `/api/settings`.
 
 ## The filter bar
 
@@ -66,48 +99,67 @@ choice becomes a token that reads as a sentence: `Type is PDF ×`.
 
 ## Selection
 
-The header checkbox ticks the loaded rows. Once they are all ticked and the
-match is larger, the selection bar offers *Select all N matching*, which
-resolves with `ids_only=true` and the same parameters. Bulk tag and bulk
-delete then act on all N, and the delete confirmation names N.
+Select all is a checkbox at the filter bar's left end (its `leading` slot),
+lined up with the rows' checkboxes. It selects **every match**, not the rows
+loaded so far, by asking `ids_only=true` with the same parameters (without
+`group`). It shows a dash while some are selected, and clicking it when all
+are clears the selection. Bulk tag and bulk delete then act on all N, and the
+delete confirmation names N.
 
-- Changing the filter empties the selection; changing the sort does not.
+- A row's checkbox shows on hover and focus, and on every row once anything
+  is selected.
+- Changing the filter empties the selection; changing the sort or the
+  grouping does not.
 - Delete is one request per id (the API has no bulk delete). `useDeleteAssets`
   runs six at a time and refetches once at the end.
 
 ## A row
 
-- **Kind:** a bare Hugeicons mark with no box (`AssetKindMark`), from the row's `kind`. The server owns that classification.
-  - PDF, document, spreadsheet, CSV, presentation, web page, recording, note.
-  - An image puts its thumbnail in the slot instead.
-- **Title:** written as words (`listTitle`).
-  - URL-encoding is decoded, a file's extension dropped, and underscores become spaces.
-  - A hyphenated file name reads as words.
-  - A page's " - InfoQ" suffix goes when the row shows its domain.
-  - Titles wrap and never truncate, so the table measures each row (`VirtualTable`'s `measureRows`).
-- **Second line**, when there is one:
-  - While a Text mentions search is active: where it matched, with the words marked (`MatchSnippet`).
-  - "Reading the document…" while ingest or analysis runs.
-  - Otherwise the analysis gist (`gist`).
-- **Facts:** a quiet line with:
-  - the domain;
-  - a recording's duration (`file.duration_ms`);
-  - a file's pages;
-  - a status only when it isn't Ready ("Partial — page cut short").
-- **Ideas:** the verdict pill (`VerdictPill`).
-  - One segment per verdict, icon and count, always in the order Undecided · Yes · Not now · No.
-  - Verdicts with no ideas are left out. Undecided is the only teal.
-  - The tooltip, which is also the pill's accessible name, spells the counts out.
-  - A segment opens the asset page on that pile (`?verdict=`).
-  - Counts are the row's `idea_counts`. The server applies the rule that a due "Not now" counts as Undecided.
-  - Sorting the column orders by Undecided, most first (`sort=-ideas_undecided`).
-- **Updated:** one line through `lib/intl`.
-  - A distance within the week, then a date with a four-digit year.
-  - The exact time is in the tooltip.
-- **Campaign:** the campaigns holding the document (`campaign_ids`, named through `useCampaignNames`). On a campaign's own list the column is "Also in" and names the others. Post usage is not shown here.
-- **Tags:** shown as pills.
-- **Empty cells:** a faint dash, with "None" for a screen reader.
-- **Bin:** shows on hover or focus only, and on touch screens. It still goes through `DeleteDocumentsDialog`.
+Four columns, three of them fixed: the checkbox; the text, capped at its
+measure (`72ch` plus the indent under the icon) so widening the window never
+re-wraps it; the tags (168px), right after the text; a spacer that takes the
+slack; then the pill and the campaign (200px). Below the `@4xl` container
+width the tags fold under the title and the spacer goes.
+
+- **Kind:** a bare 28px Hugeicons mark at full ink, before the title
+  (`AssetKindMark`), from the row's `kind`. An image puts its thumbnail there
+  instead.
+- **Title:** an `<h3>`, written as words (`listTitle`): URL-encoding decoded, a
+  file's extension dropped, underscores and hyphens read as spaces, and a
+  page's " - InfoQ" suffix dropped when the row shows its domain.
+- **Facts:** one line, "PDF · 94 pages · published last year": the kind, a
+  page's domain, a recording's duration, a file's pages, then the date
+  (`rowDate`). The date is when the source was published (`published_at`,
+  read from its metadata at ingest) or, failing that, when it was added, and
+  says which. The exact date is the tooltip. A partial read adds its status.
+- **Summary:** the analysis gist, two lines at most; during a Text mentions
+  search, where it matched instead (`MatchSnippet`).
+- **The idea line** (`rowState`):
+  - With ideas waiting: the next one by name (`next_idea`, the oldest
+    undecided, chosen by the server), opening the asset on its undecided pile,
+    then "and N more".
+  - Reading: "Reading this file." while ingest or analysis runs. No pill and
+    no summary yet.
+  - Failed: "We couldn't read this file." with the reason worded from
+    `failure_code` (`ingestFailureMessage`), then "Upload it again, or delete
+    it." Nothing re-runs a PDF, so there is no retry.
+  - Read with no ideas: "Read, but no post ideas came out of it." with
+    Analyse again (`POST …/analysis/retry`).
+  - Never analysed, or the analysis failed or was skipped: nothing, rather
+    than a claim of "no ideas".
+- **Tags:** rounded chips in their own column.
+- **Ideas:** the verdict pill (`VerdictPill`), at 1.2× its first size.
+  - One segment per verdict, icon and count, always in the order Undecided ·
+    Yes · Not now · No. Verdicts with no ideas are left out. Undecided is the
+    only teal, so a row with no teal is finished.
+  - The tooltip, which is also the pill's accessible name, spells the counts
+    out. A segment opens the asset page on that pile (`?verdict=`).
+- **Campaign:** under the pill, each with its `CampaignMark`. On a campaign's
+  own list only the others are named. "No campaign" is said only in the bank,
+  and only once the campaigns have loaded.
+- **Bin:** `Delete02Icon`, no box, at the row's top-right. It shows on hover
+  or focus only, and on touch screens, and goes through
+  `DeleteDocumentsDialog`.
 
 ## The asset page's piles
 
@@ -115,13 +167,12 @@ Above the ideas, the asset page shows the same verdicts with their words as filt
 
 ## Wireframes
 
-![Cut the noise](assets-list/1-cut-the-noise.png)
-![Ideas and gist](assets-list/3-ideas-and-gist.png)
-![The verdict pill](assets-list/4-verdict-pill.png)
+### Ideas first (CON-378)
 
-As built, with illustrative data:
+The wireframe CON-378 was built from, with illustrative data. Its numbered
+notes are the decisions above.
 
-![As built](assets-list/built.png)
+![Ideas first](assets-list/ideas-first.png)
 
 ### The smart filter (CON-371)
 

@@ -131,8 +131,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   the endpoint's (`lib/assetFilter`), so the address is the request. Rows are
   slim — no `content` — and live under `ASSET_LIST_KEY` (`['assets','list']`),
   which anything changing what a row shows must invalidate: idea verdicts,
-  analysis events and campaign membership already do. See
-  [`docs/assets-list.md`](./docs/assets-list.md).
+  analysis events and campaign membership already do. **Grouping is the
+  server's too** (CON-378/379): `group=` orders rows by group, each row
+  carries `group_key`, and `groups` counts each group over the whole match,
+  so a band never counts its loaded rows. The undecided total above the list
+  is `ideas_undecided_total`, never a sum of rows. The list is deliberately
+  not virtualised, because its sticky group bands need the rows above the
+  window to exist. See [`docs/assets-list.md`](./docs/assets-list.md).
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,
   600ms debounce, generation-counter guarded, flush-on-unmount). Campaign forms
   autosave similarly. Prefer these patterns over new local edit stores.
