@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -335,6 +337,71 @@ describe('group bands', () => {
       },
     )
     expect(await screen.findAllByText('Hype Cycle')).toHaveLength(2)
+  })
+})
+
+describe('the next page', () => {
+  /** jsdom has no IntersectionObserver; this one records what it watches. */
+  const observed: { fire: () => void }[] = []
+  beforeEach(() => {
+    observed.length = 0
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(private callback: IntersectionObserverCallback) {}
+        observe() {
+          observed.push({
+            fire: () =>
+              this.callback(
+                [{ isIntersecting: true } as IntersectionObserverEntry],
+                this as unknown as IntersectionObserver,
+              ),
+          })
+        }
+        disconnect() {}
+      },
+    )
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  /*
+   * The empty state mounts neither the scroller nor its foot, so an observer
+   * set up only on mount never existed for a list that arrived later — a
+   * filter going from no matches to some — and that list never paged.
+   */
+  it('is asked for once rows arrive after an empty first answer', async () => {
+    const onEndReached = vi.fn()
+    function Harness() {
+      const [rows, setRows] = useState<AssetListItem[]>([])
+      return (
+        <>
+          <button onClick={() => setRows([asset({})])}>arrive</button>
+          <AssetList
+            rows={rows}
+            groups={[]}
+            grouping="none"
+            groupLabel={(key) => key}
+            campaignId={null}
+            selectedIds={new Set()}
+            onToggleRow={() => {}}
+            onDelete={() => {}}
+            asOf={AS_OF}
+            onEndReached={onEndReached}
+            loadingMore={false}
+          />
+        </>
+      )
+    }
+    await renderWithProviders(<Harness />)
+    expect(observed).toHaveLength(0)
+
+    await userEvent.click(screen.getByText('arrive'))
+    await screen.findByText('Positioning')
+    expect(observed).toHaveLength(1)
+    observed[0].fire()
+    expect(onEndReached).toHaveBeenCalledTimes(1)
   })
 })
 
