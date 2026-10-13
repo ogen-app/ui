@@ -27,6 +27,9 @@ import { VERDICT_ICON } from './verdictIcons'
  * ("4 undecided · 2 yes · 1 not now") and is the legend; the same sentence is
  * the pill's name for a screen reader.
  *
+ * Drawn at 1.2× the size it first had (CON-378): on the ideas-first list it is
+ * the row's status, and the figure someone acts on deserves to be read first.
+ *
  * Each segment opens the asset's Insights on that verdict. Ideas are never
  * answered here — one place to decide, not two.
  */
@@ -49,7 +52,7 @@ export function VerdictPill({
         <span
           role="group"
           aria-label={sentence}
-          className="inline-flex h-6 items-stretch overflow-hidden rounded-full bg-tertiary text-xs tabular-nums"
+          className="inline-flex h-[29px] items-stretch overflow-hidden rounded-full bg-tertiary text-[14.5px] tabular-nums"
         >
           {shown.map((verdict, i) => (
             <Link
@@ -59,7 +62,7 @@ export function VerdictPill({
                 count: counts[verdict],
               })}
               className={cn(
-                'flex items-center gap-1 px-2 outline-none hover:bg-quaternary focus-visible:bg-quaternary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset',
+                'flex items-center gap-[5px] px-2.5 outline-none hover:bg-quaternary focus-visible:bg-quaternary focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset',
                 i > 0 && 'border-l border-quaternary',
                 verdict === 'waiting'
                   ? 'font-semibold text-accent'
@@ -68,7 +71,7 @@ export function VerdictPill({
             >
               <HugeiconsIcon
                 icon={VERDICT_ICON[verdict]}
-                size={14}
+                size={17}
                 strokeWidth={1.8}
                 aria-hidden
                 className={cn(

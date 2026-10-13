@@ -35,6 +35,9 @@ export const KIND_ICON: Record<AssetListKind, IconSvgElement> = {
  *
  * The kind is the server's (CON-374), which classifies from the type and the
  * file's MIME type so this never has to.
+ *
+ * 28px at full ink (CON-378): it leads the title, so it reads as part of the
+ * heading rather than as a faint column of its own.
  */
 export function AssetKindMark({
   asset,
@@ -45,11 +48,11 @@ export function AssetKindMark({
   const mark = (
     <HugeiconsIcon
       icon={KIND_ICON[asset.kind] ?? Note01Icon}
-      size={22}
+      size={28}
       strokeWidth={1.5}
       role="img"
       aria-label={t(`content.list.kind.${asset.kind}`)}
-      className="shrink-0 text-secondary-foreground"
+      className="shrink-0 text-foreground"
     />
   )
   return asset.kind === 'image' ? (

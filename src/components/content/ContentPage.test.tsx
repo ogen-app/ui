@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import type { AssetListItem } from '@/types/assetList'
 
 /**
  * What the page is allowed to say about an empty bank.
@@ -39,18 +38,9 @@ vi.mock('@/hooks/useContent', async (importOriginal) => ({
     total: page.rows.length,
     totalUnfiltered: page.totalUnfiltered,
     facets: {},
+    groups: [],
+    ideasUndecidedTotal: 0,
   }),
-}))
-
-/**
- * The table virtualises against a box jsdom measures as zero pixels tall, so
- * the real one draws no rows whatever it is handed — which is indistinguishable
- * from the empty state this suite is about. See `ContentList.test.tsx`.
- */
-vi.mock('@/components/tables/docsTable', () => ({
-  AssetsTable: ({ assets }: { assets: AssetListItem[] }) => (
-    <p>{`rows:${assets.length}`}</p>
-  ),
 }))
 
 const { ContentPage } = await import('./ContentPage')

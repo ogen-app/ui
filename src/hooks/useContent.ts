@@ -110,10 +110,14 @@ export function useAssetList(
     total: first?.total ?? 0,
     totalUnfiltered: first?.total_unfiltered ?? 0,
     facets: first?.facets ?? NO_FACETS,
+    /** Every group of the whole match, in display order — every page carries it. */
+    groups: first?.groups ?? NO_GROUPS,
+    ideasUndecidedTotal: first?.ideas_undecided_total ?? 0,
   }
 }
 
 const NO_FACETS: AssetListPage['facets'] = {}
+const NO_GROUPS: AssetListPage['groups'] = []
 
 /**
  * How many assets a query would match, without its rows — what a suggestion

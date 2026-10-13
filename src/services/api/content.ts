@@ -19,12 +19,22 @@ import { apiJson, apiVoid } from './http'
 const BASE = '/api/content-bank/assets'
 
 /** The list row as it arrives: `undecided` rather than the client's `waiting`. */
-type AssetListItemBody = Omit<AssetListItem, 'idea_counts'> & {
+type AssetListItemBody = Omit<
+  AssetListItem,
+  'idea_counts' | 'next_idea' | 'published_at'
+> & {
   idea_counts?: { undecided: number; yes: number; later: number; no: number }
+  next_idea?: AssetListItem['next_idea']
+  published_at?: string | null
 }
 
-type AssetListPageBody = Omit<AssetListPage, 'assets'> & {
+type AssetListPageBody = Omit<
+  AssetListPage,
+  'assets' | 'groups' | 'ideas_undecided_total'
+> & {
   assets: AssetListItemBody[] | null
+  groups?: AssetListPage['groups'] | null
+  ideas_undecided_total?: number
 }
 
 function parseListItem(body: AssetListItemBody): AssetListItem {
@@ -33,6 +43,8 @@ function parseListItem(body: AssetListItemBody): AssetListItem {
     ...body,
     tags: body.tags ?? [],
     campaign_ids: body.campaign_ids ?? [],
+    next_idea: body.next_idea ?? null,
+    published_at: body.published_at ?? null,
     idea_counts: {
       waiting: counts?.undecided ?? 0,
       yes: counts?.yes ?? 0,
@@ -63,6 +75,8 @@ export async function queryAssets(
     ...body,
     assets: (body.assets ?? []).map(parseListItem),
     facets: body.facets ?? {},
+    groups: body.groups ?? [],
+    ideas_undecided_total: body.ideas_undecided_total ?? 0,
   }
 }
 
@@ -75,7 +89,13 @@ export async function queryAssetIds(
 ): Promise<string[]> {
   const rest = Object.fromEntries(
     Object.entries(params).filter(
-      ([key]) => key !== 'cursor' && key !== 'limit' && key !== 'facets',
+      // A grouping only orders the rows, and a tag grouping would list an
+      // asset once per tag — neither belongs in a set of ids.
+      ([key]) =>
+        key !== 'cursor' &&
+        key !== 'limit' &&
+        key !== 'facets' &&
+        key !== 'group',
     ),
   )
   const body = await apiJson<{ ids: string[] | null }>(

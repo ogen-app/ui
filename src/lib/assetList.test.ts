@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { TFunction } from 'i18next'
 import {
+  assetLink,
   formatDuration,
   listDate,
   listTitle,
+  rowDate,
+  rowState,
   verdictSentence,
 } from './assetList'
 
@@ -131,5 +134,91 @@ describe('verdictSentence', () => {
     expect(verdictSentence(t, { waiting: 4, yes: 0, later: 1, no: 1 })).toBe(
       'content.list.verdict.waiting:4 · content.list.verdict.later:1 · content.list.verdict.no:1',
     )
+  })
+})
+
+describe('rowState', () => {
+  const row = (
+    over: Partial<Parameters<typeof rowState>[0]>,
+  ): Parameters<typeof rowState>[0] => ({
+    status: 'ready',
+    analysis_status: 'ready',
+    idea_counts: { waiting: 0, yes: 0, later: 0, no: 0 },
+    ...over,
+  })
+
+  it('puts a failed file first, whatever else it says', () => {
+    expect(
+      rowState(row({ status: 'failed', analysis_status: 'running' })),
+    ).toBe('failed')
+  })
+
+  it('is reading while ingest or analysis is under way, ideas or not', () => {
+    expect(rowState(row({ status: 'processing' }))).toBe('reading')
+    expect(
+      rowState(
+        row({
+          analysis_status: 'running',
+          idea_counts: { waiting: 2, yes: 0, later: 0, no: 0 },
+        }),
+      ),
+    ).toBe('reading')
+  })
+
+  it('has ideas once any verdict counts one', () => {
+    expect(
+      rowState(row({ idea_counts: { waiting: 0, yes: 0, later: 0, no: 3 } })),
+    ).toBe('ideas')
+  })
+
+  it('found nothing only when an analysis finished', () => {
+    expect(rowState(row({}))).toBe('noIdeas')
+    expect(rowState(row({ analysis_status: null }))).toBe('unanalysed')
+    expect(rowState(row({ analysis_status: 'failed' }))).toBe('unanalysed')
+  })
+})
+
+describe('rowDate', () => {
+  const now = new Date('2026-10-13T12:00:00Z')
+  const echo = ((key: string, opts?: { when?: string }) =>
+    `${key}(${opts?.when ?? ''})`) as TFunction
+
+  it('says when the source was published when it said so', () => {
+    const date = rowDate(
+      echo,
+      {
+        published_at: '2026-10-10T12:00:00Z',
+        created_at: '2026-10-13T11:00:00Z',
+      },
+      now,
+      'en',
+    )
+    expect(date?.label).toBe('content.list.publishedAgo(3 days ago)')
+  })
+
+  it('says when it was added otherwise, and "just now" inside a minute', () => {
+    expect(
+      rowDate(
+        echo,
+        { published_at: null, created_at: '2026-10-13T11:59:30Z' },
+        now,
+        'en',
+      )?.label,
+    ).toBe('content.list.addedAgo(content.list.justNow())')
+  })
+})
+
+describe('assetLink', () => {
+  it('opens the bank’s copy, or the campaign’s, on a pile when named', () => {
+    expect(assetLink({ id: 'a1' }, null, 'waiting')).toEqual({
+      to: '/assets/$assetId',
+      params: { assetId: 'a1' },
+      search: { verdict: 'waiting' },
+    })
+    expect(assetLink({ id: 'a1' }, 'c1')).toEqual({
+      to: '/campaigns/$campaignId/assets/$assetId',
+      params: { campaignId: 'c1', assetId: 'a1' },
+      search: {},
+    })
   })
 })

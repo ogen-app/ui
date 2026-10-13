@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { LinkProps } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowsClockwiseIcon,
@@ -10,15 +11,15 @@ import {
   XIcon,
 } from '@phosphor-icons/react'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
-import { AssetsTable } from '@/components/tables/docsTable'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ZIndex } from '@/config/zIndex'
 import { useBulkTagAssets, type useAssetList } from '@/hooks/useContent'
 import {
   isFilterActive,
   NONE,
   type AssetFilter,
+  type AssetGrouping,
   type AssetSort,
 } from '@/lib/assetFilter'
 import { formatNumber } from '@/lib/intl'
@@ -31,6 +32,8 @@ import type { AssetListItem, AssetQueryParams } from '@/types/assetList'
 import { AssetFilterBar } from './smartFilter/AssetFilterBar'
 import { NoMatches } from './smartFilter/NoMatches'
 import { useFilterVocabulary } from './smartFilter/useFilterVocabulary'
+import { AssetList } from './AssetList'
+import { AssetViewBar } from './AssetViewBar'
 import { DeleteDocumentsDialog } from './DeleteDocumentsDialog'
 import { TagDocumentsDialog } from './TagDocumentsDialog'
 
@@ -45,6 +48,8 @@ type Props = {
   onFilterChange: (next: AssetFilter) => void
   sort: AssetSort
   onSortChange: (next: AssetSort) => void
+  grouping: AssetGrouping
+  onGroupingChange: (next: AssetGrouping) => void
   /** The request another filter would make, for counts the bar shows. */
   paramsFor: (filter: AssetFilter) => AssetQueryParams
   /** Files still in transit to this scope, or refused on the way. */
@@ -60,6 +65,12 @@ type Props = {
   onUpload: () => void
   onAddWebPage: () => void
 }
+
+/** The ideas grouping's keys, as the server names them (CON-379). */
+type IdeasBand = 'undecided' | 'answered' | 'none'
+
+/** The date-added grouping's disjoint bands. */
+type CreatedBand = '1d' | '7d' | '30d' | 'earlier'
 
 /** What the delete dialog is asking about, and which gesture asked. */
 type Confirming = {
@@ -83,11 +94,16 @@ type Confirming = {
  *
  * **The list is a window onto the server's answer** (CON-371/374): fifty rows
  * at a time, the next fifty as the end comes into view. So the selection is
- * ids, and has two sizes — the rows ticked, and "all N matching", which asks
- * the server for every id the same filter matches. That is what bulk tagging
- * and delete act on, and the delete confirmation names the count. A changed
+ * ids, and has two sizes — the rows ticked, and every match, which asks the
+ * server for every id the same filter matches. That is what bulk tagging and
+ * delete act on, and the delete confirmation names the count. A changed
  * filter clears the selection: a set picked under one question must not be
  * deleted under another.
+ *
+ * **Select all is on the filter bar** (CON-378), at its left end, because what
+ * it selects is what that bar found — every match, not the rows loaded so far
+ * — and the bar is the line that says how many that is. The list has no
+ * header row for it to sit in any more.
  */
 export function ContentList({
   campaignId,
@@ -97,6 +113,8 @@ export function ContentList({
   onFilterChange,
   sort,
   onSortChange,
+  grouping,
+  onGroupingChange,
   paramsFor,
   uploads,
   onDeleteMany,
@@ -105,7 +123,7 @@ export function ContentList({
   onAddWebPage,
 }: Props) {
   const { t, i18n } = useTranslation()
-  const { rows, total, totalUnfiltered, facets, query } = list
+  const { rows, total, totalUnfiltered, facets, groups, query } = list
   const vocabulary = useFilterVocabulary({ facets, scoped: !!campaignId })
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   /** The selection is every id the filter matches, not only loaded rows. */
@@ -120,10 +138,10 @@ export function ContentList({
   // do about it.
   const bulkTag = useBulkTagAssets()
 
-  // A new question empties the selection. Sort and time zone change the order
-  // and nothing about which documents match, so they leave it alone.
+  // A new question empties the selection. Sort, grouping and time zone change
+  // the order and nothing about which documents match, so they leave it alone.
   const question = useMemo(() => {
-    const { sort: _sort, tz: _tz, ...rest } = params
+    const { sort: _sort, tz: _tz, group: _group, ...rest } = params
     return JSON.stringify(rest)
   }, [params])
   /** The question on screen, for a request that answers after it changed. */
@@ -142,21 +160,6 @@ export function ContentList({
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
-      return next
-    })
-  }
-
-  // Over the loaded rows, matching what the header checkbox claims; "all N
-  // matching" is offered separately, on the bar, once these are ticked.
-  const toggleAll = () => {
-    setAllMatching(false)
-    setTicked((prev) => {
-      const next = new Set(prev)
-      const all = rows.length > 0 && rows.every((a) => next.has(a.id))
-      for (const asset of rows) {
-        if (all) next.delete(asset.id)
-        else next.add(asset.id)
-      }
       return next
     })
   }
@@ -180,8 +183,57 @@ export function ContentList({
     }
   }
 
-  const loadedTicked = rows.length > 0 && rows.every((a) => ticked.has(a.id))
-  const canSelectMatching = !allMatching && loadedTicked && total > ticked.size
+  const clearSelection = () => {
+    setTicked(new Set())
+    setAllMatching(false)
+  }
+
+  // Everything, some, or nothing — against the whole match, which is what the
+  // box selects. Full clears; anything less fills it.
+  const everything = total > 0 && (allMatching || ticked.size >= total)
+  const selectAll = (
+    <Checkbox
+      checked={everything ? true : ticked.size > 0 ? 'indeterminate' : false}
+      disabled={total === 0 || resolving}
+      onCheckedChange={() =>
+        everything ? clearSelection() : void selectAllMatching()
+      }
+      aria-label={
+        everything
+          ? t('content.selection.clearAll')
+          : t('content.selection.selectAll', {
+              count: total,
+              formatted: formatNumber(total, {}, i18n.language),
+            })
+      }
+    />
+  )
+
+  const groupLabel = useCallback(
+    (key: string): string => {
+      switch (grouping) {
+        case 'ideas':
+          return t(`content.list.band.ideas.${key as IdeasBand}`, {
+            defaultValue: key,
+          })
+        case 'created':
+          return t(`content.list.band.created.${key as CreatedBand}`, {
+            defaultValue: key,
+          })
+        case 'kind':
+        case 'campaign':
+        case 'tag':
+          return vocabulary.valueLabel(grouping, key)
+        case 'none':
+          return ''
+      }
+    },
+    [grouping, t, vocabulary],
+  )
+
+  const ideasLink: LinkProps = campaignId
+    ? { to: '/campaigns/$campaignId/ideas', params: { campaignId } }
+    : { to: '/ideas' }
 
   const handleDeleteConfirmed = async () => {
     if (!confirming) return
@@ -265,7 +317,7 @@ export function ContentList({
   }
 
   return (
-    <div className="relative flex min-h-0 flex-col gap-3 py-4">
+    <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 py-4">
       <AssetFilterBar
         filter={filter}
         onChange={onFilterChange}
@@ -273,83 +325,67 @@ export function ContentList({
         total={total}
         totalUnfiltered={totalUnfiltered}
         paramsFor={paramsFor}
+        leading={selectAll}
+      />
+
+      <AssetViewBar
+        undecided={list.ideasUndecidedTotal}
+        ideasLink={ideasLink}
+        grouping={grouping}
+        onGroupingChange={onGroupingChange}
+        scoped={!!campaignId}
+        sort={sort}
+        onSortChange={onSortChange}
+        searching={!!filter.text}
       />
 
       {uploads.length > 0 && <UploadingRows uploads={uploads} />}
 
-      <div
-        className={cn(
-          'grid min-h-0 flex-1 overflow-hidden',
-          rows.length === 0 && 'min-h-50',
-        )}
-      >
-        <AssetsTable
-          assets={rows}
-          campaignId={campaignId}
-          onDelete={(asset: AssetListItem) =>
-            setConfirming({
-              ids: [asset.id],
-              title: asset.title.trim() || null,
-              fromSelection: false,
-            })
-          }
-          sort={sort}
-          onSortChange={onSortChange}
-          onEndReached={() => {
-            if (query.hasNextPage && !query.isFetchingNextPage)
-              void query.fetchNextPage()
-          }}
-          emptyState={
-            query.isError ? (
-              <p className="px-6 py-12 text-center text-sm text-destructive">
-                {t('content.filter.loadFailed')}
-              </p>
-            ) : narrowed ? (
-              <NoMatches
-                filter={filter}
-                vocabulary={vocabulary}
-                paramsFor={paramsFor}
-                onChange={onFilterChange}
-              />
-            ) : undefined
-          }
-          selectedIds={ticked}
-          onToggleRow={toggleRow}
-          onToggleAll={toggleAll}
-          // The list is a real fetch, so it arrives after a loader rather
-          // than with the page around it. On the table's own class rather
-          // than a wrapper: it is the grid item the layout sizes, and a div
-          // in between would take that role and leave it to grow past the
-          // window.
-          className="page-content-motion"
-        />
-      </div>
-
-      {query.isFetchingNextPage && (
-        <p className="shrink-0 text-center text-xs text-tertiary-foreground">
-          {t('content.filter.loadingMore')}
-        </p>
-      )}
+      <AssetList
+        rows={rows}
+        groups={groups}
+        grouping={grouping}
+        groupLabel={groupLabel}
+        campaignId={campaignId}
+        selectedIds={ticked}
+        onToggleRow={toggleRow}
+        onDelete={(asset: AssetListItem) =>
+          setConfirming({
+            ids: [asset.id],
+            title: asset.title.trim() || null,
+            fromSelection: false,
+          })
+        }
+        asOf={query.dataUpdatedAt}
+        onEndReached={() => {
+          if (query.hasNextPage && !query.isFetchingNextPage)
+            void query.fetchNextPage()
+        }}
+        loadingMore={query.isFetchingNextPage}
+        emptyState={
+          query.isError ? (
+            <p className="px-6 py-12 text-center text-sm text-destructive">
+              {t('content.filter.loadFailed')}
+            </p>
+          ) : narrowed ? (
+            <NoMatches
+              filter={filter}
+              vocabulary={vocabulary}
+              paramsFor={paramsFor}
+              onChange={onFilterChange}
+            />
+          ) : undefined
+        }
+        // The list is a real fetch, so it arrives after a loader rather than
+        // with the page around it.
+        className="page-content-motion flex-1"
+      />
 
       {ticked.size > 0 && (
         <SelectionBar
           count={ticked.size}
           busy={deleting || bulkTag.isPending || resolving}
-          matching={
-            canSelectMatching
-              ? {
-                  label: t('content.selection.selectAllMatching', {
-                    count: total,
-                    formatted: formatNumber(total, {}, i18n.language),
-                  }),
-                  onSelect: () => void selectAllMatching(),
-                }
-              : null
-          }
-          onClear={() => {
-            setTicked(new Set())
-            setAllMatching(false)
-          }}
+          onClear={clearSelection}
           onTag={() => setTagging(true)}
           onDelete={() => {
             const ids = [...ticked]
@@ -412,15 +448,12 @@ export function ContentList({
 function SelectionBar({
   count,
   busy,
-  matching,
   onClear,
   onTag,
   onDelete,
 }: {
   count: number
   busy: boolean
-  /** Offered once every loaded row is ticked and the match is larger. */
-  matching: { label: string; onSelect: () => void } | null
   onClear: () => void
   onTag: () => void
   onDelete: () => void
@@ -439,17 +472,6 @@ function SelectionBar({
         <span className="shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap">
           {t('content.selection.count', { count })}
         </span>
-        {matching && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-accent"
-            onClick={matching.onSelect}
-            disabled={busy}
-          >
-            {matching.label}
-          </Button>
-        )}
         <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
         <Button
           variant="ghost"

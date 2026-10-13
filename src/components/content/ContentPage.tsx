@@ -26,6 +26,7 @@ import {
   useDeleteAssets,
 } from '@/hooks/useContent'
 import {
+  effectiveGroup,
   effectiveSort,
   facetsFor,
   filterFromSearch,
@@ -34,6 +35,7 @@ import {
   toRequestParams,
   viewerTimeZone,
   type AssetFilter,
+  type AssetGrouping,
   type AssetListSearch,
   type AssetSort,
 } from '@/lib/assetFilter'
@@ -113,6 +115,7 @@ export function ContentPage({
   const filter = useMemo(() => filterFromSearch(search), [search])
   const sort = effectiveSort(filter, search.sort)
   const scope = campaign?.id ?? null
+  const grouping = effectiveGroup(search.group, scope)
   // The day, not the instant: a preset like "Last 7 days" resolves to a
   // midnight, so the request — and the Query key — only change at midnight.
   const today = new Date().toDateString()
@@ -121,21 +124,29 @@ export function ContentPage({
       toRequestParams(next, {
         scopeCampaign: scope,
         sort: effectiveSort(next, search.sort),
+        group: grouping,
         now: new Date(today),
         timeZone: viewerTimeZone(),
       }),
-    [scope, search.sort, today],
+    [scope, search.sort, grouping, today],
   )
   const params = useMemo(() => paramsFor(filter), [paramsFor, filter])
   const list = useAssetList(params, { facets: facetsFor(scope) })
 
   const setFilter = useCallback(
-    (next: AssetFilter) => onSearchChange(searchFromFilter(next, search.sort)),
-    [onSearchChange, search.sort],
+    (next: AssetFilter) =>
+      onSearchChange(searchFromFilter(next, search.sort, search.group)),
+    [onSearchChange, search.sort, search.group],
   )
   const setSort = useCallback(
-    (next: AssetSort) => onSearchChange(searchFromFilter(filter, next)),
-    [onSearchChange, filter],
+    (next: AssetSort) =>
+      onSearchChange(searchFromFilter(filter, next, search.group)),
+    [onSearchChange, filter, search.group],
+  )
+  const setGrouping = useCallback(
+    (next: AssetGrouping) =>
+      onSearchChange(searchFromFilter(filter, search.sort, next)),
+    [onSearchChange, filter, search.sort],
   )
 
   const enqueueUploads = useUploadStore((s) => s.enqueue)
@@ -450,6 +461,8 @@ export function ContentPage({
             onFilterChange={setFilter}
             sort={sort}
             onSortChange={setSort}
+            grouping={grouping}
+            onGroupingChange={setGrouping}
             paramsFor={paramsFor}
             uploads={uploads}
             onDeleteMany={handleDeleteMany}

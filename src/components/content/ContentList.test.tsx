@@ -16,44 +16,7 @@ import { i18next, loadLocaleResources } from '@/i18n'
 import { EMPTY_FILTER, withToken, type AssetFilter } from '@/lib/assetFilter'
 import type { AssetListItem } from '@/types/assetList'
 
-/**
- * The table is stood in for, and only here.
- *
- * `AssetsTable` virtualises against a measured box, which in jsdom is zero
- * pixels tall and renders no rows at all — so a test driving the real one
- * would be asserting against an empty list. What is under test is the wiring
- * either side of it: a bin click reaching a confirmation rather than a delete,
- * and what the answer does to the selection. The stand-in offers exactly the
- * two controls a row has, and the prop it calls (`onDelete(asset)`) is typed
- * against the real component, so the seam it fakes cannot drift silently.
- */
-vi.mock('@/components/tables/docsTable', () => ({
-  AssetsTable: ({
-    assets,
-    onDelete,
-    onToggleRow,
-    selectedIds,
-  }: {
-    assets: AssetListItem[]
-    onDelete: (asset: AssetListItem) => void
-    onToggleRow?: (id: string) => void
-    selectedIds?: Set<string>
-  }) => (
-    <div>
-      {assets.map((asset) => (
-        <div key={asset.id}>
-          <button onClick={() => onToggleRow?.(asset.id)}>
-            {`tick ${asset.id}`}
-          </button>
-          <button onClick={() => onDelete(asset)}>{`bin ${asset.id}`}</button>
-        </div>
-      ))}
-      <p>{`ticked:${[...(selectedIds ?? [])].join(',')}`}</p>
-    </div>
-  ),
-}))
-
-/** "Select all N matching" asks the server for ids; nothing else here does. */
+/** Select all asks the server for every matching id; nothing else here does. */
 const ids = vi.hoisted(() => ({ fn: vi.fn() }))
 vi.mock('@/services/api/content', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/api/content')>()),
@@ -77,6 +40,8 @@ function asset(id: string, title: string): AssetListItem {
     campaign_ids: [],
     idea_counts: { waiting: 0, yes: 0, later: 0, no: 0 },
     gist: null,
+    next_idea: null,
+    published_at: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   }
@@ -97,11 +62,14 @@ function listOf(
       isFetchingNextPage: false,
       isError: false,
       fetchNextPage: vi.fn(),
+      dataUpdatedAt: Date.parse('2026-01-02T00:00:00Z'),
     },
     rows,
     total,
     totalUnfiltered: unfiltered,
     facets: {},
+    groups: [],
+    ideasUndecidedTotal: 0,
   } as never
 }
 
@@ -128,6 +96,8 @@ function show(
         onFilterChange={() => {}}
         sort="-updated_at"
         onSortChange={() => {}}
+        grouping="ideas"
+        onGroupingChange={() => {}}
         paramsFor={() => ({})}
         uploads={[]}
         onDeleteMany={onDeleteMany}
@@ -157,6 +127,14 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+/** A row's own controls, by the names a screen reader hears. */
+const tick = (title: string) =>
+  userEvent.click(screen.getByRole('checkbox', { name: `Select ${title}` }))
+const bin = (title: string) =>
+  userEvent.click(screen.getByRole('button', { name: `Delete ${title}` }))
+const ticked = (title: string) =>
+  screen.getByRole('checkbox', { name: `Select ${title}` })
+
 describe('deleting one row', () => {
   /*
    * The regression this exists for. The bin used to call the delete directly:
@@ -166,7 +144,7 @@ describe('deleting one row', () => {
     const { ui, onDeleteMany } = show()
     await renderWithProviders(ui)
 
-    await userEvent.click(screen.getByText('bin a1'))
+    await bin('Positioning')
 
     expect(
       screen.getByRole('heading', { name: 'Delete "Positioning"?' }),
@@ -178,7 +156,7 @@ describe('deleting one row', () => {
     const { ui, onDeleteMany } = show()
     await renderWithProviders(ui)
 
-    await userEvent.click(screen.getByText('bin a2'))
+    await bin('Interview transcript')
     await userEvent.click(
       screen.getByRole('button', { name: 'DELETE DOCUMENT' }),
     )
@@ -190,7 +168,7 @@ describe('deleting one row', () => {
     const { ui, onDeleteMany } = show()
     await renderWithProviders(ui)
 
-    await userEvent.click(screen.getByText('bin a1'))
+    await bin('Positioning')
     await userEvent.click(screen.getByRole('button', { name: 'KEEP DOCUMENT' }))
 
     expect(onDeleteMany).not.toHaveBeenCalled()
@@ -206,13 +184,13 @@ describe('deleting one row', () => {
     const { ui } = show()
     await renderWithProviders(ui)
 
-    await userEvent.click(screen.getByText('tick a1'))
-    await userEvent.click(screen.getByText('bin a2'))
+    await tick('Positioning')
+    await bin('Interview transcript')
     await userEvent.click(
       screen.getByRole('button', { name: 'DELETE DOCUMENT' }),
     )
 
-    expect(screen.getByText('ticked:a1')).toBeInTheDocument()
+    expect(ticked('Positioning')).toBeChecked()
   })
 })
 
@@ -221,8 +199,8 @@ describe('deleting a selection', () => {
     const { ui, onDeleteMany } = show()
     await renderWithProviders(ui)
 
-    await userEvent.click(screen.getByText('tick a1'))
-    await userEvent.click(screen.getByText('tick a2'))
+    await tick('Positioning')
+    await tick('Interview transcript')
     await userEvent.click(screen.getByRole('button', { name: /DELETE$/ }))
 
     expect(
@@ -234,17 +212,18 @@ describe('deleting a selection', () => {
     )
 
     expect(onDeleteMany).toHaveBeenCalledWith(['a1', 'a2'])
-    expect(screen.getByText('ticked:')).toBeInTheDocument()
+    expect(ticked('Positioning')).not.toBeChecked()
+    expect(ticked('Interview transcript')).not.toBeChecked()
   })
 })
 
-describe('every match', () => {
+describe('select all', () => {
   /*
-   * The list is fifty rows at a time, so "select all" in the header can only
-   * mean the rows on screen. The whole match is a second, explicit step — and
-   * the delete it leads to has to name the count it will act on.
+   * The list is fifty rows at a time, so the box on the filter bar selects the
+   * whole match by asking the server for its ids — never just what is loaded —
+   * and the delete it leads to names the count it will act on.
    */
-  it('offers all N matching once the loaded rows are ticked, and deletes all N', async () => {
+  it('selects every match from the filter bar, and deletes all N', async () => {
     ids.fn.mockResolvedValue(['a1', 'a2', 'a3', 'a4', 'a5'])
     const { ui, onDeleteMany } = show(undefined, {
       total: 5,
@@ -252,11 +231,8 @@ describe('every match', () => {
     })
     await renderWithProviders(ui)
 
-    await userEvent.click(screen.getByText('tick a1'))
-    expect(screen.queryByRole('button', { name: /matching/ })).toBeNull()
-    await userEvent.click(screen.getByText('tick a2'))
     await userEvent.click(
-      screen.getByRole('button', { name: 'Select all 5 matching' }),
+      screen.getByRole('checkbox', { name: 'Select all 5 documents' }),
     )
 
     expect(ids.fn).toHaveBeenCalledWith({ kind: 'pdf', sort: '-updated_at' })
@@ -272,19 +248,30 @@ describe('every match', () => {
     expect(onDeleteMany).toHaveBeenCalledWith(['a1', 'a2', 'a3', 'a4', 'a5'])
   })
 
-  it('does not offer it when the rows on screen are the whole match', async () => {
+  it('shows a dash while some are selected, and clears once all are', async () => {
+    ids.fn.mockResolvedValue(['a1', 'a2'])
     const { ui } = show(undefined, { total: 2 })
     await renderWithProviders(ui)
-    await userEvent.click(screen.getByText('tick a1'))
-    await userEvent.click(screen.getByText('tick a2'))
-    expect(screen.queryByRole('button', { name: /matching/ })).toBeNull()
+
+    await tick('Positioning')
+    const box = screen.getByRole('checkbox', { name: 'Select all 2 documents' })
+    expect(box).toHaveAttribute('aria-checked', 'mixed')
+
+    await userEvent.click(box)
+    const full = await screen.findByRole('checkbox', {
+      name: 'Clear the selection',
+    })
+    expect(full).toBeChecked()
+
+    await userEvent.click(full)
+    expect(screen.queryByText(/selected$/)).not.toBeInTheDocument()
   })
 
   /*
    * The same rule across a request: an answer for the previous filter that
    * lands after the filter changed must not put its ids back.
    */
-  it('drops an "all matching" answer that arrives after the filter changed', async () => {
+  it('drops an answer that arrives after the filter changed', async () => {
     let answer: (ids: string[]) => void = () => {}
     ids.fn.mockReturnValue(new Promise<string[]>((r) => (answer = r)))
     function Harness() {
@@ -299,21 +286,19 @@ describe('every match', () => {
       )
     }
     await renderWithProviders(<Harness />)
-    await userEvent.click(screen.getByText('tick a1'))
-    await userEvent.click(screen.getByText('tick a2'))
     await userEvent.click(
-      screen.getByRole('button', { name: 'Select all 5 matching' }),
+      screen.getByRole('checkbox', { name: 'Select all 5 documents' }),
     )
     await userEvent.click(screen.getByText('refilter'))
     answer(['a1', 'a2', 'a3', 'a4', 'a5'])
     await Promise.resolve()
 
-    expect(await screen.findByText('ticked:')).toBeInTheDocument()
+    expect(ticked('Positioning')).not.toBeChecked()
     expect(screen.queryByText(/selected$/)).not.toBeInTheDocument()
   })
 
   /* A set picked under one question must not be deleted under another. */
-  it('empties the selection when the question changes', async () => {
+  it('empties the selection when the question changes, not the order', async () => {
     function Harness() {
       const [params, setParams] = useState<Record<string, string>>({
         kind: 'pdf',
@@ -323,21 +308,25 @@ describe('every match', () => {
           <button onClick={() => setParams({ kind: 'pdf', sort: 'title' })}>
             resort
           </button>
+          <button onClick={() => setParams({ kind: 'pdf', group: 'tag' })}>
+            regroup
+          </button>
           <button onClick={() => setParams({ kind: 'web' })}>refilter</button>
           {show(undefined, { params }).ui}
         </>
       )
     }
     await renderWithProviders(<Harness />)
-    await userEvent.click(screen.getByText('tick a1'))
-    expect(screen.getByText('ticked:a1')).toBeInTheDocument()
+    await tick('Positioning')
+    expect(ticked('Positioning')).toBeChecked()
 
-    // Another order is the same question.
+    // Another order, or another grouping, is the same question.
     await userEvent.click(screen.getByText('resort'))
-    expect(screen.getByText('ticked:a1')).toBeInTheDocument()
+    await userEvent.click(screen.getByText('regroup'))
+    expect(ticked('Positioning')).toBeChecked()
 
     await userEvent.click(screen.getByText('refilter'))
-    expect(screen.getByText('ticked:')).toBeInTheDocument()
+    expect(ticked('Positioning')).not.toBeChecked()
   })
 })
 
@@ -382,7 +371,9 @@ describe('in Spanish', () => {
     const { ui } = show()
     await renderWithProviders(ui)
 
-    await userEvent.click(screen.getByText('bin a1'))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Eliminar Positioning' }),
+    )
 
     expect(
       screen.getByRole('heading', { name: '¿Eliminar «Positioning»?' }),

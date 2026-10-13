@@ -4311,28 +4311,46 @@ export const en = {
      * shown only when something is off, and the Ideas column's verdict pill.
      */
     list: {
-      title: 'Title',
-      ideas: 'Ideas',
-      updated: 'Updated',
-      campaign: 'Campaign',
-      /** The Campaign column on a campaign's own list: the other campaigns. */
-      alsoIn: 'Also in',
-      tags: 'Tags',
+      /** The list's accessible name. */
+      label: 'Documents',
       untitled: 'Untitled',
-      selectAll: 'Select all documents',
-      clearSelection: 'Clear selection',
       selectRow: 'Select {{title}}',
       deleteRow: 'Delete {{title}}',
-      /** Read out for a cell whose dash means "nothing here". */
-      none: 'None',
       justNow: 'just now',
       minutes_one: '{{count}} min',
       minutes_other: '{{count}} min',
-      reading: 'Reading the document…',
+      /** The facts line's date: `when` is a distance, "14 months ago". */
+      publishedAgo: 'published {{when}}',
+      addedAgo: 'added {{when}}',
+      /** After the next undecided idea's title: how many more are waiting. */
+      nextIdeaMore_one: 'and {{count}} more',
+      nextIdeaMore_other: 'and {{count}} more',
+      readingTitle: 'Reading this file.',
+      readingBody:
+        'Ideas appear here on their own when it’s done; you can leave.',
+      failedTitle: 'We couldn’t read this file.',
+      /** After the reason a file failed. Nothing re-runs a PDF or an office file. */
+      failedNext: 'Upload it again, or delete it.',
+      noIdeas: 'Read, but no post ideas came out of it.',
+      analyseAgain: 'Analyse again',
+      /** A group band's fold, named for the group. */
+      fold: 'Fold {{group}}',
+      unfold: 'Unfold {{group}}',
+      /** The bands of the Ideas and Date added groupings (CON-379). */
+      band: {
+        ideas: {
+          undecided: 'Undecided',
+          answered: 'All answered',
+          none: 'No ideas yet',
+        },
+        created: {
+          '1d': 'Today',
+          '7d': 'Past week',
+          '30d': 'Past month',
+          earlier: 'Earlier',
+        },
+      },
       status: {
-        pending: 'Processing',
-        processing: 'Processing',
-        failed: 'Failed',
         partial: 'Partial — not all of it was read',
         partialPage: 'Partial — page cut short',
         partialAudio: 'Partial — some of it wasn’t transcribed',
@@ -4588,10 +4606,49 @@ export const en = {
       count_other: '{{count}} selected',
       clear: 'CLEAR',
       delete: 'DELETE',
-      /** Once every loaded row is ticked and the match is larger. */
-      selectAllMatching_one: 'Select all {{formatted}} matching',
-      selectAllMatching_other: 'Select all {{formatted}} matching',
+      /** The filter bar's select-all: every match, not just the rows loaded. */
+      selectAll_one: 'Select the {{formatted}} document',
+      selectAll_other: 'Select all {{formatted}} documents',
+      clearAll: 'Clear the selection',
       failed: 'Unable to select every match',
+    },
+
+    /**
+     * The line between the filter bar and the list (CON-378): how much is left
+     * to answer, and how the list is grouped and sorted.
+     */
+    view: {
+      /** `<ideas>` links to where they are answered. Counts ideas, not documents. */
+      undecided_one:
+        '<ideas>{{formatted}} idea</ideas> in these documents is waiting for a verdict.',
+      undecided_other:
+        '<ideas>{{formatted}} ideas</ideas> in these documents are waiting for a verdict.',
+      groupBy: 'Group by',
+      groupByHeading: 'GROUP BY',
+      sortBy: 'Sort',
+      group: {
+        ideas: 'Ideas',
+        created: 'Date added',
+        campaign: 'Campaign',
+        tag: 'Tag',
+        kind: 'Type',
+        none: 'No grouping',
+      },
+      /** Beside an option in the menu: what is not obvious about it. */
+      groupHint: {
+        ideas: '3 groups',
+        tag: 'once per tag',
+      },
+      sort: {
+        mostUndecided: 'Most undecided first',
+        updatedNewest: 'Recently updated',
+        updatedOldest: 'Least recently updated',
+        addedNewest: 'Newest first',
+        addedOldest: 'Oldest first',
+        titleAsc: 'Title A–Z',
+        titleDesc: 'Title Z–A',
+        relevance: 'Best match',
+      },
     },
 
     /**
