@@ -280,6 +280,38 @@ describe('every match', () => {
     expect(screen.queryByRole('button', { name: /matching/ })).toBeNull()
   })
 
+  /*
+   * The same rule across a request: an answer for the previous filter that
+   * lands after the filter changed must not put its ids back.
+   */
+  it('drops an "all matching" answer that arrives after the filter changed', async () => {
+    let answer: (ids: string[]) => void = () => {}
+    ids.fn.mockReturnValue(new Promise<string[]>((r) => (answer = r)))
+    function Harness() {
+      const [params, setParams] = useState<Record<string, string>>({
+        kind: 'pdf',
+      })
+      return (
+        <>
+          <button onClick={() => setParams({ kind: 'web' })}>refilter</button>
+          {show(undefined, { total: 5, params }).ui}
+        </>
+      )
+    }
+    await renderWithProviders(<Harness />)
+    await userEvent.click(screen.getByText('tick a1'))
+    await userEvent.click(screen.getByText('tick a2'))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Select all 5 matching' }),
+    )
+    await userEvent.click(screen.getByText('refilter'))
+    answer(['a1', 'a2', 'a3', 'a4', 'a5'])
+    await Promise.resolve()
+
+    expect(await screen.findByText('ticked:')).toBeInTheDocument()
+    expect(screen.queryByText(/selected$/)).not.toBeInTheDocument()
+  })
+
   /* A set picked under one question must not be deleted under another. */
   it('empties the selection when the question changes', async () => {
     function Harness() {

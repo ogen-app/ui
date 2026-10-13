@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowsClockwiseIcon,
@@ -126,7 +126,10 @@ export function ContentList({
     const { sort: _sort, tz: _tz, ...rest } = params
     return JSON.stringify(rest)
   }, [params])
+  /** The question on screen, for a request that answers after it changed. */
+  const asked = useRef(question)
   useEffect(() => {
+    asked.current = question
     setTicked(new Set())
     setAllMatching(false)
   }, [question])
@@ -159,9 +162,13 @@ export function ContentList({
   }
 
   const selectAllMatching = async () => {
+    const question = asked.current
     setResolving(true)
     try {
       const ids = await queryAssetIds(params)
+      // The filter moved while this was in flight, so these ids answer the
+      // previous question — and a delete must never act on that one.
+      if (asked.current !== question) return
       setTicked(new Set(ids))
       setAllMatching(true)
     } catch (error) {
