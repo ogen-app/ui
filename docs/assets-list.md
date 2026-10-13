@@ -122,3 +122,11 @@ Above the ideas, the asset page shows the same verdicts with their words as filt
 As built, with illustrative data:
 
 ![As built](assets-list/built.png)
+
+### The smart filter (CON-371)
+
+![The flow: field, operator, value, token, stepping back](assets-list/filter-1-flow.png)
+![Typing without choosing a field](assets-list/filter-2-free-text.png)
+![The value step, field by field](assets-list/filter-3-value-step.png)
+![Filters applied](assets-list/filter-4-applied.png)
+![Nothing matches](assets-list/filter-5-no-matches.png)
