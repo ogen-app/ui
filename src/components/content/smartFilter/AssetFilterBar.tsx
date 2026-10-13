@@ -991,13 +991,17 @@ function TokenChip({
         type="button"
         onClick={onEdit}
         aria-label={t('content.filter.edit', { filter: sentence })}
-        className="flex h-full min-w-0 items-center truncate pl-2 hover:bg-tertiary"
+        className="flex h-full min-w-0 items-center pl-2 hover:bg-tertiary"
       >
-        <TokenSentence
-          field={vocab.fieldLabel(token.field)}
-          op={vocab.operatorLabel(token.field, token.negated)}
-          values={vocab.tokenValueText(token)}
-        />
+        {/* Inline, not a flex child: a flex container drops the spaces
+            between the sentence's parts. */}
+        <span className="truncate">
+          <TokenSentence
+            field={vocab.fieldLabel(token.field)}
+            op={vocab.operatorLabel(token.field, token.negated)}
+            values={vocab.tokenValueText(token)}
+          />
+        </span>
       </button>
       <button
         type="button"
