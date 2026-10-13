@@ -77,15 +77,34 @@ export type AssetListItem = {
    * and has a gist or a usable summary sentence.
    */
   gist: string | null
+  /**
+   * The oldest of the ideas `idea_counts.waiting` counts (CON-379) — null
+   * exactly when that count is 0, so the row never names an idea its pill
+   * doesn't count.
+   */
+  next_idea: AssetNextIdea | null
+  /**
+   * When the source was published, read from its own metadata at ingest
+   * (a PDF's creation date, a page's `article:published_time`). Null when it
+   * said nothing; the row then says when the asset was added instead.
+   */
+  published_at: string | null
+  /** The group the row is listed under — only on a grouped read. */
+  group_key?: string
   /** Only when the query has `text`. */
   match?: AssetTextMatch
 }
+
+export type AssetNextIdea = { id: string; title: string }
 
 export type AssetFacetCount = { value: string; count: number }
 
 /** The fields the list can count values of. */
 export type AssetFacetField =
-  'kind' | 'status' | 'campaign' | 'tag' | 'ideas' | 'updated'
+  'kind' | 'status' | 'campaign' | 'tag' | 'ideas' | 'updated' | 'created'
+
+/** How many rows of the whole match one group lists. */
+export type AssetGroupCount = { key: string; count: number }
 
 export type AssetListPage = {
   assets: AssetListItem[]
@@ -100,6 +119,17 @@ export type AssetListPage = {
    * field's counts apply every *other* filter but not its own.
    */
   facets: Partial<Record<AssetFacetField, AssetFacetCount[]>>
+  /**
+   * `idea_counts.undecided` summed over every matching asset, not only this
+   * page — what "29 ideas are waiting" says. The client never adds it up.
+   */
+  ideas_undecided_total: number
+  /**
+   * On a grouped read, every non-empty group of the whole match with its row
+   * count, in display order; empty otherwise. A tag grouping lists an asset
+   * once per tag, so these count appearances where `total` counts assets.
+   */
+  groups: AssetGroupCount[]
 }
 
 /** The query string of one read, as the endpoint takes it. */

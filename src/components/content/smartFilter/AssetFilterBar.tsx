@@ -45,6 +45,12 @@ type Props = {
   totalUnfiltered: number
   /** The request a filter would make — for the counts beside free text. */
   paramsFor: (filter: AssetFilter) => AssetQueryParams
+  /**
+   * Drawn at the bar's left end, before the funnel, behind a rule: the list's
+   * select-all (CON-378), which selects what this filter found and so sits on
+   * the line that says how many that is.
+   */
+  leading?: ReactNode
 }
 
 /**
@@ -101,6 +107,7 @@ export function AssetFilterBar({
   total,
   totalUnfiltered,
   paramsFor,
+  leading,
 }: Props) {
   const { t, i18n } = useTranslation()
   const listId = useId()
@@ -583,6 +590,12 @@ export function AssetFilterBar({
           }
         }}
       >
+        {leading && (
+          <>
+            {leading}
+            <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-border" />
+          </>
+        )}
         <FunnelSimpleIcon
           className="size-4 shrink-0 text-tertiary-foreground"
           aria-hidden

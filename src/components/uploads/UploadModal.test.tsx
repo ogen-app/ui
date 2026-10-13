@@ -34,6 +34,8 @@ function imageAsset(title: string, checksum: string): AssetListItem {
     campaign_ids: [],
     idea_counts: { waiting: 0, yes: 0, later: 0, no: 0 },
     gist: null,
+    next_idea: null,
+    published_at: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   }

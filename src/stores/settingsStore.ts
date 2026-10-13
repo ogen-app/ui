@@ -54,6 +54,15 @@ export type LocalSettings = {
    * behind that nothing will ever ask for again.
    */
   postsPlace: Record<string, PostsPlace>
+
+  /**
+   * The Assets list's group bands the user has folded, as `grouping:key`
+   * (`ideas:answered`, `tag:<id>`). Device-local display state, like the
+   * explainers: folding "All answered" on a laptop says nothing about how a
+   * teammate wants to see the list. A band nobody can reach any more (a deleted
+   * tag) leaves a short string behind that nothing reads.
+   */
+  collapsedAssetBands: string[]
 }
 
 /**
@@ -105,6 +114,9 @@ type SettingsState = LocalSettings &
     /** Close an explainer permanently. Idempotent. */
     dismissNote: (id: string) => void
 
+    /** Fold an Assets group band, or unfold it if it is folded. */
+    toggleAssetBand: (band: string) => void
+
     /**
      * Record that the user is looking at this campaign's posts, arranged this
      * way. Called by the views themselves, on every anchor change — the fold is
@@ -127,6 +139,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   lastOpenedModals: {},
   dismissedNotes: [],
   postsPlace: {},
+  collapsedAssetBands: [],
 }
 
 const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
@@ -216,6 +229,14 @@ export const useSettingsStore = create<SettingsState>()(
           )
         },
 
+        toggleAssetBand: (band) => {
+          set((state) => ({
+            collapsedAssetBands: state.collapsedAssetBands.includes(band)
+              ? state.collapsedAssetBands.filter((b) => b !== band)
+              : [...state.collapsedAssetBands, band],
+          }))
+        },
+
         rememberPostsPlace: (campaignId, visit) => {
           set((state) => {
             const prev = state.postsPlace[campaignId]
@@ -245,6 +266,7 @@ export const useSettingsStore = create<SettingsState>()(
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
           postsPlace: state.postsPlace,
+          collapsedAssetBands: state.collapsedAssetBands,
           // Don't persist
           // scope, campaignId — where you are, not what you chose
         }),
@@ -258,6 +280,11 @@ export const useSettingsStore = create<SettingsState>()(
             ...saved,
             panelMemory: sanitizePanelMemory(saved.panelMemory),
             postsPlace: sanitizePostsPlaces(saved.postsPlace),
+            collapsedAssetBands: Array.isArray(saved.collapsedAssetBands)
+              ? saved.collapsedAssetBands.filter(
+                  (band): band is string => typeof band === 'string',
+                )
+              : [],
           }
         },
       },

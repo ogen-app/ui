@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   EMPTY_FILTER,
   boundStart,
+  effectiveGroup,
   effectiveSort,
   filterFromSearch,
   parseAssetListSearch,
@@ -154,6 +155,7 @@ describe('the request', () => {
       kind: 'pdf',
       updated_after: new Date(2026, 9, 7).toISOString(),
       sort: '-updated_at',
+      group: 'ideas',
       tz: 'Europe/Kyiv',
     })
   })
@@ -168,6 +170,7 @@ describe('the request', () => {
       kind: 'pdf',
       scope_campaign: 'c1',
       sort: '-updated_at',
+      group: 'ideas',
       tz: 'Europe/Kyiv',
     })
   })
@@ -180,7 +183,8 @@ describe('the request', () => {
     })
     expect(effectiveSort(text, undefined)).toBe('relevance')
     expect(effectiveSort(text, 'title')).toBe('title')
-    expect(effectiveSort(EMPTY_FILTER, 'relevance')).toBe('-updated_at')
+    // Most undecided first otherwise — the list is read for what is left.
+    expect(effectiveSort(EMPTY_FILTER, 'relevance')).toBe('-ideas_undecided')
   })
 })
 
@@ -199,5 +203,40 @@ describe('the old syntax', () => {
     expect(parseFieldPrefix('type:pdf')?.field).toBe('kind')
     expect(parseFieldPrefix('https://acme.com')).toBeNull()
     expect(parseFieldPrefix('bees')).toBeNull()
+  })
+})
+
+describe('grouping', () => {
+  it('is grouped by ideas unless the address says otherwise', () => {
+    expect(parseAssetListSearch({})).toEqual({})
+    expect(parseAssetListSearch({ group: 'tag' })).toEqual({ group: 'tag' })
+    expect(parseAssetListSearch({ group: 'none' })).toEqual({ group: 'none' })
+    // The default stays out of the address, and nonsense is dropped.
+    expect(parseAssetListSearch({ group: 'ideas' })).toEqual({})
+    expect(parseAssetListSearch({ group: 'colour' })).toEqual({})
+  })
+
+  it('keeps the grouping beside the filter and the sort in the address', () => {
+    expect(searchFromFilter(pdfs, 'title', 'kind')).toEqual({
+      kind: 'pdf',
+      sort: 'title',
+      group: 'kind',
+    })
+    expect(searchFromFilter(pdfs, undefined, 'ideas')).toEqual({ kind: 'pdf' })
+  })
+
+  it('asks the server to group, and sends nothing for no grouping', () => {
+    expect(toRequestParams(pdfs, { ...ctx, group: 'created' }).group).toBe(
+      'created',
+    )
+    expect(toRequestParams(pdfs, { ...ctx, group: 'none' })).not.toHaveProperty(
+      'group',
+    )
+  })
+
+  it('has no campaign grouping on a campaign’s own page', () => {
+    expect(effectiveGroup('campaign', 'c1')).toBe('ideas')
+    expect(effectiveGroup('campaign', null)).toBe('campaign')
+    expect(effectiveGroup(undefined, null)).toBe('ideas')
   })
 })

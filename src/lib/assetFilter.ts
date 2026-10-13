@@ -99,17 +99,55 @@ export type UpdatedPreset = (typeof UPDATED_PRESETS)[number]
 export const NONE = 'none'
 
 export const ASSET_SORTS = [
+  '-ideas_undecided',
   '-updated_at',
   'updated_at',
+  '-created_at',
+  'created_at',
   'title',
   '-title',
-  '-ideas_undecided',
   'relevance',
 ] as const
 
 export type AssetSort = (typeof ASSET_SORTS)[number]
 
-export const DEFAULT_SORT: AssetSort = '-updated_at'
+/**
+ * Most undecided first (CON-378): the list is read for what is left to
+ * answer, so the documents with work in them come up first — inside each
+ * group, when the list is grouped.
+ */
+export const DEFAULT_SORT: AssetSort = '-ideas_undecided'
+
+/**
+ * What the list can be grouped by — the server's `group` values (CON-379),
+ * in the order the menu offers them. The server orders by the group first and
+ * counts each group over the whole match, so a group that spans pages still
+ * says how many it holds.
+ */
+export const ASSET_GROUPS = [
+  'ideas',
+  'created',
+  'campaign',
+  'tag',
+  'kind',
+] as const
+
+export type AssetGroup = (typeof ASSET_GROUPS)[number]
+
+/** A grouping, or none — `none` is ours and is never sent. */
+export type AssetGrouping = AssetGroup | 'none'
+
+/**
+ * Grouped by ideas unless asked otherwise: Undecided, All answered, No ideas
+ * yet — the screen's own question first.
+ */
+export const DEFAULT_GROUP: AssetGrouping = 'ideas'
+
+function isGrouping(value: unknown): value is AssetGrouping {
+  return (
+    value === 'none' || (ASSET_GROUPS as readonly unknown[]).includes(value)
+  )
+}
 
 /** The longest `text` the server takes, and the shortest. */
 export const TEXT_MIN = 2
@@ -154,7 +192,7 @@ export type AssetListSearch = Partial<
     | 'text',
     string
   >
-> & { sort?: AssetSort }
+> & { sort?: AssetSort; group?: AssetGrouping }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 
@@ -225,6 +263,8 @@ export function parseAssetListSearch(
     // Relevance means nothing without text, and the server refuses it.
     if (sort !== 'relevance' || out.text) out.sort = sort
   }
+  if (isGrouping(raw.group) && raw.group !== DEFAULT_GROUP)
+    out.group = raw.group
   return out
 }
 
@@ -246,10 +286,14 @@ export function filterFromSearch(search: AssetListSearch): AssetFilter {
   }
 }
 
-/** The search params for a filter and an explicitly chosen sort. */
+/**
+ * The search params for a filter, an explicitly chosen sort and a grouping.
+ * The default grouping stays out of the address, like the default sort.
+ */
 export function searchFromFilter(
   filter: AssetFilter,
   sort?: AssetSort,
+  group?: AssetGrouping,
 ): AssetListSearch {
   const out: AssetListSearch = {}
   for (const key of ['title', ...CHOICE_FIELDS] as const) {
@@ -260,6 +304,7 @@ export function searchFromFilter(
   if (filter.updatedBefore) out.updated_before = filter.updatedBefore
   if (filter.text) out.text = filter.text
   if (sort && (sort !== 'relevance' || filter.text)) out.sort = sort
+  if (group && group !== DEFAULT_GROUP) out.group = group
   return out
 }
 
@@ -268,8 +313,22 @@ export function isFilterActive(filter: AssetFilter): boolean {
 }
 
 /**
+ * The grouping the list is read in. A campaign's own page has no Campaign
+ * grouping — every row is in that campaign — so a link carrying one falls
+ * back to the default there rather than drawing one band.
+ */
+export function effectiveGroup(
+  chosen: AssetGrouping | undefined,
+  scopeCampaign: string | null,
+): AssetGrouping {
+  if (!chosen) return DEFAULT_GROUP
+  if (chosen === 'campaign' && scopeCampaign) return DEFAULT_GROUP
+  return chosen
+}
+
+/**
  * The order the list is read in: what was chosen, else relevance while
- * searching inside the documents, else newest first.
+ * searching inside the documents, else most undecided first.
  */
 export function effectiveSort(
   filter: AssetFilter,
@@ -499,6 +558,8 @@ export type RequestContext = {
   /** The campaign whose page this is; null in the workspace bank. */
   scopeCampaign: string | null
   sort: AssetSort
+  /** Sent unless `none`; the default when omitted. */
+  group?: AssetGrouping
   now: Date
   timeZone: string
 }
@@ -525,6 +586,8 @@ export function toRequestParams(
   if (filter.text) out.text = filter.text
   if (ctx.scopeCampaign) out.scope_campaign = ctx.scopeCampaign
   out.sort = ctx.sort
+  const group = ctx.group ?? DEFAULT_GROUP
+  if (group !== 'none') out.group = group
   out.tz = ctx.timeZone
   return out
 }
