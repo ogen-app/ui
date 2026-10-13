@@ -13,6 +13,7 @@ import { AssetKindMark } from '@/components/content/AssetKindMark'
 import { VerdictPill } from '@/components/content/VerdictPill'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaigns } from '@/hooks/useCampaigns'
+import { useIdeaClock } from '@/hooks/useIdeaClock'
 import { useIdeas } from '@/hooks/useIdeas'
 import { cn } from '@/lib'
 import { extentLabel } from '@/lib/assetExtent'
@@ -199,9 +200,12 @@ function AssetsTableComponent({
   // The whole backlog, grouped by source asset here rather than asked for
   // per row; the Ideas inbox reads the same cache.
   const ideas = useIdeas(null)
+  // Moved on when a postponed idea comes due, so its "Not now" turns
+  // Undecided on a list left open — without re-rendering on an interval.
+  const now = useIdeaClock(ideas.ideas)
   const ideaCounts = useMemo(
-    () => ideaCountsByAsset(ideas.ideas, new Date()),
-    [ideas.ideas],
+    () => ideaCountsByAsset(ideas.ideas, now),
+    [ideas.ideas, now],
   )
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
