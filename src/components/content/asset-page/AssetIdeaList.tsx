@@ -10,6 +10,7 @@ import {
   LightbulbIcon,
 } from '@phosphor-icons/react'
 import { VERDICT_ICON } from '@/components/content/verdictIcons'
+import { useIdeaClock } from '@/hooks/useIdeaClock'
 import { cn } from '@/lib'
 import { mergePageRefs, parseIdeaNote, refLabel } from '@/lib/assetAnalysis'
 import { VERDICT_ORDER, type VerdictKey } from '@/lib/assetList'
@@ -52,18 +53,20 @@ export function AssetIdeaList({
   const { verdict: asked } = useSearch({ strict: false })
   const navigate = useNavigate()
   const all = useMemo(() => lens.ideas.map(ideaFromWire), [lens.ideas])
-  const counts = useMemo(() => countIdeas(all, new Date()), [all])
+  // One clock for the counts and the filter, moved on when a postponed idea
+  // comes due — so the two never disagree about which pile it is in.
+  const now = useIdeaClock(all)
+  const counts = useMemo(() => countIdeas(all, now), [all, now])
   // A pile this reading has none of (a link from another lens) shows them all.
   const pile = asked && counts[asked] > 0 ? asked : undefined
   const ideas = useMemo(() => {
-    const now = new Date()
     if (!pile) return all.filter((idea) => idea.verdict !== 'no')
     return all.filter((idea) =>
       pile === 'waiting'
         ? isWaiting(idea, now)
         : idea.verdict === pile && !isWaiting(idea, now),
     )
-  }, [all, pile])
+  }, [all, pile, now])
   const choosePile = (next: VerdictKey) =>
     void navigate({
       to: '.',
