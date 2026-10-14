@@ -1,4 +1,4 @@
-import { memo, useState, type ReactNode } from 'react'
+import { memo, useRef, useState, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -311,24 +311,7 @@ function IdeaLine({
     case 'ideas': {
       const next = row.next_idea
       if (!next) return null
-      const more = row.idea_counts.waiting - 1
-      return (
-        <p className="flex min-w-0 items-center gap-2 text-sm">
-          <HugeiconsIcon
-            icon={VERDICT_ICON.waiting}
-            size={16}
-            strokeWidth={1.8}
-            aria-hidden
-            className="shrink-0 text-accent"
-          />
-          <NextIdea row={row} campaignId={campaignId} next={next} />
-          {more > 0 && (
-            <span className="shrink-0 text-secondary-foreground">
-              {t('content.list.nextIdeaMore', { count: more })}
-            </span>
-          )}
-        </p>
-      )
+      return <NextIdea row={row} campaignId={campaignId} next={next} />
     }
     case 'reading':
       return (
@@ -411,41 +394,79 @@ function NextIdea({
   const others = (lens?.ideas ?? []).filter((idea) => idea.id !== next.id)
   const shown = others.slice(0, OTHER_IDEAS_SHOWN)
 
+  const more = row.idea_counts.waiting - 1
+  const lineRef = useRef<HTMLParagraphElement>(null)
+  // Top-aligned with the line, unless the line sits low enough that the card
+  // would run off the foot of the screen — then bottom-aligned with it.
+  const [align, setAlign] = useState<'start' | 'end'>('start')
+  const onOpenChange = (next: boolean) => {
+    if (next && lineRef.current) {
+      const { top } = lineRef.current.getBoundingClientRect()
+      setAlign(top > window.innerHeight * 0.6 ? 'end' : 'start')
+    }
+    setOpen(next)
+  }
+
   return (
-    <Tooltip open={open} onOpenChange={setOpen} delayDuration={250}>
+    <Tooltip open={open} onOpenChange={onOpenChange} delayDuration={250}>
+      {/* The whole line is the trigger, and only as wide as its words, so the
+          card opens after "and N more" rather than over it. */}
       <TooltipTrigger asChild>
-        <Link
-          {...assetLink(row, campaignId, 'waiting')}
-          className="min-w-0 truncate text-foreground underline decoration-quinary underline-offset-3 outline-none hover:decoration-foreground focus-visible:decoration-foreground"
+        <p
+          ref={lineRef}
+          className="inline-flex max-w-full min-w-0 items-center gap-2 self-start text-sm"
         >
-          {next.title}
-        </Link>
+          <HugeiconsIcon
+            icon={VERDICT_ICON.waiting}
+            size={16}
+            strokeWidth={1.8}
+            aria-hidden
+            className="shrink-0 text-accent"
+          />
+          <Link
+            {...assetLink(row, campaignId, 'waiting')}
+            className="min-w-0 truncate text-foreground underline decoration-quinary underline-offset-3 outline-none hover:decoration-foreground focus-visible:decoration-foreground"
+          >
+            {next.title}
+          </Link>
+          {more > 0 && (
+            <span className="shrink-0 text-secondary-foreground">
+              {t('content.list.nextIdeaMore', { count: more })}
+            </span>
+          )}
+        </p>
       </TooltipTrigger>
       {/* A light card lifted off the row by its shadow, pointing back at the
           idea it belongs to: the other ideas' titles, one to a line, with a
           pale rule between them. */}
       <TooltipContent
         side="right"
+        align={align}
         sideOffset={10}
-        className="max-w-sm rounded-lg p-0 text-left shadow-lg [text-wrap:pretty]"
+        className="max-w-xs rounded-lg p-0 text-left shadow-lg [text-wrap:pretty]"
       >
         {analyses.isPending ? (
-          <p className="px-4 py-3 text-sm text-secondary-foreground">
+          <p className="px-4 py-3 text-xs text-secondary-foreground">
             {t('content.list.otherIdeasLoading')}
           </p>
         ) : shown.length === 0 ? (
-          <p className="px-4 py-3 text-sm text-secondary-foreground">
+          <p className="px-4 py-3 text-xs text-secondary-foreground">
             {t('content.list.otherIdeasNone')}
           </p>
         ) : (
-          <ul className="flex flex-col divide-y divide-quaternary">
+          // The rules are inset by the list's own padding, so they stop short
+          // of the card's edges.
+          <ul className="flex flex-col px-3 py-1">
             {shown.map((idea) => (
-              <li key={idea.id} className="px-4 py-2.5 text-sm text-foreground">
+              <li
+                key={idea.id}
+                className="border-t border-quaternary px-1 py-2 text-xs text-foreground first:border-t-0"
+              >
                 {idea.title}
               </li>
             ))}
             {others.length > shown.length && (
-              <li className="px-4 py-2.5 text-xs text-secondary-foreground">
+              <li className="border-t border-quaternary px-1 py-2 text-xs text-secondary-foreground">
                 {t('content.list.nextIdeaMore', {
                   count: others.length - shown.length,
                 })}

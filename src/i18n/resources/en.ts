@@ -4641,7 +4641,6 @@ export const en = {
         tag: 'once per tag',
       },
       sort: {
-        mostUndecided: 'Most undecided first',
         updatedNewest: 'Recently updated',
         updatedOldest: 'Least recently updated',
         addedNewest: 'Newest first',

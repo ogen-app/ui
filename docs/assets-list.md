@@ -19,6 +19,9 @@ sorts a list itself.
   - a custom range is two days.
   `toRequestParams` turns both into absolute bounds in the viewer's time zone,
   at request time. The filter is per tab and never goes in `/api/settings`.
+  The sort and the grouping are not in the URL: they are how this person
+  reads the list, kept per device (`settingsStore.assetSort`,
+  `assetGrouping`) and shared by the bank and every campaign's page.
 - **Paging:** `useAssetList` fetches 50 rows at a time, and the list asks for
   the next cursor as its foot comes into view (an `IntersectionObserver` in
   `AssetList`). The previous rows stay on screen while a new question loads.
@@ -26,9 +29,11 @@ sorts a list itself.
   list's own scroller, and a virtual window would not mount the band of a run
   that began above it. Rows are fifty to a page, so the DOM stays small.
 - **Sorting** is a server parameter, chosen from the Sort menu (there are no
-  column headers). Most undecided first is the default (`-ideas_undecided`);
-  the others are updated and added, newest or oldest, and title A–Z or Z–A.
-  Searching inside the documents adds and defaults to Best match.
+  column headers). The menu offers each field both ways, in pairs with an
+  inset rule between them: recently / least recently updated, newest / oldest
+  added, title A–Z / Z–A (`SORT_PAIRS`). Newest first is the default.
+  Searching inside the documents adds Best match, which is then the default.
+  The server's `-ideas_undecided` is not offered.
 - **Grouping** is a server parameter too (`group=`, CON-379); see below.
 - **On a campaign's page** the request carries `scope_campaign`. Totals and
   counts are then the campaign's, and Campaign is not offered as a field.
@@ -134,7 +139,7 @@ width the tags fold under the title and the spacer goes.
 - **Kind:** a bare 28px Hugeicons mark before the title (`AssetKindMark`),
   from the row's `kind`, in the file type's conventional colour (`--kind-*`
   in `index.css`): PDF red, document blue, spreadsheet and CSV green, slides
-  and notes orange, web page dark slate, recording pale teal, anything else
+  and notes orange, web page slate, recording rust, anything else
   near-black. The colours tint marks only, never text. An image puts its
   thumbnail there instead. The checkbox is top-aligned with the mark.
 - **Title:** an `<h3>`, written as words (`listTitle`): URL-encoding decoded, a
@@ -151,9 +156,10 @@ width the tags fold under the title and the spacer goes.
 - **The idea line** (`rowState`):
   - With ideas waiting: the next one by name (`next_idea`, the oldest
     undecided, chosen by the server), opening the asset on its undecided pile,
-    then "and N more". Hovering or focusing it opens a light card to its right,
-    lifted by a shadow, listing the asset's other ideas' titles with a pale
-    rule between them. They come from the same
+    then "and N more". Hovering or focusing the line opens a light card after
+    it, lifted by a shadow, listing the asset's other ideas' titles in small
+    type with inset rules between them. The card is top-aligned with the line,
+    or bottom-aligned when the line sits in the lower part of the screen. They come from the same
     reading as the counts (the workspace's lens in the bank, the campaign's on
     a campaign's page), read from `GET /:id/analyses` only on first hover.
   - Reading: "Reading this file." with a spinning icon while ingest or

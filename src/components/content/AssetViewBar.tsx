@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { Link, type LinkProps } from '@tanstack/react-router'
 import { Trans, useTranslation } from 'react-i18next'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   ASSET_GROUPS,
-  ASSET_SORTS,
+  SORT_PAIRS,
   type AssetGrouping,
   type AssetSort,
 } from '@/lib/assetFilter'
@@ -26,7 +27,6 @@ import { formatNumber } from '@/lib/intl'
 
 /** Each sort's catalogue key — a table, since a sort value isn't a key. */
 const SORT_KEY = {
-  '-ideas_undecided': 'mostUndecided',
   '-updated_at': 'updatedNewest',
   updated_at: 'updatedOldest',
   '-created_at': 'addedNewest',
@@ -88,7 +88,11 @@ export function AssetViewBar({
 }) {
   const { t, i18n } = useTranslation()
   const groupings = ASSET_GROUPS.filter((g) => !(scoped && g === 'campaign'))
-  const sorts = ASSET_SORTS.filter((s) => s !== 'relevance' || searching)
+  // Best match is a group of its own, first, while searching; then each
+  // field's two directions together.
+  const sortGroups: readonly (readonly AssetSort[])[] = searching
+    ? [['relevance'], ...SORT_PAIRS]
+    : SORT_PAIRS
 
   return (
     <div className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-5 gap-y-1 px-1 text-[13px]">
@@ -153,7 +157,7 @@ export function AssetViewBar({
                   )}
                 </DropdownMenuRadioItem>
               ))}
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="mx-2" />
               <DropdownMenuRadioItem value="none">
                 {t('content.view.group.none')}
               </DropdownMenuRadioItem>
@@ -175,10 +179,17 @@ export function AssetViewBar({
               value={sort}
               onValueChange={(v) => onSortChange(v as AssetSort)}
             >
-              {sorts.map((s) => (
-                <DropdownMenuRadioItem key={s} value={s}>
-                  {t(`content.view.sort.${SORT_KEY[s]}`)}
-                </DropdownMenuRadioItem>
+              {sortGroups.map((group, i) => (
+                <Fragment key={group.join()}>
+                  {/* Inset from the menu's edges: a rule between two pairs,
+                      not a border across the menu. */}
+                  {i > 0 && <DropdownMenuSeparator className="mx-2" />}
+                  {group.map((s) => (
+                    <DropdownMenuRadioItem key={s} value={s}>
+                      {t(`content.view.sort.${SORT_KEY[s]}`)}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </Fragment>
               ))}
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>

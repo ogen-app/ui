@@ -3451,7 +3451,6 @@ export const es: Translation = {
         tag: 'una vez por etiqueta',
       },
       sort: {
-        mostUndecided: 'Más ideas sin decidir primero',
         updatedNewest: 'Actualizados hace poco',
         updatedOldest: 'Actualizados hace más tiempo',
         addedNewest: 'Más recientes primero',

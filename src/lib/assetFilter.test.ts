@@ -5,6 +5,7 @@ import {
   effectiveGroup,
   effectiveSort,
   isGrouping,
+  isSort,
   filterFromSearch,
   parseAssetListSearch,
   parseFieldPrefix,
@@ -57,10 +58,10 @@ describe('the URL', () => {
     expect(parseAssetListSearch({ title: 2024 })).toEqual({ title: '2024' })
   })
 
-  it('keeps relevance only beside text', () => {
-    expect(parseAssetListSearch({ text: 'bees', sort: 'relevance' }).sort).toBe(
-      'relevance',
-    )
+  it('leaves the sort out of the address — it is a per-device preference', () => {
+    expect(parseAssetListSearch({ text: 'bees', sort: 'relevance' })).toEqual({
+      text: 'bees',
+    })
   })
 
   it('round-trips a filter through the search params', () => {
@@ -72,13 +73,12 @@ describe('the URL', () => {
         values: ['2026-10-01', '2026-10-08'],
       },
     )
-    const search = searchFromFilter(filter, 'title')
+    const search = searchFromFilter(filter)
     expect(search).toEqual({
       kind: 'pdf',
       tag_not: 't1,none',
       updated_after: '2026-10-01',
       updated_before: '2026-10-08',
-      sort: 'title',
     })
     expect(filterFromSearch(parseAssetListSearch(search))).toEqual(filter)
   })
@@ -185,7 +185,10 @@ describe('the request', () => {
     expect(effectiveSort(text, undefined)).toBe('relevance')
     expect(effectiveSort(text, 'title')).toBe('title')
     // Most undecided first otherwise — the list is read for what is left.
-    expect(effectiveSort(EMPTY_FILTER, 'relevance')).toBe('-ideas_undecided')
+    // Newest first otherwise, and a stored Best match without a search falls
+    // back to it.
+    expect(effectiveSort(EMPTY_FILTER, 'relevance')).toBe('-created_at')
+    expect(effectiveSort(EMPTY_FILTER, null)).toBe('-created_at')
   })
 })
 
@@ -207,13 +210,17 @@ describe('the old syntax', () => {
   })
 })
 
+describe('sorting', () => {
+  it('offers each field one way and back, and no longer most undecided first', () => {
+    expect(isSort('-ideas_undecided')).toBe(false)
+    expect(isSort('-created_at')).toBe(true)
+  })
+})
+
 describe('grouping', () => {
   it('is not part of the address — it is a per-device preference', () => {
     expect(parseAssetListSearch({ group: 'tag' })).toEqual({})
-    expect(searchFromFilter(pdfs, 'title')).toEqual({
-      kind: 'pdf',
-      sort: 'title',
-    })
+    expect(searchFromFilter(pdfs)).toEqual({ kind: 'pdf' })
   })
 
   it('asks the server to group by date added unless told otherwise, and sends nothing for none', () => {
