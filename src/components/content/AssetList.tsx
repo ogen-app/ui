@@ -67,8 +67,8 @@ const bandId = (grouping: AssetGrouping, key: string) => `${grouping}:${key}`
  * for the whole match — a band whose rows run onto the next page still says
  * how many it holds. A tag grouping lists a document once per tag, so the
  * same row may appear under two bands; that is the grouping, not a mistake.
- * A grouping with a single group draws no band at all: one band over
- * everything is chrome that says nothing.
+ * A grouping with a single group still draws its band: the band is what says
+ * the list is grouped, and by what.
  *
  * A band folds on its chevron. What is folded is display state, kept per
  * device (`settingsStore.collapsedAssetBands`), never the workspace's.
@@ -99,7 +99,7 @@ export function AssetList({
     () => new Map(groups.map((g) => [g.key, g.count])),
     [groups],
   )
-  const banded = grouping !== 'none' && groups.length > 1
+  const banded = grouping !== 'none' && groups.length > 0
   const selecting = selectedIds.size > 0
 
   // Where each band opens, worked out once per page of rows: the rows arrive

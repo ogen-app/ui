@@ -66,9 +66,6 @@ type Props = {
   onAddWebPage: () => void
 }
 
-/** The ideas grouping's keys, as the server names them (CON-379). */
-type IdeasBand = 'undecided' | 'answered' | 'none'
-
 /** The date-added grouping's disjoint bands. */
 type CreatedBand = '1d' | '7d' | '30d' | 'earlier'
 
@@ -191,8 +188,11 @@ export function ContentList({
   // Everything, some, or nothing — against the whole match, which is what the
   // box selects. Full clears; anything less fills it.
   const everything = total > 0 && (allMatching || ticked.size >= total)
+  // `ml-2` lines the box up with the rows' check boxes: the bar's inset is
+  // 12px, a row's 20px.
   const selectAll = (
     <Checkbox
+      className="ml-2"
       checked={everything ? true : ticked.size > 0 ? 'indeterminate' : false}
       disabled={total === 0 || resolving}
       onCheckedChange={() =>
@@ -212,10 +212,6 @@ export function ContentList({
   const groupLabel = useCallback(
     (key: string): string => {
       switch (grouping) {
-        case 'ideas':
-          return t(`content.list.band.ideas.${key as IdeasBand}`, {
-            defaultValue: key,
-          })
         case 'created':
           return t(`content.list.band.created.${key as CreatedBand}`, {
             defaultValue: key,
@@ -330,6 +326,7 @@ export function ContentList({
 
       <AssetViewBar
         undecided={list.ideasUndecidedTotal}
+        documents={total}
         ideasLink={ideasLink}
         grouping={grouping}
         onGroupingChange={onGroupingChange}

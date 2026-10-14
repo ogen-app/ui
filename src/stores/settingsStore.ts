@@ -1,5 +1,10 @@
 import { create } from 'zustand'
 import { persist, devtools } from 'zustand/middleware'
+import {
+  DEFAULT_GROUP,
+  isGrouping,
+  type AssetGrouping,
+} from '@/lib/assetFilter'
 import { SETTINGS_STORE_PERSIST_KEY } from '@/stores/constants'
 import {
   DEFAULT_PANEL_MEMORY,
@@ -63,6 +68,14 @@ export type LocalSettings = {
    * tag) leaves a short string behind that nothing reads.
    */
   collapsedAssetBands: string[]
+
+  /**
+   * How the Assets list is grouped (CON-378). One choice for the bank and
+   * every campaign's page, so moving between them keeps it, and kept per
+   * device like the folded bands — it is how this person likes to read the
+   * list, not a fact about the workspace.
+   */
+  assetGrouping: AssetGrouping
 }
 
 /**
@@ -117,6 +130,8 @@ type SettingsState = LocalSettings &
     /** Fold an Assets group band, or unfold it if it is folded. */
     toggleAssetBand: (band: string) => void
 
+    setAssetGrouping: (grouping: AssetGrouping) => void
+
     /**
      * Record that the user is looking at this campaign's posts, arranged this
      * way. Called by the views themselves, on every anchor change — the fold is
@@ -140,6 +155,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   dismissedNotes: [],
   postsPlace: {},
   collapsedAssetBands: [],
+  assetGrouping: DEFAULT_GROUP,
 }
 
 const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
@@ -237,6 +253,8 @@ export const useSettingsStore = create<SettingsState>()(
           }))
         },
 
+        setAssetGrouping: (grouping) => set({ assetGrouping: grouping }),
+
         rememberPostsPlace: (campaignId, visit) => {
           set((state) => {
             const prev = state.postsPlace[campaignId]
@@ -267,6 +285,7 @@ export const useSettingsStore = create<SettingsState>()(
           dismissedNotes: state.dismissedNotes,
           postsPlace: state.postsPlace,
           collapsedAssetBands: state.collapsedAssetBands,
+          assetGrouping: state.assetGrouping,
           // Don't persist
           // scope, campaignId — where you are, not what you chose
         }),
@@ -285,6 +304,11 @@ export const useSettingsStore = create<SettingsState>()(
                   (band): band is string => typeof band === 'string',
                 )
               : [],
+            // A grouping this build no longer offers (the old `ideas`) falls
+            // back to the default rather than asking the server for it.
+            assetGrouping: isGrouping(saved.assetGrouping)
+              ? saved.assetGrouping
+              : DEFAULT_GROUP,
           }
         },
       },

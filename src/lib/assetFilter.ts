@@ -122,15 +122,10 @@ export const DEFAULT_SORT: AssetSort = '-ideas_undecided'
  * What the list can be grouped by — the server's `group` values (CON-379),
  * in the order the menu offers them. The server orders by the group first and
  * counts each group over the whole match, so a group that spans pages still
- * says how many it holds.
+ * says how many it holds. The server's `ideas` grouping is not offered: the
+ * pill and the sort already say what is left to answer.
  */
-export const ASSET_GROUPS = [
-  'ideas',
-  'created',
-  'campaign',
-  'tag',
-  'kind',
-] as const
+export const ASSET_GROUPS = ['created', 'campaign', 'tag', 'kind'] as const
 
 export type AssetGroup = (typeof ASSET_GROUPS)[number]
 
@@ -138,12 +133,16 @@ export type AssetGroup = (typeof ASSET_GROUPS)[number]
 export type AssetGrouping = AssetGroup | 'none'
 
 /**
- * Grouped by ideas unless asked otherwise: Undecided, All answered, No ideas
- * yet — the screen's own question first.
+ * Grouped by when documents were added unless the user chose otherwise:
+ * Today, Past week, Past month, Earlier.
  */
-export const DEFAULT_GROUP: AssetGrouping = 'ideas'
+export const DEFAULT_GROUP: AssetGrouping = 'created'
 
-function isGrouping(value: unknown): value is AssetGrouping {
+/**
+ * A grouping read back from somewhere this build doesn't control — a
+ * persisted preference from an older build, say — or null.
+ */
+export function isGrouping(value: unknown): value is AssetGrouping {
   return (
     value === 'none' || (ASSET_GROUPS as readonly unknown[]).includes(value)
   )
@@ -192,7 +191,7 @@ export type AssetListSearch = Partial<
     | 'text',
     string
   >
-> & { sort?: AssetSort; group?: AssetGrouping }
+> & { sort?: AssetSort }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 
@@ -263,8 +262,6 @@ export function parseAssetListSearch(
     // Relevance means nothing without text, and the server refuses it.
     if (sort !== 'relevance' || out.text) out.sort = sort
   }
-  if (isGrouping(raw.group) && raw.group !== DEFAULT_GROUP)
-    out.group = raw.group
   return out
 }
 
@@ -286,14 +283,10 @@ export function filterFromSearch(search: AssetListSearch): AssetFilter {
   }
 }
 
-/**
- * The search params for a filter, an explicitly chosen sort and a grouping.
- * The default grouping stays out of the address, like the default sort.
- */
+/** The search params for a filter and an explicitly chosen sort. */
 export function searchFromFilter(
   filter: AssetFilter,
   sort?: AssetSort,
-  group?: AssetGrouping,
 ): AssetListSearch {
   const out: AssetListSearch = {}
   for (const key of ['title', ...CHOICE_FIELDS] as const) {
@@ -304,7 +297,6 @@ export function searchFromFilter(
   if (filter.updatedBefore) out.updated_before = filter.updatedBefore
   if (filter.text) out.text = filter.text
   if (sort && (sort !== 'relevance' || filter.text)) out.sort = sort
-  if (group && group !== DEFAULT_GROUP) out.group = group
   return out
 }
 
@@ -313,9 +305,11 @@ export function isFilterActive(filter: AssetFilter): boolean {
 }
 
 /**
- * The grouping the list is read in. A campaign's own page has no Campaign
- * grouping — every row is in that campaign — so a link carrying one falls
- * back to the default there rather than drawing one band.
+ * The grouping the list is read in. It is a per-device preference
+ * (`settingsStore.assetGrouping`), shared by the bank and every campaign's
+ * page, not part of the address. A campaign's own page has no Campaign
+ * grouping — every row is in that campaign — so a preference for one falls
+ * back to the default there, and comes back in the bank.
  */
 export function effectiveGroup(
   chosen: AssetGrouping | undefined,

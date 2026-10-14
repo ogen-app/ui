@@ -39,14 +39,21 @@ sorts a list itself.
 
 Between the filter bar and the list (`AssetViewBar`):
 
-- **"29 ideas in these documents are waiting for a verdict."** It counts ideas,
-  not documents: the response's `ideas_undecided_total`, summed by the server
-  over the whole match. The figure links to Ideas (the campaign's, on a
-  campaign's page). With none waiting, the sentence is left out.
-- **Group by:** Ideas (the default), Date added, Campaign, Tag, Type, or No
-  grouping. Kept in the URL as `group`; the default is left out of it, and
-  `none` is ours and never sent. A campaign's own page has no Campaign
-  grouping.
+- **"29 ideas in 6 documents are waiting for a verdict."** The ideas are the
+  response's `ideas_undecided_total`, summed by the server over the whole
+  match; the documents are `total`, the filtered count or all of them. The
+  figure links to Ideas (the campaign's, on a campaign's page). With none
+  waiting, the sentence is left out.
+- **Which reading counts** is the server's: one lens per context, the
+  workspace's in the bank and the campaign's on a campaign's page. Until
+  CON-380 ships the server still adds the workspace lens to a campaign's, and
+  every campaign's to the bank's.
+- **Group by:** Date added (the default), Campaign, Tag, Type, or No grouping.
+  Not in the URL: it is a per-device preference (`settingsStore.assetGrouping`),
+  shared by the bank and every campaign's page, so a reload or a move between
+  them keeps it. `none` is ours and never sent. A campaign's own page has no
+  Campaign grouping, and falls back to Date added there. The server's `ideas`
+  grouping is not offered.
 - **Sort:** as above.
 
 The server orders rows by group first, adds `group_key` to each row, and
@@ -54,12 +61,12 @@ answers `groups`: every group's key and count over the whole match, in display
 order. So a band says how many it holds even when its rows run onto the next
 page.
 
-- **Ideas** groups are Undecided, All answered and No ideas yet.
 - **Date added** groups are Today, Past week, Past month and Earlier: disjoint
   bands, unlike the `updated` presets.
 - **Tag** lists a document once per tag, so the same row can appear under two
   bands, and `groups` counts appearances while `total` counts documents.
-- A grouping that produces a single group draws no band.
+- A band is drawn whenever the list is grouped, even for a single group: it is
+  what says the list is grouped, and by what.
 - Bands are `<h2>`s, sticky, and fold on a click. What is folded is kept per
   device (`settingsStore.collapsedAssetBands`), never in `/api/settings`.
 
@@ -100,7 +107,7 @@ choice becomes a token that reads as a sentence: `Type is PDF ×`.
 ## Selection
 
 Select all is a checkbox at the filter bar's left end (its `leading` slot),
-lined up with the rows' checkboxes. It selects **every match**, not the rows
+lined up horizontally with the rows' checkboxes. It selects **every match**, not the rows
 loaded so far, by asking `ids_only=true` with the same parameters (without
 `group`). It shows a dash while some are selected, and clicking it when all
 are clears the selection. Bulk tag and bulk delete then act on all N, and the
@@ -123,23 +130,27 @@ width the tags fold under the title and the spacer goes.
 
 - **Kind:** a bare 28px Hugeicons mark at full ink, before the title
   (`AssetKindMark`), from the row's `kind`. An image puts its thumbnail there
-  instead.
+  instead. The checkbox is top-aligned with it.
 - **Title:** an `<h3>`, written as words (`listTitle`): URL-encoding decoded, a
   file's extension dropped, underscores and hyphens read as spaces, and a
   page's " - InfoQ" suffix dropped when the row shows its domain.
-- **Facts:** one line, "PDF · 94 pages · published last year": the kind, a
-  page's domain, a recording's duration, a file's pages, then the date
-  (`rowDate`). The date is when the source was published (`published_at`,
-  read from its metadata at ingest) or, failing that, when it was added, and
-  says which. The exact date is the tooltip. A partial read adds its status.
+- **Facts:** one line, "94 pages · added 2 days ago", then a chip with a clock,
+  "published last year", when the source's metadata said when
+  (`published_at`). They are two facts, so both show (`rowDates`), each with
+  its exact date as the tooltip. No kind word: the mark already says it. A
+  page names its domain, a recording its duration; a partial read adds its
+  status.
 - **Summary:** the analysis gist, two lines at most; during a Text mentions
   search, where it matched instead (`MatchSnippet`).
 - **The idea line** (`rowState`):
   - With ideas waiting: the next one by name (`next_idea`, the oldest
     undecided, chosen by the server), opening the asset on its undecided pile,
-    then "and N more".
-  - Reading: "Reading this file." while ingest or analysis runs. No pill and
-    no summary yet.
+    then "and N more". Hovering or focusing it opens a dark card to its right
+    with the asset's other ideas, title and note. They come from the same
+    reading as the counts (the workspace's lens in the bank, the campaign's on
+    a campaign's page), read from `GET /:id/analyses` only on first hover.
+  - Reading: "Reading this file." with a spinning icon while ingest or
+    analysis runs. No pill and no summary yet.
   - Failed: "We couldn't read this file." with the reason worded from
     `failure_code` (`ingestFailureMessage`), then "Upload it again, or delete
     it." Nothing re-runs a PDF, so there is no retry.
@@ -157,9 +168,10 @@ width the tags fold under the title and the spacer goes.
 - **Campaign:** under the pill, each with its `CampaignMark`. On a campaign's
   own list only the others are named. "No campaign" is said only in the bank,
   and only once the campaigns have loaded.
-- **Bin:** `Delete02Icon`, no box, at the row's top-right. It shows on hover
-  or focus only, and on touch screens, and goes through
-  `DeleteDocumentsDialog`.
+- **Bin:** a 24px `Delete02Icon`, no box, at the row's top-right on the
+  checkbox's line. It shows on hover or focus only, and on touch screens, and
+  goes through `DeleteDocumentsDialog`. The bin and the checkbox fade in
+  (opacity, ease-out, 200ms; none with reduced motion).
 
 ## The asset page's piles
 

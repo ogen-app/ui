@@ -35,7 +35,6 @@ import {
   toRequestParams,
   viewerTimeZone,
   type AssetFilter,
-  type AssetGrouping,
   type AssetListSearch,
   type AssetSort,
 } from '@/lib/assetFilter'
@@ -46,6 +45,7 @@ import {
   seedFromWholeBank,
 } from '@/lib/campaignMembership'
 import { seedsWholeBank } from '@/lib/campaignSources'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { useUploadStore } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Campaign } from '@/types/campaigns'
@@ -115,7 +115,9 @@ export function ContentPage({
   const filter = useMemo(() => filterFromSearch(search), [search])
   const sort = effectiveSort(filter, search.sort)
   const scope = campaign?.id ?? null
-  const grouping = effectiveGroup(search.group, scope)
+  const chosenGrouping = useSettingsStore((s) => s.assetGrouping)
+  const setGrouping = useSettingsStore((s) => s.setAssetGrouping)
+  const grouping = effectiveGroup(chosenGrouping, scope)
   // The day, not the instant: a preset like "Last 7 days" resolves to a
   // midnight, so the request — and the Query key — only change at midnight.
   const today = new Date().toDateString()
@@ -134,19 +136,12 @@ export function ContentPage({
   const list = useAssetList(params, { facets: facetsFor(scope) })
 
   const setFilter = useCallback(
-    (next: AssetFilter) =>
-      onSearchChange(searchFromFilter(next, search.sort, search.group)),
-    [onSearchChange, search.sort, search.group],
+    (next: AssetFilter) => onSearchChange(searchFromFilter(next, search.sort)),
+    [onSearchChange, search.sort],
   )
   const setSort = useCallback(
-    (next: AssetSort) =>
-      onSearchChange(searchFromFilter(filter, next, search.group)),
-    [onSearchChange, filter, search.group],
-  )
-  const setGrouping = useCallback(
-    (next: AssetGrouping) =>
-      onSearchChange(searchFromFilter(filter, search.sort, next)),
-    [onSearchChange, filter, search.sort],
+    (next: AssetSort) => onSearchChange(searchFromFilter(filter, next)),
+    [onSearchChange, filter],
   )
 
   const enqueueUploads = useUploadStore((s) => s.enqueue)

@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from 'react'
+import { memo, useState, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -6,26 +6,34 @@ import { useQueryClient } from '@tanstack/react-query'
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
 import {
   Alert02Icon,
+  Clock01Icon,
   Delete02Icon,
   IdeaIcon,
   Loading03Icon,
 } from '@hugeicons/core-free-icons'
-import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { useRetryAssetAnalysis } from '@/hooks/useAssetAnalyses'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
+  useAssetAnalyses,
+  useRetryAssetAnalysis,
+} from '@/hooks/useAssetAnalyses'
 import { ASSET_LIST_KEY } from '@/hooks/useContent'
 import { cn } from '@/lib'
 import {
   assetLink,
   formatDuration,
   listTitle,
-  rowDate,
+  rowDates,
   rowState,
 } from '@/lib/assetList'
 import { statusToBadge } from '@/lib/assetStatus'
 import { ingestFailureMessage } from '@/lib/uploadError'
-import type { AssetListItem } from '@/types/assetList'
+import type { AssetListItem, AssetNextIdea } from '@/types/assetList'
 import { CampaignMark } from './asset-page/CampaignMark'
 import { AssetKindMark } from './AssetKindMark'
 import { MatchSnippet } from './MatchSnippet'
@@ -106,8 +114,10 @@ function AssetListRowComponent({
         checked={selected}
         onCheckedChange={() => onToggle(row.id)}
         aria-label={t('content.list.selectRow', { title })}
+        // Top-aligned with the kind mark's glyph, which sits a few pixels
+        // inside its 32px box.
         className={cn(
-          'mt-1.5',
+          'mt-1 transition-opacity duration-200 ease-out motion-reduce:transition-none',
           !selecting &&
             !selected &&
             'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
@@ -115,7 +125,7 @@ function AssetListRowComponent({
       />
 
       <div className="flex min-w-0 flex-col">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <span className="flex size-8 shrink-0 items-center justify-center">
             <AssetKindMark asset={row} />
           </span>
@@ -139,16 +149,16 @@ function AssetListRowComponent({
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-2.5 pl-11">
+        {/* The same gap under the head whatever comes first — a summary, a
+            match, or a state line on a document still being read. */}
+        <div className="mt-2 flex min-w-0 flex-col gap-2.5 pl-11 empty:hidden">
           {row.match ? (
-            <div className="mt-1.5">
-              <MatchSnippet match={row.match} />
-            </div>
+            <MatchSnippet match={row.match} />
           ) : (
             gist &&
             state !== 'reading' &&
             state !== 'failed' && (
-              <p className="mt-1.5 line-clamp-2 text-sm text-secondary-foreground">
+              <p className="line-clamp-2 text-sm text-secondary-foreground">
                 {gist}
               </p>
             )
@@ -161,7 +171,7 @@ function AssetListRowComponent({
           the title there, and an empty grid item would still take a column. */}
       <div className="hidden pt-1 @4xl:block">{tags}</div>
 
-      <div className="flex flex-col items-start gap-2 pr-9 @4xl:col-start-5">
+      <div className="flex flex-col items-start gap-2 pr-10 @4xl:col-start-5">
         {state === 'ideas' && (
           <VerdictPill
             counts={row.idea_counts}
@@ -178,22 +188,22 @@ function AssetListRowComponent({
 
       {/* Out of sight until the row is pointed at or something in it is
           focused — still a tab stop, still the same confirmation. A screen
-          with no hover shows it. No box and no border: a bin is a mark. */}
-      <Button
-        variant="ghost"
-        size="xsIcon"
+          with no hover shows it. No box and no border: a bin is a mark.
+          24px, centred on the check box's line (row inset 20 + 4 + half of
+          12 = 30px down, less half of 24). */}
+      <button
+        type="button"
         aria-label={t('content.list.deleteRow', { title })}
-        className="absolute top-4 right-4 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-transparent focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+        className="absolute top-[18px] right-5 flex size-6 items-center justify-center text-secondary-foreground opacity-0 outline-none transition-opacity duration-200 ease-out group-focus-within:opacity-100 group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none [@media(hover:none)]:opacity-100"
         onClick={() => onDelete(row)}
       >
         <HugeiconsIcon
           icon={Delete02Icon}
-          size={20}
+          size={24}
           strokeWidth={1.5}
           aria-hidden
-          className="text-secondary-foreground hover:text-destructive"
         />
-      </Button>
+      </button>
     </li>
   )
 }
@@ -211,9 +221,10 @@ function partialLabel(t: TFunction, row: AssetListItem): string | null {
 }
 
 /**
- * "PDF · 94 pages · published 14 months ago" — what kind of thing it is, how
- * much of it there is, and how old. A page names its site; a recording its
- * length. The tags are not here: they have a column of their own.
+ * "94 pages · added 2 days ago", then the publication date in a chip when the
+ * source said when it was published. No kind word: the mark before the title
+ * already says it. A page names its site, a recording its length; the tags
+ * have a column of their own.
  */
 function Facts({ row, now }: { row: AssetListItem; now: Date }) {
   const { t, i18n } = useTranslation()
@@ -221,25 +232,38 @@ function Facts({ row, now }: { row: AssetListItem; now: Date }) {
   const domain = row.type === 'URL' ? hostOf(row.source_url) : null
   const pages = settling ? 0 : (row.file?.page_count ?? 0)
   const ms = row.file?.duration_ms ?? 0
-  const date = rowDate(t, row, now, i18n.language)
+  const { added, published } = rowDates(t, row, now, i18n.language)
   const facts = [
-    t(`content.list.kind.${row.kind}`),
     domain,
     ms > 0 ? formatDuration(t, ms) : null,
     pages > 0 ? t('content.extent.pages', { count: pages }) : null,
   ].filter(Boolean)
   const partial = partialLabel(t, row)
   return (
-    <span className="flex flex-wrap items-center gap-x-2 text-xs text-secondary-foreground">
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-secondary-foreground">
       <span className="tabular-nums">
         {facts.join(' · ')}
-        {date && (
+        {added && (
           <>
-            {' · '}
-            <span title={date.exact}>{date.label}</span>
+            {facts.length > 0 && ' · '}
+            <span title={added.exact}>{added.label}</span>
           </>
         )}
       </span>
+      {published && (
+        <span
+          title={published.exact}
+          className="inline-flex items-center gap-1 rounded-full bg-tertiary px-2 py-px text-foreground"
+        >
+          <HugeiconsIcon
+            icon={Clock01Icon}
+            size={12}
+            strokeWidth={1.8}
+            aria-hidden
+          />
+          {published.label}
+        </span>
+      )}
       {partial && (
         <StatusBadge
           tone={statusToBadge(row.status).tone}
@@ -297,12 +321,7 @@ function IdeaLine({
             aria-hidden
             className="shrink-0 text-accent"
           />
-          <Link
-            {...assetLink(row, campaignId, 'waiting')}
-            className="min-w-0 truncate text-foreground underline decoration-quinary underline-offset-3 outline-none hover:decoration-foreground focus-visible:decoration-foreground"
-          >
-            {next.title}
-          </Link>
+          <NextIdea row={row} campaignId={campaignId} next={next} />
           {more > 0 && (
             <span className="shrink-0 text-secondary-foreground">
               {t('content.list.nextIdeaMore', { count: more })}
@@ -313,7 +332,10 @@ function IdeaLine({
     }
     case 'reading':
       return (
-        <StatusLine icon={Loading03Icon} iconClass="text-accent">
+        <StatusLine
+          icon={Loading03Icon}
+          iconClass="text-accent motion-safe:animate-spin"
+        >
           <strong className="font-medium text-foreground">
             {t('content.list.readingTitle')}
           </strong>{' '}
@@ -353,6 +375,100 @@ function IdeaLine({
     case 'unanalysed':
       return null
   }
+}
+
+/** How many of the other ideas the hover list names before "and N more". */
+const OTHER_IDEAS_SHOWN = 8
+
+/**
+ * The next idea's title, and on hover or focus the asset's other ideas beside
+ * it — title and note, small, on the dark surface so it reads as a different
+ * layer from the row.
+ *
+ * The ideas are those of one reading: the workspace's in the bank, the
+ * campaign's on a campaign's page — the same lens the row's counts are meant
+ * to come from (CON-380). They are read from `GET /:id/analyses` only when the
+ * list is first opened, and then cached under the asset's key, so a page of
+ * fifty rows costs nothing until somebody points at one.
+ */
+function NextIdea({
+  row,
+  campaignId,
+  next,
+}: {
+  row: AssetListItem
+  campaignId: string | null
+  next: AssetNextIdea
+}) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const analyses = useAssetAnalyses(row.id, {
+    assetStatus: row.status,
+    enabled: open,
+  })
+  const lens = analyses.data?.find(
+    (a) => (a.campaign_id ?? null) === campaignId,
+  )
+  const others = (lens?.ideas ?? []).filter((idea) => idea.id !== next.id)
+  const shown = others.slice(0, OTHER_IDEAS_SHOWN)
+
+  return (
+    <Tooltip open={open} onOpenChange={setOpen} delayDuration={250}>
+      <TooltipTrigger asChild>
+        <Link
+          {...assetLink(row, campaignId, 'waiting')}
+          className="min-w-0 truncate text-foreground underline decoration-quinary underline-offset-3 outline-none hover:decoration-foreground focus-visible:decoration-foreground"
+        >
+          {next.title}
+        </Link>
+      </TooltipTrigger>
+      {/* A dark card, rounded, pointing back at the idea it belongs to: each
+          idea's title in full ink, its note dimmed under it. */}
+      <TooltipContent
+        side="right"
+        sideOffset={10}
+        className="max-w-sm rounded-xl bg-primary-foreground p-4 text-left text-primary shadow-lg [text-wrap:pretty]"
+        arrowClassName="bg-primary-foreground fill-primary-foreground"
+      >
+        {analyses.isPending ? (
+          <p className="text-sm text-quinary">
+            {t('content.list.otherIdeasLoading')}
+          </p>
+        ) : shown.length === 0 ? (
+          <p className="text-sm text-quinary">
+            {t('content.list.otherIdeasNone')}
+          </p>
+        ) : (
+          <>
+            <p className="mb-3 text-xs font-medium text-quinary">
+              {t('content.list.otherIdeasHeading', { count: others.length })}
+            </p>
+            <ul className="flex flex-col gap-3">
+              {shown.map((idea) => (
+                <li key={idea.id} className="flex flex-col gap-0.5">
+                  <p className="text-sm font-medium text-primary">
+                    {idea.title}
+                  </p>
+                  {idea.note.trim() && (
+                    <p className="line-clamp-2 text-xs/5 text-quinary">
+                      {idea.note}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {others.length > shown.length && (
+              <p className="mt-3 text-xs text-quinary">
+                {t('content.list.nextIdeaMore', {
+                  count: others.length - shown.length,
+                })}
+              </p>
+            )}
+          </>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  )
 }
 
 function StatusLine({

@@ -5,7 +5,7 @@ import {
   formatDuration,
   listDate,
   listTitle,
-  rowDate,
+  rowDates,
   rowState,
   verdictSentence,
 } from './assetList'
@@ -178,13 +178,13 @@ describe('rowState', () => {
   })
 })
 
-describe('rowDate', () => {
+describe('rowDates', () => {
   const now = new Date('2026-10-13T12:00:00Z')
   const echo = ((key: string, opts?: { when?: string }) =>
     `${key}(${opts?.when ?? ''})`) as TFunction
 
-  it('says when the source was published when it said so', () => {
-    const date = rowDate(
+  it('says when it was added, and separately when the source was published', () => {
+    const { added, published } = rowDates(
       echo,
       {
         published_at: '2026-10-10T12:00:00Z',
@@ -193,18 +193,19 @@ describe('rowDate', () => {
       now,
       'en',
     )
-    expect(date?.label).toBe('content.list.publishedAgo(3 days ago)')
+    expect(added?.label).toBe('content.list.addedAgo(1 hour ago)')
+    expect(published?.label).toBe('content.list.publishedAgo(3 days ago)')
   })
 
-  it('says when it was added otherwise, and "just now" inside a minute', () => {
-    expect(
-      rowDate(
-        echo,
-        { published_at: null, created_at: '2026-10-13T11:59:30Z' },
-        now,
-        'en',
-      )?.label,
-    ).toBe('content.list.addedAgo(content.list.justNow())')
+  it('has no publication date when the source never said, and "just now" inside a minute', () => {
+    const { added, published } = rowDates(
+      echo,
+      { published_at: null, created_at: '2026-10-13T11:59:30Z' },
+      now,
+      'en',
+    )
+    expect(added?.label).toBe('content.list.addedAgo(content.list.justNow())')
+    expect(published).toBeNull()
   })
 })
 

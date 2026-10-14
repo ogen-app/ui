@@ -4336,13 +4336,13 @@ export const en = {
       /** A group band's fold, named for the group. */
       fold: 'Fold {{group}}',
       unfold: 'Unfold {{group}}',
-      /** The bands of the Ideas and Date added groupings (CON-379). */
+      /** The other ideas, on hover over the next one. */
+      otherIdeasHeading_one: '{{count}} other idea',
+      otherIdeasHeading_other: '{{count}} other ideas',
+      otherIdeasLoading: 'Loading the other ideas…',
+      otherIdeasNone: 'No other ideas from this reading.',
+      /** The bands of the Date added grouping (CON-379). */
       band: {
-        ideas: {
-          undecided: 'Undecided',
-          answered: 'All answered',
-          none: 'No ideas yet',
-        },
         created: {
           '1d': 'Today',
           '7d': 'Past week',
@@ -4618,16 +4618,20 @@ export const en = {
      * to answer, and how the list is grouped and sorted.
      */
     view: {
-      /** `<ideas>` links to where they are answered. Counts ideas, not documents. */
+      /**
+       * `<ideas>` links to where they are answered. `documents` is
+       * `content.view.documents`: the filtered count, or all of them.
+       */
       undecided_one:
-        '<ideas>{{formatted}} idea</ideas> in these documents is waiting for a verdict.',
+        '<ideas>{{formatted}} idea</ideas> in {{documents}} is waiting for a verdict.',
       undecided_other:
-        '<ideas>{{formatted}} ideas</ideas> in these documents are waiting for a verdict.',
+        '<ideas>{{formatted}} ideas</ideas> in {{documents}} are waiting for a verdict.',
+      documents_one: '{{formatted}} document',
+      documents_other: '{{formatted}} documents',
       groupBy: 'Group by',
       groupByHeading: 'GROUP BY',
       sortBy: 'Sort',
       group: {
-        ideas: 'Ideas',
         created: 'Date added',
         campaign: 'Campaign',
         tag: 'Tag',
@@ -4636,7 +4640,6 @@ export const en = {
       },
       /** Beside an option in the menu: what is not obvious about it. */
       groupHint: {
-        ideas: '3 groups',
         tag: 'once per tag',
       },
       sort: {
