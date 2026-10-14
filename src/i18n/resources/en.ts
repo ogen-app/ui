@@ -4337,8 +4337,6 @@ export const en = {
       fold: 'Fold {{group}}',
       unfold: 'Unfold {{group}}',
       /** The other ideas, on hover over the next one. */
-      otherIdeasHeading_one: '{{count}} other idea',
-      otherIdeasHeading_other: '{{count}} other ideas',
       otherIdeasLoading: 'Loading the other ideas…',
       otherIdeasNone: 'No other ideas from this reading.',
       /** The bands of the Date added grouping (CON-379). */

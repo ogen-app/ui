@@ -107,7 +107,8 @@ choice becomes a token that reads as a sentence: `Type is PDF ×`.
 ## Selection
 
 Select all is a checkbox at the filter bar's left end (its `leading` slot),
-lined up horizontally with the rows' checkboxes. It selects **every match**, not the rows
+lined up horizontally with the rows' checkboxes, with as much room on its
+right, up to the rule, as on its left. It selects **every match**, not the rows
 loaded so far, by asking `ids_only=true` with the same parameters (without
 `group`). It shows a dash while some are selected, and clicking it when all
 are clears the selection. Bulk tag and bulk delete then act on all N, and the
@@ -128,9 +129,12 @@ re-wraps it; the tags (168px), right after the text; a spacer that takes the
 slack; then the pill and the campaign (200px). Below the `@4xl` container
 width the tags fold under the title and the spacer goes.
 
-- **Kind:** a bare 28px Hugeicons mark at full ink, before the title
-  (`AssetKindMark`), from the row's `kind`. An image puts its thumbnail there
-  instead. The checkbox is top-aligned with it.
+- **Kind:** a bare 28px Hugeicons mark before the title (`AssetKindMark`),
+  from the row's `kind`, in the file type's conventional colour (`--kind-*`
+  in `index.css`): PDF red, document blue, spreadsheet and CSV green, slides
+  and notes orange, web page dark slate, recording pale teal, anything else
+  near-black. The colours tint marks only, never text. An image puts its
+  thumbnail there instead. The checkbox is top-aligned with the mark.
 - **Title:** an `<h3>`, written as words (`listTitle`): URL-encoding decoded, a
   file's extension dropped, underscores and hyphens read as spaces, and a
   page's " - InfoQ" suffix dropped when the row shows its domain.
@@ -145,8 +149,9 @@ width the tags fold under the title and the spacer goes.
 - **The idea line** (`rowState`):
   - With ideas waiting: the next one by name (`next_idea`, the oldest
     undecided, chosen by the server), opening the asset on its undecided pile,
-    then "and N more". Hovering or focusing it opens a dark card to its right
-    with the asset's other ideas, title and note. They come from the same
+    then "and N more". Hovering or focusing it opens a light card to its right,
+    lifted by a shadow, listing the asset's other ideas' titles with a pale
+    rule between them. They come from the same
     reading as the counts (the workspace's lens in the bank, the campaign's on
     a campaign's page), read from `GET /:id/analyses` only on first hover.
   - Reading: "Reading this file." with a spinning icon while ingest or
@@ -168,7 +173,7 @@ width the tags fold under the title and the spacer goes.
 - **Campaign:** under the pill, each with its `CampaignMark`. On a campaign's
   own list only the others are named. "No campaign" is said only in the bank,
   and only once the campaigns have loaded.
-- **Bin:** a 24px `Delete02Icon`, no box, at the row's top-right on the
+- **Bin:** an 18px `Delete02Icon`, no box, at the row's top-right on the
   checkbox's line. It shows on hover or focus only, and on touch screens, and
   goes through `DeleteDocumentsDialog`. The bin and the checkbox fade in
   (opacity, ease-out, 200ms; none with reduced motion).

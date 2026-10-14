@@ -36,7 +36,6 @@ function TooltipContent({
   className,
   sideOffset = 0,
   showArrow = true,
-  arrowClassName,
   children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content> & {
@@ -48,11 +47,6 @@ function TooltipContent({
    * picture rather than as part of the frame.
    */
   showArrow?: boolean
-  /**
-   * The arrow is drawn in the surface colour; a tooltip that sets its own
-   * surface sets the arrow's to match (`bg-…` and `fill-…`).
-   */
-  arrowClassName?: string
 }) {
   return (
     <TooltipPrimitive.Portal>
@@ -67,12 +61,7 @@ function TooltipContent({
       >
         {children}
         {showArrow && (
-          <TooltipPrimitive.Arrow
-            className={cn(
-              'bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]',
-              arrowClassName,
-            )}
-          />
+          <TooltipPrimitive.Arrow className="bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
         )}
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>

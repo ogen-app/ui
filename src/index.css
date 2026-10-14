@@ -187,6 +187,15 @@
   --color-destructive: var(--destructive);
   --color-warning: var(--warning);
   --color-accent: var(--accent);
+  /* The Assets list's kind marks (CON-378) — `text-kind-pdf` and the rest. */
+  --color-kind-pdf: var(--kind-pdf);
+  --color-kind-doc: var(--kind-doc);
+  --color-kind-sheet: var(--kind-sheet);
+  --color-kind-slides: var(--kind-slides);
+  --color-kind-note: var(--kind-note);
+  --color-kind-web: var(--kind-web);
+  --color-kind-audio: var(--kind-audio);
+  --color-kind-other: var(--kind-other);
   --color-positive: var(--positive);
   --color-negative: var(--negative);
   --color-info: var(--info);
@@ -399,6 +408,23 @@
   --nav-assets: oklch(0.5 0.16 300); /* violet */
   --nav-ideas: oklch(0.53 0.16 285); /* indigo */
   --nav-calendar: oklch(0.56 0.13 100); /* olive */
+
+  /* What kind of file an Assets row is (CON-378), as the conventional colour
+     of that kind of file — red PDF, blue Word, green Excel — so a scan down
+     the list sorts itself before a word is read. These are a file-type
+     vocabulary people bring with them, not the product's palette, which is
+     why they are the brands' own values rather than steps on the grey ramp.
+     They tint marks, never text: the pale two (slides and notes, audio) are
+     under 3:1 on white and would fail as ink. An image has no kind colour —
+     it shows its own thumbnail — and anything unlisted takes `other`. */
+  --kind-pdf: #d9483b;
+  --kind-doc: #2563eb;
+  --kind-sheet: #22ac77;
+  --kind-slides: #ff9932;
+  --kind-note: #ff9932;
+  --kind-web: #172b36;
+  --kind-audio: #a0c9cb;
+  --kind-other: #111216;
 
   /* The 120° rule above is the target and no longer reachable: the campaign's
      rail went from four coloured rows to six, and six hues cannot sit 120°

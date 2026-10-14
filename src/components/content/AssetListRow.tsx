@@ -189,17 +189,17 @@ function AssetListRowComponent({
       {/* Out of sight until the row is pointed at or something in it is
           focused — still a tab stop, still the same confirmation. A screen
           with no hover shows it. No box and no border: a bin is a mark.
-          24px, centred on the check box's line (row inset 20 + 4 + half of
-          12 = 30px down, less half of 24). */}
+          18px, centred on the check box's line (row inset 20 + 4 + half of
+          12 = 30px down, less half of 18). */}
       <button
         type="button"
         aria-label={t('content.list.deleteRow', { title })}
-        className="absolute top-[18px] right-5 flex size-6 items-center justify-center text-secondary-foreground opacity-0 outline-none transition-opacity duration-200 ease-out group-focus-within:opacity-100 group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none [@media(hover:none)]:opacity-100"
+        className="absolute top-[21px] right-5 flex size-[18px] items-center justify-center text-secondary-foreground opacity-0 outline-none transition-opacity duration-200 ease-out group-focus-within:opacity-100 group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none [@media(hover:none)]:opacity-100"
         onClick={() => onDelete(row)}
       >
         <HugeiconsIcon
           icon={Delete02Icon}
-          size={24}
+          size={18}
           strokeWidth={1.5}
           aria-hidden
         />
@@ -382,8 +382,7 @@ const OTHER_IDEAS_SHOWN = 8
 
 /**
  * The next idea's title, and on hover or focus the asset's other ideas beside
- * it — title and note, small, on the dark surface so it reads as a different
- * layer from the row.
+ * it — their titles, as a list on a lifted card.
  *
  * The ideas are those of one reading: the workspace's in the bank, the
  * campaign's on a campaign's page — the same lens the row's counts are meant
@@ -422,49 +421,37 @@ function NextIdea({
           {next.title}
         </Link>
       </TooltipTrigger>
-      {/* A dark card, rounded, pointing back at the idea it belongs to: each
-          idea's title in full ink, its note dimmed under it. */}
+      {/* A light card lifted off the row by its shadow, pointing back at the
+          idea it belongs to: the other ideas' titles, one to a line, with a
+          pale rule between them. */}
       <TooltipContent
         side="right"
         sideOffset={10}
-        className="max-w-sm rounded-xl bg-primary-foreground p-4 text-left text-primary shadow-lg [text-wrap:pretty]"
-        arrowClassName="bg-primary-foreground fill-primary-foreground"
+        className="max-w-sm rounded-lg p-0 text-left shadow-lg [text-wrap:pretty]"
       >
         {analyses.isPending ? (
-          <p className="text-sm text-quinary">
+          <p className="px-4 py-3 text-sm text-secondary-foreground">
             {t('content.list.otherIdeasLoading')}
           </p>
         ) : shown.length === 0 ? (
-          <p className="text-sm text-quinary">
+          <p className="px-4 py-3 text-sm text-secondary-foreground">
             {t('content.list.otherIdeasNone')}
           </p>
         ) : (
-          <>
-            <p className="mb-3 text-xs font-medium text-quinary">
-              {t('content.list.otherIdeasHeading', { count: others.length })}
-            </p>
-            <ul className="flex flex-col gap-3">
-              {shown.map((idea) => (
-                <li key={idea.id} className="flex flex-col gap-0.5">
-                  <p className="text-sm font-medium text-primary">
-                    {idea.title}
-                  </p>
-                  {idea.note.trim() && (
-                    <p className="line-clamp-2 text-xs/5 text-quinary">
-                      {idea.note}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
+          <ul className="flex flex-col divide-y divide-quaternary">
+            {shown.map((idea) => (
+              <li key={idea.id} className="px-4 py-2.5 text-sm text-foreground">
+                {idea.title}
+              </li>
+            ))}
             {others.length > shown.length && (
-              <p className="mt-3 text-xs text-quinary">
+              <li className="px-4 py-2.5 text-xs text-secondary-foreground">
                 {t('content.list.nextIdeaMore', {
                   count: others.length - shown.length,
                 })}
-              </p>
+              </li>
             )}
-          </>
+          </ul>
         )}
       </TooltipContent>
     </Tooltip>

@@ -3197,8 +3197,6 @@ export const es: Translation = {
       analyseAgain: 'Analizar de nuevo',
       fold: 'Plegar {{group}}',
       unfold: 'Desplegar {{group}}',
-      otherIdeasHeading_one: '{{count}} idea más',
-      otherIdeasHeading_other: '{{count}} ideas más',
       otherIdeasLoading: 'Cargando las demás ideas…',
       otherIdeasNone: 'No hay más ideas de esta lectura.',
       band: {

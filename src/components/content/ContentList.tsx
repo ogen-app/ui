@@ -189,10 +189,11 @@ export function ContentList({
   // box selects. Full clears; anything less fills it.
   const everything = total > 0 && (allMatching || ticked.size >= total)
   // `ml-2` lines the box up with the rows' check boxes: the bar's inset is
-  // 12px, a row's 20px.
+  // 12px, a row's 20px. `mr-2.5` gives it the same 20px on its right, up to
+  // the rule (the bar's 6px gap and the rule's own 4px make the rest).
   const selectAll = (
     <Checkbox
-      className="ml-2"
+      className="mr-2.5 ml-2"
       checked={everything ? true : ticked.size > 0 ? 'indeterminate' : false}
       disabled={total === 0 || resolving}
       onCheckedChange={() =>
