@@ -135,8 +135,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   server's too** (CON-378/379): `group=` orders rows by group, each row
   carries `group_key`, and `groups` counts each group over the whole match,
   so a band never counts its loaded rows. The undecided total above the list
-  is `ideas_undecided_total`, never a sum of rows. The grouping itself is a
-  per-device preference (`settingsStore.assetGrouping`), not a URL param. The list is deliberately
+  is `ideas_undecided_total`, never a sum of rows. The grouping and the sort
+  are per-device preferences (`settingsStore.assetGrouping`, `assetSort`), not
+  URL params — the URL carries the filter only. The list is deliberately
   not virtualised, because its sticky group bands need the rows above the
   window to exist. See [`docs/assets-list.md`](./docs/assets-list.md).
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,

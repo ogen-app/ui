@@ -3,7 +3,9 @@ import { persist, devtools } from 'zustand/middleware'
 import {
   DEFAULT_GROUP,
   isGrouping,
+  isSort,
   type AssetGrouping,
+  type AssetSort,
 } from '@/lib/assetFilter'
 import { SETTINGS_STORE_PERSIST_KEY } from '@/stores/constants'
 import {
@@ -76,6 +78,13 @@ export type LocalSettings = {
    * list, not a fact about the workspace.
    */
   assetGrouping: AssetGrouping
+
+  /**
+   * The Assets list's sort, or null for the default (newest first; Best match
+   * while searching inside the documents). Kept like the grouping: per
+   * device, shared by the bank and every campaign's page, never in the URL.
+   */
+  assetSort: AssetSort | null
 }
 
 /**
@@ -132,6 +141,8 @@ type SettingsState = LocalSettings &
 
     setAssetGrouping: (grouping: AssetGrouping) => void
 
+    setAssetSort: (sort: AssetSort) => void
+
     /**
      * Record that the user is looking at this campaign's posts, arranged this
      * way. Called by the views themselves, on every anchor change — the fold is
@@ -156,6 +167,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   postsPlace: {},
   collapsedAssetBands: [],
   assetGrouping: DEFAULT_GROUP,
+  assetSort: null,
 }
 
 const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
@@ -255,6 +267,8 @@ export const useSettingsStore = create<SettingsState>()(
 
         setAssetGrouping: (grouping) => set({ assetGrouping: grouping }),
 
+        setAssetSort: (sort) => set({ assetSort: sort }),
+
         rememberPostsPlace: (campaignId, visit) => {
           set((state) => {
             const prev = state.postsPlace[campaignId]
@@ -286,6 +300,7 @@ export const useSettingsStore = create<SettingsState>()(
           postsPlace: state.postsPlace,
           collapsedAssetBands: state.collapsedAssetBands,
           assetGrouping: state.assetGrouping,
+          assetSort: state.assetSort,
           // Don't persist
           // scope, campaignId — where you are, not what you chose
         }),
@@ -309,6 +324,9 @@ export const useSettingsStore = create<SettingsState>()(
             assetGrouping: isGrouping(saved.assetGrouping)
               ? saved.assetGrouping
               : DEFAULT_GROUP,
+            // A sort no longer offered (most undecided first) goes back to
+            // the default.
+            assetSort: isSort(saved.assetSort) ? saved.assetSort : null,
           }
         },
       },

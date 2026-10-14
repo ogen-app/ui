@@ -21,7 +21,7 @@ function show({
       grouping="created"
       onGroupingChange={onGroupingChange}
       scoped={scoped}
-      sort="-ideas_undecided"
+      sort="-created_at"
       onSortChange={onSortChange}
       searching={searching}
     />,
@@ -70,6 +70,28 @@ describe('AssetViewBar', () => {
     expect(
       screen.queryByRole('menuitemradio', { name: 'Campaign' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('offers the sorts in pairs, with a rule between pairs', async () => {
+    await show()
+    await userEvent.click(screen.getByText('Sort'))
+    const menu = screen.getByRole('menu')
+    expect(
+      [
+        ...menu.querySelectorAll('[role="menuitemradio"], [role="separator"]'),
+      ].map((el) =>
+        el.getAttribute('role') === 'separator' ? '—' : el.textContent?.trim(),
+      ),
+    ).toEqual([
+      'Recently updated',
+      'Least recently updated',
+      '—',
+      'Newest first',
+      'Oldest first',
+      '—',
+      'Title A–Z',
+      'Title Z–A',
+    ])
   })
 
   it('offers Best match only while searching inside the documents', async () => {

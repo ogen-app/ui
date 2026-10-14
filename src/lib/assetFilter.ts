@@ -98,25 +98,32 @@ export type UpdatedPreset = (typeof UPDATED_PRESETS)[number]
 /** The value `campaign` and `tag` take for "in none". */
 export const NONE = 'none'
 
-export const ASSET_SORTS = [
-  '-ideas_undecided',
-  '-updated_at',
-  'updated_at',
-  '-created_at',
-  'created_at',
-  'title',
-  '-title',
-  'relevance',
+/**
+ * The orders the Sort menu offers, as the server names them, in pairs: each
+ * field one way and back (CON-378). Best match is offered only while
+ * searching inside the documents. The server's `-ideas_undecided` is not
+ * offered — the pill already says what is left to answer.
+ */
+export const SORT_PAIRS = [
+  ['-updated_at', 'updated_at'],
+  ['-created_at', 'created_at'],
+  ['title', '-title'],
 ] as const
+
+export const ASSET_SORTS = [...SORT_PAIRS.flat(), 'relevance'] as const
 
 export type AssetSort = (typeof ASSET_SORTS)[number]
 
 /**
- * Most undecided first (CON-378): the list is read for what is left to
- * answer, so the documents with work in them come up first — inside each
- * group, when the list is grouped.
+ * Newest first: the list is grouped by when documents were added by default,
+ * and the newest in each band is the one somebody is most likely looking for.
  */
-export const DEFAULT_SORT: AssetSort = '-ideas_undecided'
+export const DEFAULT_SORT: AssetSort = '-created_at'
+
+/** A sort read back from storage this build doesn't control, or not. */
+export function isSort(value: unknown): value is AssetSort {
+  return (ASSET_SORTS as readonly unknown[]).includes(value)
+}
 
 /**
  * What the list can be grouped by — the server's `group` values (CON-379),
@@ -191,7 +198,7 @@ export type AssetListSearch = Partial<
     | 'text',
     string
   >
-> & { sort?: AssetSort }
+>
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 
@@ -257,11 +264,6 @@ export function parseAssetListSearch(
   }
   const text = raw.text === undefined ? '' : String(raw.text).trim()
   if (text.length >= TEXT_MIN) out.text = text.slice(0, TEXT_MAX)
-  if ((ASSET_SORTS as readonly unknown[]).includes(raw.sort)) {
-    const sort = raw.sort as AssetSort
-    // Relevance means nothing without text, and the server refuses it.
-    if (sort !== 'relevance' || out.text) out.sort = sort
-  }
   return out
 }
 
@@ -283,11 +285,12 @@ export function filterFromSearch(search: AssetListSearch): AssetFilter {
   }
 }
 
-/** The search params for a filter and an explicitly chosen sort. */
-export function searchFromFilter(
-  filter: AssetFilter,
-  sort?: AssetSort,
-): AssetListSearch {
+/**
+ * The search params for a filter. The sort and the grouping are not in them:
+ * both are per-device preferences (`settingsStore`), so a link carries what
+ * is being asked and leaves how to read it to whoever opens it.
+ */
+export function searchFromFilter(filter: AssetFilter): AssetListSearch {
   const out: AssetListSearch = {}
   for (const key of ['title', ...CHOICE_FIELDS] as const) {
     if (filter[key].any.length) out[key] = filter[key].any.join(',')
@@ -296,7 +299,6 @@ export function searchFromFilter(
   if (filter.updatedAfter) out.updated_after = filter.updatedAfter
   if (filter.updatedBefore) out.updated_before = filter.updatedBefore
   if (filter.text) out.text = filter.text
-  if (sort && (sort !== 'relevance' || filter.text)) out.sort = sort
   return out
 }
 
@@ -322,11 +324,12 @@ export function effectiveGroup(
 
 /**
  * The order the list is read in: what was chosen, else relevance while
- * searching inside the documents, else most undecided first.
+ * searching inside the documents, else newest first. A chosen Best match
+ * outlives the search it was chosen in only as the default.
  */
 export function effectiveSort(
   filter: AssetFilter,
-  chosen: AssetSort | undefined,
+  chosen: AssetSort | null | undefined,
 ): AssetSort {
   if (chosen && (chosen !== 'relevance' || filter.text)) return chosen
   return filter.text ? 'relevance' : DEFAULT_SORT

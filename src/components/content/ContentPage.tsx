@@ -36,7 +36,6 @@ import {
   viewerTimeZone,
   type AssetFilter,
   type AssetListSearch,
-  type AssetSort,
 } from '@/lib/assetFilter'
 import { uploadLimitLines } from '@/lib/assetStatus'
 import {
@@ -113,7 +112,9 @@ export function ContentPage({
   const deleteAssets = useDeleteAssets()
 
   const filter = useMemo(() => filterFromSearch(search), [search])
-  const sort = effectiveSort(filter, search.sort)
+  const chosenSort = useSettingsStore((s) => s.assetSort)
+  const setSort = useSettingsStore((s) => s.setAssetSort)
+  const sort = effectiveSort(filter, chosenSort)
   const scope = campaign?.id ?? null
   const chosenGrouping = useSettingsStore((s) => s.assetGrouping)
   const setGrouping = useSettingsStore((s) => s.setAssetGrouping)
@@ -125,23 +126,19 @@ export function ContentPage({
     (next: AssetFilter) =>
       toRequestParams(next, {
         scopeCampaign: scope,
-        sort: effectiveSort(next, search.sort),
+        sort: effectiveSort(next, chosenSort),
         group: grouping,
         now: new Date(today),
         timeZone: viewerTimeZone(),
       }),
-    [scope, search.sort, grouping, today],
+    [scope, chosenSort, grouping, today],
   )
   const params = useMemo(() => paramsFor(filter), [paramsFor, filter])
   const list = useAssetList(params, { facets: facetsFor(scope) })
 
   const setFilter = useCallback(
-    (next: AssetFilter) => onSearchChange(searchFromFilter(next, search.sort)),
-    [onSearchChange, search.sort],
-  )
-  const setSort = useCallback(
-    (next: AssetSort) => onSearchChange(searchFromFilter(filter, next)),
-    [onSearchChange, filter],
+    (next: AssetFilter) => onSearchChange(searchFromFilter(next)),
+    [onSearchChange],
   )
 
   const enqueueUploads = useUploadStore((s) => s.enqueue)

@@ -8,7 +8,8 @@ export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/assets',
 )({
   component: CampaignAssets,
-  // The list's filter and sort, as on `/assets` — see `lib/assetFilter`.
+  // The list's filter, as on `/assets` — see `lib/assetFilter`. The sort and
+  // the grouping are per-device preferences, not part of the address.
   // `campaign` never reaches the request here: the campaign is the scope.
   validateSearch: parseAssetListSearch,
 })

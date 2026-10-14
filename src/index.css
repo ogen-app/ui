@@ -414,16 +414,16 @@
      the list sorts itself before a word is read. These are a file-type
      vocabulary people bring with them, not the product's palette, which is
      why they are the brands' own values rather than steps on the grey ramp.
-     They tint marks, never text: the pale two (slides and notes, audio) are
-     under 3:1 on white and would fail as ink. An image has no kind colour —
+     They tint marks, never text: the orange of slides and notes is under 3:1
+     on white and would fail as ink. An image has no kind colour —
      it shows its own thumbnail — and anything unlisted takes `other`. */
   --kind-pdf: #d9483b;
   --kind-doc: #2563eb;
   --kind-sheet: #22ac77;
   --kind-slides: #ff9932;
   --kind-note: #ff9932;
-  --kind-web: #172b36;
-  --kind-audio: #a0c9cb;
+  --kind-web: #2c3b4d;
+  --kind-audio: #a35139;
   --kind-other: #111216;
 
   /* The 120° rule above is the target and no longer reachable: the campaign's
