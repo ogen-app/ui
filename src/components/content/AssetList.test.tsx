@@ -323,7 +323,7 @@ describe('the other ideas', () => {
       ])
   })
 
-  it('lists the rest of this reading’s ideas beside the next one, read only on hover', async () => {
+  it('lists the titles of this reading’s other ideas beside the next one, read only on hover', async () => {
     await show([row])
     expect(analyses.fn).not.toHaveBeenCalled()
 
@@ -334,9 +334,8 @@ describe('the other ideas', () => {
     expect(
       (await screen.findAllByText('A second angle')).length,
     ).toBeGreaterThan(0)
-    expect(
-      screen.getAllByText('Why the trough matters').length,
-    ).toBeGreaterThan(0)
+    // Titles only: the notes stay on the asset page.
+    expect(screen.queryByText('Why the trough matters')).not.toBeInTheDocument()
     // The workspace's reading in the bank; never the campaign's.
     expect(screen.queryByText('Only for the campaign')).not.toBeInTheDocument()
     expect(analyses.fn).toHaveBeenCalledWith('a1')

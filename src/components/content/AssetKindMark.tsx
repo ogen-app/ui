@@ -11,6 +11,7 @@ import {
   Ppt02Icon,
   Xls02Icon,
 } from '@hugeicons/core-free-icons'
+import { cn } from '@/lib'
 import type { AssetListItem, AssetListKind } from '@/types/assetList'
 import { AssetPreview } from './AssetPreview'
 
@@ -36,9 +37,27 @@ export const KIND_ICON: Record<AssetListKind, IconSvgElement> = {
  * The kind is the server's (CON-374), which classifies from the type and the
  * file's MIME type so this never has to.
  *
- * 28px at full ink (CON-378): it leads the title, so it reads as part of the
- * heading rather than as a faint column of its own.
+ * 28px, in the kind's own colour (CON-378): it leads the title, so it reads
+ * as part of the heading, and the colour sorts a long list by type at a
+ * glance.
  */
+/**
+ * Each kind's colour, as the file type's conventional one (`--kind-*` in
+ * `index.css`). A CSV is a spreadsheet; an image shows its own thumbnail, and
+ * only falls back to the neutral mark.
+ */
+const KIND_TONE: Record<AssetListKind, string> = {
+  pdf: 'text-kind-pdf',
+  document: 'text-kind-doc',
+  spreadsheet: 'text-kind-sheet',
+  csv: 'text-kind-sheet',
+  presentation: 'text-kind-slides',
+  note: 'text-kind-note',
+  web: 'text-kind-web',
+  audio: 'text-kind-audio',
+  image: 'text-kind-other',
+}
+
 export function AssetKindMark({
   asset,
 }: {
@@ -52,7 +71,7 @@ export function AssetKindMark({
       strokeWidth={1.5}
       role="img"
       aria-label={t(`content.list.kind.${asset.kind}`)}
-      className="shrink-0 text-foreground"
+      className={cn('shrink-0', KIND_TONE[asset.kind] ?? 'text-kind-other')}
     />
   )
   return asset.kind === 'image' ? (
