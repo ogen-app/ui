@@ -3197,12 +3197,11 @@ export const es: Translation = {
       analyseAgain: 'Analizar de nuevo',
       fold: 'Plegar {{group}}',
       unfold: 'Desplegar {{group}}',
+      otherIdeasHeading_one: '{{count}} idea más',
+      otherIdeasHeading_other: '{{count}} ideas más',
+      otherIdeasLoading: 'Cargando las demás ideas…',
+      otherIdeasNone: 'No hay más ideas de esta lectura.',
       band: {
-        ideas: {
-          undecided: 'Sin decidir',
-          answered: 'Todas respondidas',
-          none: 'Aún sin ideas',
-        },
         created: {
           '1d': 'Hoy',
           '7d': 'Última semana',
@@ -3435,14 +3434,15 @@ export const es: Translation = {
 
     view: {
       undecided_one:
-        '<ideas>{{formatted}} idea</ideas> de estos documentos espera un veredicto.',
+        '<ideas>{{formatted}} idea</ideas> de {{documents}} espera un veredicto.',
       undecided_other:
-        '<ideas>{{formatted}} ideas</ideas> de estos documentos esperan un veredicto.',
+        '<ideas>{{formatted}} ideas</ideas> de {{documents}} esperan un veredicto.',
+      documents_one: '{{formatted}} documento',
+      documents_other: '{{formatted}} documentos',
       groupBy: 'Agrupar por',
       groupByHeading: 'AGRUPAR POR',
       sortBy: 'Ordenar',
       group: {
-        ideas: 'Ideas',
         created: 'Fecha de alta',
         campaign: 'Campaña',
         tag: 'Etiqueta',
@@ -3450,7 +3450,6 @@ export const es: Translation = {
         none: 'Sin agrupar',
       },
       groupHint: {
-        ideas: '3 grupos',
         tag: 'una vez por etiqueta',
       },
       sort: {

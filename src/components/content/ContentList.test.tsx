@@ -96,7 +96,7 @@ function show(
         onFilterChange={() => {}}
         sort="-updated_at"
         onSortChange={() => {}}
-        grouping="ideas"
+        grouping="created"
         onGroupingChange={() => {}}
         paramsFor={() => ({})}
         uploads={[]}

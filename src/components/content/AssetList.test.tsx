@@ -23,6 +23,13 @@ vi.mock('@/hooks/useCampaigns', () => ({
   useArchivedCampaigns: () => ({ data: [] }),
 }))
 
+/** The asset's readings, each with its ideas — what the hover list reads. */
+const analyses = vi.hoisted(() => ({ fn: vi.fn() }))
+vi.mock('@/services/api/content', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/api/content')>()),
+  listAssetAnalyses: analyses.fn,
+}))
+
 const { AssetList } = await import('./AssetList')
 
 const NO_IDEAS = { waiting: 0, yes: 0, later: 0, no: 0 }
@@ -104,19 +111,23 @@ describe('a row', () => {
         name: 'Hype Cycle for AI',
       }),
     ).toBeInTheDocument()
+    // The mark says it is a PDF; the facts line doesn't say it again.
     expect(screen.getByRole('img', { name: 'PDF' })).toBeInTheDocument()
-    expect(screen.getByText(/^PDF · 94 pages ·/)).toBeInTheDocument()
-    // The date is its own element, carrying the exact date as its tooltip.
-    expect(screen.getByText('published last year')).toHaveAttribute(
-      'title',
-      expect.stringContaining('2025'),
-    )
+    expect(screen.getByText(/^94 pages ·/)).toBeInTheDocument()
+    expect(screen.queryByText(/^PDF/)).not.toBeInTheDocument()
+    // Added and published are two facts; the second is a chip with the exact
+    // date as its tooltip.
+    expect(screen.getByText('added 2 minutes ago')).toBeInTheDocument()
+    expect(
+      screen.getByText('published last year').closest('[title]'),
+    ).toHaveAttribute('title', expect.stringContaining('2025'))
   })
 
-  it('says when it was added, when the source never said when it was published', async () => {
+  it('says only when it was added, when the source never said when it was published', async () => {
     await show([asset({})])
     expect(await screen.findByText('added 2 minutes ago')).toBeInTheDocument()
     expect(screen.queryByText(/published/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Note/)).not.toBeInTheDocument()
   })
 
   it('titles a page without its publisher, and names its site', async () => {
@@ -131,7 +142,7 @@ describe('a row', () => {
     expect(
       await screen.findByText('Design Patterns for Serverless Systems'),
     ).toBeInTheDocument()
-    expect(screen.getByText(/^Web page · infoq\.com/)).toBeInTheDocument()
+    expect(screen.getByText(/^infoq\.com ·/)).toBeInTheDocument()
   })
 
   it('names the next undecided idea, opening its pile, and how many more', async () => {
@@ -275,49 +286,124 @@ describe('a row', () => {
   })
 })
 
+describe('the other ideas', () => {
+  const idea = (id: string, title: string, note = '') => ({
+    id,
+    title,
+    note,
+    campaign_id: null,
+    verdict: null,
+    created_at: '2026-10-01T00:00:00Z',
+    created_by: null,
+    decided_at: null,
+    decided_by: null,
+    remind_at: null,
+  })
+  const lens = (campaign_id: string | null, ideas: unknown[]) => ({
+    id: `lens-${campaign_id ?? 'workspace'}`,
+    asset_id: 'a1',
+    campaign_id,
+    status: 'ready',
+    ideas,
+  })
+  const row = asset({
+    idea_counts: { waiting: 3, yes: 0, later: 0, no: 0 },
+    next_idea: { id: 'i1', title: 'The next one' },
+  })
+
+  beforeEach(() => {
+    analyses.fn
+      .mockReset()
+      .mockResolvedValue([
+        lens(null, [
+          idea('i1', 'The next one'),
+          idea('i2', 'A second angle', 'Why the trough matters'),
+        ]),
+        lens('c1', [idea('i9', 'Only for the campaign')]),
+      ])
+  })
+
+  it('lists the rest of this reading’s ideas beside the next one, read only on hover', async () => {
+    await show([row])
+    expect(analyses.fn).not.toHaveBeenCalled()
+
+    await userEvent.hover(
+      await screen.findByRole('link', { name: 'The next one' }),
+    )
+
+    expect(
+      (await screen.findAllByText('A second angle')).length,
+    ).toBeGreaterThan(0)
+    expect(
+      screen.getAllByText('Why the trough matters').length,
+    ).toBeGreaterThan(0)
+    // The workspace's reading in the bank; never the campaign's.
+    expect(screen.queryByText('Only for the campaign')).not.toBeInTheDocument()
+    expect(analyses.fn).toHaveBeenCalledWith('a1')
+  })
+
+  it('reads the campaign’s reading on a campaign’s page', async () => {
+    await show([row], { campaignId: 'c1' })
+    await userEvent.hover(
+      await screen.findByRole('link', { name: 'The next one' }),
+    )
+    expect(
+      (await screen.findAllByText('Only for the campaign')).length,
+    ).toBeGreaterThan(0)
+    expect(screen.queryByText('A second angle')).not.toBeInTheDocument()
+  })
+})
+
 describe('group bands', () => {
   const grouped = [
-    asset({ id: 'a1', title: 'One', group_key: 'undecided' }),
-    asset({ id: 'a2', title: 'Two', group_key: 'undecided' }),
-    asset({ id: 'a3', title: 'Three', group_key: 'answered' }),
+    asset({ id: 'a1', title: 'One', group_key: '1d' }),
+    asset({ id: 'a2', title: 'Two', group_key: '1d' }),
+    asset({ id: 'a3', title: 'Three', group_key: 'earlier' }),
   ]
   const groups = [
-    { key: 'undecided', count: 7 },
-    { key: 'answered', count: 1 },
+    { key: '1d', count: 7 },
+    { key: 'earlier', count: 1 },
   ]
 
   it('heads each run of rows with its group and the server’s count', async () => {
-    await show(grouped, { grouping: 'ideas', groups })
+    await show(grouped, { grouping: 'created', groups })
     const bands = await screen.findAllByRole('heading', { level: 2 })
     expect(bands.map((b) => b.textContent)).toEqual([
-      'band undecided7',
-      'band answered1',
+      'band 1d7',
+      'band earlier1',
     ])
     // Sticky, inside the list's own scroller.
     expect(bands[0].parentElement).toHaveClass('sticky')
   })
 
-  it('draws no band when the grouping has a single group', async () => {
+  it('draws the band even when the grouping has a single group', async () => {
     await show(grouped.slice(0, 2), {
-      grouping: 'ideas',
-      groups: [{ key: 'undecided', count: 2 }],
+      grouping: 'created',
+      groups: [{ key: '1d', count: 2 }],
     })
+    expect(
+      await screen.findByRole('heading', { level: 2, name: /band 1d/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('draws no band when the list is not grouped', async () => {
+    await show(grouped.slice(0, 2), { grouping: 'none' })
     await screen.findByText('One')
     expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument()
   })
 
   it('folds a band on its button, and remembers it', async () => {
-    await show(grouped, { grouping: 'ideas', groups })
+    await show(grouped, { grouping: 'created', groups })
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Fold band undecided' }),
+      await screen.findByRole('button', { name: 'Fold band 1d' }),
     )
     expect(screen.queryByText('One')).not.toBeInTheDocument()
     expect(screen.getByText('Three')).toBeInTheDocument()
     expect(useSettingsStore.getState().collapsedAssetBands).toEqual([
-      'ideas:undecided',
+      'created:1d',
     ])
     await userEvent.click(
-      screen.getByRole('button', { name: 'Unfold band undecided' }),
+      screen.getByRole('button', { name: 'Unfold band 1d' }),
     )
     expect(screen.getByText('One')).toBeInTheDocument()
   })
@@ -435,7 +521,6 @@ describe('in Spanish', () => {
     expect(
       screen.getByText('No hemos podido leer este archivo.'),
     ).toBeInTheDocument()
-    expect(screen.getAllByText(/^Nota ·/)).toHaveLength(2)
     expect(screen.getAllByText(/^añadido hace/)).toHaveLength(2)
     // The English that a literal would have left behind.
     expect(screen.queryByText(/and 2 more/)).not.toBeInTheDocument()

@@ -7,6 +7,7 @@ import { AssetViewBar } from './AssetViewBar'
 
 function show({
   undecided = 29,
+  documents = 6,
   scoped = false,
   searching = false,
   onGroupingChange = vi.fn(),
@@ -15,8 +16,9 @@ function show({
   return renderWithProviders(
     <AssetViewBar
       undecided={undecided}
+      documents={documents}
       ideasLink={{ to: '/ideas' }}
-      grouping="ideas"
+      grouping="created"
       onGroupingChange={onGroupingChange}
       scoped={scoped}
       sort="-ideas_undecided"
@@ -27,10 +29,10 @@ function show({
 }
 
 describe('AssetViewBar', () => {
-  it('counts the undecided ideas, the figure going to where they are answered', async () => {
+  it('counts the undecided ideas over the documents, the figure going to where they are answered', async () => {
     await show()
     expect(
-      screen.getByText(/in these documents are waiting for a verdict\./),
+      screen.getByText(/in 6 documents are waiting for a verdict\./),
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '29 ideas' })).toHaveAttribute(
       'href',
@@ -53,7 +55,6 @@ describe('AssetViewBar', () => {
         .getAllByRole('menuitemradio')
         .map((item) => item.textContent?.trim()),
     ).toEqual([
-      'Ideas3 groups',
       'Date added',
       'Campaign',
       'Tagonce per tag',
@@ -95,10 +96,10 @@ describe('AssetViewBar in Spanish', () => {
   })
 
   it('reads its sentence and its controls from the catalogue', async () => {
-    await show({ undecided: 1 })
+    await show({ undecided: 1, documents: 1 })
     expect(screen.getByRole('link', { name: '1 idea' })).toBeInTheDocument()
     expect(
-      screen.getByText(/de estos documentos espera un veredicto\./),
+      screen.getByText(/de 1 documento espera un veredicto\./),
     ).toBeInTheDocument()
     expect(screen.getByText('Agrupar por')).toBeInTheDocument()
     expect(screen.queryByText('Group by')).not.toBeInTheDocument()

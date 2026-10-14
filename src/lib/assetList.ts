@@ -144,37 +144,47 @@ export function rowState(
 }
 
 /**
- * The row's date, as a distance: when the source was published if its
- * metadata said so, else when it was added — and the line says which, since
- * "14 months ago" alone could be either. `exact` is the tooltip.
+ * The row's two dates, each as a distance with the exact date for its
+ * tooltip: when the asset was added, always, and when its source was
+ * published, when the source's own metadata said (`published_at`). They are
+ * different facts — a report published last year and added two days ago — so
+ * neither stands in for the other.
  */
-export function rowDate(
+export function rowDates(
   t: TFunction,
   row: Pick<AssetListItem, 'published_at' | 'created_at'>,
   now: Date,
   locale?: string,
-): { label: string; exact: string } | null {
-  const published = !!row.published_at
-  const iso = row.published_at ?? row.created_at
-  const at = new Date(iso)
-  if (Number.isNaN(at.getTime())) return null
-  const exact =
-    formatDate(
-      at,
-      published
-        ? { dateStyle: 'long' }
-        : { dateStyle: 'medium', timeStyle: 'short' },
-      locale,
-    ) ?? ''
-  const when =
-    now.getTime() - at.getTime() < 60_000
-      ? t('content.list.justNow')
-      : (relativeTime(iso, now, locale) ?? exact)
+): {
+  added: { label: string; exact: string } | null
+  published: { label: string; exact: string } | null
+} {
+  const distance = (iso: string, style: Intl.DateTimeFormatOptions) => {
+    const at = new Date(iso)
+    if (Number.isNaN(at.getTime())) return null
+    const exact = formatDate(at, style, locale) ?? ''
+    const when =
+      now.getTime() - at.getTime() < 60_000
+        ? t('content.list.justNow')
+        : (relativeTime(iso, now, locale) ?? exact)
+    return { when, exact }
+  }
+  const added = distance(row.created_at, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
+  const published = row.published_at
+    ? distance(row.published_at, { dateStyle: 'long' })
+    : null
   return {
-    label: published
-      ? t('content.list.publishedAgo', { when })
-      : t('content.list.addedAgo', { when }),
-    exact,
+    added: added && {
+      label: t('content.list.addedAgo', { when: added.when }),
+      exact: added.exact,
+    },
+    published: published && {
+      label: t('content.list.publishedAgo', { when: published.when }),
+      exact: published.exact,
+    },
   }
 }
 

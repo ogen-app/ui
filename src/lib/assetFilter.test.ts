@@ -4,6 +4,7 @@ import {
   boundStart,
   effectiveGroup,
   effectiveSort,
+  isGrouping,
   filterFromSearch,
   parseAssetListSearch,
   parseFieldPrefix,
@@ -155,7 +156,7 @@ describe('the request', () => {
       kind: 'pdf',
       updated_after: new Date(2026, 9, 7).toISOString(),
       sort: '-updated_at',
-      group: 'ideas',
+      group: 'created',
       tz: 'Europe/Kyiv',
     })
   })
@@ -170,7 +171,7 @@ describe('the request', () => {
       kind: 'pdf',
       scope_campaign: 'c1',
       sort: '-updated_at',
-      group: 'ideas',
+      group: 'created',
       tz: 'Europe/Kyiv',
     })
   })
@@ -207,36 +208,31 @@ describe('the old syntax', () => {
 })
 
 describe('grouping', () => {
-  it('is grouped by ideas unless the address says otherwise', () => {
-    expect(parseAssetListSearch({})).toEqual({})
-    expect(parseAssetListSearch({ group: 'tag' })).toEqual({ group: 'tag' })
-    expect(parseAssetListSearch({ group: 'none' })).toEqual({ group: 'none' })
-    // The default stays out of the address, and nonsense is dropped.
-    expect(parseAssetListSearch({ group: 'ideas' })).toEqual({})
-    expect(parseAssetListSearch({ group: 'colour' })).toEqual({})
-  })
-
-  it('keeps the grouping beside the filter and the sort in the address', () => {
-    expect(searchFromFilter(pdfs, 'title', 'kind')).toEqual({
+  it('is not part of the address — it is a per-device preference', () => {
+    expect(parseAssetListSearch({ group: 'tag' })).toEqual({})
+    expect(searchFromFilter(pdfs, 'title')).toEqual({
       kind: 'pdf',
       sort: 'title',
-      group: 'kind',
     })
-    expect(searchFromFilter(pdfs, undefined, 'ideas')).toEqual({ kind: 'pdf' })
   })
 
-  it('asks the server to group, and sends nothing for no grouping', () => {
-    expect(toRequestParams(pdfs, { ...ctx, group: 'created' }).group).toBe(
-      'created',
-    )
+  it('asks the server to group by date added unless told otherwise, and sends nothing for none', () => {
+    expect(toRequestParams(pdfs, ctx).group).toBe('created')
+    expect(toRequestParams(pdfs, { ...ctx, group: 'tag' }).group).toBe('tag')
     expect(toRequestParams(pdfs, { ...ctx, group: 'none' })).not.toHaveProperty(
       'group',
     )
   })
 
   it('has no campaign grouping on a campaign’s own page', () => {
-    expect(effectiveGroup('campaign', 'c1')).toBe('ideas')
+    expect(effectiveGroup('campaign', 'c1')).toBe('created')
     expect(effectiveGroup('campaign', null)).toBe('campaign')
-    expect(effectiveGroup(undefined, null)).toBe('ideas')
+    expect(effectiveGroup(undefined, null)).toBe('created')
+  })
+
+  it('no longer knows the ideas grouping a stored preference may still hold', () => {
+    expect(isGrouping('ideas')).toBe(false)
+    expect(isGrouping('created')).toBe(true)
+    expect(isGrouping('none')).toBe(true)
   })
 })

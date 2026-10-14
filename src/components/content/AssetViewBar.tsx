@@ -38,7 +38,6 @@ const SORT_KEY = {
 
 /** Each grouping's catalogue key, `none` included. */
 const GROUP_KEY = {
-  ideas: 'ideas',
   created: 'created',
   campaign: 'campaign',
   tag: 'tag',
@@ -50,9 +49,10 @@ const GROUP_KEY = {
  * The line between the filter bar and the list (CON-378): how much is left to
  * answer on the left, how the list is laid out on the right.
  *
- * The sentence counts **ideas**, not documents — the server's sum over the
- * whole match (`ideas_undecided_total`, CON-379), never one added up here —
- * and the figure goes to where they are answered. With nothing undecided it
+ * The sentence counts **ideas** — the server's sum over the whole match
+ * (`ideas_undecided_total`, CON-379), never one added up here — and says over
+ * how many documents: the filtered count, or every document when nothing is
+ * filtered. The figure goes to where the ideas are answered. With nothing undecided it
  * says nothing: a sentence about zero is a sentence nobody needed.
  *
  * Group by and Sort are plain words with a chevron, no box: they change how
@@ -62,6 +62,7 @@ const GROUP_KEY = {
  */
 export function AssetViewBar({
   undecided,
+  documents,
   ideasLink,
   grouping,
   onGroupingChange,
@@ -72,6 +73,8 @@ export function AssetViewBar({
 }: {
   /** Undecided ideas over the whole match. */
   undecided: number
+  /** The documents matching the filter — all of them when nothing is filtered. */
+  documents: number
   /** Where the undecided ideas are answered. */
   ideasLink: LinkProps
   grouping: AssetGrouping
@@ -104,6 +107,10 @@ export function AssetViewBar({
               count={undecided}
               values={{
                 formatted: formatNumber(undecided, {}, i18n.language),
+                documents: t('content.view.documents', {
+                  count: documents,
+                  formatted: formatNumber(documents, {}, i18n.language),
+                }),
               }}
               components={{
                 ideas: (
@@ -139,9 +146,9 @@ export function AssetViewBar({
               {groupings.map((g) => (
                 <DropdownMenuRadioItem key={g} value={g}>
                   <span>{t(`content.view.group.${GROUP_KEY[g]}`)}</span>
-                  {(g === 'tag' || g === 'ideas') && (
+                  {g === 'tag' && (
                     <span className="ml-auto pl-3 text-xs text-secondary-foreground">
-                      {t(`content.view.groupHint.${g}`)}
+                      {t('content.view.groupHint.tag')}
                     </span>
                   )}
                 </DropdownMenuRadioItem>
