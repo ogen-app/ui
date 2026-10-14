@@ -44,10 +44,12 @@ Between the filter bar and the list (`AssetViewBar`):
   match; the documents are `total`, the filtered count or all of them. The
   figure links to Ideas (the campaign's, on a campaign's page). With none
   waiting, the sentence is left out.
-- **Which reading counts** is the server's: one lens per context, the
-  workspace's in the bank and the campaign's on a campaign's page. Until
-  CON-380 ships the server still adds the workspace lens to a campaign's, and
-  every campaign's to the bank's.
+- **Which reading counts** is the server's (CON-380): one lens per context,
+  the workspace's in the bank and the campaign's on a campaign's page. The
+  counts, the next idea, the undecided total, the ideas filter and sort, the
+  gist and the analysis status all read it. So on a campaign's page a document
+  whose campaign lens hasn't run reads as not analysed, with no pill and no
+  summary, even when its workspace lens is ready.
 - **Group by:** Date added (the default), Campaign, Tag, Type, or No grouping.
   Not in the URL: it is a per-device preference (`settingsStore.assetGrouping`),
   shared by the bank and every campaign's page, so a reload or a move between
