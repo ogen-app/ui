@@ -193,6 +193,9 @@
   --color-kind-sheet: var(--kind-sheet);
   --color-kind-slides: var(--kind-slides);
   --color-kind-neutral: var(--kind-neutral);
+  /* An idea's fit track (CON-385) — strong to weak. */
+  --color-fit-high: var(--fit-high);
+  --color-fit-low: var(--fit-low);
   --color-positive: var(--positive);
   --color-negative: var(--negative);
   --color-info: var(--info);
@@ -424,6 +427,15 @@
   --kind-sheet: oklch(0.55 0.09 150);
   --kind-slides: oklch(0.55 0.1 50);
   --kind-neutral: oklch(0.55 0.015 255);
+
+  /* An idea's fit score (CON-385), as a track from strong to weak. Pale sage
+     to pale sand, mixed in oklab: the weak end reads as *less*, never as
+     *bad*, because a low-fit idea is still a candidate and a red end would ask
+     for it to be dismissed. Sage sits at 148, clear of the teal accent; sand
+     is near-grey, nowhere near the amber of `--warning`; both are far paler
+     than the kind marks, so neither reads as a file type. */
+  --fit-high: oklch(0.8 0.09 148);
+  --fit-low: oklch(0.86 0.045 85);
 
   /* The 120° rule above is the target and no longer reachable: the campaign's
      rail went from four coloured rows to six, and six hues cannot sit 120°

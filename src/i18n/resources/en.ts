@@ -4339,6 +4339,9 @@ export const en = {
       /** The other ideas, on hover over the next one. */
       otherIdeasLoading: 'Loading the other ideas…',
       otherIdeasNone: 'No other ideas from this reading.',
+      /** An idea's fit score on its track (CON-385), 10–100. */
+      fitScore: 'Fit {{score}} of 100',
+      fitUnscored: 'Not scored',
       /** The bands of the Date added grouping (CON-379). */
       band: {
         created: {

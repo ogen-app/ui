@@ -287,10 +287,16 @@ describe('a row', () => {
 })
 
 describe('the other ideas', () => {
-  const idea = (id: string, title: string, note = '') => ({
+  const idea = (
+    id: string,
+    title: string,
+    note = '',
+    fit_score: number | null = null,
+  ) => ({
     id,
     title,
     note,
+    fit_score,
     campaign_id: null,
     verdict: null,
     created_at: '2026-10-01T00:00:00Z',
@@ -323,7 +329,7 @@ describe('the other ideas', () => {
       ])
   })
 
-  it('lists the titles of this reading’s other ideas beside the next one, read only on hover', async () => {
+  it('lists this reading’s other ideas beside the next one, read only on hover', async () => {
     await show([row])
     expect(analyses.fn).not.toHaveBeenCalled()
 
@@ -334,11 +340,46 @@ describe('the other ideas', () => {
     expect(
       (await screen.findAllByText('A second angle')).length,
     ).toBeGreaterThan(0)
-    // Titles only: the notes stay on the asset page.
-    expect(screen.queryByText('Why the trough matters')).not.toBeInTheDocument()
+    // Each with its note under the title.
+    expect(
+      (await screen.findAllByText('Why the trough matters')).length,
+    ).toBeGreaterThan(0)
     // The workspace's reading in the bank; never the campaign's.
     expect(screen.queryByText('Only for the campaign')).not.toBeInTheDocument()
     expect(analyses.fn).toHaveBeenCalledWith('a1')
+  })
+
+  it('orders them best fit first, unscored last, each with its score', async () => {
+    analyses.fn.mockResolvedValue([
+      lens(null, [
+        idea('i1', 'The next one', '', 90),
+        idea('i2', 'Never scored'),
+        idea('i3', 'A weaker fit', '', 41),
+        idea('i4', 'A strong fit', '', 77),
+      ]),
+    ])
+    await show([row])
+    await userEvent.hover(
+      await screen.findByRole('link', { name: 'The next one' }),
+    )
+    await screen.findAllByText('A strong fit')
+
+    const lists = screen.getAllByRole('list')
+    const card = lists[lists.length - 1]
+    const titles = within(card)
+      .getAllByRole('listitem')
+      .map((li) => li.textContent)
+    expect(titles).toEqual([
+      expect.stringContaining('A strong fit'),
+      expect.stringContaining('A weaker fit'),
+      expect.stringContaining('Never scored'),
+    ])
+    expect(
+      within(card).getByRole('img', { name: 'Fit 77 of 100' }),
+    ).toBeInTheDocument()
+    expect(
+      within(card).getByRole('img', { name: 'Not scored' }),
+    ).toBeInTheDocument()
   })
 
   it('reads the campaign’s reading on a campaign’s page', async () => {

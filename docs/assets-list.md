@@ -156,14 +156,21 @@ width the tags fold under the title and the spacer goes.
 - **Summary:** the analysis gist, two lines at most; during a Text mentions
   search, where it matched instead (`MatchSnippet`).
 - **The idea line** (`rowState`):
-  - With ideas waiting: the next one by name (`next_idea`, the oldest
-    undecided, chosen by the server), opening the asset on its undecided pile,
-    then "and N more". Hovering or focusing the line opens a light card after
-    it, lifted by a shadow, listing the asset's other ideas' titles in small
-    type with inset rules between them. The card is top-aligned with the line,
-    or bottom-aligned when the line sits in the lower part of the screen. They come from the same
-    reading as the counts (the workspace's lens in the bank, the campaign's on
-    a campaign's page), read from `GET /:id/analyses` only on first hover.
+  - With ideas waiting: the next one by name (`next_idea`, the best-fit
+    undecided idea, chosen by the server since CON-385), opening the asset on
+    its undecided pile, then "and N more". Hovering or focusing the line opens
+    a light card after it, 416px wide and lifted by a shadow, listing the
+    asset's other ideas best fit first (`lib/ideaFit`'s `byFit`: unscored
+    last, then oldest first, as the server picks `next_idea`). Each idea is
+    its score on a track (`FitTrack`: a pill on a 64px line from pale sage at
+    100 to pale sand at 10, its 2px ring the line's colour where it sits, a
+    dashed empty line when unscored), its title at 14.4px, and up to two lines
+    of its note. Opening downward, the card's first title is level with the
+    row's idea line; when the line sits in the lower part of the screen the
+    card opens upward and its last line is level with it instead. The ideas
+    come from the same reading as the counts (the workspace's lens in the
+    bank, the campaign's on a campaign's page), read from `GET /:id/analyses`
+    only on first hover.
   - Reading: "Reading this file." with a spinning icon while ingest or
     analysis runs. No pill and no summary yet.
   - Failed: "We couldn't read this file." with the reason worded from
