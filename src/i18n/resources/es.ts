@@ -3197,8 +3197,8 @@ export const es: Translation = {
       analyseAgain: 'Analizar de nuevo',
       fold: 'Plegar {{group}}',
       unfold: 'Desplegar {{group}}',
-      otherIdeasLoading: 'Cargando las demás ideas…',
-      otherIdeasNone: 'No hay más ideas de esta lectura.',
+      otherIdeasLoading: 'Cargando las ideas…',
+      otherIdeasNone: 'No hay ideas de esta lectura.',
       fitScore: 'Encaje {{score}} de 100',
       fitUnscored: 'Sin puntuar',
       band: {

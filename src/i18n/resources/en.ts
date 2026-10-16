@@ -4336,9 +4336,9 @@ export const en = {
       /** A group band's fold, named for the group. */
       fold: 'Fold {{group}}',
       unfold: 'Unfold {{group}}',
-      /** The other ideas, on hover over the next one. */
-      otherIdeasLoading: 'Loading the other ideas…',
-      otherIdeasNone: 'No other ideas from this reading.',
+      /** The asset's ideas, on hover over the next one. */
+      otherIdeasLoading: 'Loading the ideas…',
+      otherIdeasNone: 'No ideas from this reading.',
       /** An idea's fit score on its track (CON-385), 10–100. */
       fitScore: 'Fit {{score}} of 100',
       fitUnscored: 'Not scored',

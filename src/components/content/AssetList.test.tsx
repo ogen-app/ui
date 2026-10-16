@@ -152,8 +152,9 @@ describe('a row', () => {
         next_idea: { id: 'i1', title: 'Which AI techniques are past the peak' },
       }),
     ])
+    // One link for the whole line, the count included.
     const next = await screen.findByRole('link', {
-      name: 'Which AI techniques are past the peak',
+      name: /^Which AI techniques are past the peak\s*and 8 more$/,
     })
     expect(next).toHaveAttribute('href', '/assets/a1?verdict=waiting')
     expect(screen.getByText('and 8 more')).toBeInTheDocument()
@@ -329,12 +330,20 @@ describe('the other ideas', () => {
       ])
   })
 
-  it('lists this reading’s other ideas beside the next one, read only on hover', async () => {
+  it('links the whole line, the count included, to the undecided pile', async () => {
+    await show([row])
+    const link = await screen.findByRole('link', {
+      name: /^The next one\s*and 2 more$/,
+    })
+    expect(link).toHaveAttribute('href', expect.stringContaining('/assets/a1'))
+  })
+
+  it('lists this reading’s ideas, the next one included, read only on hover', async () => {
     await show([row])
     expect(analyses.fn).not.toHaveBeenCalled()
 
     await userEvent.hover(
-      await screen.findByRole('link', { name: 'The next one' }),
+      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
     )
 
     expect(
@@ -360,7 +369,7 @@ describe('the other ideas', () => {
     ])
     await show([row])
     await userEvent.hover(
-      await screen.findByRole('link', { name: 'The next one' }),
+      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
     )
     await screen.findAllByText('A strong fit')
 
@@ -369,7 +378,9 @@ describe('the other ideas', () => {
     const titles = within(card)
       .getAllByRole('listitem')
       .map((li) => li.textContent)
+    // The next one heads the card: it is the best fit.
     expect(titles).toEqual([
+      expect.stringContaining('The next one'),
       expect.stringContaining('A strong fit'),
       expect.stringContaining('A weaker fit'),
       expect.stringContaining('Never scored'),
@@ -385,7 +396,7 @@ describe('the other ideas', () => {
   it('reads the campaign’s reading on a campaign’s page', async () => {
     await show([row], { campaignId: 'c1' })
     await userEvent.hover(
-      await screen.findByRole('link', { name: 'The next one' }),
+      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
     )
     expect(
       (await screen.findAllByText('Only for the campaign')).length,
