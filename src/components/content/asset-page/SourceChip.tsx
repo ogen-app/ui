@@ -6,7 +6,7 @@ import { refLabel, timeLabelSeconds } from '@/lib/assetAnalysis'
 import { parseSheetLabel, shortSheetLabel } from '@/lib/sheetChunks'
 
 const CHIP =
-  'inline-flex max-w-[220px] items-center gap-1 rounded-full border border-quaternary px-2.5 py-0.5 text-xs tabular-nums'
+  'inline-flex max-w-[220px] items-center gap-1 rounded-full border border-quaternary bg-primary px-2.5 py-0.5 text-xs tabular-nums'
 
 /**
  * A source label as a chip, and where it can take you.

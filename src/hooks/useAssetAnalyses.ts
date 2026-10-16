@@ -1,11 +1,15 @@
+import { useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { analysisInFlight } from '@/lib/assetAnalysis'
+import type { IdeaVerdict } from '@/lib/ideas'
 import { ApiError } from '@/services/api/errors'
 import { listAssetAnalyses, retryAssetAnalysis } from '@/services/api/content'
+import { setIdeaVerdict } from '@/services/api/ideas'
 import { toast } from '@/stores/toastStore'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import type { AssetStatus } from '@/types/content'
+import { ASSET_LIST_KEY } from './useContent'
 
 /**
  * Under the asset's own key, so an `asset.updated` (re-extraction, a finished
@@ -90,4 +94,59 @@ export function useRetryAssetAnalysis(id: string) {
     },
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   })
+}
+
+/**
+ * Answers one of an asset's ideas where it is read (CON-387): the same
+ * `PUT /api/ideas/:id/verdict` the Ideas inbox sends, `null` putting it back
+ * with the undecided.
+ *
+ * Optimistic, as triage in Ideas is: the verdict lands in this asset's
+ * readings at once, so the mark, the piles and the buttons move with the
+ * click, and a failure puts the readings back and says so in Ideas' words.
+ * Settling re-reads the readings, the Assets list (whose counts and ideas card
+ * read verdicts) and every Ideas list, so no screen keeps the old answer.
+ */
+export function useAnswerIdea(assetId: string) {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+
+  return useCallback(
+    async (
+      ideaId: string,
+      verdict: IdeaVerdict | null,
+      remindAt: string | null = null,
+    ) => {
+      const key = assetAnalysesKey(assetId)
+      const previous = qc.getQueryData<AssetAnalysis[]>(key)
+      void qc.cancelQueries({ queryKey: key })
+      const at = new Date().toISOString()
+      qc.setQueryData<AssetAnalysis[]>(key, (lenses) =>
+        lenses?.map((lens) => ({
+          ...lens,
+          ideas: lens.ideas.map((idea) =>
+            idea.id === ideaId
+              ? {
+                  ...idea,
+                  verdict,
+                  decided_at: verdict ? at : null,
+                  remind_at: verdict === 'later' ? remindAt : null,
+                }
+              : idea,
+          ),
+        })),
+      )
+      try {
+        await setIdeaVerdict(ideaId, verdict, remindAt)
+      } catch {
+        if (previous) qc.setQueryData(key, previous)
+        toast.error(t('ideas.saveFailed'))
+      } finally {
+        void qc.invalidateQueries({ queryKey: key })
+        void qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
+        void qc.invalidateQueries({ queryKey: ['ideas'] })
+      }
+    },
+    [assetId, qc, t],
+  )
 }

@@ -1,4 +1,5 @@
 import { apiJson, apiVoid } from './http'
+import type { FitBreakdown } from '@/lib/ideaFit'
 import type { Idea, IdeaVerdict } from '@/lib/ideas'
 
 /**
@@ -105,6 +106,8 @@ export type IdeaBody = {
    * existed — never scored, rather than scored low.
    */
   fit_score?: number | null
+  /** Why it scored that, criterion by criterion (CON-385); `null` when unscored. */
+  fit_breakdown?: FitBreakdown | null
 }
 
 /** What a screen may change about an idea. The verdict is deliberately not in here. */
@@ -129,6 +132,8 @@ export function ideaFromWire(body: IdeaBody): Idea {
     origin: body.origin === 'asset_analysis' ? 'asset_analysis' : 'manual',
     assetAnalysisId: body.asset_analysis_id ?? null,
     sourceAsset: body.source_asset ?? null,
+    fitScore: body.fit_score ?? undefined,
+    fitBreakdown: body.fit_breakdown ?? undefined,
   }
 }
 

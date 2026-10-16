@@ -475,8 +475,6 @@ export const en = {
       /** The heading, with the count (CON-369). */
       count_one: '{{count}} post idea',
       count_other: '{{count}} post ideas',
-      countFor_one: '{{count}} post idea for {{campaign}}',
-      countFor_other: '{{count}} post ideas for {{campaign}}',
       waiting: 'New ideas wait in your Ideas inbox for a yes, later or no.',
       waitingFor:
         'New ideas wait in the Ideas for {{campaign}} for a yes, later or no.',
@@ -488,18 +486,43 @@ export const en = {
       emptyTitle: 'No ideas from this one',
       emptyBody:
         'The summary is here, but the source was too short or too far off the brief to draw posts from.',
-      where: {
-        inbox: 'In your Ideas inbox',
-        yes: 'Marked yes in Ideas',
-        later: 'Postponed in Ideas',
-        no: 'Marked no in Ideas',
+      /** The opened idea's answer, as a group of buttons (CON-387). */
+      answer: 'Answer this idea',
+    },
+    /** Why an idea scores what it does, criterion by criterion (CON-385/387). */
+    ideaFit: {
+      heading: 'Why it scores {{score}}',
+      forCampaign: 'for {{campaign}}',
+      forWorkspace: 'for the workspace',
+      /** An idea keeps its score when filed elsewhere, and says where it got it. */
+      scoredWorkspace: 'scored for the workspace',
+      scoredOther: 'scored for another campaign',
+      /** A criterion's rating, read out: "Key message: 4 of 5". */
+      rating: '{{criterion}}: {{level}} of 5',
+      criterion: {
+        message_fit: 'Key message',
+        audience_fit: 'Audience',
+        evidence: 'Backed by the source',
+        gap_fill: 'Fills a gap',
+        phase_fit: 'Campaign phase',
+        timeliness: 'Timing',
+        brand_fit: 'Brand voice',
+        brand_relevance: 'Brand relevance',
+        campaign_potential: 'Feeds a campaign',
+        evergreen: 'Evergreen',
       },
-      verdict: {
-        inbox: 'Not triaged yet',
-        yes: 'Yes',
-        later: 'Not now',
-        no: 'No',
+      /** A cap overrides every rating, so it is said first. */
+      cap: {
+        guardrail_breach: 'Capped: it would break a brand guardrail.',
+        off_brief: 'Capped: it goes against the brief.',
+        unsupported: 'Capped: it relies on a fact the source doesn’t contain.',
       },
+    },
+    /** Where in the source an idea comes from. */
+    reference: {
+      heading: 'Reference',
+      page: 'page {{from}}',
+      pages: 'pages {{from}}–{{to}}',
     },
     state: {
       reading: 'Reading the file first',

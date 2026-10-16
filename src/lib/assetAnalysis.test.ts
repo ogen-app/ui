@@ -5,6 +5,7 @@ import {
   formatClock,
   groupMentions,
   mergePageRefs,
+  pageSpan,
   readableTitle,
   insightState,
   isAnalyzable,
@@ -277,5 +278,17 @@ describe('readableTitle', () => {
     expect(readableTitle('Roadmap')).toBe('Roadmap')
     expect(readableTitle('GPT-4')).toBe('GPT-4')
     expect(readableTitle('launch-plan.pdf')).toBe('launch plan')
+  })
+})
+
+describe('pageSpan', () => {
+  it('spans the pages first to last', () => {
+    expect(pageSpan(['pp. 5–6', 'p. 2'])).toEqual({ from: 2, to: 6 })
+    expect(pageSpan(['p. 4'])).toEqual({ from: 4, to: 4 })
+  })
+
+  it('says nothing when a reference is not a page', () => {
+    expect(pageSpan(['p. 4', '12:03–12:47'])).toBeNull()
+    expect(pageSpan([])).toBeNull()
   })
 })
