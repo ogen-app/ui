@@ -4342,6 +4342,13 @@ export const en = {
       /** An idea's fit score on its track (CON-385), 10–100. */
       fitScore: 'Fit {{score}} of 100',
       fitUnscored: 'Not scored',
+      /** One idea's verdict on the hover card, as its mark's name. */
+      ideaVerdict: {
+        waiting: 'Undecided',
+        yes: 'Yes',
+        later: 'Not now',
+        no: 'No',
+      },
       /** The bands of the Date added grouping (CON-379). */
       band: {
         created: {

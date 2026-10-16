@@ -108,6 +108,24 @@ export const VERDICT_ORDER = ['waiting', 'yes', 'later', 'no'] as const
 
 export type VerdictKey = (typeof VERDICT_ORDER)[number]
 
+/**
+ * Which pile one idea sits in today, for a mark beside it: never answered, or
+ * postponed to a day that has come, is `waiting` — a woken idea is a question
+ * again, as `lib/ideas`'s `isWaiting` has it, though its record still says
+ * `later`.
+ */
+export function ideaVerdictKey(
+  idea: { verdict: 'yes' | 'later' | 'no' | null; remind_at: string | null },
+  now: Date,
+): VerdictKey {
+  if (idea.verdict === null) return 'waiting'
+  if (idea.verdict === 'later' && idea.remind_at) {
+    const at = Date.parse(idea.remind_at)
+    if (Number.isFinite(at) && at <= now.getTime()) return 'waiting'
+  }
+  return idea.verdict
+}
+
 /** "4 undecided · 2 yes · 1 not now" — the pill's tooltip and its name. */
 export function verdictSentence(t: TFunction, counts: IdeaCounts): string {
   return VERDICT_ORDER.filter((v) => counts[v] > 0)

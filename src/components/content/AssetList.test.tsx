@@ -393,6 +393,48 @@ describe('the other ideas', () => {
     ).toBeInTheDocument()
   })
 
+  it('marks each idea with its verdict, a woken one as undecided', async () => {
+    analyses.fn.mockResolvedValue([
+      lens(null, [
+        idea('i1', 'The next one', '', 90),
+        { ...idea('i2', 'Taken', '', 80), verdict: 'yes' },
+        {
+          ...idea('i3', 'Postponed', '', 70),
+          verdict: 'later',
+          remind_at: '2999-01-01T00:00:00Z',
+        },
+        {
+          ...idea('i4', 'Back again', '', 60),
+          verdict: 'later',
+          remind_at: '2000-01-01T00:00:00Z',
+        },
+        { ...idea('i5', 'Dropped', '', 50), verdict: 'no' },
+      ]),
+    ])
+    await show([row])
+    await userEvent.hover(
+      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
+    )
+    await screen.findAllByText('Taken')
+    const lists = screen.getAllByRole('list')
+    const card = lists[lists.length - 1]
+    const marks = within(card)
+      .getAllByRole('listitem')
+      .map((li) =>
+        within(li)
+          .getAllByRole('img')
+          .map((img) => img.getAttribute('aria-label'))
+          .filter((name) => !name?.startsWith('Fit')),
+      )
+    expect(marks).toEqual([
+      ['Undecided'],
+      ['Yes'],
+      ['Not now'],
+      ['Undecided'],
+      ['No'],
+    ])
+  })
+
   it('reads the campaign’s reading on a campaign’s page', async () => {
     await show([row], { campaignId: 'c1' })
     await userEvent.hover(

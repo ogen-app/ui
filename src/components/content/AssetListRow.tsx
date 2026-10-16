@@ -27,6 +27,7 @@ import { cn } from '@/lib'
 import {
   assetLink,
   formatDuration,
+  ideaVerdictKey,
   listTitle,
   rowDates,
   rowState,
@@ -34,6 +35,7 @@ import {
 import { statusToBadge } from '@/lib/assetStatus'
 import { byFit } from '@/lib/ideaFit'
 import { ingestFailureMessage } from '@/lib/uploadError'
+import type { VerdictKey } from '@/lib/assetList'
 import type { AssetListItem, AssetNextIdea } from '@/types/assetList'
 import { CampaignMark } from './asset-page/CampaignMark'
 import { AssetKindMark } from './AssetKindMark'
@@ -168,7 +170,7 @@ function AssetListRowComponent({
               </p>
             )
           )}
-          <IdeaLine row={row} state={state} campaignId={campaignId} />
+          <IdeaLine row={row} state={state} campaignId={campaignId} now={now} />
         </div>
       </div>
 
@@ -308,10 +310,12 @@ function IdeaLine({
   row,
   state,
   campaignId,
+  now,
 }: {
   row: AssetListItem
   state: ReturnType<typeof rowState>
   campaignId: string | null
+  now: Date
 }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -321,7 +325,9 @@ function IdeaLine({
     case 'ideas': {
       const next = row.next_idea
       if (!next) return null
-      return <NextIdea row={row} campaignId={campaignId} next={next} />
+      return (
+        <NextIdea row={row} campaignId={campaignId} next={next} now={now} />
+      )
     }
     case 'reading':
       return (
@@ -370,6 +376,36 @@ function IdeaLine({
   }
 }
 
+/**
+ * One idea's verdict as its mark alone, in the pill's colours: the word is its
+ * name and its tooltip, so the card spends no width on four words it repeats.
+ */
+function VerdictMark({ verdict }: { verdict: VerdictKey }) {
+  const { t } = useTranslation()
+  const label = t(`content.list.ideaVerdict.${verdict}`)
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className={cn(
+        'flex h-5 items-center',
+        verdict === 'waiting' && 'text-accent',
+        verdict === 'yes' && 'text-positive',
+        (verdict === 'later' || verdict === 'no') &&
+          'text-secondary-foreground',
+      )}
+    >
+      <HugeiconsIcon
+        icon={VERDICT_ICON[verdict]}
+        size={16}
+        strokeWidth={1.8}
+        aria-hidden
+      />
+    </span>
+  )
+}
+
 /** How many ideas the hover card names before "and N more". */
 const CARD_IDEAS_SHOWN = 8
 
@@ -387,8 +423,8 @@ const ROW_LINE = 20 / 2
 /**
  * The next idea's title and how many more, as one link, and on hover or focus
  * the asset's ideas beside it — best fit first (CON-385), each with its score
- * on a track, its title and up to two lines of its note, as a list on a lifted
- * card.
+ * on a track, its title, its verdict as a mark alone, and up to two lines of
+ * its note, as a list on a lifted card.
  *
  * The card lists every idea, the next one included: it is the best fit, so it
  * heads the card, on the same line as the row's own. Leaving it out made the
@@ -404,10 +440,12 @@ function NextIdea({
   row,
   campaignId,
   next,
+  now,
 }: {
   row: AssetListItem
   campaignId: string | null
   next: AssetNextIdea
+  now: Date
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -493,7 +531,7 @@ function NextIdea({
       >
         {analyses.isPending || shown.length === 0 ? (
           <div className="px-3 py-1">
-            <p className="px-1 py-2.5 text-[0.9rem]/5 text-secondary-foreground">
+            <p className="px-1 py-2.5 text-[12.5px]/5 text-secondary-foreground">
               {analyses.isPending
                 ? t('content.list.otherIdeasLoading')
                 : t('content.list.otherIdeasNone')}
@@ -507,21 +545,22 @@ function NextIdea({
             {shown.map((idea) => (
               <li
                 key={idea.id}
-                className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3 border-t border-quaternary px-1 py-2.5 first:border-t-0"
+                className="grid grid-cols-[4rem_minmax(0,1fr)_auto] gap-x-3 border-t border-quaternary px-1 py-2.5 first:border-t-0"
               >
                 <FitTrack score={idea.fit_score} />
-                <span className="text-[0.9rem]/5 text-foreground">
+                <span className="text-[12.5px]/5 text-foreground">
                   {idea.title}
                 </span>
+                <VerdictMark verdict={ideaVerdictKey(idea, now)} />
                 {idea.note && (
-                  <span className="col-start-2 mt-0.5 line-clamp-2 text-xs/[17px] text-secondary-foreground">
+                  <span className="col-span-2 col-start-2 mt-0.5 line-clamp-2 text-xs/[17px] text-secondary-foreground">
                     {idea.note}
                   </span>
                 )}
               </li>
             ))}
             {hidden > 0 && (
-              <li className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3 border-t border-quaternary px-1 py-2.5 text-[0.9rem]/5 text-secondary-foreground">
+              <li className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3 border-t border-quaternary px-1 py-2.5 text-[12.5px]/5 text-secondary-foreground">
                 <span className="col-start-2">
                   {t('content.list.nextIdeaMore', { count: hidden })}
                 </span>

@@ -3201,6 +3201,12 @@ export const es: Translation = {
       otherIdeasNone: 'No hay ideas de esta lectura.',
       fitScore: 'Encaje {{score}} de 100',
       fitUnscored: 'Sin puntuar',
+      ideaVerdict: {
+        waiting: 'Sin decidir',
+        yes: 'Sí',
+        later: 'Ahora no',
+        no: 'No',
+      },
       band: {
         created: {
           '1d': 'Hoy',
