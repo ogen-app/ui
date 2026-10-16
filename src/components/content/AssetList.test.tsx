@@ -391,6 +391,31 @@ describe('the other ideas', () => {
     ).toBeInTheDocument()
   })
 
+  it('lists every idea, scrolling rather than stopping at a count', async () => {
+    analyses.fn.mockResolvedValue([
+      lens(
+        null,
+        Array.from({ length: 12 }, (_, i) =>
+          idea(
+            `i${i + 1}`,
+            i === 0 ? 'The next one' : `Idea ${i + 1}`,
+            '',
+            90 - i,
+          ),
+        ),
+      ),
+    ])
+    await show([row])
+    await userEvent.hover(
+      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
+    )
+    await screen.findAllByText('Idea 12')
+    const lists = screen.getAllByRole('list')
+    const card = lists[lists.length - 1]
+    expect(within(card).getAllByRole('listitem')).toHaveLength(12)
+    expect(within(card).queryByText(/more$/)).not.toBeInTheDocument()
+  })
+
   it('marks each idea with its verdict, a woken one as undecided', async () => {
     analyses.fn.mockResolvedValue([
       lens(null, [

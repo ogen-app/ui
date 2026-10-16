@@ -173,9 +173,14 @@ room instead.
     dashed empty line when unscored), its title at 12.5px, its verdict as a
     mark alone on the right (the pill's marks and colours; a postponed idea
     whose day has come is undecided again; the word is the mark's name and
-    tooltip), and up to two lines of its note. Opening downward, the card's first title is level with the
+    tooltip), and up to two lines of its note. The list stops at five and a
+    half ideas and scrolls past that, every idea included (no "and N more"),
+    with the rail's edge fades (`SurfaceFader`): the foot while anything is
+    below, the head once anything has scrolled above. The card stays open
+    while the pointer is on it, so it can be scrolled. Opening downward, the card's first title is level with the
     row's idea line; when the line sits in the lower part of the screen the
-    card opens upward and its last line is level with it instead. The ideas
+    card opens upward and its last line is level with it instead, or its foot
+    when the list scrolls. The ideas
     come from the same reading as the counts (the workspace's lens in the
     bank, the campaign's on a campaign's page), read from `GET /:id/analyses`
     only on first hover.
