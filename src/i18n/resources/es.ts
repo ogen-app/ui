@@ -364,8 +364,6 @@ export const es: Translation = {
       },
       count_one: '{{count}} idea de publicación',
       count_other: '{{count}} ideas de publicación',
-      countFor_one: '{{count}} idea de publicación para {{campaign}}',
-      countFor_other: '{{count}} ideas de publicación para {{campaign}}',
       waiting:
         'Las ideas nuevas esperan en tu bandeja de Ideas un sí, más tarde o no.',
       waitingFor:
@@ -378,18 +376,37 @@ export const es: Translation = {
       emptyTitle: 'Este no dio ideas',
       emptyBody:
         'El resumen está aquí, pero la fuente era demasiado corta o se alejaba demasiado del brief para sacar publicaciones.',
-      where: {
-        inbox: 'En tu bandeja de Ideas',
-        yes: 'Marcada con sí en Ideas',
-        later: 'Pospuesta en Ideas',
-        no: 'Marcada con no en Ideas',
+      answer: 'Responder a esta idea',
+    },
+    ideaFit: {
+      heading: 'Por qué puntúa {{score}}',
+      forCampaign: 'para {{campaign}}',
+      forWorkspace: 'para el espacio de trabajo',
+      scoredWorkspace: 'puntuada para el espacio de trabajo',
+      scoredOther: 'puntuada para otra campaña',
+      rating: '{{criterion}}: {{level}} de 5',
+      criterion: {
+        message_fit: 'Mensaje clave',
+        audience_fit: 'Audiencia',
+        evidence: 'Respaldada por la fuente',
+        gap_fill: 'Cubre un hueco',
+        phase_fit: 'Fase de la campaña',
+        timeliness: 'Momento',
+        brand_fit: 'Voz de marca',
+        brand_relevance: 'Relevancia para la marca',
+        campaign_potential: 'Alimenta una campaña',
+        evergreen: 'Atemporal',
       },
-      verdict: {
-        inbox: 'Sin clasificar',
-        yes: 'Sí',
-        later: 'Ahora no',
-        no: 'No',
+      cap: {
+        guardrail_breach: 'Limitada: rompería una regla de la marca.',
+        off_brief: 'Limitada: va contra el brief.',
+        unsupported: 'Limitada: se apoya en un dato que la fuente no contiene.',
       },
+    },
+    reference: {
+      heading: 'Referencia',
+      page: 'página {{from}}',
+      pages: 'páginas {{from}}–{{to}}',
     },
     state: {
       reading: 'Primero se está leyendo el archivo',

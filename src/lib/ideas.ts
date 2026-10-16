@@ -27,6 +27,8 @@
  * components turn them into words.
  */
 
+import type { FitBreakdown } from '@/lib/ideaFit'
+
 /**
  * A verdict, or `null` for an idea nobody has answered yet.
  *
@@ -80,6 +82,10 @@ export type Idea = {
   assetAnalysisId?: string | null
   /** The asset that analysis read, named for display. */
   sourceAsset?: { id: string; title: string } | null
+  /** How well it fits the reading it came from, 10–100 (CON-385). */
+  fitScore?: number
+  /** Why it scored that; absent on an unscored idea. */
+  fitBreakdown?: FitBreakdown
 }
 
 export type IdeaOrigin = 'manual' | 'asset_analysis'

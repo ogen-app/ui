@@ -46,13 +46,26 @@ image has Source only.
 - **Insights** (ideas first, CON-369): relevance panel (campaign lens), the
   summary at rest — its lead paragraph, four lines — with "Read the full
   summary" growing the page in place (whole summary as light Markdown, key
-  points; no box scrolling inside the page), then **N post ideas** — five, then
-  "Show N more", each opening in place, its page references merged
-  (`pp. 55–57, pp. 57–59` → `pp. 55–59`) — then meeting notes for a recording
-  (participants, commitments with time chips, decisions, open questions), then
-  **What it covers**: topics as a line of text, mentions grouped by kind with
-  the kind written out, and the sheets read. No triage here; that is the Ideas
-  inbox (and CON-365).
+  points; no box scrolling inside the page), then **N post ideas** (CON-387) — led by the teal `AiIdeaIcon`, the count
+  alone in regular weight, the campaign named in the line under it; five, then
+  "Show N more", best fit first (`byFit`, the Assets list card's order), each
+  row the card's: score track, title, verdict mark in the pill's colours, the
+  note in two lines, a pale inset rule between rows and no box. A row opens in
+  place, its title semibold, to the angle, the rationale, **Why it scores N**
+  (CON-385's `fit_breakdown`: criteria heaviest first, each a Geist Mono
+  rating in a disc and five segments in the fit track's colour, the reason
+  with the phase or campaign as a chip, a cap said above them), **Reference**
+  (the page span, then the source chips — pages merged, `pp. 55–57,
+  pp. 57–59` → `pp. 55–59`; closed rows carry no references) and the
+  **answer**: Yes / Not now / No as one joined outline button group on the
+  inbox's rules — one click and no confirmation for Yes and No, Not now asks
+  when — with the record and "Put this back with the undecided" under it.
+  **Triage happens here as well as in the Ideas inbox**; an answered row stays
+  put until it is closed, even when it leaves the chosen pile. Then meeting
+  notes for a recording (participants, commitments with time chips,
+  decisions, open questions), then **What it covers**: topics as a line of
+  text, mentions grouped by kind with the kind written out, and the sheets
+  read. Turning an idea into a post is CON-365.
 - **Type and colour**: section labels are sentence case; readable grey text is
   `secondary-foreground` (gray-700, 5.2:1 — gray-600 fails AA at 3.3:1), the
   tertiary grey is left to icons and markers. Highlights are tinted panels,

@@ -1,9 +1,17 @@
-import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, screen } from '@testing-library/react'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { fireEvent, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
+import { i18next, loadLocaleResources } from '@/i18n'
 import type { IdeaBody } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { InsightsPanel, type PanelState } from './InsightsPanel'
+
+const verdicts = vi.hoisted(() => ({ fn: vi.fn() }))
+vi.mock('@/services/api/ideas', async (actual) => ({
+  ...(await actual<typeof import('@/services/api/ideas')>()),
+  setIdeaVerdict: verdicts.fn,
+}))
 
 const idea = (n: number, over: Partial<IdeaBody> = {}): IdeaBody => ({
   id: `i${n}`,
@@ -62,7 +70,7 @@ describe('InsightsPanel', () => {
     expect(screen.queryByText('Second paragraph.')).not.toBeInTheDocument()
     expect(screen.queryByText('Point one')).not.toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: '2 post ideas for Spring launch' }),
+      screen.getByRole('heading', { name: '2 post ideas' }),
     ).toBeInTheDocument()
     // Mentions are text, grouped under their kind — no tooltip.
     expect(screen.getByText('Organisations')).toBeInTheDocument()
@@ -94,7 +102,7 @@ describe('InsightsPanel', () => {
     ]
     await renderPanel('ready', lens({ ideas }))
     expect(
-      screen.getByRole('heading', { name: '7 post ideas for Spring launch' }),
+      screen.getByRole('heading', { name: '7 post ideas' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Idea 5')).toBeInTheDocument()
     expect(screen.queryByText('Idea 6')).not.toBeInTheDocument()
@@ -254,7 +262,7 @@ describe('InsightsPanel', () => {
     expect(screen.getByText('two').tagName).toBe('LI')
   })
 
-  it('shows page references merged and sorted, as plain text', async () => {
+  it('shows page references only in an opened idea, merged and sorted', async () => {
     await renderPanel(
       'ready',
       lens({
@@ -263,6 +271,165 @@ describe('InsightsPanel', () => {
         ],
       }),
     )
+    expect(screen.queryByText('pp. 55–59')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText('Idea 1'))
     expect(screen.getByText('pp. 55–59')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /^Reference\s*·\s*pages 55–59$/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('orders the ideas best fit first, each with its score and verdict', async () => {
+    await renderPanel(
+      'ready',
+      lens({
+        ideas: [
+          idea(1, { fit_score: 41 }),
+          idea(2),
+          idea(3, { fit_score: 88, verdict: 'yes' }),
+        ],
+      }),
+    )
+    const titles = screen
+      .getAllByRole('button', { expanded: false })
+      .map((b) => b.textContent ?? '')
+      .filter((text) => /Idea \d/.test(text))
+    expect(titles[0]).toContain('Idea 3')
+    expect(titles[1]).toContain('Idea 1')
+    expect(titles[2]).toContain('Idea 2')
+    expect(
+      screen.getByRole('img', { name: 'Fit 88 of 100' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Not scored' })).toBeInTheDocument()
+    // Undecided has a mark now, not only the answered.
+    expect(screen.getAllByRole('img', { name: 'Undecided' })).toHaveLength(2)
+    expect(screen.getByRole('img', { name: 'Yes' })).toBeInTheDocument()
+  })
+
+  it('explains the score, heaviest criterion first, in an opened idea', async () => {
+    await renderPanel(
+      'ready',
+      lens({
+        ideas: [
+          idea(1, {
+            fit_score: 78,
+            fit_breakdown: {
+              lens: 'campaign',
+              campaign_id: 'c1',
+              caps: [],
+              criteria: {
+                timeliness: { level: 1, why: 'Window ended.' },
+                message_fit: { level: 4, why: 'Serves the message.' },
+                phase_fit: {
+                  level: 4,
+                  why: 'Widens the story.',
+                  phase: 'Launch',
+                },
+              },
+            },
+          }),
+        ],
+      }),
+    )
+    fireEvent.click(screen.getByText('Idea 1'))
+    expect(
+      screen.getByRole('heading', {
+        name: /^Why it scores 78\s*·\s*for Spring launch$/,
+      }),
+    ).toBeInTheDocument()
+    const ratings = screen
+      .getAllByRole('img')
+      .map((img) => img.getAttribute('aria-label'))
+      .filter((name) => name?.includes(' of 5'))
+    expect(ratings).toEqual([
+      'Key message: 4 of 5',
+      'Campaign phase: 4 of 5',
+      'Timing: 1 of 5',
+    ])
+    expect(screen.getByText('Launch')).toBeInTheDocument()
+  })
+
+  it('answers an idea in place, and asks when for not now', async () => {
+    verdicts.fn.mockReset().mockResolvedValue(undefined)
+    await renderPanel('ready', lens({ ideas: [idea(1), idea(2)] }))
+    fireEvent.click(screen.getByText('Idea 1'))
+    const group = screen.getByRole('group', { name: 'Answer this idea' })
+
+    await userEvent.click(within(group).getByRole('button', { name: /Yes/ }))
+    expect(verdicts.fn).toHaveBeenCalledWith('i1', 'yes', null)
+
+    await userEvent.click(
+      within(group).getByRole('button', { name: /Not now/ }),
+    )
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Ask me in a week' }),
+    )
+    expect(verdicts.fn).toHaveBeenLastCalledWith(
+      'i1',
+      'later',
+      expect.any(String),
+    )
+  })
+
+  it("names an answered idea's verdict and offers the way back", async () => {
+    verdicts.fn.mockReset().mockResolvedValue(undefined)
+    await renderPanel(
+      'ready',
+      lens({
+        ideas: [
+          idea(1, { verdict: 'yes', decided_at: '2026-10-14T10:00:00Z' }),
+        ],
+      }),
+    )
+    fireEvent.click(screen.getByText('Idea 1'))
+    expect(
+      screen.getByRole('button', { name: /Yes/, pressed: true }),
+    ).toBeInTheDocument()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Put this back with the undecided' }),
+    )
+    expect(verdicts.fn).toHaveBeenCalledWith('i1', null, null)
+  })
+})
+
+describe('InsightsPanel in Spanish', () => {
+  beforeAll(async () => {
+    await loadLocaleResources('es')
+    await i18next.changeLanguage('es')
+  })
+  afterAll(async () => {
+    await i18next.changeLanguage('en')
+  })
+
+  it('reads the breakdown, the reference and the answer from the catalogue', async () => {
+    await renderPanel(
+      'ready',
+      lens({
+        ideas: [
+          idea(1, {
+            fit_score: 78,
+            fit_breakdown: {
+              lens: 'campaign',
+              campaign_id: 'c1',
+              caps: ['off_brief'],
+              criteria: { message_fit: { level: 4, why: 'Sirve.' } },
+            },
+          }),
+        ],
+      }),
+    )
+    fireEvent.click(screen.getByText('Idea 1'))
+    expect(screen.getByText('Por qué puntúa 78')).toBeInTheDocument()
+    expect(screen.getByText('Mensaje clave')).toBeInTheDocument()
+    expect(
+      screen.getByText('Limitada: va contra el brief.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Referencia')).toBeInTheDocument()
+    expect(
+      screen.getByRole('group', { name: 'Responder a esta idea' }),
+    ).toBeInTheDocument()
+    // The English a literal would have left behind.
+    expect(screen.queryByText(/Why it scores/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Key message')).not.toBeInTheDocument()
   })
 })

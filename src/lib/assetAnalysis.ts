@@ -344,6 +344,27 @@ export function mergePageRefs(labels: string[]): string[] {
 
 const PAGE_REF = /^pp?\.\s*(\d+)(?:\s*[–-]\s*(\d+))?$/
 
+/**
+ * The pages a set of references spans, first to last, for the line above the
+ * chips — or `null` when any of them is not a page (a time, a slide, a sheet
+ * range), since a span of mixed kinds says nothing.
+ */
+export function pageSpan(
+  labels: string[],
+): { from: number; to: number } | null {
+  let from = Infinity
+  let to = -Infinity
+  for (const label of labels) {
+    const m = PAGE_REF.exec(label.trim())
+    if (!m) return null
+    const a = Number(m[1])
+    const b = m[2] ? Number(m[2]) : a
+    from = Math.min(from, a, b)
+    to = Math.max(to, a, b)
+  }
+  return Number.isFinite(from) ? { from, to } : null
+}
+
 /** The order mention groups are read in, and which kinds exist. */
 export const MENTION_KINDS = [
   'org',
