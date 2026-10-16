@@ -3,6 +3,7 @@ import type { TFunction } from 'i18next'
 import {
   assetLink,
   formatDuration,
+  ideaVerdictKey,
   listDate,
   listTitle,
   rowDates,
@@ -221,5 +222,29 @@ describe('assetLink', () => {
       params: { campaignId: 'c1', assetId: 'a1' },
       search: {},
     })
+  })
+})
+
+describe('ideaVerdictKey', () => {
+  const now = new Date('2026-10-16T12:00:00Z')
+  const idea = (
+    verdict: 'yes' | 'later' | 'no' | null,
+    remind_at: string | null = null,
+  ) => ({ verdict, remind_at })
+
+  it('names the pile an idea sits in', () => {
+    expect(ideaVerdictKey(idea(null), now)).toBe('waiting')
+    expect(ideaVerdictKey(idea('yes'), now)).toBe('yes')
+    expect(ideaVerdictKey(idea('no'), now)).toBe('no')
+    expect(ideaVerdictKey(idea('later', '2026-11-03T00:00:00Z'), now)).toBe(
+      'later',
+    )
+  })
+
+  it('counts a postponed idea whose day has come as waiting again', () => {
+    expect(ideaVerdictKey(idea('later', '2026-10-01T00:00:00Z'), now)).toBe(
+      'waiting',
+    )
+    expect(ideaVerdictKey(idea('later'), now)).toBe('later')
   })
 })
