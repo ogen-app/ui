@@ -137,11 +137,13 @@ slack; then the pill and the campaign (200px). Below the `@4xl` container
 width the tags fold under the title and the spacer goes.
 
 - **Kind:** a bare 28px Hugeicons mark before the title (`AssetKindMark`),
-  from the row's `kind`, in the file type's conventional colour (`--kind-*`
-  in `index.css`): PDF red, document blue, spreadsheet and CSV green, slides
-  and notes orange, web page slate, recording rust, anything else
-  near-black. The colours tint marks only, never text. An image puts its
-  thumbnail there instead. The checkbox is top-aligned with the mark.
+  from the row's `kind`, stroke 1.25, in muted ink (`--kind-*` in
+  `index.css`, CON-382): PDF brick, document blue, spreadsheet and CSV green,
+  slides terracotta, all at one lightness and each over 4.5:1; web pages,
+  recordings, notes and anything else neutral grey, their glyphs being
+  distinct enough. Only the four file types people already know by colour
+  get one, and none of them may outshout the teal idea counts. An image puts
+  its thumbnail there instead. The checkbox is top-aligned with the mark.
 - **Title:** an `<h3>`, written as words (`listTitle`): URL-encoding decoded, a
   file's extension dropped, underscores and hyphens read as spaces, and a
   page's " - InfoQ" suffix dropped when the row shows its domain.
