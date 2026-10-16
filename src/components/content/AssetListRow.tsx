@@ -1,4 +1,11 @@
-import { memo, useRef, useState, type ReactNode } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import type { TFunction } from 'i18next'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -37,6 +44,7 @@ import { byFit } from '@/lib/ideaFit'
 import { ingestFailureMessage } from '@/lib/uploadError'
 import type { VerdictKey } from '@/lib/assetList'
 import type { AssetListItem, AssetNextIdea } from '@/types/assetList'
+import { SurfaceFader } from '@/components/page-primitives/SurfaceFader'
 import { CampaignMark } from './asset-page/CampaignMark'
 import { AssetKindMark } from './AssetKindMark'
 import { FitTrack } from './FitTrack'
@@ -409,8 +417,17 @@ function VerdictMark({ verdict }: { verdict: VerdictKey }) {
   )
 }
 
-/** How many ideas the hover card names before "and N more". */
-const CARD_IDEAS_SHOWN = 8
+/**
+ * The card's list stops at five and a half ideas and scrolls past that: the
+ * half idea at the foot is what says there is more. One idea with a two-line
+ * note is 77px (10 + 20 + 2 + 34 + 10, and its 1px rule), the list adds 4px
+ * above. A card of shorter ideas simply ends sooner.
+ */
+const CARD_MAX_HEIGHT = 4 + 77 * 5.5
+
+/** The edge fades: a short solid run, then the ramp, as the rail's are. */
+const CARD_FADE_SOLID = 4
+const CARD_FADE = 32
 
 /**
  * Where the card's first line sits below its top, and its last line above its
@@ -422,6 +439,8 @@ const CARD_FIRST_LINE = 4 + 10 + 20 / 2
 const CARD_LAST_LINE_TITLE = 4 + 10 + 20 / 2
 const CARD_LAST_LINE_NOTE = 4 + 10 + 17 / 2
 const ROW_LINE = 20 / 2
+/** Opening upward over a list that scrolls, the card's foot meets the line's. */
+const CARD_FOOT = ROW_LINE
 
 /**
  * The next idea's title and how many more, as one link, and on hover or focus
@@ -460,22 +479,26 @@ function NextIdea({
     (a) => (a.campaign_id ?? null) === campaignId,
   )
   const ideas = [...(lens?.ideas ?? [])].sort(byFit)
-  const shown = ideas.slice(0, CARD_IDEAS_SHOWN)
-  const hidden = ideas.length - shown.length
+  // Whether the list runs past the card, reported by the list once it has
+  // been laid out: it decides where an upward card meets the line.
+  const [overflowing, setOverflowing] = useState(false)
 
   const more = row.idea_counts.waiting - 1
   const lineRef = useRef<HTMLParagraphElement>(null)
   // Opening downward, the card's first line is level with this one; when the
   // line sits low enough that the card would run off the foot of the screen,
-  // it opens upward and its last line is level with this one instead.
+  // it opens upward and its last line is level with this one instead — or,
+  // when the list scrolls and its last visible line is half an idea, its foot.
   const [align, setAlign] = useState<'start' | 'end'>('start')
-  const last = shown[shown.length - 1]
+  const last = ideas[ideas.length - 1]
   const lastLine =
-    align === 'end' && shown.length > 0 && hidden === 0 && last?.note
-      ? CARD_LAST_LINE_NOTE
-      : align === 'end'
-        ? CARD_LAST_LINE_TITLE
-        : CARD_FIRST_LINE
+    align === 'start'
+      ? CARD_FIRST_LINE
+      : overflowing
+        ? CARD_FOOT
+        : last?.note
+          ? CARD_LAST_LINE_NOTE
+          : CARD_LAST_LINE_TITLE
   const onOpenChange = (next: boolean) => {
     if (next && lineRef.current) {
       const { top } = lineRef.current.getBoundingClientRect()
@@ -532,7 +555,7 @@ function NextIdea({
         alignOffset={-(lastLine - ROW_LINE)}
         className="w-104 max-w-104 rounded-lg p-0 text-left shadow-lg [text-wrap:pretty]"
       >
-        {analyses.isPending || shown.length === 0 ? (
+        {analyses.isPending || ideas.length === 0 ? (
           <div className="px-3 py-1">
             <p className="px-1 py-2.5 text-[12.5px]/5 text-secondary-foreground">
               {analyses.isPending
@@ -541,11 +564,8 @@ function NextIdea({
             </p>
           </div>
         ) : (
-          // The rules are inset by the list's own padding, so they stop short
-          // of the card's edges. Score, then words: the scores make one column
-          // down the left, the titles another beside it.
-          <ul className="flex flex-col px-3 py-1">
-            {shown.map((idea) => (
+          <IdeaScroller onOverflow={setOverflowing}>
+            {ideas.map((idea) => (
               <li
                 key={idea.id}
                 className="grid grid-cols-[4rem_minmax(0,1fr)_auto] gap-x-3 border-t border-quaternary px-1 py-2.5 first:border-t-0"
@@ -562,17 +582,95 @@ function NextIdea({
                 )}
               </li>
             ))}
-            {hidden > 0 && (
-              <li className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3 border-t border-quaternary px-1 py-2.5 text-[12.5px]/5 text-secondary-foreground">
-                <span className="col-start-2">
-                  {t('content.list.nextIdeaMore', { count: hidden })}
-                </span>
-              </li>
-            )}
-          </ul>
+          </IdeaScroller>
         )}
       </TooltipContent>
     </Tooltip>
+  )
+}
+
+/**
+ * The card's list, five and a half ideas tall at most and scrolling past
+ * that, with the rail's edge fades (`SurfaceFader`): the foot fades while
+ * anything is below, the head once anything has scrolled above, so the list
+ * never ends on a hard cut. Every idea is here — the card scrolls rather than
+ * stopping at a count and saying "and N more".
+ *
+ * The rules are inset by the list's own padding, so they stop short of the
+ * card's edges. Score, then words, then the verdict: the scores make one
+ * column down the left, the titles another beside it.
+ */
+function IdeaScroller({
+  onOverflow,
+  children,
+}: {
+  onOverflow: (overflowing: boolean) => void
+  children: ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState({ above: false, below: false })
+
+  const measure = useCallback(() => {
+    const el = ref.current
+    if (!el) return
+    const above = el.scrollTop > 1
+    const below = el.scrollTop + el.clientHeight < el.scrollHeight - 1
+    setEdges((was) =>
+      was.above === above && was.below === below ? was : { above, below },
+    )
+  }, [])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    measure()
+    onOverflow(el.scrollHeight > el.clientHeight + 1)
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      measure()
+      onOverflow(el.scrollHeight > el.clientHeight + 1)
+    })
+    observer.observe(el)
+    if (el.firstElementChild) observer.observe(el.firstElementChild)
+    return () => observer.disconnect()
+  }, [measure, onOverflow])
+
+  const fade =
+    'transition-opacity duration-150 ease-out motion-reduce:transition-none'
+
+  return (
+    // Its own clip, not the tooltip's: the tooltip carries the arrow, which
+    // has to stand outside the card.
+    <div className="relative overflow-hidden rounded-lg">
+      <div
+        ref={ref}
+        onScroll={measure}
+        className="overflow-y-auto overscroll-contain [scrollbar-width:thin]"
+        style={{ maxHeight: CARD_MAX_HEIGHT }}
+      >
+        <ul className="flex flex-col px-3 py-1">{children}</ul>
+      </div>
+      <SurfaceFader
+        edge="top"
+        solid={`${CARD_FADE_SOLID}px`}
+        fade={CARD_FADE}
+        className={cn('top-0', fade)}
+        style={{
+          height: CARD_FADE_SOLID + CARD_FADE,
+          opacity: edges.above ? 1 : 0,
+        }}
+      />
+      <SurfaceFader
+        edge="bottom"
+        solid={`${CARD_FADE_SOLID}px`}
+        fade={CARD_FADE}
+        className={cn('bottom-0', fade)}
+        style={{
+          height: CARD_FADE_SOLID + CARD_FADE,
+          opacity: edges.below ? 1 : 0,
+        }}
+      />
+    </div>
   )
 }
 
