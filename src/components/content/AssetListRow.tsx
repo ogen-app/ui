@@ -47,9 +47,10 @@ import { VerdictPill } from './VerdictPill'
  *
  * Four columns, and three of them hold still. The check box; then the text,
  * capped at its measure so it never re-wraps as the window widens; then the
- * tags, right after the text rather than at the far edge; then — past a
- * spacer that takes all the slack — the verdict pill and the campaign. On a
- * narrow list the tags fold back under the title, which is where they read
+ * verdict pill and the campaign, right after the text, so how many ideas are
+ * waiting reads with the next one's name; then — past a spacer that takes all
+ * the slack — the tags, at the far edge, as reference rather than headline. On
+ * a narrow list the tags fold back under the title, which is where they read
  * second-best, and the spacer goes.
  *
  * The text column leads with the kind and the title, then one line of facts,
@@ -107,7 +108,9 @@ function AssetListRowComponent({
     <li
       className={cn(
         'group relative grid grid-cols-[16px_minmax(0,1fr)_200px] gap-x-5 border-b border-quaternary px-5 pt-5 pb-5.5 last:border-b-0',
-        '@4xl:grid-cols-[16px_minmax(0,calc(72ch+40px))_168px_minmax(0,1fr)_200px]',
+        // The pill's column is 160px behind a 28px inset, which makes 48px
+        // between it and the text; the tags' is 168px plus the bin's 40px.
+        '@4xl:grid-cols-[16px_minmax(0,calc(72ch+40px))_188px_minmax(0,1fr)_208px]',
         'hover:bg-secondary focus-within:bg-secondary',
         selected && 'bg-secondary',
       )}
@@ -169,11 +172,9 @@ function AssetListRowComponent({
         </div>
       </div>
 
-      {/* Hidden, not merely empty, below the wide layout: the tags are under
-          the title there, and an empty grid item would still take a column. */}
-      <div className="hidden pt-1 @4xl:block">{tags}</div>
-
-      <div className="flex flex-col items-start gap-2 pr-10 @4xl:col-start-5">
+      {/* The bin's corner is this column's below the wide layout, the tags'
+          above it. */}
+      <div className="flex flex-col items-start gap-2 pr-10 @4xl:pr-0 @4xl:pl-7">
         {state === 'ideas' && (
           <VerdictPill
             counts={row.idea_counts}
@@ -186,6 +187,13 @@ function AssetListRowComponent({
           names={campaignNames}
           ready={campaignsReady}
         />
+      </div>
+
+      {/* Hidden, not merely empty, below the wide layout: the tags are under
+          the title there, and an empty grid item would still take a column.
+          Past the spacer, and clear of the bin in the corner. */}
+      <div className="hidden pt-1 pr-10 @4xl:col-start-5 @4xl:block">
+        {tags}
       </div>
 
       {/* Out of sight until the row is pointed at or something in it is
@@ -362,8 +370,8 @@ function IdeaLine({
   }
 }
 
-/** How many of the other ideas the hover list names before "and N more". */
-const OTHER_IDEAS_SHOWN = 8
+/** How many ideas the hover card names before "and N more". */
+const CARD_IDEAS_SHOWN = 8
 
 /**
  * Where the card's first line sits below its top, and its last line above its
@@ -377,9 +385,14 @@ const CARD_LAST_LINE_NOTE = 4 + 10 + 17 / 2
 const ROW_LINE = 20 / 2
 
 /**
- * The next idea's title, and on hover or focus the asset's other ideas beside
- * it — best fit first (CON-385), each with its score on a track, its title and
- * up to two lines of its note, as a list on a lifted card.
+ * The next idea's title and how many more, as one link, and on hover or focus
+ * the asset's ideas beside it — best fit first (CON-385), each with its score
+ * on a track, its title and up to two lines of its note, as a list on a lifted
+ * card.
+ *
+ * The card lists every idea, the next one included: it is the best fit, so it
+ * heads the card, on the same line as the row's own. Leaving it out made the
+ * card a list of everything *but* the idea worth reading first.
  *
  * The ideas are those of one reading: the workspace's in the bank, the
  * campaign's on a campaign's page — the same lens the row's counts are meant
@@ -405,11 +418,9 @@ function NextIdea({
   const lens = analyses.data?.find(
     (a) => (a.campaign_id ?? null) === campaignId,
   )
-  const others = (lens?.ideas ?? [])
-    .filter((idea) => idea.id !== next.id)
-    .sort(byFit)
-  const shown = others.slice(0, OTHER_IDEAS_SHOWN)
-  const hidden = others.length - shown.length
+  const ideas = [...(lens?.ideas ?? [])].sort(byFit)
+  const shown = ideas.slice(0, CARD_IDEAS_SHOWN)
+  const hidden = ideas.length - shown.length
 
   const more = row.idea_counts.waiting - 1
   const lineRef = useRef<HTMLParagraphElement>(null)
@@ -448,21 +459,28 @@ function NextIdea({
             aria-hidden
             className="shrink-0 text-accent"
           />
+          {/* One link and one underline, "and N more" included: the count is
+              a way into the same undecided pile as the title. The title gives
+              way to it when the line is short of room; the space before the
+              count is inside its span so the underline runs on unbroken. */}
           <Link
             {...assetLink(row, campaignId, 'waiting')}
-            className="min-w-0 truncate text-foreground underline decoration-quinary underline-offset-3 outline-none hover:decoration-foreground focus-visible:decoration-foreground"
+            className="group/next flex min-w-0 underline-offset-3 outline-none"
           >
-            {next.title}
-          </Link>
-          {more > 0 && (
-            <span className="shrink-0 text-secondary-foreground">
-              {t('content.list.nextIdeaMore', { count: more })}
+            <span className="min-w-0 truncate text-foreground underline decoration-quinary group-hover/next:decoration-foreground group-focus-visible/next:decoration-foreground">
+              {next.title}
             </span>
-          )}
+            {more > 0 && (
+              <span className="shrink-0 whitespace-pre text-secondary-foreground underline decoration-quinary group-hover/next:decoration-foreground group-focus-visible/next:decoration-foreground">
+                {' '}
+                {t('content.list.nextIdeaMore', { count: more })}
+              </span>
+            )}
+          </Link>
         </p>
       </TooltipTrigger>
       {/* A light card lifted off the row by its shadow, pointing back at the
-          idea it belongs to: the other ideas, one to a block, with a pale
+          line it opens from: the ideas, one to a block, with a pale
           rule between them. Radix negates the offset when aligned to the end,
           so one negative figure lifts the card opening downward and lowers it
           opening upward. */}

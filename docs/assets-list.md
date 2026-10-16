@@ -132,9 +132,11 @@ delete confirmation names N.
 
 Four columns, three of them fixed: the checkbox; the text, capped at its
 measure (`72ch` plus the indent under the icon) so widening the window never
-re-wraps it; the tags (168px), right after the text; a spacer that takes the
-slack; then the pill and the campaign (200px). Below the `@4xl` container
-width the tags fold under the title and the spacer goes.
+re-wraps it; the pill and the campaign (160px), 48px after the text so the
+count reads with the next idea's name; a spacer that takes the slack; then the
+tags (168px, plus 40px kept clear for the bin) at the far edge. Below the
+`@4xl` container width the tags fold under the title, the spacer goes, and the
+pill's column (200px) keeps the bin's room instead.
 
 - **Kind:** a bare 28px Hugeicons mark before the title (`AssetKindMark`),
   from the row's `kind`, stroke 1.25, in muted ink (`--kind-*` in
@@ -157,10 +159,11 @@ width the tags fold under the title and the spacer goes.
   search, where it matched instead (`MatchSnippet`).
 - **The idea line** (`rowState`):
   - With ideas waiting: the next one by name (`next_idea`, the best-fit
-    undecided idea, chosen by the server since CON-385), opening the asset on
-    its undecided pile, then "and N more". Hovering or focusing the line opens
-    a light card after it, 416px wide and lifted by a shadow, listing the
-    asset's other ideas best fit first (`lib/ideaFit`'s `byFit`: unscored
+    undecided idea, chosen by the server since CON-385) and "and N more", one
+    link under one underline, opening the asset on its undecided pile.
+    Hovering or focusing the line opens a light card after it, 416px wide and
+    lifted by a shadow, listing all of the asset's ideas best fit first, so
+    the row's own idea heads it (`lib/ideaFit`'s `byFit`: unscored
     last, then oldest first, as the server picks `next_idea`). Each idea is
     its score on a track (`FitTrack`: a pill on a 64px line from pale sage at
     100 to pale sand at 10, its 2px ring the line's colour where it sits, a
