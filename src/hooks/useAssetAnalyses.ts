@@ -156,8 +156,22 @@ export function useAnswerIdea(assetId: string, ideaId: string) {
       )
       return { previous }
     },
+    // Only this idea goes back. The guard is per idea, so another idea may
+    // have been answered since the snapshot, and putting the whole snapshot
+    // back would undo that answer too until the refetch caught up.
     onError: (_error, _vars, context) => {
-      if (context?.previous) qc.setQueryData(key, context.previous)
+      const before = context?.previous
+        ?.flatMap((lens) => lens.ideas)
+        .find((idea) => idea.id === ideaId)
+      if (before)
+        qc.setQueryData<AssetAnalysis[]>(key, (lenses) =>
+          lenses?.map((lens) => ({
+            ...lens,
+            ideas: lens.ideas.map((idea) =>
+              idea.id === ideaId ? before : idea,
+            ),
+          })),
+        )
       toast.error(t('ideas.saveFailed'))
     },
     onSettled: () => {
