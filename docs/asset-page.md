@@ -122,4 +122,11 @@ The left column's scroll and the stages' fades (CON-373):
 
 ![Left column scroll and cover fade](asset-page/13-left-column-scroll.png)
 
-Illustrative copy; the PRDs are CON-366, CON-369 and CON-373 in Linear.
+The ideas list in the Assets list card's style, the fit explained and the idea
+answered in place (CON-387):
+
+![Ideas list, now and proposed](asset-page/14-ideas-list.png)
+![An opened idea: why it scores, reference, answer](asset-page/15-ideas-opened.png)
+
+Illustrative copy; the PRDs are CON-366, CON-369, CON-373 and CON-387 in
+Linear.
