@@ -565,11 +565,13 @@ function Answer({
   now: Date
 }) {
   const { t, i18n } = useTranslation()
-  const answer = useAnswerIdea(lens.asset_id)
+  // While an answer is on its way the controls hold still: a second one
+  // racing it could land first (see `useAnswerIdea`).
+  const { answer, pending } = useAnswerIdea(lens.asset_id, idea.id)
   // A woken postponement is a question again, so nothing is held.
   const current = isWaiting(idea, now) ? null : idea.verdict
   const decide = (verdict: IdeaVerdict, remindAt: string | null = null) =>
-    void answer(idea.id, verdict, remindAt)
+    answer(verdict, remindAt)
   const day = (iso: string | null) =>
     iso
       ? (formatDate(iso, { day: 'numeric', month: 'short' }, i18n.language) ??
@@ -595,13 +597,15 @@ function Answer({
       <div
         role="group"
         aria-label={t('assetInsights.ideas.answer')}
-        className="flex [&>*]:rounded-none [&>*+*]:-ml-px [&>*:first-child]:rounded-l-md [&>*:last-child]:rounded-r-md [&>[data-active=true]]:z-10"
+        aria-busy={pending || undefined}
+        className="flex [&>*:disabled]:opacity-60 [&>*]:rounded-none [&>*+*]:-ml-px [&>*:first-child]:rounded-l-md [&>*:last-child]:rounded-r-md [&>[data-active=true]]:z-10"
       >
         <Button
           variant="outline"
           size="sm"
           active={current === 'yes'}
           aria-pressed={current === 'yes'}
+          disabled={pending}
           onClick={() => decide('yes')}
         >
           <YesIcon className={VERDICTS.yes.tone} />
@@ -614,6 +618,7 @@ function Answer({
               size="sm"
               active={current === 'later'}
               aria-pressed={current === 'later'}
+              disabled={pending}
             >
               <LaterIcon className={VERDICTS.later.tone} />
               {t(VERDICTS.later.actionKey)}
@@ -638,6 +643,7 @@ function Answer({
           size="sm"
           active={current === 'no'}
           aria-pressed={current === 'no'}
+          disabled={pending}
           onClick={() => decide('no')}
         >
           <NoIcon className={VERDICTS.no.tone} />
@@ -653,8 +659,9 @@ function Answer({
           {' · '}
           <button
             type="button"
-            onClick={() => void answer(idea.id, null)}
-            className="cursor-pointer underline decoration-quinary underline-offset-3 hover:decoration-foreground"
+            disabled={pending}
+            onClick={() => answer(null)}
+            className="cursor-pointer underline disabled:cursor-default disabled:opacity-60 decoration-quinary underline-offset-3 hover:decoration-foreground"
           >
             {t('ideas.action.undecide')}
           </button>

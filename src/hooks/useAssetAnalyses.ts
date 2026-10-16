@@ -1,5 +1,10 @@
 import { useCallback } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { analysisInFlight } from '@/lib/assetAnalysis'
 import type { IdeaVerdict } from '@/lib/ideas'
@@ -106,20 +111,33 @@ export function useRetryAssetAnalysis(id: string) {
  * click, and a failure puts the readings back and says so in Ideas' words.
  * Settling re-reads the readings, the Assets list (whose counts and ideas card
  * read verdicts) and every Ideas list, so no screen keeps the old answer.
+ *
+ * **One answer per idea at a time.** A second click while the first is in
+ * flight is refused, not queued: two PUTs racing could land in either order,
+ * the first one's settling refetch would flash the old verdict under the
+ * second, and its failure would restore a snapshot taken before both. The
+ * request is a mutation keyed by the idea, so `pending` survives the row being
+ * closed and opened again mid-flight.
  */
-export function useAnswerIdea(assetId: string) {
+export function useAnswerIdea(assetId: string, ideaId: string) {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const key = assetAnalysesKey(assetId)
+  const mutationKey = ['ideas', ideaId, 'verdict'] as const
+  const pending = useIsMutating({ mutationKey }) > 0
 
-  return useCallback(
-    async (
-      ideaId: string,
-      verdict: IdeaVerdict | null,
-      remindAt: string | null = null,
-    ) => {
-      const key = assetAnalysesKey(assetId)
+  const mutation = useMutation({
+    mutationKey,
+    mutationFn: ({
+      verdict,
+      remindAt,
+    }: {
+      verdict: IdeaVerdict | null
+      remindAt: string | null
+    }) => setIdeaVerdict(ideaId, verdict, remindAt),
+    onMutate: async ({ verdict, remindAt }) => {
+      await qc.cancelQueries({ queryKey: key })
       const previous = qc.getQueryData<AssetAnalysis[]>(key)
-      void qc.cancelQueries({ queryKey: key })
       const at = new Date().toISOString()
       qc.setQueryData<AssetAnalysis[]>(key, (lenses) =>
         lenses?.map((lens) => ({
@@ -136,17 +154,28 @@ export function useAnswerIdea(assetId: string) {
           ),
         })),
       )
-      try {
-        await setIdeaVerdict(ideaId, verdict, remindAt)
-      } catch {
-        if (previous) qc.setQueryData(key, previous)
-        toast.error(t('ideas.saveFailed'))
-      } finally {
-        void qc.invalidateQueries({ queryKey: key })
-        void qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
-        void qc.invalidateQueries({ queryKey: ['ideas'] })
-      }
+      return { previous }
     },
-    [assetId, qc, t],
+    onError: (_error, _vars, context) => {
+      if (context?.previous) qc.setQueryData(key, context.previous)
+      toast.error(t('ideas.saveFailed'))
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: key })
+      void qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
+      void qc.invalidateQueries({ queryKey: ['ideas'] })
+    },
+  })
+
+  const answer = useCallback(
+    (verdict: IdeaVerdict | null, remindAt: string | null = null) => {
+      if (qc.isMutating({ mutationKey }) > 0) return
+      mutation.mutate({ verdict, remindAt })
+    },
+    // `mutationKey` is rebuilt from `ideaId` each render; `mutate` is stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ideaId, qc, mutation.mutate],
   )
+
+  return { answer, pending }
 }

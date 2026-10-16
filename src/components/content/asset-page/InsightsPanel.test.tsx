@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { i18next, loadLocaleResources } from '@/i18n'
@@ -368,6 +368,31 @@ describe('InsightsPanel', () => {
       'i1',
       'later',
       expect.any(String),
+    )
+  })
+
+  it('holds the answer still while one is on its way', async () => {
+    let settle: (value?: unknown) => void = () => {}
+    verdicts.fn
+      .mockReset()
+      .mockImplementationOnce(
+        () => new Promise((resolve) => (settle = resolve)),
+      )
+      .mockResolvedValue(undefined)
+    await renderPanel('ready', lens({ ideas: [idea(1)] }))
+    fireEvent.click(screen.getByText('Idea 1'))
+    const group = screen.getByRole('group', { name: 'Answer this idea' })
+
+    await userEvent.click(within(group).getByRole('button', { name: /Yes/ }))
+    expect(within(group).getByRole('button', { name: /^No$/ })).toBeDisabled()
+    fireEvent.click(within(group).getByRole('button', { name: /^No$/ }))
+    expect(verdicts.fn).toHaveBeenCalledTimes(1)
+
+    settle()
+    await waitFor(() =>
+      expect(
+        within(group).getByRole('button', { name: /^No$/ }),
+      ).not.toBeDisabled(),
     )
   })
 
