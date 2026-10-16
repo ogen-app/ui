@@ -3199,6 +3199,8 @@ export const es: Translation = {
       unfold: 'Desplegar {{group}}',
       otherIdeasLoading: 'Cargando las demás ideas…',
       otherIdeasNone: 'No hay más ideas de esta lectura.',
+      fitScore: 'Encaje {{score}} de 100',
+      fitUnscored: 'Sin puntuar',
       band: {
         created: {
           '1d': 'Hoy',

@@ -98,6 +98,13 @@ export type IdeaBody = {
   origin?: '' | 'asset_analysis'
   asset_analysis_id?: string | null
   source_asset?: { id: string; title: string } | null
+  /**
+   * How well the idea fits the reading it came from, 10–100 (CON-385): the
+   * campaign's brief on a campaign's reading, the workspace's otherwise. `null`
+   * for an idea a person wrote and for one from a reading before the score
+   * existed — never scored, rather than scored low.
+   */
+  fit_score?: number | null
 }
 
 /** What a screen may change about an idea. The verdict is deliberately not in here. */

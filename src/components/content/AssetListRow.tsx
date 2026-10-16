@@ -32,10 +32,12 @@ import {
   rowState,
 } from '@/lib/assetList'
 import { statusToBadge } from '@/lib/assetStatus'
+import { byFit } from '@/lib/ideaFit'
 import { ingestFailureMessage } from '@/lib/uploadError'
 import type { AssetListItem, AssetNextIdea } from '@/types/assetList'
 import { CampaignMark } from './asset-page/CampaignMark'
 import { AssetKindMark } from './AssetKindMark'
+import { FitTrack } from './FitTrack'
 import { MatchSnippet } from './MatchSnippet'
 import { VERDICT_ICON } from './verdictIcons'
 import { VerdictPill } from './VerdictPill'
@@ -364,8 +366,20 @@ function IdeaLine({
 const OTHER_IDEAS_SHOWN = 8
 
 /**
+ * Where the card's first line sits below its top, and its last line above its
+ * bottom, in px: the list's own padding, the item's, and half the line. The
+ * card is shifted by these less half the row's 20px line, so the line it opens
+ * from and the line it lists start (or, opening upward, end) level.
+ */
+const CARD_FIRST_LINE = 4 + 10 + 20 / 2
+const CARD_LAST_LINE_TITLE = 4 + 10 + 20 / 2
+const CARD_LAST_LINE_NOTE = 4 + 10 + 17 / 2
+const ROW_LINE = 20 / 2
+
+/**
  * The next idea's title, and on hover or focus the asset's other ideas beside
- * it — their titles, as a list on a lifted card.
+ * it — best fit first (CON-385), each with its score on a track, its title and
+ * up to two lines of its note, as a list on a lifted card.
  *
  * The ideas are those of one reading: the workspace's in the bank, the
  * campaign's on a campaign's page — the same lens the row's counts are meant
@@ -391,14 +405,25 @@ function NextIdea({
   const lens = analyses.data?.find(
     (a) => (a.campaign_id ?? null) === campaignId,
   )
-  const others = (lens?.ideas ?? []).filter((idea) => idea.id !== next.id)
+  const others = (lens?.ideas ?? [])
+    .filter((idea) => idea.id !== next.id)
+    .sort(byFit)
   const shown = others.slice(0, OTHER_IDEAS_SHOWN)
+  const hidden = others.length - shown.length
 
   const more = row.idea_counts.waiting - 1
   const lineRef = useRef<HTMLParagraphElement>(null)
-  // Top-aligned with the line, unless the line sits low enough that the card
-  // would run off the foot of the screen — then bottom-aligned with it.
+  // Opening downward, the card's first line is level with this one; when the
+  // line sits low enough that the card would run off the foot of the screen,
+  // it opens upward and its last line is level with this one instead.
   const [align, setAlign] = useState<'start' | 'end'>('start')
+  const last = shown[shown.length - 1]
+  const lastLine =
+    align === 'end' && shown.length > 0 && hidden === 0 && last?.note
+      ? CARD_LAST_LINE_NOTE
+      : align === 'end'
+        ? CARD_LAST_LINE_TITLE
+        : CARD_FIRST_LINE
   const onOpenChange = (next: boolean) => {
     if (next && lineRef.current) {
       const { top } = lineRef.current.getBoundingClientRect()
@@ -437,39 +462,51 @@ function NextIdea({
         </p>
       </TooltipTrigger>
       {/* A light card lifted off the row by its shadow, pointing back at the
-          idea it belongs to: the other ideas' titles, one to a line, with a
-          pale rule between them. */}
+          idea it belongs to: the other ideas, one to a block, with a pale
+          rule between them. Radix negates the offset when aligned to the end,
+          so one negative figure lifts the card opening downward and lowers it
+          opening upward. */}
       <TooltipContent
         side="right"
         align={align}
         sideOffset={10}
-        className="max-w-xs rounded-lg p-0 text-left shadow-lg [text-wrap:pretty]"
+        alignOffset={-(lastLine - ROW_LINE)}
+        className="w-104 max-w-104 rounded-lg p-0 text-left shadow-lg [text-wrap:pretty]"
       >
-        {analyses.isPending ? (
-          <p className="px-4 py-3 text-xs text-secondary-foreground">
-            {t('content.list.otherIdeasLoading')}
-          </p>
-        ) : shown.length === 0 ? (
-          <p className="px-4 py-3 text-xs text-secondary-foreground">
-            {t('content.list.otherIdeasNone')}
-          </p>
+        {analyses.isPending || shown.length === 0 ? (
+          <div className="px-3 py-1">
+            <p className="px-1 py-2.5 text-[0.9rem]/5 text-secondary-foreground">
+              {analyses.isPending
+                ? t('content.list.otherIdeasLoading')
+                : t('content.list.otherIdeasNone')}
+            </p>
+          </div>
         ) : (
           // The rules are inset by the list's own padding, so they stop short
-          // of the card's edges.
+          // of the card's edges. Score, then words: the scores make one column
+          // down the left, the titles another beside it.
           <ul className="flex flex-col px-3 py-1">
             {shown.map((idea) => (
               <li
                 key={idea.id}
-                className="border-t border-quaternary px-1 py-2 text-xs text-foreground first:border-t-0"
+                className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3 border-t border-quaternary px-1 py-2.5 first:border-t-0"
               >
-                {idea.title}
+                <FitTrack score={idea.fit_score} />
+                <span className="text-[0.9rem]/5 text-foreground">
+                  {idea.title}
+                </span>
+                {idea.note && (
+                  <span className="col-start-2 mt-0.5 line-clamp-2 text-xs/[17px] text-secondary-foreground">
+                    {idea.note}
+                  </span>
+                )}
               </li>
             ))}
-            {others.length > shown.length && (
-              <li className="border-t border-quaternary px-1 py-2 text-xs text-secondary-foreground">
-                {t('content.list.nextIdeaMore', {
-                  count: others.length - shown.length,
-                })}
+            {hidden > 0 && (
+              <li className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3 border-t border-quaternary px-1 py-2.5 text-[0.9rem]/5 text-secondary-foreground">
+                <span className="col-start-2">
+                  {t('content.list.nextIdeaMore', { count: hidden })}
+                </span>
               </li>
             )}
           </ul>
