@@ -132,11 +132,14 @@ delete confirmation names N.
 
 Four columns, three of them fixed: the checkbox; the text, capped at its
 measure (`72ch` plus the indent under the icon) so widening the window never
-re-wraps it; the pill and the campaign (160px), 48px after the text so the
-count reads with the next idea's name; a spacer that takes the slack; then the
-tags (168px, plus 40px kept clear for the bin) at the far edge. Below the
-`@4xl` container width the tags fold under the title, the spacer goes, and the
-pill's column (200px) keeps the bin's room instead.
+re-wraps it; the pill alone (160px), 48px after the text so the count reads
+with the next idea's name; a spacer that takes the slack; then what the
+document belongs to (168px, plus 40px kept clear for the bin) at the far edge:
+its campaigns, one to a line with their mark, then 10px below them its tags. A
+document in no campaign shows nothing there for it. Below the `@4xl` container
+width the campaigns and tags fold under the title on one wrapping line,
+campaigns first, the spacer goes, and the pill's column (200px) keeps the bin's
+room instead.
 
 - **Kind:** a bare 28px Hugeicons mark before the title (`AssetKindMark`),
   from the row's `kind`, stroke 1.25, in muted ink (`--kind-*` in
@@ -192,9 +195,10 @@ pill's column (200px) keeps the bin's room instead.
     only teal, so a row with no teal is finished.
   - The tooltip, which is also the pill's accessible name, spells the counts
     out. A segment opens the asset page on that pile (`?verdict=`).
-- **Campaign:** under the pill, each with its `CampaignMark`. On a campaign's
-  own list only the others are named. "No campaign" is said only in the bank,
-  and only once the campaigns have loaded.
+- **Campaign:** at the top of the far-edge column, above the tags, each with
+  its `CampaignMark` and cut short rather than wrapped. On a campaign's own
+  list only the others are named. A document in no campaign says nothing:
+  "No campaign" is the filter's word, not the row's.
 - **Bin:** an 18px `Delete02Icon`, no box, at the row's top-right on the
   checkbox's line. It shows on hover or focus only, and on touch screens, and
   goes through `DeleteDocumentsDialog`. The bin and the checkbox fade in
