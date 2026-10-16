@@ -49,11 +49,12 @@ import { VerdictPill } from './VerdictPill'
  *
  * Four columns, and three of them hold still. The check box; then the text,
  * capped at its measure so it never re-wraps as the window widens; then the
- * verdict pill and the campaign, right after the text, so how many ideas are
- * waiting reads with the next one's name; then — past a spacer that takes all
- * the slack — the tags, at the far edge, as reference rather than headline. On
- * a narrow list the tags fold back under the title, which is where they read
- * second-best, and the spacer goes.
+ * verdict pill, alone, right after the text, so how many ideas are waiting
+ * reads with the next one's name; then — past a spacer that takes all the
+ * slack — what the document belongs to, at the far edge, as reference rather
+ * than headline: its campaigns, one to a line, then its tags. On a narrow list
+ * those fold back under the title, campaigns first on the same line as the
+ * tags, and the spacer goes.
  *
  * The text column leads with the kind and the title, then one line of facts,
  * then what the document says (or, while a text search runs, where it
@@ -92,6 +93,7 @@ function AssetListRowComponent({
   const title = listTitle(row, t('content.list.untitled'))
   const state = rowState(row)
   const gist = row.gist?.trim()
+  const held = heldCampaigns(row, campaignId, campaignNames, campaignsReady)
   const tags =
     row.tags.length > 0 ? (
       <span className="flex flex-wrap content-start gap-1">
@@ -152,7 +154,12 @@ function AssetListRowComponent({
               </Link>
             </h3>
             <Facts row={row} now={now} />
-            {tags && <div className="pt-1 @4xl:hidden">{tags}</div>}
+            {(held.length > 0 || tags) && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 @4xl:hidden">
+                <CampaignList campaigns={held} className="flex-wrap gap-x-3" />
+                {tags}
+              </div>
+            )}
           </div>
         </div>
 
@@ -183,18 +190,14 @@ function AssetListRowComponent({
             link={(verdict) => assetLink(row, campaignId, verdict)}
           />
         )}
-        <Campaigns
-          row={row}
-          campaignId={campaignId}
-          names={campaignNames}
-          ready={campaignsReady}
-        />
       </div>
 
-      {/* Hidden, not merely empty, below the wide layout: the tags are under
-          the title there, and an empty grid item would still take a column.
-          Past the spacer, and clear of the bin in the corner. */}
-      <div className="hidden pt-1 pr-10 @4xl:col-start-5 @4xl:block">
+      {/* Hidden, not merely empty, below the wide layout: the campaigns and
+          the tags are under the title there, and an empty grid item would
+          still take a column. Past the spacer, and clear of the bin in the
+          corner: the campaigns one to a line, then the tags a step below. */}
+      <div className="hidden flex-col gap-2.5 pt-1 pr-10 @4xl:col-start-5 @4xl:flex">
+        <CampaignList campaigns={held} className="flex-col" />
         {tags}
       </div>
 
@@ -597,36 +600,35 @@ function StatusLine({
 }
 
 /**
- * The campaigns holding the document, each with its mark — on a campaign's
- * own page, only the others, since every row is in that one and saying so
- * forty times is noise. "No campaign" is said only in the bank, and only once
- * the campaigns have arrived, so it is never a guess.
+ * The campaigns a document is filed in, by name — only the others on a
+ * campaign's own page, where that one goes without saying. Nothing until the
+ * names have arrived, and nothing for a document in none: "No campaign" down
+ * every unfiled row said what an empty slot already does.
  */
-function Campaigns({
-  row,
-  campaignId,
-  names,
-  ready,
-}: {
-  row: AssetListItem
-  campaignId: string | null
-  names: Map<string, string>
-  ready: boolean
-}) {
-  const { t } = useTranslation()
-  if (!ready) return null
-  const campaigns = row.campaign_ids
+function heldCampaigns(
+  row: AssetListItem,
+  campaignId: string | null,
+  names: Map<string, string>,
+  ready: boolean,
+): { id: string; name: string }[] {
+  if (!ready) return []
+  return row.campaign_ids
     .filter((id) => id !== campaignId)
     .map((id) => ({ id, name: names.get(id) }))
     .filter((c): c is { id: string; name: string } => !!c.name)
-  if (campaigns.length === 0)
-    return campaignId ? null : (
-      <span className="text-xs text-secondary-foreground">
-        {t('content.filter.noCampaign')}
-      </span>
-    )
+}
+
+/** Each campaign with its mark; the caller says whether they stack or run on. */
+function CampaignList({
+  campaigns,
+  className,
+}: {
+  campaigns: { id: string; name: string }[]
+  className?: string
+}) {
+  if (campaigns.length === 0) return null
   return (
-    <ul className="flex min-w-0 flex-col gap-1">
+    <ul className={cn('flex min-w-0 gap-1', className)}>
       {campaigns.map((c) => (
         <li key={c.id} className="flex min-w-0 items-center gap-1.5 text-xs">
           <CampaignMark

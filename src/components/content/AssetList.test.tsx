@@ -237,22 +237,20 @@ describe('a row', () => {
     ]
     const held = asset({ campaign_ids: ['c1', 'c2'] })
     const { unmount } = await show([held])
-    expect(await screen.findByText('Beekeeping in Ukraine')).toBeInTheDocument()
-    expect(screen.getByText('Finance Q4')).toBeInTheDocument()
+    // Twice, like the tags: under the title on a narrow list, at the far edge
+    // on a wide one, and one of them always hidden.
+    expect(await screen.findAllByText('Beekeeping in Ukraine')).toHaveLength(2)
+    expect(screen.getAllByText('Finance Q4')).toHaveLength(2)
     unmount()
 
     await show([held], { campaignId: 'c1' })
-    expect(await screen.findByText('Finance Q4')).toBeInTheDocument()
+    expect(await screen.findAllByText('Finance Q4')).toHaveLength(2)
     expect(screen.queryByText('Beekeeping in Ukraine')).not.toBeInTheDocument()
   })
 
-  it('says "No campaign" in the bank, and nothing on a campaign’s page', async () => {
+  it('says nothing for a document in no campaign', async () => {
     campaigns.current = [{ id: 'c1', name: 'Finance Q4' }]
-    const { unmount } = await show([asset({})])
-    expect(await screen.findByText('No campaign')).toBeInTheDocument()
-    unmount()
-
-    await show([asset({ campaign_ids: ['c1'] })], { campaignId: 'c1' })
+    await show([asset({})])
     await screen.findByText('Positioning')
     expect(screen.queryByText('No campaign')).not.toBeInTheDocument()
   })
