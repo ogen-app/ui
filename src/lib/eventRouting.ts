@@ -69,14 +69,20 @@ const ZERNIO_SURFACES: QueryFilters[] = [
 ]
 
 /**
- * Every Ideas list — the workspace's and each campaign's live under
- * `['ideas', …]` (`ideasQueryKey`).
+ * Every Ideas list and count — the workspace's and each campaign's live under
+ * `['ideas', …]` (`IDEA_LIST_KEY`).
  */
 const IDEA_LISTS: QueryFilters = { queryKey: ['ideas'] }
 
 /** Splits `entity:post:abc` and friends into the record they are about. */
 export function parseTopic(topic: string): EventSubject {
   if (topic === 'zernio:sync') return { kind: 'zernioSync' }
+  if (topic === 'entity:ideas:list') return { kind: 'ideaLists' }
+  if (topic.startsWith('entity:saved_views:'))
+    return {
+      kind: 'savedViews',
+      surface: topic.slice('entity:saved_views:'.length),
+    }
   const parts = topic.split(':')
   if (parts.length === 3 && parts[0] === 'entity' && parts[2]) {
     switch (parts[1]) {
@@ -263,6 +269,17 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         return ZERNIO_SURFACES
       }
       return []
+
+    // `ideas.deleted`, after a bulk delete (CON-389): the rows are gone from
+    // every list, and an asset row counts its ideas per verdict.
+    case 'ideaLists':
+      return [IDEA_LISTS, { queryKey: ASSET_LIST_KEY }]
+
+    // A shared smart group was saved, changed or deleted by somebody else.
+    case 'savedViews':
+      return subject.surface === 'ideas'
+        ? [{ queryKey: ['ideas', 'savedViews'] }]
+        : []
 
     case 'unknown':
       return []

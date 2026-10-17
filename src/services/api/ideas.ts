@@ -1,4 +1,5 @@
 import { apiJson, apiVoid } from './http'
+import { ApiError } from './errors'
 import type { FitBreakdown } from '@/lib/ideaFit'
 import type { Idea, IdeaSourceAsset, IdeaVerdict } from '@/lib/ideas'
 import type { AssetListKind } from '@/types/assetList'
@@ -134,6 +135,8 @@ export type IdeaBody = {
   angle?: string | null
   rationale?: string | null
   sources?: string[] | null
+  /** The group a grouped list lists it under (CON-389). */
+  group_key?: string
   /**
    * How well the idea fits the reading it came from, 10–100 (CON-385): the
    * campaign's brief on a campaign's reading, the workspace's otherwise. `null`
@@ -186,6 +189,7 @@ export function ideaFromWire(body: IdeaBody): Idea {
     angle: body.angle ?? undefined,
     rationale: body.rationale ?? undefined,
     sources: body.sources ?? undefined,
+    groupKey: body.group_key,
     fitScore: body.fit_score ?? undefined,
     fitBreakdown: body.fit_breakdown ?? undefined,
   }
@@ -269,4 +273,104 @@ export async function deleteIdea(id: string): Promise<void> {
   await apiVoid(`/api/ideas/${id}`, 'Unable to delete the idea', {
     method: 'DELETE',
   })
+}
+
+// ---------------------------------------------------------------------------
+// The list as a query (CON-389): filtered, counted, grouped and paged by the
+// server. Read only under `ideas-smart-filter` — see `lib/ideaFilter`.
+
+/** One value of a field, and how many ideas have it. */
+export type IdeaFacetCount = { value: string; count: number }
+
+export type IdeaListPageBody = {
+  ideas: IdeaBody[]
+  total: number
+  total_unfiltered: number
+  /** Every pile's size within the filter; the four always add up. */
+  piles: { waiting: number; yes: number; later: number; no: number }
+  facets: Record<string, IdeaFacetCount[]>
+  facet_labels?: {
+    source_asset?: { id: string; title: string; kind: AssetListKind }[]
+  }
+  groups: { key: string; count: number }[] | null
+  next_cursor: string | null
+}
+
+export type IdeaListPage = Omit<IdeaListPageBody, 'ideas'> & { ideas: Idea[] }
+
+/** The query string as the endpoint takes it — the Ideas page's own search params. */
+export type IdeaQueryParams = Record<string, string>
+
+const IDEAS = '/api/ideas'
+
+function ideasUrl(params: IdeaQueryParams): string {
+  const query = new URLSearchParams(params).toString()
+  return query ? `${IDEAS}?${query}` : IDEAS
+}
+
+export async function queryIdeas(
+  params: IdeaQueryParams,
+): Promise<IdeaListPage> {
+  const body = await apiJson<IdeaListPageBody>(
+    ideasUrl(params),
+    'Unable to fetch ideas',
+  )
+  return { ...body, ideas: (body.ideas ?? []).map(ideaFromWire) }
+}
+
+/** Over this many, a whole match cannot be selected (422 `too_many`). */
+export const MAX_IDEA_SELECTION = 5000
+
+/**
+ * Every id the filter matches, the pile included — for selecting a whole
+ * match. Paging and grouping are left off: they order a page, not a set.
+ * `null` when the match is bigger than a selection may be.
+ */
+export async function queryIdeaIds(
+  params: IdeaQueryParams,
+): Promise<{ ids: string[]; total: number } | null> {
+  const rest = Object.fromEntries(
+    Object.entries(params).filter(
+      ([key]) => !['cursor', 'limit', 'facets', 'group', 'sort'].includes(key),
+    ),
+  )
+  try {
+    const body = await apiJson<{ ids: string[] | null; total: number }>(
+      ideasUrl({ ...rest, ids_only: 'true' }),
+      'Unable to fetch ideas',
+    )
+    return { ids: body.ids ?? [], total: body.total }
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'too_many') return null
+    throw error
+  }
+}
+
+/** The endpoint's limit on one bulk request. */
+export const BULK_IDEA_BATCH = 500
+
+/**
+ * Deletes ideas, 500 to a request. An id somebody else deleted first comes
+ * back `not_found`: it is gone, which is what was asked, so it counts as
+ * deleted rather than failed.
+ */
+export async function bulkDeleteIdeas(
+  ids: string[],
+): Promise<{ deleted: number; failed: number }> {
+  let deleted = 0
+  let failed = 0
+  for (let i = 0; i < ids.length; i += BULK_IDEA_BATCH) {
+    const body = await apiJson<{
+      deleted: string[] | null
+      failed: { id: string; code: string }[] | null
+    }>(`${IDEAS}/bulk-delete`, 'Unable to delete the ideas', {
+      method: 'POST',
+      body: { ids: ids.slice(i, i + BULK_IDEA_BATCH) },
+    })
+    const misses = body.failed ?? []
+    const gone = misses.filter((f) => f.code === 'not_found').length
+    deleted += (body.deleted?.length ?? 0) + gone
+    failed += misses.length - gone
+  }
+  return { deleted, failed }
 }

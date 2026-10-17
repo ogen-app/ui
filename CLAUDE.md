@@ -140,6 +140,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   URL params — the URL carries the filter only. The list is deliberately
   not virtualised, because its sticky group bands need the rows above the
   window to exist. See [`docs/assets-list.md`](./docs/assets-list.md).
+- **The Ideas list is the server's answer to the URL too** (CON-388/389),
+  by the Assets rules: `GET /api/ideas` filters, counts (`facets`, `piles`),
+  groups and pages, and the page's search params are the endpoint's own
+  (`lib/ideaFilter`) — with the pile, sort and grouping in the address as
+  well, because a **smart group** (`/api/saved-views`, surface `ideas`) is
+  that address saved, minus the pile. Never count or pile ideas on the
+  client: the rail's figure is a `pile=waiting&limit=1` read. Both lists'
+  filter bars are one `components/smartFilter/SmartFilterBar` over a
+  per-list model and vocabulary (`lib/smartFilter`). Bulk delete is
+  `POST /api/ideas/bulk-delete` in batches of 500, and select-all is
+  `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
+  `idea_read_only`); only its campaign may change.
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,
   600ms debounce, generation-counter guarded, flush-on-unmount). Campaign forms
   autosave similarly. Prefer these patterns over new local edit stores.

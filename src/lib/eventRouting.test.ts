@@ -61,6 +61,17 @@ describe('parseTopic', () => {
 })
 
 describe('invalidationsFor', () => {
+  it('refreshes every Ideas list and the asset rows after a bulk delete', () => {
+    const e = event('entity:ideas:list', 'ideas.deleted', { ids: ['i1'] })
+    expect(parseTopic('entity:ideas:list')).toEqual({ kind: 'ideaLists' })
+    expect(keys(e)).toEqual([['ideas'], ['assets', 'list']])
+  })
+
+  it('refreshes the Ideas smart groups when a shared one changes', () => {
+    const e = event('entity:saved_views:ideas', 'saved_view.updated')
+    expect(keys(e)).toEqual([['ideas', 'savedViews']])
+  })
+
   it('refreshes the post and every calendar showing it on new analytics', () => {
     const e = event('entity:post:p1', 'post.analytics.updated')
     expect(keys(e)).toContainEqual(['post', 'p1'])

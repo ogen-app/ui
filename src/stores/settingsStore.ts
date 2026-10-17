@@ -85,6 +85,13 @@ export type LocalSettings = {
    * device, shared by the bank and every campaign's page, never in the URL.
    */
   assetSort: AssetSort | null
+
+  /**
+   * Whether the Ideas page's smart groups panel is folded into its "Views"
+   * button (CON-388 §5), or null for not yet chosen — which folds it on a
+   * narrow window and opens it on a wide one. Per device, like the bands.
+   */
+  ideaViewsFolded: boolean | null
 }
 
 /**
@@ -143,6 +150,8 @@ type SettingsState = LocalSettings &
 
     setAssetSort: (sort: AssetSort) => void
 
+    setIdeaViewsFolded: (folded: boolean) => void
+
     /**
      * Record that the user is looking at this campaign's posts, arranged this
      * way. Called by the views themselves, on every anchor change — the fold is
@@ -168,6 +177,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   collapsedAssetBands: [],
   assetGrouping: DEFAULT_GROUP,
   assetSort: null,
+  ideaViewsFolded: null,
 }
 
 const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
@@ -269,6 +279,8 @@ export const useSettingsStore = create<SettingsState>()(
 
         setAssetSort: (sort) => set({ assetSort: sort }),
 
+        setIdeaViewsFolded: (folded) => set({ ideaViewsFolded: folded }),
+
         rememberPostsPlace: (campaignId, visit) => {
           set((state) => {
             const prev = state.postsPlace[campaignId]
@@ -301,6 +313,7 @@ export const useSettingsStore = create<SettingsState>()(
           collapsedAssetBands: state.collapsedAssetBands,
           assetGrouping: state.assetGrouping,
           assetSort: state.assetSort,
+          ideaViewsFolded: state.ideaViewsFolded,
           // Don't persist
           // scope, campaignId — where you are, not what you chose
         }),

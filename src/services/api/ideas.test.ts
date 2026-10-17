@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  bulkDeleteIdeas,
   captureIdea,
   deleteIdea,
+  ideaFromWire,
+  queryIdeaIds,
+  queryIdeas,
   editIdea,
   listIdeas,
   setIdeaVerdict,
@@ -184,5 +188,128 @@ describe('deleteIdea', () => {
       method: 'DELETE',
       body: undefined,
     })
+  })
+})
+
+describe('ideaFromWire (CON-389)', () => {
+  it('reads the source, the parts and the writer', () => {
+    const analysed = ideaFromWire({
+      ...IDEA,
+      origin: 'asset_analysis',
+      angle: 'The hook',
+      rationale: null,
+      sources: ['p. 5'],
+      author: null,
+      source_asset: {
+        id: 'a1',
+        title: 'Handbook',
+        kind: 'pdf',
+        page_count: 7,
+        duration_ms: null,
+        domain: null,
+        reading: { campaign_id: 'c1', campaign_name: 'Bees' },
+      },
+    })
+    expect(analysed.authorName).toBeNull()
+    expect(analysed.angle).toBe('The hook')
+    expect(analysed.rationale).toBeUndefined()
+    expect(analysed.sourceAsset).toEqual({
+      id: 'a1',
+      title: 'Handbook',
+      kind: 'pdf',
+      pageCount: 7,
+      durationMs: null,
+      domain: null,
+      reading: { campaignId: 'c1', campaignName: 'Bees' },
+    })
+  })
+
+  it('names a written idea by its author, or by the name captured with it', () => {
+    expect(
+      ideaFromWire({ ...IDEA, author: { id: null, name: 'Alex Lane' } })
+        .authorName,
+    ).toBe('Alex Lane')
+    expect(ideaFromWire(IDEA).authorName).toBe('Serhii Herasymov')
+  })
+})
+
+describe('queryIdeas', () => {
+  it("asks with the page's own params and maps the rows", async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(200, {
+        ideas: [{ ...IDEA, group_key: 'none' }],
+        total: 1,
+        total_unfiltered: 4,
+        piles: { waiting: 1, yes: 0, later: 0, no: 3 },
+        facets: {},
+        groups: [{ key: 'none', count: 1 }],
+        next_cursor: null,
+      }),
+    )
+
+    const page = await queryIdeas({ fit: 'high', pile: 'waiting' })
+
+    expect(sent(fetchMock).url).toBe('/api/ideas?fit=high&pile=waiting')
+    expect(page.ideas[0]).toEqual(
+      expect.objectContaining({ id: 'k3Xz9QpL', groupKey: 'none' }),
+    )
+    expect(page.piles.no).toBe(3)
+  })
+})
+
+describe('queryIdeaIds', () => {
+  it('asks for every id the filter and pile match, unpaged and unordered', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(200, { ids: ['a', 'b'], total: 2 }),
+    )
+
+    const answer = await queryIdeaIds({
+      fit: 'high',
+      pile: 'waiting',
+      sort: 'fit',
+      group: 'source',
+      limit: '50',
+    })
+
+    expect(sent(fetchMock).url).toBe(
+      '/api/ideas?fit=high&pile=waiting&ids_only=true',
+    )
+    expect(answer).toEqual({ ids: ['a', 'b'], total: 2 })
+  })
+
+  it('answers null when the match is too big to select', async () => {
+    stubFetch(
+      jsonResponse(422, { code: 'too_many', error: 'too many', total: 6000 }),
+    )
+    expect(await queryIdeaIds({})).toBeNull()
+  })
+})
+
+describe('bulkDeleteIdeas', () => {
+  it('sends 500 to a request and counts one already gone as deleted', async () => {
+    const ids = Array.from({ length: 501 }, (_, i) => `i${i}`)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          deleted: ids.slice(0, 498),
+          failed: [
+            { id: 'i498', code: 'not_found' },
+            { id: 'i499', code: 'forbidden' },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(200, { deleted: ['i500'], failed: [] }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await bulkDeleteIdeas(ids)
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/ideas/bulk-delete')
+    expect(JSON.parse(String(init.body)).ids).toHaveLength(500)
+    expect(result).toEqual({ deleted: 500, failed: 1 })
   })
 })

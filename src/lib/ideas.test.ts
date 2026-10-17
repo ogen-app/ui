@@ -2,15 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   countIdeas,
   decideIdea,
-  decidedIdeas,
   hasWokenUp,
   isWaiting,
   newIdea,
   parseIdeas,
   postponeUntil,
   returnToInbox,
-  triageQueue,
-  waitingSince,
   type Idea,
 } from './ideas'
 
@@ -82,51 +79,6 @@ describe('waking up', () => {
       remindAt: '2026-01-01T00:00:00Z',
     })
     expect(hasWokenUp(archived, NOW)).toBe(false)
-  })
-})
-
-describe('triageQueue', () => {
-  it('asks the longest-unanswered idea first', () => {
-    const queue = triageQueue(
-      [
-        idea({ id: 'new', createdAt: '2026-09-16T09:00:00Z' }),
-        idea({ id: 'old', createdAt: '2026-08-01T09:00:00Z' }),
-      ],
-      NOW,
-    )
-    expect(queue.map((i) => i.id)).toEqual(['old', 'new'])
-  })
-
-  it('leaves the decided out of it', () => {
-    const queue = triageQueue(
-      [
-        idea({ id: 'yes', verdict: 'yes', decidedAt: '2026-09-02T09:00:00Z' }),
-        idea({ id: 'no', verdict: 'no', decidedAt: '2026-09-02T09:00:00Z' }),
-        idea({ id: 'open' }),
-      ],
-      NOW,
-    )
-    expect(queue.map((i) => i.id)).toEqual(['open'])
-  })
-
-  /*
-   * A woken idea has been waiting since it woke, not since it was written. The
-   * other order buries today's returning ideas under everything ever captured,
-   * which is the failure a wake-up exists to prevent.
-   */
-  it('dates a woken postponement from the day it came back', () => {
-    const woken = idea({
-      id: 'woken',
-      createdAt: '2026-01-01T09:00:00Z',
-      verdict: 'later',
-      remindAt: '2026-09-16T09:00:00Z',
-    })
-    expect(waitingSince(woken)).toBe('2026-09-16T09:00:00Z')
-    const queue = triageQueue(
-      [woken, idea({ id: 'older', createdAt: '2026-06-01T09:00:00Z' })],
-      NOW,
-    )
-    expect(queue.map((i) => i.id)).toEqual(['older', 'woken'])
   })
 })
 
@@ -208,40 +160,6 @@ describe('countIdeas', () => {
     expect(counts).toEqual({ waiting: 2, yes: 1, later: 1, no: 1 })
     const total = counts.waiting + counts.yes + counts.later + counts.no
     expect(total).toBe(ideas.length)
-  })
-})
-
-describe('decidedIdeas', () => {
-  it('shows the most recent decision first', () => {
-    const pile = decidedIdeas(
-      [
-        idea({ id: 'first', verdict: 'no', decidedAt: '2026-09-01T09:00:00Z' }),
-        idea({ id: 'last', verdict: 'no', decidedAt: '2026-09-10T09:00:00Z' }),
-      ],
-      'no',
-      NOW,
-    )
-    expect(pile.map((i) => i.id)).toEqual(['last', 'first'])
-  })
-
-  it('drops a postponement that has gone back to the inbox', () => {
-    const pile = decidedIdeas(
-      [
-        idea({
-          id: 'woken',
-          verdict: 'later',
-          remindAt: '2026-09-01T09:00:00Z',
-        }),
-        idea({
-          id: 'asleep',
-          verdict: 'later',
-          remindAt: '2026-12-01T09:00:00Z',
-        }),
-      ],
-      'later',
-      NOW,
-    )
-    expect(pile.map((i) => i.id)).toEqual(['asleep'])
   })
 })
 

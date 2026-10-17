@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { IconSvgElement } from '@hugeicons/react'
 import { KIND_ICON } from '@/components/content/AssetKindMark'
 import { VERDICT_ICON } from '@/components/content/verdictIcons'
 import { useCampaignNames } from '@/hooks/useCampaignNames'
@@ -20,20 +19,10 @@ import {
   type FilterToken,
 } from '@/lib/assetFilter'
 import { formatDate, formatList } from '@/lib/intl'
+import type { SmartVocabulary, ValueOption } from '@/lib/smartFilter'
 import type { AssetListPage } from '@/types/assetList'
 
-/** One value the bar offers for a field. */
-export type ValueOption = {
-  value: string
-  label: string
-  /** How many assets choosing it would leave; null when that isn't known. */
-  count: number | null
-  icon?: IconSvgElement
-  /** The ideas verdicts are drawn in the pill's own colours. */
-  tone?: 'accent' | 'positive' | 'muted'
-  /** Sits under a rule after the ordinary values: "No tags", "Not read yet". */
-  pinned?: boolean
-}
+export type { ValueOption }
 
 /** The ideas values in the pill's vocabulary (`waiting` is `undecided`). */
 const IDEAS_ICON = {
@@ -216,7 +205,8 @@ export function useFilterVocabulary({
    * worked out from it at all.
    */
   const options = useCallback(
-    (field: ChoiceField | 'updated', negated: boolean): ValueOption[] => {
+    (field: FilterField, negated: boolean): ValueOption[] => {
+      if (field === 'title' || field === 'text') return []
       const counts = negated ? null : countsOf(field)
       const count = (value: string) =>
         counts ? (counts.get(value) ?? 0) : null
@@ -304,7 +294,18 @@ export function useFilterVocabulary({
     [countsOf, valueLabel, campaignNames, tags.data],
   )
 
+  const textPlaceholder = useCallback(
+    (field: FilterField) =>
+      field === 'text'
+        ? t('content.filter.textPlaceholder')
+        : t('content.filter.titlePlaceholder'),
+    [t],
+  )
+
   return {
+    label: t('content.filter.label'),
+    placeholder: t('content.filter.placeholder'),
+    textPlaceholder,
     fields,
     fieldLabel,
     fieldHint,
@@ -317,4 +318,5 @@ export function useFilterVocabulary({
   }
 }
 
-export type FilterVocabulary = ReturnType<typeof useFilterVocabulary>
+export type FilterVocabulary = ReturnType<typeof useFilterVocabulary> &
+  SmartVocabulary<FilterField>
