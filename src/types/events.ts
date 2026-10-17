@@ -40,6 +40,10 @@ export type EventSubject =
   | { kind: 'asset'; id: string }
   | { kind: 'zernioAccount'; id: string }
   | { kind: 'zernioSync' }
+  /** `entity:ideas:list` — the Ideas lists as a whole (CON-389). */
+  | { kind: 'ideaLists' }
+  /** `entity:saved_views:<surface>` — a list's shared smart groups. */
+  | { kind: 'savedViews'; surface: string }
   | { kind: 'unknown'; topic: string }
 
 /**

@@ -10,6 +10,7 @@ import {
   CaretUpIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -75,6 +76,8 @@ export function IdeaRow({
   onDelete,
   /** The campaign's own list already knows which campaign it is. */
   showCampaign = true,
+  compactSource = false,
+  selection,
 }: {
   idea: Idea
   now: Date
@@ -86,6 +89,16 @@ export function IdeaRow({
   /** Asks first — the surface holds the confirmation. */
   onDelete: () => void
   showCampaign?: boolean
+  /**
+   * Under a band that already names the document (grouped by source), the
+   * source line keeps only the places it cites.
+   */
+  compactSource?: boolean
+  /**
+   * The row's box, when the list can select (CON-388 §6). Its column is
+   * reserved whether or not the box shows, so nothing shifts when it does.
+   */
+  selection?: { selected: boolean; selecting: boolean; onToggle: () => void }
 }) {
   const { t } = useTranslation()
   const analysed = isAnalysed(idea)
@@ -123,7 +136,30 @@ export function IdeaRow({
   )
 
   return (
-    <li data-open={expanded || undefined} className={cn(IDEA_ROW, 'group')}>
+    <li
+      data-open={expanded || undefined}
+      className={cn(
+        IDEA_ROW,
+        'group',
+        selection && 'pl-9',
+        selection?.selected && 'bg-accent/5 before:opacity-0',
+      )}
+    >
+      {selection && (
+        // Under the filter bar's select-all: the list hangs 12px out, so the
+        // box sits 24px into the row.
+        <Checkbox
+          checked={selection.selected}
+          onCheckedChange={selection.onToggle}
+          aria-label={t('ideas.bulk.select', { title: idea.title })}
+          className={cn(
+            'absolute top-[18px] left-6',
+            !selection.selected &&
+              !selection.selecting &&
+              'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+          )}
+        />
+      )}
       {editing ? (
         // The title is a field now, so the head is no longer one button: the
         // caret becomes the control that closes it.
@@ -158,7 +194,12 @@ export function IdeaRow({
 
       {!expanded && (
         <>
-          <SourceLine idea={idea} now={now} showCampaign={showCampaign} />
+          <SourceLine
+            idea={idea}
+            now={now}
+            showCampaign={showCampaign}
+            compact={compactSource}
+          />
           <QuickAnswers title={idea.title} now={now} onDecide={onDecide} />
         </>
       )}
@@ -254,10 +295,12 @@ function SourceLine({
   idea,
   now,
   showCampaign,
+  compact,
 }: {
   idea: Idea
   now: Date
   showCampaign: boolean
+  compact: boolean
 }) {
   const { t, i18n } = useTranslation()
   const campaign = useCampaignName(idea.campaignId)
@@ -266,16 +309,17 @@ function SourceLine({
   if (isAnalysed(idea)) {
     if (idea.sourceAsset) {
       const { places, more } = citedPlace(idea)
-      bits.push(
-        <Link
-          key="source"
-          {...sourceLink(idea)}
-          className="inline-flex min-w-0 items-center gap-1.5 text-foreground hover:underline"
-        >
-          <KindMark kind={idea.sourceAsset.kind} />
-          <span className="truncate">{idea.sourceAsset.title}</span>
-        </Link>,
-      )
+      if (!compact)
+        bits.push(
+          <Link
+            key="source"
+            {...sourceLink(idea)}
+            className="inline-flex min-w-0 items-center gap-1.5 text-foreground hover:underline"
+          >
+            <KindMark kind={idea.sourceAsset.kind} />
+            <span className="truncate">{idea.sourceAsset.title}</span>
+          </Link>,
+        )
       if (places.length > 0)
         bits.push(
           <span key="places" className="shrink-0 tabular-nums">

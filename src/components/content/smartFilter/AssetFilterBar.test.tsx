@@ -32,7 +32,10 @@ vi.mock('@/hooks/useCampaigns', () => ({
 // The counts beside free text are the server's; here, a fixed answer.
 vi.mock('@/hooks/useContent', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/useContent')>()),
-  useAssetCount: () => ({ data: 5 }),
+  assetCountQuery: (params: unknown) => ({
+    queryKey: ['assets', 'list', 'count', params],
+    queryFn: async () => 5,
+  }),
 }))
 
 const FACETS: AssetListPage['facets'] = {

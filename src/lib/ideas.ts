@@ -96,6 +96,8 @@ export type Idea = {
   angle?: string
   rationale?: string
   sources?: string[]
+  /** The group a grouped list lists it under; absent when ungrouped. */
+  groupKey?: string
   /** How well it fits the reading it came from, 10–100 (CON-385). */
   fitScore?: number
   /** Why it scored that; absent on an unscored idea. */
@@ -171,55 +173,6 @@ export function hasWokenUp(idea: Idea, now: Date): boolean {
 /** Whether this idea is currently a question: never answered, or back again. */
 export function isWaiting(idea: Idea, now: Date): boolean {
   return idea.verdict === null || hasWokenUp(idea, now)
-}
-
-/**
- * When this idea started waiting for its answer — the sort key of the inbox.
- *
- * Not `createdAt`: a postponed idea that has just woken has been waiting since
- * it woke, not since it was written months ago, and ordering by creation would
- * bury today's returning ideas under everything that was ever captured. The
- * question the inbox is sorted by is "how long has this gone unanswered", and
- * for a woken idea the clock restarted.
- */
-export function waitingSince(idea: Idea): string {
-  return idea.verdict === 'later' && idea.remindAt
-    ? idea.remindAt
-    : idea.createdAt
-}
-
-/**
- * The inbox, oldest first.
- *
- * Oldest first, and deliberately: a queue that shows the newest idea first
- * never reaches the bottom, which is exactly how a backlog becomes a place
- * things go to be forgotten. The one that has waited longest is the one that
- * most needs an answer.
- */
-export function triageQueue(ideas: Idea[], now: Date): Idea[] {
-  return ideas
-    .filter((idea) => isWaiting(idea, now))
-    .sort((a, b) => Date.parse(waitingSince(a)) - Date.parse(waitingSince(b)))
-}
-
-/**
- * One decided pile, newest decision first.
- *
- * A woken `later` is not in its own pile any more — it is back in the inbox,
- * and showing it in both would make the counts add up to more than the list.
- */
-export function decidedIdeas(
-  ideas: Idea[],
-  verdict: IdeaVerdict,
-  now: Date,
-): Idea[] {
-  return ideas
-    .filter((idea) => idea.verdict === verdict && !isWaiting(idea, now))
-    .sort(
-      (a, b) =>
-        Date.parse(b.decidedAt ?? b.createdAt) -
-        Date.parse(a.decidedAt ?? a.createdAt),
-    )
 }
 
 export type IdeaCounts = Record<IdeaVerdict | 'waiting', number>

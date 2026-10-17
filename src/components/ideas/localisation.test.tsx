@@ -10,15 +10,12 @@ import { IdeaRow } from './IdeaRow'
 import { IdeaCapture } from './IdeaCapture'
 import { IdeasSidebarItem } from './IdeasSidebarItem'
 
-/**
- * The rail's row reads the list through the hook, and the hook is gated on the
- * feature's flag — so the fixture goes in here rather than through the query
- * cache, which would otherwise be a test of the flag.
- */
-const BACKLOG: Idea[] = []
+/** The rail's row reads the server's undecided count; here, a fixed answer. */
+const undecided = vi.hoisted(() => ({ count: 0 }))
 
-vi.mock('@/hooks/useIdeas', () => ({
-  useIdeas: () => ({ ideas: BACKLOG, isLoading: false, isError: false }),
+vi.mock('@/hooks/useIdeaList', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/useIdeaList')>()),
+  useUndecidedIdeaCount: () => undecided.count,
 }))
 
 /**
@@ -228,30 +225,13 @@ describe('capture in Spanish', () => {
 
 describe("the rail's Ideas row in Spanish", () => {
   it('counts what is still a question, and says so', async () => {
-    // Dated far either side of any clock this runs under: the row reads the
-    // real one, so a fixture dated near today would pass in the morning and
-    // fail on a runner in another zone.
-    BACKLOG.push(
-      idea({ id: 'undecided' }),
-      idea({ id: 'woken', verdict: 'later', remindAt: '2020-01-01T00:00:00Z' }),
-      idea({
-        id: 'sleeping',
-        verdict: 'later',
-        remindAt: '2099-01-01T00:00:00Z',
-      }),
-      idea({
-        id: 'accepted',
-        verdict: 'yes',
-        decidedAt: '2026-09-10T09:00:00Z',
-      }),
-    )
+    undecided.count = 2
 
     await renderWithProviders(<IdeasSidebarItem isActive={false} />, {
       path: '/ideas',
     })
 
-    // Two, not four: the backlog's size is not the figure, and a postponement
-    // whose day has come is back to being a question.
+    // The undecided pile, not the backlog's size.
     const chip = screen.getByLabelText('2 ideas sin decidir')
     expect(chip).toHaveTextContent('2')
     expect(screen.queryByLabelText('2 undecided ideas')).not.toBeInTheDocument()

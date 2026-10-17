@@ -128,11 +128,18 @@ export function useAssetCount(
   { enabled = true }: { enabled?: boolean } = {},
 ) {
   return useQuery({
-    queryKey: [...ASSET_LIST_KEY, 'count', params],
-    queryFn: async () => (await queryAssets({ ...params, limit: '1' })).total,
+    ...assetCountQuery(params),
     enabled,
     staleTime: 30_000,
   })
+}
+
+/** How many assets a request matches — a one-row read of the list. */
+export function assetCountQuery(params: AssetQueryParams) {
+  return {
+    queryKey: [...ASSET_LIST_KEY, 'count', params] as const,
+    queryFn: async () => (await queryAssets({ ...params, limit: '1' })).total,
+  }
 }
 
 /**
