@@ -103,7 +103,14 @@ function ChunkSection({ chunk }: { chunk: AssetChunk }) {
   const label = chunkLabel(t, chunk)
   const text = withoutLeadingLabel(chunk.content, chunk.source_label)
   return (
-    <li className="flex flex-col gap-2">
+    // Where an idea's citation can find it (`lib/assetPlace`).
+    <li
+      className="flex scroll-mt-6 flex-col gap-2"
+      data-place
+      data-page-from={chunk.page_start > 0 ? chunk.page_start : undefined}
+      data-page-to={chunk.page_end > 0 ? chunk.page_end : undefined}
+      data-label={chunk.source_label?.trim() || undefined}
+    >
       {label && (
         <h3 className="text-xs font-medium uppercase tracking-wide text-tertiary-foreground">
           {label}

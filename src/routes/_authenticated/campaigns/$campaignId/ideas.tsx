@@ -1,5 +1,7 @@
+import { useCallback } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { IdeasSurface } from '@/components/ideas/IdeasSurface'
+import { parseIdeaListSearch, type IdeaListSearch } from '@/lib/ideaFilter'
 
 /**
  * The campaign's ideas — the same module as the workspace's, narrowed to one
@@ -17,9 +19,22 @@ export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/ideas',
 )({
   component: CampaignIdeasView,
+  validateSearch: parseIdeaListSearch,
 })
 
 function CampaignIdeasView() {
   const { campaignId } = Route.useParams()
-  return <IdeasSurface campaignId={campaignId} />
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+  const onSearchChange = useCallback(
+    (next: IdeaListSearch) => void navigate({ search: next, replace: true }),
+    [navigate],
+  )
+  return (
+    <IdeasSurface
+      campaignId={campaignId}
+      search={search}
+      onSearchChange={onSearchChange}
+    />
+  )
 }

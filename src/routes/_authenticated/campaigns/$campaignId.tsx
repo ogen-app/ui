@@ -45,7 +45,6 @@ const SECTIONS = [
 const DOCUMENT_SECTIONS: readonly string[] = [
   'Overview',
   'Analytics',
-  'Ideas',
   'Activity',
 ]
 

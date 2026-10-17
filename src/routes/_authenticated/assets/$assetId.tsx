@@ -24,7 +24,7 @@ export const Route = createFileRoute('/_authenticated/assets/$assetId')({
  */
 function BankDocument() {
   const { assetId } = Route.useParams()
-  const { lens } = Route.useSearch()
+  const { lens, at } = Route.useSearch()
   const navigate = Route.useNavigate()
   // Stable, so the page's stale-lens effect does not re-run on every render.
   const onLensChange = useCallback(
@@ -35,12 +35,22 @@ function BankDocument() {
       }),
     [navigate],
   )
+  const onPlaceReached = useCallback(
+    () =>
+      void navigate({
+        search: (prev) => ({ ...prev, at: undefined }),
+        replace: true,
+      }),
+    [navigate],
+  )
   return (
     <AssetDocument
       assetId={assetId}
       campaignId={null}
       lens={lens}
       onLensChange={onLensChange}
+      at={at}
+      onPlaceReached={onPlaceReached}
     />
   )
 }

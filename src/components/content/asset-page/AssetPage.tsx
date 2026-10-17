@@ -30,6 +30,7 @@ import {
   type CitedRange,
 } from '@/lib/sheetChunks'
 import { assetKind } from '@/lib/assetKind'
+import { assetPlace, findPlace, type AssetPlace } from '@/lib/assetPlace'
 import { documentOutline } from '@/lib/documentOutline'
 import type { Asset } from '@/types/content'
 import { AssetMetaColumn } from './AssetMetaColumn'
@@ -47,10 +48,23 @@ type Props = {
   /** `?lens=` — a campaign id or `workspace`, when the address names one. */
   lens: string | undefined
   onLensChange: (lens: string) => void
+  /** `?at=` — a place an idea cites, to go to once (`lib/assetPlace`). */
+  at?: string
+  /** Drops `?at=` once the page has gone there, so a reload does not again. */
+  onPlaceReached?: () => void
   /** Today's screen for this asset, hosted whole under the Source tab. */
   source: ReactNode
   onTitleChange: (title: string) => void
   onDirty: () => void
+}
+
+const noop = () => {}
+
+/** Whether a cited place is found in the Source tab's text. */
+function readsInSource(
+  place: AssetPlace | null,
+): place is Extract<AssetPlace, { kind: 'page' | 'label' }> {
+  return place?.kind === 'page' || place?.kind === 'label'
 }
 
 type Tab = 'insights' | 'source'
@@ -102,6 +116,8 @@ export function AssetPage({
   campaignId,
   lens,
   onLensChange,
+  at,
+  onPlaceReached = noop,
   source,
   onTitleChange,
   onDirty,
@@ -113,7 +129,9 @@ export function AssetPage({
     enabled: analyzable,
   })
   const retry = useRetryAssetAnalysis(asset.id)
-  const [tab, setTabState] = useState<Tab>(readTab)
+  const [tab, setTabState] = useState<Tab>(() =>
+    readsInSource(at ? assetPlace(at) : null) ? 'source' : readTab(),
+  )
   const setTab = useCallback((next: Tab) => {
     setTabState(next)
     rememberTab(next)
@@ -196,7 +214,11 @@ export function AssetPage({
   // stage, the facts and the text agree.
   const spreadsheet = isSpreadsheet(asset) && settled
   const isDocument = asset.type === 'DOC' && settled
-  const chunks = useAssetChunks(asset.id, { enabled: isDocument })
+  // The same query the Source tab reads, also run to find a cited place.
+  const chunks = useAssetChunks(asset.id, {
+    enabled:
+      isDocument || (settled && readsInSource(at ? assetPlace(at) : null)),
+  })
   const loadedChunks = useMemo(
     () => chunks.data?.pages.flatMap((p) => p.chunks) ?? [],
     [chunks.data],
@@ -246,6 +268,69 @@ export function AssetPage({
         : null,
     [spreadsheet, openSheet],
   )
+
+  // `?at=` — the place an idea cited (CON-388): the recording plays from it,
+  // the sheet opens on its rows, anything else is found in the Source tab
+  // once its text has loaded. Once, then the address forgets it.
+  const place = useMemo(() => (at ? assetPlace(at) : null), [at])
+  // A page or a labelled part is read in the Source tab: switched to as the
+  // place arrives, not remembered as the reader's choice of tab.
+  const [placeSeen, setPlaceSeen] = useState(at)
+  if (placeSeen !== at) {
+    setPlaceSeen(at)
+    if (readsInSource(place)) setTabState('source')
+  }
+  useEffect(() => {
+    if (!place) return
+    if (place.kind === 'time') {
+      if (!player) return
+      player.seek(place.seconds)
+      onPlaceReached()
+      return
+    }
+    if (place.kind === 'rows') {
+      if (!citer) return
+      citer.cite(place.label, '')
+      onPlaceReached()
+      return
+    }
+  }, [place, player, citer, onPlaceReached])
+
+  // A page or a labelled part: looked for in the Source tab's text once each
+  // page of it has drawn, loading the next page while it is not there yet —
+  // a long document's cited page is rarely in the first. With every page
+  // read and nothing found, the address still lets it go, or each reload
+  // would search the whole document again.
+  const {
+    isPending: chunksPending,
+    isError: chunksFailed,
+    hasNextPage: moreChunks,
+    isFetchingNextPage: fetchingChunks,
+  } = chunks
+  useEffect(() => {
+    if (!place || !readsInSource(place)) return
+    const frame = requestAnimationFrame(() => {
+      const target = findPlace(document, place)
+      if (target) {
+        target.scrollIntoView({ block: 'start', behavior: 'smooth' })
+        onPlaceReached()
+        return
+      }
+      if (chunksPending || fetchingChunks) return
+      if (moreChunks && !chunksFailed) void fetchNextPage()
+      else onPlaceReached()
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [
+    place,
+    chunks.data,
+    chunksPending,
+    chunksFailed,
+    moreChunks,
+    fetchingChunks,
+    fetchNextPage,
+    onPlaceReached,
+  ])
 
   const sourceBody = (
     <div className="px-8 py-8">

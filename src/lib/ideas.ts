@@ -28,6 +28,7 @@
  */
 
 import type { FitBreakdown } from '@/lib/ideaFit'
+import type { AssetListKind } from '@/types/assetList'
 
 /**
  * A verdict, or `null` for an idea nobody has answered yet.
@@ -80,8 +81,23 @@ export type Idea = {
   origin?: IdeaOrigin
   /** The analysis that distilled it, while that analysis still exists. */
   assetAnalysisId?: string | null
-  /** The asset that analysis read, named for display. */
-  sourceAsset?: { id: string; title: string } | null
+  /**
+   * The asset an analysed idea was distilled from, while it exists. It
+   * outlives the analysis (CON-389); `null` once the asset is deleted.
+   */
+  sourceAsset?: IdeaSourceAsset | null
+  /** Who wrote a written idea, as named at capture; `null` on an analysed one. */
+  authorName?: string | null
+  /**
+   * An analysed idea's parts, as the server split them (CON-389). Absent on a
+   * written idea, and on an older analysed one whose note did not split — read
+   * them through `lib/ideaSource.ideaParts`, which falls back to the note.
+   */
+  angle?: string
+  rationale?: string
+  sources?: string[]
+  /** The group a grouped list lists it under; absent when ungrouped. */
+  groupKey?: string
   /** How well it fits the reading it came from, 10–100 (CON-385). */
   fitScore?: number
   /** Why it scored that; absent on an unscored idea. */
@@ -89,6 +105,22 @@ export type Idea = {
 }
 
 export type IdeaOrigin = 'manual' | 'asset_analysis'
+
+/** The asset an analysed idea came from, with what its source line draws. */
+export type IdeaSourceAsset = {
+  id: string
+  title: string
+  /** `null` against an API that predates CON-389. */
+  kind: AssetListKind | null
+  /** `null` when the file is not paged. */
+  pageCount: number | null
+  /** A recording's length; `null` when unknown or not a recording. */
+  durationMs: number | null
+  /** A web page's host without `www.`; `null` for other kinds. */
+  domain: string | null
+  /** The campaign whose reading produced it; `null` for the workspace's. */
+  reading: { campaignId: string; campaignName: string } | null
+}
 
 /** How long "not now" lasts. The options the postpone control offers. */
 export const POSTPONE_HORIZONS = ['week', 'month', 'quarter'] as const
@@ -141,55 +173,6 @@ export function hasWokenUp(idea: Idea, now: Date): boolean {
 /** Whether this idea is currently a question: never answered, or back again. */
 export function isWaiting(idea: Idea, now: Date): boolean {
   return idea.verdict === null || hasWokenUp(idea, now)
-}
-
-/**
- * When this idea started waiting for its answer — the sort key of the inbox.
- *
- * Not `createdAt`: a postponed idea that has just woken has been waiting since
- * it woke, not since it was written months ago, and ordering by creation would
- * bury today's returning ideas under everything that was ever captured. The
- * question the inbox is sorted by is "how long has this gone unanswered", and
- * for a woken idea the clock restarted.
- */
-export function waitingSince(idea: Idea): string {
-  return idea.verdict === 'later' && idea.remindAt
-    ? idea.remindAt
-    : idea.createdAt
-}
-
-/**
- * The inbox, oldest first.
- *
- * Oldest first, and deliberately: a queue that shows the newest idea first
- * never reaches the bottom, which is exactly how a backlog becomes a place
- * things go to be forgotten. The one that has waited longest is the one that
- * most needs an answer.
- */
-export function triageQueue(ideas: Idea[], now: Date): Idea[] {
-  return ideas
-    .filter((idea) => isWaiting(idea, now))
-    .sort((a, b) => Date.parse(waitingSince(a)) - Date.parse(waitingSince(b)))
-}
-
-/**
- * One decided pile, newest decision first.
- *
- * A woken `later` is not in its own pile any more — it is back in the inbox,
- * and showing it in both would make the counts add up to more than the list.
- */
-export function decidedIdeas(
-  ideas: Idea[],
-  verdict: IdeaVerdict,
-  now: Date,
-): Idea[] {
-  return ideas
-    .filter((idea) => idea.verdict === verdict && !isWaiting(idea, now))
-    .sort(
-      (a, b) =>
-        Date.parse(b.decidedAt ?? b.createdAt) -
-        Date.parse(a.decidedAt ?? a.createdAt),
-    )
 }
 
 export type IdeaCounts = Record<IdeaVerdict | 'waiting', number>

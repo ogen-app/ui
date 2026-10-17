@@ -39,6 +39,9 @@ type Props = {
    */
   lens?: string
   onLensChange?: (lens: string) => void
+  /** `?at=` — a place an idea cites, gone to once (CON-388). */
+  at?: string
+  onPlaceReached?: () => void
 }
 
 /**
@@ -74,6 +77,8 @@ export function AssetDocument({
   campaignId,
   lens,
   onLensChange = () => {},
+  at,
+  onPlaceReached,
 }: Props) {
   const { t } = useTranslation()
   const { data: campaign } = useCampaign(campaignId ?? '')
@@ -335,6 +340,8 @@ export function AssetDocument({
               campaignId={campaignId}
               lens={lens}
               onLensChange={onLensChange}
+              at={at}
+              onPlaceReached={onPlaceReached}
               source={source}
               onTitleChange={handleTitleChange}
               onDirty={markDirty}
