@@ -52,6 +52,11 @@ type Props<F, Field extends string> = {
   leading?: ReactNode
   /** Drawn at the right end, after Clear all: the Ideas page's Save as group. */
   trailing?: ReactNode
+  /**
+   * The bar's left inset, when a list lines its funnel up with something
+   * below it — the Ideas rows' 20px. Assets keeps the default.
+   */
+  inset?: string
 }
 
 /**
@@ -113,6 +118,7 @@ export function SmartFilterBar<F, Field extends string>({
   countQuery,
   leading,
   trailing,
+  inset = 'pl-3',
 }: Props<F, Field>) {
   const { t, i18n } = useTranslation()
   const listId = useId()
@@ -607,7 +613,10 @@ export function SmartFilterBar<F, Field extends string>({
           the cursor where it would have gone anyway. */}
       <div
         ref={barRef}
-        className="flex min-h-11 w-full flex-wrap items-center gap-1.5 border-b-2 border-quaternary bg-input-secondary px-3 py-1.5 transition-colors focus-within:border-foreground"
+        className={cn(
+          'flex min-h-11 w-full flex-wrap items-center gap-1.5 border-b-2 border-quaternary bg-input-secondary py-1.5 pr-3 transition-colors focus-within:border-foreground',
+          inset,
+        )}
         onMouseDown={(event) => {
           if (event.target === event.currentTarget) {
             event.preventDefault()

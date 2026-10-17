@@ -40,12 +40,11 @@ import {
   useUndecidedIdeaCount,
 } from '@/hooks/useIdeaList'
 import { useIdeaViewWriter, useIdeaViews } from '@/hooks/useIdeaViews'
-import { useMeasuredWidth } from '@/hooks/useMeasuredWidth'
-import { useSettingsStore } from '@/stores/settingsStore'
 import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
 import { cn } from '@/lib'
 import { viewerTimeZone } from '@/lib/assetFilter'
 import {
+  DEFAULT_IDEA_GROUP,
   IDEA_FILTER_MODEL,
   IDEA_GROUPS,
   IDEA_PILES,
@@ -76,17 +75,10 @@ import { IdeaCapture } from '../IdeaCapture'
 import { IdeaRow } from '../IdeaRow'
 import {
   DeleteGroupDialog,
-  IdeaViewsPanel,
+  IdeaViewsMenu,
   SaveGroupDialog,
-  ViewsButton,
-} from './IdeaViewsPanel'
+} from './IdeaViewsMenu'
 import { useIdeaVocabulary, type IdeaVocabulary } from './useIdeaVocabulary'
-
-/**
- * The narrowest column the panel docks in: its 220px and the gap, and room
- * for a list whose rows still read on one line.
- */
-const DOCK_MIN_WIDTH = 860
 
 /** What the delete dialog is asking about. */
 type Confirming = {
@@ -151,18 +143,6 @@ export function IdeasQuerySurface({
   const views = useIdeaViews({ enabled: groupsOn })
   const viewWriter = useIdeaViewWriter()
   const allCount = useUndecidedIdeaCount()
-  const chosenFold = useSettingsStore((st) => st.ideaViewsFolded)
-  const setFolded = useSettingsStore((st) => st.setIdeaViewsFolded)
-  const folded = chosenFold ?? false
-  /**
-   * Whether the column has room to dock the panel beside a readable list. It
-   * is the content column that decides, not the window: with the app's rail
-   * and the assistant open, a wide window leaves a narrow list. Without the
-   * room, the Views button floats the panel over the list instead.
-   */
-  const [frameRef, frameWidth] = useMeasuredWidth<HTMLDivElement>()
-  const roomy = frameWidth === 0 || frameWidth >= DOCK_MIN_WIDTH
-  const [floating, setFloating] = useState(false)
   const active = views.data?.find((v) => v.id === search.view) ?? null
   const edited = !!active && active.valid && !matchesView(search, active.query)
   const [saving, setSaving] = useState<
@@ -322,7 +302,6 @@ export function IdeasQuerySurface({
   const everything = total > 0 && (allMatching || ticked.size >= total)
   const selectAll = (
     <Checkbox
-      className="mr-2"
       checked={everything ? true : ticked.size > 0 ? 'indeterminate' : false}
       disabled={total === 0 || resolving}
       onCheckedChange={() =>
@@ -369,117 +348,45 @@ export function IdeasQuerySurface({
 
   // The frame is drawn from the first render, loader and all: it is what the
   // panel's room is measured on, and the measure is taken once it mounts.
-  if (query.isPending || (query.isError && rows.length === 0))
-    return (
-      <div ref={frameRef} className="flex grow flex-col">
-        {query.isPending ? (
-          <PageLoader />
-        ) : (
-          <PageError header={t('ideas.loadFailed')} />
-        )}
-      </div>
-    )
+  if (query.isPending) return <PageLoader />
+  if (query.isError && rows.length === 0)
+    return <PageError header={t('ideas.loadFailed')} />
 
   const firstRun = totalUnfiltered === 0 && !narrowed
   const selecting = ticked.size > 0
 
-  const panelOpen = groupsOn && !folded && roomy && !firstRun
-  const panelProps = {
-    views: views.data ?? [],
-    activeId: active?.id ?? null,
-    allCount,
-    onRename: (view: SavedView) => {
-      setFloating(false)
-      setSaving({ mode: 'rename', view })
-    },
-    onShare: (view: SavedView, shared: boolean) =>
-      viewWriter.update.mutate({ id: view.id, shared }),
-    onDuplicate: (view: SavedView) =>
-      viewWriter.create.mutate({
-        name: t('ideas.views.copyName', { name: view.name }).slice(
-          0,
-          SAVED_VIEW_NAME_MAX,
-        ),
-        query: view.query,
-        shared: false,
-      }),
-    onDelete: (view: SavedView) => {
-      setFloating(false)
-      setRemoving(view)
-    },
-  }
-
   return (
-    <div
-      ref={frameRef}
-      className="relative flex grow flex-col px-3 pb-10 lg:px-6"
-    >
-      <div
-        className={cn(
-          'mx-auto flex w-full grow flex-col gap-4',
-          // The panel takes its own width beside the column, never the column's.
-          panelOpen
-            ? 'max-w-[calc(var(--container-content)+236px)]'
-            : 'max-w-content',
-        )}
-      >
-        <IdeaCapture onCapture={(title) => void writer.capture(title)} />
+    // The Assets page's frame (CON-388): full width, the list on white in its
+    // own scroller, so its group bands stay pinned while the rows pass under
+    // them. Nothing above the list scrolls.
+    <div className="relative flex h-full min-h-0 flex-col gap-4 pt-1 pb-4">
+      <IdeaCapture onCapture={(title) => void writer.capture(title)} />
 
-        {firstRun ? (
-          <div className="pt-6">
-            <p className="text-sm text-secondary-foreground">
-              {t('ideas.empty.title')}
-            </p>
-            <p className="pt-1 text-sm text-tertiary-foreground">
-              {t('ideas.empty.subtitle')}
-            </p>
-          </div>
-        ) : (
-          <div
-            className={cn(
-              panelOpen
-                ? 'grid grid-cols-[220px_minmax(0,1fr)] items-start gap-4'
-                : 'flex flex-col',
-            )}
-          >
-            {panelOpen && (
-              <IdeaViewsPanel
-                {...panelProps}
-                onOpen={openView}
-                onFold={() => setFolded(true)}
-              />
-            )}
-            <div className="flex min-w-0 flex-col gap-4">
-              {groupsOn && (!panelOpen || active) && (
-                <GroupLine
-                  active={active}
-                  edited={edited}
-                  folded={!panelOpen}
-                  count={views.data?.length ?? 0}
-                  busy={viewWriter.update.isPending}
-                  onUnfold={() =>
-                    roomy ? setFolded(false) : setFloating((open) => !open)
-                  }
-                  floatingPanel={
-                    floating &&
-                    !roomy && (
-                      <IdeaViewsPanel
-                        {...panelProps}
-                        floating
-                        onOpen={(view) => {
-                          setFloating(false)
-                          openView(view)
-                        }}
-                        onFold={() => setFloating(false)}
-                      />
-                    )
-                  }
-                  onDelete={() => active && setRemoving(active)}
-                  onSaveChanges={saveChanges}
-                  onSaveAs={() => setSaving({ mode: 'new' })}
-                  onRevert={() => active && openView(active)}
-                />
-              )}
+      {firstRun ? (
+        <div className="pt-2">
+          <p className="text-sm text-secondary-foreground">
+            {t('ideas.empty.title')}
+          </p>
+          <p className="pt-1 text-sm text-tertiary-foreground">
+            {t('ideas.empty.subtitle')}
+          </p>
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col">
+          {groupsOn && active && (
+            <GroupLine
+              active={active}
+              edited={edited}
+              busy={viewWriter.update.isPending}
+              onDelete={() => setRemoving(active)}
+              onSaveChanges={saveChanges}
+              onSaveAs={() => setSaving({ mode: 'new' })}
+              onRevert={() => openView(active)}
+            />
+          )}
+          {/* The filter and, on its line, which view of the list this is. */}
+          <div className="flex items-stretch gap-2">
+            <div className="min-w-0 flex-1">
               <SmartFilterBar
                 filter={filter}
                 onChange={onFilterChange}
@@ -488,76 +395,106 @@ export function IdeasQuerySurface({
                 total={total}
                 totalUnfiltered={totalUnfiltered}
                 countQuery={(f) => ideaCountQuery(contextFor(f))}
-                leading={selectAll}
                 trailing={saveAsGroup}
+                // The rows' 20px inset, so the funnel sits over their boxes
+                // and the words over the bands' names.
+                inset="pl-5"
               />
-
-              <ViewRow
-                piles={piles}
-                pile={pile}
-                onPile={(next) =>
-                  change({ pile: next === 'waiting' ? undefined : next })
+            </div>
+            {groupsOn && (
+              <IdeaViewsMenu
+                views={views.data ?? []}
+                active={active}
+                edited={edited}
+                allCount={allCount}
+                canSave={narrowed}
+                onOpen={openView}
+                onSaveCurrent={() => setSaving({ mode: 'new' })}
+                onRename={(view) => setSaving({ mode: 'rename', view })}
+                onShare={(view, shared) =>
+                  viewWriter.update.mutate({ id: view.id, shared })
                 }
-                group={group}
-                onGroup={(next) =>
-                  change({ group: next === 'none' ? undefined : next })
+                onDuplicate={(view) =>
+                  viewWriter.create.mutate({
+                    name: t('ideas.views.copyName', {
+                      name: view.name,
+                    }).slice(0, SAVED_VIEW_NAME_MAX),
+                    query: view.query,
+                    shared: false,
+                  })
                 }
-                scoped={!!campaignId}
-                sort={sort}
-                onSort={(next) =>
-                  change({ sort: next === 'waiting' ? undefined : next })
-                }
+                onDelete={setRemoving}
               />
+            )}
+          </div>
 
-              {visibleRows.length === 0 ? (
-                narrowed ? (
-                  <NoMatches
-                    title={t('ideas.filter.nothingMatches')}
-                    filter={filter}
-                    model={IDEA_FILTER_MODEL}
-                    vocabulary={vocabulary}
-                    countQuery={(f) => ideaCountQuery(contextFor(f))}
-                    onChange={onFilterChange}
-                  />
-                ) : (
-                  <p className="py-8 text-center text-sm text-tertiary-foreground">
-                    {t(`ideas.pileEmpty.${pile}`)}
-                  </p>
-                )
-              ) : (
-                <IdeaRows
-                  rows={visibleRows}
-                  groups={groups ?? []}
-                  group={group}
+          <ViewRow
+            selectAll={selectAll}
+            piles={piles}
+            pile={pile}
+            onPile={(next) =>
+              change({ pile: next === 'waiting' ? undefined : next })
+            }
+            group={group}
+            onGroup={(next) =>
+              change({ group: next === DEFAULT_IDEA_GROUP ? undefined : next })
+            }
+            scoped={!!campaignId}
+            sort={sort}
+            onSort={(next) =>
+              change({ sort: next === 'waiting' ? undefined : next })
+            }
+          />
+
+          {visibleRows.length === 0 ? (
+            <div className="min-h-0 flex-1 overflow-y-auto bg-primary">
+              {narrowed ? (
+                <NoMatches
+                  title={t('ideas.filter.nothingMatches')}
+                  filter={filter}
+                  model={IDEA_FILTER_MODEL}
                   vocabulary={vocabulary}
-                  now={now}
-                  showCampaign={campaignId === null}
-                  expandedId={expandedId}
-                  onToggleExpanded={(id) =>
-                    setExpandedId((open) => (open === id ? null : id))
-                  }
-                  ticked={ticked}
-                  selecting={selecting}
-                  onToggleRow={toggleRow}
-                  writer={writer}
-                  onDelete={(idea) =>
-                    setConfirming({
-                      ids: [idea.id],
-                      title: idea.title,
-                      fromSelection: false,
-                    })
-                  }
-                  onEndReached={() => {
-                    if (query.hasNextPage && !query.isFetchingNextPage)
-                      void query.fetchNextPage()
-                  }}
-                  loadingMore={query.isFetchingNextPage}
+                  countQuery={(f) => ideaCountQuery(contextFor(f))}
+                  onChange={onFilterChange}
                 />
+              ) : (
+                <p className="py-12 text-center text-sm text-tertiary-foreground">
+                  {t(`ideas.pileEmpty.${pile}`)}
+                </p>
               )}
             </div>
-          </div>
-        )}
-      </div>
+          ) : (
+            <IdeaRows
+              rows={visibleRows}
+              groups={groups ?? []}
+              group={group}
+              vocabulary={vocabulary}
+              now={now}
+              showCampaign={campaignId === null}
+              expandedId={expandedId}
+              onToggleExpanded={(id) =>
+                setExpandedId((open) => (open === id ? null : id))
+              }
+              ticked={ticked}
+              selecting={selecting}
+              onToggleRow={toggleRow}
+              writer={writer}
+              onDelete={(idea) =>
+                setConfirming({
+                  ids: [idea.id],
+                  title: idea.title,
+                  fromSelection: false,
+                })
+              }
+              onEndReached={() => {
+                if (query.hasNextPage && !query.isFetchingNextPage)
+                  void query.fetchNextPage()
+              }}
+              loadingMore={query.isFetchingNextPage}
+            />
+          )}
+        </div>
+      )}
 
       {selecting && (
         <SelectionBar
@@ -637,6 +574,7 @@ const PILE_LABEL = {
  * the match — and on the same line, how to read them: Group by and Sort.
  */
 function ViewRow({
+  selectAll,
   piles,
   pile,
   onPile,
@@ -646,6 +584,8 @@ function ViewRow({
   sort,
   onSort,
 }: {
+  /** Select all, at the line's start over the rows' boxes. */
+  selectAll: React.ReactNode
   piles: Record<IdeaPile, number>
   pile: IdeaPile
   onPile: (pile: IdeaPile) => void
@@ -658,8 +598,11 @@ function ViewRow({
   const { t, i18n } = useTranslation()
   const groupings = IDEA_GROUPS.filter((g) => !(scoped && g === 'campaign'))
   return (
-    <div className="flex flex-wrap items-end gap-x-5 border-b border-quaternary">
+    <div className="mt-2 flex flex-wrap items-end gap-x-5 border-b border-quaternary">
       <div className="flex items-center gap-1">
+        {/* In the rows' 20px inset, with the same 20px after it that the
+            rows leave before their score: the tabs start where the scores do. */}
+        <span className="flex h-10 items-center pr-1 pl-5">{selectAll}</span>
         {IDEA_PILES.map((p) => (
           <button
             key={p}
@@ -775,7 +718,17 @@ function IdeaRows({
   loadingMore: boolean
 }) {
   const { t, i18n } = useTranslation()
+  const scrollRef = useRef<HTMLDivElement>(null)
   const footRef = useRef<HTMLDivElement>(null)
+  /** Bands folded this visit, as `grouping:key`. */
+  const [folded, setFolded] = useState<Set<string>>(new Set())
+  const toggleBand = (id: string) =>
+    setFolded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   const counts = useMemo(
     () => new Map(groups.map((g) => [g.key, g.count])),
     [groups],
@@ -789,25 +742,33 @@ function IdeaRows({
     endReached.current = onEndReached
   })
   useEffect(() => {
+    const root = scrollRef.current
     const foot = footRef.current
-    if (!foot || typeof IntersectionObserver === 'undefined') return
+    if (!root || !foot || typeof IntersectionObserver === 'undefined') return
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) endReached.current()
       },
-      { rootMargin: '400px 0px' },
+      { root, rootMargin: '400px 0px' },
     )
     observer.observe(foot)
     return () => observer.disconnect()
   }, [])
 
   return (
-    <div>
-      <ul aria-label={t('ideas.list.label')} className="-mx-3 flex flex-col">
+    // The list scrolls itself, as the Assets list does, so a band stays
+    // pinned while its rows pass under it and is pushed off by the next.
+    <div
+      ref={scrollRef}
+      className="@container min-h-0 flex-1 overflow-y-auto bg-primary"
+    >
+      <ul aria-label={t('ideas.list.label')} className="flex flex-col">
         {rows.map((idea, i) => {
           const key = idea.groupKey ?? ''
           const opensBand =
             banded && (i === 0 || rows[i - 1].groupKey !== idea.groupKey)
+          const bandId = `${group}:${key}`
+          const isFolded = banded && folded.has(bandId)
           return (
             <Fragment key={idea.id}>
               {opensBand && (
@@ -817,27 +778,32 @@ function IdeaRows({
                   first={idea}
                   vocabulary={vocabulary}
                   count={formatNumber(counts.get(key) ?? 0, {}, i18n.language)}
+                  folded={isFolded}
+                  onToggle={() => toggleBand(bandId)}
+                  firstBand={i === 0}
                 />
               )}
-              <IdeaRow
-                idea={idea}
-                now={now}
-                showCampaign={showCampaign}
-                compactSource={group === 'source'}
-                expanded={idea.id === expandedId}
-                onToggle={() => onToggleExpanded(idea.id)}
-                onDecide={(verdict, remindAt) =>
-                  void writer.decide(idea.id, verdict, remindAt)
-                }
-                onUndecide={() => void writer.undecide(idea.id)}
-                onEdit={(edit) => void writer.edit(idea.id, edit)}
-                onDelete={() => onDelete(idea)}
-                selection={{
-                  selected: ticked.has(idea.id),
-                  selecting,
-                  onToggle: () => onToggleRow(idea.id),
-                }}
-              />
+              {!isFolded && (
+                <IdeaRow
+                  idea={idea}
+                  now={now}
+                  showCampaign={showCampaign}
+                  compactSource={group === 'source'}
+                  expanded={idea.id === expandedId}
+                  onToggle={() => onToggleExpanded(idea.id)}
+                  onDecide={(verdict, remindAt) =>
+                    void writer.decide(idea.id, verdict, remindAt)
+                  }
+                  onUndecide={() => void writer.undecide(idea.id)}
+                  onEdit={(edit) => void writer.edit(idea.id, edit)}
+                  onDelete={() => onDelete(idea)}
+                  selection={{
+                    selected: ticked.has(idea.id),
+                    selecting,
+                    onToggle: () => onToggleRow(idea.id),
+                  }}
+                />
+              )}
             </Fragment>
           )
         })}
@@ -861,6 +827,9 @@ function Band({
   first,
   vocabulary,
   count,
+  folded,
+  onToggle,
+  firstBand,
 }: {
   group: IdeaGrouping
   groupKey: string
@@ -868,6 +837,9 @@ function Band({
   first: Idea
   vocabulary: IdeaVocabulary
   count: string
+  folded: boolean
+  onToggle: () => void
+  firstBand: boolean
 }) {
   const { t } = useTranslation()
   const source = group === 'source' && groupKey !== NONE
@@ -904,30 +876,62 @@ function Band({
     }
   })()
   return (
+    // The Assets list's band: pinned at the top of the list while its rows
+    // pass under it, and folded by its whole width. Its chevron sits over the
+    // rows' boxes and its name level with the filter's words.
     <li
-      className="sticky top-0 mx-3 flex h-9.5 items-center gap-2 border-b border-quaternary bg-primary text-xs"
+      className={cn(
+        'sticky top-0 border-b border-quaternary bg-secondary',
+        !firstBand && 'border-t',
+      )}
       style={{ zIndex: ZIndex.stickyTableHeader }}
     >
-      {source && (
-        <HugeiconsIcon
-          icon={(kind && KIND_ICON[kind]) || Note01Icon}
-          size={16}
-          strokeWidth={1.5}
-          aria-hidden
-          className={cn(
-            'shrink-0',
-            (kind && KIND_TONE[kind]) ?? 'text-kind-neutral',
+      <h2>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={!folded}
+          aria-label={t(folded ? 'content.list.unfold' : 'content.list.fold', {
+            group: label,
+          })}
+          className="flex h-9.5 w-full cursor-pointer items-center gap-1.5 px-5 text-left text-xs outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
+        >
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            size={16}
+            strokeWidth={1.8}
+            aria-hidden
+            className={cn(
+              'shrink-0 text-secondary-foreground transition-transform',
+              folded && '-rotate-90',
+            )}
+          />
+          {source && (
+            <HugeiconsIcon
+              icon={(kind && KIND_ICON[kind]) || Note01Icon}
+              size={16}
+              strokeWidth={1.5}
+              aria-hidden
+              className={cn(
+                'shrink-0',
+                (kind && KIND_TONE[kind]) ?? 'text-kind-neutral',
+              )}
+            />
           )}
-        />
-      )}
-      <h2 className="truncate font-semibold text-foreground">{label}</h2>
-      <span className="tabular-nums text-secondary-foreground">{count}</span>
-      {source && first.sourceAsset && (
-        // What the document is, beside how many ideas it gave.
-        <span className="truncate text-secondary-foreground">
-          {sourceFacts(t, first.sourceAsset)}
-        </span>
-      )}
+          <span className="truncate font-semibold text-foreground">
+            {label}
+          </span>
+          <span className="tabular-nums text-secondary-foreground">
+            {count}
+          </span>
+          {source && first.sourceAsset && (
+            // What the document is, beside how many ideas it gave.
+            <span className="truncate text-secondary-foreground">
+              {sourceFacts(t, first.sourceAsset)}
+            </span>
+          )}
+        </button>
+      </h2>
     </li>
   )
 }
@@ -951,7 +955,7 @@ function SelectionBar({
   const { t } = useTranslation()
   return (
     <div
-      className="pointer-events-none sticky bottom-4 flex justify-center"
+      className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center"
       style={{ zIndex: ZIndex.pageActionBar }}
     >
       <div className="pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg">
@@ -989,46 +993,30 @@ function SelectionBar({
 
 /**
  * The open group, named above the bar — "Beekeeping, last 30 days · smart
- * group · only you" — and, when the panel is folded, the button that brings
- * it back. Changed, the group is marked edited and offers Save changes (when
+ * group · only you". Changed, the group is marked edited and offers Save changes (when
  * the viewer may), Save as new… and Revert; nothing is stored until one is
  * chosen. A group whose filter no longer works says so here.
  */
 function GroupLine({
   active,
   edited,
-  folded,
-  count,
   busy,
-  onUnfold,
   onDelete,
   onSaveChanges,
   onSaveAs,
   onRevert,
-  floatingPanel,
 }: {
-  active: SavedView | null
+  active: SavedView
   edited: boolean
-  folded: boolean
-  count: number
   busy: boolean
-  onUnfold: () => void
   onDelete: () => void
   onSaveChanges: () => void
   onSaveAs: () => void
   onRevert: () => void
-  /** The panel floated over the list, when there is no room to dock it. */
-  floatingPanel?: React.ReactNode
 }) {
   const { t } = useTranslation()
   return (
-    <div className="flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1">
-      {folded && (
-        <span className="relative">
-          <ViewsButton count={count} onUnfold={onUnfold} />
-          {floatingPanel}
-        </span>
-      )}
+    <div className="mb-3 flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1">
       {active && (
         <p className="min-w-0 text-sm text-secondary-foreground">
           <span className="font-medium text-foreground">{active.name}</span>

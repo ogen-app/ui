@@ -629,6 +629,7 @@ export const en = {
       no: 'No',
       undecide: 'Put this back with the undecided',
       close: 'Close this idea',
+      open: 'Open this idea',
       delete: 'DELETE IDEA',
     },
     horizon: {
@@ -806,11 +807,8 @@ export const en = {
     /** Smart groups — saved filters (CON-388 §5). */
     views: {
       heading: 'Views',
-      fold: 'Hide smart groups',
-      unfold: 'Show smart groups',
       all: 'All ideas',
       groups: 'Smart groups',
-      empty: 'Filter the list, then save it here with <b>Save as group</b>.',
       shared: 'Shared with the workspace',
       menu: 'Actions for “{{name}}”',
       rename: 'Rename',
@@ -825,6 +823,9 @@ export const en = {
       edited: 'edited',
       invalid: 'This group’s filter no longer works.',
       saveAs: 'Save as group',
+      saveCurrent: 'Save current filter as a group',
+      trigger: 'Views: {{name}}',
+      emptyMenu: 'Filter the list, then save it here as a group.',
       saveChanges: 'Save changes',
       saveAsNew: 'Save as new…',
       revert: 'Revert',

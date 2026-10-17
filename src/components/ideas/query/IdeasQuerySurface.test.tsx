@@ -155,10 +155,10 @@ describe('IdeasQuerySurface', () => {
     await renderSurface({ group: 'source' })
 
     expect(
-      await screen.findByRole('heading', { name: 'Handbook' }),
+      await screen.findByRole('heading', { name: /Handbook/ }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'No document' }),
+      screen.getByRole('heading', { name: /No document/ }),
     ).toBeInTheDocument()
     expect(screen.getByText('PDF · 7 pages')).toBeInTheDocument()
   })
@@ -286,15 +286,20 @@ describe('smart groups', () => {
   it('lists the groups with their undecided counts and opens one', async () => {
     await renderSurface({ pile: 'yes' })
 
-    const open = await screen.findByRole('button', { name: /^Strong PDFs/ })
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Views: All ideas' }),
+    )
+    const open = await screen.findByRole('menuitem', { name: /^Strong PDFs/ })
     expect(open).toHaveTextContent('3')
     await userEvent.click(open)
 
-    // Its filter, grouping and sort into the address; the pile stays.
+    // Its filter, grouping and sort into the address; the pile stays. A
+    // group stored without a grouping is one that does not group.
     expect(onSearchChange).toHaveBeenLastCalledWith({
       fit: 'high',
       kind: 'pdf',
       sort: 'fit',
+      group: 'none',
       view: 'v1',
       pile: 'yes',
     })
@@ -303,7 +308,12 @@ describe('smart groups', () => {
   it("offers only Duplicate on somebody else's shared group", async () => {
     await renderSurface()
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Actions for “Strong PDFs”' }),
+      await screen.findByRole('button', { name: 'Views: All ideas' }),
+    )
+    await userEvent.click(
+      await screen.findByRole('menuitem', {
+        name: 'Actions for “Strong PDFs”',
+      }),
     )
     expect(
       screen.getByRole('menuitem', { name: 'Duplicate' }),
@@ -321,6 +331,7 @@ describe('smart groups', () => {
       fit: 'high',
       kind: 'pdf',
       sort: 'fit',
+      group: 'none',
       view: 'v1',
     })
     await screen.findByText('Idea a')
@@ -329,7 +340,8 @@ describe('smart groups', () => {
     first.unmount()
 
     await renderSurface({ fit: 'high', kind: 'pdf', view: 'v1' })
-    expect(await screen.findByText('edited')).toBeInTheDocument()
+    // On the Views button and on the group's line above the bar.
+    expect(await screen.findAllByText('edited')).toHaveLength(2)
     // Somebody else's group: no Save changes, but it can be saved as new.
     expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull()
     expect(
@@ -383,7 +395,7 @@ describe('IdeasQuerySurface in Spanish', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.getByText('Más tiempo esperando')).toBeInTheDocument()
-    expect(screen.getByText('Sin agrupar')).toBeInTheDocument()
+    expect(screen.getByText('Fecha de alta')).toBeInTheDocument()
     expect(screen.queryByText('Waiting longest')).not.toBeInTheDocument()
     expect(
       screen.queryByPlaceholderText('Filter by text, source, campaign, fit…'),

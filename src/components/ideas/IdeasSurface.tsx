@@ -51,15 +51,19 @@ export function IdeasSurface({
     />
   )
 
-  // The campaign's document shell owns the header and the scrolling for its
-  // sections, so at that level this renders bare.
+  // The campaign layout owns the header for its sections, so at that level
+  // this renders bare, in the frame the layout gives it.
   if (!heading) return body
 
+  // The Assets page's frame: the header, then a body that does not scroll —
+  // the list scrolls itself, so its group bands can stay pinned.
   return (
     <PageContainer variant="fullFlex">
-      <div className="flex h-0 grow flex-col overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col">
         <PageHeader title={heading} />
-        {body}
+        <div className="grid min-h-0 flex-1 overflow-hidden px-3 lg:px-6">
+          {body}
+        </div>
       </div>
     </PageContainer>
   )
