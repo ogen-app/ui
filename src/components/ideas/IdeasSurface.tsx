@@ -9,9 +9,11 @@ import {
   countIdeas,
   decidedIdeas,
   triageQueue,
+  type Idea,
   type IdeaVerdict,
 } from '@/lib/ideas'
 import { IdeaCapture } from './IdeaCapture'
+import { DeleteIdeasDialog } from './DeleteIdeasDialog'
 import { IdeaRow } from './IdeaRow'
 import { VERDICT_ORDER, VERDICTS } from './verdicts'
 import { cn } from '@/lib'
@@ -89,6 +91,8 @@ export function IdeasSurface({
 
   const [pile, setPile] = useState<IdeaVerdict | 'waiting'>('waiting')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  /** The idea a DELETE IDEA is asking about. */
+  const [deleting, setDeleting] = useState<Idea | null>(null)
 
   const counts = useMemo(() => countIdeas(ideas, now), [ideas, now])
   const waiting = useMemo(() => triageQueue(ideas, now), [ideas, now])
@@ -129,13 +133,15 @@ export function IdeasSurface({
             <>
               <PileTabs counts={counts} active={pile} onSelect={setPile} />
 
-              <div className="flex flex-col gap-2">
-                {visible.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-tertiary-foreground">
-                    {t(PILE_EMPTY[pile])}
-                  </p>
-                ) : (
-                  visible.map((idea) => (
+              {visible.length === 0 ? (
+                <p className="py-8 text-center text-sm text-tertiary-foreground">
+                  {t(PILE_EMPTY[pile])}
+                </p>
+              ) : (
+                // Hung out by the rows' own padding, so the origin slots line
+                // up with the capture field rather than a step inside it.
+                <ul className="-mx-3 flex flex-col">
+                  {visible.map((idea) => (
                     <IdeaRow
                       key={idea.id}
                       idea={idea}
@@ -150,11 +156,22 @@ export function IdeasSurface({
                       }
                       onUndecide={() => void undecide(idea.id)}
                       onEdit={(change) => void edit(idea.id, change)}
-                      onDelete={() => void remove(idea.id)}
+                      onDelete={() => setDeleting(idea)}
                     />
-                  ))
-                )}
-              </div>
+                  ))}
+                </ul>
+              )}
+              <DeleteIdeasDialog
+                count={1}
+                title={deleting?.title ?? null}
+                isOpen={deleting !== null}
+                onClose={() => setDeleting(null)}
+                deleting={false}
+                onConfirm={() => {
+                  if (deleting) void remove(deleting.id)
+                  setDeleting(null)
+                }}
+              />
             </>
           )}
         </div>

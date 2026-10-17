@@ -28,6 +28,7 @@
  */
 
 import type { FitBreakdown } from '@/lib/ideaFit'
+import type { AssetListKind } from '@/types/assetList'
 
 /**
  * A verdict, or `null` for an idea nobody has answered yet.
@@ -80,8 +81,21 @@ export type Idea = {
   origin?: IdeaOrigin
   /** The analysis that distilled it, while that analysis still exists. */
   assetAnalysisId?: string | null
-  /** The asset that analysis read, named for display. */
-  sourceAsset?: { id: string; title: string } | null
+  /**
+   * The asset an analysed idea was distilled from, while it exists. It
+   * outlives the analysis (CON-389); `null` once the asset is deleted.
+   */
+  sourceAsset?: IdeaSourceAsset | null
+  /** Who wrote a written idea, as named at capture; `null` on an analysed one. */
+  authorName?: string | null
+  /**
+   * An analysed idea's parts, as the server split them (CON-389). Absent on a
+   * written idea, and on an older analysed one whose note did not split — read
+   * them through `lib/ideaSource.ideaParts`, which falls back to the note.
+   */
+  angle?: string
+  rationale?: string
+  sources?: string[]
   /** How well it fits the reading it came from, 10–100 (CON-385). */
   fitScore?: number
   /** Why it scored that; absent on an unscored idea. */
@@ -89,6 +103,22 @@ export type Idea = {
 }
 
 export type IdeaOrigin = 'manual' | 'asset_analysis'
+
+/** The asset an analysed idea came from, with what its source line draws. */
+export type IdeaSourceAsset = {
+  id: string
+  title: string
+  /** `null` against an API that predates CON-389. */
+  kind: AssetListKind | null
+  /** `null` when the file is not paged. */
+  pageCount: number | null
+  /** A recording's length; `null` when unknown or not a recording. */
+  durationMs: number | null
+  /** A web page's host without `www.`; `null` for other kinds. */
+  domain: string | null
+  /** The campaign whose reading produced it; `null` for the workspace's. */
+  reading: { campaignId: string; campaignName: string } | null
+}
 
 /** How long "not now" lasts. The options the postpone control offers. */
 export const POSTPONE_HORIZONS = ['week', 'month', 'quarter'] as const

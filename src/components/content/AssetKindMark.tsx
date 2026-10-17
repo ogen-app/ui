@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib'
 import type { AssetListItem, AssetListKind } from '@/types/assetList'
 import { AssetPreview } from './AssetPreview'
+import { KIND_TONE } from './kindTone'
 
 /** Each kind's mark — the list's rows and the filter's Type values alike. */
 export const KIND_ICON: Record<AssetListKind, IconSvgElement> = {
@@ -41,16 +42,8 @@ export const KIND_ICON: Record<AssetListKind, IconSvgElement> = {
  * that tells those five apart. Stroke 1.25 so the mark weighs about what the
  * title beside it does. Muted ink (CON-382, `--kind-*` in `index.css`): the
  * four file types people already know by colour keep it, a CSV being a
- * spreadsheet, and every other kind is neutral.
+ * spreadsheet, and every other kind is neutral (`kindTone`).
  */
-const KIND_TONE: Partial<Record<AssetListKind, string>> = {
-  pdf: 'text-kind-pdf',
-  document: 'text-kind-doc',
-  spreadsheet: 'text-kind-sheet',
-  csv: 'text-kind-sheet',
-  presentation: 'text-kind-slides',
-}
-
 export function AssetKindMark({
   asset,
 }: {

@@ -5,6 +5,7 @@ import { QueryWrapper } from '@/test/queryWrapper'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { i18next, loadLocaleResources } from '@/i18n'
 import type { Idea } from '@/lib/ideas'
+import { DeleteIdeasDialog } from './DeleteIdeasDialog'
 import { IdeaRow } from './IdeaRow'
 import { IdeaCapture } from './IdeaCapture'
 import { IdeasSidebarItem } from './IdeasSidebarItem'
@@ -110,25 +111,101 @@ describe('an undecided idea in Spanish', () => {
 })
 
 describe("a decided idea's record in Spanish", () => {
-  it('joins its history and says when a postponement comes back', () => {
+  it('names its writer and says when a postponement comes back', () => {
     renderRow(
       idea({
         verdict: 'later',
+        authorName: 'Alex Lane',
         decidedAt: '2026-09-10T09:00:00Z',
         remindAt: '2026-10-17T09:00:00Z',
       }),
       { expanded: true },
     )
 
-    expect(screen.getByText(/Anotada el/)).toBeInTheDocument()
+    expect(screen.getByText(/Escrita por Alex Lane/)).toBeInTheDocument()
     expect(screen.getByText(/Vuelve el/)).toBeInTheDocument()
     expect(screen.queryByText(/Comes back on/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Written by/)).not.toBeInTheDocument()
 
     // The way back out of a pile, named rather than drawn: the undo is the
     // reason saying no is cheap.
     expect(
-      screen.getByLabelText('Devolver a las pendientes de decidir'),
+      screen.getByRole('button', {
+        name: 'Devolver a las pendientes de decidir',
+      }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'ELIMINAR IDEA' }),
+    ).toBeInTheDocument()
+  })
+})
+
+describe('an analysed idea in Spanish', () => {
+  it('names its source, and says when the document is gone', async () => {
+    const analysed = idea({
+      origin: 'asset_analysis',
+      fitScore: 78,
+      sources: ['p. 5'],
+      angle: 'El gancho',
+      sourceAsset: {
+        id: 'asset1',
+        title: 'Manual de apicultura',
+        kind: 'pdf',
+        pageCount: 7,
+        durationMs: null,
+        domain: null,
+        reading: null,
+      },
+    })
+    await renderWithProviders(
+      <ul>
+        <IdeaRow
+          idea={analysed}
+          now={NOW}
+          expanded
+          onToggle={() => {}}
+          onDecide={() => {}}
+          onUndecide={() => {}}
+          onEdit={() => {}}
+          onDelete={() => {}}
+        />
+      </ul>,
+      { path: '/ideas' },
+    )
+
+    expect(screen.getByText('Fuente')).toBeInTheDocument()
+    expect(
+      screen.getByText(/7 páginas · leída para el espacio de trabajo/),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Abrir la fuente')).toBeInTheDocument()
+    expect(screen.queryByText('Source')).not.toBeInTheDocument()
+    expect(screen.queryByText('Open source')).not.toBeInTheDocument()
+  })
+
+  it('says so when its document has been deleted', () => {
+    renderRow(idea({ origin: 'asset_analysis', sourceAsset: null }))
+    expect(screen.getByText('Documento eliminado')).toBeInTheDocument()
+    expect(screen.queryByText('Document deleted')).not.toBeInTheDocument()
+  })
+})
+
+describe('deleting an idea in Spanish', () => {
+  it('names the one idea and keeps the capitals', () => {
+    render(
+      <DeleteIdeasDialog
+        count={1}
+        title="Cera"
+        isOpen
+        onClose={() => {}}
+        onConfirm={() => {}}
+        deleting={false}
+      />,
+    )
+    expect(screen.getByText('¿Eliminar «Cera»?')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'CONSERVAR IDEA' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Delete/)).not.toBeInTheDocument()
   })
 })
 
