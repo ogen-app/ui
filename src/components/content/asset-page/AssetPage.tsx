@@ -30,6 +30,7 @@ import {
   type CitedRange,
 } from '@/lib/sheetChunks'
 import { assetKind } from '@/lib/assetKind'
+import { assetPlace, findPlace, type AssetPlace } from '@/lib/assetPlace'
 import { documentOutline } from '@/lib/documentOutline'
 import type { Asset } from '@/types/content'
 import { AssetMetaColumn } from './AssetMetaColumn'
@@ -47,10 +48,21 @@ type Props = {
   /** `?lens=` — a campaign id or `workspace`, when the address names one. */
   lens: string | undefined
   onLensChange: (lens: string) => void
+  /** `?at=` — a place an idea cites, to go to once (`lib/assetPlace`). */
+  at?: string
+  /** Drops `?at=` once the page has gone there, so a reload does not again. */
+  onPlaceReached?: () => void
   /** Today's screen for this asset, hosted whole under the Source tab. */
   source: ReactNode
   onTitleChange: (title: string) => void
   onDirty: () => void
+}
+
+const noop = () => {}
+
+/** Whether a cited place is found in the Source tab's text. */
+function readsInSource(place: AssetPlace | null): boolean {
+  return place?.kind === 'page' || place?.kind === 'label'
 }
 
 type Tab = 'insights' | 'source'
@@ -102,6 +114,8 @@ export function AssetPage({
   campaignId,
   lens,
   onLensChange,
+  at,
+  onPlaceReached = noop,
   source,
   onTitleChange,
   onDirty,
@@ -113,7 +127,9 @@ export function AssetPage({
     enabled: analyzable,
   })
   const retry = useRetryAssetAnalysis(asset.id)
-  const [tab, setTabState] = useState<Tab>(readTab)
+  const [tab, setTabState] = useState<Tab>(() =>
+    readsInSource(at ? assetPlace(at) : null) ? 'source' : readTab(),
+  )
   const setTab = useCallback((next: Tab) => {
     setTabState(next)
     rememberTab(next)
@@ -246,6 +262,43 @@ export function AssetPage({
         : null,
     [spreadsheet, openSheet],
   )
+
+  // `?at=` — the place an idea cited (CON-388): the recording plays from it,
+  // the sheet opens on its rows, anything else is found in the Source tab
+  // once its text has loaded. Once, then the address forgets it.
+  const place = useMemo(() => (at ? assetPlace(at) : null), [at])
+  // A page or a labelled part is read in the Source tab: switched to as the
+  // place arrives, not remembered as the reader's choice of tab.
+  const [placeSeen, setPlaceSeen] = useState(at)
+  if (placeSeen !== at) {
+    setPlaceSeen(at)
+    if (readsInSource(place)) setTabState('source')
+  }
+  useEffect(() => {
+    if (!place) return
+    if (place.kind === 'time') {
+      if (!player) return
+      player.seek(place.seconds)
+      onPlaceReached()
+      return
+    }
+    if (place.kind === 'rows') {
+      if (!citer) return
+      citer.cite(place.label, '')
+      onPlaceReached()
+      return
+    }
+    let tries = 0
+    const timer = window.setInterval(() => {
+      const target = findPlace(document, place)
+      if (target || ++tries > 40) {
+        window.clearInterval(timer)
+        target?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+        onPlaceReached()
+      }
+    }, 250)
+    return () => window.clearInterval(timer)
+  }, [place, player, citer, onPlaceReached])
 
   const sourceBody = (
     <div className="px-8 py-8">
