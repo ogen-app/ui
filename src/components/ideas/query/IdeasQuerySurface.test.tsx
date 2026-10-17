@@ -11,6 +11,7 @@ const api = vi.hoisted(() => ({
   queryIdeaIds: vi.fn(),
   bulkDeleteIdeas: vi.fn(),
   setIdeaVerdict: vi.fn(),
+  captureIdea: vi.fn(),
 }))
 const groups = vi.hoisted(() => ({
   listSavedViews: vi.fn(),
@@ -35,6 +36,7 @@ vi.mock('@/services/api/ideas', async (importOriginal) => {
     queryIdeaIds: api.queryIdeaIds,
     bulkDeleteIdeas: api.bulkDeleteIdeas,
     setIdeaVerdict: api.setIdeaVerdict,
+    captureIdea: api.captureIdea,
   }
 })
 vi.mock('@/stores/toastStore', () => ({
@@ -195,6 +197,32 @@ describe('IdeasQuerySurface', () => {
 
     await waitFor(() => expect(api.bulkDeleteIdeas).toHaveBeenCalledWith(['b']))
     expect(toasts.success).toHaveBeenCalledWith('Deleted 1 idea.')
+  })
+})
+
+describe('capturing', () => {
+  it('shows a new idea at once on the undecided pile, and not on Yes', async () => {
+    // The server takes its time; the row must not wait for it.
+    api.captureIdea.mockReturnValue(new Promise(() => {}))
+    await renderSurface()
+    await screen.findByText('Idea a')
+    await userEvent.type(
+      screen.getByPlaceholderText('What could we make?'),
+      'A brand-new idea{Enter}',
+    )
+    expect(await screen.findByText('A brand-new idea')).toBeInTheDocument()
+  })
+
+  it('leaves another pile alone', async () => {
+    api.captureIdea.mockReturnValue(new Promise(() => {}))
+    await renderSurface({ pile: 'yes' })
+    await screen.findByText('Idea a')
+    await userEvent.type(
+      screen.getByPlaceholderText('What could we make?'),
+      'A brand-new idea{Enter}',
+    )
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(screen.queryByText('A brand-new idea')).not.toBeInTheDocument()
   })
 })
 
