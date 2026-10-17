@@ -10,6 +10,7 @@ const api = vi.hoisted(() => ({
   queryIdeas: vi.fn(),
   queryIdeaIds: vi.fn(),
   bulkDeleteIdeas: vi.fn(),
+  setIdeaVerdict: vi.fn(),
 }))
 const groups = vi.hoisted(() => ({
   listSavedViews: vi.fn(),
@@ -33,6 +34,7 @@ vi.mock('@/services/api/ideas', async (importOriginal) => {
     },
     queryIdeaIds: api.queryIdeaIds,
     bulkDeleteIdeas: api.bulkDeleteIdeas,
+    setIdeaVerdict: api.setIdeaVerdict,
   }
 })
 vi.mock('@/stores/toastStore', () => ({
@@ -65,7 +67,12 @@ function page(over: Partial<IdeaListPageBody> = {}): IdeaListPageBody {
         origin: 'asset_analysis',
         fit_score: 78,
         group_key: 'pdf1',
-        source_asset: { id: 'pdf1', title: 'Handbook', kind: 'pdf' },
+        source_asset: {
+          id: 'pdf1',
+          title: 'Handbook',
+          kind: 'pdf',
+          page_count: 7,
+        },
       }),
       idea('b', { group_key: 'none' }),
     ],
@@ -127,6 +134,23 @@ describe('IdeasQuerySurface', () => {
     )
   })
 
+  it('says which filter is in the way when nothing matches', async () => {
+    // Nothing is high fit; without that filter there are 9.
+    api.queryIdeas.mockImplementation(async (params: Record<string, string>) =>
+      params.fit
+        ? page({ ideas: [], total: 0, groups: [] })
+        : page({ total: 9 }),
+    )
+    await renderSurface({ fit: 'high' })
+
+    expect(
+      await screen.findByText('No ideas match these filters'),
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: 'Remove “Fit is High”' }),
+    ).toBeInTheDocument()
+  })
+
   it('draws a band per group, counted over the whole match', async () => {
     await renderSurface({ group: 'source' })
 
@@ -136,6 +160,7 @@ describe('IdeasQuerySurface', () => {
     expect(
       screen.getByRole('heading', { name: 'No document' }),
     ).toBeInTheDocument()
+    expect(screen.getByText('PDF · 7 pages')).toBeInTheDocument()
   })
 
   it('says so, and selects nothing, when the match is too big', async () => {
@@ -172,6 +197,39 @@ describe('IdeasQuerySurface', () => {
 
     await waitFor(() => expect(api.bulkDeleteIdeas).toHaveBeenCalledWith(['b']))
     expect(toasts.success).toHaveBeenCalledWith('Deleted 1 idea.')
+  })
+})
+
+describe('an answered idea', () => {
+  it('stays open where it was until it is closed', async () => {
+    api.setIdeaVerdict.mockResolvedValue({})
+    await renderSurface()
+    await userEvent.click(await screen.findByText('Idea b'))
+
+    // The server moves it to the Yes pile; this pile's next answer lacks it.
+    api.queryIdeas.mockResolvedValue(
+      page({ ideas: [page().ideas[0]], total: 1 }),
+    )
+    const answer = screen.getByRole('group', { name: 'Answer this idea' })
+    await userEvent.click(within(answer).getByRole('button', { name: /Yes/ }))
+    await waitFor(() =>
+      expect(api.setIdeaVerdict).toHaveBeenCalledWith('b', 'yes', null),
+    )
+    // The list asked again (the rail's count asks too, so at least twice
+    // more), and the answer without it has landed.
+    await waitFor(() =>
+      expect(api.queryIdeas.mock.calls.length).toBeGreaterThan(2),
+    )
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    // Open, a written idea's title is its field.
+    expect(screen.getByDisplayValue('Idea b')).toBeInTheDocument()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Close this idea' }),
+    )
+    await waitFor(() =>
+      expect(screen.queryByText('Idea b')).not.toBeInTheDocument(),
+    )
   })
 })
 

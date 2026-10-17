@@ -18,6 +18,7 @@ import {
 import { TrashIcon } from '@phosphor-icons/react'
 import { KIND_ICON } from '@/components/content/AssetKindMark'
 import { KIND_TONE } from '@/components/content/kindTone'
+import { NoMatches } from '@/components/smartFilter/NoMatches'
 import { SmartFilterBar } from '@/components/smartFilter/SmartFilterBar'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
@@ -44,7 +45,6 @@ import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
 import { cn } from '@/lib'
 import { viewerTimeZone } from '@/lib/assetFilter'
 import {
-  EMPTY_IDEA_FILTER,
   IDEA_FILTER_MODEL,
   IDEA_GROUPS,
   IDEA_PILES,
@@ -69,6 +69,7 @@ import type { Idea } from '@/lib/ideas'
 import { formatNumber } from '@/lib/intl'
 import { queryIdeaIds } from '@/services/api/ideas'
 import { toast } from '@/stores/toastStore'
+import { sourceFacts } from '../card/sourceFacts'
 import { DeleteIdeasDialog } from '../DeleteIdeasDialog'
 import { IdeaCapture } from '../IdeaCapture'
 import { IdeaRow } from '../IdeaRow'
@@ -167,6 +168,28 @@ export function IdeasQuerySurface({
   })
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  /**
+   * The rows on screen: the server's, plus the open idea if an answer just
+   * moved it out of this pile. It leaves when it is closed, never from under
+   * the reader — the asset page's rule (CON-387).
+   */
+  const [shown, setShown] = useState({ rows, expandedId, list: rows })
+  if (shown.rows !== rows || shown.expandedId !== expandedId) {
+    const gone =
+      expandedId !== null && !rows.some((r) => r.id === expandedId)
+        ? shown.list.findIndex((r) => r.id === expandedId)
+        : -1
+    setShown({
+      rows,
+      expandedId,
+      list:
+        gone >= 0
+          ? [...rows.slice(0, gone), shown.list[gone], ...rows.slice(gone)]
+          : rows,
+    })
+  }
+  const visibleRows =
+    shown.rows === rows && shown.expandedId === expandedId ? shown.list : rows
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   const [allMatching, setAllMatching] = useState(false)
   const [resolving, setResolving] = useState(false)
@@ -439,15 +462,24 @@ export function IdeasQuerySurface({
                 }
               />
 
-              {rows.length === 0 ? (
-                <EmptyPile
-                  narrowed={narrowed}
-                  pile={pile}
-                  onClear={() => onFilterChange(EMPTY_IDEA_FILTER)}
-                />
+              {visibleRows.length === 0 ? (
+                narrowed ? (
+                  <NoMatches
+                    title={t('ideas.filter.nothingMatches')}
+                    filter={filter}
+                    model={IDEA_FILTER_MODEL}
+                    vocabulary={vocabulary}
+                    countQuery={(f) => ideaCountQuery(contextFor(f))}
+                    onChange={onFilterChange}
+                  />
+                ) : (
+                  <p className="py-8 text-center text-sm text-tertiary-foreground">
+                    {t(`ideas.pileEmpty.${pile}`)}
+                  </p>
+                )
               ) : (
                 <IdeaRows
-                  rows={rows}
+                  rows={visibleRows}
                   groups={groups ?? []}
                   group={group}
                   vocabulary={vocabulary}
@@ -843,36 +875,13 @@ function Band({
       )}
       <h2 className="truncate font-semibold text-foreground">{label}</h2>
       <span className="tabular-nums text-secondary-foreground">{count}</span>
+      {source && first.sourceAsset && (
+        // What the document is, beside how many ideas it gave.
+        <span className="truncate text-secondary-foreground">
+          {sourceFacts(t, first.sourceAsset)}
+        </span>
+      )}
     </li>
-  )
-}
-
-/** What an empty pile says — and, when a filter emptied it, the way out. */
-function EmptyPile({
-  narrowed,
-  pile,
-  onClear,
-}: {
-  narrowed: boolean
-  pile: IdeaPile
-  onClear: () => void
-}) {
-  const { t } = useTranslation()
-  if (narrowed)
-    return (
-      <div className="flex flex-col items-center gap-3 py-12 text-center">
-        <p className="text-sm text-secondary-foreground">
-          {t('ideas.filter.nothingMatches')}
-        </p>
-        <Button variant="outline" size="sm" onClick={onClear}>
-          {t('content.filter.empty.clearAll')}
-        </Button>
-      </div>
-    )
-  return (
-    <p className="py-8 text-center text-sm text-tertiary-foreground">
-      {t(`ideas.pileEmpty.${pile}`)}
-    </p>
   )
 }
 
