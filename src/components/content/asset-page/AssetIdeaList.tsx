@@ -9,37 +9,22 @@ import {
   CaretRightIcon,
   LightbulbIcon,
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { FitTrack } from '@/components/content/FitTrack'
-import { VERDICT_ICON } from '@/components/content/verdictIcons'
-import { HORIZON_KEYS, VERDICTS } from '@/components/ideas/verdicts'
+import {
+  AnswerGroup,
+  FitSection,
+  Part,
+  VerdictMark,
+} from '@/components/ideas/card/IdeaCardParts'
+import { IDEA_ROW, pileOf } from '@/components/ideas/card/ideaRow'
 import { useAnswerIdea } from '@/hooks/useAssetAnalyses'
 import { useIdeaClock } from '@/hooks/useIdeaClock'
 import { cn } from '@/lib'
 import { mergePageRefs, pageSpan, parseIdeaNote } from '@/lib/assetAnalysis'
+import { VERDICT_ICON } from '@/components/content/verdictIcons'
 import { VERDICT_ORDER, type VerdictKey } from '@/lib/assetList'
-import {
-  FIT_CRITERIA,
-  byFit,
-  fitLevelStrength,
-  fitRows,
-  type FitBreakdown,
-} from '@/lib/ideaFit'
-import {
-  POSTPONE_HORIZONS,
-  countIdeas,
-  isWaiting,
-  postponeUntil,
-  type Idea,
-  type IdeaVerdict,
-} from '@/lib/ideas'
-import { formatDate } from '@/lib/intl'
+import { byFit } from '@/lib/ideaFit'
+import { countIdeas, isWaiting, type Idea } from '@/lib/ideas'
 import { ideaFromWire } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { SourceChip } from './SourceChip'
@@ -257,11 +242,6 @@ function Piles({
   )
 }
 
-/** Which pile an idea sits in today: a postponed one whose day has come is a question again. */
-function pileOf(idea: Idea, now: Date): VerdictKey {
-  return isWaiting(idea, now) ? 'waiting' : (idea.verdict ?? 'waiting')
-}
-
 /**
  * One idea. No box: a pale rule between rows, inset by the row's padding, and
  * stepping aside for a row that is hovered or open, which take one pale fill.
@@ -284,6 +264,7 @@ function IdeaRow({
   expanded: boolean
   onToggle: () => void
 }) {
+  const { t } = useTranslation()
   const { angle, rationale, sources: cited } = parseIdeaNote(idea.note)
   // Pages sorted and merged ("pp. 55–59", not "pp. 57–59, pp. 55–57").
   const sources = mergePageRefs(cited)
@@ -293,10 +274,8 @@ function IdeaRow({
       data-open={expanded || undefined}
       style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
       className={cn(
-        'relative rounded-md transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:fill-mode-both',
-        "before:absolute before:inset-x-3 before:top-0 before:border-t before:border-quaternary before:content-[''] first:before:hidden",
-        'hover:bg-secondary hover:before:opacity-0 [li:hover+&]:before:opacity-0',
-        'data-[open]:bg-secondary data-[open]:before:opacity-0 [li[data-open]+&]:before:opacity-0',
+        IDEA_ROW,
+        'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:fill-mode-both',
       )}
     >
       <button
@@ -335,7 +314,7 @@ function IdeaRow({
               {rationale}
             </p>
           )}
-          <FitSection idea={idea} lens={lens} />
+          <FitSection idea={idea} scoredFor={scoredFor(t, idea, lens)} />
           {sources.length > 0 && (
             <Reference sources={sources} citedBy={idea.title} />
           )}
@@ -347,169 +326,17 @@ function IdeaRow({
 }
 
 /**
- * The verdict as its mark alone, in the pill's colours — undecided teal too,
- * which used to have no mark. The word is the mark's name and its tooltip.
- */
-function VerdictMark({ verdict }: { verdict: VerdictKey }) {
-  const { t } = useTranslation()
-  const label = t(`assetInsights.ideas.pile.${verdict}`)
-  return (
-    <span
-      role="img"
-      aria-label={label}
-      title={label}
-      className={cn(
-        'flex h-6 items-center',
-        verdict === 'waiting' && 'text-accent',
-        verdict === 'yes' && 'text-positive',
-        (verdict === 'later' || verdict === 'no') &&
-          'text-secondary-foreground',
-      )}
-    >
-      <HugeiconsIcon
-        icon={VERDICT_ICON[verdict]}
-        size={16}
-        strokeWidth={1.8}
-        aria-hidden
-      />
-    </span>
-  )
-}
-
-/** A section of the opened row: a pale rule, then a small heading. */
-function Part({
-  heading,
-  aside,
-  children,
-}: {
-  heading: string
-  aside?: string | null
-  children: React.ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-2 border-t border-quaternary pt-3">
-      <h4 className="text-xs font-semibold text-foreground">
-        {heading}
-        {aside && (
-          <span className="font-normal text-secondary-foreground">
-            {' · '}
-            {aside}
-          </span>
-        )}
-      </h4>
-      {children}
-    </div>
-  )
-}
-
-type CriterionKey = (typeof FIT_CRITERIA)[keyof typeof FIT_CRITERIA][number]
-const KNOWN_CRITERIA = new Set<string>([
-  ...FIT_CRITERIA.campaign,
-  ...FIT_CRITERIA.workspace,
-])
-const KNOWN_CAPS = ['guardrail_breach', 'off_brief', 'unsupported'] as const
-type CapKey = (typeof KNOWN_CAPS)[number]
-
-/** "zeitgeist_fit" → "Zeitgeist fit", for a criterion this build predates. */
-function humanise(key: string): string {
-  const words = key.replace(/_/g, ' ').trim()
-  return words.charAt(0).toUpperCase() + words.slice(1)
-}
-
-/**
- * Why the idea scores what it does (CON-385): each criterion, heaviest first,
- * with its rating — a figure in a disc and five segments, both in the fit
- * track's own colour at that rating — and the model's reason. A cap overrides
- * every rating, so it is said above them. An unscored idea has nothing to
- * explain and no section.
- */
-function FitSection({ idea, lens }: { idea: Idea; lens: AssetAnalysis }) {
-  const { t } = useTranslation()
-  const breakdown = idea.fitBreakdown
-  if (idea.fitScore == null || !breakdown) return null
-  const rows = fitRows(breakdown)
-  if (rows.length === 0) return null
-  const caps = (breakdown.caps ?? []).filter((cap): cap is CapKey =>
-    (KNOWN_CAPS as readonly string[]).includes(cap),
-  )
-  return (
-    <Part
-      heading={t('assetInsights.ideaFit.heading', { score: idea.fitScore })}
-      aside={scoredFor(t, breakdown, lens)}
-    >
-      {caps.map((cap) => (
-        <p key={cap} className="text-xs text-foreground">
-          {t(`assetInsights.ideaFit.cap.${cap}`)}
-        </p>
-      ))}
-      <ul className="flex flex-col gap-1.5">
-        {rows.map((row) => {
-          const name = KNOWN_CRITERIA.has(row.key)
-            ? t(`assetInsights.ideaFit.criterion.${row.key as CriterionKey}`)
-            : humanise(row.key)
-          const tone = `color-mix(in oklab, var(--fit-high) ${fitLevelStrength(row.level)}%, var(--fit-low))`
-          return (
-            <li
-              key={row.key}
-              className="grid grid-cols-[8.5rem_auto_minmax(0,1fr)] items-start gap-x-3 text-[12.5px]/[18px]"
-            >
-              <span className="text-foreground">{name}</span>
-              <span
-                role="img"
-                aria-label={t('assetInsights.ideaFit.rating', {
-                  criterion: name,
-                  level: row.level,
-                })}
-                className="flex items-center gap-3"
-              >
-                <span
-                  aria-hidden
-                  className="-mt-px flex size-5 items-center justify-center rounded-full font-mono text-[11px] font-semibold text-secondary-foreground"
-                  style={{ background: tone }}
-                >
-                  {row.level}
-                </span>
-                <span aria-hidden className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((step) => (
-                    <span
-                      key={step}
-                      className={cn(
-                        'h-1.5 w-2.5 rounded-[2px]',
-                        step > row.level && 'bg-quaternary',
-                      )}
-                      style={
-                        step <= row.level ? { background: tone } : undefined
-                      }
-                    />
-                  ))}
-                </span>
-              </span>
-              <span className="text-secondary-foreground">
-                {row.hint && (
-                  <span className="mr-1 inline-block rounded-full bg-border px-1.5 text-[11.5px]/[18px] font-medium text-foreground">
-                    {row.hint}
-                  </span>
-                )}
-                {row.why}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
-    </Part>
-  )
-}
-
-/**
  * Which reading the score is for. Usually the one on screen; an idea filed
  * into another campaign keeps the score it was given, and says so rather than
  * passing it off as this reading's.
  */
 function scoredFor(
   t: TFunction,
-  breakdown: FitBreakdown,
+  idea: Idea,
   lens: AssetAnalysis,
-): string {
+): string | null {
+  const breakdown = idea.fitBreakdown
+  if (!breakdown) return null
   if (breakdown.lens === 'workspace')
     return lens.campaign_id === null
       ? t('assetInsights.ideaFit.forWorkspace')
@@ -547,14 +374,7 @@ function Reference({
   )
 }
 
-/**
- * The answer, last — after everything that informs it. Yes / Not now / No as
- * one joined button group on the inbox's own rules (`VerdictControls`): Yes
- * and No are one click and no confirmation, both being reversible; Not now
- * asks when, because a postponement that names no day is an archive. Choosing
- * another button changes the answer; the line under the group says when it
- * was given and offers the way back.
- */
+/** The answer group, ending in the way to this reading's Ideas page. */
 function Answer({
   idea,
   lens,
@@ -564,110 +384,18 @@ function Answer({
   lens: AssetAnalysis
   now: Date
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   // While an answer is on its way the controls hold still: a second one
   // racing it could land first (see `useAnswerIdea`).
   const { answer, pending } = useAnswerIdea(lens.asset_id, idea.id)
-  // A woken postponement is a question again, so nothing is held.
-  const current = isWaiting(idea, now) ? null : idea.verdict
-  const decide = (verdict: IdeaVerdict, remindAt: string | null = null) =>
-    answer(verdict, remindAt)
-  const day = (iso: string | null) =>
-    iso
-      ? (formatDate(iso, { day: 'numeric', month: 'short' }, i18n.language) ??
-        '')
-      : ''
-
-  const record =
-    current === 'later'
-      ? t('ideas.record.returns', { at: day(idea.remindAt) })
-      : current
-        ? t('ideas.record.decided', {
-            verdict: t(VERDICTS[current].labelKey),
-            at: day(idea.decidedAt),
-          })
-        : null
-
-  const YesIcon = VERDICTS.yes.icon
-  const LaterIcon = VERDICTS.later.icon
-  const NoIcon = VERDICTS.no.icon
-
   return (
-    <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2.5 border-t border-quaternary pt-3">
-      <div
-        role="group"
-        aria-label={t('assetInsights.ideas.answer')}
-        aria-busy={pending || undefined}
-        className="flex [&>*:disabled]:opacity-60 [&>*]:rounded-none [&>*+*]:-ml-px [&>*:first-child]:rounded-l-md [&>*:last-child]:rounded-r-md [&>[data-active=true]]:z-10"
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          active={current === 'yes'}
-          aria-pressed={current === 'yes'}
-          disabled={pending}
-          onClick={() => decide('yes')}
-        >
-          <YesIcon className={VERDICTS.yes.tone} />
-          {t(VERDICTS.yes.actionKey)}
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              active={current === 'later'}
-              aria-pressed={current === 'later'}
-              disabled={pending}
-            >
-              <LaterIcon className={VERDICTS.later.tone} />
-              {t(VERDICTS.later.actionKey)}
-              <CaretDownIcon className="size-3 text-secondary-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" sideOffset={4}>
-            {POSTPONE_HORIZONS.map((horizon) => (
-              <DropdownMenuItem
-                key={horizon}
-                onSelect={() =>
-                  decide('later', postponeUntil(new Date(), horizon))
-                }
-              >
-                {t(HORIZON_KEYS[horizon])}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Button
-          variant="outline"
-          size="sm"
-          active={current === 'no'}
-          aria-pressed={current === 'no'}
-          disabled={pending}
-          onClick={() => decide('no')}
-        >
-          <NoIcon className={VERDICTS.no.tone} />
-          {t(VERDICTS.no.actionKey)}
-        </Button>
-      </div>
-      <span className="ml-auto">
-        <InboxLink lens={lens} label={t('assetInsights.ideas.open')} />
-      </span>
-      {record && (
-        <p className="order-last basis-full text-xs text-secondary-foreground">
-          {record}
-          {' · '}
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => answer(null)}
-            className="cursor-pointer underline disabled:cursor-default disabled:opacity-60 decoration-quinary underline-offset-3 hover:decoration-foreground"
-          >
-            {t('ideas.action.undecide')}
-          </button>
-        </p>
-      )}
-    </div>
+    <AnswerGroup
+      idea={idea}
+      now={now}
+      onAnswer={answer}
+      pending={pending}
+      trailing={<InboxLink lens={lens} label={t('assetInsights.ideas.open')} />}
+    />
   )
 }
 

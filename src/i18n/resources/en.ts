@@ -674,6 +674,46 @@ export const en = {
      */
     undecidedCount_one: '{{count}} undecided idea',
     undecidedCount_other: '{{count}} undecided ideas',
+    /** The Ideas page's card (CON-388): where each idea came from. */
+    card: {
+      written: 'Written',
+      writtenBy: 'Written by {{name}}',
+      writtenByAt: 'Written by {{name}} · {{at}}',
+      /** A written idea whose writer was never named. */
+      someone: 'Someone',
+      documentDeleted: 'Document deleted',
+      morePlaces: '+{{count}} more',
+      quickAnswers: 'Answer “{{title}}”',
+      openSource: 'Open source',
+      filedUnder: 'Filed under',
+      change: 'Change',
+      unscored:
+        'Written ideas have no score: a score rates what an analysis read against its brief.',
+      savedOnBlur: 'Saved as you leave a field',
+      source: {
+        heading: 'Source',
+        pages_one: '{{count}} page',
+        pages_other: '{{count}} pages',
+        minutes_one: '{{count}} min',
+        minutes_other: '{{count}} min',
+        readFor: 'read for {{campaign}}',
+        readForWorkspace: 'read for the workspace',
+      },
+    },
+    /** Deleting ideas always asks, and names a single one. */
+    delete: {
+      titleNamed: 'Delete “{{title}}”?',
+      title_one: 'Delete {{count}} idea?',
+      title_other: 'Delete {{count}} ideas?',
+      body_one:
+        'This idea will be permanently deleted, with its verdict. This cannot be undone.',
+      body_other:
+        'These ideas will be permanently deleted, with their verdicts. This cannot be undone.',
+      keep_one: 'KEEP IDEA',
+      keep_other: 'KEEP IDEAS',
+      confirm_one: 'DELETE IDEA',
+      confirm_other: 'DELETE {{count}} IDEAS',
+    },
     loadFailed: 'Unable to load ideas',
     saveFailed: 'Could not save that. Your ideas are unchanged.',
   },

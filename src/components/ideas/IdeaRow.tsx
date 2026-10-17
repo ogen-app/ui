@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import type { TFunction } from 'i18next'
+import { Link } from '@tanstack/react-router'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Note01Icon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
 import {
-  ArrowCounterClockwiseIcon,
   CaretDownIcon,
+  CaretRightIcon,
   CaretUpIcon,
-  TrashIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,36 +18,51 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { CampaignIcon } from '@/components/layout/CampaignIcon'
+import { FitTrack } from '@/components/content/FitTrack'
+import { KIND_ICON } from '@/components/content/AssetKindMark'
+import { KIND_TONE } from '@/components/content/kindTone'
+import { SourceChip } from '@/components/content/asset-page/SourceChip'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { useDateTimeLabel } from '@/hooks/useActivityLabels'
+import { cn } from '@/lib'
 import { identityAbbr, identityColorVar } from '@/lib/identity'
 import { hasWokenUp, type Idea } from '@/lib/ideas'
+import { citedPlace, ideaParts, isAnalysed } from '@/lib/ideaSource'
+import { formatDate } from '@/lib/intl'
 import type { IdeaEdit } from '@/services/api/ideas'
+import type { AssetListKind } from '@/types/assetList'
+import {
+  AnswerGroup,
+  AnswerRecord,
+  FitSection,
+  Part,
+  VerdictMark,
+  type Answer,
+} from './card/IdeaCardParts'
+import { IDEA_ROW, pileOf } from './card/ideaRow'
 import { VerdictControls, type Decide } from './VerdictControls'
-import { VERDICTS } from './verdicts'
-import { cn } from '@/lib'
 
 /**
- * One idea, as a line you can answer without opening.
+ * One idea on the Ideas page, as the CON-387 card (CON-388): the same row the
+ * asset page and the Assets list draw, so an idea looks the same wherever it
+ * is met.
  *
- * **The row is the whole of triage.** Everything needed to decide is on it —
- * the sentence, and the three answers — and everything else is behind the
- * click that opens it. That split is the same one `TasksBoard` makes and for
- * the same reason: a list whose rows are two lines tall is a page you scroll
- * rather than a list you scan. It is also why this module has no separate
- * answering mode: there is nothing a mode could put on screen that this line
- * does not already carry.
+ * **The slot at the head of the row says where it came from.** An analysed
+ * idea has its fit score on a track; a written one has its writer — initials
+ * in their colour and the word *Written*. No badge and no third colour: the
+ * column that ranks the list also tells its two kinds apart. The line under
+ * the note names the source the same way — the document and the place it
+ * cites, or who wrote it and when.
  *
- * **A decided row keeps its verdict visible and its undo beside it.** Saying
- * no has to be cheap, and it is only cheap if taking it back is obvious;
- * hiding the reversal behind an expand would make the archive feel like a
- * place things go rather than a pile you can rummage in.
+ * **The row is still the whole of triage.** Hovered or focused, the verdict
+ * mark gives way to the three answers, so the forty-seventh idea of two
+ * hundred is answered without opening. Opening it shows everything that
+ * informs the answer and ends in the full answer group.
  *
- * Opening one edits it in place. The title and the note save on blur rather
- * than behind a SAVE button — this is a sentence somebody is fixing a typo in,
- * not a document — and the verdict is never among the fields, because a
- * decision is not an edit. Its endpoint is separate for exactly that reason.
+ * **Only a written idea is edited.** An analysed idea's words are the
+ * analysis's and its score was given to them, so the server refuses a changed
+ * title or note on one (409 `idea_read_only`); this row offers no field that
+ * would be refused. Either kind can be moved to another campaign.
  */
 export function IdeaRow({
   idea,
@@ -65,188 +83,491 @@ export function IdeaRow({
   onDecide: Decide
   onUndecide: () => void
   onEdit: (change: IdeaEdit) => void
+  /** Asks first — the surface holds the confirmation. */
   onDelete: () => void
   showCampaign?: boolean
 }) {
   const { t } = useTranslation()
-  const { data: campaigns } = useCampaigns()
-  const when = useDateTimeLabel()
+  const analysed = isAnalysed(idea)
+  const parts = ideaParts(idea)
+  const answer: Answer = (verdict, remindAt = null) =>
+    verdict === null ? onUndecide() : onDecide(verdict, remindAt)
+  const editing = expanded && !analysed
+  // An analysed idea's note is its parts; the angle is the line worth reading.
+  const summary = parts ? parts.angle || parts.rationale : idea.note
+  const Caret = expanded ? CaretDownIcon : CaretRightIcon
 
-  const woken = hasWokenUp(idea, now)
-  // A woken idea is stored as `later` and read as a question — the row follows
-  // the reading, or the one idea that most needs answering would be drawn as
-  // already answered.
-  const decided = idea.verdict !== null && !woken
-  const verdict = decided && idea.verdict ? VERDICTS[idea.verdict] : null
-
-  const campaign = campaigns?.find((c) => c.id === idea.campaignId)
-  const campaignName = idea.campaignId
-    ? campaign?.name.trim() || t('nav.untitledCampaign')
-    : null
-
-  const record = [
-    t('ideas.record.captured', { at: when(idea.createdAt) }),
-    verdict && idea.decidedAt
-      ? t('ideas.record.decided', {
-          verdict: t(verdict.labelKey),
-          at: when(idea.decidedAt),
-        })
-      : null,
-    idea.verdict === 'later' && idea.remindAt && !woken
-      ? t('ideas.record.returns', { at: when(idea.remindAt) })
-      : null,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  const head = (
+    <>
+      <span className="flex h-6 items-center">
+        {analysed ? (
+          <FitTrack score={idea.fitScore} />
+        ) : (
+          <AuthorSlot name={idea.authorName ?? null} id={idea.createdBy} />
+        )}
+      </span>
+      {editing ? (
+        <TitleField idea={idea} onEdit={onEdit} />
+      ) : (
+        <span
+          className={cn(
+            'text-sm/6 text-foreground',
+            expanded && 'font-semibold',
+          )}
+        >
+          {idea.title}
+        </span>
+      )}
+      <VerdictMark verdict={pileOf(idea, now)} />
+    </>
+  )
 
   return (
-    <article className="w-full rounded-md bg-primary px-4 py-3 min-w-0">
-      <div className="flex items-center gap-3 min-w-0">
-        {verdict && (
-          // The answer, at the head of the row where the tick is on a task —
-          // the column that says what state this line is in.
-          <span
-            className="flex w-4 shrink-0 items-center justify-center"
-            title={t(verdict.labelKey)}
-          >
-            <verdict.icon
-              className={cn('size-4', verdict.tone)}
-              weight="bold"
-            />
-          </span>
-        )}
-
-        {/* The title occupies one slot whether it is being read or edited —
-            the row never shows it twice. An open row that repeated its own
-            heading above the field editing it would look as though opening had
-            done nothing, which is the same argument that takes the note preview
-            off the line below. */}
-        {expanded ? (
-          <TitleField idea={idea} onEdit={onEdit} />
-        ) : (
+    <li data-open={expanded || undefined} className={cn(IDEA_ROW, 'group')}>
+      {editing ? (
+        // The title is a field now, so the head is no longer one button: the
+        // caret becomes the control that closes it.
+        <div className="grid grid-cols-[4rem_minmax(0,1fr)_16px_16px] items-start gap-x-3 px-3 py-3.5">
+          {head}
           <button
             type="button"
             onClick={onToggle}
-            aria-expanded={false}
-            className="flex min-w-0 flex-1 items-baseline gap-2 text-left cursor-pointer"
-          >
-            <span
-              className={cn(
-                'min-w-0 truncate text-sm',
-                decided
-                  ? 'text-tertiary-foreground'
-                  : 'text-primary-foreground',
-              )}
-            >
-              {idea.title}
-            </span>
-            {idea.note && (
-              <span className="min-w-24 flex-1 truncate text-sm text-quaternary-foreground">
-                {idea.note}
-              </span>
-            )}
-            {woken && (
-              // Why this one is back. Without it a postponed idea reappearing
-              // in the inbox reads as the list having lost track of a decision.
-              <span className="shrink-0 text-xs text-tertiary-foreground">
-                {t('ideas.backFrom')}
-              </span>
-            )}
-          </button>
-        )}
-
-        {/* Closing is a control of its own once the title has become a field:
-            the row's own text is no longer something you can click without
-            putting a cursor in it. */}
-        {expanded && (
-          <Button
-            variant="ghost"
-            size="smIcon"
             aria-expanded
             aria-label={t('ideas.action.close')}
-            onClick={onToggle}
+            className="mt-1 cursor-pointer"
           >
-            <CaretUpIcon className="size-4 text-tertiary-foreground" />
-          </Button>
-        )}
-
-        {showCampaign && idea.campaignId && campaignName && (
-          <span className="flex shrink-0 items-center gap-1.5 text-xs text-tertiary-foreground">
-            <CampaignIcon
-              abbr={identityAbbr(campaignName)}
-              color={identityColorVar(idea.campaignId)}
-              className="size-5"
-            />
-            <span className="hidden sm:inline max-w-32 truncate">
-              {campaignName}
-            </span>
-          </span>
-        )}
-
-        {decided ? (
-          <Button
-            variant="ghost"
-            size="smIcon"
-            aria-label={t('ideas.action.undecide')}
-            onClick={onUndecide}
-          >
-            <ArrowCounterClockwiseIcon className="size-4 text-tertiary-foreground" />
-          </Button>
-        ) : (
-          <VerdictControls onDecide={onDecide} now={now} />
-        )}
-      </div>
-
-      <div
-        className={cn(
-          'grid transition-[grid-template-rows] duration-200 ease-out',
-          expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-        )}
-      >
-        <div className="overflow-hidden">
-          <div
-            className={cn(
-              'flex flex-col gap-3 pt-3',
-              // The panel starts in the title's column, not the row's — the
-              // 16px verdict slot plus the 12px gap, when there is one.
-              verdict && 'pl-7',
-            )}
-          >
-            {expanded && <NoteField idea={idea} onEdit={onEdit} />}
-
-            <div className="flex flex-col gap-2 border-t border-quaternary pt-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="min-w-0 text-[13px] leading-5 text-tertiary-foreground">
-                {record}
-              </p>
-              <div className="flex shrink-0 items-center gap-1">
-                {showCampaign && (
-                  <CampaignPicker
-                    value={idea.campaignId}
-                    onChange={(campaignId) =>
-                      onEdit({ campaign_id: campaignId })
-                    }
-                  />
-                )}
-                {/* The only irreversible thing in the module, and the reason it
-                    is here rather than on the row: a verdict is an answer and
-                    this is a deletion, and the two must not sit a pixel apart
-                    on a line somebody is scanning past. Opening the idea is
-                    the confirmation step. */}
-                <Button
-                  variant="ghost"
-                  size="smIcon"
-                  className="-mr-1"
-                  aria-label={t('ideas.action.delete')}
-                  onClick={onDelete}
-                >
-                  <TrashIcon className="size-4 text-tertiary-foreground hover:text-destructive" />
-                </Button>
-              </div>
-            </div>
-          </div>
+            <CaretUpIcon className="size-4 text-secondary-foreground" />
+          </button>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          className="grid w-full cursor-pointer grid-cols-[4rem_minmax(0,1fr)_16px_16px] gap-x-3 px-3 py-3.5 text-left"
+        >
+          {head}
+          <Caret className="mt-1 size-4 shrink-0 text-secondary-foreground" />
+          {summary && !expanded && (
+            <span className="col-span-2 col-start-2 mt-0.5 line-clamp-2 text-[13px]/[19px] text-secondary-foreground">
+              {summary}
+            </span>
+          )}
+        </button>
+      )}
+
+      {!expanded && (
+        <>
+          <SourceLine idea={idea} now={now} showCampaign={showCampaign} />
+          <QuickAnswers title={idea.title} now={now} onDecide={onDecide} />
+        </>
+      )}
+
+      {expanded &&
+        (analysed ? (
+          <AnalysedBody
+            idea={idea}
+            now={now}
+            onAnswer={answer}
+            onEdit={onEdit}
+            showCampaign={showCampaign}
+          />
+        ) : (
+          <WrittenBody
+            idea={idea}
+            now={now}
+            onAnswer={answer}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            showCampaign={showCampaign}
+          />
+        ))}
+    </li>
+  )
+}
+
+/**
+ * A written idea's slot: its writer's initials in their identity colour, and
+ * *Written* beside them. Named for a screen reader, as the fit track is.
+ */
+function AuthorSlot({ name, id }: { name: string | null; id: string | null }) {
+  const { t } = useTranslation()
+  const who = name || t('ideas.card.someone')
+  return (
+    <span
+      role="img"
+      aria-label={t('ideas.card.writtenBy', { name: who })}
+      className="flex w-16 shrink-0 items-center gap-1.5"
+    >
+      <span
+        aria-hidden
+        className="flex size-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-primary"
+        style={{ background: identityColorVar(id ?? who) }}
+      >
+        {identityAbbr(who)}
+      </span>
+      <span aria-hidden className="text-[11px] text-secondary-foreground">
+        {t('ideas.card.written')}
+      </span>
+    </span>
+  )
+}
+
+/** A source document's kind, as a mark at the size of the line it sits in. */
+function KindMark({
+  kind,
+  size = 14,
+}: {
+  kind: AssetListKind | null
+  size?: number
+}) {
+  return (
+    <HugeiconsIcon
+      icon={(kind && KIND_ICON[kind]) || Note01Icon}
+      size={size}
+      strokeWidth={1.5}
+      aria-hidden
+      className={cn(
+        'shrink-0',
+        (kind && KIND_TONE[kind]) ?? 'text-kind-neutral',
+      )}
+    />
+  )
+}
+
+/** The asset page an idea's source opens, on the reading it came from. */
+function sourceLink(idea: Idea) {
+  const asset = idea.sourceAsset!
+  return {
+    to: '/assets/$assetId' as const,
+    params: { assetId: asset.id },
+    search: { lens: asset.reading?.campaignId ?? 'workspace' },
+  }
+}
+
+/**
+ * The closed row's last line: where the idea came from. A document by its
+ * kind and title, linked, with the places it cites; a person by name and day.
+ * The workspace's list ends it with the campaign the idea is filed under.
+ */
+function SourceLine({
+  idea,
+  now,
+  showCampaign,
+}: {
+  idea: Idea
+  now: Date
+  showCampaign: boolean
+}) {
+  const { t, i18n } = useTranslation()
+  const campaign = useCampaignName(idea.campaignId)
+  const bits: React.ReactNode[] = []
+
+  if (isAnalysed(idea)) {
+    if (idea.sourceAsset) {
+      const { places, more } = citedPlace(idea)
+      bits.push(
+        <Link
+          key="source"
+          {...sourceLink(idea)}
+          className="inline-flex min-w-0 items-center gap-1.5 text-foreground hover:underline"
+        >
+          <KindMark kind={idea.sourceAsset.kind} />
+          <span className="truncate">{idea.sourceAsset.title}</span>
+        </Link>,
+      )
+      if (places.length > 0)
+        bits.push(
+          <span key="places" className="shrink-0 tabular-nums">
+            {places.join(', ')}
+            {more > 0 && ` ${t('ideas.card.morePlaces', { count: more })}`}
+          </span>,
+        )
+    } else {
+      bits.push(<span key="gone">{t('ideas.card.documentDeleted')}</span>)
+    }
+  } else {
+    bits.push(
+      <span key="who" className="truncate">
+        {idea.authorName || t('ideas.card.someone')}
+      </span>,
+      <span key="when" className="shrink-0">
+        {formatDate(
+          idea.createdAt,
+          { day: 'numeric', month: 'short' },
+          i18n.language,
+        ) ?? ''}
+      </span>,
+    )
+  }
+  if (showCampaign && campaign)
+    bits.push(
+      <span key="campaign" className="truncate">
+        {campaign}
+      </span>,
+    )
+  if (hasWokenUp(idea, now))
+    // Why this one is back. Without it a postponed idea reappearing with the
+    // undecided reads as the list having lost track of a decision.
+    bits.push(<span key="back">{t('ideas.backFrom')}</span>)
+
+  return (
+    <div className="-mt-2 flex min-w-0 items-center gap-1.5 pr-3 pb-3.5 pl-[88px] text-xs text-secondary-foreground">
+      {bits.map((bit, i) => (
+        <span key={i} className="contents">
+          {i > 0 && <span aria-hidden>·</span>}
+          {bit}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * The three answers, over the verdict mark while the row is hovered or has
+ * focus — so a row is answered without being opened, and reached by keyboard
+ * the same way.
+ */
+function QuickAnswers({
+  title,
+  now,
+  onDecide,
+}: {
+  title: string
+  now: Date
+  onDecide: Decide
+}) {
+  const { t } = useTranslation()
+  return (
+    <div
+      role="group"
+      aria-label={t('ideas.card.quickAnswers', { title })}
+      className="absolute top-2 right-[26px] flex rounded-md bg-secondary pl-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 has-[[data-state=open]]:opacity-100"
+    >
+      <VerdictControls onDecide={onDecide} now={now} />
+    </div>
+  )
+}
+
+function useCampaignName(campaignId: string | null): string | null {
+  const { t } = useTranslation()
+  const { data: campaigns } = useCampaigns()
+  if (!campaignId) return null
+  const campaign = campaigns?.find((c) => c.id === campaignId)
+  return campaign?.name.trim() || t('nav.untitledCampaign')
+}
+
+/**
+ * Which reading the score is for. An idea keeps the score it was given when
+ * it is filed into another campaign, and says so rather than passing it off
+ * as that campaign's.
+ */
+function scoredFor(
+  t: TFunction,
+  idea: Idea,
+  campaignName: (id: string) => string | null,
+): string | null {
+  const breakdown = idea.fitBreakdown
+  if (!breakdown) return null
+  if (breakdown.lens === 'workspace')
+    return t('assetInsights.ideaFit.forWorkspace')
+  const reading = idea.sourceAsset?.reading
+  const name =
+    breakdown.campaign_id && reading?.campaignId === breakdown.campaign_id
+      ? reading.campaignName
+      : breakdown.campaign_id
+        ? campaignName(breakdown.campaign_id)
+        : null
+  return name
+    ? t('assetInsights.ideaFit.forCampaign', { campaign: name })
+    : t('assetInsights.ideaFit.scoredOther')
+}
+
+/** The opened analysed idea: its parts, its score, its source, the answer. */
+function AnalysedBody({
+  idea,
+  now,
+  onAnswer,
+  onEdit,
+  showCampaign,
+}: {
+  idea: Idea
+  now: Date
+  onAnswer: Answer
+  onEdit: (change: IdeaEdit) => void
+  showCampaign: boolean
+}) {
+  const { t } = useTranslation()
+  const { data: campaigns } = useCampaigns()
+  const parts = ideaParts(idea)
+  const nameOf = (id: string) =>
+    campaigns?.find((c) => c.id === id)?.name.trim() || null
+
+  return (
+    // In the title's column: the row's padding, the slot and its gap.
+    <div className="flex flex-col gap-3 pr-3 pb-4 pl-[88px]">
+      {parts?.angle && (
+        <p className="text-sm leading-6 text-foreground">{parts.angle}</p>
+      )}
+      {parts?.rationale && (
+        <p className="whitespace-pre-line text-sm leading-6 text-secondary-foreground">
+          {parts.rationale}
+        </p>
+      )}
+      <FitSection idea={idea} scoredFor={scoredFor(t, idea, nameOf)} />
+      <SourceSection idea={idea} sources={parts?.sources ?? []} />
+      {showCampaign && <FiledUnder idea={idea} onEdit={onEdit} />}
+      <AnswerGroup
+        idea={idea}
+        now={now}
+        onAnswer={onAnswer}
+        trailing={
+          idea.sourceAsset && (
+            <Link
+              {...sourceLink(idea)}
+              className="text-sm font-medium text-accent hover:underline"
+            >
+              {t('ideas.card.openSource')}
+            </Link>
+          )
+        }
+      />
+    </div>
+  )
+}
+
+/**
+ * Where the analysed idea came from: the document, what it is and which
+ * reading wrote the idea, then the places it cites as chips.
+ */
+function SourceSection({ idea, sources }: { idea: Idea; sources: string[] }) {
+  const { t } = useTranslation()
+  const asset = idea.sourceAsset
+  if (!asset)
+    return (
+      <Part heading={t('ideas.card.source.heading')}>
+        <p className="text-sm text-secondary-foreground">
+          {t('ideas.card.documentDeleted')}
+        </p>
+      </Part>
+    )
+  const facts = [
+    asset.kind && t(`content.list.kind.${asset.kind}`),
+    asset.pageCount != null &&
+      t('ideas.card.source.pages', { count: asset.pageCount }),
+    asset.durationMs != null &&
+      asset.durationMs > 0 &&
+      t('ideas.card.source.minutes', {
+        count: Math.max(1, Math.round(asset.durationMs / 60_000)),
+      }),
+    asset.domain,
+    asset.reading
+      ? t('ideas.card.source.readFor', {
+          campaign: asset.reading.campaignName,
+        })
+      : t('ideas.card.source.readForWorkspace'),
+  ].filter(Boolean)
+
+  return (
+    <Part heading={t('ideas.card.source.heading')}>
+      <Link
+        {...sourceLink(idea)}
+        className="flex min-w-0 items-center gap-2 text-sm text-foreground hover:underline"
+      >
+        <KindMark kind={asset.kind} size={18} />
+        <span className="truncate">{asset.title}</span>
+      </Link>
+      <p className="text-xs text-secondary-foreground">{facts.join(' · ')}</p>
+      {sources.length > 0 && (
+        <span className="flex flex-wrap gap-1.5">
+          {sources.map((s) => (
+            <SourceChip key={s} label={s} citedBy={idea.title} />
+          ))}
+        </span>
+      )}
+    </Part>
+  )
+}
+
+/** The opened written idea: its note, who wrote it, where it is filed, the answer. */
+function WrittenBody({
+  idea,
+  now,
+  onAnswer,
+  onEdit,
+  onDelete,
+  showCampaign,
+}: {
+  idea: Idea
+  now: Date
+  onAnswer: Answer
+  onEdit: (change: IdeaEdit) => void
+  onDelete: () => void
+  showCampaign: boolean
+}) {
+  const { t } = useTranslation()
+  const when = useDateTimeLabel()
+
+  return (
+    <div className="flex flex-col gap-3 pr-3 pb-4 pl-[88px]">
+      <NoteField idea={idea} onEdit={onEdit} />
+      {/* No rule above: the note field's own underline is the line. */}
+      <div className="flex flex-col gap-1 text-xs text-secondary-foreground">
+        <p>
+          {t('ideas.card.writtenByAt', {
+            name: idea.authorName || t('ideas.card.someone'),
+            at: when(idea.createdAt),
+          })}
+        </p>
+        <p>{t('ideas.card.unscored')}</p>
       </div>
-    </article>
+      {showCampaign && <FiledUnder idea={idea} onEdit={onEdit} />}
+      <AnswerGroup
+        idea={idea}
+        now={now}
+        onAnswer={onAnswer}
+        record={
+          <div className="flex flex-col gap-1">
+            <AnswerRecord idea={idea} now={now} onAnswer={onAnswer} />
+            <p>
+              {t('ideas.card.savedOnBlur')}
+              {' · '}
+              {/* The only irreversible thing on the card, and it asks first. */}
+              <button
+                type="button"
+                onClick={onDelete}
+                className="cursor-pointer font-medium text-destructive hover:underline"
+              >
+                {t('ideas.action.delete')}
+              </button>
+            </p>
+          </div>
+        }
+      />
+    </div>
+  )
+}
+
+/**
+ * Which campaign an idea is filed under, and the way to change it — for
+ * either kind: filing is not an edit of the words.
+ */
+function FiledUnder({
+  idea,
+  onEdit,
+}: {
+  idea: Idea
+  onEdit: (change: IdeaEdit) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex items-center gap-2 text-xs text-secondary-foreground">
+      <span>{t('ideas.card.filedUnder')}</span>
+      <CampaignPicker
+        value={idea.campaignId}
+        onChange={(campaignId) => onEdit({ campaign_id: campaignId })}
+      />
+    </div>
   )
 }
 
@@ -279,7 +600,9 @@ function TitleField({
     <Input
       value={title}
       autoFocus
-      className="min-w-0 flex-1"
+      // The field's own padding hangs out to the left, so the words stay in
+      // the title column they were read in.
+      className="-my-1 -ml-3 h-8 w-[calc(100%+0.75rem)] pl-3 min-w-0 font-semibold"
       aria-label={t('ideas.field.title')}
       onChange={(event) => setTitle(event.target.value)}
       onBlur={() => {
@@ -308,7 +631,7 @@ function NoteField({
   return (
     <Textarea
       value={note}
-      className="min-h-16"
+      className="-ml-3 min-h-16 w-[calc(100%+0.75rem)] pl-3"
       aria-label={t('ideas.field.note')}
       placeholder={t('ideas.field.notePlaceholder')}
       onChange={(event) => setNote(event.target.value)}
@@ -342,14 +665,15 @@ function CampaignPicker({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <span className="max-w-40 truncate">
+        <Button variant="ghost" size="sm" className="-ml-2">
+          <span className="max-w-48 truncate text-foreground">
             {current?.name.trim() || t('ideas.field.noCampaign')}
           </span>
+          <span className="text-accent">{t('ideas.card.change')}</span>
           <CaretDownIcon className="size-3" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={4}>
+      <DropdownMenuContent align="start" sideOffset={4}>
         <DropdownMenuItem onSelect={() => onChange(null)}>
           {t('ideas.field.noCampaign')}
         </DropdownMenuItem>
