@@ -259,6 +259,29 @@ describe('an answered idea', () => {
   })
 })
 
+describe('deleting the open idea', () => {
+  it('closes it, so it does not stay on screen once it is gone', async () => {
+    api.bulkDeleteIdeas.mockResolvedValue({ deleted: 1, failed: 0 })
+    await renderSurface()
+    await userEvent.click(await screen.findByText('Idea b'))
+    api.queryIdeas.mockResolvedValue(
+      page({ ideas: [page().ideas[0]], total: 1 }),
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'DELETE IDEA' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'DELETE IDEA' }),
+    )
+
+    await waitFor(() => expect(api.bulkDeleteIdeas).toHaveBeenCalledWith(['b']))
+    await waitFor(() =>
+      expect(screen.queryByDisplayValue('Idea b')).not.toBeInTheDocument(),
+    )
+    expect(screen.queryByText('Idea b')).not.toBeInTheDocument()
+  })
+})
+
 describe('smart groups', () => {
   it('lists the groups with their undecided counts and opens one', async () => {
     await renderSurface({ pile: 'yes' })

@@ -291,6 +291,12 @@ describe('AssetPage', () => {
 
   it('opens the Source tab at the page an idea cites (?at=), once', async () => {
     api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
+    api.listAssetChunks.mockResolvedValue({
+      chunks: [],
+      total: 0,
+      offset: 0,
+      limit: 50,
+    } satisfies AssetChunkPage)
     const scrolled = vi.fn()
     Element.prototype.scrollIntoView = scrolled
     const onPlaceReached = vi.fn()
@@ -320,5 +326,53 @@ describe('AssetPage', () => {
     ).toBeInTheDocument()
     await vi.waitFor(() => expect(onPlaceReached).toHaveBeenCalledTimes(1))
     expect(scrolled.mock.contexts[0]).toHaveProperty('id', 'p5')
+  })
+
+  it('reads on through the document until the cited page turns up', async () => {
+    api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
+    const chunk = (i: number, from: number, to: number) => ({
+      id: `c${i}`,
+      asset_id: 'a1',
+      chunk_index: i,
+      page_start: from,
+      page_end: to,
+      content: `Pages ${from}–${to}`,
+      token_count: 10,
+    })
+    api.listAssetChunks
+      .mockResolvedValueOnce({
+        chunks: [chunk(0, 1, 4)],
+        total: 2,
+        offset: 0,
+        limit: 1,
+      } satisfies AssetChunkPage)
+      .mockResolvedValueOnce({
+        chunks: [chunk(1, 5, 8)],
+        total: 2,
+        offset: 1,
+        limit: 1,
+      } satisfies AssetChunkPage)
+    const scrolled = vi.fn()
+    Element.prototype.scrollIntoView = scrolled
+    const onPlaceReached = vi.fn()
+    const { AssetExtractedView } = await import('../AssetExtractedView')
+    const pdf = asset()
+    await renderWithProviders(
+      <AssetPage
+        asset={pdf}
+        campaignId={null}
+        lens={undefined}
+        onLensChange={() => {}}
+        at="p. 6"
+        onPlaceReached={onPlaceReached}
+        source={<AssetExtractedView asset={pdf} />}
+        onTitleChange={() => {}}
+        onDirty={() => {}}
+      />,
+    )
+
+    await vi.waitFor(() => expect(onPlaceReached).toHaveBeenCalledTimes(1))
+    expect(api.listAssetChunks).toHaveBeenCalledTimes(2)
+    expect(scrolled.mock.contexts[0]).toHaveProperty('dataset.pageFrom', '5')
   })
 })

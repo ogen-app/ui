@@ -68,10 +68,13 @@ export function IdeaViewsPanel({
     if (!floating) return
     const away = (event: MouseEvent) => {
       const target = event.target as Node
-      // Its own menus render in a portal, outside the panel.
+      // Its own menus render in a portal, outside the panel; and the Views
+      // button toggles it itself — closing here on mousedown would let its
+      // click open the panel straight back up.
       if (
         ref.current?.contains(target) ||
-        (target instanceof Element && target.closest('[role="menu"]'))
+        (target instanceof Element &&
+          target.closest('[role="menu"], [data-views-trigger]'))
       )
         return
       onFold()
@@ -257,6 +260,7 @@ export function ViewsButton({
       size="sm"
       onClick={onUnfold}
       aria-label={t('ideas.views.unfold')}
+      data-views-trigger
     >
       <SidebarSimpleIcon />
       {t('ideas.views.heading')}
