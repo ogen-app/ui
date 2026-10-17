@@ -278,12 +278,19 @@ function KindMark({
 }
 
 /** The asset page an idea's source opens, on the reading it came from. */
-function sourceLink(idea: Idea) {
+/**
+ * The asset page an idea's source opens, on the reading it came from — and,
+ * given a place it cites, at that place (`?at=`, `lib/assetPlace`).
+ */
+function sourceLink(idea: Idea, at?: string) {
   const asset = idea.sourceAsset!
   return {
     to: '/assets/$assetId' as const,
     params: { assetId: asset.id },
-    search: { lens: asset.reading?.campaignId ?? 'workspace' },
+    search: {
+      lens: asset.reading?.campaignId ?? 'workspace',
+      ...(at ? { at } : {}),
+    },
   }
 }
 
@@ -314,7 +321,8 @@ function SourceLine({
         bits.push(
           <Link
             key="source"
-            {...sourceLink(idea)}
+            // At the first place it cites, which is where it begins.
+            {...sourceLink(idea, ideaParts(idea)?.sources[0])}
             className="inline-flex min-w-0 items-center gap-1.5 text-foreground hover:underline"
           >
             <KindMark kind={idea.sourceAsset.kind} />
@@ -511,7 +519,15 @@ function SourceSection({ idea, sources }: { idea: Idea; sources: string[] }) {
       {sources.length > 0 && (
         <span className="flex flex-wrap gap-1.5">
           {sources.map((s) => (
-            <SourceChip key={s} label={s} citedBy={idea.title} />
+            // Each chip opens the document at that place; there is no player
+            // or sheet on this page for it to drive in place.
+            <Link
+              key={s}
+              {...sourceLink(idea, s)}
+              className="rounded-full outline-none hover:opacity-80 focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <SourceChip label={s} interactive={false} />
+            </Link>
           ))}
         </span>
       )}

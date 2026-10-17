@@ -61,13 +61,18 @@ const workspaceLens = (over: Partial<AssetAnalysis> = {}): AssetAnalysis => ({
   ...over,
 })
 
-function renderPage(a: Asset, campaignId: string | null = null) {
+function renderPage(
+  a: Asset,
+  campaignId: string | null = null,
+  place: { at?: string; onPlaceReached?: () => void } = {},
+) {
   return renderWithProviders(
     <AssetPage
       asset={a}
       campaignId={campaignId}
       lens={undefined}
       onLensChange={() => {}}
+      {...place}
       source={<p>legacy source</p>}
       onTitleChange={() => {}}
       onDirty={() => {}}
@@ -282,5 +287,38 @@ describe('AssetPage', () => {
     expect(
       within(screen.getByRole('table')).getByText('Litware').closest('tr'),
     ).toHaveClass('bg-warning/10')
+  })
+
+  it('opens the Source tab at the page an idea cites (?at=), once', async () => {
+    api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
+    const scrolled = vi.fn()
+    Element.prototype.scrollIntoView = scrolled
+    const onPlaceReached = vi.fn()
+    await renderWithProviders(
+      <>
+        <AssetPage
+          asset={asset()}
+          campaignId={null}
+          lens={undefined}
+          onLensChange={() => {}}
+          at="pp. 5–6"
+          onPlaceReached={onPlaceReached}
+          source={
+            <ol>
+              <li data-place data-page-from="1" data-page-to="4" />
+              <li data-place data-page-from="5" data-page-to="8" id="p5" />
+            </ol>
+          }
+          onTitleChange={() => {}}
+          onDirty={() => {}}
+        />
+      </>,
+    )
+
+    expect(
+      screen.getByRole('tab', { name: /Source/, selected: true }),
+    ).toBeInTheDocument()
+    await vi.waitFor(() => expect(onPlaceReached).toHaveBeenCalledTimes(1))
+    expect(scrolled.mock.contexts[0]).toHaveProperty('id', 'p5')
   })
 })

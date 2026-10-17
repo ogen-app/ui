@@ -175,6 +175,11 @@ describe('an analysed idea in Spanish', () => {
       screen.getByText(/7 páginas · leída para el espacio de trabajo/),
     ).toBeInTheDocument()
     expect(screen.getByText('Abrir la fuente')).toBeInTheDocument()
+    // The chip opens the document at the page it cites.
+    expect(screen.getByRole('link', { name: 'p. 5' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('at=p.+5'),
+    )
     expect(screen.queryByText('Source')).not.toBeInTheDocument()
     expect(screen.queryByText('Open source')).not.toBeInTheDocument()
   })
