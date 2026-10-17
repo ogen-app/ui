@@ -61,7 +61,9 @@ type Props = {
 const noop = () => {}
 
 /** Whether a cited place is found in the Source tab's text. */
-function readsInSource(place: AssetPlace | null): boolean {
+function readsInSource(
+  place: AssetPlace | null,
+): place is Extract<AssetPlace, { kind: 'page' | 'label' }> {
   return place?.kind === 'page' || place?.kind === 'label'
 }
 
@@ -212,7 +214,11 @@ export function AssetPage({
   // stage, the facts and the text agree.
   const spreadsheet = isSpreadsheet(asset) && settled
   const isDocument = asset.type === 'DOC' && settled
-  const chunks = useAssetChunks(asset.id, { enabled: isDocument })
+  // The same query the Source tab reads, also run to find a cited place.
+  const chunks = useAssetChunks(asset.id, {
+    enabled:
+      isDocument || (settled && readsInSource(at ? assetPlace(at) : null)),
+  })
   const loadedChunks = useMemo(
     () => chunks.data?.pages.flatMap((p) => p.chunks) ?? [],
     [chunks.data],
@@ -288,17 +294,43 @@ export function AssetPage({
       onPlaceReached()
       return
     }
-    let tries = 0
-    const timer = window.setInterval(() => {
-      const target = findPlace(document, place)
-      if (target || ++tries > 40) {
-        window.clearInterval(timer)
-        target?.scrollIntoView({ block: 'start', behavior: 'smooth' })
-        onPlaceReached()
-      }
-    }, 250)
-    return () => window.clearInterval(timer)
   }, [place, player, citer, onPlaceReached])
+
+  // A page or a labelled part: looked for in the Source tab's text once each
+  // page of it has drawn, loading the next page while it is not there yet —
+  // a long document's cited page is rarely in the first. With every page
+  // read and nothing found, the address still lets it go, or each reload
+  // would search the whole document again.
+  const {
+    isPending: chunksPending,
+    isError: chunksFailed,
+    hasNextPage: moreChunks,
+    isFetchingNextPage: fetchingChunks,
+  } = chunks
+  useEffect(() => {
+    if (!place || !readsInSource(place)) return
+    const frame = requestAnimationFrame(() => {
+      const target = findPlace(document, place)
+      if (target) {
+        target.scrollIntoView({ block: 'start', behavior: 'smooth' })
+        onPlaceReached()
+        return
+      }
+      if (chunksPending || fetchingChunks) return
+      if (moreChunks && !chunksFailed) void fetchNextPage()
+      else onPlaceReached()
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [
+    place,
+    chunks.data,
+    chunksPending,
+    chunksFailed,
+    moreChunks,
+    fetchingChunks,
+    fetchNextPage,
+    onPlaceReached,
+  ])
 
   const sourceBody = (
     <div className="px-8 py-8">

@@ -341,6 +341,9 @@ export function IdeasQuerySurface({
 
   const handleDeleteConfirmed = async () => {
     if (!confirming) return
+    // An open idea being deleted closes first, or the open row would be kept
+    // on screen after it is gone (see `shown`).
+    if (expandedId && confirming.ids.includes(expandedId)) setExpandedId(null)
     setDeleting(true)
     const result = await writer.removeMany(confirming.ids)
     setDeleting(false)
