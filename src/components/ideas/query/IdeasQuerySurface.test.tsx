@@ -116,8 +116,6 @@ const VIEW = {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  // A wide window, where the groups panel starts open.
-  window.innerWidth = 1440
   api.queryIdeas.mockResolvedValue(page())
   groups.listSavedViews.mockResolvedValue([VIEW])
 })

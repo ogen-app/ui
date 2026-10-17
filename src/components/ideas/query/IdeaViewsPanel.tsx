@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import {
   DotsThreeIcon,
@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { ModalContainer } from '@/components/ui/modal'
 import { Switch } from '@/components/ui/switch'
+import { ZIndex } from '@/config/zIndex'
 import { cn } from '@/lib'
 import { formatNumber } from '@/lib/intl'
 import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
@@ -43,6 +44,7 @@ export function IdeaViewsPanel({
   onShare,
   onDuplicate,
   onDelete,
+  floating = false,
 }: {
   views: SavedView[]
   /** The open group, or null for All ideas. */
@@ -54,12 +56,47 @@ export function IdeaViewsPanel({
   onShare: (view: SavedView, shared: boolean) => void
   onDuplicate: (view: SavedView) => void
   onDelete: (view: SavedView) => void
+  /**
+   * Over the list, under the Views button, when the column has no room to
+   * dock it. Escape or a click elsewhere puts it away.
+   */
+  floating?: boolean
 }) {
   const { t, i18n } = useTranslation()
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!floating) return
+    const away = (event: MouseEvent) => {
+      const target = event.target as Node
+      // Its own menus render in a portal, outside the panel.
+      if (
+        ref.current?.contains(target) ||
+        (target instanceof Element && target.closest('[role="menu"]'))
+      )
+        return
+      onFold()
+    }
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onFold()
+    }
+    document.addEventListener('mousedown', away)
+    document.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('mousedown', away)
+      document.removeEventListener('keydown', escape)
+    }
+  }, [floating, onFold])
   return (
     <nav
+      ref={ref}
       aria-label={t('ideas.views.heading')}
-      className="sticky top-4 flex flex-col gap-1 self-start rounded-md bg-primary p-2 shadow-md"
+      className={cn(
+        'flex flex-col gap-1 rounded-md bg-primary p-2 shadow-md',
+        floating
+          ? 'absolute top-full left-0 mt-2 w-60'
+          : 'sticky top-4 self-start',
+      )}
+      style={floating ? { zIndex: ZIndex.popover } : undefined}
     >
       <div className="flex items-center justify-between pl-2">
         <h2 className="text-xs font-semibold tracking-wide text-secondary-foreground uppercase">
