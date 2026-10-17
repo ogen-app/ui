@@ -1,13 +1,7 @@
-import {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { localPoint } from '@visx/event'
 import { scaleLinear } from '@visx/scale'
+import { useMeasuredWidth } from '@/hooks/useMeasuredWidth'
 import { cn } from '@/lib'
 import type { Point } from './types'
 
@@ -183,40 +177,6 @@ export function Plot({
       )}
     </div>
   )
-}
-
-/**
- * The element's width, measured on mount and kept up to date.
- *
- * Ours rather than `@visx/responsive`'s `ParentSize`, which measures from a div
- * it positions absolutely and updates only from a `ResizeObserver`. Two things
- * went wrong with that here: the absolute div is out of flow, so a container
- * sized by its children collapsed to nothing — and a plot mounted *after* the
- * first paint, which is every plot drawn by switching the selected measure,
- * never received an observation at all and stayed blank for good.
- *
- * The synchronous first read in a layout effect is the part that matters: it
- * lands before paint, so the chart is drawn the frame its card is, and it does
- * not depend on an element whose size never changes being reported anyway.
- */
-function useMeasuredWidth<T extends HTMLElement>() {
-  const ref = useRef<T>(null)
-  const [width, setWidth] = useState(0)
-
-  useLayoutEffect(() => {
-    const node = ref.current
-    if (!node) return
-
-    setWidth(node.getBoundingClientRect().width)
-
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) setWidth(entry.contentRect.width)
-    })
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
-
-  return [ref, width] as const
 }
 
 function PlotBody({

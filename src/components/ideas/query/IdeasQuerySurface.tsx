@@ -40,6 +40,7 @@ import {
   useUndecidedIdeaCount,
 } from '@/hooks/useIdeaList'
 import { useIdeaViewWriter, useIdeaViews } from '@/hooks/useIdeaViews'
+import { useMeasuredWidth } from '@/hooks/useMeasuredWidth'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
 import { cn } from '@/lib'
@@ -80,6 +81,12 @@ import {
   ViewsButton,
 } from './IdeaViewsPanel'
 import { useIdeaVocabulary, type IdeaVocabulary } from './useIdeaVocabulary'
+
+/**
+ * The narrowest column the panel docks in: its 220px and the gap, and room
+ * for a list whose rows still read on one line.
+ */
+const DOCK_MIN_WIDTH = 860
 
 /** What the delete dialog is asking about. */
 type Confirming = {
@@ -149,11 +156,16 @@ export function IdeasQuerySurface({
   const allCount = useUndecidedIdeaCount()
   const chosenFold = useSettingsStore((st) => st.ideaViewsFolded)
   const setFolded = useSettingsStore((st) => st.setIdeaViewsFolded)
-  // Not chosen yet: folded on a narrow window, open on a wide one.
-  const [narrowWindow] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth < 1280,
-  )
-  const folded = chosenFold ?? narrowWindow
+  const folded = chosenFold ?? false
+  /**
+   * Whether the column has room to dock the panel beside a readable list. It
+   * is the content column that decides, not the window: with the app's rail
+   * and the assistant open, a wide window leaves a narrow list. Without the
+   * room, the Views button floats the panel over the list instead.
+   */
+  const [frameRef, frameWidth] = useMeasuredWidth<HTMLDivElement>()
+  const roomy = frameWidth === 0 || frameWidth >= DOCK_MIN_WIDTH
+  const [floating, setFloating] = useState(false)
   const active = views.data?.find((v) => v.id === search.view) ?? null
   const edited = !!active && active.valid && !matchesView(search, active.query)
   const [saving, setSaving] = useState<
@@ -355,17 +367,53 @@ export function IdeasQuerySurface({
     setConfirming(null)
   }
 
-  if (query.isPending) return <PageLoader />
-  if (query.isError && rows.length === 0)
-    return <PageError header={t('ideas.loadFailed')} />
+  // The frame is drawn from the first render, loader and all: it is what the
+  // panel's room is measured on, and the measure is taken once it mounts.
+  if (query.isPending || (query.isError && rows.length === 0))
+    return (
+      <div ref={frameRef} className="flex grow flex-col">
+        {query.isPending ? (
+          <PageLoader />
+        ) : (
+          <PageError header={t('ideas.loadFailed')} />
+        )}
+      </div>
+    )
 
   const firstRun = totalUnfiltered === 0 && !narrowed
   const selecting = ticked.size > 0
 
-  const panelOpen = groupsOn && !folded && !firstRun
+  const panelOpen = groupsOn && !folded && roomy && !firstRun
+  const panelProps = {
+    views: views.data ?? [],
+    activeId: active?.id ?? null,
+    allCount,
+    onRename: (view: SavedView) => {
+      setFloating(false)
+      setSaving({ mode: 'rename', view })
+    },
+    onShare: (view: SavedView, shared: boolean) =>
+      viewWriter.update.mutate({ id: view.id, shared }),
+    onDuplicate: (view: SavedView) =>
+      viewWriter.create.mutate({
+        name: t('ideas.views.copyName', { name: view.name }).slice(
+          0,
+          SAVED_VIEW_NAME_MAX,
+        ),
+        query: view.query,
+        shared: false,
+      }),
+    onDelete: (view: SavedView) => {
+      setFloating(false)
+      setRemoving(view)
+    },
+  }
 
   return (
-    <div className="relative flex grow flex-col px-3 pb-10 lg:px-6">
+    <div
+      ref={frameRef}
+      className="relative flex grow flex-col px-3 pb-10 lg:px-6"
+    >
       <div
         className={cn(
           'mx-auto flex w-full grow flex-col gap-4',
@@ -396,37 +444,36 @@ export function IdeasQuerySurface({
           >
             {panelOpen && (
               <IdeaViewsPanel
-                views={views.data ?? []}
-                activeId={active?.id ?? null}
-                allCount={allCount}
+                {...panelProps}
                 onOpen={openView}
                 onFold={() => setFolded(true)}
-                onRename={(view) => setSaving({ mode: 'rename', view })}
-                onShare={(view, shared) =>
-                  viewWriter.update.mutate({ id: view.id, shared })
-                }
-                onDuplicate={(view) =>
-                  viewWriter.create.mutate({
-                    name: t('ideas.views.copyName', { name: view.name }).slice(
-                      0,
-                      SAVED_VIEW_NAME_MAX,
-                    ),
-                    query: view.query,
-                    shared: false,
-                  })
-                }
-                onDelete={setRemoving}
               />
             )}
             <div className="flex min-w-0 flex-col gap-4">
-              {groupsOn && (folded || active) && (
+              {groupsOn && (!panelOpen || active) && (
                 <GroupLine
                   active={active}
                   edited={edited}
-                  folded={folded}
+                  folded={!panelOpen}
                   count={views.data?.length ?? 0}
                   busy={viewWriter.update.isPending}
-                  onUnfold={() => setFolded(false)}
+                  onUnfold={() =>
+                    roomy ? setFolded(false) : setFloating((open) => !open)
+                  }
+                  floatingPanel={
+                    floating &&
+                    !roomy && (
+                      <IdeaViewsPanel
+                        {...panelProps}
+                        floating
+                        onOpen={(view) => {
+                          setFloating(false)
+                          openView(view)
+                        }}
+                        onFold={() => setFloating(false)}
+                      />
+                    )
+                  }
                   onDelete={() => active && setRemoving(active)}
                   onSaveChanges={saveChanges}
                   onSaveAs={() => setSaving({ mode: 'new' })}
@@ -958,6 +1005,7 @@ function GroupLine({
   onSaveChanges,
   onSaveAs,
   onRevert,
+  floatingPanel,
 }: {
   active: SavedView | null
   edited: boolean
@@ -969,11 +1017,18 @@ function GroupLine({
   onSaveChanges: () => void
   onSaveAs: () => void
   onRevert: () => void
+  /** The panel floated over the list, when there is no room to dock it. */
+  floatingPanel?: React.ReactNode
 }) {
   const { t } = useTranslation()
   return (
     <div className="flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1">
-      {folded && <ViewsButton count={count} onUnfold={onUnfold} />}
+      {folded && (
+        <span className="relative">
+          <ViewsButton count={count} onUnfold={onUnfold} />
+          {floatingPanel}
+        </span>
+      )}
       {active && (
         <p className="min-w-0 text-sm text-secondary-foreground">
           <span className="font-medium text-foreground">{active.name}</span>

@@ -88,8 +88,9 @@ export type LocalSettings = {
 
   /**
    * Whether the Ideas page's smart groups panel is folded into its "Views"
-   * button (CON-388 §5), or null for not yet chosen — which folds it on a
-   * narrow window and opens it on a wide one. Per device, like the bands.
+   * button (CON-388 §5), or null for not yet chosen, which reads as open. It
+   * docks only where the column has room; elsewhere the button floats it.
+   * Per device, like the bands.
    */
   ideaViewsFolded: boolean | null
 }
