@@ -1321,6 +1321,15 @@ The piles stay tabs rather than a filter field: the verdict is where you are.
 An opened idea that an answer moves out of the pile stays where it was until
 it is closed, as on the asset page.
 
+**The page is the Assets page's frame.** The list runs the full width on
+white in a scroller of its own, so its group bands stay pinned; it is grouped
+by date added unless told not to (`group=none`), as Assets is. A row is the
+Assets row's grid — a box, the slot, the text capped at a readable measure,
+the campaign in a column of its own on a wide list — and the smart groups are
+one dropdown on the filter's line rather than a panel beside the list, which
+a narrow column could not afford. Select all sits at the start of the piles'
+line, over the rows' boxes, since it takes the pile that line names.
+
 **Analysed and written ideas are told apart by the row's first slot**: the fit
 score for an analysed idea, the writer for a written one — no badge. An
 analysed idea's words are read-only, on the server too (409

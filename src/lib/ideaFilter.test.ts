@@ -57,8 +57,11 @@ describe('parseIdeaListSearch', () => {
     expect(ideaViewFromSearch({})).toEqual({
       pile: 'waiting',
       sort: 'waiting',
-      group: 'none',
+      group: 'created',
     })
+    // Grouped by date added unless told not to group.
+    expect(parseIdeaListSearch({ group: 'created' })).toEqual({})
+    expect(ideaViewFromSearch({ group: 'none' }).group).toBe('none')
   })
 })
 
@@ -138,5 +141,23 @@ describe('toIdeaRequestParams', () => {
       values: ['7d'],
     })
     expect(toIdeaRequestParams(filter, ctx).created_before).toBe('2026-10-11')
+  })
+})
+
+describe('smart group queries', () => {
+  it('store the grouping as it is, and open a group stored without one ungrouped', async () => {
+    const { ideaViewQuery, searchFromViewQuery, matchesView } =
+      await import('./ideaFilter')
+    expect(ideaViewQuery({ fit: 'high' })).toBe('fit=high&group=created')
+    expect(ideaViewQuery({ fit: 'high', group: 'none' })).toBe('fit=high')
+    expect(searchFromViewQuery('fit=high')).toEqual({
+      fit: 'high',
+      group: 'none',
+    })
+    expect(searchFromViewQuery('fit=high&group=created')).toEqual({
+      fit: 'high',
+    })
+    expect(matchesView({ fit: 'high', group: 'none' }, 'fit=high')).toBe(true)
+    expect(matchesView({ fit: 'high' }, 'fit=high')).toBe(false)
   })
 })

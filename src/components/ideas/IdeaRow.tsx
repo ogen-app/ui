@@ -4,13 +4,10 @@ import { Link } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Note01Icon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
-import {
-  CaretDownIcon,
-  CaretRightIcon,
-  CaretUpIcon,
-} from '@phosphor-icons/react'
+import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { CampaignIcon } from '@/components/layout/CampaignIcon'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -40,7 +37,7 @@ import {
   VerdictMark,
   type Answer,
 } from './card/IdeaCardParts'
-import { IDEA_ROW, pileOf } from './card/ideaRow'
+import { pileOf } from './card/ideaRow'
 import { sourceFacts } from './card/sourceFacts'
 import { VerdictControls, type Decide } from './VerdictControls'
 
@@ -111,8 +108,40 @@ export function IdeaRow({
   const summary = parts ? parts.angle || parts.rationale : idea.note
   const Caret = expanded ? CaretDownIcon : CaretRightIcon
 
-  const head = (
-    <>
+  const verdict = pileOf(idea, now)
+  const campaignName = useCampaignName(idea.campaignId)
+
+  return (
+    <li
+      data-open={expanded || undefined}
+      className={cn(
+        // The Assets row's frame (CON-388): a rule under each row, 20px of
+        // air, and columns rather than longer lines — the box, the slot, the
+        // text capped at a readable measure, the campaign, the answer.
+        'group relative grid grid-cols-[16px_4rem_minmax(0,1fr)_auto_16px] gap-x-5 border-b border-quaternary px-5 pt-5 pb-5.5',
+        '@4xl:grid-cols-[16px_4rem_minmax(0,calc(72ch+40px))_minmax(0,1fr)_auto_16px]',
+        'hover:bg-secondary focus-within:bg-secondary data-[open]:bg-secondary',
+        selection?.selected && 'bg-accent/5 hover:bg-accent/5',
+      )}
+    >
+      {/* The box's column is reserved whether or not it shows, so nothing
+          shifts when it does; it sits under the list's select-all. */}
+      <span className="flex h-6 items-center">
+        {selection && (
+          <Checkbox
+            checked={selection.selected}
+            onCheckedChange={selection.onToggle}
+            aria-label={t('ideas.bulk.select', { title: idea.title })}
+            className={cn(
+              'transition-opacity duration-200 ease-out motion-reduce:transition-none',
+              !selection.selected &&
+                !selection.selecting &&
+                'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
+            )}
+          />
+        )}
+      </span>
+
       <span className="flex h-6 items-center">
         {analysed ? (
           <FitTrack score={idea.fitScore} />
@@ -120,90 +149,84 @@ export function IdeaRow({
           <AuthorSlot name={idea.authorName ?? null} id={idea.createdBy} />
         )}
       </span>
-      {editing ? (
-        <TitleField idea={idea} onEdit={onEdit} />
-      ) : (
-        <span
-          className={cn(
-            'text-sm/6 text-foreground',
-            expanded && 'font-semibold',
-          )}
-        >
-          {idea.title}
-        </span>
-      )}
-      <VerdictMark verdict={pileOf(idea, now)} />
-    </>
-  )
 
-  return (
-    <li
-      data-open={expanded || undefined}
-      className={cn(
-        IDEA_ROW,
-        'group',
-        selection && 'pl-9',
-        selection?.selected && 'bg-accent/5 before:opacity-0',
-      )}
-    >
-      {selection && (
-        // Under the filter bar's select-all: the list hangs 12px out, so the
-        // box sits 24px into the row.
-        <Checkbox
-          checked={selection.selected}
-          onCheckedChange={selection.onToggle}
-          aria-label={t('ideas.bulk.select', { title: idea.title })}
-          className={cn(
-            'absolute top-[18px] left-6',
-            !selection.selected &&
-              !selection.selecting &&
-              'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
-          )}
-        />
-      )}
-      {editing ? (
-        // The title is a field now, so the head is no longer one button: the
-        // caret becomes the control that closes it.
-        <div className="grid grid-cols-[4rem_minmax(0,1fr)_16px_16px] items-start gap-x-3 px-3 py-3.5">
-          {head}
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded
-            aria-label={t('ideas.action.close')}
-            className="mt-1 cursor-pointer"
-          >
-            <CaretUpIcon className="size-4 text-secondary-foreground" />
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={expanded}
-          className="grid w-full cursor-pointer grid-cols-[4rem_minmax(0,1fr)_16px_16px] gap-x-3 px-3 py-3.5 text-left"
-        >
-          {head}
-          <Caret className="mt-1 size-4 shrink-0 text-secondary-foreground" />
-          {summary && !expanded && (
-            <span className="col-span-2 col-start-2 mt-0.5 line-clamp-2 text-[13px]/[19px] text-secondary-foreground">
-              {summary}
-            </span>
-          )}
-        </button>
-      )}
-
-      {!expanded && (
-        <>
+      <div className="flex min-w-0 flex-col">
+        {editing ? (
+          <TitleField idea={idea} onEdit={onEdit} />
+        ) : (
+          <h3 className="text-base/6 font-semibold break-words">
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-expanded={expanded}
+              className="cursor-pointer text-left outline-none hover:underline focus-visible:underline"
+            >
+              {idea.title}
+            </button>
+          </h3>
+        )}
+        {!expanded && summary && (
+          <p className="mt-1 line-clamp-2 text-sm text-secondary-foreground">
+            {summary}
+          </p>
+        )}
+        {!expanded && (
           <SourceLine
             idea={idea}
             now={now}
             showCampaign={showCampaign}
             compact={compactSource}
           />
-          <QuickAnswers title={idea.title} now={now} onDecide={onDecide} />
-        </>
-      )}
+        )}
+      </div>
+
+      {/* The campaign's own column on a wide list; below it, the source
+          line ends with it instead. */}
+      <span className="hidden min-w-0 pt-0.5 text-[13px] @4xl:block">
+        {showCampaign && campaignName && idea.campaignId && (
+          <span className="flex min-w-0 items-center gap-1.5">
+            <CampaignIcon
+              abbr={identityAbbr(campaignName)}
+              color={identityColorVar(idea.campaignId)}
+              className="size-4"
+            />
+            <span className="truncate">{campaignName}</span>
+          </span>
+        )}
+      </span>
+
+      {/* The verdict, and — hovered or focused, closed — the three answers in
+          its place, so a row is answered without being opened. */}
+      <span className="flex h-6 items-center justify-end">
+        <span
+          className={cn(
+            'flex',
+            !expanded &&
+              'group-focus-within:hidden group-hover:hidden group-has-[[data-state=open]]:hidden',
+          )}
+        >
+          <VerdictMark verdict={verdict} />
+        </span>
+        {!expanded && (
+          <span
+            role="group"
+            aria-label={t('ideas.card.quickAnswers', { title: idea.title })}
+            className="-my-1 hidden group-focus-within:flex group-hover:flex group-has-[[data-state=open]]:flex"
+          >
+            <VerdictControls onDecide={onDecide} now={now} />
+          </span>
+        )}
+      </span>
+
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-label={expanded ? t('ideas.action.close') : t('ideas.action.open')}
+        className="flex h-6 cursor-pointer items-center"
+      >
+        <Caret className="size-4 text-secondary-foreground" />
+      </button>
 
       {expanded &&
         (analysed ? (
@@ -353,6 +376,8 @@ function SourceLine({
       </span>,
     )
   }
+  // Only below the wide layout, where the campaign has no column of its own.
+  const narrowOnly = bits.length
   if (showCampaign && campaign)
     bits.push(
       <span key="campaign" className="truncate">
@@ -365,39 +390,19 @@ function SourceLine({
     bits.push(<span key="back">{t('ideas.backFrom')}</span>)
 
   return (
-    <div className="-mt-2 flex min-w-0 items-center gap-1.5 pr-3 pb-3.5 pl-[88px] text-xs text-secondary-foreground">
+    <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[13px] text-secondary-foreground">
       {bits.map((bit, i) => (
-        <span key={i} className="contents">
+        <span
+          key={i}
+          className={cn(
+            'contents',
+            i === narrowOnly && showCampaign && campaign && '@4xl:hidden',
+          )}
+        >
           {i > 0 && <span aria-hidden>·</span>}
           {bit}
         </span>
       ))}
-    </div>
-  )
-}
-
-/**
- * The three answers, over the verdict mark while the row is hovered or has
- * focus — so a row is answered without being opened, and reached by keyboard
- * the same way.
- */
-function QuickAnswers({
-  title,
-  now,
-  onDecide,
-}: {
-  title: string
-  now: Date
-  onDecide: Decide
-}) {
-  const { t } = useTranslation()
-  return (
-    <div
-      role="group"
-      aria-label={t('ideas.card.quickAnswers', { title })}
-      className="absolute top-2 right-[26px] flex rounded-md bg-secondary pl-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 has-[[data-state=open]]:opacity-100"
-    >
-      <VerdictControls onDecide={onDecide} now={now} />
     </div>
   )
 }
@@ -457,8 +462,8 @@ function AnalysedBody({
     campaigns?.find((c) => c.id === id)?.name.trim() || null
 
   return (
-    // In the title's column: the row's padding, the slot and its gap.
-    <div className="flex flex-col gap-3 pr-3 pb-4 pl-[88px]">
+    // In the title's column, to the row's end.
+    <div className="col-start-3 col-end-[-1] mt-3 flex flex-col gap-3">
       {parts?.angle && (
         <p className="text-sm leading-6 text-foreground">{parts.angle}</p>
       )}
@@ -555,7 +560,7 @@ function WrittenBody({
   const when = useDateTimeLabel()
 
   return (
-    <div className="flex flex-col gap-3 pr-3 pb-4 pl-[88px]">
+    <div className="col-start-3 col-end-[-1] mt-3 flex flex-col gap-3">
       <NoteField idea={idea} onEdit={onEdit} />
       {/* No rule above: the note field's own underline is the line. */}
       <div className="flex flex-col gap-1 text-xs text-secondary-foreground">

@@ -85,6 +85,14 @@ export const IDEA_GROUPS = [
 export type IdeaGroup = (typeof IDEA_GROUPS)[number]
 export type IdeaGrouping = IdeaGroup | 'none'
 
+/**
+ * Grouped by when ideas were added unless chosen otherwise — Today, Past 7
+ * days, Past month, Earlier — as the Assets list is, so the bands are always
+ * there. `none` is the choice not to group, kept in the address as such.
+ */
+export const DEFAULT_IDEA_GROUP: IdeaGrouping = 'created'
+const GROUPINGS = [...IDEA_GROUPS, 'none'] as const
+
 /** The longest `text` the server takes. */
 export const IDEA_TEXT_MAX = 200
 
@@ -198,8 +206,8 @@ export function parseIdeaListSearch(
   if (pile && pile !== 'waiting') out.pile = pile
   const sort = oneOf(raw.sort, IDEA_SORTS)
   if (sort && sort !== DEFAULT_IDEA_SORT) out.sort = sort
-  const group = oneOf(raw.group, IDEA_GROUPS)
-  if (group) out.group = group
+  const group = oneOf(raw.group, GROUPINGS)
+  if (group && group !== DEFAULT_IDEA_GROUP) out.group = group
   // The smart group open, by id — ours, never sent to the list endpoint.
   if (typeof raw.view === 'string' && raw.view.trim())
     out.view = raw.view.trim()
@@ -250,7 +258,7 @@ export function ideaViewFromSearch(search: IdeaListSearch): {
   return {
     pile: oneOf(search.pile, IDEA_PILES) ?? 'waiting',
     sort: oneOf(search.sort, IDEA_SORTS) ?? DEFAULT_IDEA_SORT,
-    group: oneOf(search.group, IDEA_GROUPS) ?? 'none',
+    group: oneOf(search.group, GROUPINGS) ?? DEFAULT_IDEA_GROUP,
   }
 }
 
@@ -487,6 +495,12 @@ const VIEW_KEYS = (search: IdeaListSearch): IdeaListSearch => {
  */
 export function ideaViewQuery(search: IdeaListSearch): string {
   const parsed = parseIdeaListSearch(VIEW_KEYS(search))
+  // The grouping is stored as what it is rather than as this build's
+  // default: `group=created` when grouped by date, nothing when not grouped
+  // (`none` is ours; the endpoint knows no such value).
+  delete parsed.group
+  const { group } = ideaViewFromSearch(search)
+  if (group !== 'none') parsed.group = group
   return Object.keys(parsed)
     .sort()
     .map((key) => {
@@ -501,6 +515,8 @@ export function ideaViewQuery(search: IdeaListSearch): string {
 export function searchFromViewQuery(query: string): IdeaListSearch {
   const raw: Record<string, string> = {}
   for (const [key, value] of new URLSearchParams(query)) raw[key] = value
+  // A group stored without a grouping is one that does not group.
+  if (!raw.group) raw.group = 'none'
   return VIEW_KEYS(parseIdeaListSearch(raw))
 }
 
