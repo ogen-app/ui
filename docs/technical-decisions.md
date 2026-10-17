@@ -1266,7 +1266,8 @@ trusting long before they report it.
 **The rail carries one of those four, and it is the undecided one.** The
 sidebar's Ideas row shows what is still a question — its own component
 (`IdeasSidebarItem`) for the same reason the Inbox row has one: the figure
-costs a query, and a row that fetches must not exist while the flag is off. The
+costs a query. Since CON-388 that query is the server's own count of the
+undecided pile (`pile=waiting&limit=1`), never the whole list counted here. The
 backlog's *size* is deliberately not what is drawn there. A backlog is meant to
 be long — that is the difference between this module and the Inbox above it —
 so a total would only ever climb and would never be a reason to click, where
@@ -1302,10 +1303,30 @@ undecided pile, in what order, how much of the idea you can read without
 opening it), never by adding a second place to be.
 
 **One component, both levels.** The campaign's Ideas page is `IdeasSurface`
-with `campaignId` set — the same rows filtered, and captures made there filed
-to that campaign. `campaign_id` is a filter and not a scope, so an idea moved
-onto a campaign keeps the verdict and the history it already had instead of
-becoming a second row somewhere else.
+with `campaignId` set — the same rows scoped (`scope_campaign`), and captures
+made there filed to that campaign. An idea moved onto a campaign keeps the
+verdict and the history it already had instead of becoming a second row
+somewhere else.
+
+**The list is the server's answer to the address (CON-388/389).** Ideas pile up
+with every analysed document, so the page stopped loading the whole backlog and
+piling it here: `GET /api/ideas` filters, counts the piles within the filter,
+groups and pages, and the page's search params are the endpoint's own
+(`lib/ideaFilter`). The narrowing is the Assets list's — one `SmartFilterBar`
+over a per-list model and vocabulary (`lib/smartFilter`), so the two bars
+cannot drift — with one difference: the pile, the sort and the grouping are in
+the address too, because a **smart group** is that address saved
+(`/api/saved-views`, a resource for any list, which drops the pile itself).
+The piles stay tabs rather than a filter field: the verdict is where you are.
+An opened idea that an answer moves out of the pile stays where it was until
+it is closed, as on the asset page.
+
+**Analysed and written ideas are told apart by the row's first slot**: the fit
+score for an analysed idea, the writer for a written one — no badge. An
+analysed idea's words are read-only, on the server too (409
+`idea_read_only`), because its score was given to them; only its campaign
+moves. Bulk delete asks first, always, and goes 500 to a request; select-all
+is `ids_only`, capped at 5,000.
 
 **Backed by `/api/ideas` (CON-315).** The contract was written out in
 `services/api/ideas.ts` first and answered by a `localStorage` stub, a plain
@@ -1320,9 +1341,11 @@ filed onto a campaign, and that is all. Promotion — an idea becoming a post or
 a brief — wants `POST /api/ideas/:id/promote` rather than the client creating
 the post and hoping the link survives. CON-315 lists it as future work.
 
-**Where.** `lib/ideas.ts` (+ test), `services/api/ideas.ts` (+ test),
-`hooks/useIdeas.ts`,
-`components/ideas/*` (the rail's row included), its wiring in
+**Where.** `lib/ideas.ts`, `lib/ideaFilter.ts`, `lib/ideaSource.ts`,
+`lib/smartFilter.ts` (+ tests), `services/api/ideas.ts` and
+`services/api/savedViews.ts` (+ test), `hooks/useIdeaList.ts`,
+`hooks/useIdeaViews.ts`, `components/ideas/*` (the card's parts in `card/`,
+the list, filter and groups in `query/`, the rail's row), its wiring in
 `components/layout/nav/WorkspaceLevel.tsx`, the two `ideas` routes, and the
 `ideas.*` catalogue entries in both languages.
 

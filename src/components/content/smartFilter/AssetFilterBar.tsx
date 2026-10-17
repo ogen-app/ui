@@ -1,39 +1,10 @@
 import type { ReactNode } from 'react'
 import { SmartFilterBar } from '@/components/smartFilter/SmartFilterBar'
 import { assetCountQuery } from '@/hooks/useContent'
-import {
-  TEXT_MAX,
-  TEXT_MIN,
-  parseFieldPrefix,
-  tokensOf,
-  withToken,
-  withoutToken,
-  type AssetFilter,
-  type FilterField,
-} from '@/lib/assetFilter'
-import type { FilterModel } from '@/lib/smartFilter'
+import type { AssetFilter } from '@/lib/assetFilter'
 import type { AssetQueryParams } from '@/types/assetList'
+import { ASSET_MODEL } from './assetModel'
 import type { FilterVocabulary } from './useFilterVocabulary'
-
-/** The Assets filter as the smart filter reads it (`lib/smartFilter`). */
-const ASSET_MODEL: FilterModel<AssetFilter, FilterField> = {
-  kindOf: (field) =>
-    field === 'title'
-      ? 'substrings'
-      : field === 'text'
-        ? 'search'
-        : field === 'updated'
-          ? 'date'
-          : 'choice',
-  tokensOf,
-  withToken,
-  withoutToken,
-  parseFieldPrefix,
-  // A title search, then a search inside the documents.
-  freeText: ['title', 'text'],
-  searchMin: TEXT_MIN,
-  textMax: TEXT_MAX,
-}
 
 /**
  * The Assets list's smart filter (CON-371): `SmartFilterBar` over the Assets

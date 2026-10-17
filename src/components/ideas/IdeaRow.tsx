@@ -41,6 +41,7 @@ import {
   type Answer,
 } from './card/IdeaCardParts'
 import { IDEA_ROW, pileOf } from './card/ideaRow'
+import { sourceFacts } from './card/sourceFacts'
 import { VerdictControls, type Decide } from './VerdictControls'
 
 /**
@@ -495,22 +496,7 @@ function SourceSection({ idea, sources }: { idea: Idea; sources: string[] }) {
         </p>
       </Part>
     )
-  const facts = [
-    asset.kind && t(`content.list.kind.${asset.kind}`),
-    asset.pageCount != null &&
-      t('ideas.card.source.pages', { count: asset.pageCount }),
-    asset.durationMs != null &&
-      asset.durationMs > 0 &&
-      t('ideas.card.source.minutes', {
-        count: Math.max(1, Math.round(asset.durationMs / 60_000)),
-      }),
-    asset.domain,
-    asset.reading
-      ? t('ideas.card.source.readFor', {
-          campaign: asset.reading.campaignName,
-        })
-      : t('ideas.card.source.readForWorkspace'),
-  ].filter(Boolean)
+  const facts = sourceFacts(t, asset, { reading: true })
 
   return (
     <Part heading={t('ideas.card.source.heading')}>
@@ -521,7 +507,7 @@ function SourceSection({ idea, sources }: { idea: Idea; sources: string[] }) {
         <KindMark kind={asset.kind} size={18} />
         <span className="truncate">{asset.title}</span>
       </Link>
-      <p className="text-xs text-secondary-foreground">{facts.join(' · ')}</p>
+      <p className="text-xs text-secondary-foreground">{facts}</p>
       {sources.length > 0 && (
         <span className="flex flex-wrap gap-1.5">
           {sources.map((s) => (

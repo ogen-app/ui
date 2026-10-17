@@ -619,7 +619,7 @@ export const es: Translation = {
       noDocument: 'Sin documento',
       unknownDocument: 'Un documento eliminado',
       formerMember: 'Un antiguo miembro',
-      nothingMatches: 'Ninguna idea coincide con estos filtros.',
+      nothingMatches: 'Ninguna idea coincide con estos filtros',
     },
     view: {
       group: {

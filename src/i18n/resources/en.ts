@@ -761,7 +761,7 @@ export const en = {
       noDocument: 'No document',
       unknownDocument: 'A deleted document',
       formerMember: 'A former member',
-      nothingMatches: 'No ideas match these filters.',
+      nothingMatches: 'No ideas match these filters',
     },
     view: {
       group: {
