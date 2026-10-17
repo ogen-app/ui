@@ -124,35 +124,34 @@ export function useUndecidedIdeaCount(): number {
  */
 export function useIdeaListWriter({
   campaignId,
-  capturesShow,
 }: {
   /** Captures made here are filed to it. */
   campaignId: string | null
-  /** Whether a fresh idea belongs in the list on screen (the undecided pile). */
-  capturesShow: boolean
 }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
 
   const run = useCallback(
     async (
-      patch: (ideas: Idea[], page: number) => Idea[],
+      /** Each loaded page of each list, with the request that list made. */
+      patch: (ideas: Idea[], page: number, params: IdeaQueryParams) => Idea[],
       send: () => Promise<unknown>,
       { failure = t('ideas.saveFailed') }: { failure?: string } = {},
     ) => {
       void qc.cancelQueries({ queryKey: IDEA_LIST_KEY })
       const snapshot = qc.getQueriesData<Pages>({ queryKey: IDEA_LIST_KEY })
-      qc.setQueriesData<Pages>({ queryKey: IDEA_LIST_KEY }, (data) =>
-        data?.pages
-          ? {
-              ...data,
-              pages: data.pages.map((page, i) => ({
-                ...page,
-                ideas: patch(page.ideas, i),
-              })),
-            }
-          : data,
-      )
+      for (const [key, data] of snapshot) {
+        // The counts share the prefix and hold a number, not pages.
+        if (!data?.pages) continue
+        const params = (key[2] ?? {}) as IdeaQueryParams
+        qc.setQueryData<Pages>(key, {
+          ...data,
+          pages: data.pages.map((page, i) => ({
+            ...page,
+            ideas: patch(page.ideas, i, params),
+          })),
+        })
+      }
       try {
         return await send()
       } catch {
@@ -206,9 +205,9 @@ export function useIdeaListWriter({
   )
 
   /**
-   * Capture: shown at the head of the list on screen while it is the
-   * undecided pile, which is where a new idea lands; anywhere else it would be
-   * a row the refetch takes away again.
+   * Capture: shown at once at the head of every loaded undecided pile, which
+   * is where a new idea lands; in any other pile it would be a row the refetch
+   * takes away again.
    */
   const capture = useCallback(
     (title: string) => {
@@ -221,14 +220,16 @@ export function useIdeaListWriter({
         at: new Date(),
       })
       return run(
-        // Every loaded list gets it while on the undecided pile — a capture
-        // is undecided wherever it is shown.
-        (ideas, page) =>
-          capturesShow && page === 0 ? [optimistic, ...ideas] : ideas,
+        // At the head of every loaded undecided pile, where a new idea
+        // lands; a Yes or No list would only have it taken away again.
+        (ideas, page, params) =>
+          params.pile === 'waiting' && page === 0
+            ? [optimistic, ...ideas]
+            : ideas,
         () => captureIdea({ title: trimmed, campaignId }),
       )
     },
-    [campaignId, capturesShow, run],
+    [campaignId, run],
   )
 
   /**

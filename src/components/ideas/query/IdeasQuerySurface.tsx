@@ -145,10 +145,7 @@ export function IdeasQuerySurface({
   const facets = useMemo(() => ideaFacetsFor(campaignId), [campaignId])
   const list = useIdeaList(params, facets)
   const { rows, total, totalUnfiltered, piles, groups, query } = list
-  const writer = useIdeaListWriter({
-    campaignId,
-    capturesShow: pile === 'waiting',
-  })
+  const writer = useIdeaListWriter({ campaignId })
   // Smart groups are the workspace page's (§5); a campaign's has none yet.
   const groupsOn = campaignId === null
   const views = useIdeaViews({ enabled: groupsOn })
