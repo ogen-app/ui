@@ -210,9 +210,13 @@ export function useIdeaListWriter({
    * takes away again.
    */
   const capture = useCallback(
-    (title: string, note = '', writer?: { id: string; name: string }) => {
+    (
+      title: string,
+      note = '',
+      writer?: { id: string | null; name: string },
+    ): Promise<boolean> => {
       const trimmed = title.trim()
-      if (!trimmed) return Promise.resolve()
+      if (!trimmed) return Promise.resolve(false)
       // Drawn as the row it will be: a written idea, by whoever wrote it.
       const optimistic: Idea = {
         ...newIdea({
@@ -234,7 +238,8 @@ export function useIdeaListWriter({
             ? [optimistic, ...ideas]
             : ideas,
         () => captureIdea({ title: trimmed, note, campaignId }),
-      )
+        // Whether it was kept, so the field can give the words back if not.
+      ).then((idea) => idea !== undefined)
     },
     [campaignId, run],
   )
