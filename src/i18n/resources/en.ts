@@ -611,10 +611,28 @@ export const en = {
    */
   ideas: {
     capture: {
-      placeholder: 'What could we make?',
       /** The field carries no visible label — the placeholder is the prompt. */
       label: 'Write down an idea',
-      submit: 'ADD IDEA',
+      /**
+       * The prompt, one picked per visit. Each says what an idea is here — a
+       * post somebody could make — rather than asking for a finished one.
+       */
+      prompt: {
+        post: 'A post worth making…',
+        postingAbout: 'What’s worth posting about?',
+        worthAPost: 'Something worth a post?',
+        story: 'A story worth telling…',
+        stopScrolling: 'What would make people stop scrolling?',
+        wantToRead: 'A post you’d want to read…',
+        thisWeek: 'What’s worth sharing this week?',
+        audienceHear: 'Something your audience should hear…',
+        format: 'A carousel, a reel, a thread — what’s the idea?',
+        deserves: 'What deserves a post?',
+        behindScenes: 'A behind-the-scenes worth showing…',
+        keepsAsking: 'A question your audience keeps asking…',
+      },
+      hint: 'Return <key/> to keep it',
+      hintMultiline: 'Shift <key/> for a new line · Return <key/> to keep it',
     },
     /** The verdicts as the piles they name. */
     verdict: {

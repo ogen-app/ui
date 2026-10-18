@@ -210,15 +210,22 @@ export function useIdeaListWriter({
    * takes away again.
    */
   const capture = useCallback(
-    (title: string) => {
+    (title: string, note = '', writer?: { id: string; name: string }) => {
       const trimmed = title.trim()
       if (!trimmed) return Promise.resolve()
-      const optimistic = newIdea({
-        id: `idea_pending_${crypto.randomUUID()}`,
-        title: trimmed,
-        campaignId,
-        at: new Date(),
-      })
+      // Drawn as the row it will be: a written idea, by whoever wrote it.
+      const optimistic: Idea = {
+        ...newIdea({
+          id: `idea_pending_${crypto.randomUUID()}`,
+          title: trimmed,
+          note,
+          campaignId,
+          by: writer?.id ?? null,
+          at: new Date(),
+        }),
+        origin: 'manual',
+        authorName: writer?.name || null,
+      }
       return run(
         // At the head of every loaded undecided pile, where a new idea
         // lands; a Yes or No list would only have it taken away again.
@@ -226,7 +233,7 @@ export function useIdeaListWriter({
           params.pile === 'waiting' && page === 0
             ? [optimistic, ...ideas]
             : ideas,
-        () => captureIdea({ title: trimmed, campaignId }),
+        () => captureIdea({ title: trimmed, note, campaignId }),
       )
     },
     [campaignId, run],

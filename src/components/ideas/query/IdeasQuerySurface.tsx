@@ -360,7 +360,9 @@ export function IdeasQuerySurface({
     // own scroller, so its group bands stay pinned while the rows pass under
     // them. Nothing above the list scrolls.
     <div className="relative flex h-full min-h-0 flex-col gap-4 pt-1 pb-4">
-      <IdeaCapture onCapture={(title) => void writer.capture(title)} />
+      <IdeaCapture
+        onCapture={(title, note, by) => void writer.capture(title, note, by)}
+      />
 
       {firstRun ? (
         <div className="pt-2">
