@@ -489,10 +489,18 @@ export function IdeasQuerySurface({
                 })
               }
               onEndReached={() => {
-                if (query.hasNextPage && !query.isFetchingNextPage)
+                // Not after a page failed: re-observing the foot would ask
+                // again at once, and again. The retry below is the way on.
+                if (
+                  query.hasNextPage &&
+                  !query.isFetchingNextPage &&
+                  !query.isFetchNextPageError
+                )
                   void query.fetchNextPage()
               }}
               loadingMore={query.isFetchingNextPage}
+              moreFailed={query.isFetchNextPageError}
+              onRetryMore={() => void query.fetchNextPage()}
             />
           )}
         </div>
@@ -702,6 +710,8 @@ function IdeaRows({
   onDelete,
   onEndReached,
   loadingMore,
+  moreFailed,
+  onRetryMore,
 }: {
   rows: Idea[]
   groups: { key: string; count: number }[]
@@ -718,6 +728,9 @@ function IdeaRows({
   onDelete: (idea: Idea) => void
   onEndReached: () => void
   loadingMore: boolean
+  /** The next page failed; paging waits for the retry. */
+  moreFailed: boolean
+  onRetryMore: () => void
 }) {
   const { t, i18n } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -817,6 +830,18 @@ function IdeaRows({
       {loadingMore && (
         <p className="py-3 text-center text-xs text-secondary-foreground">
           {t('content.filter.loadingMore')}
+        </p>
+      )}
+      {moreFailed && !loadingMore && (
+        <p className="flex justify-center gap-2 py-3 text-xs text-destructive">
+          {t('ideas.list.moreFailed')}
+          <button
+            type="button"
+            onClick={onRetryMore}
+            className="cursor-pointer font-medium text-foreground underline underline-offset-3"
+          >
+            {t('ideas.capture.retry')}
+          </button>
         </p>
       )}
       {/* Room for the floating selection bar, so it never sits on the last row. */}

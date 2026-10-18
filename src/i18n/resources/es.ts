@@ -503,6 +503,9 @@ export const es: Translation = {
         keepsAsking: 'Una pregunta que tu audiencia no deja de hacer…',
       },
       hint: 'Intro <key/> para guardarla',
+      unsaved: 'No se guardó: «{{title}}»',
+      retry: 'Reintentar',
+      dismiss: 'Descartar',
       hintMultiline:
         'Mayús <key/> para otra línea · Intro <key/> para guardarla',
     },
@@ -655,6 +658,7 @@ export const es: Translation = {
     },
     list: {
       label: 'Ideas',
+      moreFailed: 'No se pudieron cargar más ideas.',
       band: {
         noAuthor: 'De documentos',
       },

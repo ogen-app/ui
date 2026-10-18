@@ -81,66 +81,119 @@ export function IdeaCapture({
     setValue('')
     requestAnimationFrame(fit)
     field.current?.focus()
-    const saved = await onCapture(title, rest.join('\n').trim(), writer)
-    if (saved === false) {
-      setValue((now) => (now === '' ? kept : now))
+    await keep(title, rest.join('\n').trim(), kept)
+  }
+
+  /**
+   * Hands an idea over, and keeps hold of it if the save fails: back in the
+   * field when the field is still empty, otherwise on a line under it —
+   * several failures in a run each keep their own, and nothing typed since is
+   * ever overwritten.
+   */
+  const keep = async (title: string, note: string, text: string) => {
+    const saved = await onCapture(title, note, writer)
+    if (saved !== false) return
+    // The field as it is now — the DOM's value, not this render's copy.
+    if (field.current && field.current.value === '') {
+      setValue(text)
       requestAnimationFrame(fit)
+    } else {
+      setUnsaved((all) => [
+        ...all,
+        { id: crypto.randomUUID(), title, note, text },
+      ])
     }
+  }
+  const [unsaved, setUnsaved] = useState<
+    { id: string; title: string; note: string; text: string }[]
+  >([])
+  const retry = (draft: (typeof unsaved)[number]) => {
+    setUnsaved((all) => all.filter((d) => d.id !== draft.id))
+    void keep(draft.title, draft.note, draft.text)
   }
 
   const typed = value.trim().length > 0
   const multiline = value.includes('\n')
 
   return (
-    <div className="flex min-h-16 items-start gap-4 border border-quaternary bg-primary px-5 py-4 transition-colors focus-within:border-foreground">
-      <span
-        aria-hidden
-        className="mt-px flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primary"
-        style={{ background: identityColorVar(writer.id ?? writer.name) }}
-      >
-        {identityAbbr(writer.name)}
-      </span>
-      <textarea
-        ref={field}
-        rows={1}
-        value={value}
-        placeholder={t(prompt)}
-        aria-label={t('ideas.capture.label')}
-        onChange={(event) => {
-          setValue(event.target.value)
-          fit()
-        }}
-        onKeyDown={(event) => {
-          if (
-            event.key === 'Enter' &&
-            !event.shiftKey &&
-            // Safari ends a composition before the Return that confirms a
-            // candidate, so that Return reports keyCode 229 instead.
-            !event.nativeEvent.isComposing &&
-            event.keyCode !== 229
-          ) {
-            event.preventDefault()
-            void submit()
-          }
-        }}
-        className="min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-xl/8 tracking-[-0.01em] text-foreground outline-none placeholder:text-tertiary-foreground"
-      />
-      {/* How to keep it, quietly at the right end — brighter once there is
-          something to keep; with a line already broken, how to break one. */}
-      <span
-        className={cn(
-          'flex shrink-0 items-center gap-1 text-xs whitespace-nowrap [&_svg]:size-3.5',
-          typed ? 'text-secondary-foreground' : 'text-tertiary-foreground',
-          multiline ? 'self-end pb-1' : 'self-center',
-        )}
-      >
-        <Trans
-          i18nKey={
-            multiline ? 'ideas.capture.hintMultiline' : 'ideas.capture.hint'
-          }
-          components={{ key: <ArrowElbowDownLeftIcon aria-hidden /> }}
+    <div className="flex flex-col gap-1">
+      <div className="flex min-h-16 items-start gap-4 border border-quaternary bg-primary px-5 py-4 transition-colors focus-within:border-foreground">
+        <span
+          aria-hidden
+          className="mt-px flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primary"
+          style={{ background: identityColorVar(writer.id ?? writer.name) }}
+        >
+          {identityAbbr(writer.name)}
+        </span>
+        <textarea
+          ref={field}
+          rows={1}
+          value={value}
+          placeholder={t(prompt)}
+          aria-label={t('ideas.capture.label')}
+          onChange={(event) => {
+            setValue(event.target.value)
+            fit()
+          }}
+          onKeyDown={(event) => {
+            if (
+              event.key === 'Enter' &&
+              !event.shiftKey &&
+              // Safari ends a composition before the Return that confirms a
+              // candidate, so that Return reports keyCode 229 instead.
+              !event.nativeEvent.isComposing &&
+              event.keyCode !== 229
+            ) {
+              event.preventDefault()
+              void submit()
+            }
+          }}
+          className="min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-xl/8 tracking-[-0.01em] text-foreground outline-none placeholder:text-tertiary-foreground"
         />
-      </span>
+        {/* How to keep it, quietly at the right end — brighter once there is
+          something to keep; with a line already broken, how to break one. */}
+        <span
+          className={cn(
+            'flex shrink-0 items-center gap-1 text-xs whitespace-nowrap [&_svg]:size-3.5',
+            typed ? 'text-secondary-foreground' : 'text-tertiary-foreground',
+            multiline ? 'self-end pb-1' : 'self-center',
+          )}
+        >
+          <Trans
+            i18nKey={
+              multiline ? 'ideas.capture.hintMultiline' : 'ideas.capture.hint'
+            }
+            components={{ key: <ArrowElbowDownLeftIcon aria-hidden /> }}
+          />
+        </span>
+      </div>
+      {unsaved.map((draft) => (
+        <p
+          key={draft.id}
+          role="status"
+          className="flex items-center gap-2 px-1 text-xs text-destructive"
+        >
+          <span className="min-w-0 truncate">
+            {t('ideas.capture.unsaved', { title: draft.title })}
+          </span>
+          <button
+            type="button"
+            onClick={() => retry(draft)}
+            className="shrink-0 cursor-pointer font-medium text-foreground underline underline-offset-3"
+          >
+            {t('ideas.capture.retry')}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setUnsaved((all) => all.filter((d) => d.id !== draft.id))
+            }
+            className="shrink-0 cursor-pointer text-secondary-foreground underline underline-offset-3"
+          >
+            {t('ideas.capture.dismiss')}
+          </button>
+        </p>
+      ))}
     </div>
   )
 }

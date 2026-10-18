@@ -224,6 +224,29 @@ describe('capturing', () => {
     expect(toasts.error).toHaveBeenCalled()
   })
 
+  it('keeps both when two captures in a row fail', async () => {
+    const pending: Array<(reason: Error) => void> = []
+    api.captureIdea.mockImplementation(
+      () => new Promise((_, reject) => pending.push(reject)),
+    )
+    await renderSurface()
+    await screen.findByText('Idea a')
+    const field = screen.getByRole('textbox', { name: 'Write down an idea' })
+    await userEvent.type(field, 'First idea{Enter}')
+    await userEvent.type(field, 'Second idea{Enter}')
+    await waitFor(() => expect(pending).toHaveLength(2))
+
+    pending[0](new Error('offline'))
+    await waitFor(() => expect(field).toHaveValue('First idea'))
+    pending[1](new Error('offline'))
+
+    // The field already holds the first, so the second waits under it.
+    expect(
+      await screen.findByText('Not kept: “Second idea”'),
+    ).toBeInTheDocument()
+    expect(field).toHaveValue('First idea')
+  })
+
   it('leaves another pile alone', async () => {
     api.captureIdea.mockReturnValue(new Promise(() => {}))
     await renderSurface({ pile: 'yes' })

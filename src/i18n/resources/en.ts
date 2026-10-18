@@ -633,6 +633,10 @@ export const en = {
         keepsAsking: 'A question your audience keeps asking…',
       },
       hint: 'Return <key/> to keep it',
+      /** An idea whose save failed, kept under the field. */
+      unsaved: 'Not kept: “{{title}}”',
+      retry: 'Try again',
+      dismiss: 'Dismiss',
       hintMultiline: 'Shift <key/> for a new line · Return <key/> to keep it',
     },
     /** The verdicts as the piles they name. */
@@ -802,6 +806,7 @@ export const en = {
     },
     list: {
       label: 'Ideas',
+      moreFailed: 'Couldn’t load more ideas.',
       band: {
         /** Grouped by author: the ideas no member wrote. */
         noAuthor: 'From documents',
