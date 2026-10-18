@@ -165,12 +165,12 @@ describe('a row', () => {
       asset({ idea_counts: { waiting: 2, yes: 1, later: 0, no: 1 } }),
     ])
     const pill = await screen.findByRole('group', {
-      name: '2 undecided · 1 yes · 1 no',
+      name: '2 on the desk · 1 making · 1 set aside',
     })
     expect(
-      within(pill).getByRole('link', { name: '2 undecided' }),
+      within(pill).getByRole('link', { name: '2 on the desk' }),
     ).toHaveAttribute('href', '/assets/a1?verdict=waiting')
-    // No "not now" segment: a verdict with no ideas is left out.
+    // No "in the drawer" segment: a verdict with no ideas is left out.
     expect(within(pill).getAllByRole('link')).toHaveLength(3)
   })
 
@@ -450,11 +450,11 @@ describe('the other ideas', () => {
           .filter((name) => !name?.startsWith('Fit')),
       )
     expect(marks).toEqual([
-      ['Undecided'],
-      ['Yes'],
-      ['Not now'],
-      ['Undecided'],
-      ['No'],
+      ['On the desk'],
+      ['Making'],
+      ['In the drawer'],
+      ['On the desk'],
+      ['Set aside'],
     ])
   })
 
@@ -632,7 +632,7 @@ describe('in Spanish', () => {
     ])
     expect(await screen.findByText('y 2 más')).toBeInTheDocument()
     expect(
-      screen.getByRole('group', { name: '3 sin decidir · 1 ahora no' }),
+      screen.getByRole('group', { name: '3 sobre la mesa · 1 en el cajón' }),
     ).toBeInTheDocument()
     expect(
       screen.getByText('No hemos podido leer este archivo.'),

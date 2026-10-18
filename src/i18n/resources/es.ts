@@ -357,17 +357,17 @@ export const es: Translation = {
     ideas: {
       /** The verdict piles above the asset page's ideas (CON-370). */
       pile: {
-        waiting: 'Sin decidir',
-        yes: 'Sí',
-        later: 'Ahora no',
-        no: 'No',
+        waiting: 'Sobre la mesa',
+        yes: 'En marcha',
+        later: 'En el cajón',
+        no: 'Apartadas',
       },
       count_one: '{{count}} idea de publicación',
       count_other: '{{count}} ideas de publicación',
       waiting:
-        'Las ideas nuevas esperan en tu bandeja de Ideas un sí, más tarde o no.',
+        'Las ideas nuevas llegan a la mesa de Ideas, para ponerlas en marcha, guardarlas en el cajón o apartarlas.',
       waitingFor:
-        'Las ideas nuevas esperan en las Ideas de {{campaign}} un sí, más tarde o no.',
+        'Las ideas nuevas llegan a la mesa de las Ideas de {{campaign}}, para ponerlas en marcha, guardarlas en el cajón o apartarlas.',
       heading: 'Ideas',
       viewAll: 'Ver todas en Ideas',
       open: 'Abrir en Ideas',
@@ -507,15 +507,15 @@ export const es: Translation = {
         'Mayús <key/> para otra línea · Intro <key/> para guardarla',
     },
     verdict: {
-      yes: 'Sí',
-      later: 'Ahora no',
-      no: 'No',
+      yes: 'En marcha',
+      later: 'En el cajón',
+      no: 'Apartada',
     },
     action: {
-      yes: 'Sí',
-      later: 'Ahora no',
-      no: 'No',
-      undecide: 'Devolver a las pendientes de decidir',
+      yes: 'En marcha',
+      later: 'En el cajón',
+      no: 'Apartar',
+      undecide: 'Devolverla a la mesa',
       close: 'Cerrar esta idea',
       open: 'Abrir esta idea',
       delete: 'ELIMINAR IDEA',
@@ -526,13 +526,13 @@ export const es: Translation = {
       quarter: 'Recuérdamelo en tres meses',
     },
     pile: {
-      waiting: 'Sin decidir',
+      waiting: 'Sobre la mesa',
     },
     pileEmpty: {
-      waiting: 'Ya se ha respondido a todo lo que había aquí.',
-      yes: 'Todavía no se ha aceptado ninguna.',
-      later: 'No hay ninguna aplazada.',
-      no: 'No se ha descartado ninguna.',
+      waiting: 'La mesa está despejada.',
+      yes: 'Todavía no hay nada en marcha.',
+      later: 'No hay nada en el cajón.',
+      no: 'No se ha apartado nada.',
     },
     backFrom: 'ha vuelto',
     field: {
@@ -542,17 +542,17 @@ export const es: Translation = {
       noCampaign: 'Sin campaña',
     },
     record: {
-      captured: 'Anotada el {{at}}',
-      decided: '{{verdict}} el {{at}}',
-      returns: 'Vuelve el {{at}}',
+      yes: 'En marcha desde el {{at}}',
+      no: 'Apartada el {{at}}',
+      returns: 'Vuelve a la mesa el {{at}}',
     },
     empty: {
       title: 'Todavía no has anotado nada.',
       subtitle:
         'Cualquier cosa que valga la pena crear, por poco formada que esté. Decidir sobre ella es otro trabajo y puede esperar.',
     },
-    undecidedCount_one: '{{count}} idea sin decidir',
-    undecidedCount_other: '{{count}} ideas sin decidir',
+    undecidedCount_one: '{{count}} idea sobre la mesa',
+    undecidedCount_other: '{{count}} ideas sobre la mesa',
     card: {
       written: 'Escrita',
       writtenBy: 'Escrita por {{name}}',
@@ -3403,10 +3403,10 @@ export const es: Translation = {
       fitScore: 'Encaje {{score}} de 100',
       fitUnscored: 'Sin puntuar',
       ideaVerdict: {
-        waiting: 'Sin decidir',
-        yes: 'Sí',
-        later: 'Ahora no',
-        no: 'No',
+        waiting: 'Sobre la mesa',
+        yes: 'En marcha',
+        later: 'En el cajón',
+        no: 'Apartada',
       },
       band: {
         created: {
@@ -3422,14 +3422,14 @@ export const es: Translation = {
         partialAudio: 'Parcial: no se transcribió todo',
       },
       verdict: {
-        waiting_one: '{{count}} sin decidir',
-        waiting_other: '{{count}} sin decidir',
-        yes_one: '{{count}} sí',
-        yes_other: '{{count}} sí',
-        later_one: '{{count}} ahora no',
-        later_other: '{{count}} ahora no',
-        no_one: '{{count}} no',
-        no_other: '{{count}} no',
+        waiting_one: '{{count}} sobre la mesa',
+        waiting_other: '{{count}} sobre la mesa',
+        yes_one: '{{count}} en marcha',
+        yes_other: '{{count}} en marcha',
+        later_one: '{{count}} en el cajón',
+        later_other: '{{count}} en el cajón',
+        no_one: '{{count}} apartada',
+        no_other: '{{count}} apartadas',
       },
       kind: {
         pdf: 'PDF',
@@ -3468,7 +3468,7 @@ export const es: Translation = {
         campaign: '',
         tag: '',
         updated: 'últimos 7 días…',
-        ideas: 'sin decidir, sí…',
+        ideas: 'sobre la mesa, en marcha…',
         text: 'dentro de los documentos',
       },
       op: {
@@ -3489,10 +3489,10 @@ export const es: Translation = {
         ready: 'Listo',
       },
       ideas: {
-        undecided: 'Sin decidir',
-        yes: 'Sí',
-        later: 'Ahora no',
-        no: 'No',
+        undecided: 'Sobre la mesa',
+        yes: 'En marcha',
+        later: 'En el cajón',
+        no: 'Apartadas',
         none: 'Sin ideas',
         unread: 'Aún sin leer',
       },
@@ -3641,9 +3641,9 @@ export const es: Translation = {
 
     view: {
       undecided_one:
-        '<ideas>{{formatted}} idea</ideas> de {{documents}} espera un veredicto.',
+        '<ideas>{{formatted}} idea</ideas> de {{documents}} está sobre la mesa.',
       undecided_other:
-        '<ideas>{{formatted}} ideas</ideas> de {{documents}} esperan un veredicto.',
+        '<ideas>{{formatted}} ideas</ideas> de {{documents}} están sobre la mesa.',
       documents_one: '{{formatted}} documento',
       documents_other: '{{formatted}} documentos',
       groupBy: 'Agrupar por',

@@ -130,24 +130,24 @@ describe('InsightsPanel', () => {
         ],
       }),
     )
-    const no = screen.getByRole('button', { name: '1 No' })
+    const no = screen.getByRole('button', { name: '1 Set aside' })
     expect(
-      screen.getByRole('button', { name: '2 Undecided' }),
+      screen.getByRole('button', { name: '2 On the desk' }),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: /Not now/ }),
+      screen.queryByRole('button', { name: /In the drawer/ }),
     ).not.toBeInTheDocument()
     expect(screen.queryByText('Idea 4')).not.toBeInTheDocument()
 
     fireEvent.click(no)
     expect(await screen.findByText('Idea 4')).toBeInTheDocument()
     expect(screen.queryByText('Idea 1')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '1 No' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: '1 Set aside' })).toHaveAttribute(
       'aria-pressed',
       'true',
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '1 No' }))
+    fireEvent.click(screen.getByRole('button', { name: '1 Set aside' }))
     expect(await screen.findByText('Idea 1')).toBeInTheDocument()
     expect(screen.queryByText('Idea 4')).not.toBeInTheDocument()
   })
@@ -301,9 +301,9 @@ describe('InsightsPanel', () => {
       screen.getByRole('img', { name: 'Fit 88 of 100' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Not scored' })).toBeInTheDocument()
-    // Undecided has a mark now, not only the answered.
-    expect(screen.getAllByRole('img', { name: 'Undecided' })).toHaveLength(2)
-    expect(screen.getByRole('img', { name: 'Yes' })).toBeInTheDocument()
+    // On the desk has a mark now, not only the answered.
+    expect(screen.getAllByRole('img', { name: 'On the desk' })).toHaveLength(2)
+    expect(screen.getByRole('img', { name: 'Making' })).toBeInTheDocument()
   })
 
   it('explains the score, heaviest criterion first, in an opened idea', async () => {
@@ -349,17 +349,17 @@ describe('InsightsPanel', () => {
     expect(screen.getByText('Launch')).toBeInTheDocument()
   })
 
-  it('answers an idea in place, and asks when for not now', async () => {
+  it('answers an idea in place, and asks when for the drawer', async () => {
     verdicts.fn.mockReset().mockResolvedValue(undefined)
     await renderPanel('ready', lens({ ideas: [idea(1), idea(2)] }))
     fireEvent.click(screen.getByText('Idea 1'))
     const group = screen.getByRole('group', { name: 'Answer this idea' })
 
-    await userEvent.click(within(group).getByRole('button', { name: /Yes/ }))
+    await userEvent.click(within(group).getByRole('button', { name: /Making/ }))
     expect(verdicts.fn).toHaveBeenCalledWith('i1', 'yes', null)
 
     await userEvent.click(
-      within(group).getByRole('button', { name: /Not now/ }),
+      within(group).getByRole('button', { name: /In the drawer/ }),
     )
     await userEvent.click(
       await screen.findByRole('menuitem', { name: 'Ask me in a week' }),
@@ -383,15 +383,17 @@ describe('InsightsPanel', () => {
     fireEvent.click(screen.getByText('Idea 1'))
     const group = screen.getByRole('group', { name: 'Answer this idea' })
 
-    await userEvent.click(within(group).getByRole('button', { name: /Yes/ }))
-    expect(within(group).getByRole('button', { name: /^No$/ })).toBeDisabled()
-    fireEvent.click(within(group).getByRole('button', { name: /^No$/ }))
+    await userEvent.click(within(group).getByRole('button', { name: /Making/ }))
+    expect(
+      within(group).getByRole('button', { name: /^Set aside$/ }),
+    ).toBeDisabled()
+    fireEvent.click(within(group).getByRole('button', { name: /^Set aside$/ }))
     expect(verdicts.fn).toHaveBeenCalledTimes(1)
 
     settle()
     await waitFor(() =>
       expect(
-        within(group).getByRole('button', { name: /^No$/ }),
+        within(group).getByRole('button', { name: /^Set aside$/ }),
       ).not.toBeDisabled(),
     )
   })
@@ -408,10 +410,10 @@ describe('InsightsPanel', () => {
     )
     fireEvent.click(screen.getByText('Idea 1'))
     expect(
-      screen.getByRole('button', { name: /Yes/, pressed: true }),
+      screen.getByRole('button', { name: /Making/, pressed: true }),
     ).toBeInTheDocument()
     await userEvent.click(
-      screen.getByRole('button', { name: 'Put this back with the undecided' }),
+      screen.getByRole('button', { name: 'Put it back on the desk' }),
     )
     expect(verdicts.fn).toHaveBeenCalledWith('i1', null, null)
   })
