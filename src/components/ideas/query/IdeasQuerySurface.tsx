@@ -938,7 +938,7 @@ function Band({
           aria-label={t(folded ? 'content.list.unfold' : 'content.list.fold', {
             group: label,
           })}
-          className="flex h-9.5 w-full cursor-pointer items-center gap-1.5 px-5 text-left text-xs outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
+          className="flex h-9.5 w-full cursor-pointer items-center gap-1.5 px-5 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
         >
           <HugeiconsIcon
             icon={ArrowDown01Icon}
@@ -962,9 +962,7 @@ function Band({
               )}
             />
           )}
-          <span className="truncate font-semibold text-foreground">
-            {label}
-          </span>
+          <span className="truncate font-medium text-foreground">{label}</span>
           <span className="tabular-nums text-secondary-foreground">
             {count}
           </span>

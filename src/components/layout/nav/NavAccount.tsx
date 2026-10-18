@@ -137,7 +137,7 @@ function AccountMenu({
     >
       {destinations.length > 0 && (
         <>
-          <DropdownMenuLabel className="px-2 py-1 font-mono text-xs font-medium uppercase text-tertiary-foreground">
+          <DropdownMenuLabel className="px-2 py-1 font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
             {t('nav.workspaceScope')}
           </DropdownMenuLabel>
           {destinations.map((destination) => (

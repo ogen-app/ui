@@ -338,7 +338,7 @@ function CampaignRows({ ids }: { ids: string[] }) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="font-mono text-xs/4 font-medium uppercase text-tertiary-foreground">
+      <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
         {title}
       </h3>
       {children}

@@ -149,7 +149,7 @@ function AssetListRowComponent({
           <div className="flex min-w-0 flex-col gap-0.5">
             <h3
               className={cn(
-                'text-base/6 font-semibold break-words',
+                'text-base/6 font-medium break-words',
                 (state === 'reading' || state === 'failed') &&
                   'text-secondary-foreground',
               )}

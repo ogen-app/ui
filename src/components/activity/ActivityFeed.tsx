@@ -352,7 +352,7 @@ function SeenBeforeDivider() {
           destructive action, and the `aria-label` should read as a sentence. */}
       <span
         aria-hidden
-        className="shrink-0 font-mono text-xs uppercase text-tertiary-foreground"
+        className="shrink-0 font-grotesk text-xs uppercase text-tertiary-foreground"
       >
         {t('activity.seenBefore')}
       </span>

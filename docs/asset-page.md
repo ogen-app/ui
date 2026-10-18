@@ -52,7 +52,7 @@ image has Source only.
   row the card's: score track, title, verdict mark in the pill's colours, the
   note in two lines, a pale inset rule between rows and no box. A row opens in
   place, its title semibold, to the angle, the rationale, **Why it scores N**
-  (CON-385's `fit_breakdown`: criteria heaviest first, each a Geist Mono
+  (CON-385's `fit_breakdown`: criteria heaviest first, each a Plex Mono
   rating in a disc and five segments in the fit track's colour, the reason
   with the phase or campaign as a chip, a cap said above them), **Reference**
   (the page span, then the source chips — pages merged, `pp. 55–57,

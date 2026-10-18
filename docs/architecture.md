@@ -235,7 +235,7 @@ variables and `config/zIndex.ts`. Concrete tables: `postsTable` and `docsTable`
 ## Styling — Tailwind CSS v4
 
 Styling is **CSS-first**: there is no `tailwind.config.js`. `src/index.css` is
-the single source of truth — it declares the fonts (Geist + Geist Mono, both
+the single source of truth — it declares the fonts (IBM Plex Sans + IBM Plex Mono, both
 vendored under `src/assets/fonts`), a `@theme inline` block with a blue-cast
 grey OKLCH ramp (`--gray-*`), a teal accent, and semantic tokens
 (`--color-primary…senary`, sidebar, table, chart), radii, and shadows. `:root`

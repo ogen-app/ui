@@ -61,7 +61,7 @@ const tabsTriggerVariants = cva(
           'rounded-t-md font-sans tracking-[.03em] border-b-3 pt-[3px] border-transparent px-2 lg:px-4 h-full ' +
           'data-[state=active]:border-primary-foreground data-[state=active]:text-foreground',
         switcher:
-          'rounded-none font-mono text-xs px-4 h-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ',
+          'rounded-none text-xs px-4 h-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ',
         // Each segment mirrors the default Button: 32px tall, same radius and
         // type; the active one takes the button's white-on-black surface.
         segmented:
