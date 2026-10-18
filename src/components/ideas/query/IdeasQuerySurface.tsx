@@ -19,7 +19,6 @@ import { TrashIcon } from '@phosphor-icons/react'
 import { KIND_ICON } from '@/components/content/AssetKindMark'
 import { KIND_TONE } from '@/components/content/kindTone'
 import { NoMatches } from '@/components/smartFilter/NoMatches'
-import { SmartFilterBar } from '@/components/smartFilter/SmartFilterBar'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { Button } from '@/components/ui/button'
@@ -78,6 +77,7 @@ import {
   IdeaViewsMenu,
   SaveGroupDialog,
 } from './IdeaViewsMenu'
+import { IdeaSentence } from './IdeaSentence'
 import { useIdeaVocabulary, type IdeaVocabulary } from './useIdeaVocabulary'
 
 /** What the delete dialog is asking about. */
@@ -375,60 +375,70 @@ export function IdeasQuerySurface({
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
-          {groupsOn && active && (
-            <GroupLine
-              active={active}
-              edited={edited}
-              busy={viewWriter.update.isPending}
-              onDelete={() => setRemoving(active)}
-              onSaveChanges={saveChanges}
-              onSaveAs={() => setSaving({ mode: 'new' })}
-              onRevert={() => openView(active)}
-            />
+          {/* Which view this is, then what it shows, as one sentence. */}
+          <IdeaSentence
+            filter={filter}
+            onChange={onFilterChange}
+            vocabulary={vocabulary}
+            total={total}
+            totalUnfiltered={totalUnfiltered}
+            countQuery={(f) => ideaCountQuery(contextFor(f))}
+            clearable={!active}
+            leading={
+              groupsOn && (
+                <IdeaViewsMenu
+                  views={views.data ?? []}
+                  active={active}
+                  edited={edited}
+                  allCount={allCount}
+                  canSave={narrowed}
+                  onOpen={openView}
+                  onSaveCurrent={() => setSaving({ mode: 'new' })}
+                  onRename={(view) => setSaving({ mode: 'rename', view })}
+                  onShare={(view, shared) =>
+                    viewWriter.update.mutate({ id: view.id, shared })
+                  }
+                  onDuplicate={(view) =>
+                    viewWriter.create.mutate({
+                      name: t('ideas.views.copyName', {
+                        name: view.name,
+                      }).slice(0, SAVED_VIEW_NAME_MAX),
+                      query: view.query,
+                      shared: false,
+                    })
+                  }
+                  onDelete={setRemoving}
+                />
+              )
+            }
+            trailing={
+              groupsOn && active
+                ? edited && (
+                    <GroupActions
+                      canEdit={active.canEdit}
+                      busy={viewWriter.update.isPending}
+                      onSaveChanges={saveChanges}
+                      onSaveAs={() => setSaving({ mode: 'new' })}
+                      onRevert={() => openView(active)}
+                    />
+                  )
+                : saveAsGroup
+            }
+          />
+          {groupsOn && active && !active.valid && (
+            <p className="mt-1 flex items-center gap-2 pl-5 text-sm text-destructive">
+              {t('ideas.views.invalid')}
+              {active.canEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setRemoving(active)}
+                >
+                  {t('ideas.views.remove.confirm')}
+                </Button>
+              )}
+            </p>
           )}
-          {/* The filter and, on its line, which view of the list this is. */}
-          <div className="flex items-stretch gap-2">
-            <div className="min-w-0 flex-1">
-              <SmartFilterBar
-                filter={filter}
-                onChange={onFilterChange}
-                model={IDEA_FILTER_MODEL}
-                vocabulary={vocabulary}
-                total={total}
-                totalUnfiltered={totalUnfiltered}
-                countQuery={(f) => ideaCountQuery(contextFor(f))}
-                trailing={saveAsGroup}
-                // The rows' 20px inset, so the funnel sits over their boxes
-                // and the words over the bands' names.
-                inset="pl-5"
-              />
-            </div>
-            {groupsOn && (
-              <IdeaViewsMenu
-                views={views.data ?? []}
-                active={active}
-                edited={edited}
-                allCount={allCount}
-                canSave={narrowed}
-                onOpen={openView}
-                onSaveCurrent={() => setSaving({ mode: 'new' })}
-                onRename={(view) => setSaving({ mode: 'rename', view })}
-                onShare={(view, shared) =>
-                  viewWriter.update.mutate({ id: view.id, shared })
-                }
-                onDuplicate={(view) =>
-                  viewWriter.create.mutate({
-                    name: t('ideas.views.copyName', {
-                      name: view.name,
-                    }).slice(0, SAVED_VIEW_NAME_MAX),
-                    query: view.query,
-                    shared: false,
-                  })
-                }
-                onDelete={setRemoving}
-              />
-            )}
-          </div>
 
           <ViewRow
             selectAll={selectAll}
@@ -1022,80 +1032,48 @@ function SelectionBar({
 }
 
 /**
- * The open group, named above the bar — "Beekeeping, last 30 days · smart
- * group · only you". Changed, the group is marked edited and offers Save changes (when
- * the viewer may), Save as new… and Revert; nothing is stored until one is
- * chosen. A group whose filter no longer works says so here.
+ * An edited group's actions, at the end of the sentence (CON-391): Save
+ * changes for whoever may change it, Save as new… and Revert. Nothing is
+ * stored until one is chosen.
  */
-function GroupLine({
-  active,
-  edited,
+function GroupActions({
+  canEdit,
   busy,
-  onDelete,
   onSaveChanges,
   onSaveAs,
   onRevert,
 }: {
-  active: SavedView
-  edited: boolean
+  canEdit: boolean
   busy: boolean
-  onDelete: () => void
   onSaveChanges: () => void
   onSaveAs: () => void
   onRevert: () => void
 }) {
   const { t } = useTranslation()
+  const action =
+    'cursor-pointer text-[13px] font-medium whitespace-nowrap text-foreground outline-none hover:underline focus-visible:underline disabled:opacity-50'
   return (
-    <div className="mb-3 flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1">
-      {active && (
-        <p className="min-w-0 text-sm text-secondary-foreground">
-          <span className="font-medium text-foreground">{active.name}</span>
-          {' · '}
-          {t('ideas.views.smartGroup')}
-          {' · '}
-          {active.shared
-            ? t('ideas.views.sharedMeta')
-            : t('ideas.views.onlyYou')}
-          {edited && (
-            <span className="ml-2 text-accent">{t('ideas.views.edited')}</span>
-          )}
-        </p>
+    <span className="inline-flex items-center gap-3.5">
+      {canEdit && (
+        <button
+          type="button"
+          className={action}
+          onClick={onSaveChanges}
+          disabled={busy}
+        >
+          {t('ideas.views.saveChanges')}
+        </button>
       )}
-      {active && edited && (
-        <span className="ml-auto flex items-center gap-1">
-          {active.canEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSaveChanges}
-              disabled={busy}
-            >
-              {t('ideas.views.saveChanges')}
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={onSaveAs}>
-            {t('ideas.views.saveAsNew')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-secondary-foreground"
-            onClick={onRevert}
-          >
-            {t('ideas.views.revert')}
-          </Button>
-        </span>
-      )}
-      {active && !active.valid && (
-        <p className="flex items-center gap-2 text-sm text-destructive">
-          {t('ideas.views.invalid')}
-          {active.canEdit && (
-            <Button variant="ghost" size="sm" onClick={onDelete}>
-              {t('ideas.views.remove.confirm')}
-            </Button>
-          )}
-        </p>
-      )}
-    </div>
+      <button type="button" className={action} onClick={onSaveAs}>
+        {t('ideas.views.saveAsNew')}
+      </button>
+      <button
+        type="button"
+        className={cn(action, 'font-normal text-secondary-foreground')}
+        onClick={onRevert}
+      >
+        {t('ideas.views.revert')}
+      </button>
+    </span>
   )
 }

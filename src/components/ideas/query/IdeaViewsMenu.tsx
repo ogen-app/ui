@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { CombineIcon } from '@hugeicons/core-free-icons'
+import { FilterMailSquareIcon } from '@hugeicons/core-free-icons'
 import {
   CaretDownIcon,
   CheckIcon,
@@ -29,7 +29,8 @@ import { formatNumber } from '@/lib/intl'
 import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
 
 /**
- * The smart groups (CON-388 §5) as one dropdown on the filter bar's line,
+ * The smart groups (CON-388 §5) as one dropdown opening the filter sentence's
+ * line (CON-391),
  * naming what is open — "All ideas 30", or the group and whether it has been
  * edited. **A group is a saved filter, not a folder**: it holds the filters,
  * the grouping and the sort, never a list of ideas, so an idea is in it the
@@ -85,15 +86,24 @@ export function IdeaViewsMenu({
         <button
           type="button"
           aria-label={t('ideas.views.trigger', { name: label })}
-          className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 border border-input bg-primary px-3.5 text-sm font-medium outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent data-[state=open]:bg-secondary"
+          // A ghost button opening the sentence's line (CON-391). Its 17px
+          // inset puts the icon's centre at 26px — over the select-all box
+          // in the rows' 20px inset, and so over every row's.
+          className="flex h-[34px] shrink-0 cursor-pointer items-center gap-2 pr-2.5 pl-[17px] text-[15px] font-medium outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent data-[state=open]:bg-secondary"
         >
           <HugeiconsIcon
-            icon={CombineIcon}
+            icon={FilterMailSquareIcon}
             size={18}
             strokeWidth={1.5}
             aria-hidden
           />
           <span className="max-w-56 truncate">{label}</span>
+          {active?.shared && (
+            <UsersIcon
+              className="size-3.5 text-tertiary-foreground"
+              aria-label={t('ideas.views.shared')}
+            />
+          )}
           {figure !== null && (
             <span className="text-accent tabular-nums">{figure}</span>
           )}
@@ -105,7 +115,7 @@ export function IdeaViewsMenu({
           <CaretDownIcon className="size-3.5 text-secondary-foreground" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={6} className="w-80 p-1.5">
+      <DropdownMenuContent align="start" sideOffset={6} className="w-80 p-1.5">
         <DropdownMenuItem
           onSelect={() => onOpen(null)}
           className={cn('gap-2.5', !active && 'font-medium')}

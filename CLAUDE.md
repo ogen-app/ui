@@ -147,8 +147,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   well, because a **smart group** (`/api/saved-views`, surface `ideas`) is
   that address saved, minus the pile. Never count or pile ideas on the
   client: the rail's figure is a `pile=waiting&limit=1` read. Both lists'
-  filter bars are one `components/smartFilter/SmartFilterBar` over a
-  per-list model and vocabulary (`lib/smartFilter`). Bulk delete is
+  filters are one per-list model and vocabulary (`lib/smartFilter`), drawn
+  two ways: Assets as the token bar (`components/smartFilter/SmartFilterBar`),
+  Ideas as **a sentence you edit** (`IdeaSentence`, CON-391) — one catalogue
+  sentence per field and operator, clauses in a fixed order, joined by
+  `formatListParts`. Same fields, same address, same counts; never assemble
+  a clause from fragments. Bulk delete is
   `POST /api/ideas/bulk-delete` in batches of 500, and select-all is
   `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
   `idea_read_only`); only its campaign may change.
