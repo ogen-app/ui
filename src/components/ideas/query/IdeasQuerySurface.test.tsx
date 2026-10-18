@@ -455,6 +455,27 @@ describe('the filter as a sentence', () => {
     expect(onSearchChange).toHaveBeenLastCalledWith({ fit_not: 'high' })
   })
 
+  it('words "before" a preset as its own phrase, and reopens it on the presets', async () => {
+    await renderSurface({ created_before: '7d' })
+    await screen.findByText('Idea a')
+    expect(sentence()).toHaveTextContent(
+      'Showing ideas added more than 7 days ago',
+    )
+    expect(sentence()).not.toHaveTextContent(/Invalid Date/)
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Change: added more than 7 days ago',
+      }),
+    )
+    const panel = screen.getByRole('dialog', { name: 'Ideas added…' })
+    // The preset list, not the custom form holding "7d" as a day.
+    expect(
+      within(panel).getByRole('radio', { name: /Last 7 days/, checked: true }),
+    ).toBeInTheDocument()
+    expect(within(panel).queryByText('Before')).toBeNull()
+  })
+
   it('removes a clause with its ×', async () => {
     await renderSurface({ fit: 'high', kind: 'pdf' })
     await screen.findByText('Idea a')

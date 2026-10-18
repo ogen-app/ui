@@ -749,6 +749,7 @@ export const es: Translation = {
         created: 'añadidas <v>{{values}}</v>',
         created_range: 'añadidas <v>entre el {{from}} y el {{to}}</v>',
         created_not: 'añadidas <v>antes del {{values}}</v>',
+        created_not_preset: 'añadidas <v>{{values}}</v>',
         text: 'que mencionan <v>«{{values}}»</v>',
       },
       origin: {
@@ -777,6 +778,12 @@ export const es: Translation = {
         week: 'en los últimos 7 días',
         days30: 'en los últimos 30 días',
         month: 'este mes',
+      },
+      createdBefore: {
+        today: 'antes de hoy',
+        week: 'hace más de 7 días',
+        days30: 'hace más de 30 días',
+        month: 'antes de este mes',
       },
       noCampaign: 'ninguna campaña',
       noDocument: 'ningún documento',
