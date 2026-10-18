@@ -374,7 +374,9 @@ export function IdeasQuerySurface({
           </p>
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col">
+        // 32px under the capture field (16 here, on the page's 16): writing
+        // an idea and narrowing the list are different acts.
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
           {/* Which view this is, then what it shows, as one sentence. */}
           <IdeaSentence
             filter={filter}
@@ -618,7 +620,9 @@ function ViewRow({
   const { t, i18n } = useTranslation()
   const groupings = IDEA_GROUPS.filter((g) => !(scoped && g === 'campaign'))
   return (
-    <div className="mt-2 flex flex-wrap items-end gap-x-5 border-b border-quaternary">
+    // 24px under the sentence, so the filter reads as the list's heading
+    // rather than part of its tabs.
+    <div className="mt-6 flex flex-wrap items-end gap-x-5 border-b border-quaternary">
       <div className="flex items-center gap-1">
         {/* In the rows' 20px inset, with the same 20px after it that the
             rows leave before their score: the tabs start where the scores do. */}
