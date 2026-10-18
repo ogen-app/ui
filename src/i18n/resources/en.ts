@@ -467,17 +467,18 @@ export const en = {
     ideas: {
       /** The verdict piles above the asset page's ideas (CON-370). */
       pile: {
-        waiting: 'Undecided',
-        yes: 'Yes',
-        later: 'Not now',
-        no: 'No',
+        waiting: 'On the desk',
+        yes: 'Making',
+        later: 'In the drawer',
+        no: 'Set aside',
       },
       /** The heading, with the count (CON-369). */
       count_one: '{{count}} post idea',
       count_other: '{{count}} post ideas',
-      waiting: 'New ideas wait in your Ideas inbox for a yes, later or no.',
+      waiting:
+        'New ideas land on the desk in Ideas, to make, put in the drawer or set aside.',
       waitingFor:
-        'New ideas wait in the Ideas for {{campaign}} for a yes, later or no.',
+        'New ideas land on the desk in the Ideas for {{campaign}}, to make, put in the drawer or set aside.',
       heading: 'Ideas',
       viewAll: 'View all in Ideas',
       open: 'Open in Ideas',
@@ -636,16 +637,16 @@ export const en = {
     },
     /** The verdicts as the piles they name. */
     verdict: {
-      yes: 'Yes',
-      later: 'Not now',
-      no: 'No',
+      yes: 'Making',
+      later: 'In the drawer',
+      no: 'Set aside',
     },
-    /** The same verdicts as the controls that give them. */
+    /** The same verdicts as the controls that give them — named as the state. */
     action: {
-      yes: 'Yes',
-      later: 'Not now',
-      no: 'No',
-      undecide: 'Put this back with the undecided',
+      yes: 'Making',
+      later: 'In the drawer',
+      no: 'Set aside',
+      undecide: 'Put it back on the desk',
       close: 'Close this idea',
       open: 'Open this idea',
       delete: 'DELETE IDEA',
@@ -657,13 +658,13 @@ export const en = {
     },
     pile: {
       /** Not "Inbox": the rail already has one of those, and it holds tasks. */
-      waiting: 'Undecided',
+      waiting: 'On the desk',
     },
     pileEmpty: {
-      waiting: 'Everything here has been answered.',
-      yes: 'Nothing has been accepted yet.',
-      later: 'Nothing is postponed.',
-      no: 'Nothing has been turned down.',
+      waiting: 'The desk is clear.',
+      yes: 'Nothing is being made yet.',
+      later: 'Nothing is in the drawer.',
+      no: 'Nothing has been set aside.',
     },
     /** Said on a postponed idea whose day has come round. */
     backFrom: 'back again',
@@ -675,9 +676,10 @@ export const en = {
     },
     /** An idea's own history, joined — never a sentence built from fragments. */
     record: {
-      captured: 'Captured on {{at}}',
-      decided: '{{verdict}} on {{at}}',
-      returns: 'Comes back on {{at}}',
+      yes: 'Making since {{at}}',
+      no: 'Set aside on {{at}}',
+      /** A drawer idea's day: when it comes back to the desk. */
+      returns: 'Back on the desk on {{at}}',
     },
     empty: {
       title: 'Nothing written down yet.',
@@ -687,12 +689,12 @@ export const en = {
     /**
      * The figure on the sidebar's Ideas row, read out rather than seen.
      *
-     * Undecided and not the backlog's size: a backlog is meant to be long, so
+     * The desk and not the backlog's size: a backlog is meant to be long, so
      * the number worth a slot in the rail is the one that goes down when
      * somebody answers a row. Same word as the pile it counts.
      */
-    undecidedCount_one: '{{count}} undecided idea',
-    undecidedCount_other: '{{count}} undecided ideas',
+    undecidedCount_one: '{{count}} idea on the desk',
+    undecidedCount_other: '{{count}} ideas on the desk',
     /** The Ideas page's card (CON-388): where each idea came from. */
     card: {
       written: 'Written',
@@ -4560,10 +4562,10 @@ export const en = {
       fitUnscored: 'Not scored',
       /** One idea's verdict on the hover card, as its mark's name. */
       ideaVerdict: {
-        waiting: 'Undecided',
-        yes: 'Yes',
-        later: 'Not now',
-        no: 'No',
+        waiting: 'On the desk',
+        yes: 'Making',
+        later: 'In the drawer',
+        no: 'Set aside',
       },
       /** The bands of the Date added grouping (CON-379). */
       band: {
@@ -4580,14 +4582,14 @@ export const en = {
         partialAudio: 'Partial — some of it wasn’t transcribed',
       },
       verdict: {
-        waiting_one: '{{count}} undecided',
-        waiting_other: '{{count}} undecided',
-        yes_one: '{{count}} yes',
-        yes_other: '{{count}} yes',
-        later_one: '{{count}} not now',
-        later_other: '{{count}} not now',
-        no_one: '{{count}} no',
-        no_other: '{{count}} no',
+        waiting_one: '{{count}} on the desk',
+        waiting_other: '{{count}} on the desk',
+        yes_one: '{{count}} making',
+        yes_other: '{{count}} making',
+        later_one: '{{count}} in the drawer',
+        later_other: '{{count}} in the drawer',
+        no_one: '{{count}} set aside',
+        no_other: '{{count}} set aside',
       },
       kind: {
         pdf: 'PDF',
@@ -4632,7 +4634,7 @@ export const en = {
         campaign: '',
         tag: '',
         updated: 'last 7 days…',
-        ideas: 'undecided, yes…',
+        ideas: 'on the desk, making…',
         text: 'inside the documents',
       },
       op: {
@@ -4653,10 +4655,10 @@ export const en = {
         ready: 'Ready',
       },
       ideas: {
-        undecided: 'Undecided',
-        yes: 'Yes',
-        later: 'Not now',
-        no: 'No',
+        undecided: 'On the desk',
+        yes: 'Making',
+        later: 'In the drawer',
+        no: 'Set aside',
         none: 'No ideas found',
         unread: 'Not read yet',
       },
@@ -4847,9 +4849,9 @@ export const en = {
        * `content.view.documents`: the filtered count, or all of them.
        */
       undecided_one:
-        '<ideas>{{formatted}} idea</ideas> in {{documents}} is waiting for a verdict.',
+        '<ideas>{{formatted}} idea</ideas> from {{documents}} is on the desk.',
       undecided_other:
-        '<ideas>{{formatted}} ideas</ideas> in {{documents}} are waiting for a verdict.',
+        '<ideas>{{formatted}} ideas</ideas> from {{documents}} are on the desk.',
       documents_one: '{{formatted}} document',
       documents_other: '{{formatted}} documents',
       groupBy: 'Group by',

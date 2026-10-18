@@ -127,7 +127,7 @@ describe('IdeasQuerySurface', () => {
     await renderSurface({ fit: 'high' })
 
     expect(await screen.findByText('Idea a')).toBeInTheDocument()
-    const tabs = screen.getByRole('button', { name: /Yes\s*4/ })
+    const tabs = screen.getByRole('button', { name: /Making\s*4/ })
     expect(tabs).toBeInTheDocument()
     expect(api.queryIdeas).toHaveBeenCalledWith(
       expect.objectContaining({ fit: 'high', pile: 'waiting', limit: '50' }),
@@ -248,7 +248,9 @@ describe('an answered idea', () => {
       page({ ideas: [page().ideas[0]], total: 1 }),
     )
     const answer = screen.getByRole('group', { name: 'Answer this idea' })
-    await userEvent.click(within(answer).getByRole('button', { name: /Yes/ }))
+    await userEvent.click(
+      within(answer).getByRole('button', { name: /Making/ }),
+    )
     await waitFor(() =>
       expect(api.setIdeaVerdict).toHaveBeenCalledWith('b', 'yes', null),
     )

@@ -32,7 +32,7 @@ describe('AssetViewBar', () => {
   it('counts the undecided ideas over the documents, the figure going to where they are answered', async () => {
     await show()
     expect(
-      screen.getByText(/in 6 documents are waiting for a verdict\./),
+      screen.getByText(/from 6 documents are on the desk\./),
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '29 ideas' })).toHaveAttribute(
       'href',
@@ -42,7 +42,7 @@ describe('AssetViewBar', () => {
 
   it('says nothing about ideas when none are waiting', async () => {
     await show({ undecided: 0 })
-    expect(screen.queryByText(/waiting for a verdict/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/on the desk/)).not.toBeInTheDocument()
     expect(screen.getByText('Group by')).toBeInTheDocument()
   })
 
@@ -121,7 +121,7 @@ describe('AssetViewBar in Spanish', () => {
     await show({ undecided: 1, documents: 1 })
     expect(screen.getByRole('link', { name: '1 idea' })).toBeInTheDocument()
     expect(
-      screen.getByText(/de 1 documento espera un veredicto\./),
+      screen.getByText(/de 1 documento está sobre la mesa\./),
     ).toBeInTheDocument()
     expect(screen.getByText('Agrupar por')).toBeInTheDocument()
     expect(screen.queryByText('Group by')).not.toBeInTheDocument()

@@ -82,23 +82,23 @@ describe('an undecided idea in Spanish', () => {
   it('names its three answers from the catalogue', () => {
     renderRow(idea())
 
-    expect(screen.getByLabelText('Sí')).toBeInTheDocument()
-    expect(screen.getByLabelText('Ahora no')).toBeInTheDocument()
-    expect(screen.getByLabelText('No')).toBeInTheDocument()
+    expect(screen.getByLabelText('En marcha')).toBeInTheDocument()
+    expect(screen.getByLabelText('En el cajón')).toBeInTheDocument()
+    expect(screen.getByLabelText('Apartar')).toBeInTheDocument()
 
     // The words that used to be literals in the component. Their absence is
-    // half the assertion: a hard-coded "Not now" would satisfy every positive
+    // half the assertion: a hard-coded "In the drawer" would satisfy every positive
     // check above while proving nothing at all.
-    expect(screen.queryByLabelText('Not now')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Yes')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('In the drawer')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Making')).not.toBeInTheDocument()
   })
 
   it('offers the horizons rather than picking one, and dates the answer from them', async () => {
     const onDecide = vi.fn()
     renderRow(idea(), { onDecide })
 
-    await userEvent.click(screen.getByLabelText('Ahora no'))
-    // "Not now" is not an answer until it says how long — so the menu is the
+    await userEvent.click(screen.getByLabelText('En el cajón'))
+    // "In the drawer" is not an answer until it says how long — so the menu is the
     // control, and there is no default a click could fall back on.
     await userEvent.click(screen.getByText('Recuérdamelo en un mes'))
 
@@ -120,7 +120,7 @@ describe("a decided idea's record in Spanish", () => {
     )
 
     expect(screen.getByText(/Escrita por Alex Lane/)).toBeInTheDocument()
-    expect(screen.getByText(/Vuelve el/)).toBeInTheDocument()
+    expect(screen.getByText(/Vuelve a la mesa el/)).toBeInTheDocument()
     expect(screen.queryByText(/Comes back on/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Written by/)).not.toBeInTheDocument()
 
@@ -128,7 +128,7 @@ describe("a decided idea's record in Spanish", () => {
     // reason saying no is cheap.
     expect(
       screen.getByRole('button', {
-        name: 'Devolver a las pendientes de decidir',
+        name: 'Devolverla a la mesa',
       }),
     ).toBeInTheDocument()
     expect(
@@ -274,7 +274,7 @@ describe("the rail's Ideas row in Spanish", () => {
     })
 
     // The undecided pile, not the backlog's size.
-    const chip = screen.getByLabelText('2 ideas sin decidir')
+    const chip = screen.getByLabelText('2 ideas sobre la mesa')
     expect(chip).toHaveTextContent('2')
     expect(screen.queryByLabelText('2 undecided ideas')).not.toBeInTheDocument()
   })

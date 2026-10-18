@@ -332,10 +332,7 @@ export function AnswerRecord({
     <>
       {current === 'later'
         ? t('ideas.record.returns', { at: day(idea.remindAt) })
-        : t('ideas.record.decided', {
-            verdict: t(VERDICTS[current].labelKey),
-            at: day(idea.decidedAt),
-          })}
+        : t(`ideas.record.${current}`, { at: day(idea.decidedAt) })}
       {' · '}
       <button
         type="button"
