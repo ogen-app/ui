@@ -213,6 +213,17 @@ describe('capturing', () => {
     expect(await screen.findByText('A brand-new idea')).toBeInTheDocument()
   })
 
+  it('gives the words back when the save fails', async () => {
+    api.captureIdea.mockRejectedValue(new Error('offline'))
+    await renderSurface()
+    await screen.findByText('Idea a')
+    const field = screen.getByRole('textbox', { name: 'Write down an idea' })
+    await userEvent.type(field, 'A brand-new idea{Enter}')
+
+    await waitFor(() => expect(field).toHaveValue('A brand-new idea'))
+    expect(toasts.error).toHaveBeenCalled()
+  })
+
   it('leaves another pile alone', async () => {
     api.captureIdea.mockReturnValue(new Promise(() => {}))
     await renderSurface({ pile: 'yes' })

@@ -52,8 +52,8 @@ export function IdeaCapture({
   onCapture: (
     title: string,
     note: string,
-    writer: { id: string; name: string },
-  ) => void
+    writer: Writer,
+  ) => Promise<boolean> | void
 }) {
   const { t } = useTranslation()
   const [value, setValue] = useState('')
@@ -71,14 +71,21 @@ export function IdeaCapture({
     el.style.height = `${el.scrollHeight}px`
   }
 
-  const submit = () => {
+  const submit = async () => {
+    const kept = value
     const [first, ...rest] = value.trim().split('\n')
     const title = first.trim()
     if (!title) return
-    onCapture(title, rest.join('\n').trim(), writer)
+    // Cleared at once — the next idea is usually already on its way — and
+    // put back if the save fails, unless the field has moved on since.
     setValue('')
     requestAnimationFrame(fit)
     field.current?.focus()
+    const saved = await onCapture(title, rest.join('\n').trim(), writer)
+    if (saved === false) {
+      setValue((now) => (now === '' ? kept : now))
+      requestAnimationFrame(fit)
+    }
   }
 
   const typed = value.trim().length > 0
@@ -89,7 +96,7 @@ export function IdeaCapture({
       <span
         aria-hidden
         className="mt-px flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-primary"
-        style={{ background: identityColorVar(writer.id) }}
+        style={{ background: identityColorVar(writer.id ?? writer.name) }}
       >
         {identityAbbr(writer.name)}
       </span>
@@ -107,10 +114,13 @@ export function IdeaCapture({
           if (
             event.key === 'Enter' &&
             !event.shiftKey &&
-            !event.nativeEvent.isComposing
+            // Safari ends a composition before the Return that confirms a
+            // candidate, so that Return reports keyCode 229 instead.
+            !event.nativeEvent.isComposing &&
+            event.keyCode !== 229
           ) {
             event.preventDefault()
-            submit()
+            void submit()
           }
         }}
         className="min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-xl/8 tracking-[-0.01em] text-foreground outline-none placeholder:text-tertiary-foreground"
@@ -140,11 +150,23 @@ export function IdeaCapture({
  * row is coloured by, so the circle here and the one on the row agree. Before
  * the members arrive, the session's own name.
  */
-function useWriter(): { id: string; name: string } {
+export type Writer = {
+  /**
+   * The membership in this workspace — what the server stamps as
+   * `created_by` and a written idea's row is coloured by — or null while the
+   * members have not arrived. Never the session's user id: that names the
+   * default workspace's membership, and would colour the row wrongly until
+   * the server's answer replaced it.
+   */
+  id: string | null
+  name: string
+}
+
+function useWriter(): Writer {
   const members = useWorkspaceMembers()
   const user = useAuthStore((s) => s.user)
   const self = members.data?.find((m) => m.is_self)
   const name =
     self?.name || `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
-  return { id: self?.id ?? user?.id ?? name, name }
+  return { id: self?.id ?? null, name }
 }

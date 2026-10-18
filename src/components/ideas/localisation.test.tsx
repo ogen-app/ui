@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { QueryWrapper } from '@/test/queryWrapper'
@@ -235,6 +235,16 @@ describe('capture in Spanish', () => {
     // usually already half-written when the first lands.
     expect(field).toHaveValue('')
     expect(field).toHaveFocus()
+  })
+
+  it('does not keep anything on the Return that confirms a composition', () => {
+    const onCapture = vi.fn()
+    render(<IdeaCapture onCapture={onCapture} />, { wrapper: QueryWrapper })
+    const field = screen.getByRole('textbox', { name: 'Anota una idea' })
+    fireEvent.change(field, { target: { value: '東京のホテル' } })
+    // Safari's: the composition has ended, and the key reports 229.
+    fireEvent.keyDown(field, { key: 'Enter', keyCode: 229 })
+    expect(onCapture).not.toHaveBeenCalled()
   })
 
   it('keeps a longer thought as the idea and its note', async () => {

@@ -361,7 +361,7 @@ export function IdeasQuerySurface({
     // them. Nothing above the list scrolls.
     <div className="relative flex h-full min-h-0 flex-col gap-4 pt-1 pb-4">
       <IdeaCapture
-        onCapture={(title, note, by) => void writer.capture(title, note, by)}
+        onCapture={(title, note, by) => writer.capture(title, note, by)}
       />
 
       {firstRun ? (
@@ -755,7 +755,10 @@ function IdeaRows({
     )
     observer.observe(foot)
     return () => observer.disconnect()
-  }, [])
+    // Observed afresh once a page has landed: an observer reports only
+    // changes, and with bands folded the foot can stay in view while the new
+    // rows go into them, so no change would ever ask for the next page.
+  }, [rows.length, loadingMore])
 
   return (
     // The list scrolls itself, as the Assets list does, so a band stays
