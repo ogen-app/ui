@@ -255,7 +255,7 @@ export function useIdeaVocabulary({
       )
       return key(negated ? `${field}_not` : field, { values: list })
     },
-    [day, sentenceValue, locale],
+    [t, day, sentenceValue, locale],
   )
 
   /** The clause as plain words — for screen readers and the empty state. */
