@@ -22,6 +22,7 @@ import {
 } from '@/lib/ideaFilter'
 import { formatDate, formatList } from '@/lib/intl'
 import type { SmartVocabulary, ValueOption } from '@/lib/smartFilter'
+import type { Translation } from '@/i18n/resources/en'
 import type { IdeaListPage } from '@/services/api/ideas'
 import type { AssetListKind } from '@/types/assetList'
 
@@ -173,14 +174,90 @@ export function useIdeaVocabulary({
     [t, day, valueLabel, locale],
   )
 
+  /** One value as it reads inside a clause: "PDFs", "high", "no campaign". */
+  const sentenceValue = useCallback(
+    (field: IdeaFilterField, value: string): string => {
+      switch (field) {
+        case 'origin':
+          return t(`ideas.sentence.origin.${value as 'manual'}`, {
+            defaultValue: value,
+          })
+        case 'kind':
+          return t(`ideas.sentence.kind.${value as 'pdf'}`, {
+            defaultValue: value,
+          })
+        case 'fit':
+          return t(`ideas.sentence.fit.${value as 'high'}`, {
+            defaultValue: value,
+          })
+        case 'campaign_id':
+          return value === NONE
+            ? t('ideas.sentence.noCampaign')
+            : valueLabel(field, value)
+        case 'source_asset':
+          return value === NONE
+            ? t('ideas.sentence.noDocument')
+            : valueLabel(field, value)
+        case 'created':
+          return isPreset(value)
+            ? t(`ideas.sentence.created.${CREATED_KEY[value]}`)
+            : day(value)
+        default:
+          return valueLabel(field, value)
+      }
+    },
+    [t, valueLabel, day],
+  )
+
+  /**
+   * A token as its clause in the sentence (CON-391): the catalogue key and
+   * what fills it. One sentence per field and operator, so a language puts
+   * the words in its own order; values are joined with "or", as the server
+   * matches any of them.
+   */
+  const clause = useCallback(
+    (token: IdeaToken): Clause => {
+      const { field, negated, values } = token
+      const key = (name: ClauseName, fill: Record<string, string> = {}) => ({
+        key: `ideas.sentence.clause.${name}` as const,
+        values: fill,
+      })
+      if (field === 'created') {
+        if (negated) return key('created_not', { values: day(values[0]) })
+        if (values.length === 2)
+          return key('created_range', {
+            from: day(values[0]),
+            // The endpoint's upper bound is exclusive; people say the last day.
+            to: day(previousDay(values[1])),
+          })
+        return key('created', { values: sentenceValue(field, values[0]) })
+      }
+      if (field === 'text') return key('text', { values: values[0] ?? '' })
+      if (!negated && values.length === 1) {
+        if (field === 'source_asset' && values[0] === NONE)
+          return key('source_asset_none')
+        if (field === 'fit' && values[0] === 'unscored')
+          return key('fit_unscored')
+      }
+      const list = formatList(
+        values.map((v) => sentenceValue(field, v)),
+        'disjunction',
+        locale,
+      )
+      return key(negated ? `${field}_not` : field, { values: list })
+    },
+    [day, sentenceValue, locale],
+  )
+
+  /** The clause as plain words — for screen readers and the empty state. */
   const tokenText = useCallback(
-    (token: IdeaToken) =>
-      t('content.filter.tokenPlain', {
-        field: fieldLabel(token.field),
-        op: operatorLabel(token.field, token.negated),
-        values: tokenValueText(token),
-      }),
-    [t, fieldLabel, operatorLabel, tokenValueText],
+    (token: IdeaToken) => {
+      const { key, values } = clause(token)
+      // One key of a known family; the union is wider than `t` resolves.
+      const words = (t as (k: string, o: object) => string)(key, values)
+      return words.replace(/<\/?\w+>/g, '')
+    },
+    [t, clause],
   )
 
   /**
@@ -311,6 +388,7 @@ export function useIdeaVocabulary({
   )
   const vocabulary: SmartVocabulary<IdeaFilterField> & {
     valueLabel: typeof valueLabel
+    clause: typeof clause
   } = useMemo(
     () => ({
       label,
@@ -325,6 +403,7 @@ export function useIdeaVocabulary({
       tokenText,
       options,
       valueLabel,
+      clause,
     }),
     [
       label,
@@ -339,9 +418,19 @@ export function useIdeaVocabulary({
       tokenText,
       options,
       valueLabel,
+      clause,
     ],
   )
   return vocabulary
 }
 
 export type IdeaVocabulary = ReturnType<typeof useIdeaVocabulary>
+
+/** The clauses the catalogue words, one per field and operator. */
+type ClauseName = keyof Translation['ideas']['sentence']['clause']
+
+/** A clause's catalogue key and what fills it. */
+export type Clause = {
+  key: `ideas.sentence.clause.${ClauseName}`
+  values: Record<string, string>
+}

@@ -147,7 +147,7 @@ describe('IdeasQuerySurface', () => {
       await screen.findByText('No ideas match these filters'),
     ).toBeInTheDocument()
     expect(
-      await screen.findByRole('button', { name: 'Remove “Fit is High”' }),
+      await screen.findByRole('button', { name: 'Remove “with a high fit”' }),
     ).toBeInTheDocument()
   })
 
@@ -376,8 +376,8 @@ describe('smart groups', () => {
     first.unmount()
 
     await renderSurface({ fit: 'high', kind: 'pdf', view: 'v1' })
-    // On the Views button and on the group's line above the bar.
-    expect(await screen.findAllByText('edited')).toHaveLength(2)
+    // On the Views button, which names the open group.
+    expect(await screen.findByText('edited')).toBeInTheDocument()
     // Somebody else's group: no Save changes, but it can be saved as new.
     expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull()
     expect(
@@ -414,6 +414,111 @@ describe('smart groups', () => {
   })
 })
 
+describe('the filter as a sentence', () => {
+  const sentence = () => screen.getByRole('group', { name: 'Filter' })
+
+  it('reads "Showing all ideas" with nothing chosen', async () => {
+    await renderSurface()
+    await screen.findByText('Idea a')
+    expect(sentence()).toHaveTextContent('Showing all ideas')
+  })
+
+  it('reads the clauses in a fixed order, however the address holds them', async () => {
+    await renderSurface({
+      created: '30d',
+      fit: 'high,medium',
+      kind_not: 'web',
+      campaign_id: 'c1',
+      origin: 'asset_analysis',
+    })
+    await screen.findByText('Idea a')
+    expect(sentence()).toHaveTextContent(
+      'Showing ideas from documents, in Bees, that aren’t web pages, with a high or medium fit, added in the last 30 days',
+    )
+    expect(sentence()).toHaveTextContent('2 of 9')
+  })
+
+  it('changes a clause from its panel, and switches it to "not in"', async () => {
+    await renderSurface({ fit: 'high' })
+    await screen.findByText('Idea a')
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Change: with a high fit' }),
+    )
+    const panel = screen.getByRole('dialog', { name: 'Ideas whose fit is…' })
+    await userEvent.click(
+      within(panel).getByRole('checkbox', { name: /Medium/ }),
+    )
+    expect(onSearchChange).toHaveBeenLastCalledWith({ fit: 'high,medium' })
+
+    await userEvent.click(within(panel).getByRole('radio', { name: 'without' }))
+    expect(onSearchChange).toHaveBeenLastCalledWith({ fit_not: 'high' })
+  })
+
+  it('removes a clause with its ×', async () => {
+    await renderSurface({ fit: 'high', kind: 'pdf' })
+    await screen.findByText('Idea a')
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Remove: that are PDFs' }),
+    )
+    expect(onSearchChange).toHaveBeenLastCalledWith({ fit: 'high' })
+  })
+
+  it('adds a detail by typing — "mentioning …" — or from a starter', async () => {
+    await renderSurface()
+    await screen.findByText('Idea a')
+
+    await userEvent.click(screen.getByRole('button', { name: /add a detail/ }))
+    const field = screen.getByRole('combobox', { name: 'add a detail' })
+    expect(screen.getByText('in a campaign…')).toBeInTheDocument()
+
+    await userEvent.type(field, 'wax{Enter}')
+    expect(onSearchChange).toHaveBeenLastCalledWith({ text: 'wax' })
+
+    await userEvent.click(screen.getByRole('button', { name: /add a detail/ }))
+    await userEvent.click(screen.getByText('in a campaign…'))
+    const panel = screen.getByRole('dialog', { name: 'Ideas filed under…' })
+    await userEvent.click(within(panel).getByRole('checkbox', { name: /Bees/ }))
+    expect(onSearchChange).toHaveBeenLastCalledWith({ campaign_id: 'c1' })
+  })
+
+  it('removes the last clause on Backspace in an empty detail', async () => {
+    await renderSurface({ fit: 'high', kind: 'pdf' })
+    await screen.findByText('Idea a')
+    await userEvent.keyboard('/')
+    await waitFor(() =>
+      expect(
+        screen.getByRole('combobox', { name: 'add a detail' }),
+      ).toHaveFocus(),
+    )
+    await userEvent.keyboard('{Backspace}')
+    // Fit reads after Type, so it is the last clause.
+    expect(onSearchChange).toHaveBeenLastCalledWith({ kind: 'pdf' })
+  })
+
+  it('offers Clear, but not while a group is open as saved', async () => {
+    const first = await renderSurface({ fit: 'high' })
+    await screen.findByText('Idea a')
+    await userEvent.click(
+      within(sentence()).getByRole('button', { name: 'Clear' }),
+    )
+    expect(onSearchChange).toHaveBeenLastCalledWith({})
+    first.unmount()
+
+    await renderSurface({
+      fit: 'high',
+      kind: 'pdf',
+      sort: 'fit',
+      group: 'none',
+      view: 'v1',
+    })
+    await screen.findByText('Idea a')
+    expect(
+      within(sentence()).queryByRole('button', { name: 'Clear' }),
+    ).toBeNull()
+  })
+})
+
 describe('IdeasQuerySurface in Spanish', () => {
   afterAll(async () => {
     await i18next.changeLanguage('en')
@@ -425,16 +530,34 @@ describe('IdeasQuerySurface in Spanish', () => {
     await renderSurface()
     await screen.findByText('Idea a')
 
+    expect(screen.getByRole('group', { name: 'Filtro' })).toHaveTextContent(
+      'Mostrando todas las ideas',
+    )
     expect(
-      screen.getByPlaceholderText(
-        'Filtrar por texto, fuente, campaña, encaje…',
-      ),
+      screen.getByRole('button', { name: /añadir un detalle/ }),
     ).toBeInTheDocument()
     expect(screen.getByText('Más tiempo esperando')).toBeInTheDocument()
     expect(screen.getByText('Fecha de alta')).toBeInTheDocument()
     expect(screen.queryByText('Waiting longest')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Showing/)).not.toBeInTheDocument()
+    expect(screen.queryByText('add a detail')).not.toBeInTheDocument()
+  })
+
+  it('words each clause as one Spanish sentence', async () => {
+    await loadLocaleResources('es')
+    await i18next.changeLanguage('es')
+    await renderSurface({ origin: 'asset_analysis', fit: 'high,medium' })
+    await screen.findByText('Idea a')
+
+    expect(screen.getByRole('group', { name: 'Filtro' })).toHaveTextContent(
+      // The language's own joining: Spanish puts "y" before the last.
+      'Mostrando ideas de documentos y con un encaje alto o medio',
+    )
     expect(
-      screen.queryByPlaceholderText('Filter by text, source, campaign, fit…'),
-    ).not.toBeInTheDocument()
+      screen.getByRole('button', {
+        name: 'Cambiar: con un encaje alto o medio',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/high or medium/)).not.toBeInTheDocument()
   })
 })
