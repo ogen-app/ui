@@ -223,7 +223,16 @@ export function useIdeaVocabulary({
         values: fill,
       })
       if (field === 'created') {
-        if (negated) return key('created_not', { values: day(values[0]) })
+        if (negated)
+          // "Before" a preset is its own phrase — "more than 7 days ago" —
+          // never "before in the last 7 days".
+          return isPreset(values[0])
+            ? key('created_not_preset', {
+                values: t(
+                  `ideas.sentence.createdBefore.${CREATED_KEY[values[0]]}`,
+                ),
+              })
+            : key('created_not', { values: day(values[0]) })
         if (values.length === 2)
           return key('created_range', {
             from: day(values[0]),

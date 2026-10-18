@@ -1078,7 +1078,10 @@ function DateStep({
 }) {
   const { t } = useTranslation()
   const ranged = values.length === 2 || (negated && values.length === 1)
-  const [custom, setCustom] = useState(ranged && /^\d/.test(values[0] ?? ''))
+  // A custom day, never a preset: `7d` starts with a digit too.
+  const [custom, setCustom] = useState(
+    ranged && /^\d{4}-\d{2}-\d{2}$/.test(values[0] ?? ''),
+  )
   const [range, setRange] = useState({
     from: ranged ? values[0] : '',
     to: values.length === 2 ? previousDay(values[1]) : '',

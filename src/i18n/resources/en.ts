@@ -904,6 +904,7 @@ export const en = {
         created: 'added <v>{{values}}</v>',
         created_range: 'added <v>between {{from}} and {{to}}</v>',
         created_not: 'added <v>before {{values}}</v>',
+        created_not_preset: 'added <v>{{values}}</v>',
         text: 'mentioning <v>“{{values}}”</v>',
       },
       origin: {
@@ -932,6 +933,12 @@ export const en = {
         week: 'in the last 7 days',
         days30: 'in the last 30 days',
         month: 'this month',
+      },
+      createdBefore: {
+        today: 'before today',
+        week: 'more than 7 days ago',
+        days30: 'more than 30 days ago',
+        month: 'before this month',
       },
       noCampaign: 'no campaign',
       noDocument: 'no document',
