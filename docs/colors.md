@@ -17,6 +17,11 @@ questions. Produced from the 2026-07 color audit (branch
 > `--font-display` and `--font-grotesk` both point at plain Geist now, so
 > headings and uppercase labels separate on size, weight and tracking rather
 > than on a second face.
+>
+> CON-390 then replaced Geist with **IBM Plex Sans** and Geist Mono with **IBM
+> Plex Mono**, keeping the one-family rule: the page title is Light at
+> `text-display`, list headings Medium, body Regular, and mono is for figures
+> only. See the header comment in `src/index.css`.
 
 ## Architecture: three layers
 

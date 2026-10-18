@@ -457,12 +457,11 @@ function PostCardComponent({
               aria-hidden={!problem}
               aria-label={problem ? t('posts.hasProblem') : undefined}
             />
-            {/* Plain `tabular-nums` in the body face, which under Geist is
-                both aligned and clean. Not `font-mono`: Geist Mono draws a
-                slashed zero by default, and no feature turns it off — `zero`,
-                `ss01`–`ss04` and `cv01` all leave the slash where it is. On the
-                previous theme the two faces were the other way round, which is
-                why this briefly wore `font-mono`. */}
+            {/* Plain `tabular-nums` in the body face: Plex Sans's figures are
+                tabular by default, so the clock is aligned without a second
+                face in a slot this narrow. It wore `font-mono` once, and then
+                came off it under Geist, whose mono drew a slashed zero no
+                feature could turn off. */}
             {showStatus ? (
               <span className="truncate">{statusLabel}</span>
             ) : (

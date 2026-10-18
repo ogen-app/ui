@@ -154,7 +154,7 @@ export function IdeaRow({
         {editing ? (
           <TitleField idea={idea} onEdit={onEdit} />
         ) : (
-          <h3 className="text-base/6 font-semibold break-words">
+          <h3 className="text-base/6 font-medium break-words">
             <button
               type="button"
               onClick={onToggle}
@@ -653,7 +653,7 @@ function TitleField({
       autoFocus
       // The field's own padding hangs out to the left, so the words stay in
       // the title column they were read in.
-      className="-my-1 -ml-3 h-8 w-[calc(100%+0.75rem)] pl-3 min-w-0 font-semibold"
+      className="-my-1 -ml-3 h-8 w-[calc(100%+0.75rem)] pl-3 min-w-0 font-medium"
       aria-label={t('ideas.field.title')}
       onChange={(event) => setTitle(event.target.value)}
       onBlur={() => {

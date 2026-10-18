@@ -32,7 +32,7 @@ type CampaignTabBarProps = {
 /**
  * The count beside a tab's name: a small mono figure on a faint wash.
  *
- * Mono because it is a figure and this app sets figures in Geist Mono, and the
+ * Mono because it is a figure and this app sets figures in Plex Mono, and the
  * wash because the mark has to survive both tab states — the active trigger
  * fills with `bg-quaternary`, so an outline or a grey chip disappears on
  * exactly the tab you are looking at. Ink is inherited rather than set: the

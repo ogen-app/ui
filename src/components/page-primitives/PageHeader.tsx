@@ -116,7 +116,7 @@ export function PageHeader({
           {title !== undefined && (
             <h1
               className={cn(
-                'font-display text-2xl font-medium leading-8 tracking-[-0.24px] text-primary-foreground truncate',
+                'type-display font-display text-display font-light text-primary-foreground truncate',
                 fadeOnScroll && 'transition-opacity duration-300',
                 faded && 'opacity-0',
               )}

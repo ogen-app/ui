@@ -82,7 +82,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           counts instead of replacing it. */}
       <Sidebar
         collapsible="icon"
-        className={'select-none group-data-[side=left]:border-r border-border'}
+        className={
+          'type-display select-none group-data-[side=left]:border-r border-border'
+        }
         {...props}
       >
         {/* The campaign's identity colour as a rule down the whole rail, in
