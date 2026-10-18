@@ -212,19 +212,46 @@ describe('deleting an idea in Spanish', () => {
 })
 
 describe('capture in Spanish', () => {
-  it('prompts and files without leaving the field', async () => {
+  it('prompts, hints and files without leaving the field', async () => {
     const onCapture = vi.fn()
     render(<IdeaCapture onCapture={onCapture} />, { wrapper: QueryWrapper })
 
-    const field = screen.getByPlaceholderText('¿Qué podríamos crear?')
-    expect(screen.queryByPlaceholderText('What could we make?')).toBeNull()
+    const field = screen.getByRole('textbox', { name: 'Anota una idea' })
+    // One of the prompts, picked per visit — always a Spanish one.
+    const prompts = Object.values(
+      i18next.getResource('es', 'translation', 'ideas.capture.prompt'),
+    )
+    expect(prompts).toContain(field.getAttribute('placeholder'))
+    expect(screen.getByText(/para guardarla/)).toBeInTheDocument()
+    expect(screen.queryByText(/to keep it/)).toBeNull()
 
     await userEvent.type(field, '  Una serie de desmontajes  {Enter}')
-    expect(onCapture).toHaveBeenCalledWith('Una serie de desmontajes')
+    expect(onCapture).toHaveBeenCalledWith(
+      'Una serie de desmontajes',
+      '',
+      expect.anything(),
+    )
     // Cleared and still focused: ideas arrive in bursts and the second one is
     // usually already half-written when the first lands.
     expect(field).toHaveValue('')
     expect(field).toHaveFocus()
+  })
+
+  it('keeps a longer thought as the idea and its note', async () => {
+    const onCapture = vi.fn()
+    render(<IdeaCapture onCapture={onCapture} />, { wrapper: QueryWrapper })
+    const field = screen.getByRole('textbox', { name: 'Anota una idea' })
+
+    await userEvent.type(field, 'Desayunos de hotel{Shift>}{Enter}{/Shift}')
+    expect(onCapture).not.toHaveBeenCalled()
+    expect(screen.getByText(/para otra línea/)).toBeInTheDocument()
+
+    await userEvent.type(field, 'Cada viernes de primavera{Enter}')
+    expect(onCapture).toHaveBeenCalledWith(
+      'Desayunos de hotel',
+      'Cada viernes de primavera',
+      expect.anything(),
+    )
   })
 })
 

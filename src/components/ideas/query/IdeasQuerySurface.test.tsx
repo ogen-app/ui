@@ -207,7 +207,7 @@ describe('capturing', () => {
     await renderSurface()
     await screen.findByText('Idea a')
     await userEvent.type(
-      screen.getByPlaceholderText('What could we make?'),
+      screen.getByRole('textbox', { name: 'Write down an idea' }),
       'A brand-new idea{Enter}',
     )
     expect(await screen.findByText('A brand-new idea')).toBeInTheDocument()
@@ -218,7 +218,7 @@ describe('capturing', () => {
     await renderSurface({ pile: 'yes' })
     await screen.findByText('Idea a')
     await userEvent.type(
-      screen.getByPlaceholderText('What could we make?'),
+      screen.getByRole('textbox', { name: 'Write down an idea' }),
       'A brand-new idea{Enter}',
     )
     await new Promise((resolve) => setTimeout(resolve, 50))

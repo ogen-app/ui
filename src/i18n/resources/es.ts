@@ -487,9 +487,24 @@ export const es: Translation = {
 
   ideas: {
     capture: {
-      placeholder: '¿Qué podríamos crear?',
       label: 'Anota una idea',
-      submit: 'AÑADIR IDEA',
+      prompt: {
+        post: 'Una publicación que valga la pena…',
+        postingAbout: '¿De qué vale la pena publicar?',
+        worthAPost: '¿Algo que merezca una publicación?',
+        story: 'Una historia que valga la pena contar…',
+        stopScrolling: '¿Qué haría que la gente dejara de deslizar?',
+        wantToRead: 'Una publicación que querrías leer…',
+        thisWeek: '¿Qué vale la pena compartir esta semana?',
+        audienceHear: 'Algo que tu audiencia debería escuchar…',
+        format: 'Un carrusel, un reel, un hilo: ¿cuál es la idea?',
+        deserves: '¿Qué merece una publicación?',
+        behindScenes: 'Un detrás de cámaras que valga la pena mostrar…',
+        keepsAsking: 'Una pregunta que tu audiencia no deja de hacer…',
+      },
+      hint: 'Intro <key/> para guardarla',
+      hintMultiline:
+        'Mayús <key/> para otra línea · Intro <key/> para guardarla',
     },
     verdict: {
       yes: 'Sí',
