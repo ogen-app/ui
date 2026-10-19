@@ -79,8 +79,11 @@ export function usePostAttachments(postId: string) {
     refetchIntervalInBackground: false,
   })
 
+  /** Resolves once the attachment list has refetched. */
   const invalidate = useCallback(() => {
-    void qc.invalidateQueries({ queryKey: postAttachmentsKey(postId) })
+    const refetched = qc.invalidateQueries({
+      queryKey: postAttachmentsKey(postId),
+    })
     // These bytes are the whole of `media_storage_bytes`: the server's counter
     // is the sum of the workspace's post attachments and nothing else, so an
     // upload here spends the allowance and a removal gives it back (CON-295).
@@ -88,7 +91,25 @@ export function usePostAttachments(postId: string) {
     // The first drawable file is the post's `cover_url` on every list row,
     // and this hook holds only the post's id (CON-247).
     invalidatePostLists(qc)
+    return refetched
   }, [qc, postId])
+
+  /**
+   * A batch is pending from the moment it is asked for until the list that
+   * carries it has refetched — not one file at a time while each is in
+   * flight. `pending` is what the card counts against the post type's cap
+   * alongside the attachments, so a file still queued, or landed but not yet
+   * listed, must already be in it: otherwise a pick made mid-upload sees room
+   * that the rest of the batch is about to take.
+   */
+  const addPending = useCallback((entries: PendingUpload[]) => {
+    setPending((p) => [...p, ...entries])
+  }, [])
+  const dropPending = useCallback((keys: readonly string[]) => {
+    if (keys.length === 0) return
+    const gone = new Set(keys)
+    setPending((p) => p.filter((u) => !gone.has(u.key)))
+  }, [])
 
   /**
    * Uploads sequentially: `CreateAtNextPosition` assigns positions on the
@@ -99,9 +120,14 @@ export function usePostAttachments(postId: string) {
     async (files: File[], segmentIndex?: number): Promise<UploadResult> => {
       const errors: string[] = []
       const ids: string[] = []
+      const stamp = Date.now()
+      const keys = files.map((file, i) => `${stamp}-${i}-${file.name}`)
+      addPending(
+        files.map((file, i) => ({ key: keys[i], name: file.name, percent: 0 })),
+      )
+      const landed: string[] = []
       for (const [i, file] of files.entries()) {
-        const key = `${Date.now()}-${i}-${file.name}`
-        setPending((p) => [...p, { key, name: file.name, percent: 0 }])
+        const key = keys[i]
         try {
           // Video never passes through the API process — it goes presign →
           // direct PUT → finalize (CON-148). Everything else posts the bytes
@@ -118,20 +144,21 @@ export function usePostAttachments(postId: string) {
               ),
           })
           ids.push(created.id)
+          landed.push(key)
         } catch (err) {
           errors.push(
             err instanceof Error
               ? err.message
               : `Unable to upload ${file.name}`,
           )
-        } finally {
-          setPending((p) => p.filter((u) => u.key !== key))
+          dropPending([key])
         }
       }
-      invalidate()
+      await invalidate()
+      dropPending(landed)
       return { uploaded: ids.length, errors, ids }
     },
-    [postId, invalidate],
+    [postId, invalidate, addPending, dropPending],
   )
 
   /**
@@ -143,23 +170,33 @@ export function usePostAttachments(postId: string) {
     async (images: BankImage[]): Promise<AttachResult> => {
       const failures: AttachResult['failures'] = []
       let attached = 0
+      const stamp = Date.now()
+      const keys = images.map((image, i) => `${stamp}-${i}-${image.id}`)
+      addPending(
+        images.map((image, i) => ({
+          key: keys[i],
+          name: image.title,
+          percent: null,
+        })),
+      )
+      const landed: string[] = []
       for (const [i, image] of images.entries()) {
-        const key = `${Date.now()}-${i}-${image.id}`
-        setPending((p) => [...p, { key, name: image.title, percent: null }])
+        const key = keys[i]
         try {
           const created = await attachFromAsset(postId, image.id)
           attached += 1
+          landed.push(key)
           setAssetOf((prev) => new Map(prev).set(created.id, image.id))
         } catch (error) {
           failures.push({ title: image.title, error })
-        } finally {
-          setPending((p) => p.filter((u) => u.key !== key))
+          dropPending([key])
         }
       }
-      invalidate()
+      await invalidate()
+      dropPending(landed)
       return { attached, failures }
     },
-    [postId, invalidate],
+    [postId, invalidate, addPending, dropPending],
   )
 
   const attachments = query.data?.attachments
@@ -201,7 +238,7 @@ export function usePostAttachments(postId: string) {
    */
   const invalidateAfterLastWrite = useCallback(() => {
     if (qc.isMutating({ mutationKey: writeKey, exact: true }) <= 1) {
-      invalidate()
+      void invalidate()
     }
   }, [qc, writeKey, invalidate])
 

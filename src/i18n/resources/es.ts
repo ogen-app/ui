@@ -2364,6 +2364,7 @@ export const es: Translation = {
           locked:
             'Esta publicación está programada o publicada, así que su contenido multimedia ya no puede cambiar.',
           gone: 'Esta imagen ya no está en Recursos.',
+          postGone: 'Esta publicación se ha eliminado.',
           noFile: 'Este recurso no tiene una imagen guardada que adjuntar.',
         },
       },

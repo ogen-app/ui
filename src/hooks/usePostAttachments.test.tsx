@@ -190,7 +190,9 @@ describe('usePostAttachments and the content bank (CON-290)', () => {
       ])
     })
     await waitFor(() => expect(order).toEqual(['img-1']))
-    expect(result.current.pending.map((p) => p.percent)).toEqual([null])
+    // The queued image is pending too: both hold a place against the cap.
+    expect(result.current.pending.map((p) => p.name)).toEqual(['One', 'Two'])
+    expect(result.current.pending.map((p) => p.percent)).toEqual([null, null])
 
     await act(async () => {
       release()

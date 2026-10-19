@@ -127,10 +127,13 @@ export function PostMediaCard({
   // still holds where it means something — per post, on the thread's own row
   // in the pre-publish bar.
   const totalMax = thread ? null : policy.max
-  const canAdd =
-    !frozen &&
-    policy.accepts &&
-    (totalMax === null || attachments.length < totalMax)
+  // What already holds a place against the cap: the files on the post and
+  // every one still on its way — queued, in flight, or landed but not yet
+  // listed (`pending` covers all three). Counting only the first let a pick
+  // made during an upload overrun the type's cap.
+  const occupied = attachments.length + pending.length
+  const room = totalMax === null ? null : Math.max(0, totalMax - occupied)
+  const canAdd = !frozen && policy.accepts && (room === null || room > 0)
 
   if (
     attachments.length === 0 &&
@@ -163,9 +166,7 @@ export function PostMediaCard({
       }
     }
     if (accepted.length === 0) return
-    const room =
-      totalMax === null ? accepted.length : totalMax - attachments.length
-    const within = accepted.slice(0, Math.max(0, room))
+    const within = accepted.slice(0, room ?? accepted.length)
     if (within.length < accepted.length) {
       toast.warning(`Only ${policy.max} files fit on this post type`, {
         description: `${accepted.length - within.length} file(s) were not uploaded.`,
@@ -428,7 +429,7 @@ export function PostMediaCard({
       {choosingAssets && (
         <AddFromAssetsModal
           campaignId={post.campaign_id}
-          room={totalMax === null ? null : totalMax - attachments.length}
+          room={room}
           attachedAssetIds={attachedAssetIds}
           onAdd={(images) => void handleAssets(images)}
           onClose={() => setChoosingAssets(false)}
