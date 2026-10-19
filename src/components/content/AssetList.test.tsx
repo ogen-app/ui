@@ -489,7 +489,7 @@ describe('group bands', () => {
       'band 1d7',
       'band earlier1',
     ])
-    // Sticky, inside the list's own scroller.
+    // Sticky, inside the page's scroller.
     expect(bands[0].parentElement).toHaveClass('sticky')
   })
 
@@ -501,6 +501,62 @@ describe('group bands', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: /band 1d/ }),
     ).toBeInTheDocument()
+  })
+
+  /*
+   * A new grouping, a fold or the next page moves bands without a scroll
+   * event, so the pinned band — and the cap behind the header that comes with
+   * it — is marked again whenever the bands change, not only on scroll.
+   */
+  it('marks the band at the header’s foot as pinned when the bands change', async () => {
+    // jsdom lays nothing out: the scroller's top is 0, so a band "at" 80px is
+    // the one sitting at the header's foot.
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const top = this.textContent?.startsWith('band earlier') ? 80 : 0
+        return {
+          top,
+          bottom: top,
+          left: 0,
+          right: 0,
+          height: 0,
+          width: 0,
+          x: 0,
+          y: top,
+          toJSON: () => ({}),
+        }
+      })
+    function Harness() {
+      const [grouping, setGrouping] = useState<AssetGrouping>('none')
+      return (
+        <div style={{ overflowY: 'auto' }}>
+          <button onClick={() => setGrouping('created')}>regroup</button>
+          <AssetList
+            rows={grouped}
+            groups={grouping === 'none' ? [] : groups}
+            total={grouped.length}
+            grouping={grouping}
+            groupLabel={(key) => `band ${key}`}
+            campaignId={null}
+            selectedIds={new Set()}
+            onToggleRow={() => {}}
+            onDelete={() => {}}
+            asOf={AS_OF}
+            onEndReached={() => {}}
+            loadingMore={false}
+          />
+        </div>
+      )
+    }
+    await renderWithProviders(<Harness />)
+    expect(document.querySelector('[data-pinned]')).toBeNull()
+
+    await userEvent.click(screen.getByText('regroup'))
+    const pinned = document.querySelectorAll('[data-pinned]')
+    expect(pinned).toHaveLength(1)
+    expect(pinned[0]).toHaveTextContent('band earlier')
+    rect.mockRestore()
   })
 
   it('draws one "No grouping" band when the list is not grouped', async () => {

@@ -53,6 +53,15 @@ type Props = {
  */
 const BAND_TOP = 80
 
+/** Marks the band sitting at `BAND_TOP` as pinned, and no other. */
+function markPinned(list: HTMLElement, scroller: HTMLElement) {
+  const top = scroller.getBoundingClientRect().top + BAND_TOP
+  for (const band of list.querySelectorAll<HTMLElement>('[data-band]')) {
+    const at = band.getBoundingClientRect().top
+    band.toggleAttribute('data-pinned', Math.abs(at - top) < 1)
+  }
+}
+
 /** A band's id in the folded set: the grouping and its key. */
 const bandId = (grouping: AssetGrouping, key: string) => `${grouping}:${key}`
 
@@ -160,30 +169,32 @@ export function AssetList({
 
   // Which band is pinned: the one sitting exactly at `BAND_TOP`. Marked on
   // the element rather than held in state — it changes on every scroll, and
-  // all it switches is the cap behind the header.
+  // all it switches is the cap behind the header. Marked on scroll, and again
+  // whenever the bands themselves change — a new grouping, a fold, the next
+  // page — since those move bands without a scroll event.
   useEffect(() => {
     const list = listRef.current
     const scroller = findScrollParent(list)
     if (!list || !scroller) return
     let frame = 0
-    const mark = () => {
-      frame = 0
-      const top = scroller.getBoundingClientRect().top + BAND_TOP
-      for (const band of list.querySelectorAll<HTMLElement>('[data-band]')) {
-        const at = band.getBoundingClientRect().top
-        band.toggleAttribute('data-pinned', Math.abs(at - top) < 1)
-      }
-    }
     const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(mark)
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        markPinned(list, scroller)
+      })
     }
-    mark()
     scroller.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       scroller.removeEventListener('scroll', onScroll)
       if (frame) cancelAnimationFrame(frame)
     }
   }, [hasRows])
+  useLayoutEffect(() => {
+    const list = listRef.current
+    const scroller = findScrollParent(list)
+    if (list && scroller) markPinned(list, scroller)
+  }, [entries, collapsed, grouping])
 
   if (rows.length === 0) {
     return <div className={cn('min-h-50', className)}>{emptyState}</div>
