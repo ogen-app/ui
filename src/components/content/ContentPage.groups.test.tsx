@@ -122,7 +122,14 @@ describe('the Assets page’s smart groups', () => {
   })
 
   it('saves a filter as a new group, with how it is read', async () => {
-    groups.createSavedView.mockResolvedValue({ ...GARTNER, id: 'v2' })
+    // The server answers with the query it stored.
+    groups.createSavedView.mockImplementation(
+      async (fields: { query: string }) => ({
+        ...GARTNER,
+        id: 'v2',
+        query: fields.query,
+      }),
+    )
     await renderPage({ kind: 'pdf', updated: '30d' })
     await userEvent.click(
       await screen.findByRole('button', { name: 'Save as group' }),
@@ -134,6 +141,16 @@ describe('the Assets page’s smart groups', () => {
         name: 'PDFs, updated in the last 30 days',
         shared: false,
         query: 'group=created&kind=pdf&sort=-created_at&updated=30d',
+      }),
+    )
+    // The new group opens with what it saved, sort and grouping included.
+    await waitFor(() =>
+      expect(onSearchChange).toHaveBeenLastCalledWith({
+        kind: 'pdf',
+        updated: '30d',
+        sort: '-created_at',
+        group: 'created',
+        view: 'v2',
       }),
     )
   })
