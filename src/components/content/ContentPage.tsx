@@ -8,9 +8,11 @@ import {
   UploadSimpleIcon,
 } from '@phosphor-icons/react'
 import { PageError } from '@/components/page-primitives/PageError'
+import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -461,181 +463,194 @@ export function ContentPage({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <PageHeader
-        // In a campaign, the shape the layout builds for every other section:
-        // `${campaign} ${section}`, with the section named as the rail names
-        // it. In the workspace the rail's own row is the whole address, so the
-        // title is the module's name and nothing else.
-        title={
-          campaign
-            ? t('content.page.campaignTitle', { campaign: scopeName })
-            : t('content.page.title')
-        }
-        actions={
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="lg"
-                loading={createAsset.isPending}
-                className="data-[state=open]:bg-primary-foreground data-[state=open]:text-primary"
-              >
-                <span>ADD CONTENT</span>
-                <CaretDownIcon weight="bold" className="size-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              sideOffset={4}
-              onCloseAutoFocus={(e) => {
-                if (!openingWebPage.current) return
-                openingWebPage.current = false
-                e.preventDefault()
-              }}
-            >
-              <DropdownMenuItem size="lg" onClick={write}>
-                <FileTextIcon />
-                <span>Write a note</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem size="lg" onClick={upload}>
-                <UploadSimpleIcon />
-                <span>Upload file</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                size="lg"
-                onClick={() => {
-                  // Set either way: what it suppresses is the menu handing
-                  // focus back, and a modal is opening in both outcomes.
-                  openingWebPage.current = true
-                  addWebPage()
-                }}
-              >
-                <GlobeSimpleIcon />
-                <span>Add a web page</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        }
-      />
-
-      {/* The campaign layout's body box: no page scroll — the table
-          virtualises against this and scrolls itself. `flex-1` over a fixed
-          `h-full`, which measures the whole column with the header in it and
-          would push the table's last rows under the fold. */}
-      <div className="grid min-h-0 flex-1 overflow-hidden px-3 lg:px-6">
-        {/* `awaiting`, not `isLoading` — see `lib/fetched`. This is the
-            branch the bug was in: a read that failed while the tab was in the
-            background parks the query as *pending but not fetching*, which
-            `isLoading` and `isError` both report as false, and the bank drew
-            its first-run empty state over a workspace holding eighteen
-            documents — with three buttons inviting the user to file the
-            first. An empty list is a claim, and this is the only place that
-            gets to make it. */}
-        {awaiting(list.query) ? (
-          <PageLoader />
-        ) : list.query.isError &&
-          !list.query.data &&
-          !isFilterActive(filter) ? (
-          <PageError
-            header={
+      {/* The post page's scroll frame (CON-392): the header sticky inside the
+          one scroller, carrying its own 80px fade; the content scrolls under
+          it; `PageBottomFader` along the bottom, a sibling after the scroll
+          area so it covers the content without scrolling away. */}
+      <div className="relative flex min-h-0 flex-1">
+        <ScrollArea
+          className="min-h-0 flex-1"
+          type="scroll"
+          scrollHideDelay={350}
+        >
+          <PageHeader
+            // In a campaign, the shape the layout builds for every other section:
+            // `${campaign} ${section}`, with the section named as the rail names
+            // it. In the workspace the rail's own row is the whole address, so the
+            // title is the module's name and nothing else.
+            title={
               campaign
-                ? "Unable to load this campaign's content"
-                : 'Unable to load the content bank'
+                ? t('content.page.campaignTitle', { campaign: scopeName })
+                : t('content.page.title')
+            }
+            actions={
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="lg"
+                    loading={createAsset.isPending}
+                    className="data-[state=open]:bg-primary-foreground data-[state=open]:text-primary"
+                  >
+                    <span>ADD CONTENT</span>
+                    <CaretDownIcon weight="bold" className="size-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={4}
+                  onCloseAutoFocus={(e) => {
+                    if (!openingWebPage.current) return
+                    openingWebPage.current = false
+                    e.preventDefault()
+                  }}
+                >
+                  <DropdownMenuItem size="lg" onClick={write}>
+                    <FileTextIcon />
+                    <span>Write a note</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem size="lg" onClick={upload}>
+                    <UploadSimpleIcon />
+                    <span>Upload file</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    size="lg"
+                    onClick={() => {
+                      // Set either way: what it suppresses is the menu handing
+                      // focus back, and a modal is opening in both outcomes.
+                      openingWebPage.current = true
+                      addWebPage()
+                    }}
+                  >
+                    <GlobeSimpleIcon />
+                    <span>Add a web page</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             }
           />
-        ) : (
-          <ContentList
-            campaignId={campaignId}
-            list={list}
-            vocabulary={vocabulary}
-            sentenceLeading={
-              groupsOn && (
-                <SavedViewsMenu
-                  views={views.data ?? []}
-                  allLabel={t('savedViews.all.assets')}
-                  countName="total"
-                  active={active}
-                  edited={edited}
-                  allCount={list.totalUnfiltered}
-                  canSave={narrowed}
-                  onOpen={openView}
-                  onSaveCurrent={() => setSaving({ mode: 'new' })}
-                  onRename={(view) => setSaving({ mode: 'rename', view })}
-                  onShare={(view, shared) =>
-                    viewWriter.update.mutate({ id: view.id, shared })
-                  }
-                  onDuplicate={(view) =>
-                    viewWriter.create.mutate({
-                      name: t('savedViews.copyName', {
-                        name: view.name,
-                      }).slice(0, SAVED_VIEW_NAME_MAX),
-                      query: view.query,
-                      shared: false,
-                    })
-                  }
-                  onDelete={setRemoving}
-                />
-              )
-            }
-            sentenceTrailing={
-              !groupsOn
-                ? null
-                : active
-                  ? edited && (
-                      <GroupActions
-                        canEdit={active.canEdit}
-                        busy={viewWriter.update.isPending}
-                        onSaveChanges={() =>
-                          viewWriter.update.mutate({
-                            id: active.id,
-                            query: currentQuery(),
-                          })
-                        }
-                        onSaveAs={() => setSaving({ mode: 'new' })}
-                        onRevert={() => openView(active)}
-                      />
-                    )
-                  : narrowed && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSaving({ mode: 'new' })}
-                      >
-                        {t('savedViews.saveAs')}
-                      </Button>
-                    )
-            }
-            groupNotice={
-              active && !active.valid ? (
-                <p className="flex items-center gap-2 pl-5 text-sm text-destructive">
-                  {t('savedViews.invalid')}
-                  {active.canEdit && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setRemoving(active)}
-                    >
-                      {t('savedViews.remove.confirm')}
-                    </Button>
-                  )}
-                </p>
-              ) : null
-            }
-            clearable={!active}
-            params={params}
-            filter={filter}
-            onFilterChange={setFilter}
-            sort={sort}
-            onSortChange={setSort}
-            grouping={grouping}
-            onGroupingChange={setGrouping}
-            paramsFor={paramsFor}
-            uploads={uploads}
-            onDeleteMany={handleDeleteMany}
-            onWrite={write}
-            onUpload={upload}
-            onAddWebPage={addWebPage}
-          />
-        )}
+
+          {/* Under the header, everything scrolls together: the sentence, the
+              Group by line and the list, whose bands pin at the header's foot. */}
+          <div className="px-3 lg:px-6">
+            {/* `awaiting`, not `isLoading` — see `lib/fetched`. This is the
+                branch the bug was in: a read that failed while the tab was in the
+                background parks the query as *pending but not fetching*, which
+                `isLoading` and `isError` both report as false, and the bank drew
+                its first-run empty state over a workspace holding eighteen
+                documents — with three buttons inviting the user to file the
+                first. An empty list is a claim, and this is the only place that
+                gets to make it. */}
+            {awaiting(list.query) ? (
+              <div className="h-[60vh]">
+                <PageLoader />
+              </div>
+            ) : list.query.isError &&
+              !list.query.data &&
+              !isFilterActive(filter) ? (
+              <PageError
+                header={
+                  campaign
+                    ? "Unable to load this campaign's content"
+                    : 'Unable to load the content bank'
+                }
+              />
+            ) : (
+              <ContentList
+                campaignId={campaignId}
+                list={list}
+                vocabulary={vocabulary}
+                sentenceLeading={
+                  groupsOn && (
+                    <SavedViewsMenu
+                      views={views.data ?? []}
+                      allLabel={t('savedViews.all.assets')}
+                      countName="total"
+                      active={active}
+                      edited={edited}
+                      allCount={list.totalUnfiltered}
+                      canSave={narrowed}
+                      onOpen={openView}
+                      onSaveCurrent={() => setSaving({ mode: 'new' })}
+                      onRename={(view) => setSaving({ mode: 'rename', view })}
+                      onShare={(view, shared) =>
+                        viewWriter.update.mutate({ id: view.id, shared })
+                      }
+                      onDuplicate={(view) =>
+                        viewWriter.create.mutate({
+                          name: t('savedViews.copyName', {
+                            name: view.name,
+                          }).slice(0, SAVED_VIEW_NAME_MAX),
+                          query: view.query,
+                          shared: false,
+                        })
+                      }
+                      onDelete={setRemoving}
+                    />
+                  )
+                }
+                sentenceTrailing={
+                  !groupsOn
+                    ? null
+                    : active
+                      ? edited && (
+                          <GroupActions
+                            canEdit={active.canEdit}
+                            busy={viewWriter.update.isPending}
+                            onSaveChanges={() =>
+                              viewWriter.update.mutate({
+                                id: active.id,
+                                query: currentQuery(),
+                              })
+                            }
+                            onSaveAs={() => setSaving({ mode: 'new' })}
+                            onRevert={() => openView(active)}
+                          />
+                        )
+                      : narrowed && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSaving({ mode: 'new' })}
+                          >
+                            {t('savedViews.saveAs')}
+                          </Button>
+                        )
+                }
+                groupNotice={
+                  active && !active.valid ? (
+                    <p className="flex items-center gap-2 pl-5 text-sm text-destructive">
+                      {t('savedViews.invalid')}
+                      {active.canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setRemoving(active)}
+                        >
+                          {t('savedViews.remove.confirm')}
+                        </Button>
+                      )}
+                    </p>
+                  ) : null
+                }
+                clearable={!active}
+                params={params}
+                filter={filter}
+                onFilterChange={setFilter}
+                sort={sort}
+                onSortChange={setSort}
+                grouping={grouping}
+                onGroupingChange={setGrouping}
+                paramsFor={paramsFor}
+                uploads={uploads}
+                onDeleteMany={handleDeleteMany}
+                onWrite={write}
+                onUpload={upload}
+                onAddWebPage={addWebPage}
+              />
+            )}
+          </div>
+        </ScrollArea>
+        <PageBottomFader />
       </div>
 
       {isDragging && (

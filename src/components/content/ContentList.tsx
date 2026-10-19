@@ -340,7 +340,8 @@ export function ContentList({
   return (
     // Tighter than Ideas, which has a capture field to set apart (CON-392):
     // the sentence sits under the title, 12px over the Group by / Sort line.
-    <div className="relative flex min-h-0 flex-1 flex-col gap-3 pt-1 pb-4">
+    // In the page's one scroller (CON-392), under its sticky header.
+    <div className="flex flex-col gap-3 pt-1 pb-4">
       <div className="flex flex-col gap-1">
         <FilterSentence
           filter={filter}
@@ -375,6 +376,7 @@ export function ContentList({
       <AssetList
         rows={rows}
         groups={groups}
+        total={total}
         grouping={grouping}
         groupLabel={groupLabel}
         campaignId={campaignId}
@@ -409,7 +411,7 @@ export function ContentList({
         }
         // The list is a real fetch, so it arrives after a loader rather than
         // with the page around it.
-        className="page-content-motion flex-1"
+        className="page-content-motion"
       />
 
       {ticked.size > 0 && (
@@ -495,8 +497,12 @@ function SelectionBar({
     // list without covering it; `bottom-4` and `h-12` are the assistant
     // trigger's own, which is what puts all three surfaces — trigger, commit
     // bar, this — on one line along the bottom of the app.
+    // Sticky at the foot of the page's scroller rather than absolute: the
+    // list scrolls with the page now (CON-392), so the bar stays on the
+    // column's bottom edge however far down it is. `-mt-12` takes back the
+    // room it would occupy at the end of the list.
     <div
-      className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center"
+      className="pointer-events-none sticky bottom-4 -mt-12 flex justify-center"
       style={{ zIndex: ZIndex.pageActionBar }}
     >
       <div className="pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg">

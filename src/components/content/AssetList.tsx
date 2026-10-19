@@ -14,6 +14,7 @@ import { useCampaignNames } from '@/hooks/useCampaignNames'
 import { cn } from '@/lib'
 import type { AssetGrouping } from '@/lib/assetFilter'
 import { formatNumber } from '@/lib/intl'
+import { findScrollParent } from '@/lib/scrollParent'
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { AssetGroupCount, AssetListItem } from '@/types/assetList'
 import { AssetListRow } from './AssetListRow'
@@ -23,6 +24,8 @@ type Props = {
   rows: AssetListItem[]
   /** Every group of the whole match with its count, in display order. */
   groups: AssetGroupCount[]
+  /** Every match — the one band's count when the list is not grouped. */
+  total: number
   grouping: AssetGrouping
   /** What a band is called: the group key in words. */
   groupLabel: (key: string) => string
@@ -44,6 +47,12 @@ type Props = {
   className?: string
 }
 
+/**
+ * Where a band pins: the foot of the page header, whose 80px fade (24px over
+ * the title, the 40px row, 16px under) the list scrolls under (CON-392).
+ */
+const BAND_TOP = 80
+
 /** A band's id in the folded set: the grouping and its key. */
 const bandId = (grouping: AssetGrouping, key: string) => `${grouping}:${key}`
 
@@ -57,10 +66,17 @@ const bandId = (grouping: AssetGrouping, key: string) => `${grouping}:${key}`
  * heading list then offers as a way through.
  *
  * **The bands are sticky and pushed off by the next one.** That is plain
- * `position: sticky` on each band inside the list's own scroller, which is why
- * this list is not virtualised: a virtual window mounts only what is on
- * screen, so the band of a run that began above it would not exist to stick.
- * Pages are fifty rows, and the next is asked for as the foot comes into view.
+ * `position: sticky` on each band inside the *page's* scroller (CON-392): the
+ * list has none of its own, so the sentence and the Group by line scroll away
+ * with it, and a band pins at the foot of the page header's 80px fade
+ * (`BAND_TOP`). A pinned band carries the page background up behind the
+ * header, so rows never show through the fade's transparent half — only while
+ * pinned, or it would cover the last rows of the group above it. The band is
+ * the page's own colour, with one hairline under it, so it reads as the page
+ * continuing rather than a strip. This is also why the list is not
+ * virtualised: a virtual window mounts only what is on screen, so the band of
+ * a run that began above it would not exist to stick. Pages are fifty rows,
+ * and the next is asked for as the foot comes into view.
  *
  * **Grouping is the server's** (CON-379). The rows arrive ordered by group, a
  * band is drawn where the group changes, and its count is the server's total
@@ -68,7 +84,8 @@ const bandId = (grouping: AssetGrouping, key: string) => `${grouping}:${key}`
  * how many it holds. A tag grouping lists a document once per tag, so the
  * same row may appear under two bands; that is the grouping, not a mistake.
  * A grouping with a single group still draws its band: the band is what says
- * the list is grouped, and by what.
+ * the list is grouped, and by what. And an ungrouped list has one too — "No
+ * grouping", with the count — so the list always has an edge to pin.
  *
  * A band folds on its chevron. What is folded is display state, kept per
  * device (`settingsStore.collapsedAssetBands`), never the workspace's.
@@ -76,6 +93,7 @@ const bandId = (grouping: AssetGrouping, key: string) => `${grouping}:${key}`
 export function AssetList({
   rows,
   groups,
+  total,
   grouping,
   groupLabel,
   campaignId,
@@ -92,14 +110,15 @@ export function AssetList({
   const { names, ready } = useCampaignNames()
   const collapsed = useSettingsStore((s) => s.collapsedAssetBands)
   const toggleBand = useSettingsStore((s) => s.toggleAssetBand)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
   const footRef = useRef<HTMLDivElement>(null)
   const now = useMemo(() => new Date(asOf), [asOf])
   const counts = useMemo(
     () => new Map(groups.map((g) => [g.key, g.count])),
     [groups],
   )
-  const banded = grouping !== 'none' && groups.length > 0
+  // Ungrouped, the whole list is one band — "No grouping" — under the key ''.
+  const grouped = grouping !== 'none' && groups.length > 0
   const selecting = selectedIds.size > 0
 
   // Where each band opens, worked out once per page of rows: the rows arrive
@@ -108,11 +127,12 @@ export function AssetList({
     () =>
       rows.map((row, i) => ({
         row,
-        key: row.group_key ?? '',
-        opensBand:
-          banded && (i === 0 || rows[i - 1].group_key !== row.group_key),
+        key: grouped ? (row.group_key ?? '') : '',
+        opensBand: grouped
+          ? i === 0 || rows[i - 1].group_key !== row.group_key
+          : i === 0,
       })),
-    [rows, banded],
+    [rows, grouped],
   )
 
   // The foot coming into view is the cue for the next page. A ref to the
@@ -125,9 +145,9 @@ export function AssetList({
     endReached.current = onEndReached
   })
   useEffect(() => {
-    const root = scrollRef.current
     const foot = footRef.current
-    if (!root || !foot || typeof IntersectionObserver === 'undefined') return
+    const root = findScrollParent(foot)
+    if (!foot || typeof IntersectionObserver === 'undefined') return
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) endReached.current()
@@ -138,33 +158,58 @@ export function AssetList({
     return () => observer.disconnect()
   }, [hasRows])
 
+  // Which band is pinned: the one sitting exactly at `BAND_TOP`. Marked on
+  // the element rather than held in state — it changes on every scroll, and
+  // all it switches is the cap behind the header.
+  useEffect(() => {
+    const list = listRef.current
+    const scroller = findScrollParent(list)
+    if (!list || !scroller) return
+    let frame = 0
+    const mark = () => {
+      frame = 0
+      const top = scroller.getBoundingClientRect().top + BAND_TOP
+      for (const band of list.querySelectorAll<HTMLElement>('[data-band]')) {
+        const at = band.getBoundingClientRect().top
+        band.toggleAttribute('data-pinned', Math.abs(at - top) < 1)
+      }
+    }
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(mark)
+    }
+    mark()
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      scroller.removeEventListener('scroll', onScroll)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [hasRows])
+
   if (rows.length === 0) {
-    return (
-      <div className={cn('min-h-50 overflow-y-auto', className)}>
-        {emptyState}
-      </div>
-    )
+    return <div className={cn('min-h-50', className)}>{emptyState}</div>
   }
 
   return (
-    <div
-      ref={scrollRef}
-      className={cn('@container min-h-0 overflow-y-auto bg-primary', className)}
-    >
-      <ul aria-label={t('content.list.label')}>
-        {entries.map(({ row, key, opensBand }, index) => {
-          const folded = banded && collapsed.includes(bandId(grouping, key))
+    <div className={cn('@container bg-primary', className)}>
+      <ul ref={listRef} aria-label={t('content.list.label')}>
+        {entries.map(({ row, key, opensBand }) => {
+          const folded = collapsed.includes(bandId(grouping, key))
           // A row listed under two tags is two rows; the key keeps them apart.
           const id = `${key}:${row.id}`
           return (
             <Fragment key={id}>
               {opensBand && (
                 <Band
-                  label={groupLabel(key)}
-                  count={formatNumber(counts.get(key) ?? 0, {}, i18n.language)}
+                  label={
+                    grouped ? groupLabel(key) : t('content.view.group.none')
+                  }
+                  count={formatNumber(
+                    grouped ? (counts.get(key) ?? 0) : total,
+                    {},
+                    i18n.language,
+                  )}
                   folded={folded}
                   onToggle={() => toggleBand(bandId(grouping, key))}
-                  first={index === 0}
                 />
               )}
               {!folded && (
@@ -206,20 +251,23 @@ function Band({
   count,
   folded,
   onToggle,
-  first,
 }: {
   label: string
   count: string
   folded: boolean
   onToggle: () => void
-  first: boolean
 }) {
   const { t } = useTranslation()
   return (
     <li
+      data-band
       className={cn(
-        'sticky top-0 border-b border-quaternary bg-secondary',
-        !first && 'border-t',
+        // The page's own colour and one hairline under it: the band reads as
+        // the page continuing, not a strip of a second grey.
+        'sticky top-20 border-b border-quaternary bg-background',
+        // Pinned, a cap of page background up behind the header, so no row
+        // shows through the fade's transparent half.
+        "before:absolute before:inset-x-0 before:bottom-full before:hidden before:h-20 before:bg-background before:content-[''] data-pinned:before:block",
       )}
       style={{ zIndex: ZIndex.stickyTableHeader }}
     >

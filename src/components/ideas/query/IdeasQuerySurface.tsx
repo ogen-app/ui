@@ -816,7 +816,6 @@ function IdeaRows({
                   count={formatNumber(counts.get(key) ?? 0, {}, i18n.language)}
                   folded={isFolded}
                   onToggle={() => toggleBand(bandId)}
-                  firstBand={i === 0}
                 />
               )}
               {!isFolded && (
@@ -877,7 +876,6 @@ function Band({
   count,
   folded,
   onToggle,
-  firstBand,
 }: {
   group: IdeaGrouping
   groupKey: string
@@ -887,7 +885,6 @@ function Band({
   count: string
   folded: boolean
   onToggle: () => void
-  firstBand: boolean
 }) {
   const { t } = useTranslation()
   const source = group === 'source' && groupKey !== NONE
@@ -926,12 +923,11 @@ function Band({
   return (
     // The Assets list's band: pinned at the top of the list while its rows
     // pass under it, and folded by its whole width. Its chevron sits over the
-    // rows' boxes and its name level with the filter's words.
+    // rows' boxes and its name level with the filter's words. The page's own
+    // colour with one hairline under it, as on Assets (CON-392): the page
+    // continuing, not a strip of a second grey.
     <li
-      className={cn(
-        'sticky top-0 border-b border-quaternary bg-secondary',
-        !firstBand && 'border-t',
-      )}
+      className="sticky top-0 border-b border-quaternary bg-background"
       style={{ zIndex: ZIndex.stickyTableHeader }}
     >
       <h2>

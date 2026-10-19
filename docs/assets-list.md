@@ -73,9 +73,30 @@ page.
 - **Tag** lists a document once per tag, so the same row can appear under two
   bands, and `groups` counts appearances while `total` counts documents.
 - A band is drawn whenever the list is grouped, even for a single group: it is
-  what says the list is grouped, and by what.
+  what says the list is grouped, and by what. Ungrouped, the list still has one
+  band, **No grouping**, with the count (CON-392), so it always has an edge to
+  pin.
 - Bands are `<h2>`s, sticky, and fold on a click. What is folded is kept per
   device (`settingsStore.collapsedAssetBands`), never in `/api/settings`.
+- Bands are the page's own colour (`bg-background`) with one hairline under
+  them, so they read as the page continuing rather than a strip.
+
+## Scrolling
+
+The page uses the post page's scroll frame (CON-392). `PageHeader` (the title
+and ADD CONTENT) is sticky inside one `ScrollArea`, carrying its own 80px fade.
+The sentence, the Group by / Sort line and the list scroll together under it,
+and `PageBottomFader` runs along the bottom. The list has no scroller of its
+own: paging watches the page's.
+
+- **Pinning:** a band pins at 80px, the foot of the header's fade. While
+  pinned (`data-pinned`, worked out on scroll) it carries a cap of page
+  background up behind the header, so no row shows through the fade's
+  transparent half.
+- **The cap only while pinned:** a cap on every band would cover the last rows
+  of the group above it.
+- **The selection bar** is sticky at the scroller's foot, so it floats over the
+  bottom fade in line with the assistant trigger.
 
 ## The filter sentence
 
