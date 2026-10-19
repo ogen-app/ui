@@ -13,6 +13,7 @@ import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { resolveForPlatform } from '@/lib/publishingAccount'
 import { hasVisibleProblem } from '@/lib/postValidation'
+import { coverDrawable, useFailedCovers } from '@/lib/failedCovers'
 import { isDateLocked } from './LockMark'
 import { PostCard } from './PostCard'
 import { withCampaignRow } from './cardFields'
@@ -76,6 +77,9 @@ function WeeklyCalendarComponent({
   const [hoverKey, setHoverKey] = useState<string | null>(null)
   const { t, i18n } = useTranslation()
   const today = useMemo(() => new Date(), [])
+  // Covers that would not load — a card that dropped its picture is not
+  // charged the band for it (`lib/failedCovers`).
+  const failedCovers = useFailedCovers()
   // Never called on the workspace grid — the button that would call it isn't
   // rendered there — but hooks don't take a branch, so it is given the empty
   // campaign a disabled create would refuse anyway.
@@ -178,10 +182,10 @@ function WeeklyCalendarComponent({
               ),
               resolvePlatform(post.platform_id),
             ),
-          // Truthiness, exactly as the card decides whether to draw the band
-          // (`cover_url` there too) — a present-but-empty URL must not be
+          // Exactly as the card decides whether to draw the band — a
+          // present-but-empty URL, or one that failed to load, must not be
           // charged a 100px band the card then leaves blank.
-          hasImage: Boolean(post.cover_url),
+          hasImage: coverDrawable(post.cover_url, failedCovers),
           // As the card decides whether to draw the row: a campaign that came
           // back unhydrated has no name to print, so it costs no height.
           hasCampaign: Boolean(post.campaign),
@@ -216,6 +220,7 @@ function WeeklyCalendarComponent({
       platformViews,
       resolvePlatform,
       fields,
+      failedCovers,
       i18n.language,
     ],
   )
