@@ -2983,6 +2983,43 @@ export const en = {
      * one idea at two lengths — the card can afford to explain what the list
      * is for, the rail cannot.
      */
+    /**
+     * Attaching an image from Assets to a post (CON-290). The bank copies the
+     * image into the post server-side, so these are the picker's words and
+     * the refusals the copy can meet.
+     */
+    media: {
+      fromAssets: {
+        tile: 'From Assets',
+        title: 'Add images from Assets',
+        scopeCampaign: 'This campaign',
+        scopeWorkspace: 'All assets',
+        search: 'Search images',
+        searchLabel: 'Search images in Assets',
+        clearSearch: 'Clear search',
+        room_one: 'One more image fits on this post.',
+        room_other: '{{count}} more images fit on this post.',
+        error: 'Unable to read Assets.',
+        emptyCampaign:
+          'This campaign has no images yet. Switch to All assets to choose from the whole workspace.',
+        emptyWorkspace: 'There are no images in Assets yet.',
+        noMatch: 'No images match that.',
+        onPost: 'On this post',
+        processing: 'Processing',
+        failed: 'Failed',
+        add: 'Add',
+        addCount_one: 'Add {{count}} image',
+        addCount_other: 'Add {{count}} images',
+        failedToast: "Couldn't add {{title}}",
+        errors: {
+          locked:
+            'This post is scheduled or published, so its media can no longer change.',
+          gone: 'This image is no longer in Assets.',
+          noFile: 'This asset has no stored image to attach.',
+        },
+      },
+    },
+
     sources: {
       heading: 'Sources',
       /** The rail section's title. Its capitals are the copy, as everywhere. */

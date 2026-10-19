@@ -2334,6 +2334,41 @@ export const es: Translation = {
 
     hasProblem: 'Esta publicación tiene un problema',
 
+    /**
+     * Adjuntar una imagen de Recursos a una publicación (CON-290).
+     */
+    media: {
+      fromAssets: {
+        tile: 'Desde Recursos',
+        title: 'Añadir imágenes desde Recursos',
+        scopeCampaign: 'Esta campaña',
+        scopeWorkspace: 'Todos los recursos',
+        search: 'Buscar imágenes',
+        searchLabel: 'Buscar imágenes en Recursos',
+        clearSearch: 'Borrar búsqueda',
+        room_one: 'Cabe una imagen más en esta publicación.',
+        room_other: 'Caben {{count}} imágenes más en esta publicación.',
+        error: 'No se pudieron leer los Recursos.',
+        emptyCampaign:
+          'Esta campaña aún no tiene imágenes. Cambia a Todos los recursos para elegir entre todo el espacio de trabajo.',
+        emptyWorkspace: 'Aún no hay imágenes en Recursos.',
+        noMatch: 'Ninguna imagen coincide.',
+        onPost: 'En esta publicación',
+        processing: 'Procesando',
+        failed: 'Error',
+        add: 'Añadir',
+        addCount_one: 'Añadir {{count}} imagen',
+        addCount_other: 'Añadir {{count}} imágenes',
+        failedToast: 'No se pudo añadir {{title}}',
+        errors: {
+          locked:
+            'Esta publicación está programada o publicada, así que su contenido multimedia ya no puede cambiar.',
+          gone: 'Esta imagen ya no está en Recursos.',
+          noFile: 'Este recurso no tiene una imagen guardada que adjuntar.',
+        },
+      },
+    },
+
     sources: {
       heading: 'Fuentes',
       sectionTitle: 'FUENTES',

@@ -50,7 +50,6 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 | N3 | **A per-post series** — `GET /api/analytics/posts/:post_id`, returning per-metric running totals on an age-since-publish axis. **Written and in review** (ogen#130); re-test the client against it when it merges, per CLAUDE.md rule 4. | CON-250 | `campaign-analytics` |
 | N7 | **`account.avatar_url` is declared and always empty**, `display_name` mirrors `username`. Rows fall back to the initial plus the platform badge and fill in on their own. | **CON-287** | — |
 | S1 | **A content-bank image has no thumbnail**, so the list's preview cell downloads the full file to draw it at 40px. Raised on the image service rather than as its own issue: it is one more output of a pipeline that already writes a normalized derivative. `assetPreview` prefers `thumbnail_url` already, so the client changes nothing when it lands. | CON-281 | — |
-| S2 | **The bridge that attaches a bank image to a post.** Both sides were built expecting it — `asset_files`' columns are named to match `post_attachments` for the field copy, and the alt text CON-246 collects has no other consumer. The client picker wants CON-210 first, so it is scoped against a campaign rather than the workspace. | **CON-290** | — |
 | S3 | **Campaign-scoped assets**, with the workspace bank staying on as workspace-wide knowledge storage (CON-211). | CON-210 | — |
 | B1 | **Session-authenticated email preferences.** CON-155 shipped the suppression engine, but every endpoint it exposes verifies a signature lifted from an email footer, not a session. | CON-155 | `email-preferences` |
 | E1 | **`post.attachments.changed` on `entity:post:<id>`** after every committed attachment write — upload, video finalize, bank attach (the Figma plugin's path), update, reorder, delete — tenant-stamped with no `UserID`, so every member with the post open hears it. The client routes it already (`lib/eventRouting`); until it is published, a file the Figma plugin attaches to an open post appears only on reload or the 10-minute presign refetch. | **CON-345** | — |
@@ -60,6 +59,12 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 
 Kept for one cycle so nobody re-raises them, then deleted.
 
+- **S2 — the bridge that attaches a bank image to a post.** Shipped in CON-290
+  (ogen#187, 2026-10-03): `POST /api/posts/:id/attachments/from-asset` copies
+  the image into the post rather than referencing it, EXIF-stripped, with the
+  asset's alt text. Not the field copy the ticket proposed — the bank keeps the
+  original upload, metadata and all, so the checksum and size are the stripped
+  copy's. The media card's **From Assets** picker is the client half.
 - **S5 — R2 CORS for a browser `PUT`.** Video post attachments already PUT
   straight to a presigned R2 URL through the same `storageUpload`, unflagged, so
   the bucket was answering the app's origin all along. Audio uploads are on by
