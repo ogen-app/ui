@@ -1,4 +1,5 @@
 import { useLocation } from '@tanstack/react-router'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { useWorkspaceDestinations } from '@/components/layout/nav/workspaceDestinations'
 import { TasksSidebarItem } from '@/components/tasks/TasksSidebarItem'
@@ -39,9 +40,7 @@ export function WorkspaceLevel() {
         return (
           <AppSidebarButtonMenu
             key={destination.id}
-            icon={
-              <destination.icon weight="regular" className="size-5 flex-none" />
-            }
+            icon={<NavIcon icon={destination.icon} />}
             text={destination.label}
             isActive={isActive}
             to={destination.to}

@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
@@ -147,7 +148,12 @@ function AccountMenu({
               className="px-2"
               onSelect={() => navigate({ to: destination.to })}
             >
-              <destination.icon weight="bold" />
+              <HugeiconsIcon
+                icon={destination.icon}
+                size={16}
+                strokeWidth={1.8}
+                aria-hidden
+              />
               <span>{destination.label}</span>
             </DropdownMenuItem>
           ))}

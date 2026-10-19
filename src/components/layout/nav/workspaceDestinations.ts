@@ -1,16 +1,16 @@
 import { useTranslation } from 'react-i18next'
 import {
-  BellSimpleIcon,
-  CalendarDotsIcon,
-  ChartLineUpIcon,
-  FilesIcon,
-  GearSixIcon,
-  LightbulbIcon,
+  AiIdeaIcon,
+  BellIcon,
+  Calendar04Icon,
+  ChartColumnIncreasingIcon,
+  FolderLibraryIcon,
+  InboxIcon,
   PaletteIcon,
-  ToolboxIcon,
-  TrayIcon,
-  type Icon,
-} from '@phosphor-icons/react'
+  PromotionIcon,
+  Settings01Icon,
+} from '@hugeicons/core-free-icons'
+import type { IconSvgElement } from '@hugeicons/react'
 import type { LinkProps } from '@tanstack/react-router'
 import { useFeatureFlag } from '@/config/featureFlags'
 
@@ -47,7 +47,8 @@ import { useFeatureFlag } from '@/config/featureFlags'
 export type WorkspaceDestination = {
   id: string
   label: string
-  icon: Icon
+  /** Hugeicons, drawn by `NavIcon`. */
+  icon: IconSvgElement
   to: LinkProps['to']
   /** True when the current path is this destination. */
   isActive: (pathname: string) => boolean
@@ -67,7 +68,7 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
     destinations.push({
       id: 'inbox',
       label: t('nav.inbox'),
-      icon: TrayIcon,
+      icon: InboxIcon,
       to: '/tasks',
       isActive: (p) => p.startsWith('/tasks'),
     })
@@ -79,7 +80,7 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
   destinations.push({
     id: 'ideas',
     label: t('nav.ideas'),
-    icon: LightbulbIcon,
+    icon: AiIdeaIcon,
     to: '/ideas',
     isActive: (p) => p.startsWith('/ideas'),
   })
@@ -94,7 +95,7 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
     // Files rather than the stacked-cards glyph it wore inside Brand: one
     // level down this row sits directly above Posts, whose mark is cards, and
     // two card stacks in one rail at 20px is a puzzle rather than a menu.
-    icon: FilesIcon,
+    icon: FolderLibraryIcon,
     to: '/assets',
     isActive: (p) => p.startsWith('/assets'),
   })
@@ -102,7 +103,7 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
   destinations.push({
     id: 'campaigns',
     label: t('nav.campaigns'),
-    icon: ToolboxIcon,
+    icon: PromotionIcon,
     to: '/campaigns',
     // Exact: everything below `/campaigns/<id>` is level 1, and lighting the
     // module row up while the rail is drawing a campaign would say the two are
@@ -114,7 +115,7 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
     destinations.push({
       id: 'calendar',
       label: t('nav.calendar'),
-      icon: CalendarDotsIcon,
+      icon: Calendar04Icon,
       to: '/calendar',
       isActive: (p) => p.startsWith('/calendar'),
     })
@@ -123,7 +124,7 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
   destinations.push({
     id: 'analytics',
     label: t('nav.analytics'),
-    icon: ChartLineUpIcon,
+    icon: ChartColumnIncreasingIcon,
     to: '/analytics',
     isActive: (p) => p.startsWith('/analytics'),
   })
@@ -162,7 +163,7 @@ export function useWorkspaceMenuEntries(): WorkspaceDestination[] {
   entries.push({
     id: 'activity',
     label: t('nav.activity'),
-    icon: BellSimpleIcon,
+    icon: BellIcon,
     to: '/activity',
     isActive: (p) => p.startsWith('/activity'),
   })
@@ -170,7 +171,7 @@ export function useWorkspaceMenuEntries(): WorkspaceDestination[] {
   entries.push({
     id: 'workspace-settings',
     label: t('nav.workspaceSettings'),
-    icon: GearSixIcon,
+    icon: Settings01Icon,
     to: '/workspace-settings',
     isActive: (p) => p.startsWith('/workspace-settings'),
   })

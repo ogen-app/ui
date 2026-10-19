@@ -1,4 +1,5 @@
 import { useLocation, type LinkProps } from '@tanstack/react-router'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
 import { useTranslation } from 'react-i18next'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { SidebarMenuSkeleton } from '@/components/ui/sidebar'
@@ -157,15 +158,9 @@ export function CampaignLevel({
               <AppSidebarButtonMenu
                 key={section.id}
                 icon={
-                  // The same 20px slot every row uses, so the labels line up;
-                  // only the glyph inside is smaller. `tone` is the section's
-                  // permanent hue — see `lib/campaignSections`.
-                  <span
-                    className="flex size-5 flex-none items-center justify-center"
-                    style={{ color: section.tone }}
-                  >
-                    <section.icon className="size-4" />
-                  </span>
+                  // The same 20px glyph every row uses, at both levels, in
+                  // the section's permanent hue — see `lib/campaignSections`.
+                  <NavIcon icon={section.icon} tone={section.tone} />
                 }
                 text={t(section.labelKey)}
                 isActive={activeSection === section.id}

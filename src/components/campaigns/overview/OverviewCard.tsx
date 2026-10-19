@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { CaretRightIcon } from '@phosphor-icons/react'
@@ -76,8 +77,10 @@ export function OverviewCard({
         <div className="flex items-center gap-3 min-w-0">
           <CardGlyph>
             {Glyph ? (
-              <Glyph
-                className="size-5"
+              <HugeiconsIcon
+                icon={Glyph}
+                size={20}
+                strokeWidth={1.5}
                 style={{ color: meta?.tone }}
                 aria-hidden
               />
@@ -256,7 +259,13 @@ export function CollapsedCard({
     >
       <div className="flex items-center gap-3 min-w-0">
         <CardGlyph>
-          <Glyph className="size-5" style={{ color: tone }} aria-hidden />
+          <HugeiconsIcon
+            icon={Glyph}
+            size={20}
+            strokeWidth={1.5}
+            style={{ color: tone }}
+            aria-hidden
+          />
         </CardGlyph>
         <h2 className="font-display text-base font-medium shrink-0">
           {t(labelKey)}
