@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { BellSimpleIcon } from '@phosphor-icons/react'
+import { BellIcon } from '@hugeicons/core-free-icons'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { useNotificationUnreadCount } from '@/hooks/useNotifications'
 
@@ -25,7 +26,7 @@ export function ActivitySidebarItem({ isActive }: { isActive: boolean }) {
 
   return (
     <AppSidebarButtonMenu
-      icon={<BellSimpleIcon weight="regular" className="size-5 flex-none" />}
+      icon={<NavIcon icon={BellIcon} />}
       text={t('nav.activity')}
       isActive={isActive}
       to="/activity"

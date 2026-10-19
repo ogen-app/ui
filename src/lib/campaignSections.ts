@@ -1,14 +1,14 @@
 import {
-  BellSimpleIcon,
-  CalendarDotsIcon,
-  CardsIcon,
-  ChartLineUpIcon,
-  FilesIcon,
-  GearSixIcon,
-  LightbulbIcon,
-  NotepadIcon,
-  TrayIcon,
-} from '@phosphor-icons/react'
+  AiIdeaIcon,
+  BellIcon,
+  Calendar04Icon,
+  ChartColumnIncreasingIcon,
+  Chess02Icon,
+  FolderLibraryIcon,
+  Navigation06Icon,
+  NewsIcon,
+  Settings01Icon,
+} from '@hugeicons/core-free-icons'
 
 /**
  * The campaign's sections, as the app names and marks them.
@@ -60,10 +60,8 @@ export const CAMPAIGN_SECTIONS = [
     id: 'overview',
     labelKey: 'nav.campaign.overview',
     openKey: 'campaignOverview.openOverview',
-    // The workspace's Inbox glyph, because this is the same slot: the one
-    // place at this level that is addressed to you — what the campaign has
-    // waiting rather than what you went looking for.
-    icon: TrayIcon,
+    // Where you are and what is waiting: the campaign's front page.
+    icon: Navigation06Icon,
     tone: 'var(--nav-overview)',
     utility: false,
   },
@@ -71,7 +69,7 @@ export const CAMPAIGN_SECTIONS = [
     id: 'strategy',
     labelKey: 'nav.campaign.strategy',
     openKey: 'campaignOverview.openStrategy',
-    icon: NotepadIcon,
+    icon: Chess02Icon,
     tone: 'var(--nav-strategy)',
     utility: false,
   },
@@ -79,7 +77,7 @@ export const CAMPAIGN_SECTIONS = [
     id: 'ideas',
     labelKey: 'nav.campaign.ideas',
     openKey: 'campaignOverview.openIdeas',
-    icon: LightbulbIcon,
+    icon: AiIdeaIcon,
     tone: 'var(--nav-ideas)',
     utility: false,
   },
@@ -91,7 +89,7 @@ export const CAMPAIGN_SECTIONS = [
     id: 'assets',
     labelKey: 'nav.campaign.assets',
     openKey: 'campaignOverview.openAssets',
-    icon: FilesIcon,
+    icon: FolderLibraryIcon,
     tone: 'var(--nav-assets)',
     utility: false,
   },
@@ -99,10 +97,9 @@ export const CAMPAIGN_SECTIONS = [
     id: 'posts',
     labelKey: 'nav.campaign.posts',
     openKey: 'campaignOverview.openPosts',
-    // Cards, not a calendar: this row is the table now, and the calendar is
-    // the row below it. Two arrangements of the same posts, and for the first
-    // time each has its own way in.
-    icon: CardsIcon,
+    // Not a calendar: this row is the table, and the calendar is the row
+    // below it. Two arrangements of the same posts, each with its own way in.
+    icon: NewsIcon,
     tone: 'var(--nav-posts)',
     utility: false,
   },
@@ -110,7 +107,7 @@ export const CAMPAIGN_SECTIONS = [
     id: 'calendar',
     labelKey: 'nav.campaign.calendar',
     openKey: 'campaignOverview.openCalendar',
-    icon: CalendarDotsIcon,
+    icon: Calendar04Icon,
     tone: 'var(--nav-calendar)',
     utility: false,
   },
@@ -118,7 +115,7 @@ export const CAMPAIGN_SECTIONS = [
     id: 'analytics',
     labelKey: 'nav.campaign.analytics',
     openKey: 'campaignOverview.openAnalytics',
-    icon: ChartLineUpIcon,
+    icon: ChartColumnIncreasingIcon,
     tone: 'var(--nav-analytics)',
     utility: false,
   },
@@ -126,7 +123,7 @@ export const CAMPAIGN_SECTIONS = [
     id: 'activity',
     labelKey: 'nav.campaign.activity',
     openKey: 'campaignOverview.openActivity',
-    icon: BellSimpleIcon,
+    icon: BellIcon,
     tone: undefined,
     utility: true,
   },
@@ -134,7 +131,7 @@ export const CAMPAIGN_SECTIONS = [
     id: 'settings',
     labelKey: 'nav.campaign.settings',
     openKey: 'campaignOverview.openSettings',
-    icon: GearSixIcon,
+    icon: Settings01Icon,
     tone: undefined,
     utility: true,
   },

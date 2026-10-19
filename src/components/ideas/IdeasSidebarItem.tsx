@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { LightbulbIcon } from '@phosphor-icons/react'
+import { AiIdeaIcon } from '@hugeicons/core-free-icons'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { useUndecidedIdeaCount } from '@/hooks/useIdeaList'
 
@@ -27,7 +28,7 @@ export function IdeasSidebarItem({ isActive }: { isActive: boolean }) {
 
   return (
     <AppSidebarButtonMenu
-      icon={<LightbulbIcon weight="regular" className="size-5 flex-none" />}
+      icon={<NavIcon icon={AiIdeaIcon} />}
       text={t('nav.ideas')}
       isActive={isActive}
       to="/ideas"

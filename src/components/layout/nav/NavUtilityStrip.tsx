@@ -1,6 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { useLocation } from '@tanstack/react-router'
-import { BellSimpleIcon, GearSixIcon, PaletteIcon } from '@phosphor-icons/react'
+import {
+  BellIcon,
+  PaletteIcon,
+  Settings01Icon,
+} from '@hugeicons/core-free-icons'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
 import { ActivitySidebarItem } from '@/components/activity/ActivitySidebarItem'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 
@@ -45,7 +50,7 @@ export function NavUtilityStrip({
   const { t } = useTranslation()
   const { pathname } = useLocation()
 
-  const gear = <GearSixIcon weight="regular" className="size-5 flex-none" />
+  const gear = <NavIcon icon={Settings01Icon} />
 
   if (level === 1 && campaignId) {
     return (
@@ -55,9 +60,7 @@ export function NavUtilityStrip({
             number here would be answering a different question than the row
             it sits under is asking. */}
         <AppSidebarButtonMenu
-          icon={
-            <BellSimpleIcon weight="regular" className="size-5 flex-none" />
-          }
+          icon={<NavIcon icon={BellIcon} />}
           text={t('nav.campaign.activity')}
           isActive={pathname.includes('/activity')}
           to="/campaigns/$campaignId/activity"
@@ -80,7 +83,7 @@ export function NavUtilityStrip({
   return (
     <div className="flex flex-col gap-1">
       <AppSidebarButtonMenu
-        icon={<PaletteIcon weight="regular" className="size-5 flex-none" />}
+        icon={<NavIcon icon={PaletteIcon} />}
         text={t('nav.foundation')}
         isActive={pathname.startsWith('/foundation')}
         to="/foundation"

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { TrayIcon } from '@phosphor-icons/react'
+import { InboxIcon } from '@hugeicons/core-free-icons'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { useTasks } from '@/hooks/useTasks'
 import { openTasks } from '@/lib/tasks'
@@ -29,7 +30,7 @@ export function TasksSidebarItem({ isActive }: { isActive: boolean }) {
 
   return (
     <AppSidebarButtonMenu
-      icon={<TrayIcon weight="regular" className="size-5 flex-none" />}
+      icon={<NavIcon icon={InboxIcon} />}
       text={t('nav.inbox')}
       isActive={isActive}
       to="/tasks"
