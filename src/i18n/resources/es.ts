@@ -1644,6 +1644,7 @@ export const es: Translation = {
     columnTitle: 'Título',
     columnStatus: 'Estado',
     columnPlatform: 'Plataforma',
+    columnFormat: 'Formato',
     columnPublishDate: 'Fecha de publicación',
     columnWhen: 'Cuándo',
 

@@ -401,13 +401,13 @@ const FEATURE_FLAGS = {
    * warns about it. Forcing the classification is the mistake CON-210 paid for
    * with its three-mode source picker.
    *
-   * **Waiting on** a nullable `content_format` column on the post (and on the
-   * series, when that flag lands — a series pins one and its posts inherit it).
-   * Until then a post's format lives in a `localStorage` sidecar
-   * (`services/api/contentLocal.ts`), which is per browser and must not ship
-   * that way.
+   * **Backed since CON-329**: `content_format` on the post, presence-aware on
+   * the PUT, inside CON-251's lock, and read by the post assistant. Turned on
+   * after re-testing against dev; delete the flag and its off-branches once it
+   * has survived a deploy. Still to come, and not gating this: the series'
+   * own `content_format` (CON-330) and analytics grouped by format.
    */
-  'content-formats': false,
+  'content-formats': true,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

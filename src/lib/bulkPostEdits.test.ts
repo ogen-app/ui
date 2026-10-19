@@ -32,6 +32,7 @@ function post(
     first_comment: '',
     first_comment_delay_minutes: 0,
     first_comment_status: null,
+    content_format: null,
     status,
     cta_type: '' as Post['cta_type'],
     cta_url: '',

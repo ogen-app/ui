@@ -2102,6 +2102,7 @@ export const en = {
     columnTitle: 'Title',
     columnStatus: 'Status',
     columnPlatform: 'Platform',
+    columnFormat: 'Format',
     columnPublishDate: 'Publish date',
     columnWhen: 'When',
 

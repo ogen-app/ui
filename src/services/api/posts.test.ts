@@ -114,6 +114,17 @@ describe('postToPayload', () => {
     expect(payload.first_comment_delay_minutes).toBe(3)
   })
 
+  it('restates the format, and an unset one as null rather than ""', () => {
+    // The same case for the same reason (CON-329). `null` clears and `""` is a
+    // 400, so "no format" has to travel as the former.
+    expect(
+      postToPayload(makePost({ content_format: 'how-to' })).content_format,
+    ).toBe('how-to')
+    const unset = postToPayload(makePost({ content_format: null }))
+    expect('content_format' in unset).toBe(true)
+    expect(unset.content_format).toBeNull()
+  })
+
   it('never sends the thread segments back', () => {
     // A third case, and a third reason (CON-284 R2). `published_url` must be
     // present or it is lost; `used_asset_ids` must be absent or it is

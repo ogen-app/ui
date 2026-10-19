@@ -387,6 +387,9 @@ export function restorePost(
  * sources, but restated rather than omitted: unlike `used_asset_ids` they have
  * no endpoint of their own, so the autosave is their only writer, and the
  * CON-251 lock lets a scheduled post restate the values it already holds.
+ *
+ * `content_format` (CON-329) is the same arrangement for the same reasons:
+ * presence-aware, no endpoint of its own, inside the lock, and restated.
  */
 export function postToPayload(post: Post): PostPayload {
   return {
@@ -407,5 +410,6 @@ export function postToPayload(post: Post): PostPayload {
     campaign_type_phase_id: post.campaign_type_phase_id,
     first_comment: post.first_comment,
     first_comment_delay_minutes: post.first_comment_delay_minutes,
+    content_format: post.content_format,
   }
 }
