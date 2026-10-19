@@ -15,14 +15,9 @@ import {
 } from '@/types/attachments'
 import { awaiting } from '@/lib/fetched'
 import { invalidateEntitlements } from '@/hooks/useEntitlements'
+import { invalidatePostLists } from '@/lib/postCache'
+import { PRESIGN_REFRESH_MS } from '@/lib/presignedUrls'
 import { localWriteKey, postAttachmentsKey } from '@/lib/queryKeys'
-
-/**
- * Presigned GET URLs expire 15 minutes after the response is built
- * (`PresignedURLTTL` in the Go handler). Refetch comfortably inside that
- * window so images in a long editing session never start 403-ing.
- */
-const PRESIGN_REFRESH_MS = 10 * 60 * 1000
 
 /**
  * What an upload run produced. `ids` are the attachments the server created,
@@ -60,6 +55,9 @@ export function usePostAttachments(postId: string) {
     // is the sum of the workspace's post attachments and nothing else, so an
     // upload here spends the allowance and a removal gives it back (CON-295).
     invalidateEntitlements(qc)
+    // The first drawable file is the post's `cover_url` on every list row,
+    // and this hook holds only the post's id (CON-247).
+    invalidatePostLists(qc)
   }, [qc, postId])
 
   /**

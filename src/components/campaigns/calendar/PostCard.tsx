@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import {
@@ -247,11 +247,17 @@ function PostCardComponent({
     i18n.language,
   )
 
-  // Only what the list payload already carries — `media_urls`. The editor's
-  // uploads land in `post_attachments`, whose thumbnails are hydrated per
-  // post, and a week view will not make one request per card for them. See
-  // the note in docs/technical-decisions.md#calendar-card-media.
-  const image = fields.image ? post.media_urls[0] : undefined
+  // Only what the list payload already carries — the server's `cover_url`,
+  // never a per-card attachments fetch. See
+  // docs/technical-decisions.md#calendar-card-media.
+  //
+  // A cover that will not load is dropped rather than drawn as the browser's
+  // broken-image glyph: it is a presigned GET, so the likely cause is that it
+  // expired before the list's next refetch, and that refetch brings a new URL
+  // — which is not the one that failed, so the picture comes back with it.
+  const [failedCover, setFailedCover] = useState<string>()
+  const cover = fields.image ? post.cover_url : undefined
+  const image = cover !== failedCover ? cover : undefined
   // Resolved the same way the status machine resolves it, so the card and
   // the schedule button never disagree about whether the account is a
   // problem. Reads the cached platform list — no per-card fetch.
@@ -373,9 +379,15 @@ function PostCardComponent({
           first row included, on something near the card's own fill. */}
       {image && (
         <>
+          {/* Lazy and off the main thread: a cover is the full-size original
+              (or a PDF page, or a poster frame), and a month grid can hold a
+              few dozen of them, most of them below the fold. */}
           <img
             src={image}
             alt=""
+            loading="lazy"
+            decoding="async"
+            onError={() => setFailedCover(image)}
             className={cn(
               'pointer-events-none absolute inset-0 size-full object-cover',
               // A broken post's picture drains. Same `problem` that turns the

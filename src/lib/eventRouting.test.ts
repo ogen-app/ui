@@ -102,18 +102,19 @@ describe('invalidationsFor', () => {
     }
   })
 
-  it("refreshes only the media list when a post's files change", () => {
+  it("refreshes the media list and the calendars, never the body, when a post's files change", () => {
     // The Figma plugin attaching from outside the app is the case this is for
     // (CON-345). The body must not refetch — the editor may be mid-autosave —
-    // and no list reads attachments.
+    // but every list row carries a cover taken from those files (CON-247).
     const e = event('entity:post:p1', 'post.attachments.changed', {
       attachment_id: 'att1',
       action: 'created',
       source: 'figma_plugin',
     })
-    expect(keys(e)).toEqual([['post', 'p1', 'attachments']])
+    expect(keys(e)).toContainEqual(['post', 'p1', 'attachments'])
+    expect(keys(e)).toContainEqual(['posts'])
     expect(keys(e)).not.toContainEqual(['post', 'p1'])
-    expect(hitsPostLists(e)).toBe(false)
+    expect(hitsPostLists(e)).toBe(true)
   })
 
   it("refreshes every calendar after someone else's assistant turn", () => {

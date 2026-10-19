@@ -106,6 +106,22 @@ export type Post = {
    */
   thread_segments: ThreadSegment[]
   media_urls: string[]
+  /**
+   * The picture a calendar card is backed by (CON-247): the post's first
+   * attachment a browser can draw — the thread root first, then by position;
+   * a PDF's rendered first page, a video's poster frame, an image itself.
+   * Omitted when nothing qualifies (HEIC/TIFF, a video with no poster).
+   *
+   * **A presigned GET that expires in 15 minutes**, like an attachment's
+   * `thumbnail_url` — CON-247 shipped it public and CON-368 signed it, because
+   * the bucket serves no anonymous reads. So it is never stored anywhere, and
+   * the lists that carry it refetch inside the window (`PRESIGN_REFRESH_MS`).
+   * It is never read off a request either, so it is absent from `PostPayload`;
+   * and an attachment write returns no post, so whoever adds, moves or removes
+   * a file makes the post lists stale for the card to see the new cover
+   * (`invalidatePostLists`).
+   */
+  cover_url?: string
   scheduled_at: string | null
   published_at: string | null
   status: PostStatus

@@ -136,3 +136,24 @@ describe('usePostAttachments and the event stream', () => {
     )
   })
 })
+
+describe('usePostAttachments and the calendar', () => {
+  it("makes every post list stale after an upload, since a row's cover is its first file", async () => {
+    // CON-247: the list rows carry `cover_url`, and the upload answers with
+    // the attachment rather than the post — the hook knows only the post's id.
+    vi.mocked(service.uploadAttachment).mockResolvedValue(file('b', 1))
+    queryClient.setQueryData(['campaigns', 'c1', 'posts'], [])
+    queryClient.setQueryData(['posts'], [])
+    const { result } = renderHook(() => usePostAttachments('p1'), { wrapper })
+    await waitFor(() => expect(ids(result)).toEqual(['a']))
+
+    await act(() =>
+      result.current.upload([new File(['x'], 'x.png', { type: 'image/png' })]),
+    )
+
+    const stale = (key: unknown[]) =>
+      queryClient.getQueryState(key)?.isInvalidated
+    expect(stale(['campaigns', 'c1', 'posts'])).toBe(true)
+    expect(stale(['posts'])).toBe(true)
+  })
+})

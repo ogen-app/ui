@@ -200,7 +200,7 @@ function MonthlyCalendarComponent({
                     ),
                     resolvePlatform(post.platform_id),
                   ),
-                hasImage: Boolean(post.media_urls[0]),
+                hasImage: Boolean(post.cover_url),
                 hasCampaign: Boolean(post.campaign),
               }))
               // `null` means the day fits at no rung, with or without its

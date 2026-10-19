@@ -65,6 +65,21 @@ export function invalidateCampaignPosts(
 }
 
 /**
+ * Marks every post list stale — each campaign's and the workspace's — for a
+ * write that changes what a row carries but knows only the post's id. An
+ * attachment write is the case: it answers with the attachment, not the post,
+ * and moves the row's server-derived `cover_url` (CON-247). The summaries are
+ * left alone; they carry no cover.
+ */
+export function invalidatePostLists(qc: QueryClient): void {
+  qc.invalidateQueries({
+    predicate: (query) =>
+      query.queryKey[0] === 'campaigns' && query.queryKey[2] === 'posts',
+  })
+  qc.invalidateQueries({ queryKey: WORKSPACE_POSTS_KEY })
+}
+
+/**
  * The campaign list's copy of a post, for opening the editor on it without a
  * fetch first.
  *

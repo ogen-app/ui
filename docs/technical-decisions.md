@@ -206,7 +206,7 @@ the next invalidation. Accepted: streaming is a detail-view concern.
 
 ## The calendar card reads the post row and nothing else {#calendar-card-media}
 
-**Decision.** `PostCard` draws its leading image from `post.media_urls[0]` and
+**Decision.** `PostCard` draws its leading image from `post.cover_url` and
 its problem flag from `hasVisibleProblem(post)` — status, platform, post type.
 Neither fetches anything.
 
@@ -217,32 +217,35 @@ subset of `evaluatePost` that the list already answers. Everything it flags is
 also a `fail` in the full check set; the reverse does not hold, so a clean card
 is not a promise the post will publish — it understates rather than cries wolf.
 
-**Known gap.** The editor's uploads go to the `post_attachments` table, whose
-presigned/thumbnail URLs are hydrated per post at response time. Nothing writes
-`media_urls`, so **the leading image never renders in practice today**. The card
-is built and correct; lighting it up needs the backend to put a thumbnail URL on
-the post list payload — **CON-247**, a backend ticket with no front-end change
-expected.
+**The picture is the server's choice, and it expires.** `cover_url` (CON-247)
+is the post's first attachment a browser can draw — the thread root first, then
+by position; a PDF's rendered first page, a video's poster frame, an image
+itself — and is omitted when nothing qualifies. Picking it is one `DISTINCT ON`
+per list on the server, which is the whole reason it is not worked out here
+from the attachments. It shipped as a public URL and CON-368 signed it, because
+the bucket serves no anonymous reads, so it is a **15-minute presigned GET**
+like every other file URL. Three things follow:
 
-Calendar Settings' *Show cards as image previews* switch is therefore **hidden
-behind `calendar-card-images`**. It was on by default and inert, which is the
-worst of the three states it could be in: an off switch would read as a setting
-to try, an absent one as a feature not built, but a switch already *on* says the
-pictures are missing for some other reason and sends the user looking for it in
-their posts. The preference itself is untouched — still stored, still defaulted
-— so this hides a control rather than changing a setting, and whatever a user
-chose comes back when the flag flips.
+- **Nothing stores it.** It is not on `PostPayload`; the server never reads it.
+  `media_urls` is no fallback either — nothing has ever written it.
+- **The lists refetch inside the window** (`PRESIGN_REFRESH_MS`, 10 minutes).
+  The campaign's list has no range, so paging the calendar never refetches it,
+  and without the interval a calendar left open would draw expired covers on
+  the next week it showed. Focus refetches it too, once it is 30 seconds old.
+- **A cover that fails is dropped**, not drawn as the browser's broken-image
+  glyph. The likeliest cause is expiry, and the next refetch brings a URL that
+  is not the one that failed, so the picture comes back on its own.
 
-There is no client-side workaround, and it is worth writing down which one fails
-and why. `postToPayload` does round-trip `media_urls`, so the front end could in
-principle write a thumbnail URL there on upload — but `PostAttachment.ThumbnailURL`
-is a **presigned GET with a 15-minute TTL** (`PresignedURLTTL`, `handlers/post_attachments.go`),
-so what would be persisted is a URL that is broken by the time anyone reloads.
-The server's own `ListByCampaign` returns bare post rows with no attachment join,
-so the payload has no other image in it either. The fix is one of: hydrate a
-thumbnail onto the post list rows, or serve attachment thumbnails from a public
-key the way `assets` already does (`storage.PublicURL`) so a stored URL would
-keep working.
+An attachment write answers with the attachment, not the post, so whoever adds,
+moves or removes a file makes every post list stale (`invalidatePostLists`), and
+`post.attachments.changed` on the broadcast stream does the same for everyone
+else's tab.
+
+Calendar Settings' *Show cards as image previews* switch was **hidden behind
+`calendar-card-images`** while no card could draw a picture: it was on by
+default and inert, which is the worst of the three states it could be in — a
+switch already *on* says the pictures are missing for some other reason. The
+flag is on since the re-test and waits to be deleted.
 
 **Where.** `components/campaigns/calendar/PostCard.tsx`,
 `lib/postValidation.ts` (`hasVisibleProblem`).

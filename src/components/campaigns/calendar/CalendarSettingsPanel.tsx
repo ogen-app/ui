@@ -133,10 +133,8 @@ export function CalendarSettingsPanel({
               the month on a shorter band, and only on the days that have room
               for one (see `cardRungs`).
 
-              Behind `calendar-card-images` because no card has ever drawn one:
-              nothing writes `post.media_urls` (CON-247). The preference itself
-              stays stored and defaulted, so this is the control disappearing,
-              not the setting. */}
+              Behind `calendar-card-images` until that flag is retired — it hid
+              the switch while no card could draw a picture (CON-247). */}
           {imagesEnabled && (
             <div className="mt-2 flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2">
               <span className="flex min-w-0 flex-col">
