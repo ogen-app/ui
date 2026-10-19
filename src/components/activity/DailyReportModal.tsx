@@ -6,6 +6,7 @@ import { StatTile } from '@/components/campaigns/overview/StatTile'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { useWorkspaceMembers } from '@/hooks/useWorkspaces'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
+import { postFailureMessage } from '@/lib/postFailure'
 import { useActivityFeed, useActivityReport } from '@/hooks/useActivity'
 import { useDayLabel } from '@/hooks/useActivityLabels'
 import { browserTimeZone } from '@/lib/timeZones'
@@ -195,11 +196,11 @@ function ChannelRows({
  * What did not go out, one row per post.
  *
  * Each links to the post — the report's job is to be the way back to the thing
- * that needs attention — and each carries the server's own `failure_reason`
- * verbatim. That string is Go prose (`"zernio_terminal: rejected"`), composed
- * on the server and not a code this build can translate, so it is shown as it
- * arrived or not at all; the same rule as a notification's `title`. A per-post
- * `code` is the ask that would let this be worded here — `docs/open-questions.md`.
+ * that needs attention — and each says why, in the sentence the post's own
+ * screen uses (`lib/postFailure`, CON-200). `failure_reason` is
+ * `<code>: <message>`; the code is worded here and a code this build predates
+ * is shown as it arrived. Only the sentence: a row has room for one line, and
+ * the service's own words are on the post the row links to.
  */
 function FailedRows({
   posts,
@@ -221,17 +222,14 @@ function FailedRows({
             : t('activity.report.status.failed')
         const campaignId = campaignOfPost(post.post_id)
         const label = channel ? `${what} — ${channel}` : what
+        const why = post.failure_reason
+          ? postFailureMessage(t, post.failure_reason).summary
+          : ''
 
         // No campaign means the post is deleted or out of this reader's reach.
         // The row still says what happened, which is the part that matters.
         if (!campaignId) {
-          return (
-            <Row
-              key={post.post_id}
-              label={label}
-              detail={post.failure_reason}
-            />
-          )
+          return <Row key={post.post_id} label={label} detail={why} />
         }
         return (
           <li
@@ -246,9 +244,9 @@ function FailedRows({
               <span className="min-w-0 flex-1 truncate text-sm text-primary-foreground">
                 {label}
               </span>
-              {post.failure_reason && (
+              {why && (
                 <span className="min-w-0 truncate text-xs text-tertiary-foreground">
-                  {post.failure_reason}
+                  {why}
                 </span>
               )}
             </Link>

@@ -206,11 +206,12 @@ reach, both of them listed here as "widens later":
   ids, the same ones `listMembers` returns — a count against an id nobody
   matches belongs to somebody who has left, and the screen says so rather than
   printing a sqid.
-- **Why a post failed.** `failure_reason` rides along the same way. It is Go
-  prose (`"zernio_terminal: rejected"`), not a code, so the report shows it
-  verbatim — the same rule as a notification's server-composed `title`. A
-  per-result code is the ask — the one upload results got in CON-281, and
-  still open for posts (`open-questions.md` S4).
+- **Why a post failed.** `failure_reason` rides along the same way, as
+  `<code>: <message>` — every terminal write goes through one function that
+  prefixes a stable code. The report words the code with the sentence the post's
+  own screen uses (`lib/postFailure`, CON-200) and shows a code this build
+  predates as it arrived. A separate `code` field is still the tidier ask
+  (`open-questions.md` S4).
 
 What it cost is the **per-campaign breakdown**, which the computed version had
 for free because it held every post. That was never in the v1 contents above; a
@@ -394,7 +395,8 @@ flag came out; none of them was a reason to keep it.
 **Three things the report endpoints deliberately do not carry**: a
 **per-campaign breakdown** (a campaign's own report is the same endpoint with
 `campaign_id` set — see [The report](#it-moved-to-the-server-and-the-timezone-is-why));
-**a code for a failure** — `failure_reason` is Go prose and is shown verbatim,
-the same ask `lib/uploadError` is waiting on (`open-questions.md` S4); and
+**a code for a failure as its own field** — it rides as the prefix of
+`failure_reason` instead, which `lib/postFailure` reads (`open-questions.md`
+S4); and
 **paging**, since `before` is a keyset the feed does not use — it asks for one
 horizon of days and says on screen where it stops.
