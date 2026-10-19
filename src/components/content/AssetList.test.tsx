@@ -514,7 +514,13 @@ describe('group bands', () => {
     const rect = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
       .mockImplementation(function (this: HTMLElement) {
-        const top = this.textContent?.startsWith('band earlier') ? 80 : 0
+        // The scroller at 0; one band stuck at the pin line, the others
+        // further down the list.
+        const top = !this.hasAttribute('data-band')
+          ? 0
+          : this.textContent?.startsWith('band earlier')
+            ? 80
+            : 500
         return {
           top,
           bottom: top,

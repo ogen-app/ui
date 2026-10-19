@@ -53,12 +53,30 @@ type Props = {
  */
 const BAND_TOP = 80
 
-/** Marks the band sitting at `BAND_TOP` as pinned, and no other. */
-function markPinned(list: HTMLElement, scroller: HTMLElement) {
+/**
+ * The page's scroller: the `ScrollArea`'s viewport, found by what it is
+ * rather than by its overflow — Radix sets that only once its bar mounts.
+ */
+function scrollerOf(el: HTMLElement | null): HTMLElement | null {
+  return (
+    el?.closest<HTMLElement>('[data-radix-scroll-area-viewport]') ??
+    findScrollParent(el)
+  )
+}
+
+/**
+ * Marks the bands stuck at `BAND_TOP` as pinned. Bands are siblings in one
+ * list, so a later one stacks over an earlier one at the same line rather
+ * than pushing it off — each stuck band carries the cap, and the top one is
+ * what shows. A pixel's slack for zoom and fractional layout.
+ */
+function markPinned(list: HTMLElement) {
+  const scroller = scrollerOf(list)
+  if (!scroller) return
   const top = scroller.getBoundingClientRect().top + BAND_TOP
   for (const band of list.querySelectorAll<HTMLElement>('[data-band]')) {
     const at = band.getBoundingClientRect().top
-    band.toggleAttribute('data-pinned', Math.abs(at - top) < 1)
+    band.toggleAttribute('data-pinned', at <= top + 1)
   }
 }
 
@@ -155,7 +173,7 @@ export function AssetList({
   })
   useEffect(() => {
     const foot = footRef.current
-    const root = findScrollParent(foot)
+    const root = scrollerOf(foot)
     if (!foot || typeof IntersectionObserver === 'undefined') return
     const observer = new IntersectionObserver(
       (entries) => {
@@ -174,26 +192,31 @@ export function AssetList({
   // page — since those move bands without a scroll event.
   useEffect(() => {
     const list = listRef.current
-    const scroller = findScrollParent(list)
-    if (!list || !scroller) return
+    if (!list) return
     let frame = 0
+    // On the document, in the capture phase: a scroll event does not bubble,
+    // and the page's scroller may not be one yet when this runs — Radix makes
+    // its viewport scrollable only once its bar has mounted, which on a warm
+    // cache is after the rows. Anything scrolling re-marks; `markPinned` finds
+    // the scroller when it measures.
     const onScroll = () => {
       if (frame) return
       frame = requestAnimationFrame(() => {
         frame = 0
-        markPinned(list, scroller)
+        markPinned(list)
       })
     }
-    scroller.addEventListener('scroll', onScroll, { passive: true })
+    document.addEventListener('scroll', onScroll, {
+      capture: true,
+      passive: true,
+    })
     return () => {
-      scroller.removeEventListener('scroll', onScroll)
+      document.removeEventListener('scroll', onScroll, { capture: true })
       if (frame) cancelAnimationFrame(frame)
     }
   }, [hasRows])
   useLayoutEffect(() => {
-    const list = listRef.current
-    const scroller = findScrollParent(list)
-    if (list && scroller) markPinned(list, scroller)
+    if (listRef.current) markPinned(listRef.current)
   }, [entries, collapsed, grouping])
 
   if (rows.length === 0) {
