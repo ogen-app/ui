@@ -5,6 +5,7 @@ import {
   FileArrowUpIcon,
   FilePdfIcon,
   ImageBrokenIcon,
+  ImagesIcon,
   PlayCircleIcon,
   PlusIcon,
   TrashIcon,
@@ -41,7 +42,14 @@ import {
   attachmentKind,
   type PostAttachmentWithValidation,
 } from '@/types/attachments.ts'
-import type { PendingUpload, UploadResult } from '@/hooks/usePostAttachments.ts'
+import { bankAttachErrorMessage } from '@/lib/bankAttachError.ts'
+import type {
+  AttachResult,
+  BankImage,
+  PendingUpload,
+  UploadResult,
+} from '@/hooks/usePostAttachments.ts'
+import { AddFromAssetsModal } from './AddFromAssetsModal.tsx'
 import type { Post } from '@/types/posts.ts'
 
 /**
@@ -65,6 +73,9 @@ type Props = {
   pending: PendingUpload[]
   policy: MediaPolicy
   upload: (files: File[]) => Promise<UploadResult>
+  attachFromAssets: (images: BankImage[]) => Promise<AttachResult>
+  /** Content-bank images this tab has attached, still on the post. */
+  attachedAssetIds: ReadonlySet<string>
   remove: (attachmentId: string) => Promise<void>
   reorder: (ordered: PostAttachmentWithValidation[]) => void
   /** Absent for every post that is not a thread, which is nearly all of them. */
@@ -88,6 +99,8 @@ export function PostMediaCard({
   pending,
   policy,
   upload,
+  attachFromAssets,
+  attachedAssetIds,
   remove,
   reorder,
   thread,
@@ -99,6 +112,7 @@ export function PostMediaCard({
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
+  const [choosingAssets, setChoosingAssets] = useState(false)
   const storage = useUpgradeGate('media_storage_bytes')
 
   // Attachments freeze once a copy of the post exists outside Ogen, so the
@@ -163,6 +177,25 @@ export function PostMediaCard({
       toast.error('Upload failed', { description: error })
     }
   }
+
+  // Nothing to check client-side, unlike a file: the picker lists images
+  // only and stops at the cap, and the server applies the platform's rules to
+  // the copy exactly as it would to an upload.
+  const handleAssets = async (images: BankImage[]) => {
+    const { failures } = await attachFromAssets(images)
+    for (const failure of failures) {
+      toast.error(
+        t('posts.media.fromAssets.failedToast', { title: failure.title }),
+        { description: bankAttachErrorMessage(t, failure.error) },
+      )
+    }
+  }
+
+  // The bank holds images only as far as this goes — the endpoint copies an
+  // `IMG` asset and refuses anything else — so a post type that takes no
+  // images is not offered it.
+  const canAddFromAssets =
+    canAdd && !collapsed && policy.kinds.includes('image')
 
   const moveTo = (from: number, to: number) => {
     if (to < 0 || to >= attachments.length || from === to) return
@@ -307,10 +340,16 @@ export function PostMediaCard({
               {p.name}
             </span>
             <span className="h-[2px] w-20 bg-quaternary">
-              <span
-                className="block h-full bg-foreground transition-[width]"
-                style={{ width: `${p.percent}%` }}
-              />
+              {/* A copy from the bank moves no bytes through the browser, so
+                  there is no fraction to draw — only that it is under way. */}
+              {p.percent === null ? (
+                <span className="block h-full w-full animate-pulse bg-foreground" />
+              ) : (
+                <span
+                  className="block h-full bg-foreground transition-[width]"
+                  style={{ width: `${p.percent}%` }}
+                />
+              )}
             </span>
           </div>
         ))}
@@ -334,6 +373,28 @@ export function PostMediaCard({
             <PlusIcon className="size-5 text-tertiary-foreground" />
             <span className="text-xs text-tertiary-foreground">
               {attachments.length === 0 ? 'Add media' : 'Add more'}
+            </span>
+          </button>
+        )}
+
+        {/* Beside the file tile rather than inside a menu on it: the two are
+            the two places media comes from, and a second click to discover
+            the bank is how the bank stays undiscovered. Gated on storage like
+            the file tile — the copy is counted against the same allowance. */}
+        {canAddFromAssets && (
+          <button
+            type="button"
+            onClick={() => {
+              storage.intent(() => setChoosingAssets(true))()
+            }}
+            className={cn(
+              'flex size-32 flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors',
+              'bg-tertiary hover:bg-quaternary',
+            )}
+          >
+            <ImagesIcon className="size-5 text-tertiary-foreground" />
+            <span className="text-xs text-tertiary-foreground">
+              {t('posts.media.fromAssets.tile')}
             </span>
           </button>
         )}
@@ -363,6 +424,16 @@ export function PostMediaCard({
       {/* Answered before the picker opens rather than after the file is chosen:
           a workspace out of storage should not be asked which file to send. */}
       <UpgradeDialog gate={storage} />
+
+      {choosingAssets && (
+        <AddFromAssetsModal
+          campaignId={post.campaign_id}
+          room={totalMax === null ? null : totalMax - attachments.length}
+          attachedAssetIds={attachedAssetIds}
+          onAdd={(images) => void handleAssets(images)}
+          onClose={() => setChoosingAssets(false)}
+        />
+      )}
     </div>
   )
 }

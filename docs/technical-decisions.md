@@ -1442,6 +1442,6 @@ KEK-encrypted set, encapsulated in the API and shared by all tenants** (CON-97
   server does not do yet is render a smaller copy, so the list's preview cell
   draws the full file scaled into 40px. `thumbnail_url` is already preferred
   everywhere it could appear, so the day that job exists nothing on the client
-  changes. Also missing: the bridge that attaches a bank image to a post as a
-  real `post_attachments` row, which is what the alt text is being collected
-  for. AI image *generation* is planned but **secondary** (CON-105/88/83).
+  changes. A bank image now reaches a post as a real `post_attachments` row
+  (CON-290) — copied and EXIF-stripped server-side, carrying the asset's alt
+  text — which is what that alt text was being collected for. AI image *generation* is planned but **secondary** (CON-105/88/83).

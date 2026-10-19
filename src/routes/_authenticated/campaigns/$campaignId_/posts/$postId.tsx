@@ -891,6 +891,8 @@ function PostEditorSurface({
                 pending={media.pending}
                 policy={media.policy}
                 upload={media.upload}
+                attachFromAssets={media.attachFromAssets}
+                attachedAssetIds={media.attachedAssetIds}
                 remove={media.remove}
                 reorder={media.reorder}
                 thread={threadTargets}

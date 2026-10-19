@@ -137,7 +137,7 @@ export const QUERY_FIVE_MINUTES = FIVE_MINUTES
  * plural selector, not decoration — and an absent one takes the flat sentence,
  * because a limit printed as `undefined` would be worse than a vaguer one.
  */
-function denialReason(error: unknown): string | undefined {
+export function denialReason(error: unknown): string | undefined {
   if (!(error instanceof EntitlementError)) return undefined
   if (error.reason === 'tier') return i18next.t('tiers.deniedTier')
   return error.limit === null

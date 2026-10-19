@@ -255,6 +255,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   The image screen still debounces the whole asset rather than each field, for
   the unrelated reason that two saves in flight each carry a stale copy of the
   other's field.
+- **A bank image reaches a post as a copy, never a reference** (CON-290).
+  `POST /api/posts/:id/attachments/from-asset` strips the bank's original
+  (which keeps its EXIF) into an object the attachment owns, so deleting the
+  asset leaves the post intact, and the copy is charged to
+  `media_storage_bytes` like an upload. The media card's **From Assets** tile
+  opens `AddFromAssetsModal`, images only, on the post's campaign with the
+  whole bank one switch away. Two rules: **never send `alt_text`** — omitted,
+  the asset's text *and* whether a person wrote it carry over, while a sent one
+  is marked user-edited — and attach **one at a time, in pick order**, because
+  the server positions each copy as it lands. The server keeps no link back to
+  the asset, so "already on this post" is this tab's memory
+  (`usePostAttachments.attachedAssetIds`) and a reload forgets it.
 - **Tags are filed over a selection, not on a row** (`POST
   /api/content-bank/assets/tags`, CON-279). Each asset keeps what it has, minus
   `remove`, plus `add`, so the client never has to say what an asset already
@@ -817,10 +829,8 @@ rather than drawn broken; `calendar-card-images` is on and waits to be deleted
 images upload, store as `IMG` and open on their own screen (CON-246), but the
 server renders no smaller copy, so the list's preview cell draws the full file
 scaled into 40px; `thumbnail_url` is preferred wherever it appears, so nothing
-here changes when that job lands. The other half still missing is the bridge
-that attaches a bank image to a post — **CON-290**, since CON-16 was cancelled
-once CON-246 shipped, and unowned as of 2026-09-08 — which is what the alt text
-is being collected for · **the React Compiler lint rules are warnings, not errors** —
+here changes when that job lands. That cost now lands on the media card's
+picker too, which is a grid of them (below) · **the React Compiler lint rules are warnings, not errors** —
 `react-hooks` v7 reports 123 of them against code that predates it, and each is
 a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n converts whole screens in some

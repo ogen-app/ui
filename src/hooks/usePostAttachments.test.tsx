@@ -157,3 +157,96 @@ describe('usePostAttachments and the calendar', () => {
     expect(stale(['posts'])).toBe(true)
   })
 })
+
+describe('usePostAttachments and the content bank (CON-290)', () => {
+  it('attaches in the order picked and remembers which image each came from', async () => {
+    // The server places each copy at the next position as it lands, so the
+    // second request must not leave before the first has answered.
+    const order: string[] = []
+    let release: () => void = () => {}
+    vi.mocked(service.attachFromAsset).mockImplementation(
+      async (_post, assetId) => {
+        order.push(assetId)
+        if (assetId === 'img-1') {
+          await new Promise<void>((r) => {
+            release = r
+          })
+        }
+        return file(assetId === 'img-1' ? 'b' : 'c', 9)
+      },
+    )
+    vi.mocked(service.listAttachments)
+      .mockReset()
+      .mockResolvedValueOnce(list(file('a', 0)))
+      .mockResolvedValue(list(file('a', 0), file('b', 1), file('c', 2)))
+    const { result } = renderHook(() => usePostAttachments('p1'), { wrapper })
+    await waitFor(() => expect(ids(result)).toEqual(['a']))
+
+    let run: Promise<unknown> = Promise.resolve()
+    act(() => {
+      run = result.current.attachFromAssets([
+        { id: 'img-1', title: 'One' },
+        { id: 'img-2', title: 'Two' },
+      ])
+    })
+    await waitFor(() => expect(order).toEqual(['img-1']))
+    expect(result.current.pending.map((p) => p.percent)).toEqual([null])
+
+    await act(async () => {
+      release()
+      await run
+    })
+
+    expect(order).toEqual(['img-1', 'img-2'])
+    await waitFor(() => expect(ids(result)).toEqual(['a', 'b', 'c']))
+    expect([...result.current.attachedAssetIds]).toEqual(['img-1', 'img-2'])
+  })
+
+  it('offers an image again once its attachment is removed', async () => {
+    vi.mocked(service.attachFromAsset).mockResolvedValue(file('b', 1))
+    vi.mocked(service.listAttachments)
+      .mockReset()
+      .mockResolvedValueOnce(list(file('a', 0)))
+      .mockResolvedValueOnce(list(file('a', 0), file('b', 1)))
+      .mockResolvedValue(list(file('a', 0)))
+    vi.mocked(service.deleteAttachment).mockResolvedValue()
+    const { result } = renderHook(() => usePostAttachments('p1'), { wrapper })
+    await waitFor(() => expect(ids(result)).toEqual(['a']))
+
+    await act(() =>
+      result.current.attachFromAssets([{ id: 'img', title: 'X' }]),
+    )
+    await waitFor(() =>
+      expect(result.current.attachedAssetIds.has('img')).toBe(true),
+    )
+
+    await act(() => result.current.remove('b'))
+    await waitFor(() => expect(ids(result)).toEqual(['a']))
+    expect(result.current.attachedAssetIds.size).toBe(0)
+  })
+
+  it('reports a refusal with its title and keeps going', async () => {
+    const refusal = new Error('nope')
+    vi.mocked(service.attachFromAsset)
+      .mockRejectedValueOnce(refusal)
+      .mockResolvedValueOnce(file('b', 1))
+    const { result } = renderHook(() => usePostAttachments('p1'), { wrapper })
+    await waitFor(() => expect(ids(result)).toEqual(['a']))
+
+    let outcome: Awaited<
+      ReturnType<ReturnType<typeof usePostAttachments>['attachFromAssets']>
+    > = { attached: 0, failures: [] }
+    await act(async () => {
+      outcome = await result.current.attachFromAssets([
+        { id: 'img-1', title: 'Refused' },
+        { id: 'img-2', title: 'Fine' },
+      ])
+    })
+
+    expect(outcome).toEqual({
+      attached: 1,
+      failures: [{ title: 'Refused', error: refusal }],
+    })
+    expect(result.current.pending).toEqual([])
+  })
+})

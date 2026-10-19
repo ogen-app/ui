@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  attachFromAsset,
   deleteAttachment,
   listAttachments,
   reorderAttachment,
@@ -33,13 +34,42 @@ export type PendingUpload = {
   // Local id — the server one doesn't exist until the upload lands.
   key: string
   name: string
-  percent: number
+  /**
+   * `null` when there is no transfer to measure: an image attached from the
+   * content bank is copied server-side, so the browser sends one small request
+   * and waits.
+   */
+  percent: number | null
   error?: string
+}
+
+/** What attaching needs to know about a content-bank image. */
+export type BankImage = { id: string; title: string }
+
+/**
+ * What an attach run produced. Failures keep the error itself rather than a
+ * sentence: the refusals are typed (a plan limit, a locked post, an
+ * image-service code) and wording them takes `t`, which a hook has no business
+ * holding for a toast it does not raise.
+ */
+export type AttachResult = {
+  attached: number
+  failures: { title: string; error: unknown }[]
 }
 
 export function usePostAttachments(postId: string) {
   const qc = useQueryClient()
   const [pending, setPending] = useState<PendingUpload[]>([])
+  /**
+   * Which content-bank image each attachment made in this tab came from,
+   * attachment id → asset id. The server keeps no link back (CON-290), and
+   * attaching the same image twice makes two attachments, so this is what
+   * lets the picker say an image is already on the post. Per session by
+   * necessity: a reload forgets it, and the picker offers the image again.
+   */
+  const [assetOf, setAssetOf] = useState<ReadonlyMap<string, string>>(
+    () => new Map(),
+  )
 
   const query = useQuery({
     queryKey: postAttachmentsKey(postId),
@@ -103,6 +133,50 @@ export function usePostAttachments(postId: string) {
     },
     [postId, invalidate],
   )
+
+  /**
+   * Attaches content-bank images, one request each and in the order given:
+   * the server places each at the next position as it lands, so issuing them
+   * together would order the post by whichever copy finished first.
+   */
+  const attachFromAssets = useCallback(
+    async (images: BankImage[]): Promise<AttachResult> => {
+      const failures: AttachResult['failures'] = []
+      let attached = 0
+      for (const [i, image] of images.entries()) {
+        const key = `${Date.now()}-${i}-${image.id}`
+        setPending((p) => [...p, { key, name: image.title, percent: null }])
+        try {
+          const created = await attachFromAsset(postId, image.id)
+          attached += 1
+          setAssetOf((prev) => new Map(prev).set(created.id, image.id))
+        } catch (error) {
+          failures.push({ title: image.title, error })
+        } finally {
+          setPending((p) => p.filter((u) => u.key !== key))
+        }
+      }
+      invalidate()
+      return { attached, failures }
+    },
+    [postId, invalidate],
+  )
+
+  const attachments = query.data?.attachments
+
+  /**
+   * The bank images on the post right now, as far as this tab knows. Read off
+   * the live list rather than kept as its own set, so removing the attachment
+   * offers the image again.
+   */
+  const attachedAssetIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const att of attachments ?? []) {
+      const assetId = assetOf.get(att.id)
+      if (assetId) ids.add(assetId)
+    }
+    return ids
+  }, [attachments, assetOf])
 
   /**
    * Marks the three writes below as this tab's own, so a broadcast about the
@@ -241,13 +315,15 @@ export function usePostAttachments(postId: string) {
   })
 
   return {
-    attachments: query.data?.attachments ?? [],
+    attachments: attachments ?? [],
     /** Post-level rule failures (count cap, image+PDF mix). */
     postValidation: query.data?.platform_validation ?? [],
     loading: awaiting(query),
     error: query.error ?? undefined,
     pending,
     upload,
+    attachFromAssets,
+    attachedAssetIds,
     remove: remove.mutateAsync,
     removing: remove.isPending,
     reorder: reorder.mutate,

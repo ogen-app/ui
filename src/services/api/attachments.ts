@@ -177,6 +177,35 @@ export async function uploadVideoAttachment(
 }
 
 /**
+ * Attaches an image already in the content bank to the post (CON-290), without
+ * the bytes passing through the browser.
+ *
+ * The server copies the bank's original into an object the attachment owns —
+ * EXIF-stripped on the way, as a direct upload is — so deleting the asset later
+ * leaves the post intact. The response is the same `attachmentResponse` an
+ * upload returns, `platform_validation` included.
+ *
+ * `alt_text` is deliberately never sent. Omitted, the asset's alt text *and*
+ * whether a person wrote it carry over; sent, the server would mark it as
+ * edited by the user, promoting a generated description to a written one.
+ *
+ * The refusals are typed, which is why this is `apiJson` rather than the
+ * upload's XHR: 402 when the copy would cross `media_storage_bytes`, 409 while
+ * the post is scheduled or published (CON-251), 422 for an asset that is not an
+ * image, and the image-service codes (`invalid_file`, …) an upload gets.
+ */
+export function attachFromAsset(
+  postId: string,
+  assetId: string,
+): Promise<PostAttachmentWithValidation> {
+  return apiJson<PostAttachmentWithValidation>(
+    `${base(postId)}/from-asset`,
+    'Unable to add this image',
+    { method: 'POST', body: { asset_id: assetId } },
+  )
+}
+
+/**
  * Moves one attachment onto a different message of a thread, or takes it off
  * the chain entirely with `null` (CON-284).
  *
