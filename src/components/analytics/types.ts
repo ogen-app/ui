@@ -252,6 +252,13 @@ export interface MeasureReading {
   series: Point[]
   /** The comparison period's own series, drawn as a ghost behind the current. */
   previousSeries?: Point[]
+  /**
+   * The figure counts the whole workspace although the card around it is
+   * narrowed to a campaign — followers, which belong to accounts rather than
+   * campaigns (CON-288). The tile says so, or a campaign's page would present
+   * the workspace's audience as the campaign's.
+   */
+  wholeWorkspace?: boolean
 }
 
 /** A sentence the surface is willing to say out loud. */

@@ -42,6 +42,7 @@ export function WorkspacePerformersView({
   by,
   onChangeBasis,
   narrowedTo = [],
+  campaign = false,
 }: {
   result: AnalyticsPerformersResult
   by: PerformerSort
@@ -51,6 +52,11 @@ export function WorkspacePerformersView({
    * them — so an empty board says which platforms had nothing to rank.
    */
   narrowedTo?: readonly string[]
+  /**
+   * Whether the board is one campaign's (CON-288) — so an empty one says the
+   * campaign had nothing to rank, not that nothing went out at all.
+   */
+  campaign?: boolean
 }) {
   const { t } = useTranslation()
   const { view, isPending, isError, isUnavailable, isEmpty } = result
@@ -73,13 +79,27 @@ export function WorkspacePerformersView({
   // a successful answer that carries no payload, and reporting it as a failure
   // tells a workspace that simply hasn't published that something is broken.
   if (isEmpty) {
+    const platforms = formatList([...narrowedTo])
+    const narrowed = narrowedTo.length > 0
     return (
       <Shell by={by} onChangeBasis={onChangeBasis} withPicker={false}>
-        {narrowedTo.length > 0 ? (
+        {campaign ? (
           <NotYet
-            title={t('analytics.performers.emptyNarrowedTitle', {
-              platforms: formatList([...narrowedTo]),
-            })}
+            title={
+              narrowed
+                ? t('analytics.performers.emptyCampaignNarrowedTitle', {
+                    platforms,
+                  })
+                : t('analytics.performers.emptyCampaignTitle')
+            }
+          >
+            {narrowed
+              ? t('analytics.performers.emptyCampaignNarrowedBody')
+              : t('analytics.performers.emptyCampaignBody')}
+          </NotYet>
+        ) : narrowed ? (
+          <NotYet
+            title={t('analytics.performers.emptyNarrowedTitle', { platforms })}
           >
             {t('analytics.performers.emptyNarrowedBody')}
           </NotYet>

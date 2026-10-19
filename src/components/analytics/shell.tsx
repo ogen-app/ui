@@ -40,22 +40,33 @@ import { cn } from '@/lib'
 export type SectionScope = 'lens' | 'all-time' | 'ahead'
 
 /**
- * Whether the period above reaches this card, said when it does not.
+ * Which of the things narrowing the page do *not* reach this card, said when
+ * one doesn't.
  *
- * Only the period: since CON-289 the platform filter reaches every card the
- * workspace page draws, so the "every platform — not affected by the filter"
- * half of this note went with the gap it apologised for.
+ * Two of them can: the period, and — on a campaign's page — the campaign
+ * (CON-288), which the lessons card does not take because the server keeps
+ * lessons workspace-wide. The platform filter is not one: since CON-289 it
+ * reaches every card, so the "every platform" half of this note went with the
+ * gap it apologised for.
  */
-function scopeNote(t: TFunction, scope: SectionScope): string | null {
-  if (scope === 'all-time') return t('analytics.scopeNote.allTime')
+function scopeNote(
+  t: TFunction,
+  scope: SectionScope,
+  wholeWorkspace: boolean,
+): string | null {
+  if (scope === 'all-time')
+    return wholeWorkspace
+      ? t('analytics.scopeNote.allTimeWholeWorkspace')
+      : t('analytics.scopeNote.allTime')
   if (scope === 'ahead') return t('analytics.scopeNote.ahead')
-  return null
+  return wholeWorkspace ? t('analytics.scopeNote.wholeWorkspace') : null
 }
 
 export function SectionCard({
   title,
   qualifier,
   scope = 'lens',
+  wholeWorkspace = false,
   status,
   children,
   className,
@@ -72,12 +83,17 @@ export function SectionCard({
    */
   qualifier?: ReactNode
   scope?: SectionScope
+  /**
+   * The card answers for the whole workspace although the page is about one
+   * campaign — so the campaign above does not narrow it, and the note says so.
+   */
+  wholeWorkspace?: boolean
   status?: ReactNode
   children: ReactNode
   className?: string
 }) {
   const { t } = useTranslation()
-  const note = scopeNote(t, scope)
+  const note = scopeNote(t, scope, wholeWorkspace)
   return (
     <section
       className={cn(

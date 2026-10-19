@@ -1,5 +1,4 @@
 import { apiJson } from './http'
-import { ApiError } from './errors'
 import {
   demoLearnings,
   demoMode,
@@ -14,86 +13,9 @@ import type {
   LearningsSection,
   PerformerSort,
   PerformersBoard,
-  PostAnalyticsList,
-  PostAnalyticsSort,
 } from '@/types/analytics'
 
 const BASE = '/api/analytics'
-
-/**
- * Filters `GET /api/analytics/posts` accepts. Note what is *not* here: there
- * is no campaign, account or date filter on the server, so a campaign-scoped
- * view has to narrow the workspace-wide answer itself — see
- * `lib/campaignAnalytics`.
- */
-export type PostAnalyticsQuery = {
-  page?: number
-  /** Server caps this at 100 whatever we ask for. */
-  limit?: number
-  sortBy?: PostAnalyticsSort
-  order?: 'asc' | 'desc'
-  /** Platform *name* (e.g. "instagram"), not the platform id. */
-  platform?: string
-}
-
-function queryString(query: PostAnalyticsQuery): string {
-  const params = new URLSearchParams()
-  if (query.page !== undefined) params.set('page', String(query.page))
-  if (query.limit !== undefined) params.set('limit', String(query.limit))
-  if (query.sortBy) params.set('sort_by', query.sortBy)
-  if (query.order) params.set('order', query.order)
-  if (query.platform) params.set('platform', query.platform)
-  const qs = params.toString()
-  return qs ? `?${qs}` : ''
-}
-
-/**
- * One page of per-post engagement, newest snapshot per post, plus the totals
- * over the whole filtered set.
- *
- * Served entirely from the analytics database — no publisher call on the
- * request path — so this is cheap enough to load beside a page rather than
- * behind a click. Posts that have never been through a refresh sweep are
- * absent rather than zeroed; the list covers what has been *measured*, which
- * is a smaller set than what has been published.
- */
-export async function listPostAnalytics(
-  query: PostAnalyticsQuery = {},
-): Promise<PostAnalyticsList> {
-  return apiJson<PostAnalyticsList>(
-    `${BASE}/posts${queryString(query)}`,
-    'Unable to fetch analytics',
-  )
-}
-
-/**
- * The exact message the Go handler sends with its no-analytics-database 503
- * (`handlers/analytics.go`, CON-125 Track B). Matched verbatim: the status
- * alone can't be trusted, because a proxy or gateway also answers 503 during
- * a redeploy — and that body never parses to this message, so it falls
- * through to the request's fallback text.
- */
-const UNAVAILABLE_MESSAGE = 'analytics is not available'
-
-/**
- * Whether a failure means "this deployment has no analytics database" rather
- * than "the request went wrong".
- *
- * The server fails open with a 503 when `ANALYTICS_DSN` is unset (CON-125
- * Track B), which is a normal configuration, not a fault — the UI explains it
- * instead of reporting an error the user can't act on. Anything else — a
- * transient 503 from the platform included — is a real failure and must be
- * reported as one, not presented as a permanent workspace state.
- */
-export function isAnalyticsUnavailable(error: unknown): boolean {
-  return (
-    error instanceof ApiError &&
-    error.status === 503 &&
-    error.message === UNAVAILABLE_MESSAGE
-  )
-}
-
-/* ------------------------------------------------ the dashboard endpoints -- */
 
 /**
  * Whether this browser has asked to be served simulated numbers instead.
@@ -154,6 +76,30 @@ function appendPlatforms(
   return params
 }
 
+/**
+ * The campaign a dashboard read is narrowed to (CON-288), or none for the whole
+ * workspace — which is sent as no parameter, so an un-narrowed read is
+ * byte-identical to one from before the dimension existed.
+ *
+ * Only `/overview` and `/performers` take it. `/learnings` answers **400
+ * `campaign_scope_unsupported`** to any value: a lesson mined from one
+ * campaign's history is a much thinner claim than a workspace's, so the server
+ * keeps lessons workspace-wide and {@link LearningsQuery} has no field for it.
+ * A campaign this workspace doesn't have is a **404**, whatever the id looks
+ * like — ids are sqids, so a garbled one is simply not found.
+ */
+export type AnalyticsCampaignQuery = {
+  campaignId?: string | null
+}
+
+function appendCampaign(
+  params: URLSearchParams,
+  query: AnalyticsCampaignQuery,
+): URLSearchParams {
+  if (query.campaignId) params.set('campaign_id', query.campaignId)
+  return params
+}
+
 function search(params: URLSearchParams): string {
   const qs = params.toString()
   return qs ? `?${qs}` : ''
@@ -195,24 +141,30 @@ export function hasHistory<T>(section: LearningsSection<T>): section is T {
  * The whole windowed dashboard in one read: five KPI cards, a series per
  * metric, and the deterministic callouts (CON-237).
  *
- * Narrowed by platform like the other two (CON-289). `granularity` is deliberately not exposed: the server
+ * Narrowed by platform like the other two (CON-289), and by campaign
+ * (CON-288) — except the followers card, which stays workspace-wide because
+ * followers belong to accounts rather than campaigns; the answer says so in
+ * `followers_scope`. `granularity` is deliberately not exposed: the server
  * buckets weekly past 90 days on its own, and forcing `week` on a short window
  * produces four points where the reader expects twenty-eight.
  */
-export type OverviewQuery = AnalyticsWindowQuery & AnalyticsPlatformQuery
+export type OverviewQuery = AnalyticsWindowQuery &
+  AnalyticsPlatformQuery &
+  AnalyticsCampaignQuery
 
 export async function fetchAnalyticsOverview(
   query: OverviewQuery = {},
 ): Promise<InsightEnvelope<AnalyticsOverview>> {
   if (demo()) return demoOverview(query)
   return apiJson<InsightEnvelope<AnalyticsOverview>>(
-    `${BASE}/overview${search(appendPlatforms(windowParams(query), query))}`,
+    `${BASE}/overview${search(appendCampaign(appendPlatforms(windowParams(query), query), query))}`,
     'Unable to fetch analytics',
   )
 }
 
 export type PerformersQuery = AnalyticsWindowQuery &
-  AnalyticsPlatformQuery & {
+  AnalyticsPlatformQuery &
+  AnalyticsCampaignQuery & {
     /** Default `against_typical`. Anything outside the union is a 400. */
     by?: PerformerSort
     /** Rows *per list*, not in total. Clamped to 20. */
@@ -226,6 +178,10 @@ export type PerformersQuery = AnalyticsWindowQuery &
  * Ranking is the server's: `best`/`worst` come back already ordered under `by`,
  * and the middle of the distribution is never sent, so switching criterion is a
  * refetch rather than a re-sort.
+ *
+ * Under a campaign the board ranks only that campaign's posts, but
+ * `against_typical` is still measured against the **workspace's** typical post —
+ * "2.1×" means twice your usual post, not twice the campaign's average.
  */
 export async function fetchPerformers(
   query: PerformersQuery = {},
@@ -235,6 +191,7 @@ export async function fetchPerformers(
   if (query.by) params.set('by', query.by)
   if (query.limit !== undefined) params.set('limit', String(query.limit))
   appendPlatforms(params, query)
+  appendCampaign(params, query)
   return apiJson<InsightEnvelope<PerformersBoard>>(
     `${BASE}/performers${search(params)}`,
     'Unable to fetch analytics',

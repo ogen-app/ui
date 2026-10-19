@@ -18,6 +18,10 @@ import type { PerformerSort } from '@/types/analytics'
  * is why the four states below are the overview's four, named the same and
  * decided the same way.
  *
+ * Narrowed like the overview, by platform (CON-289) and on a campaign's page by
+ * the campaign (CON-288) — only the posts are; each is still held against the
+ * *workspace's* typical post.
+ *
  * The one structural difference: **`by` is part of the key.** The server ranks
  * and sends two clamped ends, so changing the criterion is a different answer
  * rather than a different view of the same one, and there is no way to re-sort
@@ -29,12 +33,14 @@ export function analyticsPerformersKey(
   window: string,
   by: PerformerSort,
   platforms: readonly string[] = [],
+  campaignId: string | null = null,
 ) {
   return [
     ...ANALYTICS_PERFORMERS_KEY,
     window,
     by,
     platformsKey(platforms),
+    campaignId ?? 'workspace',
   ] as const
 }
 
@@ -53,12 +59,15 @@ export function useAnalyticsPerformers(
   by: PerformerSort = DEFAULT_PERFORMER_BASIS,
   /** Zernio slugs to narrow to; empty for every platform. */
   platforms: readonly string[] = [],
+  /** The campaign to narrow to; `null` for the whole workspace. */
+  campaignId: string | null = null,
 ): AnalyticsPerformersResult {
   const { t } = useTranslation()
   const scope = canonicalPlatforms(platforms)
   const query = useQuery({
-    queryKey: analyticsPerformersKey(window, by, scope),
-    queryFn: () => fetchPerformers({ window, by, platforms: scope }),
+    queryKey: analyticsPerformersKey(window, by, scope, campaignId),
+    queryFn: () =>
+      fetchPerformers({ window, by, platforms: scope, campaignId }),
     staleTime: 5 * 60_000,
     retry: 2,
     // Re-ranking is a refetch, and a board that empties itself into a skeleton

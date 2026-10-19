@@ -65,6 +65,32 @@ describe('WorkspaceOverviewView', () => {
     expect(screen.queryByText(/Once this workspace starts/i)).toBeNull()
   })
 
+  it("speaks of the campaign on a campaign's page", () => {
+    // CON-288: narrowed to a campaign, `no_data` means this campaign's posts
+    // have nothing measured — not that the workspace has never published.
+    render(<WorkspaceOverviewView {...SETTLED} isEmpty campaign />)
+
+    expect(
+      screen.getByText('Nothing measured for this campaign yet'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Once this workspace starts/i)).toBeNull()
+  })
+
+  it('names the campaign and the platforms when both narrowed it', () => {
+    render(
+      <WorkspaceOverviewView
+        {...SETTLED}
+        isEmpty
+        campaign
+        narrowedTo={['LinkedIn']}
+      />,
+    )
+
+    expect(
+      screen.getByText('Nothing measured for this campaign on LinkedIn'),
+    ).toBeInTheDocument()
+  })
+
   it('says a failed request is a failed request', () => {
     render(<WorkspaceOverviewView {...SETTLED} isError />)
 

@@ -149,10 +149,9 @@ describe('fetchPostAnalytics', () => {
     ).toBe(true)
   })
 
-  it('keeps its own 503 message apart from the one /analytics/posts sends', async () => {
-    // "post analytics is not available" here, "analytics is not available"
-    // there. One condition, two strings — so `isAnalyticsUnavailable` does not
-    // match this and a screen reading both endpoints needs both predicates.
+  it('reads its own 503 message as a missing analytics database', async () => {
+    // "post analytics is not available" — the post's own wording, which no
+    // other analytics read uses: the dashboard says it in a 200 envelope.
     stubFetch(jsonResponse(503, { error: 'post analytics is not available' }))
 
     expect(

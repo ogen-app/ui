@@ -48,21 +48,30 @@ import type { LearningsMetric } from '@/types/analytics'
  * card says which platforms it counted, once, below the sections: each
  * section's own sentence explains what it needs, and only this line can say
  * that widening the filter is the way to get it.
+ *
+ * The campaign does **not** reach it (CON-288): the server refuses a
+ * `campaign_id` here, because a lesson mined from one campaign's history is a
+ * much thinner claim than a workspace's. On a campaign's page the card is the
+ * workspace's, and `wholeWorkspace` makes its header say so.
  */
 export function WorkspaceLearningsView({
   result,
   metric,
   onChangeMetric,
   narrowedTo = [],
+  wholeWorkspace = false,
 }: {
   result: AnalyticsLearningsResult
   metric: LearningsMetric
   onChangeMetric: (metric: LearningsMetric) => void
   /** The names of the platforms the scope bar narrowed to, or empty for all. */
   narrowedTo?: readonly string[]
+  /** Drawn on a campaign's page, which this card does not narrow to. */
+  wholeWorkspace?: boolean
 }) {
   const { t } = useTranslation()
   const { view, isPending, isError, isUnavailable, isEmpty } = result
+  const shell = { metric, onChangeMetric, wholeWorkspace }
 
   if (isPending) {
     return <Skeleton className="h-96 w-full max-w-content mx-auto" />
@@ -70,7 +79,7 @@ export function WorkspaceLearningsView({
 
   if (isUnavailable) {
     return (
-      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
+      <Shell {...shell} withPicker={false}>
         <NotYet title={t('analytics.learned.unavailableTitle')}>
           {t('analytics.learned.unavailableBody')}
         </NotYet>
@@ -83,7 +92,7 @@ export function WorkspaceLearningsView({
   // that has simply never published that something is broken.
   if (isEmpty) {
     return (
-      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
+      <Shell {...shell} withPicker={false}>
         <NotYet title={t('analytics.learned.emptyTitle')}>
           {t('analytics.learned.emptyBody')}
         </NotYet>
@@ -93,7 +102,7 @@ export function WorkspaceLearningsView({
 
   if (isError || !view) {
     return (
-      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
+      <Shell {...shell} withPicker={false}>
         <NotYet title={t('analytics.learned.errorTitle')}>
           {t('analytics.learned.errorBody')}
         </NotYet>
@@ -102,12 +111,7 @@ export function WorkspaceLearningsView({
   }
 
   return (
-    <Shell
-      metric={metric}
-      onChangeMetric={onChangeMetric}
-      withPicker
-      qualifier={view.historySince ?? undefined}
-    >
+    <Shell {...shell} withPicker qualifier={view.historySince ?? undefined}>
       <Section
         icon={CalendarBlankIcon}
         title={t('analytics.learned.whenPostsLand')}
@@ -195,12 +199,14 @@ export function WorkspaceLearningsView({
 function Shell({
   metric,
   onChangeMetric,
+  wholeWorkspace,
   withPicker,
   qualifier,
   children,
 }: {
   metric: LearningsMetric
   onChangeMetric: (metric: LearningsMetric) => void
+  wholeWorkspace: boolean
   withPicker: boolean
   qualifier?: string
   children: React.ReactNode
@@ -210,6 +216,7 @@ function Shell({
     <SectionCard
       title={t('analytics.learned.title')}
       scope="all-time"
+      wholeWorkspace={wholeWorkspace}
       qualifier={qualifier}
       status={
         withPicker ? (

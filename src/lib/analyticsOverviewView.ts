@@ -301,7 +301,13 @@ export function buildNowView(
     comparedToDate: overview.window.from,
     readings: overview.cards
       .filter((card) => overview.series[card.metric])
-      .map((card) => readReading(card, overview.series[card.metric])),
+      .map((card) => ({
+        ...readReading(card, overview.series[card.metric]),
+        // Only followers: on a campaign read every other card is the
+        // campaign's, and the server names the one it could not narrow.
+        ...(card.metric === 'followers' &&
+          overview.followers_scope === 'workspace' && { wholeWorkspace: true }),
+      })),
     insights: overview.insights.map(readInsight),
     coverage: readCoverage(values, overview.updated_at),
   }

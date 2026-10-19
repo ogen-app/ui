@@ -26,6 +26,11 @@ import type { LearningsMetric } from '@/types/analytics'
  * workspace has disowned, which is a workspace setting rather than a control on
  * a card, and offering it beside the metric would turn an all-time card back
  * into a period one.
+ *
+ * And there is no campaign in it either: the server refuses a `campaign_id`
+ * here (400 `campaign_scope_unsupported`, CON-288), because a lesson mined from
+ * one campaign's history is a much thinner claim than a workspace's. On a
+ * campaign's page this is the workspace's answer, and the card says so.
  */
 export const ANALYTICS_LEARNINGS_KEY = ['analytics', 'learnings'] as const
 

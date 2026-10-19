@@ -197,29 +197,46 @@ window yields four points where the reader expects twenty-eight.
 serialises as `0001-01-01T00:00:00Z`. Any "updated N ago" line has to treat that
 as *never*, not as a date in the year 1.
 
-## 3. What the flag is still waiting for
+## 3. How the reads narrow
 
-The original blocker — "a campaign dimension on `GET /api/analytics/posts`" —
-**did not land**. All three new endpoints are tenant-scoped. Since CON-289
-(ogen#186, merged 2026-10-03) each takes a repeatable `platform` — Zernio slugs,
-the union, absent for every platform, an unknown slug a 400
-`invalid_platform` — and the client sends it from the scope bar's marks, one
-param per platform and none at all for "all". `/learnings` narrows *before* its
-minimum-support floors, so a single platform's thin history withdraws sections
-with `insufficient_history`; the card says which platforms it counted when that
-happens. `GET /api/analytics/posts?platform=` was left alone server-side — one
-value, matched on the display name — and nothing here sends it. So:
+All three endpoints are tenant-scoped, and narrow two ways.
 
-1. **A campaign dimension.** `campaign_id` on the dashboard reads, or a campaign
-   column on the rows. Nothing else unblocks the campaign screen, which is what
-   `campaign-analytics` gates.
-2. **A per-post series** (§2.3).
-3. **Live re-test** (§4).
+**By platform** (CON-289, ogen#186, merged 2026-10-03). Each takes a repeatable
+`platform` — Zernio slugs, the union, absent for every platform, an unknown slug
+a 400 `invalid_platform` — and the client sends it from the scope bar's marks,
+one param per platform and none at all for "all". `/learnings` narrows *before*
+its minimum-support floors, so a single platform's thin history withdraws
+sections with `insufficient_history`; the card says which platforms it counted
+when that happens.
 
-The two workspace-wide surfaces need none of (1), and shipped first — unflagged
-since 2026-09-18. (3) is still outstanding for them: it is something to check on
-a live workspace rather than something to wait for, and §4 below is the list.
-`campaign-analytics` stays off until (1) exists.
+**By campaign** (CON-288, ogen#194, merged 2026-10-03). `/overview` and
+`/performers` take a `campaign_id`; absent is the whole workspace, byte for byte
+the answer from before. A campaign the workspace doesn't have — foreign,
+deleted or a garbled sqid — is a **404** `campaign not found`. Three things the
+narrowing does *not* reach, each the server's decision and each stated on
+screen:
+
+- **Followers.** They belong to accounts, so the overview's followers card and
+  series stay workspace-wide and the payload says `followers_scope:
+  "workspace"`. The tile prints *Whole workspace* under its label.
+- **The typical post.** `against_typical` on a campaign's board is still
+  measured against the *workspace's* typical post at that age, so "2.1×" means
+  twice your usual post, not twice the campaign's average.
+- **The lessons.** `/learnings` answers **400 `campaign_scope_unsupported`** to
+  any `campaign_id`, because a lesson mined from one campaign's history is a much
+  thinner claim. The client never sends one, and the card's header says it is
+  the workspace's.
+
+The campaign's Analytics section is therefore the workspace dashboard with the
+campaign passed (`components/analytics/AnalyticsDashboard`), and the Overview's
+Analytics card reads the same `/overview` answer. The client-side sum over one
+100-row page of `GET /api/analytics/posts` that stood in for this is deleted,
+and nothing in the app reads `/posts` any more. `campaign-analytics` is on.
+
+Still outstanding: **a per-post series** (§2.3 — served since ogen#130, read by
+nothing here yet) and the **live re-test** (§4), which on this machine stops at
+the contract: the local analytics database holds no snapshots, so every read is
+`no_data`.
 
 ## 4. Only verifiable against a running backend
 

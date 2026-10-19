@@ -16,6 +16,7 @@ import type {
 import type {
   AnalyticsWindowQuery,
   LearningsQuery,
+  OverviewQuery,
   PerformersQuery,
 } from './analytics'
 
@@ -755,10 +756,16 @@ function buildLearnings(query: LearningsQuery, now: Date): AnalyticsLearnings {
 /* ------------------------------------------------------------- the exports -- */
 
 export function demoOverview(
-  query: AnalyticsWindowQuery,
+  query: OverviewQuery,
   now: Date = new Date(),
 ): Promise<InsightEnvelope<AnalyticsOverview>> {
-  return envelopeFor(() => buildOverview(query, now))
+  // The figures are the workspace's whatever the campaign — this is for looking
+  // at the cards, not at a campaign — but the one thing a campaign read changes
+  // about the *shape* is the followers card's scope, so that much is real.
+  return envelopeFor(() => ({
+    ...buildOverview(query, now),
+    ...(query.campaignId ? { followers_scope: 'workspace' as const } : {}),
+  }))
 }
 
 export function demoPerformers(

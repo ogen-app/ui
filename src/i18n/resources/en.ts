@@ -1509,6 +1509,16 @@ export const en = {
      * and a blank cell reads as a bug rather than as the fact it is.
      */
     noDate: 'No date',
+
+    /** The Analytics card: four of the campaign's figures and a link. */
+    analytics: {
+      nothingMeasured: 'Nothing measured yet',
+      nothingMeasuredBody:
+        "Once this campaign's posts go out and the platforms report back, what they earn shows up here.",
+      error: "Couldn't load analytics.",
+      window_one: 'Last day',
+      window_other: 'Last {{count}} days',
+    },
   },
 
   calendar: {
@@ -2255,6 +2265,11 @@ export const en = {
       vsTypical: 'vs a typical post of yours',
       vsTypicalAtAge: 'vs a typical post of yours at the same age',
       vsTypicalMultiple: '{{value}}× your typical',
+      // Under the followers label on a campaign's page (CON-288): the server
+      // counts followers for the whole workspace whatever the campaign.
+      wholeWorkspace: 'Whole workspace',
+      wholeWorkspaceHint:
+        'Followers belong to accounts rather than campaigns, so this counts everyone following the workspace.',
     },
 
     // The line under a card's heading saying which of the controls above it
@@ -2264,6 +2279,11 @@ export const en = {
     scopeNote: {
       allTime: 'All time — not affected by the period above',
       ahead: 'Looking ahead — not affected by the period above',
+      // On a campaign's page, for a card the campaign does not narrow
+      // (CON-288). One line naming both, for the reason above.
+      allTimeWholeWorkspace:
+        'All time, across the whole workspace — not narrowed to this campaign or the period above',
+      wholeWorkspace: 'The whole workspace — not narrowed to this campaign',
     },
 
     charts: {
@@ -2304,6 +2324,13 @@ export const en = {
       emptyNarrowedTitle: 'Nothing measured on {{platforms}}',
       emptyNarrowedBody:
         'Nothing posted on these platforms has reported numbers in this window. Choose ALL PLATFORMS above to count the rest of the workspace.',
+      emptyCampaignTitle: 'Nothing measured for this campaign yet',
+      emptyCampaignBody:
+        "None of this campaign's posts have reported numbers in this window. Widen the period, or come back once its posts have gone out.",
+      emptyCampaignNarrowedTitle:
+        'Nothing measured for this campaign on {{platforms}}',
+      emptyCampaignNarrowedBody:
+        "None of this campaign's posts on these platforms have reported numbers in this window. Choose ALL PLATFORMS above to count the rest of the campaign.",
       errorTitle: "Couldn't load analytics",
       errorBody:
         'The workspace itself is unaffected — nothing here changes what is scheduled or published. Try again in a moment.',
@@ -2359,6 +2386,13 @@ export const en = {
       emptyNarrowedTitle: 'Nothing on {{platforms}} to rank in this period',
       emptyNarrowedBody:
         'No posts went out on these platforms in this window. Widen the period, or choose more platforms above.',
+      emptyCampaignTitle: 'Nothing in this campaign to rank in this period',
+      emptyCampaignBody:
+        "None of this campaign's posts went out in this window. Widen the period, or come back once the next one has published.",
+      emptyCampaignNarrowedTitle:
+        'Nothing in this campaign on {{platforms}} to rank in this period',
+      emptyCampaignNarrowedBody:
+        "None of this campaign's posts went out on these platforms in this window. Widen the period, or choose more platforms above.",
       errorTitle: "Couldn't load performers",
       errorBody:
         'The workspace itself is unaffected — nothing here changes what is scheduled or published. Try again in a moment.',

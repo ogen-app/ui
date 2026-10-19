@@ -8,9 +8,9 @@
  * when something is missing:
  *
  * - **The stored post list** (`/posts`) is served from the isolated analytics
- *   database. When the deployment runs without one it answers **503** rather
- *   than an empty body — "we don't know", not "zero". It is the only endpoint
- *   here that still does.
+ *   database and answers **503** when the deployment has none. Nothing here
+ *   reads it any more: the campaign screen summed one page of it until the
+ *   dashboard reads took a campaign (CON-288), so it has no types here either.
  * - **Live insights** (`/best-times`, `/content-decay`, `/posting-frequency`,
  *   `/followers`) proxy or read per request and always answer 200, wrapping the
  *   payload in {@link InsightEnvelope} with `available: false` when the tenant
@@ -23,10 +23,10 @@
  * `last_refreshed_at` is now the internal `last_checked_at`, so freshness
  * survives the change-detection dedup that keeps the trend table honest.
  *
- * What the wire still has no answer for: a **campaign** dimension (nothing here
- * takes a `campaign_id`) and a **per-post series** (the snapshot history is
- * written and retained, but no endpoint reads it). Both are what
- * `campaign-analytics` is waiting on.
+ * The dashboard reads are tenant-scoped and narrow two ways: a repeatable
+ * `platform` on all three (CON-289), and a `campaign_id` on `/overview` and
+ * `/performers` (CON-288) — `/learnings` refuses one, because its lessons are
+ * the workspace's.
  */
 
 /** The engagement block, identical on a post row and inside a platform row. */
@@ -44,69 +44,6 @@ export type AnalyticsMetrics = {
 }
 
 /**
- * One post's numbers, as of the last refresh sweep.
- *
- * `platform` and `title` are denormalised into the analytics database at
- * refresh time (the read can't join across databases), so they describe the
- * post as it was when it was measured — a post renamed since will still carry
- * its old title here.
- */
-export type PostAnalyticsItem = {
-  post_id: string
-  publisher_post_id: string
-  title: string
-  publisher: string
-  platform: string
-  published_at: string | null
-  sync_status: string
-  /** The publisher's own "numbers computed at"; with `last_refreshed_at` it
-   *  tells stale numbers from a stale fetch. */
-  metrics_last_updated: string | null
-  last_refreshed_at: string
-  analytics: AnalyticsMetrics
-}
-
-/** Summed over the whole filtered set, not just the returned page. */
-export type PostAnalyticsOverview = {
-  post_count: number
-  impressions: number
-  reach: number
-  likes: number
-  comments: number
-  shares: number
-  saves: number
-  clicks: number
-  views: number
-  engagement_rate_avg: number
-}
-
-export type AnalyticsPagination = {
-  page: number
-  limit: number
-  total: number
-  pages: number
-}
-
-export type PostAnalyticsList = {
-  items: PostAnalyticsItem[]
-  pagination: AnalyticsPagination
-  overview: PostAnalyticsOverview
-}
-
-/** The closed set the server accepts; anything else is a 400. */
-export type PostAnalyticsSort =
-  | 'engagement'
-  | 'impressions'
-  | 'reach'
-  | 'likes'
-  | 'comments'
-  | 'shares'
-  | 'saves'
-  | 'clicks'
-  | 'views'
-  | 'published_at'
-
-/**
  * How every endpoint but `/posts` answers. They never fail for a tenant that
  * simply isn't set up: `available: false` with a `reason` is the normal answer,
  * so a caller renders an explanation rather than an error.
@@ -119,11 +56,6 @@ export type PostAnalyticsSort =
  * because the server is free to add one, and a caller that has to narrow it
  * must handle the value it has never heard of by explaining rather than
  * crashing.
- *
- * Note the asymmetry this leaves: `/posts` alone still answers **503** when the
- * deployment has no analytics database, so a screen that reads both has two
- * unavailabilities to tell apart — see `isAnalyticsUnavailable` and
- * `envelopeUnavailable` in `services/api/analytics`.
  */
 export type InsightEnvelope<T> = {
   available: boolean
@@ -138,8 +70,8 @@ export type InsightEnvelope<T> = {
  * single post, and the only one that carries the full nine-measure block.
  *
  * It is **not** under `/api/analytics`: it hangs off the post
- * (`handlers/posts.go`), which is why its unavailable message differs from the
- * one `isAnalyticsUnavailable` matches — see `services/api/postAnalytics`.
+ * (`handlers/posts.go`), and its no-database answer is a 503 rather than the
+ * envelope — see `services/api/postAnalytics`.
  *
  * Five answers, and a caller has to tell all five apart:
  *
@@ -220,9 +152,9 @@ export type PostAnalyticsAnswer = PostAnalyticsSnapshot | PostAnalyticsPending
  *
  * Two things about them that catch a client out, said once here:
  *
- * - **Everything is tenant-scoped.** All three take a repeatable `platform`
- *   (Zernio slugs, the union; CON-289), and none of them is read by campaign
- *   here — which is why `campaign-analytics` is still off.
+ * - **Everything is tenant-scoped, and narrows two ways.** All three take a
+ *   repeatable `platform` (Zernio slugs, the union; CON-289); `/overview` and
+ *   `/performers` take a `campaign_id` (CON-288), which `/learnings` refuses.
  * - **Every window is resolved by the server and echoed back.** Never re-derive
  *   the dates from the shorthand that was sent: `28d` includes today, so its
  *   `from` is 27 days back, and a client that computes its own labels drifts by
@@ -309,6 +241,13 @@ export type AnalyticsOverview = {
   cards: OverviewCard[]
   series: Record<OverviewMetric, OverviewSeries>
   insights: AnalyticsInsight[]
+  /**
+   * `"workspace"` when the read was narrowed to a campaign (CON-288), and
+   * absent otherwise. Followers belong to accounts, not campaigns, so the
+   * followers card and its series are the whole workspace's on a campaign
+   * read — and the card has to say so, or it reads as the campaign's audience.
+   */
+  followers_scope?: 'workspace'
 }
 
 /** What `/performers` will rank by. Anything else is a 400 `invalid_sort`. */

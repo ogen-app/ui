@@ -79,6 +79,7 @@ function renderCard(
     view?: ReturnType<typeof buildLearningsView>
   },
   narrowedTo?: string[],
+  wholeWorkspace?: boolean,
 ) {
   return render(
     <WorkspaceLearningsView
@@ -86,6 +87,7 @@ function renderCard(
       metric="reach"
       onChangeMetric={vi.fn()}
       narrowedTo={narrowedTo}
+      wholeWorkspace={wholeWorkspace}
     />,
   )
 }
@@ -193,6 +195,28 @@ describe('what the card says about its own scope', () => {
     expect(
       screen.getByText(/All time — not affected by the period above/i),
     ).toBeInTheDocument()
+  })
+
+  it("says the campaign does not reach it, on a campaign's page", () => {
+    // The server refuses a campaign on /learnings (CON-288), so on a
+    // campaign's page this card is the workspace's and has to say so.
+    renderCard(
+      { view: buildLearningsView(t, 'en', learnings()) },
+      undefined,
+      true,
+    )
+
+    expect(
+      screen.getByText(
+        'All time, across the whole workspace — not narrowed to this campaign or the period above',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('says so in every state, not only when it has lessons', () => {
+    renderCard({ isEmpty: true }, undefined, true)
+
+    expect(screen.getByText(/across the whole workspace/i)).toBeInTheDocument()
   })
 
   it('says the hours are UTC, because the wire carries no offset', () => {

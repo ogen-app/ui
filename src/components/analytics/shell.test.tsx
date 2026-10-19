@@ -7,7 +7,8 @@ import { SectionCard } from './shell'
  * it.
  *
  * This is the whole defence of a dashboard whose cards obey different scopes:
- * the period does not reach the lessons card. A card that quietly ignored a
+ * the period does not reach the lessons card, and on a campaign's page neither
+ * does the campaign. A card that quietly ignored a
  * control above it would be worse than not offering the control.
  */
 
@@ -31,6 +32,23 @@ describe('SectionCard scope note', () => {
 
     expect(
       screen.getByText('All time — not affected by the period above'),
+    ).toBeInTheDocument()
+  })
+
+  it('disclaims the campaign as well as the period, in one line', () => {
+    // On a campaign's page the lessons card is the workspace's (CON-288): the
+    // server refuses a campaign there, so the card names both things above it
+    // that it ignores rather than stacking two notes.
+    render(
+      <SectionCard title="What we've learned" scope="all-time" wholeWorkspace>
+        <p>lessons</p>
+      </SectionCard>,
+    )
+
+    expect(
+      screen.getByText(
+        'All time, across the whole workspace — not narrowed to this campaign or the period above',
+      ),
     ).toBeInTheDocument()
   })
 })

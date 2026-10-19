@@ -266,6 +266,33 @@ describe('insight tone comes from the rule, not the severity', () => {
   })
 })
 
+describe('a campaign read', () => {
+  it('marks followers as the whole workspace, and nothing else', () => {
+    // Followers belong to accounts, so the server leaves that card un-narrowed
+    // and names it; every other figure is the campaign's own.
+    const view = buildNowView(
+      t,
+      overview(
+        [card('reach', { value: 400 }), card('followers', { value: 1200 })],
+        {},
+        { followers_scope: 'workspace' },
+      ),
+    )
+
+    expect(reading(view, 'followers')?.wholeWorkspace).toBe(true)
+    expect(reading(view, 'reach')?.wholeWorkspace).toBeUndefined()
+  })
+
+  it('marks nothing on a workspace read', () => {
+    const view = buildNowView(
+      t,
+      overview([card('followers', { value: 1200 })], {}),
+    )
+
+    expect(reading(view, 'followers')?.wholeWorkspace).toBeUndefined()
+  })
+})
+
 describe('what the endpoint cannot answer', () => {
   it('carries no usual range, because every card comes back insufficient_history', () => {
     const view = buildNowView(

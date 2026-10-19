@@ -5,7 +5,6 @@ import {
   fetchLearnings,
   fetchPerformers,
   hasHistory,
-  isAnalyticsUnavailable,
 } from './analytics'
 import type {
   AnalyticsLearnings,
@@ -17,10 +16,9 @@ import type {
 /**
  * The executable statement of the CON-236–239 dashboard contract.
  *
- * These endpoints exist — they landed on the Go side on 2026-08-27 — but the
- * feature that reads them is still behind `campaign-analytics`, so nothing has
- * been exercised against a running server. What this file pins is what was read
- * off the handlers: the paths, the query-parameter *names* (`trend_window`, not
+ * These endpoints landed on the Go side on 2026-08-27, and their figures have
+ * still only been seen against an analytics database that holds none — so what
+ * this file pins is what was read off the handlers: the paths, the query-parameter *names* (`trend_window`, not
  * `trendWindow`), the envelope every one of them answers in, and the three
  * degradations a caller has to get right — `no_data`, a null multiplier, and a
  * learnings section that withdraws on its own.
@@ -176,6 +174,48 @@ describe('fetchAnalyticsOverview', () => {
     ).rejects.toThrow('invalid_platform')
   })
 
+  it('narrows to one campaign by its id, beside the platforms', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(200, {
+        available: true,
+        data: { ...OVERVIEW, followers_scope: 'workspace' },
+      }),
+    )
+
+    const envelope = await fetchAnalyticsOverview({
+      window: '28d',
+      platforms: ['linkedin'],
+      campaignId: 'c1',
+    })
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      '/api/analytics/overview?window=28d&platform=linkedin&campaign_id=c1',
+    )
+    // Followers belong to accounts, so the server keeps that card the whole
+    // workspace's and says so — the card has to repeat it.
+    expect(envelope.data?.followers_scope).toBe('workspace')
+  })
+
+  it('sends no campaign for the whole workspace', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(200, { available: true, data: OVERVIEW }),
+    )
+
+    await fetchAnalyticsOverview({ window: '28d', campaignId: null })
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      '/api/analytics/overview?window=28d',
+    )
+  })
+
+  it('surfaces a campaign this workspace does not have as a 404', async () => {
+    stubFetch(jsonResponse(404, { error: 'campaign not found' }))
+
+    await expect(
+      fetchAnalyticsOverview({ campaignId: 'nope' }),
+    ).rejects.toMatchObject({ status: 404 })
+  })
+
   it("surfaces a rejected range as the server's code", async () => {
     // The body is `{"error": "invalid_range"}` — a machine code, no prose. It
     // must never be shown to a reader as-is.
@@ -303,6 +343,18 @@ describe('fetchPerformers', () => {
     expect(row?.direction).toBeUndefined()
   })
 
+  it('ranks one campaign by its id', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(200, { available: false, reason: 'no_data', data: null }),
+    )
+
+    await fetchPerformers({ window: '28d', campaignId: 'c1' })
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      '/api/analytics/performers?window=28d&campaign_id=c1',
+    )
+  })
+
   it("surfaces an unknown ranking basis as the server's code", async () => {
     stubFetch(jsonResponse(400, { error: 'invalid_sort' }))
 
@@ -395,25 +447,5 @@ describe('fetchLearnings', () => {
     stubFetch(jsonResponse(400, { error: 'invalid_param' }))
 
     await expect(fetchLearnings()).rejects.toThrow('invalid_param')
-  })
-})
-
-describe('the two kinds of unavailable', () => {
-  it("keeps the /posts 503 apart from the dashboard's envelope", async () => {
-    // `/posts` is the only endpoint here that still says "no analytics
-    // database" with a status code. The dashboard says it in the body, at 200 —
-    // so a screen reading both has to ask two different questions.
-    stubFetch(
-      jsonResponse(200, {
-        available: false,
-        reason: 'not_configured',
-        data: null,
-      }),
-    )
-
-    const envelope = await fetchAnalyticsOverview()
-
-    expect(envelopeUnavailable(envelope)).toBe(true)
-    expect(isAnalyticsUnavailable(envelope)).toBe(false)
   })
 })

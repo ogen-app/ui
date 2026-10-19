@@ -68,6 +68,7 @@ function view(best: number, worst: number, total = best + worst) {
 function renderBoard(
   result: Partial<typeof SETTLED> & { view?: ReturnType<typeof view> },
   narrowedTo?: string[],
+  campaign?: boolean,
 ) {
   return render(
     <WorkspacePerformersView
@@ -75,6 +76,7 @@ function renderBoard(
       by="against_typical"
       onChangeBasis={vi.fn()}
       narrowedTo={narrowedTo}
+      campaign={campaign}
     />,
     { wrapper: QueryWrapper },
   )
@@ -109,6 +111,25 @@ describe('how the board withdraws', () => {
 
     expect(
       screen.getByText('Nothing on Instagram to rank in this period'),
+    ).toBeInTheDocument()
+  })
+
+  it('says the campaign had nothing to rank, not the workspace', () => {
+    // On a campaign's page (CON-288) `no_data` is about this campaign's posts.
+    renderBoard({ isEmpty: true }, [], true)
+
+    expect(
+      screen.getByText('Nothing in this campaign to rank in this period'),
+    ).toBeInTheDocument()
+  })
+
+  it('names the campaign and the platforms when both narrowed it', () => {
+    renderBoard({ isEmpty: true }, ['Instagram'], true)
+
+    expect(
+      screen.getByText(
+        'Nothing in this campaign on Instagram to rank in this period',
+      ),
     ).toBeInTheDocument()
   })
 

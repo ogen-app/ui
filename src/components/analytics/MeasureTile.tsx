@@ -71,6 +71,19 @@ export function MeasureTile({
           readable, and "Cumulative intera…" costs more than a second line. */}
       <span className="text-xs text-secondary-foreground" title={copy.hint}>
         {copy.periodLabel}
+        {/*
+          Inside the label rather than under the figure: it qualifies what the
+          number *is*, and it has to be read before the number is — on a
+          campaign's page a bare follower count reads as the campaign's audience.
+        */}
+        {reading.wholeWorkspace && (
+          <span
+            className="block text-tertiary-foreground"
+            title={t('analytics.tile.wholeWorkspaceHint')}
+          >
+            {t('analytics.tile.wholeWorkspace')}
+          </span>
+        )}
       </span>
 
       {/*

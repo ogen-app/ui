@@ -1199,6 +1199,14 @@ export const es: Translation = {
     openAssets: 'ABRIR RECURSOS',
     openSettings: 'ABRIR AJUSTES',
     noDate: 'Sin fecha',
+    analytics: {
+      nothingMeasured: 'Aún no se ha medido nada',
+      nothingMeasuredBody:
+        'En cuanto salgan las publicaciones de esta campaña y las plataformas informen, aquí aparecerá lo que ganan.',
+      error: 'No se ha podido cargar la analítica.',
+      window_one: 'Último día',
+      window_other: 'Últimos {{count}} días',
+    },
   },
 
   calendar: {
@@ -1760,11 +1768,18 @@ export const es: Translation = {
       vsTypicalAtAge:
         'frente a una publicación habitual tuya con la misma antigüedad',
       vsTypicalMultiple: '{{value}}× tu valor habitual',
+      wholeWorkspace: 'Todo el espacio de trabajo',
+      wholeWorkspaceHint:
+        'Los seguidores pertenecen a las cuentas, no a las campañas, así que esto cuenta a todos los que siguen al espacio de trabajo.',
     },
 
     scopeNote: {
       allTime: 'Desde siempre — no le afecta el periodo de arriba',
       ahead: 'Mirando hacia delante — no le afecta el periodo de arriba',
+      allTimeWholeWorkspace:
+        'Desde siempre y en todo el espacio de trabajo — no se limita a esta campaña ni al periodo de arriba',
+      wholeWorkspace:
+        'Todo el espacio de trabajo — no se limita a esta campaña',
     },
 
     charts: {
@@ -1805,6 +1820,13 @@ export const es: Translation = {
       emptyNarrowedTitle: 'Nada medido en {{platforms}}',
       emptyNarrowedBody:
         'Nada de lo publicado en estas plataformas ha dado cifras en este periodo. Elige TODAS LAS PLATAFORMAS arriba para contar el resto del espacio de trabajo.',
+      emptyCampaignTitle: 'Aún no se ha medido nada de esta campaña',
+      emptyCampaignBody:
+        'Ninguna publicación de esta campaña ha dado cifras en este periodo. Amplía el periodo o vuelve cuando sus publicaciones hayan salido.',
+      emptyCampaignNarrowedTitle:
+        'Nada medido de esta campaña en {{platforms}}',
+      emptyCampaignNarrowedBody:
+        'Ninguna publicación de esta campaña en estas plataformas ha dado cifras en este periodo. Elige TODAS LAS PLATAFORMAS arriba para contar el resto de la campaña.',
       errorTitle: 'No se ha podido cargar la analítica',
       errorBody:
         'El espacio de trabajo no se ve afectado — nada de aquí cambia lo que está programado o publicado. Inténtalo de nuevo en un momento.',
@@ -1858,6 +1880,13 @@ export const es: Translation = {
         'Nada en {{platforms}} que clasificar en este periodo',
       emptyNarrowedBody:
         'No se publicó nada en estas plataformas en este periodo. Amplía el periodo o elige más plataformas arriba.',
+      emptyCampaignTitle: 'Nada de esta campaña que clasificar en este periodo',
+      emptyCampaignBody:
+        'Ninguna publicación de esta campaña salió en este periodo. Amplía el periodo o vuelve cuando se haya publicado la siguiente.',
+      emptyCampaignNarrowedTitle:
+        'Nada de esta campaña en {{platforms}} que clasificar en este periodo',
+      emptyCampaignNarrowedBody:
+        'Ninguna publicación de esta campaña salió en estas plataformas en este periodo. Amplía el periodo o elige más plataformas arriba.',
       errorTitle: 'No se han podido cargar las destacadas',
       errorBody:
         'El espacio de trabajo no se ve afectado — nada de aquí cambia lo que está programado o publicado. Inténtalo de nuevo en un momento.',

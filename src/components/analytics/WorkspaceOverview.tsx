@@ -6,7 +6,8 @@ import { NotYet, SectionCard } from './shell'
 import type { AnalyticsOverviewResult } from '@/hooks/useAnalyticsOverview'
 
 /**
- * The workspace's "what happened over the last N days" card (CON-237).
+ * The "what happened over the last N days" card (CON-237) — the workspace's,
+ * or on a campaign's page the campaign's (CON-288).
  *
  * One card, from one call. `NowSection` is the same component the campaign
  * surface uses — the five figures, the chart behind whichever is selected, the
@@ -38,6 +39,7 @@ export function WorkspaceOverviewView({
   isUnavailable,
   isEmpty,
   narrowedTo = [],
+  campaign = false,
 }: AnalyticsOverviewResult & {
   /**
    * The names of the platforms the scope bar narrowed to, or empty for all of
@@ -46,6 +48,12 @@ export function WorkspaceOverviewView({
    * would send them looking for a fault.
    */
   narrowedTo?: readonly string[]
+  /**
+   * Whether the read was narrowed to a campaign. Only the empty state reads it,
+   * for the same reason: a campaign with nothing measured is not a workspace
+   * that has never published.
+   */
+  campaign?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -68,14 +76,24 @@ export function WorkspaceOverviewView({
   // be reported as a failed request — telling a new workspace something is
   // broken when the truth is that it hasn't published yet.
   if (isEmpty) {
+    const platforms = formatList([...narrowedTo])
+    const narrowed = narrowedTo.length > 0
     return (
       <SectionCard title={t('analytics.now.title')}>
-        {narrowedTo.length > 0 ? (
+        {campaign ? (
           <NotYet
-            title={t('analytics.now.emptyNarrowedTitle', {
-              platforms: formatList([...narrowedTo]),
-            })}
+            title={
+              narrowed
+                ? t('analytics.now.emptyCampaignNarrowedTitle', { platforms })
+                : t('analytics.now.emptyCampaignTitle')
+            }
           >
+            {narrowed
+              ? t('analytics.now.emptyCampaignNarrowedBody')
+              : t('analytics.now.emptyCampaignBody')}
+          </NotYet>
+        ) : narrowed ? (
+          <NotYet title={t('analytics.now.emptyNarrowedTitle', { platforms })}>
             {t('analytics.now.emptyNarrowedBody')}
           </NotYet>
         ) : (

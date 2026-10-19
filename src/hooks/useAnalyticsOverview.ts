@@ -14,15 +14,22 @@ import type { NowView } from '@/components/analytics/types'
  * per metric and the deterministic callouts.
  *
  * Tenant-scoped, and narrowed by the scope bar's platforms like the other two
- * reads (CON-289) — so the set is part of the key.
+ * reads (CON-289) and, on a campaign's page, by the campaign (CON-288) — so both
+ * are part of the key.
  */
 export const ANALYTICS_OVERVIEW_KEY = ['analytics', 'overview'] as const
 
 export function analyticsOverviewKey(
   window: string,
   platforms: readonly string[] = [],
+  campaignId: string | null = null,
 ) {
-  return [...ANALYTICS_OVERVIEW_KEY, window, platformsKey(platforms)] as const
+  return [
+    ...ANALYTICS_OVERVIEW_KEY,
+    window,
+    platformsKey(platforms),
+    campaignId ?? 'workspace',
+  ] as const
 }
 
 /**
@@ -68,12 +75,15 @@ export function useAnalyticsOverview(
   window: string = DEFAULT_OVERVIEW_WINDOW,
   /** Zernio slugs to narrow to; empty for every platform. */
   platforms: readonly string[] = [],
+  /** The campaign to narrow to; `null` for the whole workspace. */
+  campaignId: string | null = null,
 ): AnalyticsOverviewResult {
   const { t } = useTranslation()
   const scope = canonicalPlatforms(platforms)
   const query = useQuery({
-    queryKey: analyticsOverviewKey(window, scope),
-    queryFn: () => fetchAnalyticsOverview({ window, platforms: scope }),
+    queryKey: analyticsOverviewKey(window, scope, campaignId),
+    queryFn: () =>
+      fetchAnalyticsOverview({ window, platforms: scope, campaignId }),
     // The figures move when the refresh sweep writes, not when the user does
     // anything here, so re-reading on every mount buys nothing.
     staleTime: 5 * 60_000,

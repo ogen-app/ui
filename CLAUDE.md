@@ -717,6 +717,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   sent as no parameter**, never as every slug — so a selection that grows to
   cover every connected platform collapses back to empty, and a platform
   connected later is counted in a view that says it is the whole workspace.
+- **A campaign's Analytics is the workspace dashboard with a `campaignId`**
+  (`AnalyticsDashboard`, CON-288) — never a second set of cards, and never a
+  client-side sum: `/overview` and `/performers` narrow on the server. Three
+  things the campaign does not reach, each said on screen rather than left to
+  be guessed: the **followers** tile (`followers_scope: "workspace"` → *Whole
+  workspace*), the board's **typical post** (still the workspace's, so "2.1×"
+  means your usual post), and the **lessons** card, whose read answers 400 to a
+  `campaign_id` — so it is never sent one, and `wholeWorkspace` says so in its
+  header.
 - **Charts are hand-rolled SVG, except the two full-card plots.**
   `components/analytics/charts.tsx` draws sparklines, heatmaps, the decay
   curve, the publication rail and the rank bars itself — every shape is a
