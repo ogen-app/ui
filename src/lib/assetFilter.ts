@@ -11,13 +11,17 @@ import type {
  * **The URL is the query.** Every key the page keeps in its address is a
  * parameter of `GET /api/content-bank/assets` (CON-374) under the same name —
  * `?kind=pdf&tag=<id>,<id>&ideas=undecided` — so a link a teammate opens asks
- * the server exactly what the sender's screen asked. Two values are kept in a
- * form the endpoint doesn't take, and both for the same reason: a link should
- * mean the same *words* when it is opened tomorrow. `updated_after=7d` is a
- * preset ("the last seven days") rather than a timestamp, and a custom range is
- * two days (`2026-10-01`) rather than two instants; both are turned into
- * absolute bounds in the viewer's time zone only when the request is made
- * (`toRequestParams`).
+ * the server exactly what the sender's screen asked. Dates are kept so a
+ * link means the same *words* when it is opened tomorrow: a preset is the
+ * server's own `updated=7d` ("the last seven days"), and a custom range is two
+ * days (`2026-10-01`) rather than two instants — both read in the viewer's
+ * time zone (`tz`) by the server, which takes days since CON-393.
+ *
+ * **The sort, the grouping and the open smart group are in the address too**
+ * (CON-392), as they are for Ideas: a smart group (`/api/saved-views`, surface
+ * `assets`) is this address saved, so it has to be able to say how it is
+ * read. A page with none in its address falls back to the device's preference
+ * (`settingsStore.assetSort`, `assetGrouping`).
  *
  * Nothing here filters, counts or sorts anything. It only says what to ask.
  */
@@ -193,20 +197,18 @@ export type AssetListSearch = Partial<
     | 'title_not'
     | `${ChoiceField}`
     | `${ChoiceField}_not`
+    | 'updated'
     | 'updated_after'
     | 'updated_before'
-    | 'text',
+    | 'text'
+    | 'sort'
+    | 'group'
+    | 'view',
     string
   >
 >
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
-
-function isBound(value: string): boolean {
-  return (
-    (UPDATED_PRESETS as readonly string[]).includes(value) || DAY.test(value)
-  )
-}
 
 /** The values a choice field may take, or null for ids (any string). */
 function allowedValues(field: ChoiceField): readonly string[] | null {
@@ -258,12 +260,20 @@ export function parseAssetListSearch(
       if (values.length) out[key] = values.join(',')
     }
   }
-  for (const key of ['updated_after', 'updated_before'] as const) {
-    const value = raw[key] === undefined ? '' : String(raw[key]).trim()
-    if (isBound(value)) out[key] = value
-  }
-  const text = raw.text === undefined ? '' : String(raw.text).trim()
+  const read = (key: string) =>
+    raw[key] === undefined ? '' : String(raw[key]).trim()
+  // A preset under its own name, days under the bounds' — as the endpoint
+  // takes them; one or the other for the lower bound, never both.
+  if (isPreset(read('updated'))) out.updated = read('updated')
+  else if (DAY.test(read('updated_after')))
+    out.updated_after = read('updated_after')
+  if (DAY.test(read('updated_before')))
+    out.updated_before = read('updated_before')
+  const text = read('text')
   if (text.length >= TEXT_MIN) out.text = text.slice(0, TEXT_MAX)
+  if (isSort(read('sort'))) out.sort = read('sort')
+  if (isGrouping(read('group'))) out.group = read('group')
+  if (read('view')) out.view = read('view')
   return out
 }
 
@@ -279,24 +289,23 @@ export function filterFromSearch(search: AssetListSearch): AssetFilter {
     campaign: pair('campaign'),
     tag: pair('tag'),
     ideas: pair('ideas'),
-    updatedAfter: search.updated_after ?? null,
+    updatedAfter: search.updated ?? search.updated_after ?? null,
     updatedBefore: search.updated_before ?? null,
     text: search.text ?? '',
   }
 }
 
-/**
- * The search params for a filter. The sort and the grouping are not in them:
- * both are per-device preferences (`settingsStore`), so a link carries what
- * is being asked and leaves how to read it to whoever opens it.
- */
+/** The filter's half of the search params; the sort, grouping and group are kept apart. */
 export function searchFromFilter(filter: AssetFilter): AssetListSearch {
   const out: AssetListSearch = {}
   for (const key of ['title', ...CHOICE_FIELDS] as const) {
     if (filter[key].any.length) out[key] = filter[key].any.join(',')
     if (filter[key].not.length) out[`${key}_not`] = filter[key].not.join(',')
   }
-  if (filter.updatedAfter) out.updated_after = filter.updatedAfter
+  if (filter.updatedAfter) {
+    if (isPreset(filter.updatedAfter)) out.updated = filter.updatedAfter
+    else out.updated_after = filter.updatedAfter
+  }
   if (filter.updatedBefore) out.updated_before = filter.updatedBefore
   if (filter.text) out.text = filter.text
   return out
@@ -307,11 +316,11 @@ export function isFilterActive(filter: AssetFilter): boolean {
 }
 
 /**
- * The grouping the list is read in. It is a per-device preference
- * (`settingsStore.assetGrouping`), shared by the bank and every campaign's
- * page, not part of the address. A campaign's own page has no Campaign
- * grouping — every row is in that campaign — so a preference for one falls
- * back to the default there, and comes back in the bank.
+ * The grouping the list is read in: the address's, else the device's
+ * preference (`settingsStore.assetGrouping`), else by date added. A
+ * campaign's own page has no Campaign grouping — every row is in that
+ * campaign — so a choice of one falls back to the default there, and comes
+ * back in the bank.
  */
 export function effectiveGroup(
   chosen: AssetGrouping | undefined,
@@ -557,7 +566,7 @@ export type RequestContext = {
   sort: AssetSort
   /** Sent unless `none`; the default when omitted. */
   group?: AssetGrouping
-  now: Date
+  /** The viewer's zone, which the server reads presets and days in. */
   timeZone: string
 }
 
@@ -576,10 +585,12 @@ export function toRequestParams(
     if (filter[key].any.length) out[key] = filter[key].any.join(',')
     if (filter[key].not.length) out[`${key}_not`] = filter[key].not.join(',')
   }
-  if (filter.updatedAfter)
-    out.updated_after = boundStart(filter.updatedAfter, ctx.now).toISOString()
-  if (filter.updatedBefore)
-    out.updated_before = boundStart(filter.updatedBefore, ctx.now).toISOString()
+  // Presets and days as they are: the server resolves both in `tz`.
+  if (filter.updatedAfter) {
+    if (isPreset(filter.updatedAfter)) out.updated = filter.updatedAfter
+    else out.updated_after = filter.updatedAfter
+  }
+  if (filter.updatedBefore) out.updated_before = filter.updatedBefore
   if (filter.text) out.text = filter.text
   if (ctx.scopeCampaign) out.scope_campaign = ctx.scopeCampaign
   out.sort = ctx.sort
@@ -597,37 +608,69 @@ export function facetsFor(scopeCampaign: string | null): AssetFacetField[] {
 }
 
 // ---------------------------------------------------------------------------
-// Typing straight into the bar.
+// Smart groups — the address saved (CON-392).
 
-/** The words the old box understood, and a few more, as a way to jump to a value step. */
-const FIELD_ALIASES: Record<string, FilterField> = {
-  title: 'title',
-  name: 'title',
-  type: 'kind',
-  kind: 'kind',
-  status: 'status',
-  statuses: 'status',
-  campaign: 'campaign',
-  tag: 'tag',
-  tags: 'tag',
-  updated: 'updated',
-  ideas: 'ideas',
-  idea: 'ideas',
-  text: 'text',
-  mentions: 'text',
+/** The sort and grouping a page reads: the address's, else the device's. */
+export function assetViewFromSearch(
+  search: AssetListSearch,
+  preference: { sort: AssetSort | null | undefined; group?: AssetGrouping },
+  scopeCampaign: string | null,
+): { sort: AssetSort; group: AssetGrouping } {
+  const filter = filterFromSearch(search)
+  const sort = isSort(search.sort) ? search.sort : preference.sort
+  const group = isGrouping(search.group) ? search.group : preference.group
+  return {
+    sort: effectiveSort(filter, sort),
+    group: effectiveGroup(group, scopeCampaign),
+  }
 }
 
 /**
- * `tag:gar` → the Tag value step, narrowed by "gar"; `-tag:` → "is not". The
- * old box's syntax, kept as an accelerator for anyone who learned it — never
- * the only way in.
+ * The query a smart group stores: the filter, the sort and the grouping, in
+ * the canonical form the server keeps (keys sorted, values sorted). The
+ * grouping is stored as what it is — `group=created` when grouped by date,
+ * nothing when not grouped (`none` is ours; the endpoint knows no such value).
  */
-export function parseFieldPrefix(
-  input: string,
-): { field: FilterField; negated: boolean; rest: string } | null {
-  const match = /^(-?)([a-z]+):\s?(.*)$/i.exec(input)
-  if (!match) return null
-  const field = FIELD_ALIASES[match[2].toLowerCase()]
-  if (!field) return null
-  return { field, negated: match[1] === '-', rest: match[3] }
+export function assetViewQuery(
+  search: AssetListSearch,
+  view: { sort: AssetSort; group: AssetGrouping },
+): string {
+  const parsed: Record<string, string> = {
+    ...searchFromFilter(filterFromSearch(search)),
+    sort: view.sort,
+  }
+  if (view.group !== 'none') parsed.group = view.group
+  return Object.keys(parsed)
+    .sort()
+    .map((key) => {
+      const raw = parsed[key]
+      const values = key === 'text' ? [raw] : raw.split(',').sort()
+      return `${encodeURIComponent(key)}=${values.map(encodeURIComponent).join(',')}`
+    })
+    .join('&')
+}
+
+/** A group's stored query as the page's address; no grouping is `none`. */
+export function searchFromAssetViewQuery(query: string): AssetListSearch {
+  const raw: Record<string, string> = {}
+  for (const [key, value] of new URLSearchParams(query)) raw[key] = value
+  if (!raw.group) raw.group = 'none'
+  const { view: _view, ...search } = parseAssetListSearch(raw)
+  return search
+}
+
+/** Whether the page still reads exactly as the group saved it. */
+export function matchesAssetView(
+  search: AssetListSearch,
+  view: { sort: AssetSort; group: AssetGrouping },
+  query: string,
+): boolean {
+  const saved = searchFromAssetViewQuery(query)
+  return (
+    assetViewQuery(search, view) ===
+    assetViewQuery(saved, {
+      sort: isSort(saved.sort) ? saved.sort : DEFAULT_SORT,
+      group: isGrouping(saved.group) ? saved.group : 'none',
+    })
+  )
 }

@@ -27,7 +27,7 @@ vi.mock('@/services/api/content', () => ({
   queryAssets: vi.fn(async (params: AssetQueryParams) => ({
     assets: [],
     next_cursor: null,
-    total: params.updated_after ? 0 : params.kind ? 4 : 41,
+    total: params.updated ? 0 : params.kind ? 4 : 41,
     total_unfiltered: 41,
     facets: {},
   })),
@@ -69,11 +69,11 @@ describe('NoMatches', () => {
       screen.getByText('No assets match these filters'),
     ).toBeInTheDocument()
     expect(
-      await screen.findByText('Removing “Updated in Today” would show 4.'),
+      await screen.findByText('Removing “updated today” would show 4.'),
     ).toBeInTheDocument()
 
     await userEvent.click(
-      screen.getByRole('button', { name: 'Remove “Updated in Today”' }),
+      screen.getByRole('button', { name: 'Remove “updated today”' }),
     )
     expect(tokensOf(onChange.mock.calls[0][0])).toEqual([
       { field: 'kind', negated: false, values: ['pdf'] },

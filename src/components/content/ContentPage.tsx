@@ -26,16 +26,20 @@ import {
   useDeleteAssets,
 } from '@/hooks/useContent'
 import {
-  effectiveGroup,
-  effectiveSort,
+  assetViewFromSearch,
+  assetViewQuery,
   facetsFor,
   filterFromSearch,
   isFilterActive,
+  matchesAssetView,
+  searchFromAssetViewQuery,
   searchFromFilter,
   toRequestParams,
   viewerTimeZone,
   type AssetFilter,
+  type AssetGrouping,
   type AssetListSearch,
+  type AssetSort,
 } from '@/lib/assetFilter'
 import { uploadLimitLines } from '@/lib/assetStatus'
 import {
@@ -44,6 +48,14 @@ import {
   seedFromWholeBank,
 } from '@/lib/campaignMembership'
 import { seedsWholeBank } from '@/lib/campaignSources'
+import {
+  DeleteGroupDialog,
+  GroupActions,
+  SaveGroupDialog,
+  SavedViewsMenu,
+} from '@/components/smartFilter/SavedViewsMenu'
+import { useSavedViewWriter, useSavedViews } from '@/hooks/useSavedViews'
+import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useUploadStore } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
@@ -51,6 +63,8 @@ import type { Campaign } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
 import { AddWebPageModal } from './AddWebPageModal'
 import { ContentList } from './ContentList'
+import { ASSET_MODEL } from './smartFilter/assetModel'
+import { useFilterVocabulary } from './smartFilter/useFilterVocabulary'
 import { awaiting } from '@/lib/fetched'
 
 /**
@@ -112,34 +126,115 @@ export function ContentPage({
   const deleteAssets = useDeleteAssets()
 
   const filter = useMemo(() => filterFromSearch(search), [search])
-  const chosenSort = useSettingsStore((s) => s.assetSort)
-  const setSort = useSettingsStore((s) => s.setAssetSort)
-  const sort = effectiveSort(filter, chosenSort)
   const scope = campaign?.id ?? null
+  // The sort and the grouping are the address's when it names them — a
+  // smart group stores both — and the device's preference when it doesn't.
+  const chosenSort = useSettingsStore((s) => s.assetSort)
+  const setSortPreference = useSettingsStore((s) => s.setAssetSort)
   const chosenGrouping = useSettingsStore((s) => s.assetGrouping)
-  const setGrouping = useSettingsStore((s) => s.setAssetGrouping)
-  const grouping = effectiveGroup(chosenGrouping, scope)
-  // The day, not the instant: a preset like "Last 7 days" resolves to a
-  // midnight, so the request — and the Query key — only change at midnight.
-  const today = new Date().toDateString()
+  const setGroupingPreference = useSettingsStore((s) => s.setAssetGrouping)
+  const { sort, group: grouping } = assetViewFromSearch(
+    search,
+    { sort: chosenSort, group: chosenGrouping },
+    scope,
+  )
   const paramsFor = useCallback(
     (next: AssetFilter) =>
       toRequestParams(next, {
         scopeCampaign: scope,
-        sort: effectiveSort(next, chosenSort),
+        sort: assetViewFromSearch(
+          { ...searchFromFilter(next), sort: search.sort },
+          { sort: chosenSort },
+          scope,
+        ).sort,
         group: grouping,
-        now: new Date(today),
         timeZone: viewerTimeZone(),
       }),
-    [scope, chosenSort, grouping, today],
+    [scope, search.sort, chosenSort, grouping],
   )
   const params = useMemo(() => paramsFor(filter), [paramsFor, filter])
   const list = useAssetList(params, { facets: facetsFor(scope) })
+  const vocabulary = useFilterVocabulary({
+    facets: list.facets,
+    scoped: !!campaign,
+  })
 
+  /** A new filter, keeping how the list is read and the open group. */
   const setFilter = useCallback(
-    (next: AssetFilter) => onSearchChange(searchFromFilter(next)),
-    [onSearchChange],
+    (next: AssetFilter) => {
+      const { sort: s, group: g, view: v } = search
+      onSearchChange({
+        ...searchFromFilter(next),
+        ...(s ? { sort: s } : {}),
+        ...(g ? { group: g } : {}),
+        // The group stays open, marked edited, until it is saved or left.
+        ...(v ? { view: v } : {}),
+      })
+    },
+    [search, onSearchChange],
   )
+  // Choosing an order or a grouping is the device's new habit as well as
+  // this address's: the next page opened without one reads it the same way.
+  const setSort = (next: AssetSort) => {
+    setSortPreference(next)
+    onSearchChange({ ...search, sort: next })
+  }
+  const setGrouping = (next: AssetGrouping) => {
+    setGroupingPreference(next)
+    onSearchChange({ ...search, group: next })
+  }
+
+  // Smart groups are the workspace page's (CON-392 §5); a campaign's has none.
+  const groupsOn = campaign === null
+  const views = useSavedViews('assets', { enabled: groupsOn })
+  const viewWriter = useSavedViewWriter('assets')
+  const active = groupsOn
+    ? (views.data?.find((v) => v.id === search.view) ?? null)
+    : null
+  const edited =
+    !!active &&
+    active.valid &&
+    !matchesAssetView(search, { sort, group: grouping }, active.query)
+  const narrowed = isFilterActive(filter)
+  const [saving, setSaving] = useState<
+    { mode: 'new' } | { mode: 'rename'; view: SavedView } | null
+  >(null)
+  const [removing, setRemoving] = useState<SavedView | null>(null)
+
+  /** A group's filter, grouping and sort into the address. */
+  const openView = (view: SavedView | null) =>
+    onSearchChange(
+      view
+        ? {
+            ...(view.valid ? searchFromAssetViewQuery(view.query) : {}),
+            view: view.id,
+          }
+        : {},
+    )
+  const currentQuery = () => assetViewQuery(search, { sort, group: grouping })
+  /** The name a new group is offered: what its clauses say. */
+  const suggestedName = ASSET_MODEL.tokensOf(filter)
+    .map((token) => vocabulary.tokenText(token))
+    .join(', ')
+  const saveGroup = (name: string, shared: boolean) => {
+    if (saving?.mode === 'rename') {
+      viewWriter.update.mutate(
+        { id: saving.view.id, name },
+        { onSuccess: () => setSaving(null) },
+      )
+      return
+    }
+    viewWriter.create.mutate(
+      { name, shared, query: currentQuery() },
+      {
+        onSuccess: (view) => {
+          setSaving(null)
+          onSearchChange({ ...search, view: view.id })
+          toast.success(t('savedViews.saved', { name: view.name }))
+        },
+      },
+    )
+  }
 
   const enqueueUploads = useUploadStore((s) => s.enqueue)
   const uploadItems = useUploadStore((s) => s.items)
@@ -448,6 +543,81 @@ export function ContentPage({
           <ContentList
             campaignId={campaignId}
             list={list}
+            vocabulary={vocabulary}
+            sentenceLeading={
+              groupsOn && (
+                <SavedViewsMenu
+                  views={views.data ?? []}
+                  allLabel={t('savedViews.all.assets')}
+                  countName="total"
+                  active={active}
+                  edited={edited}
+                  allCount={list.totalUnfiltered}
+                  canSave={narrowed}
+                  onOpen={openView}
+                  onSaveCurrent={() => setSaving({ mode: 'new' })}
+                  onRename={(view) => setSaving({ mode: 'rename', view })}
+                  onShare={(view, shared) =>
+                    viewWriter.update.mutate({ id: view.id, shared })
+                  }
+                  onDuplicate={(view) =>
+                    viewWriter.create.mutate({
+                      name: t('savedViews.copyName', {
+                        name: view.name,
+                      }).slice(0, SAVED_VIEW_NAME_MAX),
+                      query: view.query,
+                      shared: false,
+                    })
+                  }
+                  onDelete={setRemoving}
+                />
+              )
+            }
+            sentenceTrailing={
+              !groupsOn
+                ? null
+                : active
+                  ? edited && (
+                      <GroupActions
+                        canEdit={active.canEdit}
+                        busy={viewWriter.update.isPending}
+                        onSaveChanges={() =>
+                          viewWriter.update.mutate({
+                            id: active.id,
+                            query: currentQuery(),
+                          })
+                        }
+                        onSaveAs={() => setSaving({ mode: 'new' })}
+                        onRevert={() => openView(active)}
+                      />
+                    )
+                  : narrowed && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSaving({ mode: 'new' })}
+                      >
+                        {t('savedViews.saveAs')}
+                      </Button>
+                    )
+            }
+            groupNotice={
+              active && !active.valid ? (
+                <p className="flex items-center gap-2 pl-5 text-sm text-destructive">
+                  {t('savedViews.invalid')}
+                  {active.canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setRemoving(active)}
+                    >
+                      {t('savedViews.remove.confirm')}
+                    </Button>
+                  )}
+                </p>
+              ) : null
+            }
+            clearable={!active}
             params={params}
             filter={filter}
             onFilterChange={setFilter}
@@ -499,6 +669,41 @@ export function ContentPage({
       {/* One dialog for the three: they share a gate, so they share the
           sentence it puts on screen. */}
       <UpgradeDialog gate={bankGate} />
+
+      <SaveGroupDialog
+        isOpen={saving !== null}
+        suggested={saving?.mode === 'rename' ? saving.view.name : suggestedName}
+        title={
+          saving?.mode === 'rename'
+            ? t('savedViews.save.renameTitle')
+            : t('savedViews.save.title')
+        }
+        confirm={
+          saving?.mode === 'rename'
+            ? t('savedViews.save.renameConfirm')
+            : t('savedViews.save.confirm')
+        }
+        withShare={saving?.mode !== 'rename'}
+        saving={viewWriter.create.isPending || viewWriter.update.isPending}
+        onClose={() => setSaving(null)}
+        onSave={saveGroup}
+      />
+
+      <DeleteGroupDialog
+        view={removing}
+        deleting={viewWriter.remove.isPending}
+        onClose={() => setRemoving(null)}
+        onConfirm={() => {
+          if (!removing) return
+          const wasOpen = removing.id === active?.id
+          viewWriter.remove.mutate(removing.id, {
+            onSuccess: () => {
+              if (wasOpen) openView(null)
+            },
+          })
+          setRemoving(null)
+        }}
+      />
     </div>
   )
 }

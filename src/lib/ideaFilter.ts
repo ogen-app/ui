@@ -367,47 +367,18 @@ export function withoutIdeaToken(
   return next
 }
 
-const FIELD_ALIASES: Record<string, IdeaFilterField> = {
-  text: 'text',
-  origin: 'origin',
-  source: 'source_asset',
-  document: 'source_asset',
-  type: 'kind',
-  kind: 'kind',
-  campaign: 'campaign_id',
-  fit: 'fit',
-  score: 'fit',
-  phase: 'phase',
-  author: 'author',
-  by: 'author',
-  added: 'created',
-  created: 'created',
-}
-
-/** `fit:hi` → the Fit value step, narrowed by "hi"; `-fit:` → "is not". */
-export function parseIdeaFieldPrefix(
-  input: string,
-): { field: IdeaFilterField; negated: boolean; rest: string } | null {
-  const match = /^(-?)([a-z]+):\s?(.*)$/i.exec(input)
-  if (!match) return null
-  const field = FIELD_ALIASES[match[2].toLowerCase()]
-  if (!field) return null
-  return { field, negated: match[1] === '-', rest: match[3] }
-}
-
 function kindOf(field: IdeaFilterField): FieldKind {
   if (field === 'text') return 'search'
   if (field === 'created') return 'date'
   return 'choice'
 }
 
-/** The Ideas filter as the smart filter reads it (`lib/smartFilter`). */
+/** The Ideas filter as the sentence reads it (`lib/smartFilter`). */
 export const IDEA_FILTER_MODEL: FilterModel<IdeaFilter, IdeaFilterField> = {
   kindOf,
   tokensOf: ideaTokensOf,
   withToken: withIdeaToken,
   withoutToken: withoutIdeaToken,
-  parseFieldPrefix: parseIdeaFieldPrefix,
   freeText: ['text'],
   searchMin: 1,
   textMax: IDEA_TEXT_MAX,

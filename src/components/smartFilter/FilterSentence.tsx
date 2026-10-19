@@ -9,75 +9,108 @@ import {
 import { Trans, useTranslation } from 'react-i18next'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { CheckIcon, PlusIcon, XIcon } from '@phosphor-icons/react'
-import { useQuery } from '@tanstack/react-query'
-import type { CountQuery } from '@/components/smartFilter/SmartFilterBar'
+import { useQueries } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { ZIndex } from '@/config/zIndex'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { cn } from '@/lib'
 import { nextDay, previousDay } from '@/lib/assetFilter'
-import {
-  IDEA_FILTER_MODEL,
-  NONE,
-  type IdeaFilter,
-  type IdeaFilterField,
-  type IdeaToken,
-} from '@/lib/ideaFilter'
 import { formatListParts, formatNumber } from '@/lib/intl'
-import { tokenValuesOf, type ValueOption } from '@/lib/smartFilter'
-import type { Clause, IdeaVocabulary } from './useIdeaVocabulary'
+import type {
+  Clause,
+  CountQuery,
+  FilterModel,
+  SentenceVocabulary,
+  SmartToken,
+  ValueOption,
+} from '@/lib/smartFilter'
 
-const model = IDEA_FILTER_MODEL
+/** The value every list uses for "none" — no campaign, no tags, no document. */
+const NONE = 'none'
 
-/** The order the clauses read in, however the filter was built. */
-const SENTENCE_ORDER: readonly IdeaFilterField[] = [
-  'origin',
-  'source_asset',
-  'campaign_id',
-  'kind',
-  'fit',
-  'phase',
-  'author',
-  'created',
-  'text',
-]
-
-/** The fields whose panel offers a find field, once the list is long. */
-const FINDABLE = ['source_asset', 'campaign_id', 'kind', 'author', 'phase']
+/** A long list offers a find field from this many values. */
 const FIND_FROM = 8
 
 /** How wide the panels are, to keep them inside the line. */
 const PANEL_WIDTH = 340
 
-type Opened = { field: IdeaFilterField; negated: boolean }
+type Opened<Field> = { field: Field; negated: boolean }
 
-type AddItem =
-  | { kind: 'text' }
-  | { kind: 'quick'; field: IdeaFilterField; option: ValueOption }
-  | { kind: 'starter'; field: IdeaFilterField }
+type AddItem<Field> =
+  | { kind: 'text'; field: Field }
+  | { kind: 'quick'; field: Field; option: ValueOption }
+  | { kind: 'starter'; field: Field }
+
+type Props<F, Field extends string> = {
+  filter: F
+  onChange: (next: F) => void
+  model: FilterModel<F, Field>
+  vocabulary: SentenceVocabulary<Field>
+  total: number
+  totalUnfiltered: number
+  countQuery: CountQuery<F>
+  /** The Views dropdown, at the line's start. */
+  leading?: ReactNode
+  /** At the line's end: Save as group, or an edited group's actions. */
+  trailing?: ReactNode
+  /** Whether Clear is offered — not while a smart group is open. */
+  clearable: boolean
+}
+
+/** The values a field's token holds for this operator. */
+function valuesOf<F, Field extends string>(
+  model: FilterModel<F, Field>,
+  filter: F,
+  field: Field,
+  negated: boolean,
+): string[] {
+  return (
+    model
+      .tokensOf(filter)
+      .find(
+        (t) => t.field === field && t.negated === negated && t.values.length,
+      )?.values ?? []
+  )
+}
+
+/** Typed text as values: comma-separated, trimmed, each once. */
+function splitText(text: string): string[] {
+  return [
+    ...new Set(
+      text
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean),
+    ),
+  ]
+}
 
 /**
- * The Ideas filter as a sentence you edit (CON-391) — "Showing ideas *from
- * documents*, in *Hotel de Russie*, with a *high or medium* fit" — in place
- * of the token bar, which read like a query being built.
+ * A list's filter as a sentence you edit (CON-391, carried to Assets by
+ * CON-392) — "Showing ideas *from documents*, in *Hotel de Russie*, with a
+ * *high or medium* fit" — in place of the token bar, which read like a query
+ * being built.
  *
- * The same filter underneath: the same fields and operators
- * (`IDEA_FILTER_MODEL`), the same address, the same counts. Only how it reads
- * and how it is changed are new. Each token is one **clause**, in a fixed
- * order so the sentence reads right however it was built, worded by one
- * catalogue sentence per field and operator (`vocabulary.clause`). A clause's
- * chosen words open its panel — the question, in / not in, the values with
- * the server's counts — and its × removes it. `+ add a detail` is the one way
- * in: sentence starters, or typed words, which become "mentioning …" or a
- * matching name. `/` focuses it from anywhere on the page.
+ * The same filter underneath: the list's fields and operators (`model`), the
+ * same address, the same counts. Only how it reads and how it is changed are
+ * the sentence's. Each token is one **clause**, in a fixed order so the
+ * sentence reads right however it was built, worded by one catalogue sentence
+ * per field and operator (`vocabulary.clause`). A list may name a **subject**
+ * — Assets' type — which, when chosen, reads first and names what is listed:
+ * "Showing *PDFs*, in …". A clause's chosen words open its panel — the
+ * question, the two-word switch, the values with the server's counts — and
+ * its × removes it. `+ add a detail` is the one way in: sentence starters, or
+ * typed words, which become a search ("mentioning …", "with … in the title")
+ * or a matching name. `/` focuses it from anywhere on the page.
  *
- * Changing a value changes the filter at once, as the bar did; Done only
- * closes the panel. Nothing here filters anything — the filter is the URL,
- * and every number is the server's answer to it.
+ * Changing a value changes the filter at once; Done only closes the panel.
+ * Nothing here filters anything — the filter is the URL, and every number is
+ * the server's answer to it.
  */
-export function IdeaSentence({
+export function FilterSentence<F, Field extends string>({
   filter,
   onChange,
+  model,
   vocabulary: vocab,
   total,
   totalUnfiltered,
@@ -85,41 +118,31 @@ export function IdeaSentence({
   leading,
   trailing,
   clearable,
-}: {
-  filter: IdeaFilter
-  onChange: (next: IdeaFilter) => void
-  vocabulary: IdeaVocabulary
-  total: number
-  totalUnfiltered: number
-  countQuery: CountQuery<IdeaFilter>
-  /** The Views dropdown, at the line's start. */
-  leading?: ReactNode
-  /** At the line's end: Save as group, or an edited group's actions. */
-  trailing?: ReactNode
-  /** Whether Clear is offered — not while a smart group is open as saved. */
-  clearable: boolean
-}) {
+}: Props<F, Field>) {
   const { t, i18n } = useTranslation()
   const locale = i18n.language
   const boxRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const addRef = useRef<HTMLInputElement>(null)
-  const [opened, setOpened] = useState<Opened | null>(null)
+  const [opened, setOpened] = useState<Opened<Field> | null>(null)
   const [adding, setAdding] = useState(false)
 
-  const tokens = useMemo(
-    () =>
-      model
-        .tokensOf(filter)
-        .filter((token) => vocab.fields.includes(token.field))
-        .sort(
-          (a, b) =>
-            SENTENCE_ORDER.indexOf(a.field) - SENTENCE_ORDER.indexOf(b.field) ||
-            Number(a.negated) - Number(b.negated),
-        ),
-    [filter, vocab.fields],
-  )
+  const tokens = useMemo(() => {
+    const { order, subject } = vocab
+    const rank = (token: SmartToken<Field>) =>
+      token.field === subject && !token.negated
+        ? -1
+        : order.indexOf(token.field)
+    return model
+      .tokensOf(filter)
+      .filter((token) => vocab.fields.includes(token.field))
+      .sort(
+        (a, b) => rank(a) - rank(b) || Number(a.negated) - Number(b.negated),
+      )
+  }, [model, filter, vocab])
   const narrowed = tokens.length > 0
+  const led =
+    !!vocab.subject && tokens[0]?.field === vocab.subject && !tokens[0].negated
 
   const startAdding = () => {
     setOpened(null)
@@ -128,7 +151,7 @@ export function IdeaSentence({
   }
 
   // `/` starts a detail from anywhere on the page, unless something else is
-  // being typed into — the bar's key, kept.
+  // being typed into.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey)
@@ -188,7 +211,7 @@ export function IdeaSentence({
     panel.style.top = `${rect.bottom - outer.top + 6}px`
   })
 
-  const removeToken = (token: IdeaToken) => {
+  const removeToken = (token: SmartToken<Field>) => {
     onChange(model.withoutToken(filter, token))
     if (opened?.field === token.field && opened.negated === token.negated)
       setOpened(null)
@@ -241,7 +264,7 @@ export function IdeaSentence({
       <div
         ref={boxRef}
         role="group"
-        aria-label={t('ideas.sentence.label')}
+        aria-label={t('sentence.label')}
         // The first line sits level with the button's label: the button is
         // 34px, a line 30px (CON-391 — top-aligned, never centred).
         className={cn(
@@ -251,24 +274,32 @@ export function IdeaSentence({
       >
         {narrowed ? (
           <Trans
-            i18nKey="ideas.sentence.showing"
+            // One key of the list's own; the union is wider than `Trans`
+            // resolves.
+            i18nKey={
+              (led && vocab.showingSubjectKey
+                ? vocab.showingSubjectKey
+                : vocab.showingKey) as 'ideas.sentence.showing'
+            }
             components={{ clauses: <Joined parts={joined} /> }}
           />
         ) : (
           <Trans
-            i18nKey="ideas.sentence.showingAll"
+            i18nKey={vocab.showingAllKey as 'ideas.sentence.showingAll'}
             components={{
-              v: <AllIdeas open={adding} onClick={startAdding} />,
+              v: <AllRows open={adding} onClick={startAdding} />,
             }}
           />
         )}{' '}
         <AddDetail
           inputRef={addRef}
+          panelRef={panelRef}
           adding={adding}
           onStart={startAdding}
           onStop={() => setAdding(false)}
           filter={filter}
           onChange={onChange}
+          model={model}
           vocab={vocab}
           countQuery={countQuery}
           onRemoveLast={() => {
@@ -279,7 +310,6 @@ export function IdeaSentence({
             setAdding(false)
             setOpened({ field, negated: false })
           }}
-          panelRef={panelRef}
         />
         <span className="ml-2.5 inline-flex items-baseline gap-2.5 text-[13px] whitespace-nowrap text-tertiary-foreground">
           <span
@@ -294,7 +324,7 @@ export function IdeaSentence({
               onClick={clearAll}
               className="cursor-pointer text-secondary-foreground underline decoration-quaternary underline-offset-3 hover:text-foreground"
             >
-              {t('ideas.sentence.clear')}
+              {t('sentence.clear')}
             </button>
           )}
         </span>
@@ -311,6 +341,7 @@ export function IdeaSentence({
             negated={opened.negated}
             filter={filter}
             onChange={onChange}
+            model={model}
             vocab={vocab}
             onNegate={(negated) => setOpened({ field: opened.field, negated })}
             onClose={() => setOpened(null)}
@@ -327,7 +358,7 @@ function Joined({ parts }: { parts: ReactNode[]; children?: ReactNode }) {
 }
 
 /** "all ideas", with nothing chosen: a way into adding the first detail. */
-function AllIdeas({
+function AllRows({
   open,
   onClick,
   children,
@@ -389,24 +420,18 @@ function ClauseButton({
         type="button"
         onClick={onOpen}
         aria-expanded={open}
-        aria-label={t('ideas.sentence.change', { clause: plain })}
+        aria-label={t('sentence.change', { clause: plain })}
         className={cn(
           '-mx-0.5 cursor-pointer rounded-xs px-0.5 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent',
           open && 'bg-secondary',
         )}
       >
-        <Trans
-          // One key of the clause family; the union is wider than `Trans`
-          // resolves.
-          i18nKey={clause.key as 'ideas.sentence.clause.origin'}
-          values={clause.values}
-          components={{ v: <Chosen open={open} /> }}
-        />
+        <ClauseWords clause={clause} open={open} />
       </button>
       <button
         type="button"
         onClick={onRemove}
-        aria-label={t('ideas.sentence.remove', { clause: plain })}
+        aria-label={t('sentence.remove', { clause: plain })}
         // Zero-wide until hovered, and still reachable by keyboard.
         className="inline-flex w-0 cursor-pointer items-center justify-center overflow-hidden align-middle text-tertiary-foreground outline-none group-hover/cl:w-4 hover:text-foreground focus-visible:w-4 focus-visible:ring-2 focus-visible:ring-accent"
       >
@@ -416,12 +441,41 @@ function ClauseButton({
   )
 }
 
+/** A clause's catalogue sentence, its chosen words marked. */
+function ClauseWords({
+  clause,
+  open,
+  bold,
+}: {
+  clause: Clause
+  open?: boolean
+  /** In a list row: the chosen words in full ink, no underline. */
+  bold?: boolean
+}) {
+  return (
+    <Trans
+      // One key of the list's clause family; the union is wider than
+      // `Trans` resolves.
+      i18nKey={clause.key as 'ideas.sentence.clause.origin'}
+      values={clause.values}
+      components={{
+        v: bold ? (
+          <b className="font-medium text-foreground" />
+        ) : (
+          <Chosen open={!!open} />
+        ),
+      }}
+    />
+  )
+}
+
 /**
  * `+ add a detail`, and what it offers: the sentence starters, or — once
- * something is typed — "mentioning …" with how many ideas do, and any value
- * whose name the words match.
+ * something is typed — each search the list has ("mentioning …", "with … in
+ * the title") with how many rows it would leave, and any value whose name
+ * the words match.
  */
-function AddDetail({
+function AddDetail<F, Field extends string>({
   inputRef,
   panelRef,
   adding,
@@ -429,6 +483,7 @@ function AddDetail({
   onStop,
   filter,
   onChange,
+  model,
   vocab,
   countQuery,
   onRemoveLast,
@@ -439,12 +494,13 @@ function AddDetail({
   adding: boolean
   onStart: () => void
   onStop: () => void
-  filter: IdeaFilter
-  onChange: (next: IdeaFilter) => void
-  vocab: IdeaVocabulary
-  countQuery: CountQuery<IdeaFilter>
+  filter: F
+  onChange: (next: F) => void
+  model: FilterModel<F, Field>
+  vocab: SentenceVocabulary<Field>
+  countQuery: CountQuery<F>
   onRemoveLast: () => void
-  onStarter: (field: IdeaFilterField) => void
+  onStarter: (field: Field) => void
 }) {
   const { t, i18n } = useTranslation()
   const [text, setText] = useState('')
@@ -452,33 +508,57 @@ function AddDetail({
   const typed = text.trim()
   const q = typed.toLocaleLowerCase()
 
+  /** The filter a typed search would make. */
+  const searched = (field: Field, words: string): F | null => {
+    if (model.kindOf(field) === 'search') {
+      if (words.length < model.searchMin || words.length > model.textMax)
+        return null
+      return model.withToken(filter, { field, negated: false, values: [words] })
+    }
+    const values = splitText(words)
+    if (!values.length) return null
+    const kept = valuesOf(model, filter, field, false)
+    return model.withToken(filter, {
+      field,
+      negated: false,
+      values: [...new Set([...kept, ...values])],
+    })
+  }
+
   const debounced = useDebouncedValue(typed, 250)
-  const searchable =
-    debounced.length >= model.searchMin && debounced.length <= model.textMax
-  const counted = useQuery({
-    ...(searchable
-      ? countQuery(
-          model.withToken(filter, {
-            field: 'text',
-            negated: false,
-            values: [debounced],
-          }),
-        )
-      : { queryKey: ['idea-sentence', 'idle'], queryFn: async () => 0 }),
-    enabled: adding && searchable,
-    staleTime: 30_000,
+  const counts = useQueries({
+    queries: model.freeText.map((field) => {
+      const next = adding ? searched(field, debounced) : null
+      return {
+        ...(next
+          ? countQuery(next)
+          : {
+              queryKey: ['filter-sentence', 'idle', field],
+              queryFn: async () => 0,
+            }),
+        enabled: !!next,
+        staleTime: 30_000,
+      }
+    }),
   })
-  const textCount = debounced === typed ? (counted.data ?? null) : null
+  const countFor = (field: Field) =>
+    debounced === typed
+      ? (counts[model.freeText.indexOf(field)]?.data ?? null)
+      : null
 
   const sections = useMemo(() => {
-    const out: { heading: string; items: AddItem[] }[] = []
-    if (q && typed.length >= model.searchMin)
-      out.push({
-        heading: t('ideas.sentence.heading.search'),
-        items: [{ kind: 'text' }],
-      })
+    const out: { heading: string; items: AddItem<Field>[] }[] = []
     if (q) {
-      const quick: AddItem[] = []
+      const searches: AddItem<Field>[] = model.freeText
+        .filter((field) => vocab.fields.includes(field))
+        .filter(
+          (field) =>
+            model.kindOf(field) !== 'search' || typed.length >= model.searchMin,
+        )
+        .map((field) => ({ kind: 'text', field }))
+      if (searches.length)
+        out.push({ heading: t('sentence.heading.search'), items: searches })
+      const quick: AddItem<Field>[] = []
       for (const field of vocab.fields) {
         if (model.kindOf(field) !== 'choice') continue
         for (const option of vocab.options(field, false)) {
@@ -489,24 +569,20 @@ function AddDetail({
       }
       if (quick.length)
         out.push({
-          heading: t('ideas.sentence.heading.narrow'),
+          heading: t('sentence.heading.narrow'),
           items: quick.slice(0, 6),
         })
     }
-    const starters: AddItem[] = vocab.fields
-      .filter((field) => field !== 'text')
+    const starters: AddItem<Field>[] = vocab.fields
+      .filter((field) => model.kindOf(field) !== 'search')
       .filter(
-        (field) =>
-          !q ||
-          t(`ideas.sentence.starter.${field as 'origin'}`)
-            .toLocaleLowerCase()
-            .includes(q),
+        (field) => !q || vocab.starter(field).toLocaleLowerCase().includes(q),
       )
       .map((field) => ({ kind: 'starter', field }))
     if (starters.length)
-      out.push({ heading: t('ideas.sentence.heading.add'), items: starters })
+      out.push({ heading: t('sentence.heading.add'), items: starters })
     return out
-  }, [q, typed.length, vocab, t])
+  }, [q, typed.length, model, vocab, t])
   const items = sections.flatMap((s) => s.items)
   const current = Math.min(active, Math.max(0, items.length - 1))
 
@@ -516,22 +592,18 @@ function AddDetail({
     onStop()
   }
 
-  const pick = (item: AddItem | undefined) => {
+  const pick = (item: AddItem<Field> | undefined) => {
     if (!item) return
     switch (item.kind) {
-      case 'text':
-        if (typed.length < model.searchMin) return
-        onChange(
-          model.withToken(filter, {
-            field: 'text',
-            negated: false,
-            values: [typed.slice(0, model.textMax)],
-          }),
-        )
+      case 'text': {
+        const next = searched(item.field, typed.slice(0, model.textMax))
+        if (!next) return
+        onChange(next)
         stop()
         return
+      }
       case 'quick': {
-        const values = tokenValuesOf(model, filter, item.field, false)
+        const values = valuesOf(model, filter, item.field, false)
         onChange(
           model.withToken(filter, {
             field: item.field,
@@ -579,7 +651,7 @@ function AddDetail({
         className="ml-1 inline-flex cursor-pointer items-baseline gap-0.5 font-medium whitespace-nowrap text-accent outline-none hover:underline focus-visible:ring-2 focus-visible:ring-accent"
       >
         <PlusIcon weight="bold" className="size-3 self-center" aria-hidden />
-        {t('ideas.sentence.addDetail')}
+        {t('sentence.addDetail')}
       </button>
     )
 
@@ -600,13 +672,13 @@ function AddDetail({
           }}
           onKeyDown={onKeyDown}
           onBlur={stop}
-          placeholder={t('ideas.sentence.addPlaceholder')}
-          aria-label={t('ideas.sentence.addDetail')}
+          placeholder={t('sentence.addPlaceholder')}
+          aria-label={t('sentence.addDetail')}
           role="combobox"
           aria-expanded
-          aria-controls="idea-sentence-add"
+          aria-controls="filter-sentence-add"
           aria-activedescendant={
-            items[current] ? `idea-sentence-add-${current}` : undefined
+            items[current] ? `filter-sentence-add-${current}` : undefined
           }
           autoComplete="off"
           maxLength={model.textMax}
@@ -622,7 +694,7 @@ function AddDetail({
         onMouseDown={(event) => event.preventDefault()}
       >
         <div
-          id="idea-sentence-add"
+          id="filter-sentence-add"
           role="listbox"
           className="max-h-96 overflow-y-auto py-1"
         >
@@ -641,7 +713,7 @@ function AddDetail({
                 return (
                   <div
                     key={addKey(item)}
-                    id={`idea-sentence-add-${i}`}
+                    id={`filter-sentence-add-${i}`}
                     role="option"
                     aria-selected={i === current}
                     onMouseEnter={() => setActive(i)}
@@ -655,7 +727,7 @@ function AddDetail({
                       item={item}
                       typed={typed}
                       vocab={vocab}
-                      textCount={textCount}
+                      count={item.kind === 'text' ? countFor(item.field) : null}
                       locale={i18n.language}
                     />
                   </div>
@@ -672,7 +744,7 @@ function AddDetail({
             [
               ['↑↓', t('content.filter.keys.move')],
               ['↵', t('content.filter.keys.pick')],
-              ['⌫', t('ideas.sentence.removeLast')],
+              ['⌫', t('sentence.removeLast')],
               [t('content.filter.keys.escape'), t('content.filter.keys.close')],
             ] as const
           ).map(([key, label]) => (
@@ -689,10 +761,10 @@ function AddDetail({
   )
 }
 
-function addKey(item: AddItem): string {
+function addKey<Field extends string>(item: AddItem<Field>): string {
   switch (item.kind) {
     case 'text':
-      return 'text'
+      return `text:${item.field}`
     case 'quick':
       return `quick:${item.field}:${item.option.value}`
     case 'starter':
@@ -700,55 +772,51 @@ function addKey(item: AddItem): string {
   }
 }
 
-function AddRow({
+function AddRow<Field extends string>({
   item,
   typed,
   vocab,
-  textCount,
+  count,
   locale,
 }: {
-  item: AddItem
+  item: AddItem<Field>
   typed: string
-  vocab: IdeaVocabulary
-  textCount: number | null
+  vocab: SentenceVocabulary<Field>
+  count: number | null
   locale: string
 }) {
-  const { t } = useTranslation()
-  const bold = <b className="font-medium text-foreground" />
   switch (item.kind) {
     case 'text':
       return (
         <>
           <span className="min-w-0 flex-1 truncate">
-            <Trans
-              i18nKey="ideas.sentence.clause.text"
-              values={{ values: typed }}
-              components={{ v: bold }}
+            <ClauseWords
+              clause={vocab.clause({
+                field: item.field,
+                negated: false,
+                values: [typed],
+              })}
+              bold
             />
           </span>
-          {textCount !== null && (
+          {count !== null && (
             <span className="text-xs text-tertiary-foreground tabular-nums">
-              {t('ideas.sentence.ideas', {
-                count: textCount,
-                formatted: formatNumber(textCount, {}, locale),
-              })}
+              {vocab.matches(count)}
             </span>
           )}
         </>
       )
-    case 'quick': {
-      const clause = vocab.clause({
-        field: item.field,
-        negated: false,
-        values: [item.option.value],
-      })
+    case 'quick':
       return (
         <>
           <span className="min-w-0 flex-1 truncate">
-            <Trans
-              i18nKey={clause.key as 'ideas.sentence.clause.origin'}
-              values={clause.values}
-              components={{ v: bold }}
+            <ClauseWords
+              clause={vocab.clause({
+                field: item.field,
+                negated: false,
+                values: [item.option.value],
+              })}
+              bold
             />
           </span>
           {item.option.count !== null && (
@@ -758,16 +826,12 @@ function AddRow({
           )}
         </>
       )
-    }
     case 'starter': {
-      const hint =
-        item.field === 'kind' || item.field === 'created'
-          ? t(`ideas.sentence.starterHint.${item.field}`)
-          : null
+      const hint = vocab.starterHint(item.field)
       return (
         <>
           <span className="min-w-0 flex-1 truncate">
-            {t(`ideas.sentence.starter.${item.field as 'origin'}`)}
+            {vocab.starter(item.field)}
           </span>
           {hint && (
             <span className="text-xs text-tertiary-foreground">{hint}</span>
@@ -779,37 +843,39 @@ function AddRow({
 }
 
 /**
- * A clause's panel: the question in words, in / not in as a two-word switch,
- * the values with their counts — several at once, none dimmed — and Remove
- * this detail / Done. A tick changes the filter at once.
+ * A clause's panel: the question in words, the two-word switch, the values
+ * with their counts — several at once, none dimmed — and Remove this detail /
+ * Done. A tick changes the filter at once.
  */
-function ClausePanel({
+function ClausePanel<F, Field extends string>({
   panelRef,
   field,
   negated,
   filter,
   onChange,
+  model,
   vocab,
   onNegate,
   onClose,
 }: {
   panelRef: React.RefObject<HTMLDivElement | null>
-  field: IdeaFilterField
+  field: Field
   negated: boolean
-  filter: IdeaFilter
-  onChange: (next: IdeaFilter) => void
-  vocab: IdeaVocabulary
+  filter: F
+  onChange: (next: F) => void
+  model: FilterModel<F, Field>
+  vocab: SentenceVocabulary<Field>
   onNegate: (negated: boolean) => void
   onClose: () => void
 }) {
   const { t, i18n } = useTranslation()
   const [find, setFind] = useState('')
-  const values = tokenValuesOf(model, filter, field, negated)
-  const token: IdeaToken | null = values.length
+  const values = valuesOf(model, filter, field, negated)
+  const token: SmartToken<Field> | null = values.length
     ? { field, negated, values }
     : null
   const kind = model.kindOf(field)
-  const switchable = field !== 'origin' && field !== 'text'
+  const labels = vocab.switchLabels(field)
 
   const set = (next: string[]) =>
     onChange(
@@ -835,11 +901,12 @@ function ClausePanel({
     onClose()
   }
 
+  const question = vocab.question(field)
   return (
     <div
       ref={panelRef}
       role="dialog"
-      aria-label={t(`ideas.sentence.question.${field}`)}
+      aria-label={question}
       className="absolute flex flex-col bg-popover text-sm/5 text-popover-foreground shadow-lg ring-1 ring-quaternary"
       style={{ zIndex: ZIndex.popover, width: PANEL_WIDTH }}
       onKeyDown={(event) => {
@@ -850,13 +917,13 @@ function ClausePanel({
       }}
     >
       <p className="px-3.5 pt-3 pb-2 text-xs text-tertiary-foreground">
-        {t(`ideas.sentence.question.${field}`)}
+        {question}
       </p>
 
-      {switchable && (
+      {labels && (
         <div
           role="radiogroup"
-          aria-label={t(`ideas.sentence.question.${field}`)}
+          aria-label={question}
           className="mx-3.5 mb-2 flex border border-quaternary"
         >
           {[false, true].map((n) => (
@@ -873,28 +940,28 @@ function ClausePanel({
                   : 'text-secondary-foreground hover:text-foreground',
               )}
             >
-              {n
-                ? t(`ideas.sentence.exclude.${field as 'kind'}`)
-                : t(`ideas.sentence.include.${field as 'kind'}`)}
+              {n ? labels[1] : labels[0]}
             </button>
           ))}
         </div>
       )}
 
-      {kind === 'search' ? (
+      {kind === 'search' || kind === 'substrings' ? (
         <TextStep
-          initial={values[0] ?? ''}
+          initial={kind === 'search' ? (values[0] ?? '') : values.join(', ')}
+          min={kind === 'search' ? model.searchMin : 1}
+          max={model.textMax}
+          placeholder={vocab.textPlaceholder(field)}
           onApply={(text) => {
-            set([text])
+            set(kind === 'search' ? [text] : splitText(text))
             onClose()
           }}
         />
       ) : kind === 'date' ? (
         <DateStep
-          field={field}
+          options={vocab.options(field, negated)}
           negated={negated}
           values={values}
-          vocab={vocab}
           onPick={(next) => {
             set(next)
             onClose()
@@ -903,8 +970,8 @@ function ClausePanel({
         />
       ) : (
         <ChoiceStep
-          field={field}
           options={vocab.options(field, negated)}
+          findLabel={vocab.findLabel(field)}
           picked={values}
           find={find}
           onFind={setFind}
@@ -926,7 +993,7 @@ function ClausePanel({
             onClick={remove}
             className="cursor-pointer text-secondary-foreground outline-none hover:text-foreground focus-visible:underline"
           >
-            {t('ideas.sentence.removeDetail')}
+            {t('sentence.removeDetail')}
           </button>
         ) : (
           <span />
@@ -936,7 +1003,7 @@ function ClausePanel({
           onClick={onClose}
           className="cursor-pointer font-medium text-foreground outline-none focus-visible:underline"
         >
-          {t('ideas.sentence.done')}
+          {t('sentence.done')}
         </button>
       </div>
     </div>
@@ -944,16 +1011,16 @@ function ClausePanel({
 }
 
 function ChoiceStep({
-  field,
   options,
+  findLabel,
   picked,
   find,
   onFind,
   onToggle,
   locale,
 }: {
-  field: IdeaFilterField
   options: ValueOption[]
+  findLabel: string | null
   picked: string[]
   find: string
   onFind: (find: string) => void
@@ -961,7 +1028,7 @@ function ChoiceStep({
   locale: string
 }) {
   const { t } = useTranslation()
-  const findable = FINDABLE.includes(field) && options.length >= FIND_FROM
+  const findable = !!findLabel && options.length >= FIND_FROM
   const q = find.trim().toLocaleLowerCase()
   const shown = q
     ? options.filter((o) => o.label.toLocaleLowerCase().includes(q))
@@ -972,8 +1039,8 @@ function ChoiceStep({
         <input
           value={find}
           onChange={(event) => onFind(event.target.value)}
-          placeholder={t(`ideas.sentence.find.${field as 'kind'}`)}
-          aria-label={t(`ideas.sentence.find.${field as 'kind'}`)}
+          placeholder={findLabel}
+          aria-label={findLabel}
           autoFocus
           className="mx-3.5 mb-1.5 h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-[13px] outline-none focus:border-foreground"
         />
@@ -983,7 +1050,7 @@ function ChoiceStep({
           <p className="px-3.5 py-2 text-[13px] text-tertiary-foreground">
             {options.length
               ? t('content.filter.nothingMatches')
-              : t('ideas.sentence.noValues')}
+              : t('sentence.noValues')}
           </p>
         ) : (
           shown.map((option, i) => {
@@ -1025,9 +1092,11 @@ function ChoiceStep({
                     aria-hidden
                     className={cn(
                       'shrink-0',
-                      option.tone && option.tone.startsWith('text-')
-                        ? option.tone
-                        : 'text-secondary-foreground',
+                      option.tone === 'accent' && 'text-accent',
+                      option.tone === 'positive' && 'text-positive',
+                      (!option.tone || option.tone === 'muted') &&
+                        'text-secondary-foreground',
+                      option.tone?.startsWith('text-') && option.tone,
                     )}
                   />
                 )}
@@ -1060,19 +1129,20 @@ function ChoiceStep({
   )
 }
 
-/** Added: the presets, or a range — a single day when it is "before". */
+/**
+ * A date: the presets, or a range — a single day when it is "before". A
+ * field that offers no presets for an operator opens on the days.
+ */
 function DateStep({
-  field,
+  options,
   negated,
   values,
-  vocab,
   onPick,
   locale,
 }: {
-  field: IdeaFilterField
+  options: ValueOption[]
   negated: boolean
   values: string[]
-  vocab: IdeaVocabulary
   onPick: (values: string[]) => void
   locale: string
 }) {
@@ -1080,7 +1150,8 @@ function DateStep({
   const ranged = values.length === 2 || (negated && values.length === 1)
   // A custom day, never a preset: `7d` starts with a digit too.
   const [custom, setCustom] = useState(
-    ranged && /^\d{4}-\d{2}-\d{2}$/.test(values[0] ?? ''),
+    options.length === 0 ||
+      (ranged && /^\d{4}-\d{2}-\d{2}$/.test(values[0] ?? '')),
   )
   const [range, setRange] = useState({
     from: ranged ? values[0] : '',
@@ -1139,7 +1210,6 @@ function DateStep({
       </form>
     )
 
-  const options = vocab.options(field, negated)
   return (
     <div role="radiogroup" className="pb-1">
       {options.map((option, i) => {
@@ -1179,38 +1249,44 @@ function DateStep({
   )
 }
 
-/** Text: the words to look for, kept on Return or Done. */
+/** Text: the words to look for, kept on Return. */
 function TextStep({
   initial,
+  min,
+  max,
+  placeholder,
   onApply,
 }: {
   initial: string
+  min: number
+  max: number
+  placeholder: string
   onApply: (text: string) => void
 }) {
   const { t } = useTranslation()
   const [text, setText] = useState(initial)
   const trimmed = text.trim()
-  const ready = trimmed.length >= model.searchMin
+  const ready = trimmed.length >= min
   return (
     <form
       className="flex flex-col gap-1.5 px-3.5 pb-3"
       onSubmit={(event) => {
         event.preventDefault()
-        if (ready) onApply(trimmed.slice(0, model.textMax))
+        if (ready) onApply(trimmed.slice(0, max))
       }}
     >
       <input
         value={text}
         onChange={(event) => setText(event.target.value)}
-        placeholder={t('ideas.sentence.textPlaceholder')}
-        aria-label={t('ideas.sentence.textPlaceholder')}
-        maxLength={model.textMax}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        maxLength={max}
         autoFocus
         className="h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-[13px] outline-none focus:border-foreground"
       />
       {!ready && trimmed.length > 0 && (
         <p className="text-xs text-tertiary-foreground">
-          {t('content.filter.textTooShort', { count: model.searchMin })}
+          {t('content.filter.textTooShort', { count: min })}
         </p>
       )}
     </form>

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import type { LinkProps } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
@@ -14,7 +21,12 @@ import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptySt
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ZIndex } from '@/config/zIndex'
-import { useBulkTagAssets, type useAssetList } from '@/hooks/useContent'
+import { FilterSentence } from '@/components/smartFilter/FilterSentence'
+import {
+  assetCountQuery,
+  useBulkTagAssets,
+  type useAssetList,
+} from '@/hooks/useContent'
 import {
   isFilterActive,
   NONE,
@@ -29,9 +41,9 @@ import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Tag } from '@/types/content'
 import type { AssetListItem, AssetQueryParams } from '@/types/assetList'
-import { AssetFilterBar } from './smartFilter/AssetFilterBar'
+import { ASSET_MODEL } from './smartFilter/assetModel'
 import { NoMatches } from './smartFilter/NoMatches'
-import { useFilterVocabulary } from './smartFilter/useFilterVocabulary'
+import type { FilterVocabulary } from './smartFilter/useFilterVocabulary'
 import { AssetList } from './AssetList'
 import { AssetViewBar } from './AssetViewBar'
 import { DeleteDocumentsDialog } from './DeleteDocumentsDialog'
@@ -42,6 +54,16 @@ type Props = {
   campaignId: string | null
   /** The Assets query for this page's filter (`useAssetList`). */
   list: ReturnType<typeof useAssetList>
+  /** The filter's words — the sentence's, the bands' and the empty state's. */
+  vocabulary: FilterVocabulary
+  /** The smart groups' menu, at the sentence's start (the workspace page). */
+  sentenceLeading?: ReactNode
+  /** At the sentence's end: Save as group, or an edited group's actions. */
+  sentenceTrailing?: ReactNode
+  /** Under the sentence: an open group whose filter no longer works. */
+  groupNotice?: ReactNode
+  /** Whether the sentence offers Clear — not while a group is open. */
+  clearable: boolean
   /** The request behind it — what "select all matching" asks again for ids. */
   params: AssetQueryParams
   filter: AssetFilter
@@ -97,14 +119,18 @@ type Confirming = {
  * filter clears the selection: a set picked under one question must not be
  * deleted under another.
  *
- * **Select all is on the filter bar** (CON-378), at its left end, because what
- * it selects is what that bar found — every match, not the rows loaded so far
- * — and the bar is the line that says how many that is. The list has no
- * header row for it to sit in any more.
+ * **Select all opens the Group by / Sort line** (CON-392), over the rows'
+ * boxes — where it sits on Ideas. What it selects is every match, not the
+ * rows loaded so far; the sentence above says how many that is.
  */
 export function ContentList({
   campaignId,
   list,
+  vocabulary,
+  sentenceLeading,
+  sentenceTrailing,
+  groupNotice,
+  clearable,
   params,
   filter,
   onFilterChange,
@@ -121,7 +147,6 @@ export function ContentList({
 }: Props) {
   const { t, i18n } = useTranslation()
   const { rows, total, totalUnfiltered, facets, groups, query } = list
-  const vocabulary = useFilterVocabulary({ facets, scoped: !!campaignId })
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   /** The selection is every id the filter matches, not only loaded rows. */
   const [allMatching, setAllMatching] = useState(false)
@@ -188,12 +213,11 @@ export function ContentList({
   // Everything, some, or nothing — against the whole match, which is what the
   // box selects. Full clears; anything less fills it.
   const everything = total > 0 && (allMatching || ticked.size >= total)
-  // `ml-2` lines the box up with the rows' check boxes: the bar's inset is
-  // 12px, a row's 20px. `mr-2.5` gives it the same 20px on its right, up to
-  // the rule (the bar's 6px gap and the rule's own 4px make the rest).
+  // `ml-4` lines the box up with the rows' check boxes: the line's inset is
+  // 4px, a row's 20px.
   const selectAll = (
     <Checkbox
-      className="mr-2.5 ml-2"
+      className="mr-1 ml-4"
       checked={everything ? true : ticked.size > 0 ? 'indeterminate' : false}
       disabled={total === 0 || resolving}
       onCheckedChange={() =>
@@ -314,18 +338,27 @@ export function ContentList({
   }
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 py-4">
-      <AssetFilterBar
-        filter={filter}
-        onChange={onFilterChange}
-        vocabulary={vocabulary}
-        total={total}
-        totalUnfiltered={totalUnfiltered}
-        paramsFor={paramsFor}
-        leading={selectAll}
-      />
+    // Tighter than Ideas, which has a capture field to set apart (CON-392):
+    // the sentence sits under the title, 12px over the Group by / Sort line.
+    <div className="relative flex min-h-0 flex-1 flex-col gap-3 pt-1 pb-4">
+      <div className="flex flex-col gap-1">
+        <FilterSentence
+          filter={filter}
+          onChange={onFilterChange}
+          model={ASSET_MODEL}
+          vocabulary={vocabulary}
+          total={total}
+          totalUnfiltered={totalUnfiltered}
+          countQuery={(f) => assetCountQuery(paramsFor(f))}
+          leading={sentenceLeading}
+          trailing={sentenceTrailing}
+          clearable={clearable}
+        />
+        {groupNotice}
+      </div>
 
       <AssetViewBar
+        leading={selectAll}
         undecided={list.ideasUndecidedTotal}
         documents={total}
         ideasLink={ideasLink}

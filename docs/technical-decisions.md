@@ -1318,9 +1318,9 @@ somewhere else.
 with every analysed document, so the page stopped loading the whole backlog and
 piling it here: `GET /api/ideas` filters, counts the piles within the filter,
 groups and pages, and the page's search params are the endpoint's own
-(`lib/ideaFilter`). The narrowing is the Assets list's — one `SmartFilterBar`
-over a per-list model and vocabulary (`lib/smartFilter`), so the two bars
-cannot drift — with one difference: the pile, the sort and the grouping are in
+(`lib/ideaFilter`). The narrowing is the Assets list's — one `FilterSentence`
+over a per-list model and vocabulary (`lib/smartFilter`), so the two lists
+cannot drift — with one difference, since closed by CON-392: the pile, the sort and the grouping are in
 the address too, because a **smart group** is that address saved
 (`/api/saved-views`, a resource for any list, which drops the pile itself).
 The piles stay tabs rather than a filter field: the verdict is where you are.
@@ -1359,7 +1359,7 @@ the post and hoping the link survives. CON-315 lists it as future work.
 **Where.** `lib/ideas.ts`, `lib/ideaFilter.ts`, `lib/ideaSource.ts`,
 `lib/smartFilter.ts` (+ tests), `services/api/ideas.ts` and
 `services/api/savedViews.ts` (+ test), `hooks/useIdeaList.ts`,
-`hooks/useIdeaViews.ts`, `components/ideas/*` (the card's parts in `card/`,
+`hooks/useSavedViews.ts`, `components/smartFilter/*`, `components/ideas/*` (the card's parts in `card/`,
 the list, filter and groups in `query/`, the rail's row), its wiring in
 `components/layout/nav/WorkspaceLevel.tsx`, the two `ideas` routes, and the
 `ideas.*` catalogue entries in both languages.

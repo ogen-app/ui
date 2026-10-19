@@ -1,7 +1,6 @@
 import {
   TEXT_MAX,
   TEXT_MIN,
-  parseFieldPrefix,
   tokensOf,
   withToken,
   withoutToken,
@@ -23,7 +22,6 @@ export const ASSET_MODEL: FilterModel<AssetFilter, FilterField> = {
   tokensOf,
   withToken,
   withoutToken,
-  parseFieldPrefix,
   // A title search, then a search inside the documents.
   freeText: ['title', 'text'],
   searchMin: TEXT_MIN,

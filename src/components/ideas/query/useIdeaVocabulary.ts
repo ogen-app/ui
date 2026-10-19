@@ -20,8 +20,8 @@ import {
   type IdeaFilterField,
   type IdeaToken,
 } from '@/lib/ideaFilter'
-import { formatDate, formatList } from '@/lib/intl'
-import type { SmartVocabulary, ValueOption } from '@/lib/smartFilter'
+import { formatDate, formatList, formatNumber } from '@/lib/intl'
+import type { Clause, SentenceVocabulary, ValueOption } from '@/lib/smartFilter'
 import type { Translation } from '@/i18n/resources/en'
 import type { IdeaListPage } from '@/services/api/ideas'
 import type { AssetListKind } from '@/types/assetList'
@@ -75,38 +75,6 @@ export function useIdeaVocabulary({
     [scoped],
   )
 
-  const fieldLabel = useCallback(
-    (field: IdeaFilterField) => t(`ideas.filter.field.${field}`),
-    [t],
-  )
-  const fieldHint = useCallback(
-    (field: IdeaFilterField) => t(`ideas.filter.fieldHint.${field}`),
-    [t],
-  )
-
-  const operatorLabel = useCallback(
-    (field: IdeaFilterField, negated: boolean) => {
-      switch (field) {
-        case 'created':
-          return negated
-            ? t('content.filter.op.before')
-            : t('content.filter.op.in')
-        case 'text':
-          return t('content.filter.op.contains')
-        default:
-          return negated
-            ? t('content.filter.op.isNot')
-            : t('content.filter.op.is')
-      }
-    },
-    [t],
-  )
-
-  const hasOperatorStep = useCallback(
-    (field: IdeaFilterField) => field !== 'text',
-    [],
-  )
-
   const day = useCallback(
     (value: string) =>
       formatDate(
@@ -154,26 +122,6 @@ export function useIdeaVocabulary({
     [t, sources, campaignNames, memberNames, day],
   )
 
-  const tokenValueText = useCallback(
-    (token: Pick<IdeaToken, 'field' | 'values'>) => {
-      const { field, values } = token
-      if (field === 'created' && values.length === 2)
-        return t('content.filter.range', {
-          from: day(values[0]),
-          // The endpoint's upper bound is exclusive; people say the last day.
-          to: day(previousDay(values[1])),
-        })
-      if (field === 'text')
-        return t('content.filter.quoted', { text: values[0] ?? '' })
-      return formatList(
-        values.map((v) => valueLabel(field, v)),
-        'disjunction',
-        locale,
-      )
-    },
-    [t, day, valueLabel, locale],
-  )
-
   /** One value as it reads inside a clause: "PDFs", "high", "no campaign". */
   const sentenceValue = useCallback(
     (field: IdeaFilterField, value: string): string => {
@@ -218,10 +166,10 @@ export function useIdeaVocabulary({
   const clause = useCallback(
     (token: IdeaToken): Clause => {
       const { field, negated, values } = token
-      const key = (name: ClauseName, fill: Record<string, string> = {}) => ({
-        key: `ideas.sentence.clause.${name}` as const,
-        values: fill,
-      })
+      const key = (
+        name: ClauseName,
+        fill: Record<string, string> = {},
+      ): Clause => ({ key: `ideas.sentence.clause.${name}`, values: fill })
       if (field === 'created') {
         if (negated)
           // "Before" a preset is its own phrase — "more than 7 days ago" —
@@ -389,45 +337,90 @@ export function useIdeaVocabulary({
     [facets, valueLabel, sources, campaignNames, t],
   )
 
-  const label = t('ideas.filter.label')
-  const placeholder = t('ideas.filter.placeholder')
-  const textPlaceholder = useCallback(
-    () => t('ideas.filter.textPlaceholder'),
+  const question = useCallback(
+    (field: IdeaFilterField) => t(`ideas.sentence.question.${field}`),
     [t],
   )
-  const vocabulary: SmartVocabulary<IdeaFilterField> & {
+  const switchLabels = useCallback(
+    (field: IdeaFilterField): [string, string] | null =>
+      // Origin's two values are each other's complement; text has no "not".
+      field === 'origin' || field === 'text'
+        ? null
+        : [
+            t(`ideas.sentence.include.${field}`),
+            t(`ideas.sentence.exclude.${field}`),
+          ],
+    [t],
+  )
+  const findLabel = useCallback(
+    (field: IdeaFilterField) =>
+      field === 'source_asset' ||
+      field === 'campaign_id' ||
+      field === 'kind' ||
+      field === 'author' ||
+      field === 'phase'
+        ? t(`ideas.sentence.find.${field}`)
+        : null,
+    [t],
+  )
+  const starter = useCallback(
+    (field: IdeaFilterField) =>
+      field === 'text' ? '' : t(`ideas.sentence.starter.${field}`),
+    [t],
+  )
+  const starterHint = useCallback(
+    (field: IdeaFilterField) =>
+      field === 'kind' || field === 'created'
+        ? t(`ideas.sentence.starterHint.${field}`)
+        : null,
+    [t],
+  )
+  const textPlaceholder = useCallback(
+    () => t('ideas.sentence.textPlaceholder'),
+    [t],
+  )
+  const matches = useCallback(
+    (count: number) =>
+      t('ideas.sentence.ideas', {
+        count,
+        formatted: formatNumber(count, {}, locale),
+      }),
+    [t, locale],
+  )
+
+  const vocabulary: SentenceVocabulary<IdeaFilterField> & {
     valueLabel: typeof valueLabel
-    clause: typeof clause
   } = useMemo(
     () => ({
-      label,
-      placeholder,
-      textPlaceholder,
       fields,
-      fieldLabel,
-      fieldHint,
-      operatorLabel,
-      hasOperatorStep,
-      tokenValueText,
+      order: SENTENCE_ORDER,
+      showingKey: 'ideas.sentence.showing',
+      showingAllKey: 'ideas.sentence.showingAll',
+      clause,
       tokenText,
       options,
+      question,
+      switchLabels,
+      findLabel,
+      starter,
+      starterHint,
+      textPlaceholder,
+      matches,
       valueLabel,
-      clause,
     }),
     [
-      label,
-      placeholder,
-      textPlaceholder,
       fields,
-      fieldLabel,
-      fieldHint,
-      operatorLabel,
-      hasOperatorStep,
-      tokenValueText,
+      clause,
       tokenText,
       options,
+      question,
+      switchLabels,
+      findLabel,
+      starter,
+      starterHint,
+      textPlaceholder,
+      matches,
       valueLabel,
-      clause,
     ],
   )
   return vocabulary
@@ -435,11 +428,18 @@ export function useIdeaVocabulary({
 
 export type IdeaVocabulary = ReturnType<typeof useIdeaVocabulary>
 
+/** The order the clauses read in, however the filter was built. */
+const SENTENCE_ORDER: readonly IdeaFilterField[] = [
+  'origin',
+  'source_asset',
+  'campaign_id',
+  'kind',
+  'fit',
+  'phase',
+  'author',
+  'created',
+  'text',
+]
+
 /** The clauses the catalogue words, one per field and operator. */
 type ClauseName = keyof Translation['ideas']['sentence']['clause']
-
-/** A clause's catalogue key and what fills it. */
-export type Clause = {
-  key: `ideas.sentence.clause.${ClauseName}`
-  values: Record<string, string>
-}

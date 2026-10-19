@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  assetViewFromSearch,
+  assetViewQuery,
+  matchesAssetView,
+  searchFromAssetViewQuery,
   EMPTY_FILTER,
   boundStart,
   effectiveGroup,
@@ -8,7 +12,6 @@ import {
   isSort,
   filterFromSearch,
   parseAssetListSearch,
-  parseFieldPrefix,
   searchFromFilter,
   toRequestParams,
   tokensOf,
@@ -39,9 +42,10 @@ describe('the URL', () => {
         status_not: 'failed',
         tag: 't1, t2,t1',
         ideas: 'undecided',
-        updated_after: '7d',
+        updated: '7d',
         updated_before: 'yesterday',
         sort: 'relevance',
+        group: 'shelf',
         lang: 'es',
         text: 'x',
       }),
@@ -50,18 +54,31 @@ describe('the URL', () => {
       status_not: 'failed',
       tag: 't1,t2',
       ideas: 'undecided',
-      updated_after: '7d',
+      updated: '7d',
+      sort: 'relevance',
     })
+    // A day under the bounds' names; a preset under its own, never as a bound.
+    expect(
+      parseAssetListSearch({
+        updated_after: '7d',
+        updated_before: '2026-10-08',
+      }),
+    ).toEqual({ updated_before: '2026-10-08' })
   })
 
   it('reads a numeric title as text', () => {
     expect(parseAssetListSearch({ title: 2024 })).toEqual({ title: '2024' })
   })
 
-  it('leaves the sort out of the address — it is a per-device preference', () => {
-    expect(parseAssetListSearch({ text: 'bees', sort: 'relevance' })).toEqual({
-      text: 'bees',
-    })
+  it('keeps the sort, the grouping and the open group in the address', () => {
+    expect(
+      parseAssetListSearch({
+        text: 'bees',
+        sort: 'title',
+        group: 'none',
+        view: 'v1',
+      }),
+    ).toEqual({ text: 'bees', sort: 'title', group: 'none', view: 'v1' })
   })
 
   it('round-trips a filter through the search params', () => {
@@ -152,9 +169,10 @@ describe('the request', () => {
       negated: false,
       values: ['7d'],
     })
+    // The preset as the server names it: it is read in `tz` there.
     expect(toRequestParams(filter, ctx)).toEqual({
       kind: 'pdf',
-      updated_after: new Date(2026, 9, 7).toISOString(),
+      updated: '7d',
       sort: '-updated_at',
       group: 'created',
       tz: 'Europe/Kyiv',
@@ -192,24 +210,6 @@ describe('the request', () => {
   })
 })
 
-describe('the old syntax', () => {
-  it('jumps to a field’s value step', () => {
-    expect(parseFieldPrefix('tag:gar')).toEqual({
-      field: 'tag',
-      negated: false,
-      rest: 'gar',
-    })
-    expect(parseFieldPrefix('-status:')).toEqual({
-      field: 'status',
-      negated: true,
-      rest: '',
-    })
-    expect(parseFieldPrefix('type:pdf')?.field).toBe('kind')
-    expect(parseFieldPrefix('https://acme.com')).toBeNull()
-    expect(parseFieldPrefix('bees')).toBeNull()
-  })
-})
-
 describe('sorting', () => {
   it('offers each field one way and back, and no longer most undecided first', () => {
     expect(isSort('-ideas_undecided')).toBe(false)
@@ -218,8 +218,17 @@ describe('sorting', () => {
 })
 
 describe('grouping', () => {
-  it('is not part of the address — it is a per-device preference', () => {
-    expect(parseAssetListSearch({ group: 'tag' })).toEqual({})
+  it('is the address’s when it names one, else the device’s', () => {
+    expect(
+      assetViewFromSearch(
+        { group: 'tag' },
+        { sort: null, group: 'kind' },
+        null,
+      ),
+    ).toEqual({ sort: '-created_at', group: 'tag' })
+    expect(
+      assetViewFromSearch({}, { sort: 'title', group: 'kind' }, null),
+    ).toEqual({ sort: 'title', group: 'kind' })
     expect(searchFromFilter(pdfs)).toEqual({ kind: 'pdf' })
   })
 
@@ -241,5 +250,39 @@ describe('grouping', () => {
     expect(isGrouping('ideas')).toBe(false)
     expect(isGrouping('created')).toBe(true)
     expect(isGrouping('none')).toBe(true)
+  })
+})
+
+describe('smart groups', () => {
+  it('store the filter, the sort and the grouping, canonically', () => {
+    expect(
+      assetViewQuery(
+        { tag: 't2,t1', kind: 'pdf', updated: '7d', view: 'v1' },
+        { sort: 'title', group: 'created' },
+      ),
+    ).toBe('group=created&kind=pdf&sort=title&tag=t1,t2&updated=7d')
+    // Not grouped is stored as no grouping.
+    expect(
+      assetViewQuery({ kind: 'pdf' }, { sort: '-created_at', group: 'none' }),
+    ).toBe('kind=pdf&sort=-created_at')
+  })
+
+  it('open as the address, and tell an edited page from a saved one', () => {
+    const query = 'kind=pdf&sort=title'
+    const search = searchFromAssetViewQuery(query)
+    expect(search).toEqual({ kind: 'pdf', sort: 'title', group: 'none' })
+    expect(
+      matchesAssetView(search, { sort: 'title', group: 'none' }, query),
+    ).toBe(true)
+    expect(
+      matchesAssetView(
+        { ...search, tag: 't1' },
+        { sort: 'title', group: 'none' },
+        query,
+      ),
+    ).toBe(false)
+    expect(
+      matchesAssetView(search, { sort: 'title', group: 'tag' }, query),
+    ).toBe(false)
   })
 })

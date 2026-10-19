@@ -56,9 +56,9 @@ Between the filter bar and the list (`AssetViewBar`):
   whose campaign lens hasn't run reads as not analysed, with no pill and no
   summary, even when its workspace lens is ready.
 - **Group by:** Date added (the default), Campaign, Tag, Type, or No grouping.
-  Not in the URL: it is a per-device preference (`settingsStore.assetGrouping`),
-  shared by the bank and every campaign's page, so a reload or a move between
-  them keeps it. `none` is ours and never sent. A campaign's own page has no
+  In the URL as `group` since CON-392, because a smart group stores it; with
+  none in the address the device's preference (`settingsStore.assetGrouping`)
+  decides, and choosing one updates both. `none` is ours and never sent. A campaign's own page has no
   Campaign grouping, and falls back to Date added there. The server's `ideas`
   grouping is not offered.
 - **Sort:** as above.
@@ -77,45 +77,53 @@ page.
 - Bands are `<h2>`s, sticky, and fold on a click. What is folded is kept per
   device (`settingsStore.collapsedAssetBands`), never in `/api/settings`.
 
-## The filter bar
+## The filter sentence
 
-`smartFilter/AssetFilterBar` is Harbor's field → operator → value bar. Each
-choice becomes a token that reads as a sentence: `Type is PDF ×`.
+Since CON-392 the filter reads as **a sentence you edit** — the Ideas page's
+(CON-391), one `smartFilter/FilterSentence` over the Assets model
+(`smartFilter/assetModel`) and its sentence vocabulary
+(`smartFilter/useFilterVocabulary`):
 
-- **Fields:**
-  - Title (contains / doesn't contain)
-  - Type, Status, Campaign and Tag (is / is not)
-  - Updated (in / before; presets or a custom range)
-  - Ideas (has / has no)
-  - Text (mentions, searched inside the documents)
-- **One token per field and operator.** A token can hold several values
-  ("Tag is Gartner or Finance"), because the endpoint reads values of one
-  field as any-of. Adding to a field edits its token.
-- **Counts are the response's `facets`**, which are disjunctive per field. A
-  value nothing matches stays in the list, dimmed. Counts show for the
-  including operator only.
-- **"24 of 41"** (`total` of `total_unfiltered`) and **Clear all** sit at the
-  right of the bar.
-- **Free text never dead-ends.** It offers:
-  - `Title contains "…"` and `Text mentions "…"`, each with a count;
-  - then every value whose name matches the words.
-  `tag:` and the other old prefixes jump straight to a value step
-  (`parseFieldPrefix`).
-- **Keyboard:**
-  - `/` focuses the bar.
-  - ↑↓ move, Enter picks, Space ticks a value without committing.
-  - Esc closes.
-  - Backspace steps back (value → operator → field). From an empty field it
-    selects the last token, and a second Backspace removes it.
-- **No results:** `NoMatches` asks the server what removing each token would
-  leave. It offers the best removal, with the count, as the primary action.
+> **[All assets 24 ▾]** Showing *PDFs or web pages*, in *Hotel de Russie*,
+> tagged *Gartner*, updated *in the last 30 days* **+ add a detail** · 6 of 24 ·
+> Clear · Save as group
+
+- **The type is the subject.** Kept, it names what is listed ("Showing PDFs,
+  in …"); left out, the sentence falls back to "Showing assets that aren't
+  PDFs". With nothing chosen it reads "Showing all assets".
+- **Clauses, in a fixed order:** type, campaign, tag, title, status, updated,
+  ideas, text — each one catalogue sentence per field and operator
+  (`content.sentence.clause.*`), values joined with "or", clauses joined by
+  `formatListParts`.
+- **A clause's panel:** the question, a two-word switch (tagged / not
+  tagged…), a find field for long lists, the values with the response's
+  `facets` (disjunctive per field, shown for the kept operator only; zero
+  dimmed), Remove this detail and Done. "Updated before" takes a day: the
+  endpoint reads no preset as an upper bound.
+- **+ add a detail** offers the starters, or, once something is typed, both
+  searches — *mentioning "…"* (inside the documents) and *with "…" in the
+  title* — with counts, then every tag or campaign whose name matches.
+- **Keyboard:** `/` starts a detail from anywhere, ↑↓ move, ↵ picks,
+  Backspace on an empty detail removes the last clause, Esc closes.
+- **No results:** `NoMatches` asks the server what removing each clause would
+  leave, and offers the best removal, with the count, as the primary action.
   This is state, not an `Explainer`.
+
+## Smart groups
+
+The workspace page's Views dropdown opens the sentence's line (CON-392): All
+assets, then the groups (`/api/saved-views`, surface `assets`, CON-393), each
+with its `total`. A group is the address saved — the filter, `sort` and
+`group`, canonical (`assetViewQuery`) — never a list of documents. Open, the
+button names it; edited, it says so and the line ends with Save changes (when
+`can_edit`), Save as new… and Revert. Clear is hidden while a group is open.
+A campaign's page has none. The counts sit under the list's key
+(`ASSET_VIEWS_KEY`), so whatever refreshes the list refreshes them.
 
 ## Selection
 
-Select all is a checkbox at the filter bar's left end (its `leading` slot),
-lined up horizontally with the rows' checkboxes, with as much room on its
-right, up to the rule, as on its left. It selects **every match**, not the rows
+Select all is a checkbox at the start of the Group by / Sort line, lined up
+horizontally with the rows' checkboxes — where it sits on Ideas. It selects **every match**, not the rows
 loaded so far, by asking `ids_only=true` with the same parameters (without
 `group`). It shows a dash while some are selected, and clicking it when all
 are clears the selection. Bulk tag and bulk delete then act on all N, and the
