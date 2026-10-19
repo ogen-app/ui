@@ -833,6 +833,10 @@ export const es: Translation = {
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
     },
+    page: {
+      campaignTitle: 'Ideas de {{campaign}}',
+      untitledCampaign: 'Campaña sin título',
+    },
     loadFailed: 'No se pudieron cargar las ideas',
     saveFailed: 'No se pudo guardar. Tus ideas no han cambiado.',
   },

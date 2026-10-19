@@ -31,6 +31,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  PINNED_BAND,
+  scrollerOf,
+  usePinnedBands,
+} from '@/components/page-primitives/pinnedBands'
 import { ZIndex } from '@/config/zIndex'
 import {
   ideaCountQuery,
@@ -349,7 +354,12 @@ export function IdeasQuerySurface({
 
   // The frame is drawn from the first render, loader and all: it is what the
   // panel's room is measured on, and the measure is taken once it mounts.
-  if (query.isPending) return <PageLoader />
+  if (query.isPending)
+    return (
+      <div className="h-[60vh]">
+        <PageLoader />
+      </div>
+    )
   if (query.isError && rows.length === 0)
     return <PageError header={t('ideas.loadFailed')} />
 
@@ -360,7 +370,7 @@ export function IdeasQuerySurface({
     // The Assets page's frame (CON-388): full width, the list on white in its
     // own scroller, so its group bands stay pinned while the rows pass under
     // them. Nothing above the list scrolls.
-    <div className="relative flex h-full min-h-0 flex-col gap-4 pt-1 pb-4">
+    <div className="flex flex-col gap-4 pt-1 pb-4">
       <IdeaCapture
         onCapture={(title, note, by) => writer.capture(title, note, by)}
       />
@@ -377,7 +387,7 @@ export function IdeasQuerySurface({
       ) : (
         // 32px under the capture field (16 here, on the page's 16): writing
         // an idea and narrowing the list are different acts.
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
+        <div className="mt-4 flex flex-col">
           {/* Which view this is, then what it shows, as one sentence. */}
           <FilterSentence
             filter={filter}
@@ -465,7 +475,7 @@ export function IdeasQuerySurface({
           />
 
           {visibleRows.length === 0 ? (
-            <div className="min-h-0 flex-1 overflow-y-auto bg-primary">
+            <div className="bg-primary">
               {narrowed ? (
                 <NoMatches
                   title={t('ideas.filter.nothingMatches')}
@@ -485,6 +495,7 @@ export function IdeasQuerySurface({
             <IdeaRows
               rows={visibleRows}
               groups={groups ?? []}
+              total={total}
               group={group}
               vocabulary={vocabulary}
               now={now}
@@ -715,6 +726,7 @@ function ViewRow({
 function IdeaRows({
   rows,
   groups,
+  total,
   group,
   vocabulary,
   now,
@@ -733,6 +745,8 @@ function IdeaRows({
 }: {
   rows: Idea[]
   groups: { key: string; count: number }[]
+  /** Every match — the one band's count when the list is not grouped. */
+  total: number
   group: IdeaGrouping
   vocabulary: IdeaVocabulary
   now: Date
@@ -751,7 +765,7 @@ function IdeaRows({
   onRetryMore: () => void
 }) {
   const { t, i18n } = useTranslation()
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
   const footRef = useRef<HTMLDivElement>(null)
   /** Bands folded this visit, as `grouping:key`. */
   const [folded, setFolded] = useState<Set<string>>(new Set())
@@ -766,7 +780,10 @@ function IdeaRows({
     () => new Map(groups.map((g) => [g.key, g.count])),
     [groups],
   )
-  const banded = group !== 'none' && groups.length > 0
+  // Ungrouped, the whole list is one band — "No grouping" — so it always has
+  // an edge to pin under the page header (CON-392).
+  const grouped = group !== 'none' && groups.length > 0
+  usePinnedBands(listRef, rows.length > 0, [rows, folded, group])
 
   // The foot coming into view asks for the next page; a ref to the callback
   // so a new one each render doesn't re-observe.
@@ -775,9 +792,9 @@ function IdeaRows({
     endReached.current = onEndReached
   })
   useEffect(() => {
-    const root = scrollRef.current
     const foot = footRef.current
-    if (!root || !foot || typeof IntersectionObserver === 'undefined') return
+    const root = scrollerOf(foot)
+    if (!foot || typeof IntersectionObserver === 'undefined') return
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) endReached.current()
@@ -792,19 +809,21 @@ function IdeaRows({
   }, [rows.length, loadingMore])
 
   return (
-    // The list scrolls itself, as the Assets list does, so a band stays
-    // pinned while its rows pass under it and is pushed off by the next.
-    <div
-      ref={scrollRef}
-      className="@container min-h-0 flex-1 overflow-y-auto bg-primary"
-    >
-      <ul aria-label={t('ideas.list.label')} className="flex flex-col">
+    // The list scrolls with the page, as the Assets list does (CON-392): its
+    // bands pin under the page header while their rows pass under them.
+    <div className="@container bg-primary">
+      <ul
+        ref={listRef}
+        aria-label={t('ideas.list.label')}
+        className="flex flex-col"
+      >
         {rows.map((idea, i) => {
-          const key = idea.groupKey ?? ''
-          const opensBand =
-            banded && (i === 0 || rows[i - 1].groupKey !== idea.groupKey)
+          const key = grouped ? (idea.groupKey ?? '') : ''
+          const opensBand = grouped
+            ? i === 0 || rows[i - 1].groupKey !== idea.groupKey
+            : i === 0
           const bandId = `${group}:${key}`
-          const isFolded = banded && folded.has(bandId)
+          const isFolded = folded.has(bandId)
           return (
             <Fragment key={idea.id}>
               {opensBand && (
@@ -813,7 +832,11 @@ function IdeaRows({
                   groupKey={key}
                   first={idea}
                   vocabulary={vocabulary}
-                  count={formatNumber(counts.get(key) ?? 0, {}, i18n.language)}
+                  count={formatNumber(
+                    grouped ? (counts.get(key) ?? 0) : total,
+                    {},
+                    i18n.language,
+                  )}
                   folded={isFolded}
                   onToggle={() => toggleBand(bandId)}
                 />
@@ -917,17 +940,17 @@ function Band({
           defaultValue: groupKey,
         })
       default:
-        return ''
+        return t('ideas.view.group.none')
     }
   })()
   return (
-    // The Assets list's band: pinned at the top of the list while its rows
-    // pass under it, and folded by its whole width. Its chevron sits over the
-    // rows' boxes and its name level with the filter's words. The page's own
-    // colour with one hairline under it, as on Assets (CON-392): the page
-    // continuing, not a strip of a second grey.
+    // The Assets list's band (`pinnedBands`): pinned under the page header
+    // while its rows pass under it, the page's own colour, and folded by its
+    // whole width. Its chevron sits over the rows' boxes and its name level
+    // with the filter's words.
     <li
-      className="sticky top-0 border-b border-quaternary bg-background"
+      data-band
+      className={PINNED_BAND}
       style={{ zIndex: ZIndex.stickyTableHeader }}
     >
       <h2>
@@ -997,7 +1020,10 @@ function SelectionBar({
   const { t } = useTranslation()
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center"
+      // Sticky at the foot of the page's scroller, as on Assets (CON-392):
+      // the list scrolls with the page, so the bar keeps to the column's
+      // bottom edge. `-mt-12` takes back the room it would occupy.
+      className="pointer-events-none sticky bottom-4 -mt-12 flex justify-center"
       style={{ zIndex: ZIndex.pageActionBar }}
     >
       <div className="pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg">

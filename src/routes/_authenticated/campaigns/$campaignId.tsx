@@ -140,7 +140,9 @@ function CampaignLayout() {
   // Assets owns its whole page: its header carries an action that only means
   // something there (add *to this campaign*) and the page is one big drop
   // target, neither of which a shared header sitting outside it could do.
-  if (section === 'Assets') {
+  // Ideas too, for its scroll frame: its header is sticky inside the one
+  // scroller its list's bands pin under (CON-392).
+  if (section === 'Assets' || section === 'Ideas') {
     return (
       <PageContainer variant={'fullFlex'}>
         <Outlet />
