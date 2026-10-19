@@ -2264,11 +2264,6 @@ export const en = {
     scopeNote: {
       allTime: 'All time — not affected by the period above',
       ahead: 'Looking ahead — not affected by the period above',
-      everyPlatform: 'Every platform — not affected by the filter above',
-      allTimeEveryPlatform:
-        'All time and every platform — not affected by the controls above',
-      aheadEveryPlatform:
-        'Looking ahead and every platform — not affected by the controls above',
     },
 
     charts: {
@@ -2306,6 +2301,9 @@ export const en = {
       emptyTitle: 'Nothing measured yet',
       emptyBody:
         'Once this workspace starts publishing, what each post earns shows up here — reach, interactions, and how that compares with the stretch before.',
+      emptyNarrowedTitle: 'Nothing measured on {{platforms}}',
+      emptyNarrowedBody:
+        'Nothing posted on these platforms has reported numbers in this window. Choose ALL PLATFORMS above to count the rest of the workspace.',
       errorTitle: "Couldn't load analytics",
       errorBody:
         'The workspace itself is unaffected — nothing here changes what is scheduled or published. Try again in a moment.',
@@ -2358,6 +2356,9 @@ export const en = {
       emptyTitle: 'Nothing to rank in this period',
       emptyBody:
         'No posts went out in this window. Widen the period, or come back once the next one has published.',
+      emptyNarrowedTitle: 'Nothing on {{platforms}} to rank in this period',
+      emptyNarrowedBody:
+        'No posts went out on these platforms in this window. Widen the period, or choose more platforms above.',
       errorTitle: "Couldn't load performers",
       errorBody:
         'The workspace itself is unaffected — nothing here changes what is scheduled or published. Try again in a moment.',
@@ -2629,6 +2630,8 @@ export const en = {
       emptyTitle: 'Nothing published yet',
       emptyBody:
         'These are lessons drawn from your own posts, so they start the day you have some. Nothing needs setting up.',
+      narrowedThin:
+        'Counted on {{platforms}} alone. A lesson needs enough posts on these platforms by themselves, so choosing more above may bring a section back.',
       errorTitle: "Couldn't load what we've learned",
       errorBody:
         'The workspace itself is unaffected — nothing here changes what is scheduled or published. Try again in a moment.',

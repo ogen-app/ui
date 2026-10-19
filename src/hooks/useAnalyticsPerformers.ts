@@ -7,6 +7,7 @@ import {
   DEFAULT_PERFORMER_BASIS,
   type PerformersBoardView,
 } from '@/lib/analyticsPerformersView'
+import { canonicalPlatforms, platformsKey } from '@/lib/analyticsPlatformScope'
 import type { PerformerSort } from '@/types/analytics'
 
 /**
@@ -27,9 +28,14 @@ export const ANALYTICS_PERFORMERS_KEY = ['analytics', 'performers'] as const
 export function analyticsPerformersKey(
   window: string,
   by: PerformerSort,
-  platform?: string,
+  platforms: readonly string[] = [],
 ) {
-  return [...ANALYTICS_PERFORMERS_KEY, window, by, platform ?? 'all'] as const
+  return [
+    ...ANALYTICS_PERFORMERS_KEY,
+    window,
+    by,
+    platformsKey(platforms),
+  ] as const
 }
 
 export type AnalyticsPerformersResult = {
@@ -45,17 +51,14 @@ export type AnalyticsPerformersResult = {
 export function useAnalyticsPerformers(
   window: string,
   by: PerformerSort = DEFAULT_PERFORMER_BASIS,
-  /**
-   * The wire slug of one platform, or nothing for all of them. This is the only
-   * one of the three dashboard reads the server will narrow by platform — see
-   * the `analytics-overview` flag.
-   */
-  platform?: string,
+  /** Zernio slugs to narrow to; empty for every platform. */
+  platforms: readonly string[] = [],
 ): AnalyticsPerformersResult {
   const { t } = useTranslation()
+  const scope = canonicalPlatforms(platforms)
   const query = useQuery({
-    queryKey: analyticsPerformersKey(window, by, platform),
-    queryFn: () => fetchPerformers({ window, by, platform }),
+    queryKey: analyticsPerformersKey(window, by, scope),
+    queryFn: () => fetchPerformers({ window, by, platforms: scope }),
     staleTime: 5 * 60_000,
     retry: 2,
     // Re-ranking is a refetch, and a board that empties itself into a skeleton

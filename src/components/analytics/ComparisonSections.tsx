@@ -43,13 +43,10 @@ import type { Insight, MeasureId, NowView, SideBySideView } from './types'
 export function NowSection({
   view,
   initialMeasure,
-  everyPlatform = false,
 }: {
   view: NowView
   /** Which tab opens. Omit for the headline measure. */
   initialMeasure?: MeasureId
-  /** Whether a platform filter above this card reaches it. See `SectionCard`. */
-  everyPlatform?: boolean
 }) {
   const { t } = useTranslation()
   const headline = view.readings[0]
@@ -70,7 +67,6 @@ export function NowSection({
         title={t('analytics.now.title')}
         qualifier={window}
         scope="lens"
-        everyPlatform={everyPlatform}
       >
         <EmptyChart />
         <p className="text-[13px] text-secondary-foreground">
@@ -126,7 +122,6 @@ export function NowSection({
       title={t('analytics.now.title')}
       qualifier={window}
       scope="lens"
-      everyPlatform={everyPlatform}
     >
       <FigureGrid>
         {view.readings.map((r) => (

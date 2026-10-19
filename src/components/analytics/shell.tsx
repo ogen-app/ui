@@ -40,33 +40,22 @@ import { cn } from '@/lib'
 export type SectionScope = 'lens' | 'all-time' | 'ahead'
 
 /**
- * What the controls above this card do and do not reach.
+ * Whether the period above reaches this card, said when it does not.
  *
- * Composed rather than tabulated because the two dimensions are independent: a
- * card can obey the period and ignore the platform filter, and stacking two
- * separate footnotes to say so puts more type under the heading than the
- * heading. One sentence, whichever combination it is.
+ * Only the period: since CON-289 the platform filter reaches every card the
+ * workspace page draws, so the "every platform — not affected by the filter"
+ * half of this note went with the gap it apologised for.
  */
-function scopeNote(
-  t: TFunction,
-  scope: SectionScope,
-  everyPlatform: boolean,
-): string | null {
-  if (!everyPlatform) {
-    if (scope === 'all-time') return t('analytics.scopeNote.allTime')
-    if (scope === 'ahead') return t('analytics.scopeNote.ahead')
-    return null
-  }
-  if (scope === 'all-time') return t('analytics.scopeNote.allTimeEveryPlatform')
-  if (scope === 'ahead') return t('analytics.scopeNote.aheadEveryPlatform')
-  return t('analytics.scopeNote.everyPlatform')
+function scopeNote(t: TFunction, scope: SectionScope): string | null {
+  if (scope === 'all-time') return t('analytics.scopeNote.allTime')
+  if (scope === 'ahead') return t('analytics.scopeNote.ahead')
+  return null
 }
 
 export function SectionCard({
   title,
   qualifier,
   scope = 'lens',
-  everyPlatform = false,
   status,
   children,
   className,
@@ -83,18 +72,12 @@ export function SectionCard({
    */
   qualifier?: ReactNode
   scope?: SectionScope
-  /**
-   * Whether this card is counted over every platform whatever the filter above
-   * says. True for the two reads the server will not narrow — saying so is what
-   * keeps a filtered screenshot from being read as the whole picture.
-   */
-  everyPlatform?: boolean
   status?: ReactNode
   children: ReactNode
   className?: string
 }) {
   const { t } = useTranslation()
-  const note = scopeNote(t, scope, everyPlatform)
+  const note = scopeNote(t, scope)
   return (
     <section
       className={cn(

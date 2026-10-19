@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '@/components/ui/skeleton'
+import { formatList } from '@/lib/intl'
 import { NowSection } from './ComparisonSections'
 import { NotYet, SectionCard } from './shell'
 import type { AnalyticsOverviewResult } from '@/hooks/useAnalyticsOverview'
@@ -36,15 +37,15 @@ export function WorkspaceOverviewView({
   isError,
   isUnavailable,
   isEmpty,
-  everyPlatform = false,
+  narrowedTo = [],
 }: AnalyticsOverviewResult & {
   /**
-   * Whether a platform filter is on screen that this card is not counted under.
-   * `GET /overview` takes no `platform`, so on the workspace page this is true
-   * whenever the filter is offered at all — and the card says so rather than
-   * letting a filtered page be read as filtered throughout.
+   * The names of the platforms the scope bar narrowed to, or empty for all of
+   * them. Only the empty state reads it: narrowed, `no_data` means nothing on
+   * *these* platforms, and telling the reader the workspace has never published
+   * would send them looking for a fault.
    */
-  everyPlatform?: boolean
+  narrowedTo?: readonly string[]
 }) {
   const { t } = useTranslation()
 
@@ -69,9 +70,19 @@ export function WorkspaceOverviewView({
   if (isEmpty) {
     return (
       <SectionCard title={t('analytics.now.title')}>
-        <NotYet title={t('analytics.now.emptyTitle')}>
-          {t('analytics.now.emptyBody')}
-        </NotYet>
+        {narrowedTo.length > 0 ? (
+          <NotYet
+            title={t('analytics.now.emptyNarrowedTitle', {
+              platforms: formatList([...narrowedTo]),
+            })}
+          >
+            {t('analytics.now.emptyNarrowedBody')}
+          </NotYet>
+        ) : (
+          <NotYet title={t('analytics.now.emptyTitle')}>
+            {t('analytics.now.emptyBody')}
+          </NotYet>
+        )}
       </SectionCard>
     )
   }
@@ -89,5 +100,5 @@ export function WorkspaceOverviewView({
     )
   }
 
-  return <NowSection view={view} everyPlatform={everyPlatform} />
+  return <NowSection view={view} />
 }

@@ -67,12 +67,14 @@ function view(best: number, worst: number, total = best + worst) {
 
 function renderBoard(
   result: Partial<typeof SETTLED> & { view?: ReturnType<typeof view> },
+  narrowedTo?: string[],
 ) {
   return render(
     <WorkspacePerformersView
       result={{ ...SETTLED, ...result }}
       by="against_typical"
       onChangeBasis={vi.fn()}
+      narrowedTo={narrowedTo}
     />,
     { wrapper: QueryWrapper },
   )
@@ -100,6 +102,14 @@ describe('how the board withdraws', () => {
       screen.getByText(/Nothing to rank in this period/i),
     ).toBeInTheDocument()
     expect(screen.queryByText(/Couldn't load performers/i)).toBeNull()
+  })
+
+  it('names the platforms that had nothing to rank, when narrowed', () => {
+    renderBoard({ isEmpty: true }, ['Instagram'])
+
+    expect(
+      screen.getByText('Nothing on Instagram to rank in this period'),
+    ).toBeInTheDocument()
   })
 
   it('says a failed request is a failed request', () => {

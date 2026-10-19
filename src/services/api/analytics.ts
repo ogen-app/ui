@@ -133,6 +133,27 @@ function windowParams(query: AnalyticsWindowQuery): URLSearchParams {
   return params
 }
 
+/**
+ * The platforms a dashboard read is narrowed to (CON-289), as Zernio slugs.
+ *
+ * Repeated rather than joined — `?platform=linkedin&platform=instagram` — and
+ * the union of them. Empty or absent sends nothing, which is *every* platform:
+ * never spell "all" out as the full list, or a platform connected later is left
+ * out of a view that claims to be the whole workspace. A slug the server does
+ * not know is a 400 `invalid_platform` for the whole request, not a widening.
+ */
+export type AnalyticsPlatformQuery = {
+  platforms?: readonly string[]
+}
+
+function appendPlatforms(
+  params: URLSearchParams,
+  query: AnalyticsPlatformQuery,
+): URLSearchParams {
+  for (const slug of query.platforms ?? []) params.append('platform', slug)
+  return params
+}
+
 function search(params: URLSearchParams): string {
   const qs = params.toString()
   return qs ? `?${qs}` : ''
@@ -174,29 +195,29 @@ export function hasHistory<T>(section: LearningsSection<T>): section is T {
  * The whole windowed dashboard in one read: five KPI cards, a series per
  * metric, and the deterministic callouts (CON-237).
  *
- * Tenant-scoped — there is no campaign or platform filter, so a campaign screen
- * cannot use this yet. `granularity` is deliberately not exposed: the server
+ * Narrowed by platform like the other two (CON-289). `granularity` is deliberately not exposed: the server
  * buckets weekly past 90 days on its own, and forcing `week` on a short window
  * produces four points where the reader expects twenty-eight.
  */
+export type OverviewQuery = AnalyticsWindowQuery & AnalyticsPlatformQuery
+
 export async function fetchAnalyticsOverview(
-  query: AnalyticsWindowQuery = {},
+  query: OverviewQuery = {},
 ): Promise<InsightEnvelope<AnalyticsOverview>> {
   if (demo()) return demoOverview(query)
   return apiJson<InsightEnvelope<AnalyticsOverview>>(
-    `${BASE}/overview${search(windowParams(query))}`,
+    `${BASE}/overview${search(appendPlatforms(windowParams(query), query))}`,
     'Unable to fetch analytics',
   )
 }
 
-export type PerformersQuery = AnalyticsWindowQuery & {
-  /** Default `against_typical`. Anything outside the union is a 400. */
-  by?: PerformerSort
-  /** Rows *per list*, not in total. Clamped to 20. */
-  limit?: number
-  /** The wire slug (`linkedin`), matched case-insensitively. */
-  platform?: string
-}
+export type PerformersQuery = AnalyticsWindowQuery &
+  AnalyticsPlatformQuery & {
+    /** Default `against_typical`. Anything outside the union is a 400. */
+    by?: PerformerSort
+    /** Rows *per list*, not in total. Clamped to 20. */
+    limit?: number
+  }
 
 /**
  * The window's best and worst posts, each scored against the typical post on
@@ -213,14 +234,14 @@ export async function fetchPerformers(
   const params = windowParams(query)
   if (query.by) params.set('by', query.by)
   if (query.limit !== undefined) params.set('limit', String(query.limit))
-  if (query.platform) params.set('platform', query.platform)
+  appendPlatforms(params, query)
   return apiJson<InsightEnvelope<PerformersBoard>>(
     `${BASE}/performers${search(params)}`,
     'Unable to fetch analytics',
   )
 }
 
-export type LearningsQuery = {
+export type LearningsQuery = AnalyticsPlatformQuery & {
   /** Lower bound, `YYYY-MM-DD`. Omitted means all-time. */
   since?: string
   /** `90d`, `12w`, `6mo` — the comparison window for what's fading. */
@@ -235,6 +256,11 @@ export type LearningsQuery = {
  * on Tuesday evenings" is not a fact about the last 28 days, and putting it
  * under the same date control would imply it is. `since` exists to cut off a
  * past the workspace has disowned, not to make this a period view.
+ *
+ * The platform filter *does* reach it, and the server narrows before its
+ * minimum-support floors run — so a single platform's thin history comes back
+ * as `insufficient_history` per section rather than as a lesson from a handful
+ * of posts.
  */
 export async function fetchLearnings(
   query: LearningsQuery = {},
@@ -244,6 +270,7 @@ export async function fetchLearnings(
   if (query.since) params.set('since', query.since)
   if (query.trendWindow) params.set('trend_window', query.trendWindow)
   if (query.metric) params.set('metric', query.metric)
+  appendPlatforms(params, query)
   return apiJson<InsightEnvelope<AnalyticsLearnings>>(
     `${BASE}/learnings${search(params)}`,
     'Unable to fetch analytics',

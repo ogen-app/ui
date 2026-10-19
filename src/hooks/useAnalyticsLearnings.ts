@@ -7,6 +7,7 @@ import {
   DEFAULT_LEARNINGS_METRIC,
   type LearningsView,
 } from '@/lib/analyticsLearningsView'
+import { canonicalPlatforms, platformsKey } from '@/lib/analyticsPlatformScope'
 import type { LearningsMetric } from '@/types/analytics'
 
 /**
@@ -17,6 +18,9 @@ import type { LearningsMetric } from '@/types/analytics'
  * endpoint takes no `window`/`from`/`to`, so the page's period picker must not
  * reach the query — which is the whole reason the card is marked `all-time`.
  * Changing the period leaves this answer cached and on screen, deliberately.
+ * The platform filter is in it (CON-289): the server narrows before applying
+ * its minimum support, so a thin platform withdraws sections rather than
+ * serving a lesson from a handful of posts.
  *
  * `since` exists on the wire and is not exposed. It cuts off a past the
  * workspace has disowned, which is a workspace setting rather than a control on
@@ -25,8 +29,11 @@ import type { LearningsMetric } from '@/types/analytics'
  */
 export const ANALYTICS_LEARNINGS_KEY = ['analytics', 'learnings'] as const
 
-export function analyticsLearningsKey(metric: LearningsMetric) {
-  return [...ANALYTICS_LEARNINGS_KEY, metric] as const
+export function analyticsLearningsKey(
+  metric: LearningsMetric,
+  platforms: readonly string[] = [],
+) {
+  return [...ANALYTICS_LEARNINGS_KEY, metric, platformsKey(platforms)] as const
 }
 
 export type AnalyticsLearningsResult = {
@@ -41,14 +48,17 @@ export type AnalyticsLearningsResult = {
 
 export function useAnalyticsLearnings(
   metric: LearningsMetric = DEFAULT_LEARNINGS_METRIC,
+  /** Zernio slugs to narrow to; empty for every platform. */
+  platforms: readonly string[] = [],
 ): AnalyticsLearningsResult {
   const {
     t,
     i18n: { language },
   } = useTranslation()
+  const scope = canonicalPlatforms(platforms)
   const query = useQuery({
-    queryKey: analyticsLearningsKey(metric),
-    queryFn: () => fetchLearnings({ metric }),
+    queryKey: analyticsLearningsKey(metric, scope),
+    queryFn: () => fetchLearnings({ metric, platforms: scope }),
     // Ten minutes rather than the five the windowed reads use: these are
     // all-time aggregates refreshed daily server-side, so a fresher request
     // would return the same bytes.

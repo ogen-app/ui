@@ -1765,11 +1765,6 @@ export const es: Translation = {
     scopeNote: {
       allTime: 'Desde siempre — no le afecta el periodo de arriba',
       ahead: 'Mirando hacia delante — no le afecta el periodo de arriba',
-      everyPlatform: 'Todas las plataformas — no le afecta el filtro de arriba',
-      allTimeEveryPlatform:
-        'Desde siempre y todas las plataformas — no le afectan los controles de arriba',
-      aheadEveryPlatform:
-        'Mirando hacia delante y todas las plataformas — no le afectan los controles de arriba',
     },
 
     charts: {
@@ -1807,6 +1802,9 @@ export const es: Translation = {
       emptyTitle: 'Aún no se ha medido nada',
       emptyBody:
         'En cuanto este espacio de trabajo empiece a publicar, aquí aparecerá lo que gana cada publicación — alcance, interacciones y cómo se compara con el tramo anterior.',
+      emptyNarrowedTitle: 'Nada medido en {{platforms}}',
+      emptyNarrowedBody:
+        'Nada de lo publicado en estas plataformas ha dado cifras en este periodo. Elige TODAS LAS PLATAFORMAS arriba para contar el resto del espacio de trabajo.',
       errorTitle: 'No se ha podido cargar la analítica',
       errorBody:
         'El espacio de trabajo no se ve afectado — nada de aquí cambia lo que está programado o publicado. Inténtalo de nuevo en un momento.',
@@ -1856,6 +1854,10 @@ export const es: Translation = {
       emptyTitle: 'Nada que clasificar en este periodo',
       emptyBody:
         'No salió ninguna publicación en esta ventana. Amplía el periodo, o vuelve cuando se haya publicado la siguiente.',
+      emptyNarrowedTitle:
+        'Nada en {{platforms}} que clasificar en este periodo',
+      emptyNarrowedBody:
+        'No se publicó nada en estas plataformas en este periodo. Amplía el periodo o elige más plataformas arriba.',
       errorTitle: 'No se han podido cargar las destacadas',
       errorBody:
         'El espacio de trabajo no se ve afectado — nada de aquí cambia lo que está programado o publicado. Inténtalo de nuevo en un momento.',
@@ -2116,6 +2118,8 @@ export const es: Translation = {
       emptyTitle: 'Aún no se ha publicado nada',
       emptyBody:
         'Estas son lecciones sacadas de tus propias publicaciones, así que empiezan el día que tengas algunas. No hay nada que configurar.',
+      narrowedThin:
+        'Contado solo en {{platforms}}. Una lección necesita suficientes publicaciones en estas plataformas por sí solas, así que elegir más arriba puede recuperar una sección.',
       errorTitle: 'No se ha podido cargar lo que hemos aprendido',
       errorBody:
         'El espacio de trabajo no se ve afectado — nada de aquí cambia lo que está programado o publicado. Inténtalo de nuevo en un momento.',

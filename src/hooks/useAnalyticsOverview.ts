@@ -1,24 +1,28 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
   envelopeUnavailable,
   fetchAnalyticsOverview,
 } from '@/services/api/analytics'
 import { buildNowView } from '@/lib/analyticsOverviewView'
+import { canonicalPlatforms, platformsKey } from '@/lib/analyticsPlatformScope'
 import type { NowView } from '@/components/analytics/types'
 
 /**
  * The workspace's cumulative overview (CON-237): one call, five cards, a series
  * per metric and the deterministic callouts.
  *
- * Tenant-scoped and workspace-wide — there is no campaign or platform
- * parameter, which is why this hook takes a window and nothing else.
+ * Tenant-scoped, and narrowed by the scope bar's platforms like the other two
+ * reads (CON-289) — so the set is part of the key.
  */
 export const ANALYTICS_OVERVIEW_KEY = ['analytics', 'overview'] as const
 
-export function analyticsOverviewKey(window: string) {
-  return [...ANALYTICS_OVERVIEW_KEY, window] as const
+export function analyticsOverviewKey(
+  window: string,
+  platforms: readonly string[] = [],
+) {
+  return [...ANALYTICS_OVERVIEW_KEY, window, platformsKey(platforms)] as const
 }
 
 /**
@@ -62,11 +66,14 @@ export type AnalyticsOverviewResult = {
 
 export function useAnalyticsOverview(
   window: string = DEFAULT_OVERVIEW_WINDOW,
+  /** Zernio slugs to narrow to; empty for every platform. */
+  platforms: readonly string[] = [],
 ): AnalyticsOverviewResult {
   const { t } = useTranslation()
+  const scope = canonicalPlatforms(platforms)
   const query = useQuery({
-    queryKey: analyticsOverviewKey(window),
-    queryFn: () => fetchAnalyticsOverview({ window }),
+    queryKey: analyticsOverviewKey(window, scope),
+    queryFn: () => fetchAnalyticsOverview({ window, platforms: scope }),
     // The figures move when the refresh sweep writes, not when the user does
     // anything here, so re-reading on every mount buys nothing.
     staleTime: 5 * 60_000,
@@ -74,6 +81,10 @@ export function useAnalyticsOverview(
     // than failing, so there is no unavailable-shaped error to skip retries
     // for — the ordinary policy is right.
     retry: 2,
+    // A multi-select is clicked several times in a row, and a card that drops
+    // to a skeleton on every mark reads as a page reload. The board and the
+    // lessons card already hold their last answer the same way.
+    placeholderData: keepPreviousData,
   })
 
   const envelope = query.data

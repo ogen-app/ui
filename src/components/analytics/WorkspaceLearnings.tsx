@@ -6,7 +6,7 @@ import {
 } from '@phosphor-icons/react'
 import { Trans, useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
-import { formatNumber } from '@/lib/intl'
+import { formatList, formatNumber } from '@/lib/intl'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DecayCurve, SlotHeatmap } from './charts'
 import { Picker } from './ComparisonBar'
@@ -41,18 +41,25 @@ import type { LearningsMetric } from '@/types/analytics'
  * Nothing here is graded a second time. The server enforces its own minimum
  * support and withdraws below it, so what arrives is what it was willing to
  * stand behind — the same rule the performers board follows for `direction`.
+ *
+ * The platform filter reaches this card (CON-289), and the server narrows
+ * *before* it applies that support — so a single platform withdraws sections a
+ * workspace-wide read would have answered. When that happens under a filter the
+ * card says which platforms it counted, once, below the sections: each
+ * section's own sentence explains what it needs, and only this line can say
+ * that widening the filter is the way to get it.
  */
 export function WorkspaceLearningsView({
   result,
   metric,
   onChangeMetric,
-  everyPlatform = false,
+  narrowedTo = [],
 }: {
   result: AnalyticsLearningsResult
   metric: LearningsMetric
   onChangeMetric: (metric: LearningsMetric) => void
-  /** Whether a platform filter is on screen that this card is not counted under. */
-  everyPlatform?: boolean
+  /** The names of the platforms the scope bar narrowed to, or empty for all. */
+  narrowedTo?: readonly string[]
 }) {
   const { t } = useTranslation()
   const { view, isPending, isError, isUnavailable, isEmpty } = result
@@ -63,12 +70,7 @@ export function WorkspaceLearningsView({
 
   if (isUnavailable) {
     return (
-      <Shell
-        metric={metric}
-        onChangeMetric={onChangeMetric}
-        withPicker={false}
-        everyPlatform={everyPlatform}
-      >
+      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
         <NotYet title={t('analytics.learned.unavailableTitle')}>
           {t('analytics.learned.unavailableBody')}
         </NotYet>
@@ -81,12 +83,7 @@ export function WorkspaceLearningsView({
   // that has simply never published that something is broken.
   if (isEmpty) {
     return (
-      <Shell
-        metric={metric}
-        onChangeMetric={onChangeMetric}
-        withPicker={false}
-        everyPlatform={everyPlatform}
-      >
+      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
         <NotYet title={t('analytics.learned.emptyTitle')}>
           {t('analytics.learned.emptyBody')}
         </NotYet>
@@ -96,12 +93,7 @@ export function WorkspaceLearningsView({
 
   if (isError || !view) {
     return (
-      <Shell
-        metric={metric}
-        onChangeMetric={onChangeMetric}
-        withPicker={false}
-        everyPlatform={everyPlatform}
-      >
+      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
         <NotYet title={t('analytics.learned.errorTitle')}>
           {t('analytics.learned.errorBody')}
         </NotYet>
@@ -115,7 +107,6 @@ export function WorkspaceLearningsView({
       onChangeMetric={onChangeMetric}
       withPicker
       qualifier={view.historySince ?? undefined}
-      everyPlatform={everyPlatform}
     >
       <Section
         icon={CalendarBlankIcon}
@@ -176,6 +167,15 @@ export function WorkspaceLearningsView({
         </NotYet>
       )}
 
+      {narrowedTo.length > 0 &&
+        (!view.heatmap || !view.lifespan || !view.patterns) && (
+          <Basis>
+            {t('analytics.learned.narrowedThin', {
+              platforms: formatList([...narrowedTo]),
+            })}
+          </Basis>
+        )}
+
       {view.lastRefreshedAt && (
         <Basis>
           {t('analytics.learned.updated', { when: view.lastRefreshedAt })}
@@ -197,14 +197,12 @@ function Shell({
   onChangeMetric,
   withPicker,
   qualifier,
-  everyPlatform = false,
   children,
 }: {
   metric: LearningsMetric
   onChangeMetric: (metric: LearningsMetric) => void
   withPicker: boolean
   qualifier?: string
-  everyPlatform?: boolean
   children: React.ReactNode
 }) {
   const { t } = useTranslation()
@@ -212,7 +210,6 @@ function Shell({
     <SectionCard
       title={t('analytics.learned.title')}
       scope="all-time"
-      everyPlatform={everyPlatform}
       qualifier={qualifier}
       status={
         withPicker ? (
