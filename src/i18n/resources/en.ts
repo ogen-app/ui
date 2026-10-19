@@ -2981,12 +2981,6 @@ export const en = {
     },
 
     /**
-     * What a post writes from. The same control renders as the card under the
-     * copy and as a section in the settings rail, so the two empty states are
-     * one idea at two lengths — the card can afford to explain what the list
-     * is for, the rail cannot.
-     */
-    /**
      * Attaching an image from Assets to a post (CON-290). The bank copies the
      * image into the post server-side, so these are the picker's words and
      * the refusals the copy can meet.
@@ -3018,6 +3012,7 @@ export const en = {
           locked:
             'This post is scheduled or published, so its media can no longer change.',
           gone: 'This image is no longer in Assets.',
+          postGone: 'This post has been deleted.',
           noFile: 'This asset has no stored image to attach.',
         },
       },
@@ -3056,6 +3051,12 @@ export const en = {
         'Publishing failed for a reason this version of the app doesn’t recognise.',
     },
 
+    /**
+     * What a post writes from. The same control renders as the card under the
+     * copy and as a section in the settings rail, so the two empty states are
+     * one idea at two lengths — the card can afford to explain what the list
+     * is for, the rail cannot.
+     */
     sources: {
       heading: 'Sources',
       /** The rail section's title. Its capitals are the copy, as everywhere. */

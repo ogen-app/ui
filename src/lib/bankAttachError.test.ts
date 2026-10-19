@@ -18,6 +18,12 @@ describe('bankAttachErrorMessage', () => {
     ).toBe(t('posts.media.fromAssets.errors.gone'))
   })
 
+  it('says a post that has gone has gone, not the image', () => {
+    expect(bankAttachErrorMessage(t, new ApiError(404, 'post not found'))).toBe(
+      t('posts.media.fromAssets.errors.postGone'),
+    )
+  })
+
   it('words an image-service refusal as the same refusal on upload', () => {
     expect(
       bankAttachErrorMessage(

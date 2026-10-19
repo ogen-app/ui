@@ -830,7 +830,8 @@ images upload, store as `IMG` and open on their own screen (CON-246), but the
 server renders no smaller copy, so the list's preview cell draws the full file
 scaled into 40px; `thumbnail_url` is preferred wherever it appears, so nothing
 here changes when that job lands. That cost now lands on the media card's
-picker too, which is a grid of them (below) · **the React Compiler lint rules are warnings, not errors** —
+picker too (`AddFromAssetsModal`, a grid of them — see *A bank image reaches
+a post as a copy* under Conventions) · **the React Compiler lint rules are warnings, not errors** —
 `react-hooks` v7 reports 123 of them against code that predates it, and each is
 a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n converts whole screens in some
