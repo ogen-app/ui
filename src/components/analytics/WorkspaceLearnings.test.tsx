@@ -24,6 +24,7 @@ const SETTLED = {
   isError: false,
   isUnavailable: false,
   isEmpty: false,
+  platforms: [] as readonly string[],
 }
 
 function learnings(over: Partial<AnalyticsLearnings> = {}): AnalyticsLearnings {
@@ -110,6 +111,17 @@ describe('how the card withdraws', () => {
 
     expect(screen.getByText(/Nothing published yet/i)).toBeInTheDocument()
     expect(screen.queryByText(/Couldn't load/i)).toBeNull()
+  })
+
+  it('says which platforms have nothing, when the filter narrowed it', () => {
+    // "They start the day you have some" is false of a workspace that has
+    // published — just not on the platform the filter chose.
+    renderCard({ isEmpty: true }, ['LinkedIn'])
+
+    expect(
+      screen.getByText('Nothing published on LinkedIn yet'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/start the day you have some/i)).toBeNull()
   })
 
   it('says a failed request is a failed request', () => {

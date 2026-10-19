@@ -44,6 +44,14 @@ export type AnalyticsLearningsResult = {
   isUnavailable: boolean
   /** Wired up, and nothing has been published yet. */
   isEmpty: boolean
+  /**
+   * The platforms the answer on screen was fetched for — Zernio slugs, empty
+   * for every platform. Not the selection: while a new one is in flight the
+   * previous answer stays up (`keepPreviousData`), and a card naming the
+   * pending platforms over it would say "nothing on LinkedIn" about a read
+   * that counted everything.
+   */
+  platforms: readonly string[]
 }
 
 export function useAnalyticsLearnings(
@@ -58,7 +66,11 @@ export function useAnalyticsLearnings(
   const scope = canonicalPlatforms(platforms)
   const query = useQuery({
     queryKey: analyticsLearningsKey(metric, scope),
-    queryFn: () => fetchLearnings({ metric, platforms: scope }),
+    // The set travels with the answer, so the card can name what it counted.
+    queryFn: async () => ({
+      platforms: scope,
+      envelope: await fetchLearnings({ metric, platforms: scope }),
+    }),
     // Ten minutes rather than the five the windowed reads use: these are
     // all-time aggregates refreshed daily server-side, so a fresher request
     // would return the same bytes.
@@ -70,7 +82,7 @@ export function useAnalyticsLearnings(
     placeholderData: keepPreviousData,
   })
 
-  const envelope = query.data
+  const envelope = query.data?.envelope
   const withheld = envelope ? envelopeUnavailable(envelope) : false
   const learnings = envelope && !withheld ? envelope.data : null
 
@@ -89,5 +101,6 @@ export function useAnalyticsLearnings(
     isError: query.isError,
     isUnavailable: withheld && envelope?.reason !== 'no_data',
     isEmpty: withheld && envelope?.reason === 'no_data',
+    platforms: query.data?.platforms ?? scope,
   }
 }

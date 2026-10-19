@@ -62,6 +62,14 @@ export type AnalyticsOverviewResult = {
   isUnavailable: boolean
   /** Wired up, nothing to report: no posts, no followers, no snapshots. */
   isEmpty: boolean
+  /**
+   * The platforms the answer on screen was fetched for — Zernio slugs, empty
+   * for every platform. Not the selection: while a new one is in flight the
+   * previous answer stays up (`keepPreviousData`), and a card naming the
+   * pending platforms over it would say "nothing on LinkedIn" about a read
+   * that counted everything.
+   */
+  platforms: readonly string[]
 }
 
 export function useAnalyticsOverview(
@@ -73,7 +81,11 @@ export function useAnalyticsOverview(
   const scope = canonicalPlatforms(platforms)
   const query = useQuery({
     queryKey: analyticsOverviewKey(window, scope),
-    queryFn: () => fetchAnalyticsOverview({ window, platforms: scope }),
+    // The set travels with the answer, so the card can name what it counted.
+    queryFn: async () => ({
+      platforms: scope,
+      envelope: await fetchAnalyticsOverview({ window, platforms: scope }),
+    }),
     // The figures move when the refresh sweep writes, not when the user does
     // anything here, so re-reading on every mount buys nothing.
     staleTime: 5 * 60_000,
@@ -87,7 +99,7 @@ export function useAnalyticsOverview(
     placeholderData: keepPreviousData,
   })
 
-  const envelope = query.data
+  const envelope = query.data?.envelope
   const withheld = envelope ? envelopeUnavailable(envelope) : false
   const overview = envelope && !withheld ? envelope.data : null
 
@@ -105,5 +117,6 @@ export function useAnalyticsOverview(
     isError: query.isError,
     isUnavailable: withheld && envelope?.reason !== 'no_data',
     isEmpty: withheld && envelope?.reason === 'no_data',
+    platforms: query.data?.platforms ?? scope,
   }
 }

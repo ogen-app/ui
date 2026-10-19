@@ -2630,6 +2630,9 @@ export const en = {
       emptyTitle: 'Nothing published yet',
       emptyBody:
         'These are lessons drawn from your own posts, so they start the day you have some. Nothing needs setting up.',
+      emptyNarrowedTitle: 'Nothing published on {{platforms}} yet',
+      emptyNarrowedBody:
+        'These lessons are drawn from posts on these platforms alone, and none have gone out there. Choose ALL PLATFORMS above to learn from the rest of the workspace.',
       narrowedThin:
         'Counted on {{platforms}} alone. A lesson needs enough posts on these platforms by themselves, so choosing more above may bring a section back.',
       errorTitle: "Couldn't load what we've learned",

@@ -2118,6 +2118,9 @@ export const es: Translation = {
       emptyTitle: 'Aún no se ha publicado nada',
       emptyBody:
         'Estas son lecciones sacadas de tus propias publicaciones, así que empiezan el día que tengas algunas. No hay nada que configurar.',
+      emptyNarrowedTitle: 'Aún no se ha publicado nada en {{platforms}}',
+      emptyNarrowedBody:
+        'Estas lecciones salen solo de las publicaciones en estas plataformas, y allí no ha salido ninguna. Elige TODAS LAS PLATAFORMAS arriba para aprender del resto del espacio de trabajo.',
       narrowedThin:
         'Contado solo en {{platforms}}. Una lección necesita suficientes publicaciones en estas plataformas por sí solas, así que elegir más arriba puede recuperar una sección.',
       errorTitle: 'No se ha podido cargar lo que hemos aprendido',

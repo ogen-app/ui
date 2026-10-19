@@ -25,6 +25,7 @@ const SETTLED = {
   isError: false,
   isUnavailable: false,
   isEmpty: false,
+  platforms: [] as readonly string[],
 }
 
 function row(n: number, over: Partial<PerformerRow> = {}): PerformerRow {

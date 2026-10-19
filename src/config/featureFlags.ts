@@ -119,9 +119,10 @@ const FEATURE_FLAGS = {
    * analytics dashboard API on 2026-08-27 — `/overview`, `/performers` and
    * `/learnings`, typed against the real handlers in `types/analytics.ts` and
    * pinned by `services/api/analytics.test.ts` — and every one of them is
-   * **tenant-scoped**. None takes a `campaign_id`; only `/performers` takes a
-   * `platform`. So the thing this flag was originally waiting for did not
-   * arrive: a campaign screen still cannot ask the server its own question.
+   * **tenant-scoped**. None takes a `campaign_id`; all three take a repeatable
+   * `platform` (CON-289), which narrows by network and not by campaign. So the
+   * thing this flag was originally waiting for did not arrive: a campaign
+   * screen still cannot ask the server its own question.
    *
    * Until it can, the page fetches one 100-row page of `/posts`, intersects it
    * with the campaign's posts client-side, and sums the rows itself; the
