@@ -131,6 +131,7 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
     first_comment: '',
     first_comment_delay_minutes: 0,
     first_comment_status: null,
+    content_format: null,
     status: 'draft',
     cta_type: 'none',
     cta_url: '',
@@ -216,6 +217,9 @@ export function useAddPost(campaignId: string) {
  * original's platform, which is the one case the server's own clone carries
  * them in too. Its outcome (`first_comment_status` and the rest) is the
  * original's and stays behind, for the same reason `published_url` does.
+ *
+ * And the format (CON-329): the shape a post took is what made it worth
+ * repurposing, and the server's clone keeps it too.
  */
 function duplicatePayload(post: Post, title: string): PostPayload {
   return {
@@ -234,6 +238,7 @@ function duplicatePayload(post: Post, title: string): PostPayload {
     scheduled_at: null,
     first_comment: post.first_comment,
     first_comment_delay_minutes: post.first_comment_delay_minutes,
+    content_format: post.content_format,
   }
 }
 

@@ -23,7 +23,7 @@ import {
  *
  * Radix has no empty string value, so unset travels as a sentinel that never
  * leaves this file. The prop is `ContentFormatId | null`, which is what the
- * column will be.
+ * column is.
  */
 const UNSET = 'none'
 
@@ -36,8 +36,8 @@ export function FormatPicker({
   className,
 }: {
   /**
-   * The current format. A value this build does not recognise — from an older
-   * sidecar or a newer peer — narrows to unset rather than leaving the trigger
+   * The current format. A value this build does not recognise — from a newer
+   * build — narrows to unset rather than leaving the trigger
    * blank, which is the rule every picker in this app follows about a current
    * value that is no longer among its options.
    */

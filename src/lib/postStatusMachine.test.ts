@@ -44,6 +44,7 @@ function post(overrides: Partial<Post> = {}): Post {
     first_comment: '',
     first_comment_delay_minutes: 0,
     first_comment_status: null,
+    content_format: null,
     status: 'ready_for_publish',
     cta_type: 'none',
     cta_url: '',

@@ -15,6 +15,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { formatTitle } from '@/lib'
 import { formatDate as formatLocaleDate } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
+import { contentFormat, contentFormatLabel } from '@/lib/contentFormats'
+import { useFeatureFlag } from '@/config/featureFlags'
 
 type PostRow = Post & Record<string, unknown>
 
@@ -101,6 +103,7 @@ function PostsTableComponent({
   const data = posts as PostRow[]
   const { t, i18n } = useTranslation()
   const locale = i18n.language
+  const formats = useFeatureFlag('content-formats')
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
   // Against the rows on screen, not against the whole selection: the header
@@ -204,6 +207,31 @@ function PostsTableComponent({
           ),
       },
       {
+        id: 'format',
+        // Unset sorts last in both directions, for the reason the date column
+        // gives — "no format" is not the first format alphabetically.
+        accessorFn: (row) =>
+          contentFormat(row.content_format)
+            ? contentFormatLabel(t, row.content_format)
+            : undefined,
+        sortUndefined: 'last',
+        header: t('postsTable.columnFormat'),
+        size: 140,
+        minSize: 110,
+        cell: (_value, row) =>
+          contentFormat(row.content_format) ? (
+            <div className="h-[34px] border-b-2 border-background px-3 leading-8">
+              <TextCell value={contentFormatLabel(t, row.content_format)} />
+            </div>
+          ) : (
+            <div className="h-[34px] border-b-2 border-background px-3 leading-8">
+              <span className="table-text text-tertiary-foreground">
+                {t('formats.none')}
+              </span>
+            </div>
+          ),
+      },
+      {
         id: 'scheduled_at',
         // `null` becomes `undefined` so `sortUndefined` can take it: an
         // unscheduled post belongs at the bottom in both directions, not at
@@ -281,11 +309,12 @@ function PostsTableComponent({
       'title',
       'status',
       'platform',
+      ...(formats ? ['format'] : []),
       'scheduled_at',
       'relative_time',
       'actions',
     ],
-    [selectable],
+    [selectable, formats],
   )
 
   return (

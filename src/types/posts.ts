@@ -1,6 +1,7 @@
 import type { PlatformValidationError } from '@/types/attachments'
 import type { Campaign, PublisherAccount } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
+import type { ContentFormatId } from '@/lib/contentFormats'
 
 export type PostStatus =
   | 'draft'
@@ -198,6 +199,15 @@ export type Post = {
   first_comment_id?: string
   first_comment_posted_at?: string
   first_comment_error?: string
+  /**
+   * The rhetorical shape the post takes (CON-264/329) — one of
+   * `lib/contentFormats`'s slugs, or `null` for none, which is the normal case.
+   * Not `platform_post_type`: that is the container, this is the shape.
+   *
+   * A slug this build does not know can arrive from a newer one; it is read
+   * through `normalizeContentFormat` wherever it is drawn, and restated as-is.
+   */
+  content_format: ContentFormatId | null
   created_by: string
   created_at: string
   updated_at: string
@@ -300,4 +310,11 @@ export type PostPayload = {
    */
   first_comment?: string
   first_comment_delay_minutes?: FirstCommentDelay
+  /**
+   * Presence-aware (CON-329): omitted leaves the stored value alone, `null`
+   * clears it. `""` and an unknown slug are both a 400, and a change on a
+   * `scheduled` or `published` post is a 409 — restating the stored value is
+   * not a change.
+   */
+  content_format?: ContentFormatId | null
 }

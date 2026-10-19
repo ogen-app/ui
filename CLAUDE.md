@@ -1121,7 +1121,7 @@ hang an explanation on, and the server's own refusal already arrives as a
 sentence (CON-295).
 
 **Series and content formats are two flags, and the split is the design**
-(CON-264, `series` and `content-formats`, both off). The word people arrive with
+(CON-264; `series` is off, `content-formats` on since CON-329). The word people arrive with
 is *content pillar*, which means at least four different things; what is modelled
 is the **recurring named segment with a recipe** — the only reading a generator
 can act on and the only one analytics can group by. A broad theme collapses into
@@ -1151,15 +1151,17 @@ model, which is why it needs no instruction field and why it is a separate flag 
 it pays off in a workspace that has never opened the Series page. It is **not**
 `platform_post_type`: that is the container (carousel, reel, thread), this is the
 rhetorical shape, and the two never decide the same thing. Optional everywhere,
-and nothing warns about a post without one.
+and nothing warns about a post without one. A post's format is
+`content_format` on the post itself (CON-329): presence-aware on the PUT,
+restated by `postToPayload` like the first comment, a 400 for `""` or an unknown
+slug, and inside CON-251's lock — so the picker is disabled on a submitted post.
 
-**Waiting on** a `brand_series` table; `series_ids` plus a per-series rhythm on
+**Series are waiting on** a `brand_series` table; `series_ids` plus a per-series rhythm on
 the campaign, **attached and detached rather than restated** for the reason
-CON-233 gives about `asset_ids`; a nullable `series_id` and `content_format` on
-the post; and analytics grouped by both. Until then series live in
-`services/api/series.ts` (a stub in the shape the endpoints will have) and a
-post's format in a `localStorage` sidecar (`services/api/contentLocal.ts`) —
-both **per browser**, which is what the flags are holding. One move stays
+CON-233 gives about `asset_ids`; a nullable `series_id` on the post; and
+analytics grouped by series and by format. Until then series live in
+`services/api/series.ts` (a stub in the shape the endpoints will have), **per
+browser**, which is what the flag is holding. One move stays
 deliberately open (CON-305 decision 1): series could be its own module at both
 levels, `/series` and `/campaigns/:id/series`, which is what documents just did
 and what the nav rule would prefer over a level-1 card with no level-0 row.

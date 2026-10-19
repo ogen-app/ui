@@ -255,7 +255,7 @@ export function PostSettingsForm({ doc, changeDoc, onClose }: Props) {
               that one overrides the other. */}
           {formatsEnabled && (
             <Collapse title="FORMAT" defaultOpen>
-              <PostFormatSection postId={doc.id} />
+              <PostFormatSection post={doc} changeDoc={changeDoc} />
             </Collapse>
           )}
 

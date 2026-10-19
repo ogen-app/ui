@@ -19,6 +19,7 @@ export const SORTABLE_POST_COLUMNS = [
   'title',
   'status',
   'platform',
+  'format',
   'scheduled_at',
   'relative_time',
 ] as const
