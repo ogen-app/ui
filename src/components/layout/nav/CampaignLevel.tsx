@@ -133,7 +133,7 @@ export function CampaignLevel({
         <div className="overflow-hidden">
           {campaign ? (
             <>
-              <span className="block w-[212px] truncate font-grotesk text-sm font-medium uppercase tracking-[0.02em] lg:w-[180px]">
+              <span className="type-display block w-[212px] truncate font-grotesk text-sm font-medium uppercase tracking-[0.02em] lg:w-[180px]">
                 {campaign.name.trim() || t('nav.untitledCampaign')}
               </span>
               <p className="mt-1.5 font-mono text-xs text-tertiary-foreground">
