@@ -402,12 +402,14 @@ const FEATURE_FLAGS = {
    * with its three-mode source picker.
    *
    * **Backed since CON-329**: `content_format` on the post, presence-aware on
-   * the PUT, inside CON-251's lock, and read by the post assistant. Turned on
-   * after re-testing against dev; delete the flag and its off-branches once it
-   * has survived a deploy. Still to come, and not gating this: the series'
-   * own `content_format` (CON-330) and analytics grouped by format.
+   * the PUT, inside CON-251's lock, and read by the post assistant. **Off
+   * until the client is re-tested against a running API** (global rule 4): set
+   * a format and reload to see it in the Format column, clear it, and change it
+   * on a scheduled post for a 409. The contract was checked against ogen#191's
+   * code, not against a live server. Still to come, and not gating this: the
+   * series' own `content_format` (CON-330) and analytics grouped by format.
    */
-  'content-formats': true,
+  'content-formats': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

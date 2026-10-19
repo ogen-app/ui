@@ -1121,7 +1121,8 @@ hang an explanation on, and the server's own refusal already arrives as a
 sentence (CON-295).
 
 **Series and content formats are two flags, and the split is the design**
-(CON-264; `series` is off, `content-formats` on since CON-329). The word people arrive with
+(CON-264; both off — `content-formats` is backed since CON-329 and waits only
+on its live re-test). The word people arrive with
 is *content pillar*, which means at least four different things; what is modelled
 is the **recurring named segment with a recipe** — the only reading a generator
 can act on and the only one analytics can group by. A broad theme collapses into
