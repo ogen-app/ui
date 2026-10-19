@@ -112,51 +112,24 @@ const FEATURE_FLAGS = {
    * The **numbers** in the campaign's Analytics section (CON-175) — not the
    * section itself. The page, the sidebar item and the Overview card are
    * always there; with this off they say what the section will hold and
-   * measure nothing, and no analytics request is made. Turning it on swaps
-   * that preview for the real totals in both places.
+   * measure nothing, and no analytics request is made.
    *
-   * **Still waiting on: a campaign dimension.** CON-236–239 landed the
-   * analytics dashboard API on 2026-08-27 — `/overview`, `/performers` and
-   * `/learnings`, typed against the real handlers in `types/analytics.ts` and
-   * pinned by `services/api/analytics.test.ts` — and every one of them is
-   * **tenant-scoped**. None takes a `campaign_id`; only `/performers` takes a
-   * `platform`. So the thing this flag was originally waiting for did not
-   * arrive: a campaign screen still cannot ask the server its own question.
+   * **On since CON-288** (ogen#194, merged 2026-10-03): `/overview` and
+   * `/performers` take a `campaign_id`, so the section is the workspace
+   * dashboard with the campaign passed (`AnalyticsDashboard`) and the client
+   * no longer sums one 100-row page of `/posts` itself. `/learnings` refuses a
+   * campaign by design and the card says it is the workspace's.
    *
-   * Until it can, the page fetches one 100-row page of `/posts`, intersects it
-   * with the campaign's posts client-side, and sums the rows itself; the
-   * server's `overview` block is workspace-wide and deliberately ignored.
-   * Beyond ~100 measured posts in a workspace that stops being complete, which
-   * is why every surface states its coverage.
-   *
-   * **Before this can be flipped**, in order:
-   *
-   * 1. A campaign dimension — `campaign_id` on the dashboard reads, or a
-   *    campaign column on the rows. Nothing else unblocks the campaign screen.
-   * 2. A per-post series. `post_analytics_snapshots` is written and retained,
-   *    and no endpoint reads it (`models/post_analytics.go` says so in as many
-   *    words), so a post's own history has no source — the ask is
-   *    `GET /api/analytics/posts/:id/series` with a granularity.
-   * 3. A live re-test. Everything typed here was read off the Go source, not
-   *    off a running server; the shapes with the least margin for a
-   *    misreading are the overview's `series.previous` (index-aligned to the
-   *    *current* window's buckets) and the learnings sections, each of which
-   *    withdraws on its own.
-   *
-   * The two workspace-wide surfaces (`components/analytics`) needed no campaign
-   * dimension and shipped ahead of this one — unflagged since 2026-09-18, with
-   * the mappers from these wire shapes onto the view models written and
-   * tested. Two of their fields still have no wire source — per-post `matured`
-   * and the performers' `curve`/`typical` — and each surface states that where
-   * it would otherwise draw them; CON-250 serves both under other names
-   * (`still_counting`, and a p25/p50/p75 curve), so that is a renaming pass
-   * once ogen#130 merges rather than an ask. The third, the `save_rate` and
-   * `follow_rate` criteria, was **deleted** on 2026-09-06 instead of left
-   * waiting: `/performers` reports neither, so both were filtered out of every
-   * render they ever had. This flag is waiting on the campaign dimension
-   * (CON-288), nothing else. See `docs/analytics-contract.md`.
+   * Re-tested against the local API on 2026-10-19: both reads accept the
+   * campaign, a foreign or garbled id is a 404, `/learnings` answers 400
+   * `campaign_scope_unsupported` and is never sent one. What could not be
+   * looked at is a populated answer — the local analytics database holds no
+   * snapshots, so every read is `no_data` — and that is the same footing the
+   * workspace dashboard shipped on. Delete this flag with its off-branch
+   * (`ComingSoon` in `CampaignAnalyticsPanel`, the early return in
+   * `AnalyticsModule`) once it has survived a deploy.
    */
-  'campaign-analytics': false,
+  'campaign-analytics': true,
 
   /**
    * The marketing-email switch on Profile (CON-155). **Off — waiting on the
