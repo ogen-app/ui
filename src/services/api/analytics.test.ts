@@ -138,6 +138,44 @@ describe('fetchAnalyticsOverview', () => {
     expect(envelopeUnavailable(envelope)).toBe(true)
   })
 
+  it('narrows to the union of the platforms named, one param each', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(200, { available: true, data: OVERVIEW }),
+    )
+
+    await fetchAnalyticsOverview({
+      window: '28d',
+      platforms: ['linkedin', 'instagram'],
+    })
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      '/api/analytics/overview?window=28d&platform=linkedin&platform=instagram',
+    )
+  })
+
+  it('sends no platform at all for every platform, never the full list', async () => {
+    // Spelling "all" out as every slug would leave a platform connected later
+    // out of a view that claims to be the whole workspace.
+    const fetchMock = stubFetch(
+      jsonResponse(200, { available: true, data: OVERVIEW }),
+    )
+
+    await fetchAnalyticsOverview({ window: '28d', platforms: [] })
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      '/api/analytics/overview?window=28d',
+    )
+  })
+
+  it("surfaces an unknown platform as the server's code", async () => {
+    // One bad slug fails the whole read rather than widening to everything.
+    stubFetch(jsonResponse(400, { error: 'invalid_platform' }))
+
+    await expect(
+      fetchAnalyticsOverview({ platforms: ['myspace'] }),
+    ).rejects.toThrow('invalid_platform')
+  })
+
   it("surfaces a rejected range as the server's code", async () => {
     // The body is `{"error": "invalid_range"}` — a machine code, no prose. It
     // must never be shown to a reader as-is.
@@ -172,7 +210,7 @@ const ROW: PerformerRow = {
 }
 
 describe('fetchPerformers', () => {
-  it('names the ranking basis, the per-list limit and the platform slug', async () => {
+  it('names the ranking basis, the per-list limit and each platform slug', async () => {
     const fetchMock = stubFetch(
       jsonResponse(200, {
         available: true,
@@ -191,12 +229,14 @@ describe('fetchPerformers', () => {
     const envelope = await fetchPerformers({
       by: 'engagement_rate',
       limit: 10,
-      platform: 'linkedin',
+      platforms: ['linkedin', 'instagram'],
       window: '90d',
     })
 
+    // Repeated, not joined: the server takes both, but the repeat is the shape
+    // it documents as preferred.
     expect(fetchMock.mock.calls[0][0]).toBe(
-      '/api/analytics/performers?window=90d&by=engagement_rate&limit=10&platform=linkedin',
+      '/api/analytics/performers?window=90d&by=engagement_rate&limit=10&platform=linkedin&platform=instagram',
     )
     // `limit` is per list, so ten asked for is up to twenty rows back.
     expect(envelope.data?.by).toBe('engagement_rate')
@@ -307,10 +347,11 @@ describe('fetchLearnings', () => {
       since: '2026-01-01',
       trendWindow: '6mo',
       metric: 'saves',
+      platforms: ['instagram'],
     })
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      '/api/analytics/learnings?since=2026-01-01&trend_window=6mo&metric=saves',
+      '/api/analytics/learnings?since=2026-01-01&trend_window=6mo&metric=saves&platform=instagram',
     )
     // Sunday is 0, as on /best-times — a Monday-first grid drawn straight off
     // these indices is wrong by a day.

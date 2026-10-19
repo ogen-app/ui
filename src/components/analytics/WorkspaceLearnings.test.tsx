@@ -78,12 +78,14 @@ function renderCard(
   result: Partial<typeof SETTLED> & {
     view?: ReturnType<typeof buildLearningsView>
   },
+  narrowedTo?: string[],
 ) {
   return render(
     <WorkspaceLearningsView
       result={{ ...SETTLED, ...result }}
       metric="reach"
       onChangeMetric={vi.fn()}
+      narrowedTo={narrowedTo}
     />,
   )
 }
@@ -208,5 +210,40 @@ describe('what the card says about its own scope', () => {
       screen.getByText(/From 74 posts that have run their course/i),
     ).toBeInTheDocument()
     expect(screen.getByText(/18 posts/)).toBeInTheDocument()
+  })
+})
+
+describe('under a platform filter', () => {
+  // The server narrows before its minimum support (CON-289), so one platform
+  // withdraws sections the whole workspace would have answered — and only the
+  // card can say that widening the filter is what brings them back.
+  const thin = () =>
+    buildLearningsView(
+      t,
+      'en',
+      learnings({
+        lifespan: { insufficient_history: true },
+        patterns: { insufficient_history: true },
+      }),
+    )
+
+  it('names the platforms it counted when a section withdrew', () => {
+    renderCard({ view: thin() }, ['Instagram'])
+
+    expect(screen.getByText(/Counted on Instagram alone/)).toBeInTheDocument()
+  })
+
+  it('says nothing about the filter when every section answered', () => {
+    renderCard({ view: buildLearningsView(t, 'en', learnings()) }, [
+      'Instagram',
+    ])
+
+    expect(screen.queryByText(/Counted on/)).toBeNull()
+  })
+
+  it('says nothing about a filter that is not on', () => {
+    renderCard({ view: thin() })
+
+    expect(screen.queryByText(/Counted on/)).toBeNull()
   })
 })

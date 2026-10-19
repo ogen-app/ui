@@ -706,13 +706,17 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   deliberate break-out.
 - **A control that doesn't govern the whole page doesn't go in the corner.**
   The top-right rule above says what *may* sit there, not that every view
-  switch must. Analytics' period and platform controls sit in a scope bar above
-  the cards (`WorkspaceScopeBar`) because neither reaches all three: the period
-  does not reach the all-time lessons card, and only `/performers` takes a
-  `platform`. What makes that safe is that the cards answer back —
-  `SectionCard`'s `scope` and `everyPlatform` print one line under the heading
-  naming the controls that do *not* reach it. A card silently ignoring a
-  control above it is worse than not offering the control.
+  switch must. Analytics' period sits in a scope bar above the cards
+  (`WorkspaceScopeBar`) because it does not reach the all-time lessons card,
+  and the platform marks sit beside it because the two are read together. What
+  makes that safe is that the cards answer back — `SectionCard`'s `scope`
+  prints one line under the heading when the period does *not* reach it. A card
+  silently ignoring a control above it is worse than not offering the control.
+  The platforms reach all three reads since CON-289: a repeatable `platform`
+  (Zernio slugs, the union), multi-select on screen, and **nothing chosen is
+  sent as no parameter**, never as every slug — so a selection that grows to
+  cover every connected platform collapses back to empty, and a platform
+  connected later is counted in a view that says it is the whole workspace.
 - **Charts are hand-rolled SVG, except the two full-card plots.**
   `components/analytics/charts.tsx` draws sparklines, heatmaps, the decay
   curve, the publication rail and the rank bars itself — every shape is a

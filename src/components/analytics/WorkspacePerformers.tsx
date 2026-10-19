@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatNumber } from '@/lib/intl'
+import { formatList, formatNumber } from '@/lib/intl'
 import { PaceBar, RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
 import { Picker } from './ComparisonBar'
@@ -41,10 +41,16 @@ export function WorkspacePerformersView({
   result,
   by,
   onChangeBasis,
+  narrowedTo = [],
 }: {
   result: AnalyticsPerformersResult
   by: PerformerSort
   onChangeBasis: (by: PerformerSort) => void
+  /**
+   * The names of the platforms the scope bar narrowed to, or empty for all of
+   * them — so an empty board says which platforms had nothing to rank.
+   */
+  narrowedTo?: readonly string[]
 }) {
   const { t } = useTranslation()
   const { view, isPending, isError, isUnavailable, isEmpty } = result
@@ -69,9 +75,19 @@ export function WorkspacePerformersView({
   if (isEmpty) {
     return (
       <Shell by={by} onChangeBasis={onChangeBasis} withPicker={false}>
-        <NotYet title={t('analytics.performers.emptyTitle')}>
-          {t('analytics.performers.emptyBody')}
-        </NotYet>
+        {narrowedTo.length > 0 ? (
+          <NotYet
+            title={t('analytics.performers.emptyNarrowedTitle', {
+              platforms: formatList([...narrowedTo]),
+            })}
+          >
+            {t('analytics.performers.emptyNarrowedBody')}
+          </NotYet>
+        ) : (
+          <NotYet title={t('analytics.performers.emptyTitle')}>
+            {t('analytics.performers.emptyBody')}
+          </NotYet>
+        )}
       </Shell>
     )
   }

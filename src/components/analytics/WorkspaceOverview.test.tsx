@@ -47,6 +47,24 @@ describe('WorkspaceOverviewView', () => {
     expect(screen.queryByText(/isn't switched on/i)).toBeNull()
   })
 
+  it('says which platforms had nothing, when the filter narrowed it', () => {
+    // Narrowed, `no_data` means nothing on these platforms. "Once this
+    // workspace starts publishing" would be false, and send the reader looking
+    // for a fault.
+    render(
+      <WorkspaceOverviewView
+        {...SETTLED}
+        isEmpty
+        narrowedTo={['LinkedIn', 'Instagram']}
+      />,
+    )
+
+    expect(
+      screen.getByText('Nothing measured on LinkedIn and Instagram'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Once this workspace starts/i)).toBeNull()
+  })
+
   it('says a failed request is a failed request', () => {
     render(<WorkspaceOverviewView {...SETTLED} isError />)
 

@@ -9,8 +9,8 @@ import { WorkspaceScopeBar } from './WorkspaceScopeBar'
  *
  * Worth testing rather than eyeballing because the states that matter are the
  * ones a developer's own workspace rarely has: one connected platform (where
- * the filter must not appear at all) and several (where exactly one is counted
- * at a time, because that is all the server can answer).
+ * the filter must not appear at all) and several (where any set of them can be
+ * counted, and every one of them is the same state as none).
  */
 
 const WINDOWS = [
@@ -25,11 +25,12 @@ const THREE = [
 ]
 
 function setup(props: Partial<Parameters<typeof WorkspaceScopeBar>[0]> = {}) {
-  const onPlatformChange = vi.fn()
+  const onSelectedChange = vi.fn()
   render(
     <WorkspaceScopeBar
       platforms={THREE}
-      onPlatformChange={onPlatformChange}
+      selected={[]}
+      onSelectedChange={onSelectedChange}
       window="28d"
       windows={WINDOWS}
       onWindowChange={vi.fn()}
@@ -37,7 +38,7 @@ function setup(props: Partial<Parameters<typeof WorkspaceScopeBar>[0]> = {}) {
     />,
     { wrapper: QueryWrapper },
   )
-  return { onPlatformChange }
+  return { onSelectedChange }
 }
 
 /** The platform marks — the buttons that carry a pressed state. */
@@ -70,39 +71,85 @@ describe('WorkspaceScopeBar', () => {
     }
   })
 
-  it('narrows to exactly one', async () => {
-    const { onPlatformChange } = setup()
+  it('narrows to the first platform chosen', async () => {
+    const { onSelectedChange } = setup()
     await userEvent.click(screen.getByRole('button', { name: /LinkedIn/ }))
 
-    expect(onPlatformChange).toHaveBeenCalledWith('linkedin')
+    // Not "everything but LinkedIn": from the whole workspace the useful first
+    // move is towards one platform.
+    expect(onSelectedChange).toHaveBeenCalledWith(['linkedin'])
   })
 
-  it('shows only the chosen platform as counted', () => {
-    setup({ platform: 'linkedin' })
+  it('adds a second platform to the first', async () => {
+    const { onSelectedChange } = setup({ selected: ['linkedin'] })
+    await userEvent.click(screen.getByRole('button', { name: /Instagram/ }))
+
+    expect(onSelectedChange).toHaveBeenCalledWith(['linkedin', 'instagram'])
+  })
+
+  it('shows only the chosen platforms as counted', () => {
+    setup({ selected: ['linkedin', 'facebook'] })
 
     const pressed = marks().filter(
       (m) => m.getAttribute('aria-pressed') === 'true',
     )
-    expect(pressed).toHaveLength(1)
+    expect(pressed).toHaveLength(2)
     expect(pressed[0]).toHaveAccessibleName(/LinkedIn/)
+    expect(pressed[1]).toHaveAccessibleName(/Facebook/)
   })
 
-  it('lets the chosen platform be pressed again to clear', async () => {
-    const { onPlatformChange } = setup({ platform: 'linkedin' })
+  it('takes a chosen platform back out', async () => {
+    const { onSelectedChange } = setup({ selected: ['linkedin', 'facebook'] })
+    await userEvent.click(screen.getByRole('button', { name: /Facebook/ }))
+
+    expect(onSelectedChange).toHaveBeenCalledWith(['linkedin'])
+  })
+
+  it('returns to everything when the last chosen one is pressed again', async () => {
+    const { onSelectedChange } = setup({ selected: ['linkedin'] })
     await userEvent.click(screen.getByRole('button', { name: /LinkedIn/ }))
 
     // Without this the only way out of a filter is to guess which other control
     // clears it — and a filter left on is a filtered screenshot read as the
     // whole picture.
-    expect(onPlatformChange).toHaveBeenCalledWith(undefined)
+    expect(onSelectedChange).toHaveBeenCalledWith([])
+  })
+
+  it('reads every platform chosen as none chosen', async () => {
+    const { onSelectedChange } = setup({ selected: ['linkedin', 'facebook'] })
+    await userEvent.click(screen.getByRole('button', { name: /Instagram/ }))
+
+    // Sent as the full list it would leave out a platform connected tomorrow,
+    // in a view that looks like the whole workspace.
+    expect(onSelectedChange).toHaveBeenCalledWith([])
+  })
+
+  it('ignores a chosen platform that has no mark any more', () => {
+    // LinkedIn lost its last account while it was chosen. Counting it as
+    // chosen would leave a filter on that nothing on screen can switch off.
+    setup({
+      platforms: [
+        { id: 'instagram', label: 'Instagram', accounts: 2 },
+        { id: 'linkedin', label: 'LinkedIn', accounts: 0 },
+        { id: 'facebook', label: 'Facebook', accounts: 1 },
+      ],
+      selected: ['linkedin'],
+    })
+
+    for (const mark of marks()) {
+      expect(mark).toHaveAttribute('aria-pressed', 'true')
+    }
+    expect(
+      screen.queryByRole('button', { name: 'ALL PLATFORMS' }),
+    ).not.toBeInTheDocument()
   })
 
   it('offers a way back only while it is narrowed', async () => {
-    const { onPlatformChange } = setup({ platform: 'linkedin' })
+    const { onSelectedChange } = setup({ selected: ['linkedin', 'facebook'] })
     const clear = screen.getByRole('button', { name: 'ALL PLATFORMS' })
     await userEvent.click(clear)
 
-    expect(onPlatformChange).toHaveBeenCalledWith(undefined)
+    expect(onSelectedChange).toHaveBeenCalledWith([])
   })
 
   it('does not offer a way back from a state it is already in', () => {

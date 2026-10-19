@@ -9,29 +9,32 @@ import { usePlatformCatalog } from '@/hooks/usePlatforms'
  * What the dashboard is counting, and over what window.
  *
  * The controls live here rather than in the page header. The corner is for
- * things that govern the page (CON-178), and neither of these does: the period
- * does not reach the lessons card, and the platform reaches only the board. A
- * control in the corner claims a reach it has not got, and the fix is not a
- * smaller claim in the corner but a bar the cards can answer back to — which is
- * what the scope notes under their headings now do.
+ * things that govern the page (CON-178), and the period does not: it does not
+ * reach the lessons card, which says so under its heading. The platforms do
+ * reach all three cards since CON-289, but they sit with the period because the
+ * pair is only ever read together — what is in the numbers, and how far back.
  *
- * **One platform at a time, deliberately.** `GET /analytics/performers` takes a
- * single `platform`, and neither `/overview` nor `/learnings` takes one at all.
- * A multi-select would have to send "two of my four" as *all four* and let the
- * page look filtered while it wasn't — the failure the campaign surface's
- * filter is written to avoid, inverted. Until the API can narrow by more than
- * one, this control offers exactly what the server can answer: everything, or
- * one platform.
+ * **Several platforms at once, and nothing chosen means all of them.** The
+ * empty selection is sent as no `platform` at all, which the server reads as
+ * every platform — including one connected tomorrow. So a selection that grows
+ * to cover every connected platform collapses back to empty rather than being
+ * sent as the full list, and "all" is one state, not two that look alike.
  *
- * The marks are the app's own platform logos, greyed when they are not the one
- * being counted, because the filter's state has to be legible from across a
- * desk — a screenshot of one platform's numbers read as the workspace's is the
- * thing this bar exists to prevent.
+ * From everything, a click narrows *to* that platform rather than switching it
+ * off: the question this bar is for is "how do LinkedIn and Instagram compare",
+ * which is two clicks this way and three-of-five switched off the other way.
+ * After that each mark toggles, and switching off the last one is the way back
+ * to everything.
+ *
+ * The marks are the app's own platform logos, greyed when they are not being
+ * counted, because the filter's state has to be legible from across a desk — a
+ * screenshot of one platform's numbers read as the workspace's is the thing
+ * this bar exists to prevent.
  */
 export function WorkspaceScopeBar({
   platforms,
-  platform,
-  onPlatformChange,
+  selected,
+  onSelectedChange,
   window,
   windows,
   onWindowChange,
@@ -39,12 +42,11 @@ export function WorkspaceScopeBar({
 }: {
   platforms: PlatformOption[]
   /**
-   * The platform being counted, or `undefined` for every one of them. Our
-   * platform id, not the wire slug — the caller maps it on the way to the
-   * request, because the two differ (`x` here is `twitter` there).
+   * The platforms being counted, as Zernio slugs — empty for every one of
+   * them. Never every slug spelled out: see above.
    */
-  platform?: string
-  onPlatformChange: (platform: string | undefined) => void
+  selected: readonly string[]
+  onSelectedChange: (selected: string[]) => void
   window: string
   windows: readonly { readonly window: string; readonly label: string }[]
   onWindowChange: (window: string) => void
@@ -60,6 +62,20 @@ export function WorkspaceScopeBar({
   const filterable = connected.length > 1
   const current = windows.find((w) => w.window === window) ?? windows[0]
 
+  // Only what can be pressed counts as chosen. A platform that lost its last
+  // account while chosen has no mark left to switch it off with.
+  const chosen = selected.filter((id) => connected.some((p) => p.id === id))
+  const narrowed = chosen.length > 0
+
+  const toggle = (id: string) => {
+    const next = !narrowed
+      ? [id]
+      : chosen.includes(id)
+        ? chosen.filter((c) => c !== id)
+        : [...chosen, id]
+    onSelectedChange(next.length === connected.length ? [] : next)
+  }
+
   return (
     <section
       className={cn(
@@ -73,22 +89,20 @@ export function WorkspaceScopeBar({
             <PlatformMark
               key={option.id}
               platform={option}
-              on={platform === undefined || platform === option.id}
-              onSelect={() =>
-                // Pressing the one already chosen is the way back to everything.
-                // Without it the only route out of a filter is to guess that
-                // some other control clears it.
-                onPlatformChange(platform === option.id ? undefined : option.id)
-              }
+              on={!narrowed || chosen.includes(option.id)}
+              onSelect={() => toggle(option.id)}
             />
           ))}
 
-          {platform !== undefined && (
+          {/* The way back in one click, whatever was chosen. Switching marks off
+              one at a time to undo a filter is the small cost that makes people
+              leave one on. */}
+          {narrowed && (
             <Button
               variant="ghost"
               size="sm"
               className="ml-1"
-              onClick={() => onPlatformChange(undefined)}
+              onClick={() => onSelectedChange([])}
             >
               {t('analytics.scopeBar.allPlatforms')}
             </Button>

@@ -200,8 +200,15 @@ as *never*, not as a date in the year 1.
 ## 3. What the flag is still waiting for
 
 The original blocker — "a campaign dimension on `GET /api/analytics/posts`" —
-**did not land**. All three new endpoints are tenant-scoped; only `/performers`
-filters, and only by platform. So:
+**did not land**. All three new endpoints are tenant-scoped. Since CON-289
+(ogen#186, merged 2026-10-03) each takes a repeatable `platform` — Zernio slugs,
+the union, absent for every platform, an unknown slug a 400
+`invalid_platform` — and the client sends it from the scope bar's marks, one
+param per platform and none at all for "all". `/learnings` narrows *before* its
+minimum-support floors, so a single platform's thin history withdraws sections
+with `insufficient_history`; the card says which platforms it counted when that
+happens. `GET /api/analytics/posts?platform=` was left alone server-side — one
+value, matched on the display name — and nothing here sends it. So:
 
 1. **A campaign dimension.** `campaign_id` on the dashboard reads, or a campaign
    column on the rows. Nothing else unblocks the campaign screen, which is what

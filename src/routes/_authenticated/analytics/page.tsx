@@ -40,15 +40,17 @@ import type { LearningsMetric, PerformerSort } from '@/types/analytics'
  * in their own headings; the third takes no window at all and says "All time —
  * not affected by the period above" under its title. A card that quietly
  * ignored the control above it would be the worst of the three options.
+ *
+ * The platforms, by contrast, reach all three (CON-289) — so the scope bar's
+ * marks are a filter on the page, and no card has to disclaim them.
  */
 export function AnalyticsPage() {
   const [window, setWindow] = useState<string>(DEFAULT_OVERVIEW_WINDOW)
-  // Zernio's wire slug, which since CON-292 is the one identifier both ends
-  // understand: the dictionary that draws the marks is filed under it, and the
-  // board is the read the server narrows by it. It used to be our sqid, with a
-  // translation on the way to the request — but a sqid is a row address the
-  // server mints, and it was never the thing either side was naming.
-  const [platform, setPlatform] = useState<string | undefined>(undefined)
+  // Zernio's wire slugs, which since CON-292 are the one identifier both ends
+  // understand: the dictionary that draws the marks is filed under them, and
+  // all three reads narrow by them (CON-289). Empty is every platform, and is
+  // sent as no parameter at all.
+  const [selected, setSelected] = useState<string[]>([])
   // The board's own control, held here because it is a query parameter rather
   // than a view of what is already loaded — the server ranks and sends two
   // clamped ends, so re-ranking is a refetch.
@@ -66,14 +68,19 @@ export function AnalyticsPage() {
     accounts: connectedAccounts(view).length,
   }))
 
-  const overview = useAnalyticsOverview(window)
-  const performers = useAnalyticsPerformers(window, by, platform)
-  const learnings = useAnalyticsLearnings(metric)
+  // What is actually counted: only platforms the bar still draws a mark for.
+  // One that lost its last account while chosen, or the only one left
+  // connected, has no mark to switch it off with — and a filter nobody can see
+  // must not be narrowing the numbers.
+  const connected = platforms.filter((p) => p.accounts > 0)
+  const counted =
+    connected.length > 1 ? connected.filter((p) => selected.includes(p.id)) : []
+  const slugs = counted.map((p) => p.id)
+  const narrowedTo = counted.map((p) => p.label)
 
-  // Whether a filter the two standing cards cannot honour is on screen at all.
-  // The bar hides its marks when only one platform is connected, and a card
-  // must not disclaim a control the reader cannot see.
-  const filterable = platforms.filter((p) => p.accounts > 0).length > 1
+  const overview = useAnalyticsOverview(window, slugs)
+  const performers = useAnalyticsPerformers(window, by, slugs)
+  const learnings = useAnalyticsLearnings(metric, slugs)
 
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
@@ -85,29 +92,30 @@ export function AnalyticsPage() {
           five figures provoke exactly one follow-up and the board is it, and only
           once you have seen both is "so what should we do differently" a question
           rather than a slogan. It is last for a second reason — it is the one
-          card the controls above reach least, and the reader meets it having
-          already used them.
+          card the period above does not reach, and the reader meets it having
+          already used it.
         */}
         <div className="flex flex-col gap-3 px-3 lg:px-6 pt-4 pb-10">
           <WorkspaceScopeBar
             platforms={platforms}
-            platform={platform}
-            onPlatformChange={setPlatform}
+            selected={selected}
+            onSelectedChange={setSelected}
             window={window}
             windows={OVERVIEW_WINDOWS}
             onWindowChange={setWindow}
           />
-          <WorkspaceOverviewView {...overview} everyPlatform={filterable} />
+          <WorkspaceOverviewView {...overview} narrowedTo={narrowedTo} />
           <WorkspacePerformersView
             result={performers}
             by={by}
             onChangeBasis={setBy}
+            narrowedTo={narrowedTo}
           />
           <WorkspaceLearningsView
             result={learnings}
             metric={metric}
             onChangeMetric={setMetric}
-            everyPlatform={filterable}
+            narrowedTo={narrowedTo}
           />
         </div>
       </div>

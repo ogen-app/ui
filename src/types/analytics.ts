@@ -220,10 +220,9 @@ export type PostAnalyticsAnswer = PostAnalyticsSnapshot | PostAnalyticsPending
  *
  * Two things about them that catch a client out, said once here:
  *
- * - **Everything is tenant-scoped.** None of the three takes a `campaign_id`,
- *   and only `/performers` takes a `platform`. A campaign screen still cannot
- *   ask the server its own question — which is why `campaign-analytics` is
- *   still off.
+ * - **Everything is tenant-scoped.** All three take a repeatable `platform`
+ *   (Zernio slugs, the union; CON-289), and none of them is read by campaign
+ *   here — which is why `campaign-analytics` is still off.
  * - **Every window is resolved by the server and echoed back.** Never re-derive
  *   the dates from the shorthand that was sent: `28d` includes today, so its
  *   `from` is 27 days back, and a client that computes its own labels drifts by
