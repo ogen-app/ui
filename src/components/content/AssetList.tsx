@@ -9,12 +9,16 @@ import {
 import { useTranslation } from 'react-i18next'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { ArrowDown01Icon } from '@hugeicons/core-free-icons'
+import {
+  PINNED_BAND,
+  scrollerOf,
+  usePinnedBands,
+} from '@/components/page-primitives/pinnedBands'
 import { ZIndex } from '@/config/zIndex'
 import { useCampaignNames } from '@/hooks/useCampaignNames'
 import { cn } from '@/lib'
 import type { AssetGrouping } from '@/lib/assetFilter'
 import { formatNumber } from '@/lib/intl'
-import { findScrollParent } from '@/lib/scrollParent'
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { AssetGroupCount, AssetListItem } from '@/types/assetList'
 import { AssetListRow } from './AssetListRow'
@@ -47,39 +51,6 @@ type Props = {
   className?: string
 }
 
-/**
- * Where a band pins: the foot of the page header, whose 80px fade (24px over
- * the title, the 40px row, 16px under) the list scrolls under (CON-392).
- */
-const BAND_TOP = 80
-
-/**
- * The page's scroller: the `ScrollArea`'s viewport, found by what it is
- * rather than by its overflow — Radix sets that only once its bar mounts.
- */
-function scrollerOf(el: HTMLElement | null): HTMLElement | null {
-  return (
-    el?.closest<HTMLElement>('[data-radix-scroll-area-viewport]') ??
-    findScrollParent(el)
-  )
-}
-
-/**
- * Marks the bands stuck at `BAND_TOP` as pinned. Bands are siblings in one
- * list, so a later one stacks over an earlier one at the same line rather
- * than pushing it off — each stuck band carries the cap, and the top one is
- * what shows. A pixel's slack for zoom and fractional layout.
- */
-function markPinned(list: HTMLElement) {
-  const scroller = scrollerOf(list)
-  if (!scroller) return
-  const top = scroller.getBoundingClientRect().top + BAND_TOP
-  for (const band of list.querySelectorAll<HTMLElement>('[data-band]')) {
-    const at = band.getBoundingClientRect().top
-    band.toggleAttribute('data-pinned', at <= top + 1)
-  }
-}
-
 /** A band's id in the folded set: the grouping and its key. */
 const bandId = (grouping: AssetGrouping, key: string) => `${grouping}:${key}`
 
@@ -96,7 +67,7 @@ const bandId = (grouping: AssetGrouping, key: string) => `${grouping}:${key}`
  * `position: sticky` on each band inside the *page's* scroller (CON-392): the
  * list has none of its own, so the sentence and the Group by line scroll away
  * with it, and a band pins at the foot of the page header's 80px fade
- * (`BAND_TOP`). A pinned band carries the page background up behind the
+ * (`BAND_TOP`, `pinnedBands`). A pinned band carries the page background up behind the
  * header, so rows never show through the fade's transparent half — only while
  * pinned, or it would cover the last rows of the group above it. The band is
  * the page's own colour, with one hairline under it, so it reads as the page
@@ -185,39 +156,7 @@ export function AssetList({
     return () => observer.disconnect()
   }, [hasRows])
 
-  // Which band is pinned: the one sitting exactly at `BAND_TOP`. Marked on
-  // the element rather than held in state — it changes on every scroll, and
-  // all it switches is the cap behind the header. Marked on scroll, and again
-  // whenever the bands themselves change — a new grouping, a fold, the next
-  // page — since those move bands without a scroll event.
-  useEffect(() => {
-    const list = listRef.current
-    if (!list) return
-    let frame = 0
-    // On the document, in the capture phase: a scroll event does not bubble,
-    // and the page's scroller may not be one yet when this runs — Radix makes
-    // its viewport scrollable only once its bar has mounted, which on a warm
-    // cache is after the rows. Anything scrolling re-marks; `markPinned` finds
-    // the scroller when it measures.
-    const onScroll = () => {
-      if (frame) return
-      frame = requestAnimationFrame(() => {
-        frame = 0
-        markPinned(list)
-      })
-    }
-    document.addEventListener('scroll', onScroll, {
-      capture: true,
-      passive: true,
-    })
-    return () => {
-      document.removeEventListener('scroll', onScroll, { capture: true })
-      if (frame) cancelAnimationFrame(frame)
-    }
-  }, [hasRows])
-  useLayoutEffect(() => {
-    if (listRef.current) markPinned(listRef.current)
-  }, [entries, collapsed, grouping])
+  usePinnedBands(listRef, hasRows, [entries, collapsed, grouping])
 
   if (rows.length === 0) {
     return <div className={cn('min-h-50', className)}>{emptyState}</div>
@@ -295,14 +234,9 @@ function Band({
   return (
     <li
       data-band
-      className={cn(
-        // The page's own colour and one hairline under it: the band reads as
-        // the page continuing, not a strip of a second grey.
-        'sticky top-20 border-b border-quaternary bg-background',
-        // Pinned, a cap of page background up behind the header, so no row
-        // shows through the fade's transparent half.
-        "before:absolute before:inset-x-0 before:bottom-full before:hidden before:h-20 before:bg-background before:content-[''] data-pinned:before:block",
-      )}
+      // Pinned under the page header, the page's own colour, the cap behind
+      // the header while pinned (`pinnedBands`).
+      className={PINNED_BAND}
       style={{ zIndex: ZIndex.stickyTableHeader }}
     >
       <h2>

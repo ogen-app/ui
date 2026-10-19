@@ -151,6 +151,15 @@ describe('IdeasQuerySurface', () => {
     ).toBeInTheDocument()
   })
 
+  it('draws one "No grouping" band when the list is not grouped', async () => {
+    await renderSurface({ group: 'none' })
+    await screen.findByText('Idea a')
+    // The list always has an edge to pin under the page header (CON-392).
+    const bands = screen.getAllByRole('heading', { level: 2 })
+    expect(bands).toHaveLength(1)
+    expect(bands[0]).toHaveTextContent('No grouping2')
+  })
+
   it('draws a band per group, counted over the whole match', async () => {
     await renderSurface({ group: 'source' })
 

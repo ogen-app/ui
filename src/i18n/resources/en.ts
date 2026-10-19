@@ -990,6 +990,10 @@ export const en = {
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
     },
+    page: {
+      campaignTitle: '{{campaign}} Ideas',
+      untitledCampaign: 'Untitled campaign',
+    },
     loadFailed: 'Unable to load ideas',
     saveFailed: 'Could not save that. Your ideas are unchanged.',
   },

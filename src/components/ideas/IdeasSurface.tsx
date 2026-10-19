@@ -1,5 +1,7 @@
+import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import type { IdeaListSearch } from '@/lib/ideaFilter'
 import { IdeasQuerySurface } from './query/IdeasQuerySurface'
 
@@ -29,16 +31,23 @@ import { IdeasQuerySurface } from './query/IdeasQuerySurface'
  * One component for both levels. The campaign's Ideas page is this with
  * `campaignId` set: the same rows, scoped, and captures made there belong to
  * that campaign.
+ *
+ * **The post page's scroll frame** (CON-392), at both levels: the header
+ * sticky inside one `ScrollArea`, carrying its own 80px fade; the capture
+ * field, the sentence, the piles and the list scrolling under it, the list's
+ * bands pinning at the header's foot (`pinnedBands`); `PageBottomFader` along
+ * the bottom. The campaign layout hands this section its whole page, as it
+ * does Assets, so the header is drawn here at both levels.
  */
 export function IdeasSurface({
   campaignId = null,
-  /** Given at workspace level, where this owns the page header. */
+  /** The page header's title: "Ideas", or the campaign's "… Ideas". */
   heading,
   search,
   onSearchChange,
 }: {
   campaignId?: string | null
-  heading?: string
+  heading: string
   /** The list's address: its filter, pile, sort and grouping. */
   search: IdeaListSearch
   onSearchChange: (next: IdeaListSearch) => void
@@ -51,19 +60,18 @@ export function IdeasSurface({
     />
   )
 
-  // The campaign layout owns the header for its sections, so at that level
-  // this renders bare, in the frame the layout gives it.
-  if (!heading) return body
-
-  // The Assets page's frame: the header, then a body that does not scroll —
-  // the list scrolls itself, so its group bands can stay pinned.
   return (
-    <PageContainer variant="fullFlex">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <PageHeader title={heading} />
-        <div className="grid min-h-0 flex-1 overflow-hidden px-3 lg:px-6">
-          {body}
-        </div>
+    <PageContainer variant="fullFlex" className="page-content-motion">
+      <div className="relative flex min-h-0 flex-1">
+        <ScrollArea
+          className="min-h-0 flex-1"
+          type="scroll"
+          scrollHideDelay={350}
+        >
+          <PageHeader title={heading} />
+          <div className="px-3 lg:px-6">{body}</div>
+        </ScrollArea>
+        <PageBottomFader />
       </div>
     </PageContainer>
   )

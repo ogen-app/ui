@@ -157,7 +157,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   by `formatListParts`, and on Assets the type is the subject ("Showing
   PDFs, in …"). Never assemble a clause from fragments. Both lists have
   smart groups through the same `SavedViewsMenu` and `useSavedViews(surface)`,
-  on the workspace page only. Bulk delete is
+  on the workspace page only. Both pages use the post page's scroll frame
+  (CON-392): `PageHeader` sticky inside one `ScrollArea`, the whole page
+  scrolling under its fade, `PageBottomFader` along the bottom, and group
+  bands pinning at the header's foot through `page-primitives/pinnedBands` —
+  always at least one band ("No grouping"), in the page's own colour, capped
+  behind the header while pinned. The campaign layout hands both sections
+  their whole page. Bulk delete is
   `POST /api/ideas/bulk-delete` in batches of 500, and select-all is
   `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
   `idea_read_only`); only its campaign may change.
