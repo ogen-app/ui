@@ -114,10 +114,13 @@ export function IdeasQuerySurface({
   campaignId,
   search,
   onSearchChange,
+  onHasMoreChange,
 }: {
   campaignId: string | null
   search: IdeaListSearch
   onSearchChange: (next: IdeaListSearch) => void
+  /** Whether a further page is still to load — the page's bottom fader asks. */
+  onHasMoreChange?: (hasMore: boolean) => void
 }) {
   const { t, i18n } = useTranslation()
   // The clock and the zone the presets are read in, once a visit.
@@ -143,6 +146,10 @@ export function IdeasQuerySurface({
   const facets = useMemo(() => ideaFacetsFor(campaignId), [campaignId])
   const list = useIdeaList(params, facets)
   const { rows, total, totalUnfiltered, piles, groups, query } = list
+  const hasMore = !!query.hasNextPage
+  useEffect(() => {
+    onHasMoreChange?.(hasMore)
+  }, [hasMore, onHasMoreChange])
   const writer = useIdeaListWriter({ campaignId })
   // Smart groups are the workspace page's (§5); a campaign's has none yet.
   const groupsOn = campaignId === null

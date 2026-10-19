@@ -1,6 +1,8 @@
+import { useRef, useState } from 'react'
 import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
+import { useAtScrollEnd } from '@/components/page-primitives/useAtScrollEnd'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { IdeaListSearch } from '@/lib/ideaFilter'
 import { IdeasQuerySurface } from './query/IdeasQuerySurface'
@@ -52,11 +54,16 @@ export function IdeasSurface({
   search: IdeaListSearch
   onSearchChange: (next: IdeaListSearch) => void
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const atEnd = useAtScrollEnd(scrollRef)
+  /** Whether the list has a further page to load, as the list reports it. */
+  const [hasMore, setHasMore] = useState(false)
   const body = (
     <IdeasQuerySurface
       campaignId={campaignId}
       search={search}
       onSearchChange={onSearchChange}
+      onHasMoreChange={setHasMore}
     />
   )
 
@@ -64,6 +71,7 @@ export function IdeasSurface({
     <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="relative flex min-h-0 flex-1">
         <ScrollArea
+          ref={scrollRef}
           className="min-h-0 flex-1"
           type="scroll"
           scrollHideDelay={350}
@@ -71,7 +79,9 @@ export function IdeasSurface({
           <PageHeader title={heading} />
           <div className="px-3 lg:px-6">{body}</div>
         </ScrollArea>
-        <PageBottomFader />
+        {/* Gone once the list has nothing below it: scrolled to its end
+            with no further page to load. */}
+        <PageBottomFader hidden={atEnd && !hasMore} />
       </div>
     </PageContainer>
   )

@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
+import { useAtScrollEnd } from '@/components/page-primitives/useAtScrollEnd'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { Button } from '@/components/ui/button'
@@ -156,6 +157,8 @@ export function ContentPage({
   )
   const params = useMemo(() => paramsFor(filter), [paramsFor, filter])
   const list = useAssetList(params, { facets: facetsFor(scope) })
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const atEnd = useAtScrollEnd(scrollRef)
   const vocabulary = useFilterVocabulary({
     facets: list.facets,
     scoped: !!campaign,
@@ -469,6 +472,7 @@ export function ContentPage({
           area so it covers the content without scrolling away. */}
       <div className="relative flex min-h-0 flex-1">
         <ScrollArea
+          ref={scrollRef}
           className="min-h-0 flex-1"
           type="scroll"
           scrollHideDelay={350}
@@ -650,7 +654,9 @@ export function ContentPage({
             )}
           </div>
         </ScrollArea>
-        <PageBottomFader />
+        {/* Gone once the list has nothing below it: scrolled to its end
+            with no further page to load. */}
+        <PageBottomFader hidden={atEnd && !list.query.hasNextPage} />
       </div>
 
       {isDragging && (
