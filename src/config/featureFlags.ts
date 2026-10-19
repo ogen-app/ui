@@ -176,30 +176,19 @@ const FEATURE_FLAGS = {
    * that panel, and the calendar-wide answer the per-view `image` field is
    * copied from (`useCalendarSettings`).
    *
-   * **Waiting on:** CON-247. The switch has never done anything and could not:
-   * a card's only image source is `post.media_urls`, and nothing writes it.
-   * Editor uploads land in `post_attachments`, which `GET /api/campaigns/:id/
-   * posts` does not join — and that table's `thumbnail_url` is a 15-minute
-   * presigned GET, so copying one into `media_urls` would store a URL that is
-   * dead within the hour. The fix is the server's: a thumbnail on the post list
-   * payload, from a durable key the way `assets` already does it.
+   * **On since 2026-10-19 (CON-247).** The card reads the server's `cover_url`
+   * off the post list rows (ogen#185, signed since CON-368's ogen#216), and was
+   * re-tested against the local API: present on a post with a drawable file and
+   * absent on one without, the week's full band and the month's short one, and
+   * a cover that fails to load dropped rather than drawn broken.
    *
-   * So this is a flag over a control rather than a feature — it was on by
-   * default and inert, which is worse than absent: a switch that is already
-   * *on* tells the user the pictures are missing for some other reason, and the
-   * one thing it can't be read as is "not built yet". Hidden, the panel stops
-   * making a promise the calendar can't keep.
-   *
-   * Nothing else changes with it off. The stored preference is left alone, so
-   * whatever a user set comes back when this is switched on, and the card
-   * renders exactly as it does today either way — it has no picture to draw.
-   *
-   * Switch this on when the payload carries a thumbnail, and re-test against
-   * a real one: the card reserves a band for the image and the month view only
-   * offers it where a cell has room (`cardRungs`), neither of which has ever
-   * been seen with an actual picture in it.
+   * Only the control is behind this. The card draws a cover whenever the
+   * preference is on, and the preference defaults on — so with this off the
+   * pictures still show and nobody can turn them off. Delete the flag, and the
+   * `imagesEnabled` branch in `CalendarSettingsPanel`, at the first flag review
+   * after a deploy.
    */
-  'calendar-card-images': false,
+  'calendar-card-images': true,
 
   /**
    * Deleting one saved version of a post, from the version-history panel

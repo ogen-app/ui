@@ -179,9 +179,9 @@ function WeeklyCalendarComponent({
               resolvePlatform(post.platform_id),
             ),
           // Truthiness, exactly as the card decides whether to draw the band
-          // (`media_urls[0]` there too) — `length > 0` would charge a 100px
-          // band for a post whose first URL is the empty string.
-          hasImage: Boolean(post.media_urls[0]),
+          // (`cover_url` there too) — a present-but-empty URL must not be
+          // charged a 100px band the card then leaves blank.
+          hasImage: Boolean(post.cover_url),
           // As the card decides whether to draw the row: a campaign that came
           // back unhydrated has no name to print, so it costs no height.
           hasCampaign: Boolean(post.campaign),

@@ -11,6 +11,7 @@ import {
 } from '@/services/api/posts'
 import { invalidateCampaignPosts } from '@/lib/postCache'
 import { atDefaultTime } from '@/lib/postSchedule'
+import { PRESIGN_REFRESH_MS } from '@/lib/presignedUrls'
 import { campaignPostsKey, WORKSPACE_POSTS_KEY } from '@/lib/queryKeys'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
 import { toast } from '@/stores/toastStore'
@@ -29,6 +30,12 @@ export function useCampaignPosts(campaignId: string) {
     queryKey: campaignPostsKey(campaignId),
     queryFn: () => listCampaignPosts(campaignId),
     enabled: !!campaignId,
+    // Each row's `cover_url` is a 15-minute presigned GET (CON-247/368). The
+    // list is one request per campaign and has no range, so paging the
+    // calendar never refetches it — without this a calendar left open would
+    // start drawing expired covers on the next week it showed.
+    refetchInterval: PRESIGN_REFRESH_MS,
+    refetchIntervalInBackground: false,
   })
 
   const streamed = useAssistantStore(selectStreamedPosts(campaignId))
@@ -83,6 +90,9 @@ export function useWorkspacePosts() {
   const query = useQuery({
     queryKey: WORKSPACE_POSTS_KEY,
     queryFn: listPosts,
+    // The same presigned `cover_url` on every row, for the workspace calendar.
+    refetchInterval: PRESIGN_REFRESH_MS,
+    refetchIntervalInBackground: false,
   })
 
   const data = useMemo(

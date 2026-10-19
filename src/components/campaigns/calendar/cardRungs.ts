@@ -69,7 +69,7 @@ export type CardFacts = {
    * surface — a ladder that hides them has optimised away its own point.
    */
   hasFlag?: boolean
-  /** The post has a picture to be backed by — `media_urls[0]`. */
+  /** The post has a picture to be backed by — its `cover_url`. */
   hasImage?: boolean
   /**
    * The post's campaign came back hydrated, so there is a name to draw. Only
