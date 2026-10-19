@@ -567,6 +567,8 @@ export const es: Translation = {
       openSource: 'Abrir la fuente',
       filedUnder: 'Archivada en',
       change: 'Cambiar',
+      owner: 'Responsable',
+      noOwner: 'Sin responsable',
       unscored:
         'Las ideas escritas no tienen puntuación: la puntuación valora lo que un análisis leyó frente a su briefing.',
       savedOnBlur: 'Se guarda al salir de cada campo',

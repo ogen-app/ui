@@ -418,6 +418,28 @@ const FEATURE_FLAGS = {
    * that way.
    */
   'content-formats': false,
+
+  /**
+   * An owner on each idea — the person it belongs to (`IdeaOwnerLine` on the
+   * opened card, both kinds).
+   *
+   * In a workspace of one the owner is that member, stated and not offered:
+   * there is no picker and no *No owner*, because there is no other answer.
+   * With two or more it is a picker, unowned by default.
+   *
+   * This revises `lib/ideas.ts`'s "an idea has no assignee". An owner is not
+   * an assignee in the task sense — nothing is due and nothing drains — it
+   * names who to ask about it. Settle that wording before this ships.
+   *
+   * **Waiting on** a nullable `owner_id` on `/api/ideas` (a membership id,
+   * presence-aware on the PATCH like `campaign_id`), **stamped with the sole
+   * member at capture and at analysis while the workspace has one** — so the
+   * record agrees with what the card states once a second member joins — and
+   * `owner` as a filter field and a grouping beside `author`. Until then an
+   * owner lives in a `localStorage` sidecar (`services/api/ideaOwnerLocal.ts`),
+   * per browser, and the sole member is derived rather than stored.
+   */
+  'idea-owner': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

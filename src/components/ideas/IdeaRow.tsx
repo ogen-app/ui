@@ -38,6 +38,7 @@ import {
   type Answer,
 } from './card/IdeaCardParts'
 import { pileOf } from './card/ideaRow'
+import { IdeaOwnerLine } from './IdeaOwner'
 import { sourceFacts } from './card/sourceFacts'
 import { VerdictControls, type Decide } from './VerdictControls'
 
@@ -475,6 +476,7 @@ function AnalysedBody({
       <FitSection idea={idea} scoredFor={scoredFor(t, idea, nameOf)} />
       <SourceSection idea={idea} sources={parts?.sources ?? []} />
       {showCampaign && <FiledUnder idea={idea} onEdit={onEdit} />}
+      <IdeaOwnerLine ideaId={idea.id} />
       <AnswerGroup
         idea={idea}
         now={now}
@@ -573,6 +575,7 @@ function WrittenBody({
         <p>{t('ideas.card.unscored')}</p>
       </div>
       {showCampaign && <FiledUnder idea={idea} onEdit={onEdit} />}
+      <IdeaOwnerLine ideaId={idea.id} />
       <AnswerGroup
         idea={idea}
         now={now}

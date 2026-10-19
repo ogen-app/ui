@@ -712,6 +712,9 @@ export const en = {
       openSource: 'Open source',
       filedUnder: 'Filed under',
       change: 'Change',
+      /** Behind `idea-owner`: who an idea belongs to. */
+      owner: 'Owner',
+      noOwner: 'No owner',
       unscored:
         'Written ideas have no score: a score rates what an analysis read against its brief.',
       savedOnBlur: 'Saved as you leave a field',
