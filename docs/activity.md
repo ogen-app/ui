@@ -209,8 +209,10 @@ reach, both of them listed here as "widens later":
 - **Why a post failed.** `failure_reason` rides along the same way, as
   `<code>: <message>` — every terminal write goes through one function that
   prefixes a stable code. The report words the code with the sentence the post's
-  own screen uses (`lib/postFailure`, CON-200) and shows a code this build
-  predates as it arrived. A separate `code` field is still the tidier ask
+  own screen uses (`lib/postFailure`, CON-200), in the form that stands on one
+  line — a code this build predates gets a generic sentence, and what the
+  service answered stays on the post's own screen, which the row links to. A
+  separate `code` field is still the tidier ask
   (`open-questions.md` S4).
 
 What it cost is the **per-campaign breakdown**, which the computed version had

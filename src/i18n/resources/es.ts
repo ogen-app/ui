@@ -2385,8 +2385,11 @@ export const es: Translation = {
         'Ya se envió un contenido idéntico en las últimas 24 horas, así que el servicio de publicación lo rechazó. Cambia el texto y vuelve a programarla.',
       rejected:
         'El servicio de publicación rechazó esta publicación. Respondió:',
+      rejectedAlone: 'El servicio de publicación rechazó esta publicación.',
       retryRejected:
         'El servicio de publicación se negó a volver a enviar esta publicación. Respondió:',
+      retryRejectedAlone:
+        'El servicio de publicación se negó a volver a enviar esta publicación.',
       networkRefused: 'La red rechazó esta publicación al ir a publicarla.',
       partial:
         'Esta publicación solo se publicó en parte, así que figura como fallida.',
@@ -2397,6 +2400,8 @@ export const es: Translation = {
       notSetUp:
         'La publicación automática aún no está configurada en este espacio de trabajo.',
       unknown: 'La publicación falló. El servidor respondió:',
+      unknownAlone:
+        'La publicación falló por un motivo que esta versión de la aplicación no reconoce.',
     },
 
     sources: {

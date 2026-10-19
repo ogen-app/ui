@@ -14,11 +14,23 @@ import type { TFunction } from 'i18next'
  * A code this build predates falls back to a generic sentence with the whole
  * string as its detail: the worst case is untranslated prose, never a wrong
  * explanation — the rule `lib/uploadError` follows for the same reason.
+ *
+ * Where the detail carries the explanation, `summary` is a lead-in ("It
+ * said:") that only reads as finished with the detail under it. So a
+ * lead-in is used only when there is a detail to follow it — an empty message
+ * gets the sentence on its own — and `line` is always that standalone sentence,
+ * for a place with room for one line and no detail (the daily report's rows).
  */
-export function postFailureMessage(
-  t: TFunction,
-  reason: string,
-): { summary: string; detail: string | null } {
+export type PostFailure = {
+  /** Shown above `detail`; a lead-in ending in a colon whenever one follows. */
+  summary: string
+  /** What the service answered, verbatim, or `null` when nothing is worth showing. */
+  detail: string | null
+  /** One complete sentence that stands without `detail`. */
+  line: string
+}
+
+export function postFailureMessage(t: TFunction, reason: string): PostFailure {
   const split = reason.indexOf(': ')
   const code = split > 0 ? reason.slice(0, split) : reason
   const message = split > 0 ? reason.slice(split + 2).trim() : ''
@@ -35,12 +47,17 @@ export function postFailureMessage(
     case 'zernio_duplicate_content':
       return only(t('posts.failure.duplicate'))
     case 'zernio_rejected':
-      return { summary: t('posts.failure.rejected'), detail: message || null }
+      return saying(
+        t('posts.failure.rejected'),
+        t('posts.failure.rejectedAlone'),
+        message,
+      )
     case 'zernio_retry_rejected':
-      return {
-        summary: t('posts.failure.retryRejected'),
-        detail: message || null,
-      }
+      return saying(
+        t('posts.failure.retryRejected'),
+        t('posts.failure.retryRejectedAlone'),
+        message,
+      )
     case 'zernio_terminal':
       return only(
         message === 'partial'
@@ -55,9 +72,20 @@ export function postFailureMessage(
     case 'no_profile':
       return only(t('posts.failure.notSetUp'))
   }
-  return { summary: t('posts.failure.unknown'), detail: reason.trim() || null }
+  return saying(
+    t('posts.failure.unknown'),
+    t('posts.failure.unknownAlone'),
+    reason.trim(),
+  )
 }
 
-function only(summary: string) {
-  return { summary, detail: null }
+function only(summary: string): PostFailure {
+  return { summary, detail: null, line: summary }
+}
+
+/** A lead-in when there is something for it to lead into, else the sentence alone. */
+function saying(leadIn: string, alone: string, detail: string): PostFailure {
+  return detail
+    ? { summary: leadIn, detail, line: alone }
+    : { summary: alone, detail: null, line: alone }
 }
