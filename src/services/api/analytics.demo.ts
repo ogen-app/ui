@@ -14,6 +14,7 @@ import type {
   PerformersBoard,
 } from '@/types/analytics'
 import type {
+  AnalyticsPlatformQuery,
   AnalyticsWindowQuery,
   LearningsQuery,
   PerformersQuery,
@@ -175,10 +176,39 @@ function withheld<T>(reason: string): Promise<InsightEnvelope<T>> {
   })
 }
 
-function envelopeFor<T>(build: () => T): Promise<InsightEnvelope<T>> {
+/**
+ * `null` from `build` is the server's `no_data` too — what a platform filter
+ * that narrows to networks this workspace never published on gets back.
+ */
+function envelopeFor<T>(build: () => T | null): Promise<InsightEnvelope<T>> {
   if (mode === 'empty') return withheld<T>('no_data')
   if (mode === 'unavailable') return withheld<T>('addon_required')
-  return answer(build())
+  const data = build()
+  return data === null ? withheld<T>('no_data') : answer(data)
+}
+
+/* ------------------------------------------------------------ the platforms -- */
+
+/**
+ * How the simulated workspace's publishing splits across networks, so the scope
+ * bar's marks change the numbers (CON-289). A slug not listed here has never
+ * been published to, and narrowing to it answers `no_data` as the server does.
+ */
+const PLATFORM_SHARE: Readonly<Record<string, number>> = {
+  linkedin: 0.45,
+  instagram: 0.3,
+  x: 0.15,
+  facebook: 0.1,
+}
+
+/** The share of the workspace a narrowed read counts: 1 for every platform. */
+function shareOf(platforms: readonly string[] = []): number {
+  if (platforms.length === 0) return 1
+  const shares = [...new Set(platforms)].map((p) => PLATFORM_SHARE[p] ?? 0)
+  return Math.min(
+    1,
+    shares.reduce((total, share) => total + share, 0),
+  )
 }
 
 /* ------------------------------------------------------------ the workspace -- */
@@ -254,14 +284,14 @@ type Bucket = {
  * is the same fact the lifespan curve states, and the reason a heatmap of
  * publishing hours is worth reading at all.
  */
-function bucketFor(ms: number, followersBefore: number): Bucket {
+function bucketFor(ms: number, followersBefore: number, share: number): Bucket {
   const date = isoDay(ms)
   const next = rng(`ogen-demo:${date}`)
   const weekday = new Date(ms).getUTCDay()
   const working = weekday >= 1 && weekday <= 5
 
   const roll = next()
-  const published = working
+  const sent = working
     ? roll > 0.78
       ? 2
       : roll > 0.22
@@ -270,8 +300,13 @@ function bucketFor(ms: number, followersBefore: number): Bucket {
     : roll > 0.85
       ? 1
       : 0
+  // Each post lands on a network by its own draw, so a narrowed read keeps a
+  // subset of the day's posts rather than a fraction of one.
+  const landed = rng(`ogen-demo:${date}:platform`)
+  let published = 0
+  for (let k = 0; k < sent; k++) if (landed() < share) published++
 
-  const tail = 380 + Math.round(next() * 520)
+  const tail = Math.round((380 + next() * 520) * share)
   const reach = tail + published * (1500 + Math.round(next() * 2600))
   const rate = 0.026 + next() * 0.031
   const interactions = Math.round(reach * rate)
@@ -291,11 +326,12 @@ function bucketsEnding(
   endMs: number,
   days: number,
   followersAt: number,
+  share: number,
 ): Bucket[] {
   const out: Bucket[] = []
   let followers = followersAt
   for (let i = days - 1; i >= 0; i--) {
-    const bucket = bucketFor(endMs - i * DAY_MS, followers)
+    const bucket = bucketFor(endMs - i * DAY_MS, followers, share)
     followers = bucket.followers
     out.push(bucket)
   }
@@ -349,15 +385,27 @@ function seriesOf(
 }
 
 function buildOverview(
-  query: AnalyticsWindowQuery,
+  query: AnalyticsWindowQuery & AnalyticsPlatformQuery,
   now: Date,
-): AnalyticsOverview {
+): AnalyticsOverview | null {
+  const share = shareOf(query.platforms)
+  if (share === 0) return null
   const days = resolveDays(query)
   const end = endOfWindow(now)
   const start = end - (days - 1) * DAY_MS
 
-  const before = bucketsEnding(start - DAY_MS, days, FOLLOWERS_BASE)
-  const buckets = bucketsEnding(end, days, before[before.length - 1].followers)
+  const before = bucketsEnding(
+    start - DAY_MS,
+    days,
+    Math.round(FOLLOWERS_BASE * share),
+    share,
+  )
+  const buckets = bucketsEnding(
+    end,
+    days,
+    before[before.length - 1].followers,
+    share,
+  )
 
   const reach = sum(buckets.map((b) => b.reach))
   const interactions = sum(buckets.map((b) => b.interactions))
@@ -510,8 +558,9 @@ function rankOn(row: PerformerRow, by: PerformerSort): number {
   return row.against_typical ?? row.reach / 100_000
 }
 
-function buildBoard(query: PerformersQuery, now: Date): PerformersBoard {
+function buildBoard(query: PerformersQuery, now: Date): PerformersBoard | null {
   const overview = buildOverview(query, now)
+  if (!overview) return null
   const days = overview.window.days
   const end = endOfWindow(now)
   const totalPosts =
@@ -519,9 +568,17 @@ function buildBoard(query: PerformersQuery, now: Date): PerformersBoard {
   const periodReach =
     overview.cards.find((c) => c.metric === 'reach')?.value ?? 1
 
-  const pool = Math.max(0, Math.min(POSTS.length, totalPosts))
+  // Narrowed, only that network's posts — each keeping its own index, so a
+  // post reads the same figures whichever filter shows it.
+  const narrowed = query.platforms?.length ? query.platforms : null
+  const eligible = POSTS.map((post, i) => ({ post, i })).filter(
+    ({ post }) => !narrowed || narrowed.includes(post.platform),
+  )
+  const pool = Math.max(0, Math.min(eligible.length, totalPosts))
+  // Nothing went out on these networks in the window: the server's `no_data`.
+  if (pool === 0) return null
 
-  const rows: PerformerRow[] = POSTS.slice(0, pool).map((post, i) => {
+  const rows: PerformerRow[] = eligible.slice(0, pool).map(({ post, i }) => {
     const next = rng(`ogen-demo:post:${overview.window.to}:${i}`)
     const ageDays = Math.min(days - 1, Math.floor(next() * days))
     const publishedAt = end - ageDays * DAY_MS + 10 * 3600_000
@@ -590,11 +647,16 @@ function buildBoard(query: PerformersQuery, now: Date): PerformersBoard {
         text: 'The post with the most reach is not the one with the best rate.',
         note: 'Both are in the list below, ranked on what the picker is set to.',
       },
-      {
-        id: 'platform_skew',
-        severity: 'note',
-        text: 'LinkedIn took three of the top five.',
-      },
+      // A skew across networks is not a finding about one of them.
+      ...(narrowed
+        ? []
+        : [
+            {
+              id: 'platform_skew',
+              severity: 'note' as const,
+              text: 'LinkedIn took three of the top five.',
+            },
+          ]),
     ],
   }
 }
@@ -630,21 +692,39 @@ const HABIT: readonly [number, number, number][] = [
 /** Thursday 18:00 is the slot that stands out, and everything scales to it. */
 const STRONGEST: [number, number] = [4, 18]
 
-function buildLearnings(query: LearningsQuery, now: Date): AnalyticsLearnings {
+/**
+ * The support below which the server withdraws a section rather than serve a
+ * lesson from a handful of posts — so a thin platform loses sections.
+ */
+const MIN_HEATMAP_POSTS = 12
+const MIN_SETTLED_POSTS = 20
+const MIN_PATTERN_POSTS = 40
+
+function buildLearnings(
+  query: LearningsQuery,
+  now: Date,
+): AnalyticsLearnings | null {
+  const share = shareOf(query.platforms)
+  if (share === 0) return null
   const metric = query.metric ?? 'reach'
+  // Each slot's posts, narrowed; a slot left with none drops out of the grid.
+  const habit = HABIT.map(
+    ([day, hour, posts]) =>
+      [day, hour, Math.round(posts * share)] as [number, number, number],
+  ).filter(([, , posts]) => posts > 0)
   // Saves are one figure smaller than reach, and the card's numbers have to
   // move with the picker or it reads as a control that does nothing.
   const scale = metric === 'saves' ? 0.045 : 1
 
-  const medians = HABIT.map(([day, hour, posts]) => {
+  const medians = habit.map(([day, hour, posts]) => {
     const next = rng(`ogen-demo:slot:${day}:${hour}`)
     const best = day === STRONGEST[0] && hour === STRONGEST[1]
     const base = 4200 + next() * 5200 + (best ? 6400 : 0) + posts * 180
     return Math.round(base * scale)
   })
-  const top = Math.max(...medians)
+  const top = Math.max(1, ...medians)
 
-  const cells: HeatmapCell[] = HABIT.map(
+  const cells: HeatmapCell[] = habit.map(
     ([day_of_week, hour, post_count], i) => ({
       day_of_week,
       hour,
@@ -654,7 +734,10 @@ function buildLearnings(query: LearningsQuery, now: Date): AnalyticsLearnings {
     }),
   )
 
-  const measured = HABIT.reduce((total, [, , posts]) => total + posts, 0)
+  const measured = habit.reduce((total, [, , posts]) => total + posts, 0)
+  const strongest = cells.find(
+    (cell) => cell.day_of_week === STRONGEST[0] && cell.hour === STRONGEST[1],
+  )
 
   // Derived rather than picked, because the two counts appear four lines apart
   // on the same card: a seed claiming more posts have *finished* earning than
@@ -730,32 +813,43 @@ function buildLearnings(query: LearningsQuery, now: Date): AnalyticsLearnings {
       metric: metric as LearningsMetric,
     },
     updated_at: new Date(now.getTime() - 3 * 3600_000).toISOString(),
-    heatmap: {
-      metric,
-      cells,
-      strongest: {
-        day_of_week: STRONGEST[0],
-        hour: STRONGEST[1],
-        post_count: 6,
-      },
-      measured_posts: measured,
-    },
-    lifespan: {
-      settled_posts: settled,
-      t50_hours: halfLife,
-      t75_hours: 38,
-      t95_hours: 82,
-      horizon_hours: 124,
-      curve,
-    },
-    patterns: { works, fading },
+    heatmap:
+      measured < MIN_HEATMAP_POSTS
+        ? { insufficient_history: true }
+        : {
+            metric,
+            cells,
+            ...(strongest && {
+              strongest: {
+                day_of_week: strongest.day_of_week,
+                hour: strongest.hour,
+                post_count: strongest.post_count,
+              },
+            }),
+            measured_posts: measured,
+          },
+    lifespan:
+      settled < MIN_SETTLED_POSTS
+        ? { insufficient_history: true }
+        : {
+            settled_posts: settled,
+            t50_hours: halfLife,
+            t75_hours: 38,
+            t95_hours: 82,
+            horizon_hours: 124,
+            curve,
+          },
+    patterns:
+      measured < MIN_PATTERN_POSTS
+        ? { insufficient_history: true }
+        : { works, fading },
   }
 }
 
 /* ------------------------------------------------------------- the exports -- */
 
 export function demoOverview(
-  query: AnalyticsWindowQuery,
+  query: AnalyticsWindowQuery & AnalyticsPlatformQuery,
   now: Date = new Date(),
 ): Promise<InsightEnvelope<AnalyticsOverview>> {
   return envelopeFor(() => buildOverview(query, now))

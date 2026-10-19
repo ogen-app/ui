@@ -76,11 +76,16 @@ export function AnalyticsPage() {
   const counted =
     connected.length > 1 ? connected.filter((p) => selected.includes(p.id)) : []
   const slugs = counted.map((p) => p.id)
-  const narrowedTo = counted.map((p) => p.label)
 
   const overview = useAnalyticsOverview(window, slugs)
   const performers = useAnalyticsPerformers(window, by, slugs)
   const learnings = useAnalyticsLearnings(metric, slugs)
+
+  // Each card names the platforms *its* answer counted, not the selection: a
+  // card holds its last answer while the next is in flight, and the three
+  // land at different moments.
+  const namesOf = (shown: readonly string[]) =>
+    shown.map((slug) => platforms.find((p) => p.id === slug)?.label ?? slug)
 
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
@@ -104,18 +109,21 @@ export function AnalyticsPage() {
             windows={OVERVIEW_WINDOWS}
             onWindowChange={setWindow}
           />
-          <WorkspaceOverviewView {...overview} narrowedTo={narrowedTo} />
+          <WorkspaceOverviewView
+            {...overview}
+            narrowedTo={namesOf(overview.platforms)}
+          />
           <WorkspacePerformersView
             result={performers}
             by={by}
             onChangeBasis={setBy}
-            narrowedTo={narrowedTo}
+            narrowedTo={namesOf(performers.platforms)}
           />
           <WorkspaceLearningsView
             result={learnings}
             metric={metric}
             onChangeMetric={setMetric}
-            narrowedTo={narrowedTo}
+            narrowedTo={namesOf(learnings.platforms)}
           />
         </div>
       </div>

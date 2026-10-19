@@ -20,6 +20,7 @@ const SETTLED = {
   isError: false,
   isUnavailable: false,
   isEmpty: false,
+  platforms: [] as readonly string[],
 }
 
 describe('WorkspaceOverviewView', () => {

@@ -84,9 +84,21 @@ export function WorkspaceLearningsView({
   if (isEmpty) {
     return (
       <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
-        <NotYet title={t('analytics.learned.emptyTitle')}>
-          {t('analytics.learned.emptyBody')}
-        </NotYet>
+        {narrowedTo.length > 0 ? (
+          // Narrowed, `no_data` means nothing on *these* platforms — telling
+          // the reader the workspace has never published would be false.
+          <NotYet
+            title={t('analytics.learned.emptyNarrowedTitle', {
+              platforms: formatList([...narrowedTo]),
+            })}
+          >
+            {t('analytics.learned.emptyNarrowedBody')}
+          </NotYet>
+        ) : (
+          <NotYet title={t('analytics.learned.emptyTitle')}>
+            {t('analytics.learned.emptyBody')}
+          </NotYet>
+        )}
       </Shell>
     )
   }

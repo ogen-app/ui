@@ -214,6 +214,68 @@ describe('the learnings payload', () => {
   })
 })
 
+describe('the platform filter', () => {
+  const published = (envelope: Awaited<ReturnType<typeof demoOverview>>) =>
+    envelope.data!.cards.find((c) => c.metric === 'posts_published')!.value
+
+  it('narrows the overview to a subset of the workspace', async () => {
+    setDemoMode('demo')
+    const all = await demoOverview({ window: '90d' }, NOW)
+    const linkedin = await demoOverview(
+      { window: '90d', platforms: ['linkedin'] },
+      NOW,
+    )
+    const both = await demoOverview(
+      { window: '90d', platforms: ['linkedin', 'instagram'] },
+      NOW,
+    )
+
+    // A mark that changed nothing would read as a filter that does nothing.
+    expect(published(linkedin)).toBeGreaterThan(0)
+    expect(published(linkedin)).toBeLessThan(published(all))
+    expect(published(both)).toBeGreaterThanOrEqual(published(linkedin))
+    expect(published(both)).toBeLessThanOrEqual(published(all))
+  })
+
+  it('ranks only the chosen platform’s posts, and still agrees with the overview', async () => {
+    setDemoMode('demo')
+    const query = { window: '90d', platforms: ['instagram'] }
+    const board = (await demoPerformers(query, NOW)).data!
+    const rows = [...board.best!, ...board.worst!]
+
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.every((row) => row.platform === 'instagram')).toBe(true)
+    expect(board.total_posts).toBe(published(await demoOverview(query, NOW)))
+  })
+
+  it('withdraws lessons a thin platform cannot support', async () => {
+    setDemoMode('demo')
+    const view = buildLearningsView(
+      t,
+      'en',
+      (await demoLearnings({ platforms: ['facebook'] }, NOW)).data!,
+    )
+
+    // The server narrows before applying its minimum support, so one small
+    // network loses sections the whole workspace would have answered.
+    expect(view.patterns).toBeNull()
+    expect(view.lifespan).toBeNull()
+  })
+
+  it('answers `no_data` for a network nothing was published on', async () => {
+    setDemoMode('demo')
+    const query = { window: '28d', platforms: ['tiktok'] }
+
+    for (const envelope of [
+      await demoOverview(query, NOW),
+      await demoPerformers(query, NOW),
+      await demoLearnings(query, NOW),
+    ]) {
+      expect(envelope).toMatchObject({ available: false, reason: 'no_data' })
+    }
+  })
+})
+
 describe('the two ways of having nothing to show', () => {
   it('answers `no_data` for a workspace that has published nothing', async () => {
     setDemoMode('empty')
