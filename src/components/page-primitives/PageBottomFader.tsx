@@ -25,14 +25,26 @@ import { cn } from '@/lib'
  * Invisible when there is nothing to fade: the gradient runs from the page
  * background to transparent, so over an empty column it is background on
  * background.
+ *
+ * `hidden` fades it away — for a list scrolled to its very end (CON-392),
+ * where there is nothing below the last row to dissolve into, and the fade
+ * would only veil the row someone scrolled down to read.
  */
-export function PageBottomFader({ className }: { className?: string }) {
+export function PageBottomFader({
+  className,
+  hidden = false,
+}: {
+  className?: string
+  hidden?: boolean
+}) {
   return (
     <div
       aria-hidden
       className={cn(
         'pointer-events-none absolute inset-x-0 bottom-0 h-20',
         'bg-gradient-to-t from-background from-42% to-transparent',
+        'transition-opacity duration-300 ease-out motion-reduce:transition-none',
+        hidden && 'opacity-0',
         className,
       )}
     />
