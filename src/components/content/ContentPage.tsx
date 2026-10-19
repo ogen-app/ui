@@ -229,7 +229,10 @@ export function ContentPage({
       {
         onSuccess: (view) => {
           setSaving(null)
-          onSearchChange({ ...search, view: view.id })
+          // Opened as any group is, so the address carries the sort and the
+          // grouping it was saved with — not a device preference that could
+          // change under it and mark it edited.
+          openView(view)
           toast.success(t('savedViews.saved', { name: view.name }))
         },
       },
