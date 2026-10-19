@@ -76,6 +76,7 @@ function show(
     <AssetList
       rows={rows}
       groups={groups}
+      total={rows.length}
       grouping={grouping}
       groupLabel={(key) => `band ${key}`}
       campaignId={campaignId}
@@ -502,10 +503,13 @@ describe('group bands', () => {
     ).toBeInTheDocument()
   })
 
-  it('draws no band when the list is not grouped', async () => {
+  it('draws one "No grouping" band when the list is not grouped', async () => {
     await show(grouped.slice(0, 2), { grouping: 'none' })
     await screen.findByText('One')
-    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument()
+    // The list always has an edge to pin (CON-392), counted over the match.
+    const bands = screen.getAllByRole('heading', { level: 2 })
+    expect(bands).toHaveLength(1)
+    expect(bands[0]).toHaveTextContent('No grouping2')
   })
 
   it('folds a band on its button, and remembers it', async () => {
@@ -583,6 +587,7 @@ describe('the next page', () => {
           <AssetList
             rows={rows}
             groups={[]}
+            total={rows.length}
             grouping="none"
             groupLabel={(key) => key}
             campaignId={null}
