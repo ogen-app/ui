@@ -1,5 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
+import { act, render, screen, waitFor } from '@testing-library/react'
+import {
+  QueryClient,
+  QueryClientProvider,
+  focusManager,
+} from '@tanstack/react-query'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { listPosts } from '@/services/api/posts'
 import { useWorkspacePosts } from './usePosts'
@@ -70,5 +75,69 @@ describe('useWorkspacePosts', () => {
     await waitFor(() => {
       expect(screen.getByText('drawn:orphan')).toBeInTheDocument()
     })
+  })
+})
+
+/**
+ * Covers are 15-minute presigned URLs and the interval that renews them pauses
+ * in a background tab, so a tab coming back has to refetch on focus — which
+ * the app's default turns off. Rendered under the app's own defaults rather
+ * than the test helper's, which leave focus refetching on and would pass
+ * either way. Only `Date` is faked, so `waitFor` still runs on real timers.
+ */
+describe('useWorkspacePosts on window focus', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    focusManager.setFocused(undefined)
+  })
+
+  async function renderUnderAppDefaults() {
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, refetchOnWindowFocus: false },
+      },
+    })
+    render(
+      <QueryClientProvider client={client}>
+        <Probe />
+      </QueryClientProvider>,
+    )
+    await waitFor(() => {
+      expect(screen.getByText('drawn:p1')).toBeInTheDocument()
+    })
+  }
+
+  function refocus() {
+    act(() => {
+      focusManager.setFocused(false)
+      focusManager.setFocused(true)
+    })
+  }
+
+  it('refetches once the list is 30 seconds old', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.mocked(listPosts).mockResolvedValue([post('p1', null)])
+    await renderUnderAppDefaults()
+    expect(listPosts).toHaveBeenCalledTimes(1)
+
+    vi.setSystemTime(Date.now() + 31_000)
+    refocus()
+
+    await waitFor(() => {
+      expect(listPosts).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  it('does not refetch a list that is still fresh', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.mocked(listPosts).mockResolvedValue([post('p1', null)])
+    await renderUnderAppDefaults()
+
+    vi.setSystemTime(Date.now() + 5_000)
+    refocus()
+
+    // Give a refetch the chance to start before asserting it did not.
+    await new Promise((r) => setTimeout(r, 20))
+    expect(listPosts).toHaveBeenCalledTimes(1)
   })
 })

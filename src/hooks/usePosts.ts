@@ -19,6 +19,25 @@ import type { StreamedPost } from '@/types/assistant'
 import type { Post, PostPayload } from '@/types/posts'
 
 /**
+ * How a post list keeps its covers drawable. Each row's `cover_url` is a
+ * 15-minute presigned GET (CON-247/368), and neither list has a range, so
+ * paging the calendar never refetches it.
+ *
+ * The interval covers a calendar left open; it pauses in a background tab, so
+ * focus covers the tab coming back — without it, a tab away for more than
+ * fifteen minutes would draw expired covers for up to another ten. The app
+ * default leaves focus refetching off, so these lists opt in, and only once
+ * the data is 30 seconds old (stated here rather than inherited, because it is
+ * what the focus rule means).
+ */
+const COVER_REFRESH = {
+  refetchInterval: PRESIGN_REFRESH_MS,
+  refetchIntervalInBackground: false,
+  refetchOnWindowFocus: true,
+  staleTime: 30_000,
+} as const
+
+/**
  * The campaign's posts, with any the assistant is generating right now folded
  * in. The content-plan flow persists each draft as it writes it and streams it
  * ahead of the refetch, so the calendar fills in live instead of jumping at
@@ -30,12 +49,7 @@ export function useCampaignPosts(campaignId: string) {
     queryKey: campaignPostsKey(campaignId),
     queryFn: () => listCampaignPosts(campaignId),
     enabled: !!campaignId,
-    // Each row's `cover_url` is a 15-minute presigned GET (CON-247/368). The
-    // list is one request per campaign and has no range, so paging the
-    // calendar never refetches it — without this a calendar left open would
-    // start drawing expired covers on the next week it showed.
-    refetchInterval: PRESIGN_REFRESH_MS,
-    refetchIntervalInBackground: false,
+    ...COVER_REFRESH,
   })
 
   const streamed = useAssistantStore(selectStreamedPosts(campaignId))
@@ -90,9 +104,7 @@ export function useWorkspacePosts() {
   const query = useQuery({
     queryKey: WORKSPACE_POSTS_KEY,
     queryFn: listPosts,
-    // The same presigned `cover_url` on every row, for the workspace calendar.
-    refetchInterval: PRESIGN_REFRESH_MS,
-    refetchIntervalInBackground: false,
+    ...COVER_REFRESH,
   })
 
   const data = useMemo(

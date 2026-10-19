@@ -1,4 +1,9 @@
-import { memo, useState } from 'react'
+import { memo } from 'react'
+import {
+  coverDrawable,
+  markCoverFailed,
+  useFailedCovers,
+} from '@/lib/failedCovers'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import {
@@ -255,9 +260,11 @@ function PostCardComponent({
   // broken-image glyph: it is a presigned GET, so the likely cause is that it
   // expired before the list's next refetch, and that refetch brings a new URL
   // — which is not the one that failed, so the picture comes back with it.
-  const [failedCover, setFailedCover] = useState<string>()
+  // The set is shared with the calendar grids, which stop budgeting the band
+  // for a cover that failed (`lib/failedCovers`).
+  const failedCovers = useFailedCovers()
   const cover = fields.image ? post.cover_url : undefined
-  const image = cover !== failedCover ? cover : undefined
+  const image = coverDrawable(cover, failedCovers) ? cover : undefined
   // Resolved the same way the status machine resolves it, so the card and
   // the schedule button never disagree about whether the account is a
   // problem. Reads the cached platform list — no per-card fetch.
@@ -387,7 +394,7 @@ function PostCardComponent({
             alt=""
             loading="lazy"
             decoding="async"
-            onError={() => setFailedCover(image)}
+            onError={() => markCoverFailed(image)}
             className={cn(
               'pointer-events-none absolute inset-0 size-full object-cover',
               // A broken post's picture drains. Same `problem` that turns the

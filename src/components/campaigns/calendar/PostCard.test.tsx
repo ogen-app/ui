@@ -1,8 +1,13 @@
-import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, renderHook } from '@testing-library/react'
 import type { ReactNode } from 'react'
 
 import { PostCard } from './PostCard'
+import {
+  coverDrawable,
+  resetFailedCovers,
+  useFailedCovers,
+} from '@/lib/failedCovers'
 import { DEFAULT_WEEK_FIELDS } from './cardFields'
 import type { Post } from '@/types/posts'
 
@@ -51,6 +56,11 @@ function post(overrides: Partial<Post> = {}): Post {
 const cover = (container: HTMLElement) => container.querySelector('img')
 
 describe('PostCard cover', () => {
+  // The failed set is module-wide, as it is in the app.
+  afterEach(() => {
+    act(() => resetFailedCovers())
+  })
+
   it("draws the server's cover_url, lazily", () => {
     const { container } = render(<PostCard post={post({ cover_url: COVER })} />)
     const img = cover(container)
@@ -87,5 +97,20 @@ describe('PostCard cover', () => {
     const fresh = COVER.replace('900', '901')
     rerender(<PostCard post={post({ cover_url: fresh })} />)
     expect(cover(container)?.getAttribute('src')).toBe(fresh)
+  })
+
+  it('tells the grid a failed cover no longer costs a band', () => {
+    // What the week and month grids read to budget each card's height.
+    const grid = renderHook(() => useFailedCovers())
+    expect(coverDrawable(COVER, grid.result.current)).toBe(true)
+
+    const { container } = render(<PostCard post={post({ cover_url: COVER })} />)
+    act(() => {
+      fireEvent.error(cover(container)!)
+    })
+
+    expect(coverDrawable(COVER, grid.result.current)).toBe(false)
+    const fresh = COVER.replace('900', '901')
+    expect(coverDrawable(fresh, grid.result.current)).toBe(true)
   })
 })

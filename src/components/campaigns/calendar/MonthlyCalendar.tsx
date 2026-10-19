@@ -8,6 +8,7 @@ import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { resolveForPlatform } from '@/lib/publishingAccount'
 import { hasVisibleProblem } from '@/lib/postValidation'
+import { coverDrawable, useFailedCovers } from '@/lib/failedCovers'
 import { MonthDensity } from './MonthDensity'
 import { PostCard } from './PostCard'
 import { withCampaignRow } from './cardFields'
@@ -80,6 +81,9 @@ function MonthlyCalendarComponent({
   const [laneHeight, setLaneHeight] = useState(ASSUMED_LANE_HEIGHT)
   const { t, i18n } = useTranslation()
   const today = useMemo(() => new Date(), [])
+  // Covers that would not load — a card that dropped its picture is not
+  // charged the band for it (`lib/failedCovers`).
+  const failedCovers = useFailedCovers()
   // Never called on the workspace grid — see `WeeklyCalendar`.
   const addPost = useAddPost(campaignId ?? '')
   const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings()
@@ -200,7 +204,7 @@ function MonthlyCalendarComponent({
                     ),
                     resolvePlatform(post.platform_id),
                   ),
-                hasImage: Boolean(post.cover_url),
+                hasImage: coverDrawable(post.cover_url, failedCovers),
                 hasCampaign: Boolean(post.campaign),
               }))
               // `null` means the day fits at no rung, with or without its

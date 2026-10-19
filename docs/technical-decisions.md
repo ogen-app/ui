@@ -231,7 +231,10 @@ like every other file URL. Three things follow:
 - **The lists refetch inside the window** (`PRESIGN_REFRESH_MS`, 10 minutes).
   The campaign's list has no range, so paging the calendar never refetches it,
   and without the interval a calendar left open would draw expired covers on
-  the next week it showed. Focus refetches it too, once it is 30 seconds old.
+  the next week it showed. Focus refetches it too, once it is 30 seconds old —
+  the interval pauses in a background tab, so a tab back after fifteen minutes
+  would otherwise draw expired covers until the next tick. Both lists opt in
+  (`COVER_REFRESH` in `hooks/usePosts`); the app default leaves focus off.
 - **A cover that fails is dropped**, not drawn as the browser's broken-image
   glyph. The likeliest cause is expiry, and the next refetch brings a URL that
   is not the one that failed, so the picture comes back on its own.
