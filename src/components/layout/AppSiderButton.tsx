@@ -86,10 +86,14 @@ export function AppSidebarButtonMenu({
             A count shortens that cap so the label ellipses before it reaches
             the figures — the row is `overflow-hidden`, and anything that has to
             sit after a full-width label lands in the clipped part. Two figures
-            take another 20px off it. */}
+            take another 20px off it.
+
+            `type-display` is the global menu's voice (CON-390), set on the label
+            rather than the rail: on a container it reaches the count chip
+            beside it too, and `pnum` is the opposite of what a figure wants. */}
         <span
           className={cn(
-            'block truncate text-left tracking-[0.02em]',
+            'type-display block truncate text-left tracking-[0.02em]',
             !hasCounts && 'w-[212px] lg:w-[180px]',
             hasCounts && shown.length === 1 && 'w-[180px] lg:w-[148px]',
             hasCounts && shown.length > 1 && 'w-[160px] lg:w-[128px]',

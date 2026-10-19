@@ -79,12 +79,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           It has to be written with the same `group-data-[side=left]` prefix the
           primitive uses to zero the border out: a plain `border-r` is a weaker
           selector *and* a different key to `twMerge`, so it would lose on both
-          counts instead of replacing it. */}
+          counts instead of replacing it.
+
+          No `type-display` here: its feature list replaces the inherited one,
+          so on the container it would turn `pnum` on under every count in the
+          rail. The rows' labels carry it themselves (`AppSiderButton`). */}
       <Sidebar
         collapsible="icon"
-        className={
-          'type-display select-none group-data-[side=left]:border-r border-border'
-        }
+        className={'select-none group-data-[side=left]:border-r border-border'}
         {...props}
       >
         {/* The campaign's identity colour as a rule down the whole rail, in

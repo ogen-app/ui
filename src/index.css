@@ -609,7 +609,9 @@
      figures are lining and tabular by default and it ships no proportional
      set, so today the pair states the intent rather than changing a glyph.
      Restates `kern` and `liga` because this list replaces the body's rather
-     than adding to it. */
+     than adding to it — which is also why it goes on the text that wants it
+     and never on a container: inherited, it would set `pnum` under every count
+     and tabular figure inside. */
   .type-display {
     font-feature-settings:
       'lnum' 1,
