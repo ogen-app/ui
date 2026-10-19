@@ -14,6 +14,7 @@ describe('postFailureMessage', () => {
     ).toEqual({
       summary: t('posts.failure.retryRejected'),
       detail: 'zernio: HTTP 404: Post not found',
+      line: t('posts.failure.retryRejectedAlone'),
     })
   })
 
@@ -23,7 +24,11 @@ describe('postFailureMessage', () => {
         t,
         'account_selection_required: 2 instagram accounts connected; select one before publishing',
       ),
-    ).toEqual({ summary: t('posts.failure.chooseAccount'), detail: null })
+    ).toEqual({
+      summary: t('posts.failure.chooseAccount'),
+      detail: null,
+      line: t('posts.failure.chooseAccount'),
+    })
   })
 
   it('tells a partial publish from a refused one', () => {
@@ -46,6 +51,36 @@ describe('postFailureMessage', () => {
     expect(postFailureMessage(t, 'brand_new_code: something odd')).toEqual({
       summary: t('posts.failure.unknown'),
       detail: 'brand_new_code: something odd',
+      line: t('posts.failure.unknownAlone'),
     })
+  })
+
+  it('never leaves a lead-in with nothing after it', () => {
+    for (const reason of [
+      'zernio_rejected: ',
+      'zernio_rejected:   ',
+      'zernio_rejected',
+      'zernio_retry_rejected: \n',
+    ]) {
+      const failure = postFailureMessage(t, reason)
+      expect(failure.detail).toBeNull()
+      expect(failure.summary).toBe(failure.line)
+      expect(failure.summary).not.toMatch(/:$/)
+    }
+    expect(postFailureMessage(t, 'zernio_rejected:  ').summary).toBe(
+      t('posts.failure.rejectedAlone'),
+    )
+  })
+
+  it('gives every code a one-line form that is a whole sentence', () => {
+    for (const reason of [
+      'zernio_rejected: bad media',
+      'zernio_retry_rejected: zernio: HTTP 404: Post not found',
+      'brand_new_code: something odd',
+      'no_account_connected: none',
+      'zernio_terminal: partial',
+    ]) {
+      expect(postFailureMessage(t, reason).line).not.toMatch(/:$/)
+    }
   })
 })

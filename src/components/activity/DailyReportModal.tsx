@@ -198,9 +198,10 @@ function ChannelRows({
  * Each links to the post — the report's job is to be the way back to the thing
  * that needs attention — and each says why, in the sentence the post's own
  * screen uses (`lib/postFailure`, CON-200). `failure_reason` is
- * `<code>: <message>`; the code is worded here and a code this build predates
- * is shown as it arrived. Only the sentence: a row has room for one line, and
- * the service's own words are on the post the row links to.
+ * `<code>: <message>`; the code is worded here, and a code this build predates
+ * gets a generic sentence. Only the sentence — `line`, which stands without
+ * the service's words, never the `summary` that leads into them: a row has room
+ * for one line, and those words are on the post the row links to.
  */
 function FailedRows({
   posts,
@@ -223,7 +224,7 @@ function FailedRows({
         const campaignId = campaignOfPost(post.post_id)
         const label = channel ? `${what} — ${channel}` : what
         const why = post.failure_reason
-          ? postFailureMessage(t, post.failure_reason).summary
+          ? postFailureMessage(t, post.failure_reason).line
           : ''
 
         // No campaign means the post is deleted or out of this reader's reach.

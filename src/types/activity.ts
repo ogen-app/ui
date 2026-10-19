@@ -35,8 +35,8 @@ export type ActivityAuthorCount = {
  * distinction per row for anyone who opens it.
  *
  * `failure_reason` is the post's own, `<code>: <message>` — worded through
- * `lib/postFailure`, never shown raw unless its code is one this build
- * predates.
+ * `lib/postFailure`, never shown raw: the report's row states it in one
+ * sentence, and the service's own words are on the post's screen.
  */
 export type ActivityFailedPost = {
   post_id: string

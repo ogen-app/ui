@@ -3037,8 +3037,11 @@ export const en = {
       duplicate:
         'Identical content was already submitted in the last 24 hours, so the publishing service refused it. Change the wording, then schedule it again.',
       rejected: 'The publishing service refused this post. It said:',
+      rejectedAlone: 'The publishing service refused this post.',
       retryRejected:
         'The publishing service refused to submit this post again. It said:',
+      retryRejectedAlone:
+        'The publishing service refused to submit this post again.',
       networkRefused: 'The network refused this post when it came to publish.',
       partial: 'This post only partly published, so it is marked as failed.',
       noPlatform: 'This post had no network set, so it could not be published.',
@@ -3046,6 +3049,8 @@ export const en = {
         'This network can’t be published to automatically. Publish it by hand instead.',
       notSetUp: 'Automatic publishing isn’t set up for this workspace yet.',
       unknown: 'Publishing failed. The server said:',
+      unknownAlone:
+        'Publishing failed for a reason this version of the app doesn’t recognise.',
     },
 
     sources: {
