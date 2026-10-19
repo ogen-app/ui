@@ -610,6 +610,68 @@ export const en = {
    * language, and a button reading "Yes" beside a tab reading "Yes" is only
    * accidentally right in English.
    */
+  /** The filter sentence's own chrome, shared by every list (CON-391/392). */
+  sentence: {
+    label: 'Filter',
+    addDetail: 'add a detail',
+    addPlaceholder: 'a detail…',
+    change: 'Change: {{clause}}',
+    remove: 'Remove: {{clause}}',
+    removeDetail: 'Remove this detail',
+    done: 'Done',
+    clear: 'Clear',
+    removeLast: 'remove the last detail',
+    noValues: 'Nothing to choose from yet',
+    heading: {
+      search: 'Search',
+      narrow: 'Or narrow by',
+      add: 'Add a detail',
+    },
+  },
+  /** Smart groups — saved filters of a list (CON-388 §5, CON-392). */
+  savedViews: {
+    all: {
+      ideas: 'All ideas',
+      assets: 'All assets',
+    },
+    groups: 'Smart groups',
+    shared: 'Shared with the workspace',
+    menu: 'Actions for “{{name}}”',
+    rename: 'Rename',
+    share: 'Share with the workspace',
+    unshare: 'Stop sharing',
+    duplicate: 'Duplicate',
+    delete: 'Delete',
+    copyName: '{{name}} (copy)',
+    edited: 'edited',
+    invalid: 'This group’s filter no longer works.',
+    saveAs: 'Save as group',
+    saveCurrent: 'Save current filter as a group',
+    trigger: 'Views: {{name}}',
+    emptyMenu: 'Filter the list, then save it here as a group.',
+    saveChanges: 'Save changes',
+    saveAsNew: 'Save as new…',
+    revert: 'Revert',
+    saved: 'Saved “{{name}}”.',
+    save: {
+      title: 'Save as a smart group',
+      renameTitle: 'Rename the group',
+      name: 'Name',
+      share: 'Share with the workspace',
+      what: 'Saves the filters, the grouping and the sort — not what they find.',
+      cancel: 'Cancel',
+      confirm: 'SAVE GROUP',
+      renameConfirm: 'SAVE',
+    },
+    remove: {
+      title: 'Delete “{{name}}”?',
+      body: 'The group goes; nothing it shows is deleted.',
+      bodyShared:
+        'The group goes for everyone it is shared with; nothing it shows is deleted.',
+      keep: 'KEEP GROUP',
+      confirm: 'DELETE GROUP',
+    },
+  },
   ideas: {
     capture: {
       /** The field carries no visible label — the placeholder is the prompt. */
@@ -741,31 +803,6 @@ export const en = {
     },
     /** The smart filter on the Ideas list (CON-388 §4). */
     filter: {
-      label: 'Filter the ideas',
-      placeholder: 'Filter by text, source, campaign, fit…',
-      textPlaceholder: 'Words in the title or note…',
-      field: {
-        text: 'Text',
-        origin: 'Origin',
-        source_asset: 'Source',
-        kind: 'Type',
-        campaign_id: 'Campaign',
-        fit: 'Fit',
-        phase: 'Phase',
-        author: 'Author',
-        created: 'Added',
-      },
-      fieldHint: {
-        text: 'in the title or note',
-        origin: 'from a document, written',
-        source_asset: 'which document',
-        kind: 'PDF, web page, recording…',
-        campaign_id: '',
-        fit: 'high, medium, low…',
-        phase: 'campaign phase',
-        author: 'written ideas',
-        created: 'last 7 days…',
-      },
       origin: {
         asset_analysis: 'From a document',
         manual: 'Written',
@@ -829,58 +866,12 @@ export const en = {
       partial_other: 'Deleted {{count}} ideas; {{failed}} couldn’t be deleted.',
       failed: 'Could not delete the ideas. Some may still be there.',
     },
-    /** Smart groups — saved filters (CON-388 §5). */
-    views: {
-      heading: 'Views',
-      all: 'All ideas',
-      groups: 'Smart groups',
-      shared: 'Shared with the workspace',
-      menu: 'Actions for “{{name}}”',
-      rename: 'Rename',
-      share: 'Share with the workspace',
-      unshare: 'Stop sharing',
-      duplicate: 'Duplicate',
-      delete: 'Delete',
-      copyName: '{{name}} (copy)',
-      smartGroup: 'smart group',
-      onlyYou: 'only you',
-      sharedMeta: 'shared',
-      edited: 'edited',
-      invalid: 'This group’s filter no longer works.',
-      saveAs: 'Save as group',
-      saveCurrent: 'Save current filter as a group',
-      trigger: 'Views: {{name}}',
-      emptyMenu: 'Filter the list, then save it here as a group.',
-      saveChanges: 'Save changes',
-      saveAsNew: 'Save as new…',
-      revert: 'Revert',
-      saved: 'Saved “{{name}}”.',
-      save: {
-        title: 'Save as a smart group',
-        renameTitle: 'Rename the group',
-        name: 'Name',
-        share: 'Share with the workspace',
-        what: 'Saves the filters, the grouping and the sort — not the ideas.',
-        cancel: 'Cancel',
-        confirm: 'SAVE GROUP',
-        renameConfirm: 'SAVE',
-      },
-      remove: {
-        title: 'Delete “{{name}}”?',
-        body: 'The group goes; the ideas in it stay.',
-        bodyShared:
-          'The group goes for everyone it is shared with; the ideas in it stay.',
-        keep: 'KEEP GROUP',
-        confirm: 'DELETE GROUP',
-      },
-    },
     /**
      * The filter as a sentence you edit (CON-391). One sentence per field
      * and operator, its chosen words marked `<v>`, so a language orders the
      * words its own way; the clauses are joined by `Intl.ListFormat`.
      */
     sentence: {
-      label: 'Filter',
       /** `<clauses>` is the list of clauses, already joined. */
       showing: 'Showing ideas <clauses></clauses>',
       showingAll: 'Showing <v>all ideas</v>',
@@ -996,22 +987,8 @@ export const en = {
         kind: 'PDFs, web pages',
         created: 'last 7 days',
       },
-      addDetail: 'add a detail',
-      addPlaceholder: 'a detail…',
-      heading: {
-        search: 'Search',
-        narrow: 'Or narrow by',
-        add: 'Add a detail',
-      },
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
-      change: 'Change: {{clause}}',
-      remove: 'Remove: {{clause}}',
-      removeDetail: 'Remove this detail',
-      done: 'Done',
-      clear: 'Clear',
-      removeLast: 'remove the last detail',
-      noValues: 'Nothing to choose from yet',
     },
     loadFailed: 'Unable to load ideas',
     saveFailed: 'Could not save that. Your ideas are unchanged.',
@@ -4826,50 +4803,12 @@ export const en = {
       },
     },
     /**
-     * The Assets list's smart filter (CON-371): field → operator → value
-     * tokens. Field and operator words are what a token reads as — "Type is
-     * PDF" — so they are lower-case where the sentence continues.
+     * The Assets filter's values as a panel lists them (CON-371), and the
+     * words both lists' filter sentences share: the count, the date step, the
+     * keys and the empty state. How the sentence itself reads is
+     * `content.sentence` (CON-392).
      */
     filter: {
-      label: 'Filter the assets',
-      placeholder: 'Filter by title, type, status, campaign, tag…',
-      addFilter: 'Add filter…',
-      operatorPlaceholder: 'Operator…',
-      valuePlaceholder: 'Pick a value…',
-      titlePlaceholder: 'Type part of a title…',
-      textPlaceholder: 'Words to find inside the documents…',
-      field: {
-        title: 'Title',
-        kind: 'Type',
-        status: 'Status',
-        campaign: 'Campaign',
-        tag: 'Tag',
-        updated: 'Updated',
-        ideas: 'Ideas',
-        text: 'Text',
-      },
-      /** What each field holds, beside it in the field list. */
-      fieldHint: {
-        title: 'contains',
-        kind: 'PDF, web page, recording…',
-        status: 'Ready, partial…',
-        campaign: '',
-        tag: '',
-        updated: 'last 7 days…',
-        ideas: 'on the desk, making…',
-        text: 'inside the documents',
-      },
-      op: {
-        is: 'is',
-        isNot: 'is not',
-        contains: 'contains',
-        notContains: 'doesn’t contain',
-        in: 'in',
-        before: 'before',
-        has: 'has',
-        hasNo: 'has no',
-        mentions: 'mentions',
-      },
       status: {
         partial: 'Partial',
         failed: 'Failed',
@@ -4900,26 +4839,8 @@ export const en = {
       noTags: 'No tags',
       unknownCampaign: 'A deleted campaign',
       unknownTag: 'A deleted tag',
-      heading: {
-        fields: 'Choose a field',
-        step: '{{field}} {{op}}',
-        search: 'Search',
-        matching: 'Matching values',
-        fieldsMatching: 'Fields',
-      },
-      /** A token, with its parts marked for styling: field, operator, values. */
-      token: '<f>{{field}}</f> <o>{{op}}</o> <v>{{values}}</v>',
-      /** The same token as plain words, for screen readers and the empty state. */
-      tokenPlain: '{{field}} {{op}} {{values}}',
-      draft: '{{field}} {{op}}',
-      quoted: '“{{text}}”',
-      range: '{{from}} – {{to}}',
       count_one: '{{shown}} of {{total}}',
       count_other: '{{shown}} of {{total}}',
-      clearAll: 'Clear all',
-      edit: 'Change filter: {{filter}}',
-      remove: 'Remove filter: {{filter}}',
-      tokenSelected: 'Backspace again removes it · Enter edits it',
       textTooShort_one: 'Type at least {{count}} character',
       textTooShort_other: 'Type at least {{count}} characters',
       nothingMatches: 'Nothing matches that',
@@ -4929,9 +4850,7 @@ export const en = {
       keys: {
         move: 'move',
         pick: 'pick',
-        back: 'back',
         close: 'close',
-        backspace: 'bksp',
         escape: 'esc',
       },
       empty: {
@@ -4941,6 +4860,125 @@ export const en = {
         remove: 'Remove “{{filter}}”',
         clearAll: 'Clear all filters',
       },
+    },
+    /**
+     * The Assets filter as a sentence you edit (CON-392). The type is the
+     * subject when chosen — "Showing PDFs, in …" — so a list of documents is
+     * named by what they are; every other field is one clause, one catalogue
+     * sentence per field and operator, its chosen words marked `<v>`.
+     */
+    sentence: {
+      showing: 'Showing assets <clauses></clauses>',
+      showingSubject: 'Showing <clauses></clauses>',
+      showingAll: 'Showing <v>all assets</v>',
+      clause: {
+        kind: '<v>{{values}}</v>',
+        kind_not: 'that aren’t <v>{{values}}</v>',
+        campaign: 'in <v>{{values}}</v>',
+        campaign_not: 'outside <v>{{values}}</v>',
+        tag: 'tagged <v>{{values}}</v>',
+        tag_none: 'with <v>no tags</v>',
+        tag_not: 'not tagged <v>{{values}}</v>',
+        title: 'with <v>{{values}}</v> in the title',
+        title_not: 'without <v>{{values}}</v> in the title',
+        status: '<v>{{values}}</v>',
+        status_not: 'not <v>{{values}}</v>',
+        updated: 'updated <v>{{values}}</v>',
+        updated_range: 'updated <v>between {{from}} and {{to}}</v>',
+        updated_not: 'updated <v>before {{values}}</v>',
+        ideas: 'with ideas <v>{{values}}</v>',
+        ideas_none: 'with <v>no ideas</v>',
+        ideas_unread: '<v>not analysed yet</v>',
+        ideas_not: 'without ideas <v>{{values}}</v>',
+        text: 'mentioning <v>“{{values}}”</v>',
+      },
+      quoted: '“{{text}}”',
+      kind: {
+        pdf: 'PDFs',
+        web: 'web pages',
+        audio: 'recordings',
+        note: 'notes',
+        image: 'images',
+        document: 'documents',
+        spreadsheet: 'spreadsheets',
+        csv: 'CSVs',
+        presentation: 'presentations',
+      },
+      status: {
+        partial: 'only partly read',
+        pending: 'still being read',
+        failed: 'that couldn’t be read',
+        ready: 'ready',
+      },
+      ideas: {
+        undecided: 'on the desk',
+        yes: 'making',
+        later: 'in the drawer',
+        no: 'set aside',
+        none: 'none',
+        unread: 'not analysed yet',
+      },
+      updated: {
+        today: 'today',
+        week: 'in the last 7 days',
+        days30: 'in the last 30 days',
+        month: 'this month',
+      },
+      noCampaign: 'no campaign',
+      question: {
+        kind: 'Assets that are…',
+        campaign: 'Assets filed under…',
+        tag: 'Assets tagged…',
+        title: 'Assets with, in the title…',
+        status: 'Assets that are…',
+        updated: 'Assets updated…',
+        ideas: 'Assets with ideas…',
+        text: 'Assets mentioning…',
+      },
+      include: {
+        kind: 'are',
+        campaign: 'in',
+        tag: 'tagged',
+        title: 'with',
+        status: 'are',
+        updated: 'in',
+        ideas: 'with',
+      },
+      exclude: {
+        kind: 'aren’t',
+        campaign: 'not in',
+        tag: 'not tagged',
+        title: 'without',
+        status: 'aren’t',
+        updated: 'before',
+        ideas: 'without',
+      },
+      find: {
+        kind: 'Find a type',
+        campaign: 'Find a campaign',
+        tag: 'Find a tag',
+      },
+      textPlaceholder: {
+        title: 'Words in the title, comma-separated',
+        text: 'Words inside the documents',
+      },
+      starter: {
+        kind: 'that are…',
+        campaign: 'in a campaign…',
+        tag: 'tagged…',
+        title: 'with “…” in the title',
+        status: 'read…',
+        updated: 'updated…',
+        ideas: 'with ideas…',
+      },
+      starterHint: {
+        kind: 'PDFs, web pages',
+        status: 'partly, not yet',
+        updated: 'last 7 days',
+        ideas: 'on the desk, making',
+      },
+      assets_one: '{{formatted}} asset',
+      assets_other: '{{formatted}} assets',
     },
 
     /**

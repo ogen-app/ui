@@ -8,7 +8,7 @@ import {
   it,
   vi,
 } from 'vitest'
-import { useState } from 'react'
+import { useState, type ComponentProps } from 'react'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
@@ -24,6 +24,16 @@ vi.mock('@/services/api/content', async (importOriginal) => ({
 }))
 
 const { ContentList } = await import('./ContentList')
+const { useFilterVocabulary } =
+  await import('./smartFilter/useFilterVocabulary')
+
+/** The list as the page draws it: with the page's filter vocabulary. */
+function WithVocabulary(
+  props: Omit<ComponentProps<typeof ContentList>, 'vocabulary' | 'clearable'>,
+) {
+  const vocabulary = useFilterVocabulary({ facets: {}, scoped: false })
+  return <ContentList {...props} vocabulary={vocabulary} clearable />
+}
 
 function asset(id: string, title: string): AssetListItem {
   return {
@@ -79,21 +89,23 @@ function show(
     total = 2,
     filter = EMPTY_FILTER,
     params = {},
+    onFilterChange = () => {},
   }: {
     total?: number
     filter?: AssetFilter
     params?: Record<string, string>
+    onFilterChange?: (next: AssetFilter) => void
   } = {},
 ) {
   return {
     onDeleteMany,
     ui: (
-      <ContentList
+      <WithVocabulary
         campaignId={null}
         list={listOf([POSITIONING, TRANSCRIPT], total, Math.max(total, 5))}
         params={params}
         filter={filter}
-        onFilterChange={() => {}}
+        onFilterChange={onFilterChange}
         sort="-updated_at"
         onSortChange={() => {}}
         grouping="created"
@@ -223,7 +235,7 @@ describe('select all', () => {
    * whole match by asking the server for its ids — never just what is loaded —
    * and the delete it leads to names the count it will act on.
    */
-  it('selects every match from the filter bar, and deletes all N', async () => {
+  it('selects every match from the Group by line, and deletes all N', async () => {
     ids.fn.mockResolvedValue(['a1', 'a2', 'a3', 'a4', 'a5'])
     const { ui, onDeleteMany } = show(undefined, {
       total: 5,
@@ -330,22 +342,98 @@ describe('select all', () => {
   })
 })
 
-describe('the filter bar', () => {
-  it('answers with the count and offers to clear once something is filtered', async () => {
+describe('the filter sentence', () => {
+  const sentence = () => screen.getByRole('group', { name: 'Filter' })
+
+  it('reads "Showing all assets" with nothing chosen', async () => {
+    await renderWithProviders(show().ui)
+    expect(sentence()).toHaveTextContent('Showing all assets')
+  })
+
+  it('names what is listed by its type, and reads the rest in order', async () => {
+    let filter = withToken(EMPTY_FILTER, {
+      field: 'status',
+      negated: false,
+      values: ['partial'],
+    })
+    filter = withToken(filter, {
+      field: 'kind',
+      negated: false,
+      values: ['pdf', 'web'],
+    })
+    filter = withToken(filter, {
+      field: 'title',
+      negated: false,
+      values: ['q4'],
+    })
+    filter = withToken(filter, {
+      field: 'updated',
+      negated: false,
+      values: ['30d'],
+    })
+    await renderWithProviders(show(undefined, { filter, total: 2 }).ui)
+    expect(sentence()).toHaveTextContent(
+      'Showing PDFs or web pages, with “q4” in the title, only partly read, updated in the last 30 days',
+    )
+    expect(sentence()).toHaveTextContent('2 of 5')
+  })
+
+  it('falls back to "assets" when a type is left out', async () => {
+    const filter = withToken(EMPTY_FILTER, {
+      field: 'kind',
+      negated: true,
+      values: ['pdf'],
+    })
+    await renderWithProviders(show(undefined, { filter }).ui)
+    expect(sentence()).toHaveTextContent('Showing assets that aren’t PDFs')
+  })
+
+  it('removes a clause and clears them all', async () => {
+    const onFilterChange = vi.fn()
     const filter = withToken(EMPTY_FILTER, {
       field: 'kind',
       negated: false,
       values: ['pdf'],
     })
-    const { ui } = show(undefined, { filter, total: 2 })
-    await renderWithProviders(ui)
-    expect(screen.getByText('2 of 5')).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Clear all' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Remove filter: Type is PDF' }),
-    ).toBeInTheDocument()
+    await renderWithProviders(
+      show(undefined, { filter, total: 2, onFilterChange }).ui,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Remove: PDFs' }))
+    expect(onFilterChange).toHaveBeenLastCalledWith(EMPTY_FILTER)
+    await userEvent.click(screen.getByRole('button', { name: 'Clear' }))
+    expect(onFilterChange).toHaveBeenLastCalledWith(EMPTY_FILTER)
+  })
+
+  it('offers both searches when typing — inside the documents and in the title', async () => {
+    const onFilterChange = vi.fn()
+    await renderWithProviders(show(undefined, { onFilterChange }).ui)
+    await userEvent.click(screen.getByRole('button', { name: /add a detail/ }))
+    const field = screen.getByRole('combobox', { name: 'add a detail' })
+    await userEvent.type(field, 'garden')
+    const options = screen.getAllByRole('option').map((o) => o.textContent)
+    expect(options).toContain('mentioning “garden”')
+    expect(options).toContain('with “garden” in the title')
+
+    await userEvent.click(screen.getByText(/in the title/))
+    expect(onFilterChange).toHaveBeenLastCalledWith(
+      withToken(EMPTY_FILTER, {
+        field: 'title',
+        negated: false,
+        values: ['garden'],
+      }),
+    )
+  })
+
+  it('takes a day, never a preset, for "updated before"', async () => {
+    await renderWithProviders(show().ui)
+    await userEvent.click(screen.getByRole('button', { name: /add a detail/ }))
+    await userEvent.click(screen.getByText('updated…'))
+    const panel = () => screen.getByRole('dialog', { name: 'Assets updated…' })
+    expect(panel()).toHaveTextContent('Last 7 days')
+    await userEvent.click(screen.getByRole('radio', { name: 'before' }))
+    // The day's own field, with no presets to choose from.
+    expect(panel()).not.toHaveTextContent('Last 7 days')
+    expect(screen.getByText('Before')).toBeInTheDocument()
   })
 })
 
@@ -383,5 +471,21 @@ describe('in Spanish', () => {
     ).toBeInTheDocument()
     // The English that used to be written into the component.
     expect(screen.queryByText(/permanently deleted/)).not.toBeInTheDocument()
+  })
+
+  it('reads the sentence in Spanish', async () => {
+    const filter = withToken(EMPTY_FILTER, {
+      field: 'kind',
+      negated: false,
+      values: ['pdf'],
+    })
+    await renderWithProviders(show(undefined, { filter, total: 2 }).ui)
+    expect(screen.getByRole('group', { name: 'Filtro' })).toHaveTextContent(
+      'Mostrando PDF',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Quitar: PDF' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Showing/)).not.toBeInTheDocument()
   })
 })

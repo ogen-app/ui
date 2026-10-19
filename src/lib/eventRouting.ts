@@ -3,6 +3,7 @@ import { postKey } from '@/hooks/usePost'
 import { postAssessmentKey } from '@/hooks/usePostAssessment'
 import { campaignKey } from '@/hooks/useCampaigns'
 import { ASSETS_KEY, ASSET_LIST_KEY, assetKey } from '@/hooks/useContent'
+import { ASSET_VIEWS_KEY, IDEA_VIEWS_KEY } from '@/hooks/useSavedViews'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
@@ -284,8 +285,10 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
     // A shared smart group was saved, changed or deleted by somebody else.
     case 'savedViews':
       return subject.surface === 'ideas'
-        ? [{ queryKey: ['ideas', 'savedViews'] }]
-        : []
+        ? [{ queryKey: IDEA_VIEWS_KEY }]
+        : subject.surface === 'assets'
+          ? [{ queryKey: ASSET_VIEWS_KEY }]
+          : []
 
     case 'unknown':
       return []

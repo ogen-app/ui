@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { formatNumber } from '@/lib/intl'
 import type {
+  CountQuery,
   FilterModel,
+  SentenceVocabulary,
   SmartToken,
-  SmartVocabulary,
 } from '@/lib/smartFilter'
-import type { CountQuery } from './SmartFilterBar'
 
 /**
  * What a list says when the filters leave nothing (CON-371): which one token
@@ -34,7 +34,7 @@ export function NoMatches<F, Field extends string>({
   title: string
   filter: F
   model: FilterModel<F, Field>
-  vocabulary: SmartVocabulary<Field>
+  vocabulary: Pick<SentenceVocabulary<Field>, 'tokenText'>
   countQuery: CountQuery<F>
   onChange: (next: F) => void
 }) {

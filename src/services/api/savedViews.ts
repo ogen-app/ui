@@ -7,7 +7,7 @@ import { apiJson, apiVoid } from './http'
  * string, which the server validates with that list's parser and stores in
  * canonical form (keys sorted, values sorted and comma-joined), dropping what
  * only pages or displays (`cursor`, `limit`, `facets`, `tz`, and for Ideas the
- * `pile`). So a view keeps working — matching nothing for that value — after a
+ * `pile`; for Assets also `scope_campaign` and `checksum`). So a view keeps working — matching nothing for that value — after a
  * document or campaign it names is gone.
  *
  *     GET    /api/saved-views?surface=ideas&counts=total,undecided&tz=…
@@ -24,7 +24,8 @@ import { apiJson, apiVoid } from './http'
  * `entity:saved_views:<surface>`.
  */
 
-export type SavedViewSurface = 'ideas'
+/** The lists a view can be saved for: Ideas (CON-389) and Assets (CON-393). */
+export type SavedViewSurface = 'ideas' | 'assets'
 
 export type SavedView = {
   id: string

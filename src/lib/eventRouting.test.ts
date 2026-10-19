@@ -72,6 +72,11 @@ describe('invalidationsFor', () => {
     expect(keys(e)).toEqual([['ideas', 'savedViews']])
   })
 
+  it('refreshes the Assets smart groups when a shared one changes', () => {
+    const e = event('entity:saved_views:assets', 'saved_view.deleted')
+    expect(keys(e)).toEqual([['assets', 'list', 'savedViews']])
+  })
+
   it('refreshes the post and every calendar showing it on new analytics', () => {
     const e = event('entity:post:p1', 'post.analytics.updated')
     expect(keys(e)).toContainEqual(['post', 'p1'])

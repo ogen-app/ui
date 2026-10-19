@@ -136,8 +136,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   carries `group_key`, and `groups` counts each group over the whole match,
   so a band never counts its loaded rows. The undecided total above the list
   is `ideas_undecided_total`, never a sum of rows. The grouping and the sort
-  are per-device preferences (`settingsStore.assetGrouping`, `assetSort`), not
-  URL params — the URL carries the filter only. The list is deliberately
+  are in the address since CON-392 — a smart group (`/api/saved-views`,
+  surface `assets`) stores both — and fall back to the device's preference
+  (`settingsStore.assetGrouping`, `assetSort`) when the address names none.
+  Dates travel as the server takes them: a preset as `updated=7d`, a custom
+  range as days, both read in `tz`. The list is deliberately
   not virtualised, because its sticky group bands need the rows above the
   window to exist. See [`docs/assets-list.md`](./docs/assets-list.md).
 - **The Ideas list is the server's answer to the URL too** (CON-388/389),
@@ -147,12 +150,14 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   well, because a **smart group** (`/api/saved-views`, surface `ideas`) is
   that address saved, minus the pile. Never count or pile ideas on the
   client: the rail's figure is a `pile=waiting&limit=1` read. Both lists'
-  filters are one per-list model and vocabulary (`lib/smartFilter`), drawn
-  two ways: Assets as the token bar (`components/smartFilter/SmartFilterBar`),
-  Ideas as **a sentence you edit** (`IdeaSentence`, CON-391) — one catalogue
-  sentence per field and operator, clauses in a fixed order, joined by
-  `formatListParts`. Same fields, same address, same counts; never assemble
-  a clause from fragments. Bulk delete is
+  filters are **a sentence you edit** — one
+  `components/smartFilter/FilterSentence` over a per-list model and sentence
+  vocabulary (`lib/smartFilter`; CON-391 for Ideas, CON-392 for Assets): one
+  catalogue sentence per field and operator, clauses in a fixed order, joined
+  by `formatListParts`, and on Assets the type is the subject ("Showing
+  PDFs, in …"). Never assemble a clause from fragments. Both lists have
+  smart groups through the same `SavedViewsMenu` and `useSavedViews(surface)`,
+  on the workspace page only. Bulk delete is
   `POST /api/ideas/bulk-delete` in batches of 500, and select-all is
   `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
   `idea_read_only`); only its campaign may change.

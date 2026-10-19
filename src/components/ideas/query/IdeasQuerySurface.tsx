@@ -38,7 +38,7 @@ import {
   useIdeaListWriter,
   useUndecidedIdeaCount,
 } from '@/hooks/useIdeaList'
-import { useIdeaViewWriter, useIdeaViews } from '@/hooks/useIdeaViews'
+import { useSavedViewWriter, useSavedViews } from '@/hooks/useSavedViews'
 import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
 import { cn } from '@/lib'
 import { viewerTimeZone } from '@/lib/assetFilter'
@@ -74,10 +74,11 @@ import { IdeaCapture } from '../IdeaCapture'
 import { IdeaRow } from '../IdeaRow'
 import {
   DeleteGroupDialog,
-  IdeaViewsMenu,
+  SavedViewsMenu,
+  GroupActions,
   SaveGroupDialog,
-} from './IdeaViewsMenu'
-import { IdeaSentence } from './IdeaSentence'
+} from '@/components/smartFilter/SavedViewsMenu'
+import { FilterSentence } from '@/components/smartFilter/FilterSentence'
 import { useIdeaVocabulary, type IdeaVocabulary } from './useIdeaVocabulary'
 
 /** What the delete dialog is asking about. */
@@ -140,8 +141,8 @@ export function IdeasQuerySurface({
   const writer = useIdeaListWriter({ campaignId })
   // Smart groups are the workspace page's (§5); a campaign's has none yet.
   const groupsOn = campaignId === null
-  const views = useIdeaViews({ enabled: groupsOn })
-  const viewWriter = useIdeaViewWriter()
+  const views = useSavedViews('ideas', { enabled: groupsOn })
+  const viewWriter = useSavedViewWriter('ideas')
   const allCount = useUndecidedIdeaCount()
   const active = views.data?.find((v) => v.id === search.view) ?? null
   const edited = !!active && active.valid && !matchesView(search, active.query)
@@ -245,7 +246,7 @@ export function IdeasQuerySurface({
         onSuccess: (view) => {
           setSaving(null)
           onSearchChange({ ...search, view: view.id })
-          toast.success(t('ideas.views.saved', { name: view.name }))
+          toast.success(t('savedViews.saved', { name: view.name }))
         },
       },
     )
@@ -260,7 +261,7 @@ export function IdeasQuerySurface({
       size="sm"
       onClick={() => setSaving({ mode: 'new' })}
     >
-      {t('ideas.views.saveAs')}
+      {t('savedViews.saveAs')}
     </Button>
   )
 
@@ -378,8 +379,9 @@ export function IdeasQuerySurface({
         // an idea and narrowing the list are different acts.
         <div className="mt-4 flex min-h-0 flex-1 flex-col">
           {/* Which view this is, then what it shows, as one sentence. */}
-          <IdeaSentence
+          <FilterSentence
             filter={filter}
+            model={IDEA_FILTER_MODEL}
             onChange={onFilterChange}
             vocabulary={vocabulary}
             total={total}
@@ -388,8 +390,10 @@ export function IdeasQuerySurface({
             clearable={!active}
             leading={
               groupsOn && (
-                <IdeaViewsMenu
+                <SavedViewsMenu
                   views={views.data ?? []}
+                  allLabel={t('savedViews.all.ideas')}
+                  countName="undecided"
                   active={active}
                   edited={edited}
                   allCount={allCount}
@@ -402,7 +406,7 @@ export function IdeasQuerySurface({
                   }
                   onDuplicate={(view) =>
                     viewWriter.create.mutate({
-                      name: t('ideas.views.copyName', {
+                      name: t('savedViews.copyName', {
                         name: view.name,
                       }).slice(0, SAVED_VIEW_NAME_MAX),
                       query: view.query,
@@ -429,14 +433,14 @@ export function IdeasQuerySurface({
           />
           {groupsOn && active && !active.valid && (
             <p className="mt-1 flex items-center gap-2 pl-5 text-sm text-destructive">
-              {t('ideas.views.invalid')}
+              {t('savedViews.invalid')}
               {active.canEdit && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setRemoving(active)}
                 >
-                  {t('ideas.views.remove.confirm')}
+                  {t('savedViews.remove.confirm')}
                 </Button>
               )}
             </p>
@@ -541,13 +545,13 @@ export function IdeasQuerySurface({
         suggested={saving?.mode === 'rename' ? saving.view.name : suggestedName}
         title={
           saving?.mode === 'rename'
-            ? t('ideas.views.save.renameTitle')
-            : t('ideas.views.save.title')
+            ? t('savedViews.save.renameTitle')
+            : t('savedViews.save.title')
         }
         confirm={
           saving?.mode === 'rename'
-            ? t('ideas.views.save.renameConfirm')
-            : t('ideas.views.save.confirm')
+            ? t('savedViews.save.renameConfirm')
+            : t('savedViews.save.confirm')
         }
         withShare={saving?.mode !== 'rename'}
         saving={viewWriter.create.isPending || viewWriter.update.isPending}
@@ -1030,52 +1034,5 @@ function SelectionBar({
         </Button>
       </div>
     </div>
-  )
-}
-
-/**
- * An edited group's actions, at the end of the sentence (CON-391): Save
- * changes for whoever may change it, Save as new… and Revert. Nothing is
- * stored until one is chosen.
- */
-function GroupActions({
-  canEdit,
-  busy,
-  onSaveChanges,
-  onSaveAs,
-  onRevert,
-}: {
-  canEdit: boolean
-  busy: boolean
-  onSaveChanges: () => void
-  onSaveAs: () => void
-  onRevert: () => void
-}) {
-  const { t } = useTranslation()
-  const action =
-    'cursor-pointer text-[13px] font-medium whitespace-nowrap text-foreground outline-none hover:underline focus-visible:underline disabled:opacity-50'
-  return (
-    <span className="inline-flex items-center gap-3.5">
-      {canEdit && (
-        <button
-          type="button"
-          className={action}
-          onClick={onSaveChanges}
-          disabled={busy}
-        >
-          {t('ideas.views.saveChanges')}
-        </button>
-      )}
-      <button type="button" className={action} onClick={onSaveAs}>
-        {t('ideas.views.saveAsNew')}
-      </button>
-      <button
-        type="button"
-        className={cn(action, 'font-normal text-secondary-foreground')}
-        onClick={onRevert}
-      >
-        {t('ideas.views.revert')}
-      </button>
-    </span>
   )
 }

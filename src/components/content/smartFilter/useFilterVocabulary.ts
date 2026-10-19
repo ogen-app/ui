@@ -18,8 +18,9 @@ import {
   type FilterField,
   type FilterToken,
 } from '@/lib/assetFilter'
-import { formatDate, formatList } from '@/lib/intl'
-import type { SmartVocabulary, ValueOption } from '@/lib/smartFilter'
+import { formatDate, formatList, formatNumber } from '@/lib/intl'
+import type { Clause, SentenceVocabulary, ValueOption } from '@/lib/smartFilter'
+import type { Translation } from '@/i18n/resources/en'
 import type { AssetListPage } from '@/types/assetList'
 
 export type { ValueOption }
@@ -40,9 +41,9 @@ const UPDATED_KEY = {
 } as const
 
 /**
- * The words and values of the Assets filter bar (CON-371): what each field is
- * called, its operators, the values it offers with their counts, and how a
- * token reads.
+ * The words and values of the Assets filter sentence (CON-371, as a sentence
+ * since CON-392): how each clause reads, the values each field offers with
+ * their counts, and what the panels and the starters say.
  *
  * Every count is the server's — the `facets` of the current query, which apply
  * every other filter but not the field's own, so ticking a second tag still
@@ -65,49 +66,6 @@ export function useFilterVocabulary({
   const fields = useMemo(
     () => FILTER_FIELDS.filter((field) => !(scoped && field === 'campaign')),
     [scoped],
-  )
-
-  const fieldLabel = useCallback(
-    (field: FilterField) => t(`content.filter.field.${field}`),
-    [t],
-  )
-
-  const fieldHint = useCallback(
-    (field: FilterField) => t(`content.filter.fieldHint.${field}`),
-    [t],
-  )
-
-  /** The operator, as the token says it. */
-  const operatorLabel = useCallback(
-    (field: FilterField, negated: boolean) => {
-      switch (field) {
-        case 'title':
-          return negated
-            ? t('content.filter.op.notContains')
-            : t('content.filter.op.contains')
-        case 'updated':
-          return negated
-            ? t('content.filter.op.before')
-            : t('content.filter.op.in')
-        case 'ideas':
-          return negated
-            ? t('content.filter.op.hasNo')
-            : t('content.filter.op.has')
-        case 'text':
-          return t('content.filter.op.mentions')
-        default:
-          return negated
-            ? t('content.filter.op.isNot')
-            : t('content.filter.op.is')
-      }
-    },
-    [t],
-  )
-
-  /** Whether the field has two operators to choose between. */
-  const hasOperatorStep = useCallback(
-    (field: FilterField) => field !== 'text',
-    [],
   )
 
   const countsOf = useCallback(
@@ -158,40 +116,89 @@ export function useFilterVocabulary({
     [t, campaignNames, tags.data, day],
   )
 
-  /** A token's values as one phrase: "Gartner or Finance", "1 Oct – 7 Oct". */
-  const tokenValueText = useCallback(
-    (token: Pick<FilterToken, 'field' | 'values'>) => {
-      const { field, values } = token
-      if (field === 'updated' && values.length === 2)
-        return t('content.filter.range', {
-          from: day(values[0]),
-          // The endpoint's upper bound is exclusive; people say the last day.
-          to: day(previousDay(values[1])),
-        })
-      if (field === 'title' || field === 'text')
-        return formatList(
-          values.map((v) => t('content.filter.quoted', { text: v })),
-          'disjunction',
-          locale,
-        )
-      return formatList(
-        values.map((v) => valueLabel(field, v)),
+  /** One value as it reads inside a clause: "PDFs", "only partly read". */
+  const sentenceValue = useCallback(
+    (field: FilterField, value: string): string => {
+      switch (field) {
+        case 'kind':
+          return t(`content.sentence.kind.${value as 'pdf'}`, {
+            defaultValue: value,
+          })
+        case 'status':
+          return t(`content.sentence.status.${value as 'ready'}`, {
+            defaultValue: value,
+          })
+        case 'ideas':
+          return t(`content.sentence.ideas.${value as 'yes'}`, {
+            defaultValue: value,
+          })
+        case 'campaign':
+          return value === NONE
+            ? t('content.sentence.noCampaign')
+            : valueLabel(field, value)
+        case 'updated':
+          return isPreset(value)
+            ? t(`content.sentence.updated.${UPDATED_KEY[value]}`)
+            : day(value)
+        case 'title':
+        case 'text':
+          return t('content.sentence.quoted', { text: value })
+        default:
+          return valueLabel(field, value)
+      }
+    },
+    [t, valueLabel, day],
+  )
+
+  /**
+   * A token as its clause (CON-392): the catalogue key and what fills it.
+   * One sentence per field and operator, so a language puts the words in its
+   * own order; values are joined with "or", as the server matches any of
+   * them. Type, kept, is the sentence's subject — "Showing *PDFs*, …".
+   */
+  const clause = useCallback(
+    (token: FilterToken): Clause => {
+      const { field, negated, values } = token
+      const key = (
+        name: ClauseName,
+        fill: Record<string, string> = {},
+      ): Clause => ({ key: `content.sentence.clause.${name}`, values: fill })
+      if (field === 'updated') {
+        if (negated) return key('updated_not', { values: day(values[0]) })
+        if (values.length === 2)
+          return key('updated_range', {
+            from: day(values[0]),
+            // The endpoint's upper bound is exclusive; people say the last day.
+            to: day(previousDay(values[1])),
+          })
+        return key('updated', { values: sentenceValue(field, values[0]) })
+      }
+      if (field === 'text') return key('text', { values: values[0] ?? '' })
+      if (!negated && values.length === 1) {
+        if (field === 'tag' && values[0] === NONE) return key('tag_none')
+        if (field === 'ideas' && values[0] === 'none') return key('ideas_none')
+        if (field === 'ideas' && values[0] === 'unread')
+          return key('ideas_unread')
+      }
+      const list = formatList(
+        values.map((v) => sentenceValue(field, v)),
         'disjunction',
         locale,
       )
+      return key(negated ? `${field}_not` : field, { values: list })
     },
-    [t, day, valueLabel, locale],
+    [day, sentenceValue, locale],
   )
 
-  /** The whole token as one sentence — for screen readers and the empty state. */
+  /** The clause as plain words — for screen readers and the empty state. */
   const tokenText = useCallback(
-    (token: FilterToken) =>
-      t('content.filter.tokenPlain', {
-        field: fieldLabel(token.field),
-        op: operatorLabel(token.field, token.negated),
-        values: tokenValueText(token),
-      }),
-    [t, fieldLabel, operatorLabel, tokenValueText],
+    (token: FilterToken) => {
+      const { key, values } = clause(token)
+      // One key of a known family; the union is wider than `t` resolves.
+      const words = (t as (k: string, o: object) => string)(key, values)
+      return words.replace(/<\/?\w+>/g, '')
+    },
+    [t, clause],
   )
 
   /**
@@ -245,6 +252,9 @@ export function useFilterVocabulary({
               : { pinned: true }),
           }))
         case 'updated':
+          // "Before" takes a day: the endpoint reads no preset as an upper
+          // bound, so the panel opens on the date.
+          if (negated) return []
           return UPDATED_PRESETS.map((value) => ({
             value,
             label: valueLabel('updated', value),
@@ -294,29 +304,113 @@ export function useFilterVocabulary({
     [countsOf, valueLabel, campaignNames, tags.data],
   )
 
-  const textPlaceholder = useCallback(
-    (field: FilterField) =>
-      field === 'text'
-        ? t('content.filter.textPlaceholder')
-        : t('content.filter.titlePlaceholder'),
+  const question = useCallback(
+    (field: FilterField) => t(`content.sentence.question.${field}`),
     [t],
   )
+  const switchLabels = useCallback(
+    (field: FilterField): [string, string] | null =>
+      field === 'text'
+        ? null
+        : [
+            t(`content.sentence.include.${field}`),
+            t(`content.sentence.exclude.${field}`),
+          ],
+    [t],
+  )
+  const findLabel = useCallback(
+    (field: FilterField) =>
+      field === 'kind' || field === 'campaign' || field === 'tag'
+        ? t(`content.sentence.find.${field}`)
+        : null,
+    [t],
+  )
+  const starter = useCallback(
+    (field: FilterField) =>
+      field === 'text' ? '' : t(`content.sentence.starter.${field}`),
+    [t],
+  )
+  const starterHint = useCallback(
+    (field: FilterField) =>
+      field === 'kind' ||
+      field === 'status' ||
+      field === 'updated' ||
+      field === 'ideas'
+        ? t(`content.sentence.starterHint.${field}`)
+        : null,
+    [t],
+  )
+  const textPlaceholder = useCallback(
+    (field: FilterField) =>
+      t(
+        field === 'text'
+          ? 'content.sentence.textPlaceholder.text'
+          : 'content.sentence.textPlaceholder.title',
+      ),
+    [t],
+  )
+  const matches = useCallback(
+    (count: number) =>
+      t('content.sentence.assets', {
+        count,
+        formatted: formatNumber(count, {}, locale),
+      }),
+    [t, locale],
+  )
 
-  return {
-    label: t('content.filter.label'),
-    placeholder: t('content.filter.placeholder'),
-    textPlaceholder,
-    fields,
-    fieldLabel,
-    fieldHint,
-    operatorLabel,
-    hasOperatorStep,
-    valueLabel,
-    tokenValueText,
-    tokenText,
-    options,
-  }
+  const vocabulary: SentenceVocabulary<FilterField> & {
+    valueLabel: typeof valueLabel
+  } = useMemo(
+    () => ({
+      fields,
+      order: SENTENCE_ORDER,
+      subject: 'kind',
+      showingKey: 'content.sentence.showing',
+      showingSubjectKey: 'content.sentence.showingSubject',
+      showingAllKey: 'content.sentence.showingAll',
+      clause,
+      tokenText,
+      options,
+      question,
+      switchLabels,
+      findLabel,
+      starter,
+      starterHint,
+      textPlaceholder,
+      matches,
+      valueLabel,
+    }),
+    [
+      fields,
+      clause,
+      tokenText,
+      options,
+      question,
+      switchLabels,
+      findLabel,
+      starter,
+      starterHint,
+      textPlaceholder,
+      matches,
+      valueLabel,
+    ],
+  )
+  return vocabulary
 }
 
-export type FilterVocabulary = ReturnType<typeof useFilterVocabulary> &
-  SmartVocabulary<FilterField>
+export type FilterVocabulary = ReturnType<typeof useFilterVocabulary>
+
+/** The order the clauses read in; Type, kept, leads as the subject. */
+const SENTENCE_ORDER: readonly FilterField[] = [
+  'kind',
+  'campaign',
+  'tag',
+  'title',
+  'status',
+  'updated',
+  'ideas',
+  'text',
+]
+
+/** The clauses the catalogue words, one per field and operator. */
+type ClauseName = keyof Translation['content']['sentence']['clause']

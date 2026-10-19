@@ -29,23 +29,26 @@ import { formatNumber } from '@/lib/intl'
 import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
 
 /**
- * The smart groups (CON-388 §5) as one dropdown opening the filter sentence's
- * line (CON-391),
- * naming what is open — "All ideas 30", or the group and whether it has been
- * edited. **A group is a saved filter, not a folder**: it holds the filters,
- * the grouping and the sort, never a list of ideas, so an idea is in it the
- * moment it matches and leaves when it stops.
+ * A list's smart groups (CON-388 §5; Assets since CON-392) as one dropdown
+ * opening the filter sentence's line, naming what is open — "All ideas 30",
+ * or the group and whether it has been edited. **A group is a saved filter,
+ * not a folder**: it holds the filters, the grouping and the sort, never a
+ * list of rows, so a row is in it the moment it matches and leaves when it
+ * stops.
  *
- * The menu: All ideas, then the groups, newest first, each with its undecided
- * count — the figure that falls as people answer — a people mark when shared,
+ * The menu: the whole list, then the groups, newest first, each with its
+ * count (`countName` — for ideas the undecided ones, the figure that falls as
+ * people answer; for assets how many it holds), a people mark when shared,
  * dimmed with no count when its filter no longer parses. A group's ⋯ holds
  * what the viewer may do to it: everything on one they can change
  * (`can_edit`: its creator, or an owner when it is shared or its creator has
  * left), Duplicate alone on somebody else's shared one. Saving the current
  * filter as a group closes the menu; filtering never saves.
  */
-export function IdeaViewsMenu({
+export function SavedViewsMenu({
   views,
+  allLabel,
+  countName,
   active,
   edited,
   allCount,
@@ -58,7 +61,11 @@ export function IdeaViewsMenu({
   onDelete,
 }: {
   views: SavedView[]
-  /** The open group, or null for All ideas. */
+  /** "All ideas", "All assets": the list with no group open. */
+  allLabel: string
+  /** The count beside each group: `undecided` for ideas, `total` for assets. */
+  countName: string
+  /** The open group, or null for the whole list. */
   active: SavedView | null
   edited: boolean
   allCount: number
@@ -73,10 +80,10 @@ export function IdeaViewsMenu({
 }) {
   const { t, i18n } = useTranslation()
   const count = (n: number) => formatNumber(n, {}, i18n.language)
-  const label = active?.name ?? t('ideas.views.all')
+  const label = active?.name ?? allLabel
   const figure = active
     ? active.valid
-      ? count(active.counts.undecided ?? 0)
+      ? count(active.counts[countName] ?? 0)
       : null
     : count(allCount)
 
@@ -85,7 +92,7 @@ export function IdeaViewsMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={t('ideas.views.trigger', { name: label })}
+          aria-label={t('savedViews.trigger', { name: label })}
           // A ghost button opening the sentence's line (CON-391). Its 17px
           // inset puts the icon's centre at 26px — over the select-all box
           // in the rows' 20px inset, and so over every row's.
@@ -101,7 +108,7 @@ export function IdeaViewsMenu({
           {active?.shared && (
             <UsersIcon
               className="size-3.5 text-tertiary-foreground"
-              aria-label={t('ideas.views.shared')}
+              aria-label={t('savedViews.shared')}
             />
           )}
           {figure !== null && (
@@ -109,7 +116,7 @@ export function IdeaViewsMenu({
           )}
           {edited && (
             <span className="text-xs font-normal text-accent">
-              {t('ideas.views.edited')}
+              {t('savedViews.edited')}
             </span>
           )}
           <CaretDownIcon className="size-3.5 text-secondary-foreground" />
@@ -123,20 +130,18 @@ export function IdeaViewsMenu({
           <span className="flex size-4 shrink-0 items-center">
             {!active && <CheckIcon className="size-3.5 text-accent" />}
           </span>
-          <span className="min-w-0 flex-1 truncate">
-            {t('ideas.views.all')}
-          </span>
+          <span className="min-w-0 flex-1 truncate">{allLabel}</span>
           <span className="text-xs text-accent tabular-nums">
             {count(allCount)}
           </span>
         </DropdownMenuItem>
 
         <DropdownMenuLabel className="pt-3">
-          {t('ideas.views.groups')}
+          {t('savedViews.groups')}
         </DropdownMenuLabel>
         {views.length === 0 ? (
           <p className="px-2 pb-2 text-xs text-secondary-foreground">
-            {t('ideas.views.emptyMenu')}
+            {t('savedViews.emptyMenu')}
           </p>
         ) : (
           views.map((view) => (
@@ -158,18 +163,18 @@ export function IdeaViewsMenu({
                 {view.shared && (
                   <UsersIcon
                     className="size-3.5 shrink-0 text-tertiary-foreground"
-                    aria-label={t('ideas.views.shared')}
+                    aria-label={t('savedViews.shared')}
                   />
                 )}
                 {view.valid && (
                   <span className="text-xs text-accent tabular-nums">
-                    {count(view.counts.undecided ?? 0)}
+                    {count(view.counts[countName] ?? 0)}
                   </span>
                 )}
               </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
-                  aria-label={t('ideas.views.menu', { name: view.name })}
+                  aria-label={t('savedViews.menu', { name: view.name })}
                   className="h-8 w-8 shrink-0 justify-center px-0 [&>svg:last-child]:hidden"
                 >
                   <DotsThreeIcon weight="bold" className="size-4" />
@@ -178,19 +183,19 @@ export function IdeaViewsMenu({
                   {view.canEdit && (
                     <>
                       <DropdownMenuItem onSelect={() => onRename(view)}>
-                        {t('ideas.views.rename')}
+                        {t('savedViews.rename')}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onSelect={() => onShare(view, !view.shared)}
                       >
                         {view.shared
-                          ? t('ideas.views.unshare')
-                          : t('ideas.views.share')}
+                          ? t('savedViews.unshare')
+                          : t('savedViews.share')}
                       </DropdownMenuItem>
                     </>
                   )}
                   <DropdownMenuItem onSelect={() => onDuplicate(view)}>
-                    {t('ideas.views.duplicate')}
+                    {t('savedViews.duplicate')}
                   </DropdownMenuItem>
                   {view.canEdit && (
                     <>
@@ -199,7 +204,7 @@ export function IdeaViewsMenu({
                         className="text-destructive"
                         onSelect={() => onDelete(view)}
                       >
-                        {t('ideas.views.delete')}
+                        {t('savedViews.delete')}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -216,7 +221,7 @@ export function IdeaViewsMenu({
           className="gap-2.5"
         >
           <PlusIcon className="size-4" />
-          {t('ideas.views.saveCurrent')}
+          {t('savedViews.saveCurrent')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -266,7 +271,7 @@ export function SaveGroupDialog({
           saving={saving}
           onClose={onClose}
           onSave={onSave}
-          what={t('ideas.views.save.what')}
+          what={t('savedViews.save.what')}
         />
       )}
     </ModalContainer>
@@ -303,7 +308,7 @@ function SaveGroupForm({
       }}
     >
       <label className="flex flex-col gap-1 text-xs text-secondary-foreground">
-        {t('ideas.views.save.name')}
+        {t('savedViews.save.name')}
         <Input
           value={name}
           autoFocus
@@ -314,11 +319,11 @@ function SaveGroupForm({
       {withShare && (
         <>
           <label className="flex items-center justify-between gap-3 text-sm">
-            {t('ideas.views.save.share')}
+            {t('savedViews.save.share')}
             <Switch
               checked={shared}
               onCheckedChange={setShared}
-              aria-label={t('ideas.views.save.share')}
+              aria-label={t('savedViews.save.share')}
             />
           </label>
           <p className="text-xs text-secondary-foreground">{what}</p>
@@ -326,7 +331,7 @@ function SaveGroupForm({
       )}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onClose}>
-          {t('ideas.views.save.cancel')}
+          {t('savedViews.save.cancel')}
         </Button>
         <Button
           type="submit"
@@ -341,7 +346,7 @@ function SaveGroupForm({
   )
 }
 
-/** Deleting a group asks; the ideas in it are untouched, and it says so. */
+/** Deleting a group asks; what it shows is untouched, and it says so. */
 export function DeleteGroupDialog({
   view,
   deleting,
@@ -358,14 +363,14 @@ export function DeleteGroupDialog({
     <ModalContainer
       isOpen={view !== null}
       onClose={deleting ? () => {} : onClose}
-      title={t('ideas.views.remove.title', { name: view?.name ?? '' })}
+      title={t('savedViews.remove.title', { name: view?.name ?? '' })}
       size="small"
     >
       <div className="flex flex-col gap-4">
         <p className="text-sm text-secondary-foreground">
           {view?.shared
-            ? t('ideas.views.remove.bodyShared')
-            : t('ideas.views.remove.body')}
+            ? t('savedViews.remove.bodyShared')
+            : t('savedViews.remove.body')}
         </p>
         <div className="flex justify-end gap-2">
           <Button
@@ -374,7 +379,7 @@ export function DeleteGroupDialog({
             onClick={onClose}
             disabled={deleting}
           >
-            {t('ideas.views.remove.keep')}
+            {t('savedViews.remove.keep')}
           </Button>
           <Button
             type="button"
@@ -382,10 +387,57 @@ export function DeleteGroupDialog({
             onClick={onConfirm}
             loading={deleting}
           >
-            {t('ideas.views.remove.confirm')}
+            {t('savedViews.remove.confirm')}
           </Button>
         </div>
       </div>
     </ModalContainer>
+  )
+}
+
+/**
+ * An edited group's actions, at the end of the sentence (CON-391): Save
+ * changes for whoever may change it, Save as new… and Revert. Nothing is
+ * stored until one is chosen.
+ */
+export function GroupActions({
+  canEdit,
+  busy,
+  onSaveChanges,
+  onSaveAs,
+  onRevert,
+}: {
+  canEdit: boolean
+  busy: boolean
+  onSaveChanges: () => void
+  onSaveAs: () => void
+  onRevert: () => void
+}) {
+  const { t } = useTranslation()
+  const action =
+    'cursor-pointer text-[13px] font-medium whitespace-nowrap text-foreground outline-none hover:underline focus-visible:underline disabled:opacity-50'
+  return (
+    <span className="inline-flex items-center gap-3.5">
+      {canEdit && (
+        <button
+          type="button"
+          className={action}
+          onClick={onSaveChanges}
+          disabled={busy}
+        >
+          {t('savedViews.saveChanges')}
+        </button>
+      )}
+      <button type="button" className={action} onClick={onSaveAs}>
+        {t('savedViews.saveAsNew')}
+      </button>
+      <button
+        type="button"
+        className={cn(action, 'font-normal text-secondary-foreground')}
+        onClick={onRevert}
+      >
+        {t('savedViews.revert')}
+      </button>
+    </span>
   )
 }

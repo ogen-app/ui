@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { Link, type LinkProps } from '@tanstack/react-router'
 import { Trans, useTranslation } from 'react-i18next'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -46,8 +46,9 @@ const GROUP_KEY = {
 } as const satisfies Record<AssetGrouping, string>
 
 /**
- * The line between the filter bar and the list (CON-378): how much is left to
- * answer on the left, how the list is laid out on the right.
+ * The line between the filter sentence and the list (CON-378): select all
+ * and how much is left to answer on the left, how the list is laid out on the
+ * right.
  *
  * The sentence counts **ideas** — the server's sum over the whole match
  * (`ideas_undecided_total`, CON-379), never one added up here — and says over
@@ -61,6 +62,7 @@ const GROUP_KEY = {
  * the list has none.
  */
 export function AssetViewBar({
+  leading,
   undecided,
   documents,
   ideasLink,
@@ -71,6 +73,8 @@ export function AssetViewBar({
   onSortChange,
   searching,
 }: {
+  /** The list's select-all, at the line's start over the rows' boxes. */
+  leading?: ReactNode
   /** Undecided ideas over the whole match. */
   undecided: number
   /** The documents matching the filter — all of them when nothing is filtered. */
@@ -96,6 +100,7 @@ export function AssetViewBar({
 
   return (
     <div className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-5 gap-y-1 px-1 text-[13px]">
+      {leading}
       {undecided > 0 && (
         <p className="mr-auto flex items-center gap-1.5 text-sm text-secondary-foreground">
           <HugeiconsIcon

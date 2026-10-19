@@ -4,7 +4,6 @@ import {
   ideaFilterFromSearch,
   ideaTokensOf,
   ideaViewFromSearch,
-  parseIdeaFieldPrefix,
   parseIdeaListSearch,
   searchFromIdeaFilter,
   toIdeaRequestParams,
@@ -95,15 +94,6 @@ describe('the filter and its address', () => {
     expect(
       withoutIdeaToken(filter, ideaTokensOf(filter)[0]).createdAfter,
     ).toBeNull()
-  })
-
-  it('jumps to a field from the old box syntax', () => {
-    expect(parseIdeaFieldPrefix('-source:hand')).toEqual({
-      field: 'source_asset',
-      negated: true,
-      rest: 'hand',
-    })
-    expect(parseIdeaFieldPrefix('colour:red')).toBeNull()
   })
 })
 
