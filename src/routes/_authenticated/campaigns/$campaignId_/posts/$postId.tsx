@@ -15,6 +15,7 @@ import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { ThreadSplitNote } from '@/components/posts/sequence/ThreadSplitNote'
 import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostLockNotice } from '@/components/posts/PostLockNotice'
+import { PostFailureNotice } from '@/components/posts/PostFailureNotice'
 import { PostPerformanceSection } from '@/components/analytics/PostPerformanceSection'
 import { usePostPerformance } from '@/hooks/usePostPerformance'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
@@ -809,6 +810,12 @@ function PostEditorSurface({
                 the reason for the lock, above everything the lock applies to. */}
             <div className="w-content empty:hidden">
               <PostLockNotice status={doc.status} />
+            </div>
+            {/* The other fact about the whole post that a badge can't carry:
+                why a failed one failed. Same slot, and never alongside the
+                lock — a failed post isn't locked. */}
+            <div className="w-content empty:hidden">
+              <PostFailureNotice post={doc} />
             </div>
             <UpgradeDialog gate={qualityGate} />
             <div className="w-content">

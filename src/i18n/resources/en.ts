@@ -3020,6 +3020,34 @@ export const en = {
       },
     },
 
+    /**
+     * Why a post failed to publish (CON-200), one sentence per code the
+     * publishing worker writes. Each says what went wrong and, where there is
+     * one, what to do before scheduling it again.
+     */
+    failure: {
+      noAccount:
+        'No account is connected for this network, so there was nowhere to publish it. Connect one, then schedule it again.',
+      chooseAccount:
+        'More than one account is connected for this network and none was chosen. Choose one, then schedule it again.',
+      accountGone:
+        'The account chosen for this post is no longer connected. Choose another, then schedule it again.',
+      accountMismatch:
+        'The account chosen for this post belongs to a different network. Choose one for this network, then schedule it again.',
+      duplicate:
+        'Identical content was already submitted in the last 24 hours, so the publishing service refused it. Change the wording, then schedule it again.',
+      rejected: 'The publishing service refused this post. It said:',
+      retryRejected:
+        'The publishing service refused to submit this post again. It said:',
+      networkRefused: 'The network refused this post when it came to publish.',
+      partial: 'This post only partly published, so it is marked as failed.',
+      noPlatform: 'This post had no network set, so it could not be published.',
+      unsupported:
+        'This network can’t be published to automatically. Publish it by hand instead.',
+      notSetUp: 'Automatic publishing isn’t set up for this workspace yet.',
+      unknown: 'Publishing failed. The server said:',
+    },
+
     sources: {
       heading: 'Sources',
       /** The rail section's title. Its capitals are the copy, as everywhere. */

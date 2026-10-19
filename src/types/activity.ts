@@ -34,10 +34,9 @@ export type ActivityAuthorCount = {
  * bucket because the reader's question is the same for either, and keeps the
  * distinction per row for anyone who opens it.
  *
- * `failure_reason` is the server's own prose (`"zernio_terminal: rejected"`),
- * composed in Go and not a code we can translate — the same shape as an upload
- * refusal and the `title` on a notification. It is shown verbatim or not at
- * all.
+ * `failure_reason` is the post's own, `<code>: <message>` — worded through
+ * `lib/postFailure`, never shown raw unless its code is one this build
+ * predates.
  */
 export type ActivityFailedPost = {
   post_id: string

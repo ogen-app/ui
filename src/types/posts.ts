@@ -148,6 +148,16 @@ export type Post = {
    */
   publisher_post_id?: string
   /**
+   * Why the post failed to publish (CON-200): `<code>: <message>`, written by
+   * the publishing worker. Omitted when empty. Read it through
+   * `lib/postFailure`, never verbatim — the code is ours to word and the
+   * message is Go prose.
+   *
+   * Read-only, like `publisher_post_id`, and **not cleared** when the post
+   * leaves `failed` — so it means something only while the status says so.
+   */
+  failure_reason?: string
+  /**
    * The platform permalink for the live post (CON-165) — `""` until there is
    * one. Written server-side from Zernio when a post publishes, and by the
    * manual `verify-external` path from the URL the user pasted.

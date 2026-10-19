@@ -2369,6 +2369,36 @@ export const es: Translation = {
       },
     },
 
+    /**
+     * Por qué no se pudo publicar una publicación (CON-200).
+     */
+    failure: {
+      noAccount:
+        'No hay ninguna cuenta conectada para esta red, así que no había dónde publicarla. Conecta una y vuelve a programarla.',
+      chooseAccount:
+        'Hay más de una cuenta conectada para esta red y no se eligió ninguna. Elige una y vuelve a programarla.',
+      accountGone:
+        'La cuenta elegida para esta publicación ya no está conectada. Elige otra y vuelve a programarla.',
+      accountMismatch:
+        'La cuenta elegida para esta publicación pertenece a otra red. Elige una de esta red y vuelve a programarla.',
+      duplicate:
+        'Ya se envió un contenido idéntico en las últimas 24 horas, así que el servicio de publicación lo rechazó. Cambia el texto y vuelve a programarla.',
+      rejected:
+        'El servicio de publicación rechazó esta publicación. Respondió:',
+      retryRejected:
+        'El servicio de publicación se negó a volver a enviar esta publicación. Respondió:',
+      networkRefused: 'La red rechazó esta publicación al ir a publicarla.',
+      partial:
+        'Esta publicación solo se publicó en parte, así que figura como fallida.',
+      noPlatform:
+        'Esta publicación no tenía ninguna red asignada, así que no se pudo publicar.',
+      unsupported:
+        'En esta red no se puede publicar automáticamente. Publícala a mano.',
+      notSetUp:
+        'La publicación automática aún no está configurada en este espacio de trabajo.',
+      unknown: 'La publicación falló. El servidor respondió:',
+    },
+
     sources: {
       heading: 'Fuentes',
       sectionTitle: 'FUENTES',
