@@ -41,6 +41,15 @@ export type LocalSettings = {
    */
   panelMemory: PanelMemory
 
+  /**
+   * The right rail put away with `]` (CON-394), whatever it was showing. A
+   * flag beside the memory rather than a write to it: closing a panel drops
+   * back to the assistant and closing the assistant forgets it, so neither
+   * could hide the rail and bring back exactly what was there. Any panel
+   * action shows the rail again.
+   */
+  rightRailHidden: boolean
+
   // Modal/Dialog State
   lastOpenedModals: Record<string, string> // modal ID -> last opened timestamp
 
@@ -130,6 +139,11 @@ type SettingsState = LocalSettings &
     openRightPanel: (panel: RightPanel) => void
     /** Close what is showing: a panel drops back to the assistant, the assistant closes the rail. */
     closeRightPanel: () => void
+    /**
+     * `]` (CON-394): put the rail away, or bring back what it was showing —
+     * or the assistant, the rail's floor, when it was showing nothing.
+     */
+    toggleRightRail: () => void
 
     recordModalOpened: (modalId: string) => void
 
@@ -162,6 +176,7 @@ type SettingsState = LocalSettings &
 const DEFAULT_SETTINGS: LocalSettings = {
   sidebarCollapsed: false,
   panelMemory: DEFAULT_PANEL_MEMORY,
+  rightRailHidden: false,
   lastOpenedModals: {},
   dismissedNotes: [],
   postsPlace: {},
@@ -177,7 +192,9 @@ const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
  * assistant, or nothing. Every component asks this; none reads `panelMemory`.
  */
 export const selectActivePanel = (state: SettingsState): RightPanel | null =>
-  resolveActivePanel(state.panelMemory, state.scope)
+  state.rightRailHidden
+    ? null
+    : resolveActivePanel(state.panelMemory, state.scope)
 
 /**
  * The raw entry for one campaign, or `undefined` — the identity is what makes
@@ -221,22 +238,58 @@ export const useSettingsStore = create<SettingsState>()(
           }))
         },
 
+        // A panel action on a hidden rail acts on what the user can see: the
+        // toggle opens rather than closing something invisible, and opening
+        // shows the rail again.
         toggleRightPanel: (panel) => {
           set((state) => ({
-            panelMemory: togglePanel(state.panelMemory, panel, state.scope),
+            rightRailHidden: false,
+            panelMemory: state.rightRailHidden
+              ? openPanel(state.panelMemory, panel, state.scope)
+              : togglePanel(state.panelMemory, panel, state.scope),
           }))
         },
 
         openRightPanel: (panel) => {
           set((state) => ({
+            rightRailHidden: false,
             panelMemory: openPanel(state.panelMemory, panel, state.scope),
           }))
         },
 
         closeRightPanel: () => {
-          set((state) => ({
-            panelMemory: closePanel(state.panelMemory, state.scope),
-          }))
+          // A hidden rail shows nothing to close.
+          set((state) =>
+            state.rightRailHidden
+              ? {}
+              : { panelMemory: closePanel(state.panelMemory, state.scope) },
+          )
+        },
+
+        toggleRightRail: () => {
+          set((state) => {
+            if (state.rightRailHidden) {
+              const remembered = resolveActivePanel(
+                state.panelMemory,
+                state.scope,
+              )
+              return {
+                rightRailHidden: false,
+                panelMemory: remembered
+                  ? state.panelMemory
+                  : openPanel(state.panelMemory, 'assistant', state.scope),
+              }
+            }
+            if (resolveActivePanel(state.panelMemory, state.scope))
+              return { rightRailHidden: true }
+            return {
+              panelMemory: openPanel(
+                state.panelMemory,
+                'assistant',
+                state.scope,
+              ),
+            }
+          })
         },
 
         // Modal tracking actions
@@ -295,6 +348,7 @@ export const useSettingsStore = create<SettingsState>()(
         partialize: (state) => ({
           sidebarCollapsed: state.sidebarCollapsed,
           panelMemory: state.panelMemory,
+          rightRailHidden: state.rightRailHidden,
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
           postsPlace: state.postsPlace,
@@ -313,6 +367,7 @@ export const useSettingsStore = create<SettingsState>()(
             ...current,
             ...saved,
             panelMemory: sanitizePanelMemory(saved.panelMemory),
+            rightRailHidden: saved.rightRailHidden === true,
             postsPlace: sanitizePostsPlaces(saved.postsPlace),
             collapsedAssetBands: Array.isArray(saved.collapsedAssetBands)
               ? saved.collapsedAssetBands.filter(

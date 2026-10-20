@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { isTargetBusy, shouldIgnoreHotkey } from './hotkeys'
+import {
+  isTargetBusy,
+  shouldIgnoreAppShortcut,
+  shouldIgnoreHotkey,
+} from './hotkeys'
 
 /**
  * The events are dispatched rather than constructed, because the two things
@@ -103,5 +107,40 @@ describe('shouldIgnoreHotkey', () => {
 
   it('ignores a keypress aimed at a text field', () => {
     expect(shouldIgnoreHotkey(press(mount('<textarea></textarea>')))).toBe(true)
+  })
+})
+
+describe('shouldIgnoreAppShortcut', () => {
+  const at = (init: KeyboardEventInit, html = '<div tabindex="0"></div>') => {
+    let ignored: boolean | undefined
+    const el = mount(html)
+    el.addEventListener('keydown', (e) => {
+      ignored = shouldIgnoreAppShortcut(e as KeyboardEvent)
+    })
+    press(el, init)
+    return ignored
+  }
+
+  it('takes a bare letter, and nothing with a modifier on it', () => {
+    expect(at({ key: 'g' })).toBe(false)
+    for (const mod of ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'])
+      expect(at({ key: 'g', [mod]: true })).toBe(true)
+  })
+
+  it('takes `?`, which needs Shift on most layouts', () => {
+    expect(at({ key: '?', shiftKey: true })).toBe(false)
+  })
+
+  it('takes `[` and `]` typed with AltGr, never with ⌘ or Ctrl alone', () => {
+    // AltGr arrives as Ctrl + Alt on Windows and as Alt on a Mac.
+    expect(at({ key: '[', altKey: true })).toBe(false)
+    expect(at({ key: ']', ctrlKey: true, altKey: true })).toBe(false)
+    expect(at({ key: '[', metaKey: true })).toBe(true)
+    expect(at({ key: ']', ctrlKey: true })).toBe(true)
+  })
+
+  it('stays out of a field and ignores a held key', () => {
+    expect(at({ key: 'g' }, '<input />')).toBe(true)
+    expect(at({ key: 'g', repeat: true })).toBe(true)
   })
 })
