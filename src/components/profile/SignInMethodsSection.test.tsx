@@ -118,6 +118,23 @@ describe('SignInMethodsSection', () => {
     expect(await screen.findByText(/on its way to/i)).toBeInTheDocument()
   })
 
+  it('keeps the reset email when the methods cannot be read', async () => {
+    // The card replaced Profile's Password card; a failed (or pre-#227 404)
+    // read must not take the only way to change a password with it.
+    getAuthMethods.mockRejectedValue(new ApiError(404, 'not found'))
+    const user = userEvent.setup()
+    await render()
+
+    expect(
+      await screen.findByText(/couldn't load your sign-in methods/i),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: /email me a reset link/i }),
+    )
+    await waitFor(() => expect(requestPasswordReset).toHaveBeenCalled())
+    expect(requestPasswordReset.mock.calls[0][0]).toBe(USER.email)
+  })
+
   it("explains the server's refusal when the password went away meanwhile", async () => {
     getAuthMethods.mockResolvedValue({
       has_password: true,

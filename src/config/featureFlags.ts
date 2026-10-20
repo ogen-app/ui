@@ -414,11 +414,13 @@ const FEATURE_FLAGS = {
   /**
    * Sign in with Google (CON-396), next to email and password.
    *
-   * Every entry point is gated on this *and* on the server saying Google is
-   * configured (`GET /api/auth/providers` → `google.enabled`), so turning the
-   * flag on before an environment has its OAuth client shows nothing at all.
-   * With the flag off the auth screens, Profile and the secure-account page are
-   * exactly what they were.
+   * Every Google entry point is gated on this *and* on the server saying Google
+   * is configured (`GET /api/auth/providers` → `google.enabled`), so turning
+   * the flag on before an environment has its OAuth client shows no Google
+   * button anywhere; Profile then shows the Sign-in methods card with only its
+   * Password row, which does exactly what the Password card did. With the flag
+   * off the auth screens, Profile and the secure-account page are exactly what
+   * they were.
    *
    * What it touches: a CONTINUE WITH GOOGLE button on login, register and the
    * invitation page (a plain navigation to `/api/auth/google/start` — no

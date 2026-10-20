@@ -36,6 +36,16 @@ describe('getAuthProviders', () => {
     })
   })
 
+  it('does not mistake an outage for "no Google"', async () => {
+    // A 5xx answered as "disabled" would be cached for the query's stale time
+    // and hide the button long after the server came back.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('boom', { status: 503 })),
+    )
+    await expect(getAuthProviders()).rejects.toThrow()
+  })
+
   it('passes a configured server through', async () => {
     vi.stubGlobal(
       'fetch',

@@ -76,19 +76,21 @@ export function SignInMethodsSection() {
         <p className="text-sm text-tertiary-foreground">
           {t('common.loading')}
         </p>
-      ) : methods.isError ? (
-        <p className="text-sm text-destructive">
-          {t('profile.signInMethods.loadFailed')}
-        </p>
       ) : (
         <ul className="flex flex-col border-t border-border pt-6 divide-y divide-border">
+          {/* The password row stands even when the methods can't be read: the
+              reset email is what this card replaced, and it needs nothing from
+              that read. Only the state line is left out then, since it would
+              be a guess. */}
           <MethodRow
             icon={<PasswordIcon aria-hidden className="size-5" />}
             title={t('profile.signInMethods.password')}
             detail={
-              hasPassword
-                ? t('profile.signInMethods.passwordSet')
-                : t('profile.signInMethods.passwordNotSet')
+              methods.isError
+                ? ''
+                : hasPassword
+                  ? t('profile.signInMethods.passwordSet')
+                  : t('profile.signInMethods.passwordNotSet')
             }
             action={
               <Button
@@ -117,61 +119,69 @@ export function SignInMethodsSection() {
             }
             noteExtra={resent ? t('profile.password.resentNote') : undefined}
           />
-          {(google || googleOffered) && (
-            <MethodRow
-              icon={<GoogleMark className="size-5" />}
-              title={t('profile.signInMethods.google')}
-              detail={
-                google
-                  ? t('profile.signInMethods.googleConnected', {
-                      email: google.email,
-                      date:
-                        formatDate(
-                          google.linked_at,
-                          { dateStyle: 'medium' },
-                          locale,
-                        ) ?? '',
-                    })
-                  : t('profile.signInMethods.googleNotConnected')
-              }
-              action={
-                google ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    // `outline` has no disabled look of its own; without this
-                    // the refused button reads as one that does nothing.
-                    className="disabled:border-quaternary disabled:text-quaternary-foreground"
-                    disabled={googleIsTheOnlyWay || disconnect.isPending}
-                    loading={disconnect.isPending}
-                    onClick={() => disconnect.mutate('google')}
-                  >
-                    {t('profile.signInMethods.disconnect')}
-                  </Button>
-                ) : (
-                  <Button asChild variant="outline" size="sm">
-                    <a
-                      href={googleStartUrl({
-                        intent: 'link',
-                        returnTo: '/profile',
-                      })}
+          {methods.isError ? (
+            <SettingsRow>
+              <p role="status" className="text-sm text-destructive">
+                {t('profile.signInMethods.loadFailed')}
+              </p>
+            </SettingsRow>
+          ) : (
+            (google || googleOffered) && (
+              <MethodRow
+                icon={<GoogleMark className="size-5" />}
+                title={t('profile.signInMethods.google')}
+                detail={
+                  google
+                    ? t('profile.signInMethods.googleConnected', {
+                        email: google.email,
+                        date:
+                          formatDate(
+                            google.linked_at,
+                            { dateStyle: 'medium' },
+                            locale,
+                          ) ?? '',
+                      })
+                    : t('profile.signInMethods.googleNotConnected')
+                }
+                action={
+                  google ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      // `outline` has no disabled look of its own; without this
+                      // the refused button reads as one that does nothing.
+                      className="disabled:border-quaternary disabled:text-quaternary-foreground"
+                      disabled={googleIsTheOnlyWay || disconnect.isPending}
+                      loading={disconnect.isPending}
+                      onClick={() => disconnect.mutate('google')}
                     >
-                      {t('profile.signInMethods.connect')}
-                    </a>
-                  </Button>
-                )
-              }
-              note={
-                googleIsTheOnlyWay || disconnectRefused ? (
-                  t('profile.signInMethods.onlyWayIn')
-                ) : disconnect.error ? (
-                  <span className="text-destructive">
-                    {disconnect.error.message}
-                  </span>
-                ) : undefined
-              }
-            />
+                      {t('profile.signInMethods.disconnect')}
+                    </Button>
+                  ) : (
+                    <Button asChild variant="outline" size="sm">
+                      <a
+                        href={googleStartUrl({
+                          intent: 'link',
+                          returnTo: '/profile',
+                        })}
+                      >
+                        {t('profile.signInMethods.connect')}
+                      </a>
+                    </Button>
+                  )
+                }
+                note={
+                  googleIsTheOnlyWay || disconnectRefused ? (
+                    t('profile.signInMethods.onlyWayIn')
+                  ) : disconnect.error ? (
+                    <span className="text-destructive">
+                      {disconnect.error.message}
+                    </span>
+                  ) : undefined
+                }
+              />
+            )
           )}
         </ul>
       )}
