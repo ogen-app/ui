@@ -16,6 +16,7 @@
 import type { User } from '@/types/user'
 import type { Tenant } from '@/types/tenant'
 import { apiUrl } from './base'
+import { ApiError } from './errors'
 import { apiJson, apiVoid } from './http'
 import { rawUserToUser, type RawUser } from './users'
 
@@ -53,8 +54,10 @@ export type AuthProviders = { google: { enabled: boolean } }
 /**
  * Whether Google is configured on this server.
  *
- * A server that predates the endpoint answers 404; that is "no", not an error
- * worth showing, because the only consequence is a button that stays hidden.
+ * A server that predates the endpoint answers 404; that is a real "no", not an
+ * error worth showing. Anything else — a 5xx, the network — is rethrown rather
+ * than turned into "disabled", so it is retried instead of cached for the
+ * query's long stale time; the button stays hidden while it is unanswered.
  */
 export async function getAuthProviders(): Promise<AuthProviders> {
   try {
@@ -62,8 +65,11 @@ export async function getAuthProviders(): Promise<AuthProviders> {
       '/api/auth/providers',
       'Unable to check sign-in options',
     )
-  } catch {
-    return { google: { enabled: false } }
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return { google: { enabled: false } }
+    }
+    throw err
   }
 }
 
