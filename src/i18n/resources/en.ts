@@ -643,7 +643,7 @@ export const en = {
       toggleMenu: 'Toggle the menu',
       toggleRight: 'Toggle the right panel',
       openAssistant: 'Open the assistant',
-      filterDetail: 'Add a filter detail',
+      filterDetail: 'Add a filter detail, on Ideas and Assets',
     },
   },
   /** The filter sentence's own chrome, shared by every list (CON-391/392). */

@@ -49,6 +49,12 @@ describe('ShortcutsSheet', () => {
     expect(useShortcutsStore.getState().open).toBe(false)
   })
 
+  it('leaves Ctrl + `?` to the browser', () => {
+    open('/ideas')
+    fireEvent.keyDown(window, { key: '?', ctrlKey: true, shiftKey: true })
+    expect(useShortcutsStore.getState().open).toBe(true)
+  })
+
   describe('in Spanish', () => {
     afterAll(async () => {
       await i18next.changeLanguage('en')

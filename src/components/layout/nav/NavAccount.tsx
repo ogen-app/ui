@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { useTranslation } from 'react-i18next'
@@ -130,6 +131,10 @@ function AccountMenu({
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  // Closing the menu hands focus back to its trigger, which would pull it out
+  // of the shortcuts sheet the row has just opened. One-shot: every other row
+  // keeps the hand-back.
+  const keepFocus = useRef(false)
 
   return (
     <DropdownMenuContent
@@ -137,6 +142,11 @@ function AccountMenu({
       side="right"
       align="end"
       sideOffset={8}
+      onCloseAutoFocus={(event) => {
+        if (!keepFocus.current) return
+        keepFocus.current = false
+        event.preventDefault()
+      }}
     >
       {destinations.length > 0 && (
         <>
@@ -199,7 +209,10 @@ function AccountMenu({
       <DropdownMenuItem
         size="lg"
         className="px-2"
-        onSelect={() => useShortcutsStore.getState().setOpen(true)}
+        onSelect={() => {
+          keepFocus.current = true
+          useShortcutsStore.getState().setOpen(true)
+        }}
       >
         <KeyboardIcon weight="bold" />
         <span className="flex-1">{t('shortcuts.menuItem')}</span>
