@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
   ArrowsLeftRightIcon,
+  KeyboardIcon,
   LifebuoyIcon,
   SignOutIcon,
   UserIcon,
@@ -21,6 +22,7 @@ import { useWorkspaceMenuEntries } from '@/components/layout/nav/workspaceDestin
 import { WorkspaceMark } from '@/components/layout/WorkspaceMark'
 import { useWorkspace } from '@/hooks/useWorkspaces'
 import { useAuthStore } from '@/stores/authStore'
+import { useShortcutsStore } from '@/stores/shortcutsStore'
 import { ROLE_LABEL_KEYS, type Workspace } from '@/types/workspace'
 
 /** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
@@ -192,6 +194,18 @@ function AccountMenu({
       >
         <UserIcon weight="bold" />
         <span>{t('nav.profile')}</span>
+      </DropdownMenuItem>
+
+      <DropdownMenuItem
+        size="lg"
+        className="px-2"
+        onSelect={() => useShortcutsStore.getState().setOpen(true)}
+      >
+        <KeyboardIcon weight="bold" />
+        <span className="flex-1">{t('shortcuts.menuItem')}</span>
+        <kbd className="inline-flex h-5 min-w-5 items-center justify-center bg-secondary px-1 font-sans text-xs font-medium text-secondary-foreground">
+          ?
+        </kbd>
       </DropdownMenuItem>
 
       <DropdownMenuItem size="lg" className="px-2" asChild>

@@ -4,6 +4,8 @@ import { AppSidebar } from '@/components/layout/AppSidebar'
 import { AnnouncementFrame } from '@/components/layout/AnnouncementRibbon'
 import { UploadTracker } from '@/components/uploads/UploadTracker'
 import { RightSidebar } from '@/components/layout/RightSidebar'
+import { ShortcutsSheet } from '@/components/layout/ShortcutsSheet'
+import { useAppShortcuts } from '@/hooks/useAppShortcuts'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useEventStream } from '@/hooks/useEventStream'
 import { useNotificationStream } from '@/hooks/useNotifications'
@@ -28,6 +30,8 @@ function AuthenticatedLayout() {
   // connections rather than one because they answer different questions: this
   // one replays what was missed, and the bus above deliberately cannot.
   useNotificationStream()
+  // The app's keys (CON-394): `[`, `]`, `o`, `?` and `g` then a letter.
+  useAppShortcuts()
 
   return (
     <AnnouncementFrame>
@@ -42,6 +46,7 @@ function AuthenticatedLayout() {
         </SidebarInset>
         <RightSidebar />
         <UploadTracker />
+        <ShortcutsSheet />
       </SidebarProvider>
     </AnnouncementFrame>
   )

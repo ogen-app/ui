@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useSettingsStore } from './settingsStore'
+import { EMPTY_PANEL_MEMORY } from '@/lib/rightPanel'
+import { selectActivePanel, useSettingsStore } from './settingsStore'
 
 /**
  * The panel context — which screen is under the right sidebar, and which
@@ -41,5 +42,47 @@ describe('setPanelScope', () => {
     set('calendar', 'c-1')
     set('post', 'c-2')
     expect(useSettingsStore.getState().campaignId).toBe('c-2')
+  })
+})
+
+describe('toggleRightRail', () => {
+  beforeEach(() => {
+    useSettingsStore.setState({
+      scope: null,
+      rightRailHidden: false,
+      panelMemory: EMPTY_PANEL_MEMORY,
+    })
+  })
+  const active = () => selectActivePanel(useSettingsStore.getState())
+  const toggle = () => useSettingsStore.getState().toggleRightRail()
+
+  it('opens the assistant on an empty rail', () => {
+    toggle()
+    expect(active()).toBe('assistant')
+  })
+
+  it('hides an open rail and brings back what it showed', () => {
+    useSettingsStore.setState({ scope: 'calendar' })
+    useSettingsStore.getState().openRightPanel('calendarSettings')
+    toggle()
+    expect(active()).toBeNull()
+    expect(useSettingsStore.getState().rightRailHidden).toBe(true)
+    toggle()
+    expect(active()).toBe('calendarSettings')
+  })
+
+  it('shows the rail again when a panel is opened while hidden', () => {
+    toggle()
+    toggle()
+    useSettingsStore.getState().toggleRightPanel('assistant')
+    expect(active()).toBe('assistant')
+  })
+
+  it('closes nothing it is not showing', () => {
+    toggle()
+    toggle()
+    useSettingsStore.getState().closeRightPanel()
+    toggle()
+    expect(active()).toBe('assistant')
   })
 })

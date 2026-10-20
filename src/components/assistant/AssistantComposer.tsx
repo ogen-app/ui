@@ -154,6 +154,8 @@ export function AssistantComposer({
       >
         <Textarea
           ref={inputRef}
+          // Where `o` puts the cursor (CON-394, `useAppShortcuts`).
+          data-assistant-composer
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onFocus={() => setActive(true)}

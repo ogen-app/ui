@@ -768,8 +768,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   cut: the decision was never the slow part, reading the line is, and the line
   is already legible in the list. What the mode added was a place to go and come
   back from, a second set of controls to keep in step with the row's, and five
-  single-letter claims on the app's keyboard. `Hotkey` in `lib/hotkeys.ts` is
-  back to its two arrow keys; don't re-add letters for this. Three verdicts
+  single-letter claims on the app's keyboard. Triage has no letters of
+  its own in `lib/hotkeys.ts`; don't re-add them for this. Three verdicts
   because two force every "good, but not this quarter" into a pile that lies
   about it. **A postponement names the day it comes back**, which is the
   difference between a maybe-pile and an archive people feel better about — and
@@ -798,6 +798,19 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `services/api/ideas.ts` is what the server was built to, and the verdict
   rules are the server's to enforce now. See
   `docs/technical-decisions.md#ideas-triage`.
+- **The app's keys are one listener and one table** (CON-394).
+  `useAppShortcuts`, mounted once in `_authenticated`, owns `[` (the menu —
+  ⌘B still works), `]` (the right rail), `o` (the assistant, composer
+  focused), `?` (the sheet) and `g` then a letter; `/` stays with the filter
+  sentence. Where a letter goes is `lib/shortcuts.ts`, and inside a campaign
+  `g i/a/n/s` go to the campaign's own sections, which is the nav rule's two
+  levels again. `]` hides the rail rather than closing its panel
+  (`settingsStore.rightRailHidden`), so the panel memory survives and `]`
+  again brings back what was showing. `shouldIgnoreAppShortcut` allows Alt and
+  AltGr on `[`, `]` and `?`, because those keys need them on German and
+  Nordic layouts, and never ⌘. The sheet (`ShortcutsSheet`) lists its rows by
+  hand, so a key added to `lib/shortcuts` and not to the sheet is a sheet that
+  lies.
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
 - **Destructive-action labels are written in literal capitals** — `DELETE
