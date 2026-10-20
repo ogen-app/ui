@@ -43,6 +43,10 @@ export function apiUrl(path: string): string {
  * server caches them at the edge for everyone at once. A request varying by a
  * header the response does not depend on is a cache split per workspace, for an
  * answer that is identical in all of them.
+ *
+ * `/api/auth/*` and `/api/account/*` (CON-396) are the sign-in providers and
+ * the account's own sign-in methods: a Google identity belongs to the login,
+ * not to any workspace it can open.
  */
 function isAccountScoped(path: string): boolean {
   // Compare against the path only — a query string never changes which
@@ -56,7 +60,9 @@ function isAccountScoped(path: string): boolean {
     p.startsWith('/api/sessions/') ||
     p.startsWith('/api/invitations/accept/') ||
     p.startsWith('/api/security/login-alerts/') ||
-    p.startsWith('/api/public/')
+    p.startsWith('/api/public/') ||
+    p.startsWith('/api/auth/') ||
+    p.startsWith('/api/account/')
   )
 }
 

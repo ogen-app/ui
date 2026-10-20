@@ -11,6 +11,7 @@ import { useLoginSchema } from '@/hooks/useAuthSchemas'
 import { safeRedirect } from '@/lib'
 import { FormError } from '@/components/forms/shared/FormError'
 import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
+import { GoogleSignInOption } from '@/components/auth/GoogleSignIn'
 
 /**
  * Email/password login form. On success it returns the user to the in-app
@@ -56,6 +57,12 @@ export function AuthLoginForm() {
       className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500"
       noValidate
     >
+      {/* Google first because it is one click; the email form stays whole
+          under it. Nothing renders here unless Google is offered. */}
+      <GoogleSignInOption
+        returnTo={safeRedirect(redirect)}
+        divider={t('auth.google.orWithEmail')}
+      />
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">{t('auth.login.emailLabel')}</Label>
         <Input

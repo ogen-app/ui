@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { ArrowUpRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,11 @@ import { useAuthStore } from '@/stores/authStore'
 import { FormError } from '@/components/forms/shared/FormError'
 import { PasswordRules } from '@/components/forms/shared/PasswordRules'
 import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
+import {
+  GoogleSignInButton,
+  GoogleSignInOption,
+} from '@/components/auth/GoogleSignIn'
+import { useGoogleSignInEnabled } from '@/hooks/useGoogleSignIn'
 
 type Props = {
   /** The one-time token from the emailed link's `?token=`. */
@@ -63,29 +68,62 @@ export function AuthAcceptInviteForm({ token, email, hasAccount }: Props) {
     )
   }
   if (hasAccount) {
-    return <ExistingAccount email={email} />
+    return <ExistingAccount token={token} email={email} />
   }
   return <CreateAccount token={token} email={email} />
 }
 
-/** Signed out, address taken: the invitation waits while they sign in as it. */
-function ExistingAccount({ email }: { email: string }) {
+/**
+ * Signed out, address taken: the invitation waits while they sign in as it.
+ *
+ * Google works here too (CON-396): accepting through Google joins an existing
+ * account just as it creates a new one, so it is offered beside the log-in
+ * link rather than only on the create-account form.
+ */
+function ExistingAccount({ token, email }: { token: string; email: string }) {
   const { t } = useTranslation()
+  const google = useGoogleSignInEnabled()
   return (
-    <Panel
-      body={t('auth.invite.existingAccountBody', { email })}
-      action={
-        <Link
-          to="/auth/login"
-          search={{
-            redirect: window.location.pathname + window.location.search,
-          }}
-          className="text-primary-foreground text-[13px] font-medium"
-        >
-          {t('auth.invite.logInLink')}
-        </Link>
-      }
-    />
+    <div className="flex flex-col gap-6 shrink-0">
+      <Panel
+        body={t('auth.invite.existingAccountBody', { email })}
+        action={
+          <Link
+            to="/auth/login"
+            search={{
+              redirect: window.location.pathname + window.location.search,
+            }}
+            className="text-primary-foreground text-[13px] font-medium"
+          >
+            {t('auth.invite.logInLink')}
+          </Link>
+        }
+      />
+      {google && (
+        <div className="flex flex-col gap-3">
+          <GoogleSignInButton intent="invite" inviteToken={token} />
+          <GoogleInviteHint email={email} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The address rule, said before the click rather than after a failed round
+ * trip: the Google account has to be the invited address.
+ */
+function GoogleInviteHint({ email }: { email: string }) {
+  return (
+    <p className="text-[13px] leading-5 text-secondary-foreground">
+      <Trans
+        i18nKey="auth.invite.googleHint"
+        values={{ email }}
+        components={{
+          strong: <strong className="text-primary-foreground font-medium" />,
+        }}
+      />
+    </p>
   )
 }
 
@@ -161,7 +199,7 @@ function CreateAccount({ token, email }: { token: string; email: string }) {
   }
 
   if (taken) {
-    return <ExistingAccount email={email} />
+    return <ExistingAccount token={token} email={email} />
   }
 
   return (
@@ -170,6 +208,12 @@ function CreateAccount({ token, email }: { token: string; email: string }) {
       className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500"
       noValidate
     >
+      <GoogleSignInOption
+        intent="invite"
+        inviteToken={token}
+        hint={<GoogleInviteHint email={email} />}
+        divider={t('auth.invite.orSetPassword')}
+      />
       <div className="flex flex-col gap-2">
         <Label htmlFor="invite-email">{t('auth.invite.emailLabel')}</Label>
         <Input

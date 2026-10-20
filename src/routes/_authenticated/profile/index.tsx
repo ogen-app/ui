@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
 import { TrashIcon } from '@phosphor-icons/react'
 
 import { PageContainer } from '@/components/page-primitives/PageContainer'
@@ -18,10 +19,23 @@ import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySect
 import { PasswordSection } from '@/components/profile/PasswordSection'
 import { EmailPreferencesSection } from '@/components/profile/EmailPreferencesSection'
 import { LeaveWorkspaceDialog } from '@/components/profile/LeaveWorkspaceDialog'
+import { SignInMethodsSection } from '@/components/profile/SignInMethodsSection'
 import { useAuthStore } from '@/stores/authStore'
 import { useFeatureFlag } from '@/config/featureFlags'
+import { useGoogleLinkResult } from '@/hooks/useGoogleLinkResult'
+
+/**
+ * Where connecting Google from the Sign-in methods card comes back to
+ * (CON-396): `?linked=google` on success, `?error=<code>` otherwise. Both are
+ * read once, said as a toast and dropped from the address.
+ */
+const profileSearchSchema = z.object({
+  linked: z.string().optional().catch(undefined),
+  error: z.string().optional().catch(undefined),
+})
 
 export const Route = createFileRoute('/_authenticated/profile/')({
+  validateSearch: profileSearchSchema,
   component: ProfilePage,
 })
 
@@ -43,6 +57,8 @@ function ProfilePage() {
   const user = useAuthStore((s) => s.user)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const emailPreferencesEnabled = useFeatureFlag('email-preferences')
+  const signInMethodsEnabled = useFeatureFlag('google-sign-in')
+  useGoogleLinkResult()
 
   // The route sits under `_authenticated`, so the guard has already resolved a
   // session by the time this renders; the null branch is for the moment
@@ -71,7 +87,11 @@ function ProfilePage() {
             >
               <ProfileIdentitySection user={user} />
               <LanguageSection />
-              <PasswordSection />
+              {signInMethodsEnabled ? (
+                <SignInMethodsSection />
+              ) : (
+                <PasswordSection />
+              )}
               {emailPreferencesEnabled && (
                 <EmailPreferencesSection userId={user.id} />
               )}

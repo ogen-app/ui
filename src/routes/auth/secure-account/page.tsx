@@ -19,6 +19,8 @@ import {
   type LoginAlertFailure,
 } from '@/services/api/loginAlerts'
 import { useAuthStore } from '@/stores/authStore'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { GoogleMark } from '@/components/auth/GoogleMark'
 
 /**
  * Where the "This wasn't me — secure my account" link in the new-device
@@ -35,6 +37,7 @@ import { useAuthStore } from '@/stores/authStore'
  */
 function SecureAccountPage() {
   const { t } = useTranslation()
+  const googleBuilt = useFeatureFlag('google-sign-in')
   const { token } = useSearch({ from: '/auth/secure-account/' })
   useNoReferrer()
   const signedIn = useAuthStore((s) => s.user !== null)
@@ -208,6 +211,9 @@ function SecureAccountPage() {
   }
 
   const busy = secure.isPending || leaving
+  // Securing a Google sign-in also disconnects Google (CON-395); said only
+  // then, and only once Google sign-in is built at all.
+  const viaGoogle = googleBuilt && alert.data.method === 'google'
   const submitMessage =
     submitFailure === 'rate_limited'
       ? rateLimitedMessage
@@ -231,8 +237,20 @@ function SecureAccountPage() {
               }}
             />
           </Sentence>
-          <SignInDetails alert={alert.data} />
+          <SignInDetails alert={alert.data} viaGoogle={viaGoogle} />
           <Sentence>{t('auth.secureAccount.explainer')}</Sentence>
+          {viaGoogle && (
+            <Sentence>
+              <Trans
+                i18nKey="auth.secureAccount.googleNote"
+                components={{
+                  strong: (
+                    <strong className="text-primary-foreground font-medium" />
+                  ),
+                }}
+              />
+            </Sentence>
+          )}
           <div className="flex flex-col">
             <Button
               variant="destructiveInverted"
@@ -319,7 +337,13 @@ function useSecondsUntil(until: number | null): number {
   return until === null ? 0 : Math.max(0, Math.ceil((until - now) / 1000))
 }
 
-function SignInDetails({ alert }: { alert: LoginAlert }) {
+function SignInDetails({
+  alert,
+  viaGoogle,
+}: {
+  alert: LoginAlert
+  viaGoogle: boolean
+}) {
   const { t } = useTranslation()
   const locale = useLocale()
   // The viewer's own time zone, named — "17:03" alone can't tell someone
@@ -345,6 +369,14 @@ function SignInDetails({ alert }: { alert: LoginAlert }) {
       <DetailRow label={t('auth.secureAccount.whenLabel')}>
         {when ?? alert.login_at}
       </DetailRow>
+      {viaGoogle && (
+        <DetailRow label={t('auth.secureAccount.methodLabel')}>
+          <span className="inline-flex items-center gap-1.5">
+            <GoogleMark className="size-3.5" />
+            {t('auth.secureAccount.methodGoogle')}
+          </span>
+        </DetailRow>
+      )}
       <DetailRow label={t('auth.secureAccount.deviceLabel')}>
         {alert.device}
       </DetailRow>

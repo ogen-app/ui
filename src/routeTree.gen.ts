@@ -59,6 +59,7 @@ import { Route as AuthenticatedFoundationAudiencesAudienceIdRouteImport } from '
 import { Route as AuthenticatedFoundationSeriesSeriesIdRouteImport } from './routes/_authenticated/foundation_/series/$seriesId'
 import { Route as AuthenticatedFoundationVoicesVoiceIdRouteImport } from './routes/_authenticated/foundation_/voices/$voiceId'
 import { Route as AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport } from './routes/_authenticated/workspace-settings/connect.$connectionId'
+import { Route as AuthRegisterGoogleIndexRouteImport } from './routes/auth/register/google/index'
 import { Route as IntegrationsFigmaConnectIndexRouteImport } from './routes/integrations/figma/connect/index'
 import { Route as AuthenticatedCampaignsCampaignIdCalendarIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/calendar/index'
 import { Route as AuthenticatedCampaignsCampaignIdAssetsAssetIdRouteImport } from './routes/_authenticated/campaigns/$campaignId_/assets/$assetId'
@@ -346,6 +347,11 @@ const AuthenticatedWorkspaceSettingsConnectConnectionIdRoute =
     path: '/workspace-settings/connect/$connectionId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthRegisterGoogleIndexRoute = AuthRegisterGoogleIndexRouteImport.update({
+  id: '/auth/register/google/',
+  path: '/auth/register/google/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IntegrationsFigmaConnectIndexRoute =
   IntegrationsFigmaConnectIndexRouteImport.update({
     id: '/integrations/figma/connect/',
@@ -427,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/foundation/voices/$voiceId': typeof AuthenticatedFoundationVoicesVoiceIdRoute
   '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/auth/register/google/': typeof AuthRegisterGoogleIndexRoute
   '/integrations/figma/connect/': typeof IntegrationsFigmaConnectIndexRoute
   '/campaigns/$campaignId/assets/$assetId': typeof AuthenticatedCampaignsCampaignIdAssetsAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
@@ -480,6 +487,7 @@ export interface FileRoutesByTo {
   '/foundation/voices/$voiceId': typeof AuthenticatedFoundationVoicesVoiceIdRoute
   '/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/campaigns/$campaignId': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/auth/register/google': typeof AuthRegisterGoogleIndexRoute
   '/integrations/figma/connect': typeof IntegrationsFigmaConnectIndexRoute
   '/campaigns/$campaignId/assets/$assetId': typeof AuthenticatedCampaignsCampaignIdAssetsAssetIdRoute
   '/campaigns/$campaignId/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
@@ -538,6 +546,7 @@ export interface FileRoutesById {
   '/_authenticated/foundation_/voices/$voiceId': typeof AuthenticatedFoundationVoicesVoiceIdRoute
   '/_authenticated/workspace-settings/connect/$connectionId': typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRoute
   '/_authenticated/campaigns/$campaignId/': typeof AuthenticatedCampaignsCampaignIdIndexRoute
+  '/auth/register/google/': typeof AuthRegisterGoogleIndexRoute
   '/integrations/figma/connect/': typeof IntegrationsFigmaConnectIndexRoute
   '/_authenticated/campaigns/$campaignId_/assets/$assetId': typeof AuthenticatedCampaignsCampaignIdAssetsAssetIdRoute
   '/_authenticated/campaigns/$campaignId_/posts/$postId': typeof AuthenticatedCampaignsCampaignIdPostsPostIdRoute
@@ -596,6 +605,7 @@ export interface FileRouteTypes {
     | '/foundation/voices/$voiceId'
     | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId/'
+    | '/auth/register/google/'
     | '/integrations/figma/connect/'
     | '/campaigns/$campaignId/assets/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
@@ -649,6 +659,7 @@ export interface FileRouteTypes {
     | '/foundation/voices/$voiceId'
     | '/workspace-settings/connect/$connectionId'
     | '/campaigns/$campaignId'
+    | '/auth/register/google'
     | '/integrations/figma/connect'
     | '/campaigns/$campaignId/assets/$assetId'
     | '/campaigns/$campaignId/posts/$postId'
@@ -706,6 +717,7 @@ export interface FileRouteTypes {
     | '/_authenticated/foundation_/voices/$voiceId'
     | '/_authenticated/workspace-settings/connect/$connectionId'
     | '/_authenticated/campaigns/$campaignId/'
+    | '/auth/register/google/'
     | '/integrations/figma/connect/'
     | '/_authenticated/campaigns/$campaignId_/assets/$assetId'
     | '/_authenticated/campaigns/$campaignId_/posts/$postId'
@@ -727,6 +739,7 @@ export interface RootRouteChildren {
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
   AuthResetIndexRoute: typeof AuthResetIndexRoute
   AuthSecureAccountIndexRoute: typeof AuthSecureAccountIndexRoute
+  AuthRegisterGoogleIndexRoute: typeof AuthRegisterGoogleIndexRoute
   IntegrationsFigmaConnectIndexRoute: typeof IntegrationsFigmaConnectIndexRoute
 }
 
@@ -1082,6 +1095,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceSettingsConnectConnectionIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/auth/register/google/': {
+      id: '/auth/register/google/'
+      path: '/auth/register/google'
+      fullPath: '/auth/register/google/'
+      preLoaderRoute: typeof AuthRegisterGoogleIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/integrations/figma/connect/': {
       id: '/integrations/figma/connect/'
       path: '/integrations/figma/connect'
@@ -1283,6 +1303,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
   AuthResetIndexRoute: AuthResetIndexRoute,
   AuthSecureAccountIndexRoute: AuthSecureAccountIndexRoute,
+  AuthRegisterGoogleIndexRoute: AuthRegisterGoogleIndexRoute,
   IntegrationsFigmaConnectIndexRoute: IntegrationsFigmaConnectIndexRoute,
 }
 export const routeTree = rootRouteImport

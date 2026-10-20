@@ -130,6 +130,43 @@ Three things to keep:
   signed-in visitor home, so for them the reset link points at Profile, which
   sends the same email.
 
+### 5. Sign in with Google — behind `google-sign-in` (CON-396)
+
+The OpenID Connect flow runs on the server (CON-395, ogen#227); the browser
+only *navigates*. There is no Google script in the bundle and nothing to
+`fetch` for the sign-in itself.
+
+```text
+login / register / invite    <a href="/api/auth/google/start?…">   (GoogleSignInButton)
+                              → Google → /api/auth/google/callback
+callback lands on            {return_to}                      signed in (cookie set)
+                             /auth/register/google?token=…   new person: name the workspace
+                                └─ GET  /api/auth/google/pending/:token
+                                   POST /api/auth/google/complete { token, tenant_name }
+                             /auth/login?error=<code>        refused — said in the subtitle
+Profile → Connect            start?intent=link&return_to=/profile
+                              → /profile?linked=google | ?error=<code>   (a toast, then dropped)
+```
+
+Things to keep:
+
+- **Two gates, both required.** The flag, and the server saying it has an OAuth
+  client (`GET /api/auth/providers`, `useGoogleSignInEnabled`). With either off
+  every button is absent and the screens are what they were — so the flag can
+  be turned on before every environment has its client.
+- **A refusal is a code, worded by `lib/googleSignInError`.** It is said where
+  `loginSubtitle` already explains "session expired", uncoloured: none of them
+  is the person's fault. A code this build predates gets a generic sentence,
+  never the raw code.
+- **The same button on login and register.** The server decides whether a
+  Google account signs in or signs up, so the "wrong" screen still works.
+- **Profile's Sign-in methods card replaces the Password card**, and keeps its
+  contract: a password is changed — or, for a Google-only account, *set* — by
+  the reset email and nothing else. Disconnecting the only way in is refused
+  (409 `last_sign_in_method`); the reason is printed under the row.
+- **`/api/auth/*` and `/api/account/*` are account-scoped** (`services/api/base`):
+  a Google identity belongs to the login, not to a workspace.
+
 ## The root guard — `src/routes/__root.tsx`
 
 Auth is guarded **once**, in the root route's `beforeLoad` (never on

@@ -8,6 +8,7 @@ export {
   forgotPasswordSchema,
   resetPasswordSchema,
   acceptInviteSchema,
+  googleSignupSchema,
   profileSchema,
   passwordRules,
   type FieldErrors,

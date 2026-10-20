@@ -131,6 +131,66 @@ export const en = {
       haveAccount: 'Already have an account?',
       logInLink: 'Log in here',
     },
+    /** Sign in with Google (CON-396) — the button, the divider, and what each `?error=` says. */
+    google: {
+      /** Google's branding allows this wording; the caps are the app's CTA convention. */
+      continue: 'CONTINUE WITH GOOGLE',
+      orWithEmail: 'or with your email',
+      orSignUpWithEmail: 'or sign up with your email',
+      /** One sentence per callback code: plain, no blame, the next step included. */
+      errors: {
+        google_cancelled:
+          "Google sign-in was cancelled. Try again whenever you're ready.",
+        google_state_invalid:
+          'That sign-in took too long or was opened in another browser. Try again.',
+        google_email_unverified:
+          "Google hasn't verified that email address yet, so we can't use it to sign you in.",
+        google_unavailable:
+          "We couldn't reach Google just now. Try again in a moment.",
+        google_link_requires_password:
+          'An Ogen account already uses this email. Log in with your password, then connect Google in Profile.',
+        google_already_connected:
+          'This Ogen account is connected to a different Google account. Use that one, or log in with your password.',
+        google_linked_elsewhere:
+          'That Google account already signs in to a different Ogen account.',
+        no_active_workspace:
+          "Your account isn't part of any workspace right now. Ask a workspace owner to invite you again.",
+        signup_invite_only:
+          'Sign-up is invite-only for now. Use the link from your invitation email.',
+        invite_invalid:
+          'This invitation link no longer works. Ask whoever invited you to send another.',
+        invite_email_mismatch:
+          'This invitation is for a different email. Continue with the Google account it was sent to.',
+        invite_seats_full:
+          'This workspace has no free seats. Ask an owner to free one, then open the link again.',
+        throttled: 'Too many attempts. Wait a minute and try again.',
+        /** A code this build predates. */
+        unknown: "Google sign-in didn't finish. Try again.",
+      },
+    },
+    /** The one-field step a newcomer finishes a Google sign-up on (CON-396). */
+    googleSignup: {
+      title: 'Name your workspace',
+      subtitle: 'One last step — this is where your campaigns will live',
+      organizationLabel: 'Organization name',
+      organizationHint: 'You can rename it later in Workspace Settings.',
+      submit: 'CREATE WORKSPACE',
+      /** Restarts at Google's account chooser. */
+      notYou: 'Not you?',
+      logInLink: 'Log in',
+      expiredTitle: 'This sign-up link has expired',
+      expiredSubtitle:
+        'Links last 15 minutes. Continue with Google again — it picks up right where you left off',
+      expiredInline:
+        'This sign-up link has expired. Continue with Google again to pick up where you left off.',
+      /** 409 `email_in_use` / `google_already_linked`: a fresh Google sign-in finds the account. */
+      accountExists:
+        'An Ogen account already uses this email. Continue with Google to sign in to it.',
+      startOver: 'Continue with Google',
+      loadFailedTitle: "We couldn't load this sign-up",
+      loadFailedSubtitle:
+        'Something went wrong on our side — the link itself may still be fine',
+    },
     forgot: {
       title: 'Reset your password',
       subtitle: "We'll email you a link to set a new one",
@@ -183,6 +243,11 @@ export const en = {
       deviceLabel: 'Device',
       ipLabel: 'IP address',
       locationLabel: 'Approximate location',
+      /** Shown only for a sign-in that came through Google (CON-396). */
+      methodLabel: 'Signed in with',
+      methodGoogle: 'Google',
+      googleNote:
+        "<strong>Because this sign-in came through Google, we'll also disconnect Google.</strong> Connect it again from Profile once you're back in.",
       explainer:
         "If this wasn't you, secure your account. We'll sign out every session on every device — including this one — and you'll set a new password right away.",
       submit: 'SECURE MY ACCOUNT',
@@ -240,6 +305,9 @@ export const en = {
       /** The server's answer when the invited address already has an account. */
       existingAccountBody:
         '{{email}} already has an Ogen account. Log in as that account and this invitation will be waiting.',
+      /** Said before the click, not after a failed round trip (CON-396). */
+      googleHint: 'Use the Google account for <strong>{{email}}</strong>.',
+      orSetPassword: 'or set a password',
     },
     logout: {
       pendingTitle: 'Logging Out...',
@@ -1795,6 +1863,25 @@ export const en = {
       send: 'EMAIL ME A RESET LINK',
       resend: 'SEND IT AGAIN',
       resentNote: 'Sent again — give it a minute.',
+    },
+    /** Every way into the account, one row each (CON-396). Replaces `password` once Google ships. */
+    signInMethods: {
+      title: 'Sign-in methods',
+      loadFailed: "Couldn't load your sign-in methods.",
+      password: 'Password',
+      passwordSet: 'Email and password',
+      passwordNotSet: 'Not set — you sign in with Google',
+      /** The same reset email: there is no current password to ask for. */
+      setPassword: 'SET A PASSWORD',
+      google: 'Google',
+      googleConnected: '{{email}} · connected {{date}}',
+      googleNotConnected: 'Not connected',
+      connect: 'CONNECT',
+      disconnect: 'DISCONNECT',
+      onlyWayIn:
+        'Google is your only way in. Set a password first, then you can disconnect it.',
+      connectedToast: 'Google connected',
+      connectFailedToast: "Couldn't connect Google",
     },
     dangerZone: {
       title: 'Danger Zone',

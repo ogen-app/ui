@@ -33,6 +33,12 @@ export type LoginAlert = {
   location: string
   /** Masked by the server — `j***@acme.com`. */
   email: string
+  /**
+   * How the sign-in was made (CON-395). Absent from servers that predate it,
+   * which is the same as `password`. Securing a `google` sign-in also
+   * disconnects Google.
+   */
+  method?: 'password' | 'google'
 }
 
 /** `POST …/:token/secure` — every session is gone by the time this arrives. */

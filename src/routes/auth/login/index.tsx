@@ -30,6 +30,13 @@ const loginSearchSchema = z.object({
   expired: flag,
   /** Arrived here from a completed password reset. */
   reset: flag,
+  /**
+   * A Google sign-in that ended without a session (CON-396) — one of the
+   * codes in `lib/googleSignInError`. Any string is accepted, so a code this
+   * build predates still renders the login screen with the generic sentence;
+   * anything else is dropped rather than turned into a router error page.
+   */
+  error: z.string().optional().catch(undefined),
 })
 
 export const Route = createFileRoute('/auth/login/')({

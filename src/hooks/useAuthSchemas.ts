@@ -5,6 +5,7 @@ import type { TFunction } from 'i18next'
 import {
   acceptInviteSchema,
   forgotPasswordSchema,
+  googleSignupSchema,
   loginSchema,
   passwordRules,
   profileSchema,
@@ -32,6 +33,7 @@ export const useSignupSchema = () => useSchema(signupSchema)
 export const useForgotPasswordSchema = () => useSchema(forgotPasswordSchema)
 export const useResetPasswordSchema = () => useSchema(resetPasswordSchema)
 export const useAcceptInviteSchema = () => useSchema(acceptInviteSchema)
+export const useGoogleSignupSchema = () => useSchema(googleSignupSchema)
 export const useProfileSchema = () => useSchema(profileSchema)
 
 /** The live checklist under a new-password field. See `PasswordRules`. */
