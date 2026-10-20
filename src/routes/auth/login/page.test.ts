@@ -27,6 +27,21 @@ describe('loginSubtitle', () => {
     )
   })
 
+  it('says why a Google sign-in came back without a session', () => {
+    // CON-396: the callback is a navigation, so its refusal is a code in the
+    // address and the subtitle is where the screen explains itself.
+    expect(loginSubtitle({ error: 'google_cancelled' }, t)).toMatch(
+      /google sign-in was cancelled/i,
+    )
+  })
+
+  it('prefers the Google sentence over a stale expiry flag', () => {
+    // It is the newest thing that happened, and it names the way forward.
+    expect(
+      loginSubtitle({ error: 'google_state_invalid', expired: true }, t),
+    ).toMatch(/took too long/i)
+  })
+
   it('says the ordinary thing on an ordinary visit', () => {
     expect(loginSubtitle({}, t)).toBe(
       'Log in to continue managing your content',

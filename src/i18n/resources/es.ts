@@ -110,6 +110,62 @@ export const es: Translation = {
       haveAccount: '¿Ya tienes cuenta?',
       logInLink: 'Inicia sesión aquí',
     },
+    google: {
+      continue: 'CONTINUAR CON GOOGLE',
+      orWithEmail: 'o con tu correo electrónico',
+      orSignUpWithEmail: 'o regístrate con tu correo electrónico',
+      errors: {
+        google_cancelled:
+          'Se canceló el inicio de sesión con Google. Inténtalo de nuevo cuando quieras.',
+        google_state_invalid:
+          'Ese inicio de sesión tardó demasiado o se abrió en otro navegador. Inténtalo de nuevo.',
+        google_email_unverified:
+          'Google aún no ha verificado esa dirección de correo, así que no podemos usarla para iniciar tu sesión.',
+        google_unavailable:
+          'No hemos podido conectar con Google. Inténtalo de nuevo en un momento.',
+        google_link_requires_password:
+          'Ya hay una cuenta de Ogen con este correo. Inicia sesión con tu contraseña y conecta Google desde tu Perfil.',
+        google_already_connected:
+          'Esta cuenta de Ogen está conectada a otra cuenta de Google. Usa esa, o inicia sesión con tu contraseña.',
+        google_linked_elsewhere:
+          'Esa cuenta de Google ya da acceso a otra cuenta de Ogen.',
+        no_active_workspace:
+          'Tu cuenta no pertenece ahora mismo a ningún espacio de trabajo. Pide a un propietario que te invite de nuevo.',
+        signup_invite_only:
+          'Por ahora el registro es solo con invitación. Usa el enlace de tu correo de invitación.',
+        invite_invalid:
+          'Este enlace de invitación ya no funciona. Pide a quien te invitó que te envíe otro.',
+        invite_email_mismatch:
+          'Esta invitación es para otro correo. Continúa con la cuenta de Google a la que se envió.',
+        invite_seats_full:
+          'Este espacio de trabajo no tiene plazas libres. Pide a un propietario que libere una y abre el enlace de nuevo.',
+        throttled:
+          'Demasiados intentos. Espera un minuto e inténtalo de nuevo.',
+        unknown:
+          'El inicio de sesión con Google no terminó. Inténtalo de nuevo.',
+      },
+    },
+    googleSignup: {
+      title: 'Ponle nombre a tu espacio de trabajo',
+      subtitle: 'Un último paso — aquí vivirán tus campañas',
+      organizationLabel: 'Nombre de la organización',
+      organizationHint:
+        'Puedes cambiarlo más tarde en Ajustes del espacio de trabajo.',
+      submit: 'CREAR ESPACIO DE TRABAJO',
+      notYou: '¿No eres tú?',
+      logInLink: 'Inicia sesión',
+      expiredTitle: 'Este enlace de registro ha caducado',
+      expiredSubtitle:
+        'Los enlaces duran 15 minutos. Continúa con Google de nuevo — retomarás justo donde lo dejaste',
+      expiredInline:
+        'Este enlace de registro ha caducado. Continúa con Google de nuevo para retomar donde lo dejaste.',
+      accountExists:
+        'Ya hay una cuenta de Ogen con este correo. Continúa con Google para iniciar sesión en ella.',
+      startOver: 'Continuar con Google',
+      loadFailedTitle: 'No hemos podido cargar este registro',
+      loadFailedSubtitle:
+        'Algo ha fallado por nuestra parte — puede que el enlace siga siendo válido',
+    },
     forgot: {
       title: 'Restablece tu contraseña',
       subtitle: 'Te enviaremos un enlace por correo para elegir una nueva',
@@ -155,6 +211,10 @@ export const es: Translation = {
       deviceLabel: 'Dispositivo',
       ipLabel: 'Dirección IP',
       locationLabel: 'Ubicación aproximada',
+      methodLabel: 'Inicio de sesión con',
+      methodGoogle: 'Google',
+      googleNote:
+        '<strong>Como este inicio de sesión fue con Google, también desconectaremos Google.</strong> Vuelve a conectarlo desde tu Perfil cuando recuperes el acceso.',
       explainer:
         'Si no has sido tú, protege tu cuenta. Cerraremos todas las sesiones en todos los dispositivos — incluida esta — y elegirás una contraseña nueva enseguida.',
       submit: 'PROTEGER MI CUENTA',
@@ -208,6 +268,8 @@ export const es: Translation = {
       logOutLink: 'Cerrar sesión',
       existingAccountBody:
         '{{email}} ya tiene una cuenta de Ogen. Inicia sesión con esa cuenta y la invitación te estará esperando.',
+      googleHint: 'Usa la cuenta de Google de <strong>{{email}}</strong>.',
+      orSetPassword: 'o elige una contraseña',
     },
     logout: {
       pendingTitle: 'Cerrando sesión...',
@@ -1353,6 +1415,23 @@ export const es: Translation = {
       send: 'ENVIARME UN ENLACE DE RESTABLECIMIENTO',
       resend: 'ENVIARLO DE NUEVO',
       resentNote: 'Enviado de nuevo — dale un minuto.',
+    },
+    signInMethods: {
+      title: 'Formas de iniciar sesión',
+      loadFailed: 'No hemos podido cargar tus formas de iniciar sesión.',
+      password: 'Contraseña',
+      passwordSet: 'Correo y contraseña',
+      passwordNotSet: 'Sin contraseña — inicias sesión con Google',
+      setPassword: 'ELEGIR UNA CONTRASEÑA',
+      google: 'Google',
+      googleConnected: '{{email}} · conectado el {{date}}',
+      googleNotConnected: 'Sin conectar',
+      connect: 'CONECTAR',
+      disconnect: 'DESCONECTAR',
+      onlyWayIn:
+        'Google es tu única forma de entrar. Elige primero una contraseña y después podrás desconectarlo.',
+      connectedToast: 'Google conectado',
+      connectFailedToast: 'No hemos podido conectar Google',
     },
     dangerZone: {
       title: 'Zona de peligro',

@@ -1,0 +1,1 @@
+export { AuthGoogleSignupForm } from './AuthGoogleSignupForm'

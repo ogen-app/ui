@@ -113,6 +113,17 @@ export const acceptInviteSchema = (t: T) =>
     password: passwordField(t),
   })
 
+/**
+ * Finishing a Google sign-up (CON-396): the organization name is the one thing
+ * Google can't tell us. Name and address come from the Google account, and
+ * there is no password — the account signs in through Google until its owner
+ * sets one from Profile.
+ */
+export const googleSignupSchema = (t: T) =>
+  z.object({
+    organizationName: nameField(t, 'organizationName', 100),
+  })
+
 /** The identity half of `/profile` — what `PUT /api/users/:id` calls name + email. */
 export const profileSchema = (t: T) =>
   z.object({

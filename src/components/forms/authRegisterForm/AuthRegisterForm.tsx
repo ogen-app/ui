@@ -11,6 +11,7 @@ import { useSignupSchema } from '@/hooks/useAuthSchemas'
 import { FormError } from '@/components/forms/shared/FormError'
 import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
 import { PasswordRules } from '@/components/forms/shared/PasswordRules'
+import { GoogleSignInOption } from '@/components/auth/GoogleSignIn'
 
 /**
  * Self-service signup: organization + first admin in one step (CON-97).
@@ -70,6 +71,10 @@ export function AuthRegisterForm() {
       className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500"
       noValidate
     >
+      {/* The same button as login: the server decides whether this Google
+          account signs in or signs up, so clicking it on the "wrong" screen
+          still ends in the right place. */}
+      <GoogleSignInOption divider={t('auth.google.orSignUpWithEmail')} />
       <div className="flex flex-col gap-2">
         <Label htmlFor="organizationName">
           {t('auth.register.organizationLabel')}
