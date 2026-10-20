@@ -117,7 +117,13 @@ export function ShortcutsSheet() {
   useEffect(() => {
     if (!open) return
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === '?' && !event.metaKey) {
+      // The app's own rule for `?`: Shift and AltGr pass, ⌘ and Ctrl alone
+      // are the browser's.
+      if (
+        event.key === '?' &&
+        !event.metaKey &&
+        !(event.ctrlKey && !event.altKey)
+      ) {
         event.preventDefault()
         setOpen(false)
       }

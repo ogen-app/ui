@@ -513,7 +513,7 @@ export const es: Translation = {
       toggleMenu: 'Mostrar u ocultar el menú',
       toggleRight: 'Mostrar u ocultar el panel derecho',
       openAssistant: 'Abrir el asistente',
-      filterDetail: 'Añadir un detalle al filtro',
+      filterDetail: 'Añadir un detalle al filtro, en Ideas y Recursos',
     },
   },
   /** The filter sentence's own chrome, shared by every list (CON-391/392). */
