@@ -89,8 +89,10 @@ a skipped event is caught up rather than lost. The match is exact: a write on
 | `entity:campaign:<id>` | `assistant.completed` / `assistant.failed` | A campaign-assistant run ends | Invalidate the campaign; muted for the starting tab |
 | | `content_plan.completed` / `content_plan.failed` | Content-plan generation ends | Invalidate the campaign's posts |
 | | `asset.analysis.updated` | The same event on the campaign's topic, for a campaign lens (CON-364) | Nothing — the asset-topic copy already covers it |
+| | `asset.ideas.distill.updated` | The same event on the campaign's topic, for a campaign lens (CON-397) | Nothing — the asset-topic copy already covers it |
 | `entity:asset:<id>` | `asset.updated` | A scraped page or an ingest moves on | Invalidate the asset list and the open asset |
 | | `asset.analysis.updated` | An analysis lens is queued, starts, or settles (CON-364). Payload `{asset_id, campaign_id, analysis_id, status, ideas_count}` | Invalidate the asset's subtree — which holds its analyses (`['assets', id, 'analyses']`) — and every Ideas list, since a settled lens files new ideas. The asset page also polls every 15 s while a lens is in flight, for the event that never arrives (CON-366) |
+| | `asset.ideas.distill.updated` | A request for more ideas from a lens is queued, starts, or settles (CON-397). Payload `{asset_id, campaign_id, analysis_id, run_id, status, ideas_count}`; also sent on the campaign's topic for a campaign lens | Invalidate the asset's subtree — its runs (`['assets', id, 'distills', lens]`) and its analyses, which carry the new ideas — the Assets list and every Ideas list. The page polls the runs every 15 s while one is in flight (CON-398) |
 | `entity:zernio_account:<id>` | `zernio.account.attached` / `.updated` / `.revived` | A social account is connected or changes state | Invalidate the accounts list |
 | | `zernio.account.attach_failed` | Connecting an account failed | **Toasts** — unexpected, actionable, invisible on whatever screen you are on |
 | | `zernio.account.disconnected` | An account was disconnected | **Toasts**, same reason |

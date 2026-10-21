@@ -558,6 +558,70 @@ export const en = {
       /** The opened idea's answer, as a group of buttons (CON-387). */
       answer: 'Answer this idea',
     },
+    /**
+     * Asking a reading for more ideas (CON-398): the ghost button under the
+     * ideas, its modal, and the run's state at the foot of the list.
+     */
+    distill: {
+      action: 'Distill more ideas',
+      /** Beside the disabled button: why it can't be pressed right now. */
+      reason: {
+        analysing: 'Analysis in progress',
+        running: 'Finding more ideas…',
+        limit: 'No runs left this month',
+        plan: 'Not on your plan',
+      },
+      running_one: 'Distilling {{count}} more idea…',
+      running_other: 'Distilling {{count}} more ideas…',
+      runningFocused:
+        'Focused on “{{focus}}”. They’ll land in this list, sorted by fit.',
+      runningBody: 'They’ll land in this list, sorted by fit.',
+      empty: 'No new ideas this time — try a different focus.',
+      emptyFocused: 'Focused on “{{focus}}”.',
+      failed: 'Couldn’t distill more ideas.',
+      failure: {
+        empty_source: 'There was no text in the source to draw from.',
+        invalid_output: 'The new ideas came back malformed.',
+        source_unavailable: 'The source’s text couldn’t be loaded.',
+        model_unavailable: 'The model could not be reached.',
+        model_refused: 'The model declined to read this source.',
+        lens_gone: 'This reading was replaced before the ideas were saved.',
+        unknown: 'Something went wrong. Nothing was added.',
+      },
+      limit: 'This month’s idea runs are used up.',
+      limitBody: 'Upgrade for more, or wait for next month.',
+      plan: 'More ideas aren’t included in your plan.',
+      planBody: 'Upgrade to ask for more ideas from a document.',
+      tryAgain: 'Try again',
+      seePlans: 'See plans',
+      /** The chip that narrows the list to this visit's new ideas, and the row's dot. */
+      fresh_one: '{{count}} new',
+      fresh_other: '{{count}} new',
+      freshLabel_one: 'Show the {{count}} new idea only',
+      freshLabel_other: 'Show the {{count}} new ideas only',
+      freshMark: 'New',
+      modal: {
+        title: 'Distill more ideas',
+        howMany: 'How many',
+        howManyHint: 'New ideas this run, {{min}} to {{max}}.',
+        focus: 'Focus (optional)',
+        focusPlaceholder:
+          'e.g. objections a CFO would raise, contrarian takes, numbers that would surprise a buyer',
+        focusHint:
+          'What the new ideas should lean towards. Leave it empty for Ogen’s own pick.',
+        focusTooLong: 'Focus can be at most {{max}} characters.',
+        counter: '{{count}} / {{max}}',
+        context:
+          'Ogen reads the source again for the workspace. It won’t repeat the ideas already here, and keeps away from the ones you set aside. Every existing idea stays.',
+        contextFor:
+          'Ogen reads the source again for {{campaign}}. It won’t repeat the ideas already here, and keeps away from the ones you set aside. Every existing idea stays.',
+        invalid: 'Check the focus and the count, then try again.',
+        failed: 'Couldn’t ask for more ideas. Try again in a moment.',
+        cancel: 'CANCEL',
+        submit_one: 'DISTILL {{count}} IDEA',
+        submit_other: 'DISTILL {{count}} IDEAS',
+      },
+    },
     /** Why an idea scores what it does, criterion by criterion (CON-385/387). */
     ideaFit: {
       heading: 'Why it scores {{score}}',

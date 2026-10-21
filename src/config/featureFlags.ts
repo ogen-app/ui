@@ -410,6 +410,23 @@ const FEATURE_FLAGS = {
    * series' own `content_format` (CON-330) and analytics grouped by format.
    */
   'content-formats': false,
+  /**
+   * More ideas from an analysed asset (CON-398, the UI half of CON-397): a
+   * ghost "Distill more ideas" under the asset page's ideas, a modal for how
+   * many (3–10) and an optional focus, and the run's state at the foot of the
+   * list until its ideas land.
+   *
+   * **Waiting on CON-397 reaching `develop`** — `POST …/assets/:id/ideas/distill`,
+   * `GET …/ideas/distills`, the `asset.ideas.distill.updated` event and
+   * `distill_run_id` on an idea all live on ogen's
+   * `feature/CON-397-distill-more-ideas` today. Built against that branch's
+   * code, not a running server: once it merges, re-test the in-flight row
+   * across a reload, a 409 from a second tab, and the skipped states, then
+   * decide the flag. Not wired to `useEntitlement` either — the server's
+   * `idea_distills_per_month` is not in this build's `EntitlementKey` yet, so
+   * a refusal is shown when the server gives it rather than predicted.
+   */
+  'idea-distill': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

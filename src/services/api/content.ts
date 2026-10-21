@@ -7,7 +7,7 @@ import type {
   CreateAssetPayload,
   UpdateAssetPayload,
 } from '@/types/content'
-import type { AssetAnalysis } from '@/types/assetAnalysis'
+import type { AssetAnalysis, IdeaDistillRun } from '@/types/assetAnalysis'
 import type {
   AssetListItem,
   AssetListPage,
@@ -159,14 +159,51 @@ export function retryAssetAnalysis(
   id: string,
   campaignId: string | null,
 ): Promise<void> {
-  const query = campaignId
-    ? `?campaign_id=${encodeURIComponent(campaignId)}`
-    : ''
   return apiVoid(
-    `${BASE}/${id}/analysis/retry${query}`,
+    `${BASE}/${id}/analysis/retry${lensQuery(campaignId)}`,
     'Unable to analyse this again',
     { method: 'POST' },
   )
+}
+
+/** `?campaign_id=` for a campaign lens, nothing for the workspace's. */
+function lensQuery(campaignId: string | null): string {
+  return campaignId ? `?campaign_id=${encodeURIComponent(campaignId)}` : ''
+}
+
+/**
+ * Asks for more ideas from one lens (CON-397). Both fields are optional: an
+ * empty focus is left out, and so is the count when it is the server's own
+ * default. Answers 202 with the run, which then reports through
+ * `asset.ideas.distill.updated`.
+ */
+export async function requestIdeaDistill(
+  id: string,
+  campaignId: string | null,
+  request: { focus: string; count: number },
+): Promise<IdeaDistillRun> {
+  const focus = request.focus.trim()
+  const body = await apiJson<{ run: IdeaDistillRun }>(
+    `${BASE}/${id}/ideas/distill${lensQuery(campaignId)}`,
+    'Unable to ask for more ideas',
+    {
+      method: 'POST',
+      body: { ...(focus ? { focus } : {}), count: request.count },
+    },
+  )
+  return body.run
+}
+
+/** A lens's latest distill runs, newest first — at most 20. */
+export async function listIdeaDistills(
+  id: string,
+  campaignId: string | null,
+): Promise<IdeaDistillRun[]> {
+  const body = await apiJson<{ runs: IdeaDistillRun[] | null }>(
+    `${BASE}/${id}/ideas/distills${lensQuery(campaignId)}`,
+    'Unable to read the requests for more ideas',
+  )
+  return body.runs ?? []
 }
 
 export function createAsset(payload: CreateAssetPayload): Promise<Asset> {

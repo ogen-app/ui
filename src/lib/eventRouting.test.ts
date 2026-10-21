@@ -164,6 +164,23 @@ describe('invalidationsFor', () => {
     expect(keys(e)).toEqual([['assets', 'a1'], ['assets', 'list'], ['ideas']])
   })
 
+  it('refreshes the asset and the ideas when a request for more ideas moves', () => {
+    const e = event('entity:asset:a1', 'asset.ideas.distill.updated', {
+      run_id: 'r1',
+      status: 'ready',
+      ideas_count: 5,
+    })
+    expect(keys(e)).toEqual([['assets', 'a1'], ['assets', 'list'], ['ideas']])
+  })
+
+  it('ignores a distill event on the campaign topic', () => {
+    expect(
+      invalidationsFor(
+        event('entity:campaign:c1', 'asset.ideas.distill.updated'),
+      ),
+    ).toEqual([])
+  })
+
   it('ignores an analysis event on the campaign topic', () => {
     expect(
       invalidationsFor(event('entity:campaign:c1', 'asset.analysis.updated')),

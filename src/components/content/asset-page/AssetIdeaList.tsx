@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -18,6 +18,8 @@ import {
 } from '@/components/ideas/card/IdeaCardParts'
 import { IDEA_ROW, pileOf } from '@/components/ideas/card/ideaRow'
 import { useAnswerIdea } from '@/hooks/useAssetAnalyses'
+import { useIdeaDistill } from '@/hooks/useIdeaDistill'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { useIdeaClock } from '@/hooks/useIdeaClock'
 import { cn } from '@/lib'
 import { mergePageRefs, pageSpan, parseIdeaNote } from '@/lib/assetAnalysis'
@@ -27,6 +29,7 @@ import { byFit } from '@/lib/ideaFit'
 import { countIdeas, isWaiting, type Idea } from '@/lib/ideas'
 import { ideaFromWire } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
+import { DistillMoreIdeas } from './DistillMoreIdeas'
 import { SourceChip } from './SourceChip'
 
 /** How many ideas show before "Show N more". */
@@ -49,6 +52,10 @@ const FIRST_IDEAS = 5
  * The piles above the list (CON-370) narrow it to one verdict. `?verdict=`
  * picks one, which is where the Assets list's verdict pill sends a click;
  * choosing it again shows everything still worth making.
+ *
+ * Behind `idea-distill`, the list ends in a way to ask for more (CON-398):
+ * ideas that land while the page is open carry a teal dot, and a chip beside
+ * the piles narrows the list to them until the page is left.
  */
 export function AssetIdeaList({
   lens,
@@ -64,6 +71,11 @@ export function AssetIdeaList({
   const { t } = useTranslation()
   const [showAll, setShowAll] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
+  const canDistill = useFeatureFlag('idea-distill')
+  const distill = useIdeaDistill(lens.asset_id, lens.campaign_id, {
+    enabled: canDistill,
+  })
+  const [freshOnly, setFreshOnly] = useState(false)
   const { verdict: asked } = useSearch({ strict: false })
   const navigate = useNavigate()
   // Best fit first, as the Assets list card and the server's `next_idea` order
@@ -78,18 +90,30 @@ export function AssetIdeaList({
   const counts = useMemo(() => countIdeas(all, now), [all, now])
   // A pile this reading has none of (a link from another lens) shows them all.
   const pile = asked && counts[asked] > 0 ? asked : undefined
+  // The ideas this visit watched arrive: the dot on their rows, and the chip.
+  const { fresh: freshRuns } = distill
+  const isFresh = (idea: Idea) =>
+    !!idea.distillRunId && freshRuns.has(idea.distillRunId)
+  const freshCount = all.filter(
+    (idea) => isFresh(idea) && idea.verdict !== 'no',
+  ).length
+  const onlyFresh = freshOnly && freshCount > 0
   const ideas = useMemo(() => {
     // The opened idea stays where it is whatever it has just been answered —
     // it leaves the pile when it is closed, not from under the pointer.
     const inPile = (idea: Idea) => {
+      if (onlyFresh) return isFresh(idea) && idea.verdict !== 'no'
       if (!pile) return idea.verdict !== 'no'
       return pile === 'waiting'
         ? isWaiting(idea, now)
         : idea.verdict === pile && !isWaiting(idea, now)
     }
     return all.filter((idea) => idea.id === open || inPile(idea))
-  }, [all, pile, now, open])
-  const choosePile = (next: VerdictKey) =>
+    // `isFresh` reads `freshRuns`, which is listed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [all, pile, now, open, onlyFresh, freshRuns])
+  const choosePile = (next: VerdictKey) => {
+    setFreshOnly(false)
     void navigate({
       to: '.',
       search: (prev) => ({
@@ -98,6 +122,7 @@ export function AssetIdeaList({
       }),
       replace: true,
     })
+  }
   const shown = showAll ? ideas : ideas.slice(0, FIRST_IDEAS)
   const hidden = ideas.length - shown.length
   const forCampaign = lens.campaign_id !== null && lens.campaign_name
@@ -136,7 +161,20 @@ export function AssetIdeaList({
           </p>
         )}
         {all.length > 0 && (
-          <Piles counts={counts} active={pile} onChoose={choosePile} />
+          <Piles
+            counts={counts}
+            active={onlyFresh ? undefined : pile}
+            onChoose={choosePile}
+            trailing={
+              freshCount > 0 && (
+                <FreshChip
+                  count={freshCount}
+                  active={onlyFresh}
+                  onToggle={() => setFreshOnly(!onlyFresh)}
+                />
+              )
+            }
+          />
         )}
       </header>
 
@@ -168,6 +206,7 @@ export function AssetIdeaList({
                 lens={lens}
                 now={now}
                 expanded={open === idea.id}
+                fresh={isFresh(idea)}
                 onToggle={() => setOpen(open === idea.id ? null : idea.id)}
               />
             ))}
@@ -183,6 +222,7 @@ export function AssetIdeaList({
           )}
         </>
       )}
+      {canDistill && <DistillMoreIdeas lens={lens} distill={distill} />}
     </section>
   )
 }
@@ -195,10 +235,13 @@ function Piles({
   counts,
   active,
   onChoose,
+  trailing,
 }: {
   counts: Record<VerdictKey, number>
   active: VerdictKey | undefined
   onChoose: (pile: VerdictKey) => void
+  /** After the piles, on their line — the new ideas' chip (CON-398). */
+  trailing?: ReactNode
 }) {
   const { t } = useTranslation()
   return (
@@ -238,7 +281,42 @@ function Piles({
           {t(`assetInsights.ideas.pile.${v}`)}
         </button>
       ))}
+      {trailing}
     </div>
+  )
+}
+
+/**
+ * The ideas that landed while the page was open (CON-398), as a pile of their
+ * own: the piles' shape, in the accent the row's dot is drawn in. It narrows
+ * the list the way a pile does and gives way when a pile is chosen.
+ */
+function FreshChip({
+  count,
+  active,
+  onToggle,
+}: {
+  count: number
+  active: boolean
+  onToggle: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={t('assetInsights.distill.freshLabel', { count })}
+      onClick={onToggle}
+      className={cn(
+        'flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-semibold tabular-nums text-accent transition-colors',
+        active
+          ? 'border-accent bg-accent/10'
+          : 'border-transparent bg-accent/10 hover:border-accent',
+      )}
+    >
+      <span aria-hidden className="size-1.5 rounded-full bg-accent" />
+      {t('assetInsights.distill.fresh', { count })}
+    </button>
   )
 }
 
@@ -254,6 +332,7 @@ function IdeaRow({
   lens,
   now,
   expanded,
+  fresh = false,
   onToggle,
 }: {
   /** Its place in the list — rows arrive one after another, not at once. */
@@ -262,6 +341,8 @@ function IdeaRow({
   lens: AssetAnalysis
   now: Date
   expanded: boolean
+  /** It landed from a request for more ideas while this page was open. */
+  fresh?: boolean
   onToggle: () => void
 }) {
   const { t } = useTranslation()
@@ -290,9 +371,17 @@ function IdeaRow({
         <span
           className={cn(
             'text-sm/6 text-foreground',
-            expanded && 'font-semibold',
+            (expanded || fresh) && 'font-semibold',
           )}
         >
+          {fresh && (
+            // Before the title, inside its column, so the titles keep their line.
+            <span
+              role="img"
+              aria-label={t('assetInsights.distill.freshMark')}
+              className="mr-2 inline-block size-1.5 -translate-y-0.5 rounded-full bg-accent align-middle"
+            />
+          )}
           {idea.title}
         </span>
         <VerdictMark verdict={pileOf(idea, now)} />

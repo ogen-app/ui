@@ -91,3 +91,29 @@ export type AssetAnalysis = {
   /** The lens's ideas, `[]` when it distilled none. */
   ideas: IdeaBody[]
 }
+
+/**
+ * One request for more ideas from a lens (CON-397), as `POST …/ideas/distill`
+ * and `GET …/ideas/distills` answer it.
+ *
+ * It walks `pending → running → ready`, or ends `failed` / `skipped` — the
+ * analysis's own lifecycle, with the analysis's failure codes plus
+ * `lens_gone` (the lens was deleted before the ideas were saved). `ready` with
+ * `ideas_count: 0` is a run that found nothing new, not a failure.
+ */
+export type IdeaDistillRun = {
+  id: string
+  asset_id: string
+  campaign_id: string | null
+  analysis_id: string
+  status: AssetAnalysisStatus
+  /** `''` when the request named no focus. */
+  focus: string
+  count: number
+  ideas_count: number
+  failure_code: AssetAnalysisFailureCode | 'lens_gone' | ''
+  failure_reason: string
+  created_by: string | null
+  created_at: string
+  finished_at: string | null
+}

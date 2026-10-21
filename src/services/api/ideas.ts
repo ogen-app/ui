@@ -127,6 +127,8 @@ export type IdeaBody = {
   /** `''` for an idea a person wrote, `'asset_analysis'` for a distilled one (CON-364). */
   origin?: '' | 'asset_analysis'
   asset_analysis_id?: string | null
+  /** The "more ideas" run it came from (CON-397); `null` for the analysis's own. */
+  distill_run_id?: string | null
   source_asset?: IdeaSourceAssetBody | null
   created_by_name?: string
   /** A written idea's writer (CON-389); `id` is `null` once they have left. */
@@ -179,6 +181,7 @@ export function ideaFromWire(body: IdeaBody): Idea {
     remindAt: body.remind_at,
     origin: body.origin === 'asset_analysis' ? 'asset_analysis' : 'manual',
     assetAnalysisId: body.asset_analysis_id ?? null,
+    distillRunId: body.distill_run_id ?? null,
     sourceAsset: body.source_asset
       ? sourceAssetFromWire(body.source_asset)
       : null,

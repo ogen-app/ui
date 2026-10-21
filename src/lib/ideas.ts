@@ -82,6 +82,11 @@ export type Idea = {
   /** The analysis that distilled it, while that analysis still exists. */
   assetAnalysisId?: string | null
   /**
+   * The "more ideas" run it came from (CON-397), `null` for the analysis's own
+   * batch and for a written idea.
+   */
+  distillRunId?: string | null
+  /**
    * The asset an analysed idea was distilled from, while it exists. It
    * outlives the analysis (CON-389); `null` once the asset is deleted.
    */

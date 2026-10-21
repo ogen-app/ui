@@ -66,6 +66,21 @@ image has Source only.
   decisions, open questions), then **What it covers**: topics as a line of
   text, mentions grouped by kind with the kind written out, and the sheets
   read. Turning an idea into a post is CON-365.
+- **More ideas** (CON-398, behind `idea-distill`): the ideas end in a ghost
+  **Distill more ideas** (`AiChemistry02Icon`). It opens a modal — how many,
+  3–10 in a segmented radio group, default 5, and an optional focus of up to
+  300 characters, counted as the server counts it (trimmed, in code points) —
+  whose commit, **DISTILL N IDEAS**, is the delete dialog's pair with a dark
+  fill. The run's news is a row at the foot of the list on the idea rows'
+  grid: in flight, nothing new (Try again reopens the form on the last ask),
+  failed (Try again re-sends it), out of runs or not on the plan (See plans).
+  A run that lands says nothing there — its ideas take their places by fit,
+  each with a teal dot, and a **N new** chip beside the piles narrows the list
+  to them. Only a run this visit watched reports or marks anything, so last
+  week's failure does not greet the next visit. The button stays on screen
+  when it can't be pressed, its reason beside it. Runs live under the asset's
+  key (`hooks/useIdeaDistill`), so `asset.ideas.distill.updated` moves them
+  and their ideas together.
 - **Type and colour**: section labels are sentence case; readable grey text is
   `secondary-foreground` (gray-700, 5.2:1 — gray-600 fails AA at 3.3:1), the
   tertiary grey is left to icons and markers. Highlights are tinted panels,
@@ -83,6 +98,9 @@ image has Source only.
 and every Ideas list (`lib/eventRouting.ts`, `docs/events.md`). The analyses
 poll every 15 s only while something is in flight. A lens that finishes while
 the page is open says "Insights ready — N ideas added" for four seconds.
+`asset.ideas.distill.updated` (CON-397) takes the same route; the runs poll
+every 15 s only while one is in flight, and a poll that finds one settled
+refetches the ideas itself.
 
 ## Shared controls
 
@@ -130,3 +148,4 @@ answered in place (CON-387):
 
 Illustrative copy; the PRDs are CON-366, CON-369, CON-373 and CON-387 in
 Linear.
+![More ideas (CON-398)](asset-page/6-distill-more-ideas.png)
