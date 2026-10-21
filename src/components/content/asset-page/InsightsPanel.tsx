@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib'
 import {
+  coversAnything,
   hasMeetingNotes,
   isLensWaiting,
   type InsightState,
@@ -26,6 +27,7 @@ import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { AssetIdeaList } from './AssetIdeaList'
 import { ReadingSummary } from './ReadingSummary'
 import { WhatItCovers } from './WhatItCovers'
+import { Separator } from '@/components/ui/separator'
 import { MeetingNotes } from './MeetingNotes'
 
 /**
@@ -246,15 +248,27 @@ function Reading({
 
       <ReadingSummary lens={lens} />
 
+      {/* A pale rule between the three parts — what it says, what to make,
+          what it covers — standing in the column's own gap on either side. */}
+      <Separator className="bg-quaternary" />
+
       <AssetIdeaList lens={lens} spreadsheet={sheets !== undefined} />
 
       {hasMeetingNotes(lens) && (
-        <div className="flex flex-col gap-8 border-t border-quaternary pt-8">
-          <MeetingNotes lens={lens} />
-        </div>
+        <>
+          <Separator className="bg-quaternary" />
+          <div className="flex flex-col gap-8">
+            <MeetingNotes lens={lens} />
+          </div>
+        </>
       )}
 
-      <WhatItCovers lens={lens} sheets={sheets} />
+      {coversAnything(lens, sheets) && (
+        <>
+          <Separator className="bg-quaternary" />
+          <WhatItCovers lens={lens} sheets={sheets} />
+        </>
+      )}
     </div>
   )
 }

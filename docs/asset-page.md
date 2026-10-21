@@ -46,9 +46,9 @@ image has Source only.
 - **Insights** (ideas first, CON-369): relevance panel (campaign lens), the
   summary at rest — its lead paragraph, four lines — with "Read the full
   summary" growing the page in place (whole summary as light Markdown, key
-  points; no box scrolling inside the page), then **N post ideas** (CON-387) — led by the teal `AiIdeaIcon`, the count
-  alone in regular weight, the campaign named in the line under it; five, then
-  "Show N more", best fit first (`byFit`, the Assets list card's order), each
+  points; no box scrolling inside the page), a pale rule, then **N post ideas** (CON-387) — led by the teal `AiIdeaIcon`, the count
+  alone in regular weight, the campaign named in the line under it, no link
+  beside it; every idea at once, no fold, best fit first (`byFit`, the Assets list card's order), each
   row the card's: score track, title, verdict mark in the pill's colours, the
   note in two lines, a pale inset rule between rows and no box. A row opens in
   place, its title semibold, to the angle, the rationale, **Why it scores N**
@@ -65,7 +65,9 @@ image has Source only.
   notes for a recording (participants, commitments with time chips,
   decisions, open questions), then **What it covers**: topics as a line of
   text, mentions grouped by kind with the kind written out, and the sheets
-  read. Turning an idea into a post is CON-365.
+  read. A pale rule stands between each of those parts — summary, ideas,
+  meeting notes, what it covers — in the column's own 40px gap, and is left
+  out above a part with nothing to show. Turning an idea into a post is CON-365.
 - **More ideas** (CON-398, unflagged): the ideas end in a ghost
   **Distill more ideas** (`AiChemistry02Icon`). It opens a modal — how many,
   3–10 in a segmented radio group, default 5, and an optional focus of up to

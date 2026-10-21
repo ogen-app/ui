@@ -31,9 +31,6 @@ import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { DistillMoreIdeas } from './DistillMoreIdeas'
 import { SourceChip } from './SourceChip'
 
-/** How many ideas show before "Show N more". */
-const FIRST_IDEAS = 5
-
 /**
  * The ideas one lens distilled (CON-364), in the Assets list card's language
  * (CON-387): best fit first, each with its score on a track, its title, its
@@ -68,7 +65,6 @@ export function AssetIdeaList({
   spreadsheet?: boolean
 }) {
   const { t } = useTranslation()
-  const [showAll, setShowAll] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
   const distill = useIdeaDistill(lens.asset_id, lens.campaign_id)
   const [freshOnly, setFreshOnly] = useState(false)
@@ -121,33 +117,26 @@ export function AssetIdeaList({
       replace: true,
     })
   }
-  const shown = showAll ? ideas : ideas.slice(0, FIRST_IDEAS)
-  const hidden = ideas.length - shown.length
   const forCampaign = lens.campaign_id !== null && lens.campaign_name
 
   return (
     <section className="flex flex-col gap-4">
       <header className="flex flex-col gap-1">
-        <div className="flex items-center justify-between gap-4">
-          {/* The count alone: the line under it names the campaign. Regular
-              weight — the size carries it, and the list's titles are the
-              heaviest type in the column. */}
-          <h3 className="flex items-center gap-2.5 text-[22px] leading-8 font-normal text-foreground">
-            <HugeiconsIcon
-              icon={AiIdeaIcon}
-              size={26}
-              strokeWidth={1.5}
-              aria-hidden
-              className="shrink-0 text-accent"
-            />
-            {ideas.length === 0
-              ? t('assetInsights.ideas.heading')
-              : t('assetInsights.ideas.count', { count: ideas.length })}
-          </h3>
-          {ideas.length > 0 && (
-            <InboxLink lens={lens} label={t('assetInsights.ideas.viewAll')} />
-          )}
-        </div>
+        {/* The count alone: the line under it names the campaign. Regular
+            weight — the size carries it, and the list's titles are the
+            heaviest type in the column. */}
+        <h3 className="flex items-center gap-2.5 text-[22px] leading-8 font-normal text-foreground">
+          <HugeiconsIcon
+            icon={AiIdeaIcon}
+            size={26}
+            strokeWidth={1.5}
+            aria-hidden
+            className="shrink-0 text-accent"
+          />
+          {ideas.length === 0
+            ? t('assetInsights.ideas.heading')
+            : t('assetInsights.ideas.count', { count: ideas.length })}
+        </h3>
         {ideas.length > 0 && (
           <p className="text-sm text-secondary-foreground">
             {forCampaign
@@ -192,33 +181,24 @@ export function AssetIdeaList({
           </div>
         </div>
       ) : (
-        <>
-          {/* Hung out by the rows' own padding, so the score tracks line up
-              with the heading rather than sitting a step inside it. */}
-          <ul className="-mx-3 flex flex-col">
-            {shown.map((idea, index) => (
-              <IdeaRow
-                key={idea.id}
-                index={index}
-                idea={idea}
-                lens={lens}
-                now={now}
-                expanded={open === idea.id}
-                fresh={isFresh(idea)}
-                onToggle={() => setOpen(open === idea.id ? null : idea.id)}
-              />
-            ))}
-          </ul>
-          {hidden > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowAll(true)}
-              className="cursor-pointer self-start text-sm font-medium text-accent hover:underline"
-            >
-              {t('assetInsights.ideas.showMore', { count: hidden })}
-            </button>
-          )}
-        </>
+        // Every idea, not the first five: this list is what the page is for,
+        // and a fold only hid the ones a reader came to compare.
+        // Hung out by the rows' own padding, so the score tracks line up with
+        // the heading rather than sitting a step inside it.
+        <ul className="-mx-3 flex flex-col">
+          {ideas.map((idea, index) => (
+            <IdeaRow
+              key={idea.id}
+              index={index}
+              idea={idea}
+              lens={lens}
+              now={now}
+              expanded={open === idea.id}
+              fresh={isFresh(idea)}
+              onToggle={() => setOpen(open === idea.id ? null : idea.id)}
+            />
+          ))}
+        </ul>
       )}
       <DistillMoreIdeas lens={lens} distill={distill} />
     </section>
