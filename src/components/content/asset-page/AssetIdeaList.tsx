@@ -114,7 +114,9 @@ export function AssetIdeaList({
       to: '.',
       search: (prev) => ({
         ...prev,
-        verdict: next === pile ? undefined : next,
+        // Under the new-ideas chip no pile shows as chosen, so a click on
+        // the one the address still names chooses it rather than clearing it.
+        verdict: next === pile && !onlyFresh ? undefined : next,
       }),
       replace: true,
     })

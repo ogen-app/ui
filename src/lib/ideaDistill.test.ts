@@ -60,5 +60,8 @@ describe('ideaDistill', () => {
         run({ status: 'skipped', failure_code: 'entitlement_disabled' }),
       ),
     ).toBe('plan')
+    expect(
+      outcomeOf(run({ status: 'skipped', failure_code: 'lens_gone' })),
+    ).toBe('failed')
   })
 })

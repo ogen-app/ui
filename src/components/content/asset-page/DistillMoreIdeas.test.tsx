@@ -249,6 +249,40 @@ describe('Distill more ideas (CON-398)', () => {
     expect(screen.getByText('Fresh one')).toBeInTheDocument()
   })
 
+  it('chooses the pile the address names when clicked under the new-ideas chip', async () => {
+    const user = userEvent.setup()
+    api.list.mockResolvedValueOnce([run({ status: 'running' })])
+    const { queryClient, router } = await renderWithProviders(<Harness />, {
+      search: '?verdict=waiting',
+    })
+    await screen.findByText('Distilling 5 more ideas…')
+    api.list.mockResolvedValue([run({ status: 'ready', ideas_count: 1 })])
+    act(() =>
+      harness.set(
+        lens({
+          ideas: [
+            idea(1),
+            idea(3, { title: 'Fresh one', distill_run_id: 'r1' }),
+          ],
+        }),
+      ),
+    )
+    await queryClient.invalidateQueries({ queryKey: ['assets', 'a1'] })
+    await user.click(
+      await screen.findByRole('button', { name: 'Show the 1 new idea only' }),
+    )
+
+    await user.click(screen.getByRole('button', { name: '2 On the desk' }))
+    await waitFor(() =>
+      expect(router.state.location.search).toMatchObject({
+        verdict: 'waiting',
+      }),
+    )
+    expect(
+      screen.getByRole('button', { name: '2 On the desk' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+  })
+
   it('says nothing about a run that settled before this visit', async () => {
     api.list.mockResolvedValue([
       run({ status: 'failed', failure_code: 'model_unavailable' }),
