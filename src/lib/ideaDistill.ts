@@ -60,7 +60,11 @@ export function outcomeOf(run: IdeaDistillRun): DistillOutcome | null {
     case 'failed':
       return 'failed'
     case 'skipped':
-      return run.failure_code === 'entitlement_disabled' ? 'plan' : 'limit'
+      // The two gates the server skips on; any other code is a failure to
+      // state as one, not a limit to sell past.
+      if (run.failure_code === 'entitlement_disabled') return 'plan'
+      if (run.failure_code === 'limit_reached') return 'limit'
+      return 'failed'
     default:
       return null
   }
