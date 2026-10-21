@@ -19,7 +19,6 @@ import {
 import { IDEA_ROW, pileOf } from '@/components/ideas/card/ideaRow'
 import { useAnswerIdea } from '@/hooks/useAssetAnalyses'
 import { useIdeaDistill } from '@/hooks/useIdeaDistill'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useIdeaClock } from '@/hooks/useIdeaClock'
 import { cn } from '@/lib'
 import { mergePageRefs, pageSpan, parseIdeaNote } from '@/lib/assetAnalysis'
@@ -53,7 +52,7 @@ const FIRST_IDEAS = 5
  * picks one, which is where the Assets list's verdict pill sends a click;
  * choosing it again shows everything still worth making.
  *
- * Behind `idea-distill`, the list ends in a way to ask for more (CON-398):
+ * The list ends in a way to ask for more (CON-398):
  * ideas that land while the page is open carry a teal dot, and a chip beside
  * the piles narrows the list to them until the page is left.
  */
@@ -71,10 +70,7 @@ export function AssetIdeaList({
   const { t } = useTranslation()
   const [showAll, setShowAll] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
-  const canDistill = useFeatureFlag('idea-distill')
-  const distill = useIdeaDistill(lens.asset_id, lens.campaign_id, {
-    enabled: canDistill,
-  })
+  const distill = useIdeaDistill(lens.asset_id, lens.campaign_id)
   const [freshOnly, setFreshOnly] = useState(false)
   const { verdict: asked } = useSearch({ strict: false })
   const navigate = useNavigate()
@@ -222,7 +218,7 @@ export function AssetIdeaList({
           )}
         </>
       )}
-      {canDistill && <DistillMoreIdeas lens={lens} distill={distill} />}
+      <DistillMoreIdeas lens={lens} distill={distill} />
     </section>
   )
 }

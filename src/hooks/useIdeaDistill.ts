@@ -37,11 +37,7 @@ export type DistillRefusal = 'limit' | 'plan' | 'invalid' | 'failed'
  * reason the ideas a run added are `fresh` only on the visit that saw them
  * land: that is what the list's dot means.
  */
-export function useIdeaDistill(
-  assetId: string,
-  campaignId: string | null,
-  { enabled }: { enabled: boolean },
-) {
+export function useIdeaDistill(assetId: string, campaignId: string | null) {
   const qc = useQueryClient()
   const key = ideaDistillsKey(assetId, campaignId)
   const runs = useQuery({
@@ -54,7 +50,7 @@ export function useIdeaDistill(
       if (settledSince(before, after)) refreshIdeas(qc, assetId)
       return after
     },
-    enabled: enabled && !!assetId,
+    enabled: !!assetId,
     refetchInterval: (query) =>
       activeRun(query.state.data ?? []) ? FALLBACK_POLL_MS : false,
   })

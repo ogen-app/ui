@@ -66,7 +66,7 @@ image has Source only.
   decisions, open questions), then **What it covers**: topics as a line of
   text, mentions grouped by kind with the kind written out, and the sheets
   read. Turning an idea into a post is CON-365.
-- **More ideas** (CON-398, behind `idea-distill`): the ideas end in a ghost
+- **More ideas** (CON-398, unflagged): the ideas end in a ghost
   **Distill more ideas** (`AiChemistry02Icon`). It opens a modal — how many,
   3–10 in a segmented radio group, default 5, and an optional focus of up to
   300 characters, counted as the server counts it (trimmed, in code points) —

@@ -12,17 +12,11 @@ import { AssetIdeaList } from './AssetIdeaList'
 const api = vi.hoisted(() => ({
   list: vi.fn(),
   request: vi.fn(),
-  flag: { on: true },
 }))
 vi.mock('@/services/api/content', async (actual) => ({
   ...(await actual<typeof import('@/services/api/content')>()),
   listIdeaDistills: api.list,
   requestIdeaDistill: api.request,
-}))
-vi.mock('@/config/featureFlags', async (actual) => ({
-  ...(await actual<typeof import('@/config/featureFlags')>()),
-  useFeatureFlag: (flag: string) =>
-    flag === 'idea-distill' ? api.flag.on : false,
 }))
 
 const idea = (n: number, over: Partial<IdeaBody> = {}): IdeaBody => ({
@@ -94,19 +88,8 @@ const button = () => screen.getByRole('button', { name: 'Distill more ideas' })
 
 describe('Distill more ideas (CON-398)', () => {
   beforeEach(() => {
-    api.flag.on = true
     api.list.mockReset().mockResolvedValue([])
     api.request.mockReset()
-  })
-
-  it('is absent while the flag is off', async () => {
-    api.flag.on = false
-    await renderWithProviders(<AssetIdeaList lens={lens()} />)
-    expect(screen.getByText('Idea 1')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: 'Distill more ideas' }),
-    ).not.toBeInTheDocument()
-    expect(api.list).not.toHaveBeenCalled()
   })
 
   it('asks for the chosen count and focus, then holds the button while it runs', async () => {
