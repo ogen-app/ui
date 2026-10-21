@@ -19,7 +19,6 @@ import {
   type LoginAlertFailure,
 } from '@/services/api/loginAlerts'
 import { useAuthStore } from '@/stores/authStore'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { GoogleMark } from '@/components/auth/GoogleMark'
 
 /**
@@ -37,7 +36,6 @@ import { GoogleMark } from '@/components/auth/GoogleMark'
  */
 function SecureAccountPage() {
   const { t } = useTranslation()
-  const googleBuilt = useFeatureFlag('google-sign-in')
   const { token } = useSearch({ from: '/auth/secure-account/' })
   useNoReferrer()
   const signedIn = useAuthStore((s) => s.user !== null)
@@ -211,9 +209,8 @@ function SecureAccountPage() {
   }
 
   const busy = secure.isPending || leaving
-  // Securing a Google sign-in also disconnects Google (CON-395); said only
-  // then, and only once Google sign-in is built at all.
-  const viaGoogle = googleBuilt && alert.data.method === 'google'
+  // Securing a Google sign-in also disconnects Google (CON-395); said only then.
+  const viaGoogle = alert.data.method === 'google'
   const submitMessage =
     submitFailure === 'rate_limited'
       ? rateLimitedMessage

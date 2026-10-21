@@ -1853,18 +1853,16 @@ export const en = {
       emailWarning:
         'This is the address you log in with. It changes as soon as you save, and nothing sends a confirmation to check it works — a typo here locks you out at your next login.',
     },
+    /** The password row of `signInMethods`: changed by email and only by email
+     *  (CON-193), because the emailed route also revokes every other session. */
     password: {
-      title: 'Password',
-      /** The reason is the feature: the emailed route is the one that also
-       *  revokes every other session (CON-193), so the copy says so. */
-      body: "Your password is changed by email. We'll send a link to <email>{{email}}</email> — it's the only route that also signs out your other devices, which is usually the point.",
       sentBody:
         'A link to set a new password is on its way to <email>{{email}}</email>. It expires in an hour, and using it signs out every device — including this one.',
       send: 'EMAIL ME A RESET LINK',
       resend: 'SEND IT AGAIN',
       resentNote: 'Sent again — give it a minute.',
     },
-    /** Every way into the account, one row each (CON-396). Replaces `password` once Google ships. */
+    /** Every way into the account, one row each (CON-396). */
     signInMethods: {
       title: 'Sign-in methods',
       loadFailed: "Couldn't load your sign-in methods.",

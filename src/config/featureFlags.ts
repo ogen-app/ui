@@ -410,32 +410,6 @@ const FEATURE_FLAGS = {
    * series' own `content_format` (CON-330) and analytics grouped by format.
    */
   'content-formats': false,
-
-  /**
-   * Sign in with Google (CON-396), next to email and password.
-   *
-   * Every Google entry point is gated on this *and* on the server saying Google
-   * is configured (`GET /api/auth/providers` → `google.enabled`), so turning
-   * the flag on before an environment has its OAuth client shows no Google
-   * button anywhere; Profile then shows the Sign-in methods card with only its
-   * Password row, which does exactly what the Password card did. With the flag
-   * off the auth screens, Profile and the secure-account page are exactly what
-   * they were.
-   *
-   * What it touches: a CONTINUE WITH GOOGLE button on login, register and the
-   * invitation page (a plain navigation to `/api/auth/google/start` — no
-   * Google script in the bundle); the one-field `/auth/register/google` step a
-   * newcomer lands on to name their workspace; a Sign-in methods card that
-   * replaces Profile's Password card; `?error=` codes said in the login
-   * subtitle; and one more line on `/auth/secure-account` when the alerted
-   * sign-in came through Google.
-   *
-   * **Waiting on** ogen#227 (CON-395): the OIDC routes under
-   * `/api/auth/google/*`, `/api/auth/providers`, `GET /api/account/auth-methods`
-   * and `DELETE /api/account/identities/:provider`, plus `method` on the login
-   * alert preview. Built against that PR's code and swagger, not a live server.
-   */
-  'google-sign-in': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 
-import { isFeatureEnabled } from '@/config/featureFlags'
 import GoogleSignupPage from './page'
 
 /**
@@ -17,10 +16,6 @@ const googleSignupSearchSchema = z.object({
 export const Route = createFileRoute('/auth/register/google/')({
   validateSearch: googleSignupSearchSchema,
   beforeLoad: ({ context }) => {
-    // With the feature off there is no way to have arrived here honestly.
-    if (!isFeatureEnabled('google-sign-in')) {
-      throw redirect({ to: '/auth/register' })
-    }
     if (context.auth.isAuthenticated) {
       throw redirect({ to: '/' })
     }

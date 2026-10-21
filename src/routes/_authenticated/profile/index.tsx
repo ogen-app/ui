@@ -16,7 +16,6 @@ import {
 import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
 import { cn } from '@/lib'
 import { ProfileIdentitySection } from '@/components/profile/ProfileIdentitySection'
-import { PasswordSection } from '@/components/profile/PasswordSection'
 import { EmailPreferencesSection } from '@/components/profile/EmailPreferencesSection'
 import { LeaveWorkspaceDialog } from '@/components/profile/LeaveWorkspaceDialog'
 import { SignInMethodsSection } from '@/components/profile/SignInMethodsSection'
@@ -50,14 +49,13 @@ export const Route = createFileRoute('/_authenticated/profile/')({
  * by the Save bar at the bottom. The password, the marketing-email switch and
  * the deletion do not — each takes effect on its own, as a discrete action
  * rather than a pending settings edit. The password isn't even changed here:
- * see `PasswordSection`.
+ * see `SignInMethodsSection`.
  */
 function ProfilePage() {
   const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const emailPreferencesEnabled = useFeatureFlag('email-preferences')
-  const signInMethodsEnabled = useFeatureFlag('google-sign-in')
   useGoogleLinkResult()
 
   // The route sits under `_authenticated`, so the guard has already resolved a
@@ -87,11 +85,7 @@ function ProfilePage() {
             >
               <ProfileIdentitySection user={user} />
               <LanguageSection />
-              {signInMethodsEnabled ? (
-                <SignInMethodsSection />
-              ) : (
-                <PasswordSection />
-              )}
+              <SignInMethodsSection />
               {emailPreferencesEnabled && (
                 <EmailPreferencesSection userId={user.id} />
               )}

@@ -133,7 +133,7 @@ export const profileSchema = (t: T) =>
   })
 
 /*
- * There is no in-app change-password schema. `PasswordSection` on /profile
+ * There is no in-app change-password schema. `SignInMethodsSection` on /profile
  * sends the emailed reset instead of collecting a new credential, so the only
  * screen that sets a password from typed input is `/auth/reset` above. See
  * that component for why the form went away (CON-193).

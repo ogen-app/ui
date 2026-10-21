@@ -11,11 +11,9 @@ import { SignInMethodsSection } from './SignInMethodsSection'
 const getAuthMethods = vi.fn<() => Promise<AuthMethods>>()
 const disconnectIdentity = vi.fn()
 const requestPasswordReset = vi.fn()
+const updateUser = vi.fn()
+const login = vi.fn()
 
-vi.mock('@/config/featureFlags', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/config/featureFlags')>()
-  return { ...actual, useFeatureFlag: vi.fn(() => true) }
-})
 vi.mock('@/services/api/googleAuth', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@/services/api/googleAuth')>()
@@ -29,6 +27,16 @@ vi.mock('@/services/api/googleAuth', async (importOriginal) => {
 vi.mock('@/services/api/passwordReset', () => ({
   requestPasswordReset: (...a: unknown[]) => requestPasswordReset(...a),
   resetPassword: vi.fn(),
+}))
+vi.mock('@/services/api/users', () => ({
+  updateUser: (...a: unknown[]) => updateUser(...a),
+  deleteUser: vi.fn(),
+}))
+vi.mock('@/services/api/sessions', () => ({
+  login: (...a: unknown[]) => login(...a),
+  invalidateSession: vi.fn(),
+  logout: vi.fn(),
+  checkSession: vi.fn(),
 }))
 
 const USER = {
@@ -51,10 +59,80 @@ beforeEach(() => {
   getAuthMethods.mockReset()
   disconnectIdentity.mockReset().mockResolvedValue(undefined)
   requestPasswordReset.mockReset().mockResolvedValue(undefined)
+  updateUser.mockReset()
+  login.mockReset()
   useAuthStore.setState({ user: USER as never })
 })
 
+const sendReset = (user: ReturnType<typeof userEvent.setup>) =>
+  user.click(screen.getByRole('button', { name: /email me a reset link/i }))
+
 describe('SignInMethodsSection', () => {
+  it('changes the password by email and by nothing else', async () => {
+    // CON-193: `PUT /api/users/:id` takes a new password from any live session
+    // without asking for the old one, and revokes no sessions afterwards. The
+    // in-app form that used to be on Profile is gone precisely so this holds —
+    // the update endpoint must never see a credential.
+    getAuthMethods.mockResolvedValue({ has_password: true, identities: [] })
+    const user = userEvent.setup()
+    await render()
+
+    await screen.findByRole('button', { name: /email me a reset link/i })
+    expect(screen.queryByLabelText(/current password/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/new password/i)).not.toBeInTheDocument()
+
+    await sendReset(user)
+
+    await waitFor(() => expect(requestPasswordReset).toHaveBeenCalledTimes(1))
+    expect(requestPasswordReset.mock.calls[0][0]).toBe(USER.email)
+    expect(updateUser).not.toHaveBeenCalled()
+    expect(login).not.toHaveBeenCalled()
+    // The device revocation is the reason for the route, so it is stated.
+    expect(
+      await screen.findByText(/signs out every device/i),
+    ).toBeInTheDocument()
+  })
+
+  it('answers a resend, which otherwise changes nothing on screen', async () => {
+    getAuthMethods.mockResolvedValue({ has_password: true, identities: [] })
+    const user = userEvent.setup()
+    await render()
+
+    await screen.findByRole('button', { name: /email me a reset link/i })
+    await sendReset(user)
+    await user.click(
+      await screen.findByRole('button', { name: /send it again/i }),
+    )
+
+    expect(await screen.findByText(/sent again/i)).toBeInTheDocument()
+    expect(requestPasswordReset).toHaveBeenCalledTimes(2)
+  })
+
+  it('says why a resend was refused, and not that it went', async () => {
+    getAuthMethods.mockResolvedValue({ has_password: true, identities: [] })
+    const user = userEvent.setup()
+    await render()
+
+    await screen.findByRole('button', { name: /email me a reset link/i })
+    await sendReset(user)
+    await screen.findByText(/on its way to/i)
+    requestPasswordReset.mockRejectedValue(new Error('Too many requests'))
+    await user.click(screen.getByRole('button', { name: /send it again/i }))
+
+    expect(await screen.findByText(/too many requests/i)).toBeInTheDocument()
+    expect(screen.queryByText(/sent again/i)).not.toBeInTheDocument()
+  })
+
+  it('renders nothing without a session to mail', async () => {
+    getAuthMethods.mockResolvedValue({ has_password: true, identities: [] })
+    useAuthStore.setState({ user: null })
+    await render()
+
+    expect(
+      screen.queryByRole('button', { name: /reset link/i }),
+    ).not.toBeInTheDocument()
+  })
+
   it('offers to connect Google beside the password, through the server flow', async () => {
     getAuthMethods.mockResolvedValue({ has_password: true, identities: [] })
     await render()
@@ -119,8 +197,7 @@ describe('SignInMethodsSection', () => {
   })
 
   it('keeps the reset email when the methods cannot be read', async () => {
-    // The card replaced Profile's Password card; a failed (or pre-#227 404)
-    // read must not take the only way to change a password with it.
+    // A failed read must not take the only way to change a password with it.
     getAuthMethods.mockRejectedValue(new ApiError(404, 'not found'))
     const user = userEvent.setup()
     await render()

@@ -1,6 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 
-import { useFeatureFlag } from '@/config/featureFlags'
 import { invalidateSession } from '@/services/api/sessions'
 import {
   completeGoogleSignup,
@@ -16,23 +15,20 @@ export const AUTH_PROVIDERS_KEY = ['auth', 'providers'] as const
 export const AUTH_METHODS_KEY = ['account', 'auth-methods'] as const
 
 /**
- * Whether to offer Google at all: the feature is built (`google-sign-in`) *and*
- * this server has an OAuth client configured.
+ * Whether to offer Google at all: this server has an OAuth client configured.
  *
  * Reads `false` while the probe is in flight rather than flashing a button
  * that may then vanish — the email form under it is complete on its own, so
  * the button arriving a beat later costs nothing.
  */
 export function useGoogleSignInEnabled(): boolean {
-  const built = useFeatureFlag('google-sign-in')
   const { data } = useQuery({
     queryKey: AUTH_PROVIDERS_KEY,
     queryFn: getAuthProviders,
-    enabled: built,
     // A server's providers change with a deploy, not while a tab is open.
     staleTime: 10 * 60_000,
   })
-  return built && data?.google.enabled === true
+  return data?.google.enabled === true
 }
 
 /** The pending Google sign-up behind `/auth/register/google?token=`. */
@@ -66,11 +62,9 @@ export function useCompleteGoogleSignup(token: string) {
 
 /** Profile's Sign-in methods card. */
 export function useAuthMethods() {
-  const built = useFeatureFlag('google-sign-in')
   return useQuery({
     queryKey: AUTH_METHODS_KEY,
     queryFn: getAuthMethods,
-    enabled: built,
   })
 }
 
