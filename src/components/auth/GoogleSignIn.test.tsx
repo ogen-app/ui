@@ -56,6 +56,24 @@ describe('Continue with Google on the login form', () => {
   })
 })
 
+describe('getAuthProviders', () => {
+  it('reads a body without a Google entry as "not offered"', async () => {
+    const { getAuthProviders } = await vi.importActual<
+      typeof import('@/services/api/googleAuth')
+    >('@/services/api/googleAuth')
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({}))
+    try {
+      await expect(getAuthProviders()).resolves.toEqual({
+        google: { enabled: false },
+      })
+    } finally {
+      fetchMock.mockRestore()
+    }
+  })
+})
+
 describe('AuthGoogleSignupForm', () => {
   const PENDING = {
     email: 'jane@gmail.com',
