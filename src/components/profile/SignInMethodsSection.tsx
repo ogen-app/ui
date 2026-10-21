@@ -19,12 +19,17 @@ import { googleStartUrl } from '@/services/api/googleAuth'
 import { useAuthStore } from '@/stores/authStore'
 
 /**
- * Every way into the account, one row each (CON-396) — the card that replaces
- * `PasswordSection` once Google sign-in is built.
+ * Every way into the account, one row each (CON-396).
  *
- * The password row keeps that card's whole contract: a password is changed by
- * email and only by email, because the emailed reset proves the mailbox and
- * signs every other session out (see `PasswordSection`). An account that signed
+ * A password is changed by email, and only by email. There used to be a form
+ * here — current password, new, confirm — and it is gone deliberately:
+ * `PUT /api/users/:id` takes a new password from any live session without
+ * asking for the old one, and revokes nothing afterwards (CON-193). The emailed
+ * reset proves control of the mailbox before it changes anything, and
+ * `POST /api/password-reset/confirm` revokes every session on the way out —
+ * which is also what someone changing their password because they suspect
+ * another device actually wants. The address is read from the session, never
+ * typed, so this cannot be aimed at another account. An account that signed
  * up with Google has no password, and *setting* one is the same email under
  * different words — there is no current password to ask for.
  *

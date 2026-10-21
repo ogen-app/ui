@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { useFeatureFlag } from '@/config/featureFlags'
 import { googleErrorMessage } from '@/lib/googleSignInError'
 import { queryClient } from '@/lib/queryClient'
 import { toast } from '@/stores/toastStore'
@@ -18,13 +17,12 @@ import { AUTH_METHODS_KEY } from './useGoogleSignIn'
  */
 export function useGoogleLinkResult(): void {
   const { t } = useTranslation()
-  const built = useFeatureFlag('google-sign-in')
   const navigate = useNavigate({ from: '/profile/' })
   const { linked, error } = useSearch({ from: '/_authenticated/profile/' })
   const said = useRef(false)
 
   useEffect(() => {
-    if (!built || said.current || (!linked && !error)) return
+    if (said.current || (!linked && !error)) return
     said.current = true
     if (linked) {
       toast.success(t('profile.signInMethods.connectedToast'))
@@ -35,5 +33,5 @@ export function useGoogleLinkResult(): void {
       })
     }
     void navigate({ search: {}, replace: true })
-  }, [built, linked, error, navigate, t])
+  }, [linked, error, navigate, t])
 }

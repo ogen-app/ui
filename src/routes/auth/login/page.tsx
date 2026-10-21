@@ -4,7 +4,6 @@ import type { TFunction } from 'i18next'
 
 import { AppAuth } from '@/components/layout/AppAuth'
 import { AuthLoginForm } from '@/components/forms/authLoginForm'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { googleErrorMessage } from '@/lib/googleSignInError'
 
 type LoginFlags = { expired?: boolean; reset?: boolean; error?: string }
@@ -40,16 +39,11 @@ export function loginSubtitle(
 function LoginPage() {
   const { t } = useTranslation()
   const { expired, reset, error } = useSearch({ from: '/auth/login/' })
-  // Only Google sends `?error=`; with the feature off the param means nothing.
-  const google = useFeatureFlag('google-sign-in')
 
   return (
     <AppAuth
       title={t('auth.login.title')}
-      subtitle={loginSubtitle(
-        { expired, reset, error: google ? error : undefined },
-        t,
-      )}
+      subtitle={loginSubtitle({ expired, reset, error }, t)}
       form={<AuthLoginForm />}
       bottomNav={
         <>

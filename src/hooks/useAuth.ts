@@ -167,7 +167,7 @@ export function useUpdateProfile() {
 }
 
 /*
- * There is no in-app password change. `PasswordSection` on /profile sends the
+ * There is no in-app password change. `SignInMethodsSection` on /profile sends the
  * emailed reset instead, so `useRequestPasswordReset` above serves both it and
  * the signed-out /auth/forgot screen.
  *

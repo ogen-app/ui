@@ -6,19 +6,9 @@ import { ApiError } from '@/services/api/errors'
 import { AuthLoginForm } from '@/components/forms/authLoginForm'
 import { AuthGoogleSignupForm } from '@/components/forms/authGoogleSignupForm'
 
-const flags = vi.hoisted(() => ({ google: true }))
 const providers = vi.fn()
 const completeGoogleSignup = vi.fn()
 
-vi.mock('@/config/featureFlags', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/config/featureFlags')>()
-  return {
-    ...actual,
-    useFeatureFlag: vi.fn((id: string) =>
-      id === 'google-sign-in' ? flags.google : false,
-    ),
-  }
-})
 vi.mock('@/services/api/googleAuth', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@/services/api/googleAuth')>()
@@ -35,7 +25,6 @@ vi.mock('@/services/api/sessions', () => ({
 }))
 
 beforeEach(() => {
-  flags.google = true
   providers.mockReset().mockResolvedValue({ google: { enabled: true } })
   completeGoogleSignup.mockReset()
 })
@@ -54,17 +43,6 @@ describe('Continue with Google on the login form', () => {
     expect(href.pathname).toBe('/api/auth/google/start')
     expect(href.searchParams.get('return_to')).toBe('/campaigns/abc')
     expect(screen.getByText('or with your email')).toBeInTheDocument()
-  })
-
-  it('is absent while the feature is off — the form is what it was', async () => {
-    flags.google = false
-    await renderWithProviders(<AuthLoginForm />, { path: '/auth/login/' })
-
-    expect(await screen.findByLabelText('Email')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('link', { name: /continue with google/i }),
-    ).not.toBeInTheDocument()
-    expect(providers).not.toHaveBeenCalled()
   })
 
   it('is absent when this server has no Google client configured', async () => {
