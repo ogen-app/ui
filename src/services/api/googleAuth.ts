@@ -58,13 +58,16 @@ export type AuthProviders = { google: { enabled: boolean } }
  * error worth showing. Anything else — a 5xx, the network — is rethrown rather
  * than turned into "disabled", so it is retried instead of cached for the
  * query's long stale time; the button stays hidden while it is unanswered.
+ * A body that leaves a provider out is a "no" too — read here, once, so no
+ * caller can trip over the missing key.
  */
 export async function getAuthProviders(): Promise<AuthProviders> {
   try {
-    return await apiJson<AuthProviders>(
+    const body = await apiJson<{ google?: { enabled?: boolean } } | null>(
       '/api/auth/providers',
       'Unable to check sign-in options',
     )
+    return { google: { enabled: body?.google?.enabled === true } }
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       return { google: { enabled: false } }
