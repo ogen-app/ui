@@ -95,7 +95,7 @@ describe('InsightsPanel', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('shows five ideas, hides the ones answered no, and opens one in place', async () => {
+  it('shows every idea, hides the ones answered no, and opens one in place', async () => {
     const ideas = [
       ...Array.from({ length: 7 }, (_, i) => idea(i + 1)),
       idea(8, { verdict: 'no' }),
@@ -104,13 +104,11 @@ describe('InsightsPanel', () => {
     expect(
       screen.getByRole('heading', { name: '7 post ideas' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Idea 5')).toBeInTheDocument()
-    expect(screen.queryByText('Idea 6')).not.toBeInTheDocument()
-    expect(screen.queryByText('Idea 8')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByText('Show 2 more ideas'))
+    // Every idea at once — no fold after the fifth — and no link above them.
     expect(screen.getByText('Idea 7')).toBeInTheDocument()
     expect(screen.queryByText('Idea 8')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Show \d+ more/)).not.toBeInTheDocument()
+    expect(screen.queryByText('View all in Ideas')).not.toBeInTheDocument()
 
     expect(screen.queryByText('Why 1 fits')).not.toBeInTheDocument()
     fireEvent.click(screen.getByText('Idea 1'))

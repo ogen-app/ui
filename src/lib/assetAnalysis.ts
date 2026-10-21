@@ -1,4 +1,5 @@
 import type { AnalysisEntity, AssetAnalysis } from '@/types/assetAnalysis'
+import type { SheetSummary } from '@/lib/sheetChunks'
 import type { Asset, AssetStatus, AssetType } from '@/types/content'
 import { retrievability } from './campaignSources'
 import { shortSheetLabel } from './sheetChunks'
@@ -433,4 +434,19 @@ export function refLabel(label: string): string {
   if (sheet) return sheet
   const path = label.split(' › ')
   return path[path.length - 1] || label
+}
+
+/**
+ * Whether there is anything to say under "What it covers" — so the panel can
+ * leave out the rule above a section that would render nothing.
+ */
+export function coversAnything(
+  lens: Pick<AssetAnalysis, 'topics' | 'entities'>,
+  sheets?: SheetSummary[],
+): boolean {
+  return (
+    lens.topics.length > 0 ||
+    lens.entities.length > 0 ||
+    (sheets !== undefined && sheets.length > 0)
+  )
 }

@@ -431,10 +431,7 @@ export const es: Translation = {
       waitingFor:
         'Las ideas nuevas llegan a la mesa de las Ideas de {{campaign}}, para ponerlas en marcha, guardarlas en el cajón o apartarlas.',
       heading: 'Ideas',
-      viewAll: 'Ver todas en Ideas',
       open: 'Abrir en Ideas',
-      showMore_one: 'Mostrar {{count}} idea más',
-      showMore_other: 'Mostrar {{count}} ideas más',
       emptyTitle: 'Este no dio ideas',
       emptyBody:
         'El resumen está aquí, pero la fuente era demasiado corta o se alejaba demasiado del brief para sacar publicaciones.',

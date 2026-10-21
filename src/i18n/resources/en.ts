@@ -548,10 +548,7 @@ export const en = {
       waitingFor:
         'New ideas land on the desk in the Ideas for {{campaign}}, to make, put in the drawer or set aside.',
       heading: 'Ideas',
-      viewAll: 'View all in Ideas',
       open: 'Open in Ideas',
-      showMore_one: 'Show {{count}} more idea',
-      showMore_other: 'Show {{count}} more ideas',
       emptyTitle: 'No ideas from this one',
       emptyBody:
         'The summary is here, but the source was too short or too far off the brief to draw posts from.',

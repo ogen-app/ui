@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { groupMentions, type MentionGroup } from '@/lib/assetAnalysis'
+import {
+  coversAnything,
+  groupMentions,
+  type MentionGroup,
+} from '@/lib/assetAnalysis'
 import { formatList, formatNumber } from '@/lib/intl'
 import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
@@ -35,7 +39,7 @@ export function WhatItCovers({
   const hidden = total - shown.reduce((sum, g) => sum + g.names.length, 0)
 
   const hasSheets = sheets !== undefined && sheets.length > 0
-  if (lens.topics.length === 0 && total === 0 && !hasSheets) return null
+  if (!coversAnything(lens, sheets)) return null
 
   return (
     <Section title={t('assetInsights.covers')}>
