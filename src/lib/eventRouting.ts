@@ -245,7 +245,14 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
       // campaign's topic for a campaign lens — this one is enough.
       // The list rows carry the analysis's status, gist and idea counts
       // (CON-374), so the lists are stale with it.
-      if (event.type === 'asset.analysis.updated') {
+      // A request for more ideas moved (CON-397): the same three places,
+      // since a run that lands adds ideas to the lens, to the list's counts
+      // and to the Ideas inbox. The runs themselves sit under the asset's key
+      // (`useIdeaDistill`). Also sent on the campaign's topic; this is enough.
+      if (
+        event.type === 'asset.analysis.updated' ||
+        event.type === 'asset.ideas.distill.updated'
+      ) {
         return [
           { queryKey: assetKey(subject.id) },
           { queryKey: ASSET_LIST_KEY },
