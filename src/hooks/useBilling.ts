@@ -67,23 +67,27 @@ export function useBillingPortal() {
  * arrives — a `window.open` after the `await` has lost the gesture and is
  * blocked. `opener` is cut so the portal cannot script this tab back. A blocked
  * pop-up falls back to leaving the app for the portal in this tab.
+ *
+ * `open` returns a promise that never rejects, so a click handler can ignore it.
  */
 export function useOpenBillingPortal() {
   const { t } = useTranslation()
   const portal = useBillingPortal()
-  const open = () => {
+  const open = async () => {
     const tab = window.open('', '_blank')
     if (tab) tab.opener = null
-    portal.mutate(undefined, {
-      onSuccess: ({ url }) => {
-        if (tab) tab.location.href = url
-        else window.location.assign(url)
-      },
-      onError: () => {
-        tab?.close()
-        toast.error(t('tiers.portalFailed'))
-      },
-    })
+    // `mutateAsync`, not `mutate` with callbacks: TanStack drops per-call
+    // callbacks once the component unmounts, and somebody who clicks MANAGE
+    // and then leaves the page would be left with a blank tab. Awaiting the
+    // request ties the tab to it, mounted or not.
+    try {
+      const { url } = await portal.mutateAsync()
+      if (tab) tab.location.href = url
+      else window.location.assign(url)
+    } catch {
+      tab?.close()
+      toast.error(t('tiers.portalFailed'))
+    }
   }
   return { open, isPending: portal.isPending }
 }

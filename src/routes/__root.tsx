@@ -21,6 +21,7 @@ import { useAuthStore } from '../stores/authStore'
 import { isFeatureEnabled } from '../config/featureFlags'
 import { ENTITLEMENTS_KEY } from '../hooks/useEntitlements'
 import { isGateExempt } from '../lib/billingGate'
+import { searchTextOf } from '../lib/searchText'
 import { queryClient } from '../lib/queryClient'
 
 const SERVER_DOWN_PATH = '/server-unavailable'
@@ -152,8 +153,9 @@ async function seedActiveWorkspace(): Promise<void> {
 function adoptReturnWorkspace(pathname: string, search: unknown): void {
   if (pathname !== '/plans') return
   const params = (search ?? {}) as Record<string, unknown>
-  const workspace = params.workspace
-  if (params.billing !== 'return' || typeof workspace !== 'string') return
+  // Read the way `/plans` validates it: an all-digit id arrives as a number.
+  const workspace = searchTextOf(params.workspace)
+  if (searchTextOf(params.billing) !== 'return') return
   if (!workspace || getActiveWorkspaceId() === workspace) return
   setActiveWorkspaceId(workspace)
   queryClient.clear()

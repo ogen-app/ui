@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { afterSignupPath, rememberPlanIntent } from '@/lib/planIntent'
+import { searchText } from '@/lib/searchText'
 
 /**
  * The marketing site's way in: `/signup?plan=<tier_id>` (CON-328).
@@ -11,7 +12,7 @@ import { afterSignupPath, rememberPlanIntent } from '@/lib/planIntent'
  * like `/auth/*`; `__root.tsx` exempts it from the session guard.
  */
 const signupSearchSchema = z.object({
-  plan: z.string().optional(),
+  plan: searchText,
 })
 
 export const Route = createFileRoute('/signup/')({

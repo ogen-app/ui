@@ -3569,6 +3569,8 @@ export const en = {
     freeUntil: 'Free until {{when}}, then {{price}}.',
     freeUntilBare: 'Free until {{when}}.',
     statusOnTrial: 'Free month',
+    billingUnavailable:
+      "Billing details aren't available right now, so there's nothing to manage from here.",
     sandbox: 'Sandbox',
     noPortal: "There's nothing at Lemon Squeezy to manage yet.",
     priceExclVat: '{{price}}, excl. VAT',

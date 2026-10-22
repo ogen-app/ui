@@ -36,6 +36,12 @@ type Props = {
   mayChange: boolean
   /** The plan read failed. Kept apart from `!tier` so the two can differ. */
   planFailed?: boolean
+  /**
+   * The billing read failed — including 503, billing switched off on this
+   * deployment. Kept apart from `billing === undefined`, which is also what a
+   * member (who never asks) and a read still in flight look like.
+   */
+  billingFailed?: boolean
   onManage: () => void
   managing?: boolean
   /**
@@ -77,6 +83,7 @@ export function PlanBillingCard({
   mayManage,
   mayChange,
   planFailed = false,
+  billingFailed = false,
   onManage,
   managing = false,
   onKeepPlan,
@@ -131,8 +138,17 @@ export function PlanBillingCard({
             description={
               <>
                 {/* The state of the thing the row is named after, so it is read
-                    at full strength; everything under it is explanation. */}
-                <PaymentLine subscription={subscription} />
+                    at full strength; everything under it is explanation. A
+                    failed read says so here — and says it instead of "nothing
+                    is being charged", which is what a missing subscription
+                    would otherwise read as, and which nobody checked. */}
+                {billingFailed ? (
+                  <p className="text-primary-foreground">
+                    {t('tiers.billingUnavailable')}
+                  </p>
+                ) : (
+                  <PaymentLine subscription={subscription} />
+                )}
                 {/* The answer to "where do I change my VAT number" — a question
                     this card will be asked, and whose answer is a place rather
                     than a field. */}

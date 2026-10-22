@@ -2792,6 +2792,8 @@ export const es: Translation = {
     freeUntil: 'Gratis hasta el {{when}}; después, {{price}}.',
     freeUntilBare: 'Gratis hasta el {{when}}.',
     statusOnTrial: 'Mes gratis',
+    billingUnavailable:
+      'Los datos de facturación no están disponibles ahora mismo, así que no hay nada que gestionar desde aquí.',
     sandbox: 'Pruebas',
     noPortal: 'Todavía no hay nada que gestionar en Lemon Squeezy.',
     priceExclVat: '{{price}}, IVA no incluido',
