@@ -20,9 +20,22 @@ export type UploadResult = {
   asset?: Asset
 }
 
+/**
+ * Why a file is being uploaded, when it is not simply to file it.
+ *
+ * `brand_source` is a file brought in to read a brand from (CON-399 FR16): the
+ * server tags it "Brand source", marks it as the brand read's, and keeps it out
+ * of automatic analysis — so a tone-of-voice PDF does not also turn into a
+ * pile of post ideas nobody asked for. It is set at creation, before ingestion
+ * finishes, which is why it travels with the upload rather than being applied
+ * to the asset afterwards.
+ */
+export type UploadPurpose = 'brand_source'
+
 type UploadOptions = {
   onProgress?: (percent: number) => void
   signal?: AbortSignal
+  purpose?: UploadPurpose
 }
 
 /**
@@ -37,6 +50,7 @@ export function uploadAssetFile(
 ): Promise<UploadResult> {
   return new Promise((resolve, reject) => {
     const form = new FormData()
+    if (opts.purpose) form.append('purpose', opts.purpose)
     form.append('files', file)
 
     const xhr = new XMLHttpRequest()
@@ -144,7 +158,13 @@ export async function uploadAudioFile(
     presigned = await apiJson<PresignedAudio>(
       `${AUDIO_URL}/presign`,
       'Upload failed',
-      { method: 'POST', body: { filename: file.name } },
+      {
+        method: 'POST',
+        body: {
+          filename: file.name,
+          ...(opts.purpose ? { purpose: opts.purpose } : {}),
+        },
+      },
     )
   } catch (err) {
     if (err instanceof ApiError) return failed(audioCode(err), err.message)

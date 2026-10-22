@@ -28,8 +28,15 @@ import type { BrandFact } from './facts'
 export type BrandOrigin =
   | { kind: 'blank' }
   | { kind: 'template'; templateName: string }
-  /** Proposed from the customer's own site — CON-222 scrapes it to Markdown. */
-  | { kind: 'website'; url: string }
+  /**
+   * Read off the customer's own site by a brand read (CON-399). `url` is the
+   * site as it was given, not the page the item was quoted from.
+   */
+  | { kind: 'website'; url: string; runId?: string }
+  /** Read out of one of the workspace's assets — a deck, a style guide. */
+  | { kind: 'document'; assetId: string; title: string; runId: string }
+  /** Drafted from the answers to a brand read's questions. */
+  | { kind: 'questions'; runId: string }
   /** Learned from what the workspace has already published. */
   | { kind: 'posts'; count: number }
   /** Promoted out of a one-off note somebody wrote while working. */

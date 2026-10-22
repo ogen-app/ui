@@ -410,6 +410,34 @@ const FEATURE_FLAGS = {
    * series' own `content_format` (CON-330) and analytics grouped by format.
    */
   'content-formats': false,
+
+  /**
+   * **Brand from what you have** (CON-400): the Foundation hub's offer made
+   * real — read the brand off the website, a document or a handful of
+   * answers, review every proposed voice, audience, guardrail line and fact
+   * with the passage it came from, and save only what is kept.
+   *
+   * Every entry point is behind it: the offer's three tiles (off, they stay
+   * the COMING SOON sliver they were), `/foundation/read/:runId` and
+   * `/foundation/questions`. Nothing outside the feature reads a run.
+   *
+   * **Waiting on CON-399** — `/api/brand/distills`, the `purpose=brand_source`
+   * upload field and the `brand.distill.updated` event, built on ogen's
+   * `feature/CON-399-brand-distillation` and in review, not merged. The client
+   * was written against that branch's handlers, not against a running server,
+   * so the first live pass owes: a website read end to end (the page list
+   * filling in over SSE), a document read with an upload still in flight, the
+   * questions route, a gap-question round carrying a drop over to the child
+   * run, a commit with a skipped duplicate, and the `no_usable_sources` card
+   * on a JavaScript-only site.
+   *
+   * One thing the boards draw that the contract does not carry, and which the
+   * screen therefore leaves out rather than invents: a page's **word count**
+   * on the not-enough-to-go-on card. A source has a status — `thin` is the
+   * page under 200 words — and no count, so each page says *too little text*
+   * instead of a number.
+   */
+  'brand-distill': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

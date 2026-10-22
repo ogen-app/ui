@@ -1,7 +1,6 @@
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { brandSection } from '@/lib/brandSections'
-import { defaultVoiceLabel, sampleCount, usageLine } from './format'
+import { defaultVoiceLabel, rulesLine, sampleCount, usageLine } from './format'
 import {
   AddEntryCard,
   BrandLibrary,
@@ -13,7 +12,7 @@ import {
   StarterGroup,
 } from './shell'
 import { VOICE_STARTERS, voiceStarterCopy } from './starters'
-import { MIN_VOICE_SAMPLES, type BrandVoice, type VoiceRules } from './types'
+import { MIN_VOICE_SAMPLES, type BrandVoice } from './types'
 
 /**
  * The cast, as its own screen.
@@ -204,30 +203,4 @@ function VoiceCard({
       ]}
     />
   )
-}
-
-/**
- * The explicit rules, as one line rather than a grid of chips — and as a string
- * rather than a component, so it can only ever be set in the type its own
- * footer block is set in.
- *
- * Six chips under every card turned the section into a spec sheet and pulled
- * the eye off the sample, which is the one thing on the card that actually
- * distinguishes one voice from another. There are four rules now — hashtags
- * left the voice for the channel notes (`VoiceRules`) — and the line is the
- * better for it.
- *
- * The three `Record<…, string>` maps this used to keep are gone into the
- * catalogue: a module-level table of English is exactly the constant that
- * freezes whichever language loaded first. `formality` and `length` join them —
- * they used to print the stored enum straight out, which is English by accident
- * rather than by decision.
- */
-function rulesLine(t: TFunction, rules: VoiceRules): string {
-  return [
-    t(`brand.voices.rules.formality.${rules.formality}` as const),
-    t(`brand.voices.rules.person.${rules.person}` as const),
-    t(`brand.voices.rules.emoji.${rules.emoji}` as const),
-    t(`brand.voices.rules.length.${rules.length}` as const),
-  ].join(t('brand.facts.separator'))
 }
