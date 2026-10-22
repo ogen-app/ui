@@ -138,12 +138,23 @@ export function useRequestDistill() {
     },
     onError: async (err) => {
       if (err instanceof ApiError && err.code === 'distill_in_progress') {
-        const runs = await qc.fetchQuery({
-          queryKey: DISTILL_LIST_KEY,
-          queryFn: listDistillRuns,
-        })
-        const running = resumableRun(runs)
-        if (running) void open(running.id)
+        // The open run is the answer — unless it cannot be found: the list
+        // read failed, or the run finished between the 409 and the read. Then
+        // the press has to say something, or it looks like it did nothing.
+        try {
+          const runs = await qc.fetchQuery({
+            queryKey: DISTILL_LIST_KEY,
+            queryFn: listDistillRuns,
+          })
+          const running = resumableRun(runs)
+          if (running) {
+            void open(running.id)
+            return
+          }
+        } catch {
+          // Said below.
+        }
+        setRefusal('failed')
         return
       }
       // The plan's refusal is the toast the rest of the app answers one with —

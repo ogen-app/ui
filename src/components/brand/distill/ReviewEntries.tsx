@@ -133,8 +133,11 @@ function VoiceProposal({
     }))
 
   // A sample is proposed with its evidence; one the user added has none and
-  // is theirs. Matched by position, since the proposal's come first.
-  const evidenceAt = (i: number) => voice.samples[i]?.evidence
+  // is theirs. Matched by its words rather than its position, so removing a
+  // sample cannot hand the next one its neighbour's source — and a sample
+  // rewritten here loses its label, because once changed it is the user's.
+  const evidenceFor = (text: string) =>
+    voice.samples.find((s) => s.text === text)?.evidence
   const thin = draft.samples.length < MIN_VOICE_SAMPLES
 
   return (
@@ -184,7 +187,7 @@ function VoiceProposal({
 
       <ul className="grid gap-x-3 gap-y-4 sm:grid-cols-2">
         {draft.samples.map((sample, i) => {
-          const evidence = evidenceAt(i)
+          const evidence = evidenceFor(sample)
           return (
             <li key={i} className="flex flex-col gap-1.5">
               {editing ? (

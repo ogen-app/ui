@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   ArrowCounterClockwiseIcon,
   ChatCircleTextIcon,
@@ -311,6 +311,11 @@ function DocumentRoute({
   const [searching, setSearching] = useState(false)
   const [search, setSearch] = useState('')
   const [waiting, setWaiting] = useState(false)
+  // The watch a READ left on the upload store. Dropped on the way out, so a
+  // cancel or a switch to another route cannot have an upload that settles
+  // later start a read — and spend one — that nobody is waiting for.
+  const stopWaiting = useRef<(() => void) | null>(null)
+  useEffect(() => () => stopWaiting.current?.(), [])
 
   const uploads = useMemo(
     () => allUploads.filter((u) => uploadIds.includes(u.id)),
@@ -388,8 +393,10 @@ function DocumentRoute({
     const stop = useUploadStore.subscribe((state) => {
       if (!settled(state.items)) return
       stop()
+      stopWaiting.current = null
       send(state.items)
     })
+    stopWaiting.current = stop
   }
 
   return (

@@ -102,7 +102,10 @@ export function ReviewScreen({
       {proposal.voices.length > 0 && (
         <VoicesReview
           voices={proposal.voices}
-          hasVoices={(brand?.voices.length ?? 0) > 0}
+          // A brand not yet read is not a brand with no voices: the star
+          // promises the default, and only a workspace known to have none
+          // gets it.
+          hasVoices={brand === undefined || brand.voices.length > 0}
           sourceNoun={sourceNoun(route)}
           {...ctx}
         />

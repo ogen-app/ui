@@ -1,5 +1,9 @@
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import {
+  createJSONStorage,
+  persist,
+  type StateStorage,
+} from 'zustand/middleware'
 import { EMPTY_REVIEW, type DistillReview } from '@/lib/brandDistill'
 import type { DistillCommitResult } from '@/types/brandDistill'
 
@@ -18,6 +22,36 @@ import type { DistillCommitResult } from '@/types/brandDistill'
  * Not server state: nothing here was fetched, and the commit is the first and
  * only moment any of it leaves the tab.
  */
+
+/**
+ * `sessionStorage` that never throws. A full quota or blocked storage costs the
+ * review its survival across a reload, and nothing else: the actions keep
+ * working in memory, which matters because they run inside mutation callbacks
+ * — a throw from `carryReview` would skip the navigation to the child run.
+ */
+const safeSessionStorage: StateStorage = {
+  getItem: (name) => {
+    try {
+      return sessionStorage.getItem(name)
+    } catch {
+      return null
+    }
+  },
+  setItem: (name, value) => {
+    try {
+      sessionStorage.setItem(name, value)
+    } catch {
+      // Kept in memory only.
+    }
+  },
+  removeItem: (name) => {
+    try {
+      sessionStorage.removeItem(name)
+    } catch {
+      // Nothing to clean up.
+    }
+  },
+}
 
 /** What the hub says once, after a save, and then never again. */
 export type SavedReceipt = {
@@ -83,7 +117,7 @@ export const useBrandDistillStore = create<BrandDistillState>()(
     }),
     {
       name: 'brand-distill',
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => safeSessionStorage),
     },
   ),
 )
