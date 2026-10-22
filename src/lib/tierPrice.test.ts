@@ -13,10 +13,12 @@ import type { TierVersionPrice } from '@/types/entitlements'
 
 function price(over: Partial<TierVersionPrice> = {}): TierVersionPrice {
   return {
+    id: null,
     amount: 4900,
     currency: 'EUR',
     interval: 'month',
     countryCode: null,
+    available: true,
     ...over,
   }
 }

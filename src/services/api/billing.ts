@@ -1,5 +1,4 @@
 import { apiJson } from './http'
-import { STUBBED, stubBilling, stubBillingPortal } from './tiers.stub'
 import type {
   BillingAccount,
   BillingCard,
@@ -10,12 +9,11 @@ import type {
 } from '@/types/billing'
 
 /**
- * What the workspace pays, and the way out to the provider (CON-232).
+ * What the workspace pays, and the way out to the provider (CON-232, CON-324).
  *
- * **Nothing on the API answers this yet**, and there is no payment provider
- * connected either — `tiers.stub.ts` stands in, the way it does for the tier
- * list. This file is the contract; the stub returns the same wire shapes
- * through the same parsers.
+ * Both endpoints are the server's since CON-324. With billing switched off
+ * (`BILLING_PROVIDER=none`) they answer 503, and the card says nothing rather
+ * than an error — see `PlanSection`.
  *
  * ## Why there are only two endpoints
  *
@@ -49,7 +47,8 @@ import type {
  *         "card": {"brand": "visa", "last_four": "4242"},
  *         "price": {"amount": 4900, "currency": "USD", "period": "month"}
  *       },
- *       "portal": true
+ *       "portal": true,
+ *       "test_mode": false
  *     }
  *
  * **`subscription: null` is a workspace that has never bought anything** — a
@@ -67,10 +66,14 @@ import type {
  * subscription has no next invoice but is still paid up to a date, and "renews
  * on the 22nd" and "ends on the 22nd" are the same date and opposite news.
  *
- * **`portal: false` means there is nowhere to send anyone**, which is true
- * today and will be true for any workspace whose subscription predates the
- * provider. The screen has to render without the button rather than show one
- * that goes nowhere.
+ * **`portal: false` means there is nowhere to send anyone** — a workspace
+ * whose subscription predates the provider, or that has none. The screen has to
+ * render without the button rather than show one that goes nowhere.
+ *
+ * **`test_mode` is Lemon Squeezy's sandbox.** While it is on, nothing is really
+ * charged and the card says so with a small badge — a staging workspace that
+ * looks exactly like a paying one is how a test card ends up in a screenshot
+ * somebody believes. Prices on this read are net; the card says "excl. VAT".
  *
  *     POST /api/billing/portal
  *     200 {"url": "https://…", "expires_at": "2026-08-23T09:00:00Z"}
@@ -102,6 +105,7 @@ type SubscriptionBody = {
 export type BillingBody = {
   subscription?: SubscriptionBody | null
   portal?: boolean | null
+  test_mode?: boolean | null
 }
 
 type PortalBody = { url: string; expires_at?: string | null }
@@ -155,43 +159,24 @@ export function billingFromWire(body: BillingBody): BillingAccount {
       ? subscriptionFromWire(body.subscription)
       : null,
     portal: body.portal === true,
+    testMode: body.test_mode === true,
   }
 }
 
-/**
- * The request itself, split out so the contract stays asserted while the stub
- * answers the app — same reason as `fetchWorkspacePlan`. See
- * `entitlements.ts`.
- */
-export function fetchBilling(): Promise<BillingAccount> {
+export function getBilling(): Promise<BillingAccount> {
   return apiJson<BillingBody>(
     '/api/billing',
     'Unable to read your billing details',
   ).then(billingFromWire)
 }
 
-export function getBilling(): Promise<BillingAccount> {
-  return STUBBED ? stubBilling().then(billingFromWire) : fetchBilling()
-}
-
-/** The request, split from the stub branch so its contract stays asserted. */
-export function fetchBillingPortalLink(): Promise<BillingPortalLink> {
+/** Mints a fresh signed portal link. Called on the click, never before it. */
+export function createBillingPortalLink(): Promise<BillingPortalLink> {
   return apiJson<PortalBody>(
     '/api/billing/portal',
     'Unable to open the billing portal',
-    {
-      method: 'POST',
-    },
+    { method: 'POST' },
   ).then((payload) => ({
-    url: payload.url,
-    expiresAt: payload.expires_at ?? null,
-  }))
-}
-
-/** Mints a fresh signed portal link. Called on the click, never before it. */
-export function createBillingPortalLink(): Promise<BillingPortalLink> {
-  if (!STUBBED) return fetchBillingPortalLink()
-  return stubBillingPortal().then((payload) => ({
     url: payload.url,
     expiresAt: payload.expires_at ?? null,
   }))

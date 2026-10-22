@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import { ArrowSquareOutIcon, SealCheckIcon } from '@phosphor-icons/react'
@@ -7,8 +8,11 @@ import { SettingsCard } from '@/components/settings/SettingsCard'
 import { SettingsRow } from '@/components/workspace-settings/SettingsRow'
 import { formatDay } from '@/components/entitlements/parts'
 import { usePlanStatement } from '@/hooks/usePlanStatement'
+import { formatNumber } from '@/lib/intl'
+import { toMajorUnits } from '@/lib/tierPrice'
 import type {
   BillingAccount,
+  BillingPrice,
   BillingStatus,
   BillingSubscription,
 } from '@/types/billing'
@@ -34,6 +38,13 @@ type Props = {
   planFailed?: boolean
   onManage: () => void
   managing?: boolean
+  /**
+   * Calls off a scheduled downgrade by choosing the tier already held — one
+   * endpoint, so nothing can disagree with it (CON-325). Absent, the card
+   * offers nothing to keep.
+   */
+  onKeepPlan?: () => void
+  keeping?: boolean
 }
 
 /**
@@ -68,6 +79,8 @@ export function PlanBillingCard({
   planFailed = false,
   onManage,
   managing = false,
+  onKeepPlan,
+  keeping = false,
 }: Props) {
   const { t } = useTranslation()
   const subscription = billing?.subscription ?? null
@@ -81,12 +94,24 @@ export function PlanBillingCard({
             subscription={subscription}
             planFailed={planFailed}
             mayChange={mayChange}
+            onKeepPlan={onKeepPlan}
+            keeping={keeping}
           />
         </SettingsRow>
 
         {mayManage ? (
           <SettingsRow
             title={t('tiers.paymentMethod')}
+            badges={
+              // Lemon Squeezy's sandbox: nothing on this card is really
+              // charged. Beside the payment row rather than the plan, because
+              // it qualifies the money, not what the workspace may do.
+              billing?.testMode ? (
+                <span className="inline-flex shrink-0 items-center rounded-[2px] border border-tertiary bg-secondary px-1.5 py-0.5 text-xs text-secondary-foreground">
+                  {t('tiers.sandbox')}
+                </span>
+              ) : null
+            }
             actions={
               // Present and dead rather than absent while billing is unwired:
               // the row is about a thing that has a management screen, and
@@ -112,13 +137,10 @@ export function PlanBillingCard({
                     this card will be asked, and whose answer is a place rather
                     than a field. */}
                 <p>{t('tiers.providerHolds')}</p>
-                {/* Permanent, not an Explainer: a card headed "Plan & billing"
-                    that cannot bill implies a payment relationship that does
-                    not exist, and that is not something to hide behind a note
-                    somebody may have dismissed months ago. It also says what
-                    the dead button above is waiting for, and both go on the
-                    same day — the one the claim stops being true. */}
-                {!billing?.portal && <p>{t('tiers.billingMock')}</p>}
+                {/* Permanent, not an Explainer: it says why MANAGE above is
+                    dead — nothing at the provider to manage yet — and that is
+                    not something to hide behind a dismissed note. */}
+                {billing && !billing.portal && <p>{t('tiers.noPortal')}</p>}
               </>
             }
           />
@@ -150,11 +172,15 @@ export function PlanBanner({
   subscription,
   planFailed = false,
   mayChange,
+  onKeepPlan,
+  keeping = false,
 }: {
   tier: TierSnapshot | undefined
   subscription: BillingSubscription | null
   planFailed?: boolean
   mayChange: boolean
+  onKeepPlan?: () => void
+  keeping?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const { headline, timing } = usePlanStatement(tier)
@@ -176,18 +202,36 @@ export function PlanBanner({
    * the clock — a wrong system clock must not be able to reword this.
    */
   const ending = subscription?.endsAt ?? null
+  // The free month (CON-328): "Free until 21 November, then $49 / month". From
+  // the plan read's `trial_ends_at`, which is set only while the provider says
+  // `on_trial` — never from comparing a date with the clock.
+  const trialEnds = tier?.trialEndsAt ?? null
+  const trialPrice = subscription?.price
+    ? priceText(t, subscription.price, i18n.language)
+    : null
   const secondLine = planFailed
     ? t('tiers.planLoadFailed')
-    : tier?.scheduled || !ending
+    : tier?.scheduled
       ? timing
-      : t(
-          subscription?.status === 'expired'
-            ? 'tiers.accessEnded'
-            : 'tiers.accessEnds',
-          {
-            when: formatDay(ending, i18n.language),
-          },
-        )
+      : trialEnds
+        ? trialPrice
+          ? t('tiers.freeUntil', {
+              when: formatDay(trialEnds, i18n.language),
+              price: trialPrice,
+            })
+          : t('tiers.freeUntilBare', {
+              when: formatDay(trialEnds, i18n.language),
+            })
+        : !ending
+          ? timing
+          : t(
+              subscription?.status === 'expired'
+                ? 'tiers.accessEnded'
+                : 'tiers.accessEnds',
+              {
+                when: formatDay(ending, i18n.language),
+              },
+            )
 
   /**
    * A third line, for the two statuses that are a problem to be *solved* rather
@@ -235,7 +279,24 @@ export function PlanBanner({
           </span>
         )}
       </span>
-      <div className="ml-auto shrink-0 pl-3">
+      <div className="ml-auto flex shrink-0 items-center gap-1 pl-3">
+        {/* A scheduled downgrade can be called off from where it is stated.
+            Only a downgrade: an upgrade waiting for its date is good news,
+            and nothing on the API schedules one today anyway. */}
+        {mayChange &&
+          onKeepPlan &&
+          tier?.scheduled?.direction === 'downgrade' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onKeepPlan}
+              loading={keeping}
+            >
+              {t('tiers.keepPlan', {
+                name: tier.name.toLocaleUpperCase(i18n.language),
+              })}
+            </Button>
+          )}
         {/* The same door, named for what is behind it for this reader. A
             member sent to a screen of CHANGE buttons that do nothing would
             conclude the app is broken; one sent to read the plans finds
@@ -266,20 +327,48 @@ function PaymentLine({
 }: {
   subscription: BillingSubscription | null
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const tone = 'text-primary-foreground'
 
   if (!subscription) return <p className={tone}>{t('tiers.noSubscription')}</p>
+  // What it costs, net — Lemon Squeezy adds VAT for the buyer's country, so a
+  // bare figure would be smaller than the invoice (CON-328).
+  const price = subscription.price ? (
+    <span className="text-tertiary-foreground">
+      {' · '}
+      {t('tiers.priceExclVat', {
+        price: priceText(t, subscription.price, i18n.language),
+      })}
+    </span>
+  ) : null
   if (!subscription.card)
-    return <p className={tone}>{t('tiers.cardWithProvider')}</p>
+    return (
+      <p className={tone}>
+        {t('tiers.cardWithProvider')}
+        {price}
+      </p>
+    )
   return (
     <p className={tone}>
       {/* The brand is the provider's own lowercase token ("visa"), so the
           capital is a display choice and stays out of the string. */}
       <span className="capitalize">{subscription.card.brand}</span>{' '}
       {t('tiers.cardEnding', { last4: subscription.card.last4 })}
+      {price}
     </p>
   )
+}
+
+/** "$49 / month", in the active language and the provider's currency. */
+function priceText(t: TFunction, price: BillingPrice, locale: string): string {
+  const amount = formatNumber(
+    toMajorUnits(price.amount, price.currency, locale),
+    { style: 'currency', currency: price.currency },
+    locale,
+  )
+  return t(price.period === 'year' ? 'tiers.perYear' : 'tiers.perMonth', {
+    price: amount,
+  })
 }
 
 /**
@@ -305,6 +394,7 @@ function StatusTag({ status }: { status: BillingStatus }) {
     paused: 'tiers.statusPaused',
     expired: 'tiers.statusExpired',
     unpaid: 'tiers.statusUnpaid',
+    on_trial: 'tiers.statusOnTrial',
   } as const
 
   const key = status in keys ? keys[status as keyof typeof keys] : null

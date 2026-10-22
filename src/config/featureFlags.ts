@@ -201,87 +201,54 @@ const FEATURE_FLAGS = {
   'post-version-delete': false,
 
   /**
-   * Workspace tiers — what the plan a workspace is on allows, and how the app
-   * says so when it doesn't (CON-232). **Off — waiting on the back end.**
+   * Workspace tiers and billing — what the plan a workspace is on allows, how
+   * the app says so, and buying one through Lemon Squeezy (CON-232, CON-328).
+   * **Off — waiting on CON-322's back end reaching staging.**
    *
    * Note what this flag is and isn't. A flag decides whether a feature is built
    * yet; it is never who is allowed to see what. That is exactly why tiers get
    * their own seam (`useEntitlement`) instead of entries in this file: the
    * question "has anyone paid for this" is the server's, answered per
-   * workspace, and it would be wrong here even once the endpoint exists. This
-   * flag switches off *the asking*, not the answer.
+   * workspace. This flag switches off *the asking*, not the answer.
    *
-   * **Both reads have landed and both are wired** (CON-243, 2026-09-16).
-   * `GET /api/me/entitlements` answers on the local API and on
-   * `api.dev.getogen.com` with a resolved tier *version* — its immutable
-   * allowance set, its price rows, and each entitlement enriched with the
-   * feature catalog's own metadata. `GET /api/public/pricing` answers with the
-   * same record, one per purchasable version, unauthenticated and cached at the
-   * edge; it replaced a `GET /api/tiers` that was designed here and 404s. The
-   * rows are the same shape, so there is one wire type and one parser
-   * (`services/api/entitlements.ts`), and `tiers.ts` calls it rather than
-   * keeping a second copy to drift. Both are written against the payload as
-   * observed, and both tests' fixtures are trimmed from real responses rather
-   * than invented. The keys changed wholesale with all this: the catalog says
-   * `team_seats` and `active_campaigns` where this build used to say `seats` and
-   * `campaigns`, and `entitlements.seed.test.ts` is what keeps the two in step —
-   * under default-allow a stale key does not fail, it silently unlocks.
+   * **The client is written against the real contract, with no stub left**
+   * (CON-328). The reads are the two CON-243 shipped, grown additively by
+   * CON-324/325: `GET /api/me/entitlements` now carries the gate
+   * (`billing_required`), the free-month eligibility, the live subscription's
+   * period, renewal, trial end and scheduled change, and each allowance's tally
+   * (`current`); `GET /api/public/pricing` carries whether each tier and price
+   * can be bought and which tier has the free month. The change is
+   * `POST /api/workspace/plan` — a Lemon Squeezy checkout or an in-place change,
+   * the server's choice — and the money is `GET /api/billing` and
+   * `POST /api/billing/portal`. The shapes were read off ogen PR #229.
    *
-   * **Waiting on, in the order it matters:**
+   * What turning it on switches on:
    *
-   * 1. **A usage read.** Nothing on the API reports what a workspace has *used*,
-   *    and CON-243 has one as explicitly future — so every allowance arrives
-   *    with nothing to measure it against, and the UI can only apologise after
-   *    the click instead of disabling the control. `entitlements.seed.ts` holds
-   *    held-still counters meanwhile; `Usage.used` is `number | null` so the day
-   *    it lands nothing changes but the parse.
-   * 2. **A tier display name on the payload.** It carries `tier_id` and no name;
-   *    Serhii flagged the omission himself and offered to add one. Derived from
-   *    the slug until then.
-   * 3. **A way to change plan.** `POST /api/workspace/plan` does not exist and
-   *    has no counterpart: a workspace's version is assigned by an operator
-   *    through Harbor's gRPC `PlanAdminService` (CON-294). `/plans`' CHANGE PLAN
-   *    is the stub end to end.
-   * 4. **Billing.** `GET /api/billing` and `POST /api/billing/portal` 404, and
-   *    no payment provider is connected, so `prices` on the plan is the only
-   *    money the app can see.
-   * 5. **Pro and Max.** `GET /api/public/pricing` publishes exactly one tier
-   *    today — `trial` v1, at €0/month — so there is no comparison to draw yet.
-   *    The stub carries that version verbatim, ids and all, and proposes the
-   *    other two off the decided matrix.
+   * - **The billing gate.** `__root.tsx` reads `billing_required` and sends a
+   *   workspace with no plan to `/plans` once; a 402 `billing_required` that
+   *   still arrives is the fallback (`lib/billingGate`). Members see "waiting on
+   *   the owner". Grandfathered workspaces read `false` and never see it.
+   * - **`/plans`** as the Ledger, with checkout opened in a new tab, the
+   *   confirmation for in-place changes, and the "finishing up" wait after
+   *   checkout, which resolves on `entity:billing:<tenant>` and never on the
+   *   redirect.
+   * - **The Plan & billing card**, the gating at every control (`useEntitlement`)
+   *   and the connect-limit callout.
    *
-   * And one thing that belongs elsewhere: a downgrade suspends rather than
+   * What does **not** wait on it: the marketing entry `/signup?plan=` (it only
+   * remembers a tier id and lands on `/plans` when that exists), and being
+   * refused (CON-295) — 402 `entitlement_exceeded` and 403
+   * `feature_not_available` are read unflagged, because declining to show a
+   * machine code to a user is not a tiers feature.
+   *
+   * **Turn it on once CON-322's back end is on staging**, after re-testing the
+   * whole flow there against Lemon Squeezy's test mode (CON-328's "done when").
+   * Then delete this flag with its off-branch, on the next merge after a deploy.
+   *
+   * One thing that still belongs elsewhere: a downgrade suspends rather than
    * deletes, and the server picks which campaign goes read-only — so the
    * `suspended` flag has to ride on the resource. There is no such flag on the
-   * API yet either. The client must never work it out by counting, or it picks
-   * a different victim than the server did.
-   *
-   * With this off nothing asks, nothing renders a lock, and every feature is
-   * available exactly as it was before tiers existed. That is now a claim about
-   * a dozen screens rather than about two: **the gating is wired** (CON-232),
-   * and `useEntitlement` returning `UNGATED` with the flag down is the single
-   * thing keeping all of it inert. Every call site goes through the hook — none
-   * reads `FEATURE_FLAGS` or the plan itself — so there is one place that
-   * behaviour can be checked and one place it could be broken.
-   *
-   * **What it does not switch off is being refused** (CON-295). The server
-   * enforces whether or not this client asked first — 402 `entitlement_exceeded`
-   * and 403 `feature_not_available` — and reading those is not a tiers feature,
-   * it is the app declining to show a machine code to a user. So it ships
-   * unflagged: `EntitlementError` in `services/api/errors.ts`, the reason under
-   * the mutation toast, and the two `entitlement.limit_*` notifications. All of
-   * it is dormant on a workspace whose plan denies nothing, which is every
-   * workspace today.
-   *
-   * **Turn it on locally to look at it, and turn it back off before you
-   * commit.** The plan screen and the billing card are driven by a
-   * `localStorage` stub (`services/api/tiers.stub.ts`) so the tier
-   * differentiation can be built and reviewed; a stub is not a reason to ship
-   * the feature on. `STUBBED` still switches the plan read and the plan change —
-   * never the price list, which is always `GET /api/public/pricing` — and it
-   * stays on for now because there is no way to *change* plan. Only one tier is
-   * published, so the screen behind CHANGE PLAN is one card until Pro and Max
-   * have versions.
+   * API yet. The client must never work it out by counting.
    */
   'workspace-tiers': false,
 
