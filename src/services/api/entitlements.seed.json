@@ -162,17 +162,5 @@
       "is_material": false,
       "description": "Embedded chunks ground every generation — the product's core promise, never gated."
     }
-  ],
-  "used": {
-    "workspaces": 1,
-    "team_seats": 2,
-    "connected_accounts": 3,
-    "active_campaigns": 3,
-    "plan_runs_per_month": 7,
-    "quality_reviews_per_post": 1,
-    "posts_total": 9,
-    "media_storage_bytes": 402653184,
-    "content_bank_assets": 6,
-    "web_page_imports": 2
-  }
+  ]
 }

@@ -8,6 +8,7 @@ import {
 } from './errors'
 import { apiVoid } from './http'
 import * as staleWorkspace from '@/lib/staleWorkspace'
+import * as billingGate from '@/lib/billingGate'
 import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
 
 /**
@@ -186,6 +187,38 @@ describe('a feature-gated 403 on the JSON path', () => {
       expect(forbidden).toHaveBeenCalled()
     } finally {
       forbidden.mockRestore()
+    }
+  })
+})
+
+describe('a workspace with no plan (CON-324)', () => {
+  it('is read by its code, and its code is never the message', async () => {
+    const error = await apiErrorFrom(
+      jsonResponse(402, { error: 'billing_required' }),
+      'Unable to load campaigns',
+    )
+    expect(error).not.toBeInstanceOf(EntitlementError)
+    expect(error.code).toBe('billing_required')
+    expect(error.message).toBe('Unable to load campaigns')
+  })
+
+  it('sends the tab to /plans from the JSON path', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(jsonResponse(402, { error: 'billing_required' })),
+    )
+    const gated = vi
+      .spyOn(billingGate, 'handleBillingRequired')
+      .mockImplementation(() => {})
+    try {
+      await expect(apiVoid('/api/campaigns', 'Nope')).rejects.toBeInstanceOf(
+        ApiError,
+      )
+      expect(gated).toHaveBeenCalledTimes(1)
+    } finally {
+      gated.mockRestore()
     }
   })
 })

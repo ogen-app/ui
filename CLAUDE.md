@@ -589,7 +589,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   migrations is guarded by `IF EXISTS (… 'timescaledb')`, the API embeds and
   applies them at boot, and they track their state in `bun_migrations_analytics`
   precisely so the schema can share the dev Postgres with the control plane. `empty` and `unavailable` produce the other two answers the endpoints
-  give. It is **not** the `STUBBED` pattern: these endpoints exist and ship, so
+  give. It is **not** the JSON-seed stub pattern: these endpoints exist and ship, so
   the demo is off by default even in dev, has to be asked for, folds away
   entirely without `VITE_DEV_TOOLS=1`, and is announced in the corner for as
   long as it is on — invented figures about a workspace's own posts are
@@ -661,9 +661,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   MSW.** When a flagged feature needs data the server cannot answer for yet,
   write the normal `services/api/<thing>.ts` with the signatures the endpoint
   will have, and back them with a `.seed.json` plus `localStorage` and a small
-  delay — `services/api/tiers.stub.ts` is the pattern today, and
-  `services/api/brand.ts` was the worked example until CON-245 took the last of
-  it out. A service worker buys wire fidelity for a contract nobody has agreed,
+  delay — `services/api/tiers.stub.ts` was the pattern until CON-328 wired
+  billing to the real API and deleted it, and `services/api/brand.ts` before
+  that, until CON-245. A service worker buys wire fidelity for a contract nobody has agreed,
   and the mock ends up inventing the API; a plain module is one readable file,
   and swapping each body for an
   `apiJson` call leaves the hook, the routes and the components untouched. Rules
@@ -1015,94 +1015,107 @@ contract is in `services/api/emailPreferences.ts` and asserted by its test.
 Flip the flag when the handler answers. See
 `docs/technical-decisions.md#email-preferences`.
 
-**Workspace tiers run on a local stub** (`workspace-tiers`, CON-232). The seam
-— `types/entitlements.ts`, `lib/entitlements.ts`, `useEntitlement`, the shared
-renderings in `components/entitlements` — is written and tested, and two
-surfaces talk *about* the plan rather than being gated by it: the **Plan &
-billing card** in Workspace Settings (`components/workspace-settings/
-PlanSection`) and **`/plans`** behind its CHANGE PLAN. Choosing a tier
-re-answers every `useEntitlement` in the app, which is how the gating gets
-looked at before the API exists.
+**Workspace tiers and billing are built against the real API and flagged off**
+(`workspace-tiers`, CON-232, CON-328). The seam — `types/entitlements.ts`,
+`lib/entitlements.ts`, `useEntitlement`, the shared renderings in
+`components/entitlements` — is wired at every control, and three surfaces talk
+*about* the plan: the **Plan & billing card** in Workspace Settings
+(`components/workspace-settings/PlanSection`), **`/plans`**, and the **billing
+gate** in `__root.tsx`. There is no stub left: `tiers.stub.ts`, its `STUBBED`
+branches and the seeded usage counters were deleted in CON-328. The flag waits
+on CON-322's back end (ogen PR #229) reaching staging and a re-test against
+Lemon Squeezy's test mode.
 
-**Both plan reads have landed, and neither is the one this client designed**
-(CON-243, PR ogen#150). `GET /api/me/entitlements` answers — the invented
-`GET /api/entitlements` 404s and is gone — with a resolved tier **version**:
-`tier_id` + `version_id`, an immutable allowance set, price rows in `net_minor`
-minor units, and every entitlement enriched with the server's feature catalog
-(name, description, category, `is_material`, `reset`). **`GET /api/public/pricing`
-answers with the identical record**, one per purchasable version, in place of the
-invented `GET /api/tiers`. That identity is load-bearing: a version is one
-artifact, so there is one wire type (`TierVersionBody`) and one parser, and
-`tiers.ts` calls `entitlements.ts`'s rather than keeping a second copy — two
-parsers are how a price list and the lock on a button end up disagreeing about
-what a limit is. `TierVersion` is the half they share; `TierSnapshot` adds the
-subscription fields a *held* version has and `Tier` adds the allowances.
+**The two reads are CON-243's, grown additively by CON-324/325.**
+`GET /api/me/entitlements` answers with a resolved tier **version** — `tier_id`
++ `version_id`, an immutable allowance set, price rows in `net_minor`, every
+entitlement enriched with the server's feature catalog — plus the workspace's
+billing facts: `billing_required` (the gate), `trial_eligible`, and the live
+subscription's `billing_period`, `renews_at`, `trial_ends_at` and
+`scheduled_change`. **`GET /api/public/pricing` answers with the identical
+record** per purchasable version, plus `available`, `free_trial` and
+`trial_days` per tier and `available` per price row. That identity is
+load-bearing: one wire type (`TierVersionBody`) and one parser, and `tiers.ts`
+calls `entitlements.ts`'s — two parsers are how a price list and the lock on a
+button end up disagreeing about what a limit is. `TierVersion` is the half they
+share; `TierSnapshot` adds the subscription fields a *held* version has, `Tier`
+adds the allowances and the buying flags, and `WorkspacePlan.billing` carries
+the gate.
 
-Four things about the pair that are each a thing not to undo:
+Five things about the reads that are each a thing not to undo:
 
 - **The keys are the server's, verbatim.** `team_seats`, `active_campaigns`,
-  `plan_runs_per_month` — not the `seats`/`campaigns`/`content_plan_runs` this
-  build used to ask about. That rename had no visible symptom, which is the
-  point: under default-allow an unknown key does not fail, it silently unlocks
-  the feature it was meant to gate. `services/api/entitlements.seed.json` holds
-  a verbatim copy of the catalog and its test asserts every `EntitlementKey`
-  against it, so the next rename fails loudly. Re-sync it by re-reading
-  `GET /api/public/pricing`, never by editing it to make the test pass.
-- **Allowances arrive with no tally.** There is no usage read anywhere on the
-  API and CON-243 has one as explicitly future, so `Usage.used` is
-  `number | null` and `null` means *uncounted* — a third thing beside unlimited
-  (`limit: null`) and ungated (key absent). Never default it to `0`: that is a
-  claim nobody made, and it unlocks a control that may well be exhausted. An
-  uncounted limit therefore cannot produce `denied: 'limit'`, which is the
-  resolve-towards-offering rule the whole file follows. `entitlements.seed.ts`
-  supplies held-still counters meanwhile, **to the stub's answer only** — put
-  on the real read, an invented tally tells a real workspace it is full and
-  sells it an upgrade with no refusal behind it. A `per_post` allowance is
-  uncounted whatever arrives: the plan is the workspace's, so a tally on it is
-  about no post in particular.
-- **The subscription half is not on either read.** No display name (derived from
-  the slug until the server sends one), no `effective_from`, no renewal, no
-  scheduled change — Ogen holds no subscription state by design (CON-243 §5).
-  Screens omit those lines rather than softening them. The price list drops a
-  `tagline` for the same reason: the catalog has no per-tier line of copy, and a
-  table of taglines keyed on a tier slug goes blank for the first tier published
-  without telling this build.
-- **The price list publishes only what is purchasable, and it is public.** A
-  superseded version somebody is grandfathered onto is not in it, and neither is
-  the internal `default` tier every workspace sits on — so `/plans` renders the
-  tier in force from `WorkspacePlan` and never by looking its id up in the list;
-  a lookup that missed would blank out the name of the plan somebody is paying
-  for. It is also unauthenticated and cached at the edge, so `/api/public/*` is
-  in `isAccountScoped` (`base.ts`) and goes out with **no `X-Workspace-Id`** —
-  varying a CDN-cached route by a header the answer does not depend on splits the
-  cache per workspace for nothing. A version is priced as a *list* (currency ×
-  interval × country); which row a card shows is `lib/tierPrice.ts`, never a
-  `[0]`, and `net_minor` is divided by the currency's own exponent rather than by
-  100 — JPY has no minor unit.
+  `plan_runs_per_month` — under default-allow an unknown key does not fail, it
+  silently unlocks the feature it was meant to gate.
+  `services/api/entitlements.seed.json` holds a verbatim copy of the catalog
+  and its test asserts every `EntitlementKey` against it, so a rename fails
+  loudly. Re-sync it by re-reading `GET /api/public/pricing`, never by editing
+  it to make the test pass.
+- **The tally is `current`, and omitted means uncounted.** `Usage.used` is
+  `number | null`, and `null` — no counter registered for that key — is a third
+  thing beside unlimited (`limit: null`) and ungated (key absent). Never default
+  it to `0`: that unlocks a control that may well be exhausted. An uncounted
+  limit cannot produce `denied: 'limit'`.
+- **No name and no start date.** The tier's display name is derived from the
+  slug, `effectiveFrom` stays `null`, and the catalog has no per-tier tagline —
+  so `/plans` writes no per-tier copy at all. Screens omit what is missing
+  rather than softening it.
+- **The price list publishes only what is purchasable, and it is public.** The
+  version a grandfathered workspace holds, and the internal `default` tier, are
+  not in it — so `/plans` renders the tier in force from `WorkspacePlan` and
+  never by looking its id up in the list. It is unauthenticated and edge-cached,
+  so `/api/public/*` is in `isAccountScoped` (`base.ts`) and goes out with **no
+  `X-Workspace-Id`**. Which price row a column shows is `billingOptions`
+  (`lib/upgradeOffer`), never a `[0]`, and `net_minor` is divided by the
+  currency's own exponent — JPY has no minor unit.
+- **The free month is the server's three times over.** The price list marks
+  which tier has it; `trial_eligible` says whether this reader's account may
+  still have it (shown when *not false*); and checkout's `trial` says whether it
+  was actually applied — which is what the screen tells the buyer, because the
+  mark can move between page load and click.
 
-**Still waiting on** a usage read, a tier name on the payload,
-`POST /api/workspace/plan` (no counterpart at all: a version is assigned by an
-operator through Harbor's gRPC `PlanAdminService`, CON-294), `GET /api/billing` /
-`POST /api/billing/portal`, published Pro and Max versions, and a `suspended`
-flag on the resources a downgrade makes read-only. Contracts live in
-`services/api/entitlements.ts`, `tiers.ts` and `billing.ts`, all asserted by
-their tests against the *wire* path (`fetchWorkspacePlan`, `listTiers`,
-`fetchBilling`) so the stub can't make a contract go dark.
+**Changing plan is `POST /api/workspace/plan`, and the server picks the
+outcome** (CON-325). No live subscription: 202 with a Lemon Squeezy checkout,
+opened in a tab created synchronously on the click (a `window.open` after the
+`await` is blocked). A live one: 200 with the plan body — an upgrade now, a
+downgrade at the end of the paid period, and choosing the tier already held
+calls a pending downgrade off (the card's KEEP and `/plans`' CANCEL CHANGE both
+do exactly that). In-place changes are confirmed first (`ChangePlanDialog`),
+and during the free month the dialog says the change ends it and charges today;
+409 `trial_upgrade_unavailable` keeps the dialog open and explains. Refusals are
+codes, carried by `PlanChangeError` and worded by `lib/planChange` — never a
+toast of the raw code.
 
-**Prices are never stubbed.** The price list is read from
-`GET /api/public/pricing` even while `STUBBED` is on — `listTiers` has no stub
-branch — because it is the one thing on `/plans` and the paywall a visitor
-takes as a promise, and a seeded price is indistinguishable from a real one.
-So both screens show what is published, which today is Trial alone: the
-paywall has no plan to recommend until Pro and Max have versions, and that is
-the true answer rather than a gap to fill with a fixture.
+**The billing gate is data first and a 402 second** (CON-322 §6.4). The root
+guard reads `billing_required` off the plan read and redirects to `/plans` once,
+before any screen fires the burst of requests the server would refuse; a member
+gets "waiting on the owner" there. A 402 `billing_required` that still arrives —
+a tab open across the moment the gate closed — sends the tab to `/plans` once
+and is never toasted (`lib/billingGate`). The exempt paths there match the
+server's allowlist in spirit: `/plans`, auth, invitations, the workspace
+switcher. Grandfathered workspaces read `false` and never see any of it.
 
-**`/plans` deliberately sits outside `_authenticated`**, like `/workspaces`: it
-reads as a full-screen modal — one X, top right — because it is a detour every
-entry point returns from, and the sidebar's items belong to the work it is a
-detour from. The X goes *back* rather than to a fixed address. Two consequences
-of living out there: the broadcast stream closes while it is open, and the
-reference caches warm again on the way back.
+**Checkout's redirect proves nothing.** It returns to
+`/plans?billing=return&workspace=<tenant>`; the root guard pins the tab to that
+workspace first (the pin is per tab), and the page waits — "finishing up" —
+until the plan shows a live subscription (`billing_period` set), moved by
+`entity:billing:<tenant>` on `/api/events` and backed by a five-second poll.
+`/plans` sits outside `_authenticated`, where the stream is not open, so it opens
+it itself (`useEventStream`).
+
+**The marketing entry is `/signup?plan=<tier_id>`.** It remembers the tier in
+`sessionStorage` (`lib/planIntent`) and moves on to signup; password signup
+lands on `/plans?plan=…`, and Google carries the same path as `return_to`.
+`/plans` preselects the tier — its button focused — only if the price list
+offers it.
+
+**`/plans` deliberately sits outside `_authenticated`**, like `/workspaces`. It
+reads as a full-screen modal with one X that goes *back* — except while the
+workspace is gated, when there is nothing to go back to and the ways out are
+SWITCH WORKSPACE and SIGN OUT. The plans are one **Ledger** (`PlanLedger`): a
+column per tier on one top line, the most popular inverted, and under every
+column the *same* allowance rows with the figure on the right in Plex Mono — the
+columns are the comparison, so there is no second table.
 
 **Ogen sells through Lemon Squeezy as merchant of record, so the app holds no
 billing fields.** Lemon Squeezy is the legal seller: it takes the card, holds
@@ -1110,28 +1123,13 @@ the billing address and tax id, works out and remits VAT/GST, and issues the
 invoice. Every editable billing field therefore already has a hosted, PCI-scoped
 form we neither write nor answer for — so our side is a *report and a door*. No
 address, no tax id, no card, no cancel endpoint; a second copy here is one that
-can disagree with the invoice. **And no billing screen**: once the provider has
-taken everything editable, what is left to state is a plan, a card's last four
-and one sentence naming where the rest lives, which is a card in Workspace
-Settings rather than a page — a page of that is white space with two buttons on
-it. The door is
+can disagree with the invoice. **And no billing screen**: what is left to state
+is a plan, a card's last four and one sentence naming where the rest lives,
+which is a card in Workspace Settings. Prices are net and every one on screen
+says "excl. VAT"; a `test_mode` workspace shows a Sandbox badge. The door is
 `POST /api/billing/portal`, which mints a **signed link that expires within the
 day** — never cache, store or put it in a `href` at render time, and open the
-tab synchronously on the click (a `window.open` after an `await` is blocked).
-
-The stub is `services/api/tiers.stub.ts` — a JSON seed of the decided tier
-matrix plus `localStorage`, with `STUBBED` switching the plan read and the
-plan change (never the price list, above), and it answers the billing read too (no provider is connected, so: no subscription and
-no portal). It now stands in for an *action* rather than for the server's
-answers, both reads having landed, which raises what it owes them: its Trial row
-is the published `ttv-trial-v1` verbatim — ids, price and all fifteen
-allowances — so a choice made from the real list lands on the seed by the same
-version id. It does two things the client is forbidden to do,
-and says so:
-it **ranks** tiers (to decide upgrade from downgrade, hence `direction` on the
-wire) and it **reads the clock** (to date the renewal, which is also the
-boundary a downgrade lands on). Neither may leak out — `rank` is stripped before
-anything leaves the file, and its test asserts that.
+tab synchronously on the click (`useOpenBillingPortal`).
 
 **The call sites are wired, and the flag is the only thing holding them**
 (CON-232). Twelve of the fourteen keys are consulted at the control they govern;
@@ -1141,8 +1139,8 @@ are not wired — `custom_campaign_types` has no authoring screen to hide, and
 `workspaces` is an *account* allowance that only a *workspace*-scoped read can
 answer, so it is left to the server. Everything goes through `useEntitlement`,
 which returns `UNGATED` while the flag is down; nothing reads `FEATURE_FLAGS` or
-the plan directly. The flag stays **off** on `develop` — it also switches on a
-screen, and there is still no way to change plan.
+the plan directly. The flag stays **off** on `develop` until the billing back
+end is on staging (see above).
 
 **Selling is one behaviour, not eleven.** The sell disposition is always the
 same moment — a control the user just clicked — so it is one hook and one
@@ -1228,9 +1226,8 @@ caller already catches as an `ApiError`. Four things about that path:
   a feature off would otherwise fire one on every click of the control it hides.
   The status alone decides nothing: the code has to agree, both ways.
 - **No cache invalidation rides along the *refusal*, but the *spend* invalidates.**
-  Refetching the plan after a 402 is the obvious repair and would change
-  nothing — the API ships allowances and no tally, so the entry comes back with
-  the same limit and the same uncounted `used`. What does invalidate is the
+  Refetching the plan after a 402 is the obvious repair and changes nothing the
+  refusal did not already say. What does invalidate is the
   write that moved one of the server's four counters, through
   `invalidateEntitlements` (`hooks/useEntitlements.ts`): campaign
   create/archive/unarchive/delete, bank note/upload/import/delete, member
@@ -1238,9 +1235,9 @@ caller already catches as an `ApiError`. Four things about that path:
   easy to leave out and the one that matters more — a stale tally after a create
   offers a control that is about to be refused *with an explanation*, while a
   stale tally after a delete keeps a workspace locked out of room it has just
-  made, with no refusal to explain it. Also a no-op today, and installed anyway:
-  the alternative, the day a usage read lands, is a fortnight of meters that
-  only move on a page reload.
+  made, with no refusal to explain it. The plan read carries the tally
+  (`current`) since CON-325, so this is what keeps the meters moving with the
+  work rather than with a page reload.
 - **The near-limit warnings are notifications, one sentence per feature.**
   `entitlement.limit_approaching` / `limit_reached` carry the key, the counts and
   the band crossed; `lib/notifications.ts` maps each capped feature to its own
@@ -1252,8 +1249,8 @@ caller already catches as an `ApiError`. Four things about that path:
   replays from `Last-Event-ID` and the REST page carries rows until they
   expire, so a week-old crossing is indistinguishable from a live one, and
   writing one in would deny a workspace on a stale figure — the one direction
-  this seam never resolves towards. It becomes a refetch hint the day a usage
-  read exists.
+  this seam never resolves towards. The live tally is the plan read's
+  `current`, refetched through `invalidateEntitlements`.
 
 **A gate points at the key the server charges, not at the one the control looks
 like it costs.** `lib/entitlements.ts` carries the table of what CON-295

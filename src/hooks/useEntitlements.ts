@@ -4,7 +4,11 @@ import type { QueryClient } from '@tanstack/react-query'
 import { getWorkspacePlan } from '@/services/api/entitlements'
 import { UNGATED, resolveEntitlement } from '@/lib/entitlements'
 import { useFeatureFlag } from '@/config/featureFlags'
-import type { Entitlement, EntitlementKey } from '@/types/entitlements'
+import type {
+  Entitlement,
+  EntitlementKey,
+  WorkspacePlan,
+} from '@/types/entitlements'
 
 /**
  * Reading the workspace's tier, and asking it about one feature (CON-232).
@@ -59,10 +63,8 @@ export const ENTITLEMENTS_KEY = ['entitlements'] as const
  * out of something it has just made room for, with no refusal to explain it,
  * because nothing was ever sent.
  *
- * It is a no-op today, and that is not a reason to leave it out. The API ships
- * allowances and no tally (`entitlements.seed.ts`), so the refetch comes back
- * with the numbers it already had; the day a usage read lands, the alternative
- * to this being here is a fortnight of meters that only move on a page reload.
+ * The plan read carries the tally (`current`) since CON-325, so this is what
+ * keeps the meters moving with the work rather than with a page reload.
  */
 export function invalidateEntitlements(client: QueryClient): void {
   void client.invalidateQueries({ queryKey: ENTITLEMENTS_KEY })
@@ -75,15 +77,33 @@ export function invalidateEntitlements(client: QueryClient): void {
  * `useEntitlement` below reports `UNGATED` — the app behaves exactly as it did
  * before tiers existed, which is what the off-branch is required to do.
  */
-export function useWorkspacePlan() {
+export function useWorkspacePlan(
+  options: {
+    /**
+     * Re-read every few seconds while this says the screen is waiting for the
+     * plan to change — `/plans` after checkout, or a member waiting on the
+     * owner. The event stream is what normally moves it; the timer covers an
+     * event that was missed, and it is still the server being asked, never the
+     * redirect being believed.
+     */
+    pollWhile?: (plan: WorkspacePlan | undefined) => boolean
+  } = {},
+) {
   const gated = useFeatureFlag('workspace-tiers')
+  const { pollWhile } = options
   return useQuery({
     queryKey: ENTITLEMENTS_KEY,
     queryFn: getWorkspacePlan,
     enabled: gated,
     staleTime: 30_000,
+    refetchInterval: pollWhile
+      ? (query) => (pollWhile(query.state.data) ? PLAN_POLL_MS : false)
+      : false,
   })
 }
+
+/** How often a waiting screen asks again. */
+const PLAN_POLL_MS = 5_000
 
 /**
  * What the workspace's tier says about one feature.

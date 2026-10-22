@@ -1,7 +1,8 @@
 import { handleUnauthorized } from '@/lib/sessionExpiry'
 import { handleForbidden } from '@/lib/staleWorkspace'
+import { handleBillingRequired } from '@/lib/billingGate'
 import { apiUrl, workspaceHeader } from './base'
-import { EntitlementError, apiErrorFrom } from './errors'
+import { BILLING_REQUIRED, EntitlementError, apiErrorFrom } from './errors'
 
 type ApiRequestOptions = {
   method?: string
@@ -58,6 +59,13 @@ async function send(
     // throw still happens so the caller's own error path stays intact while
     // the reload is in flight. See `lib/sessionExpiry.ts`.
     if (res.status === 401) handleUnauthorized()
+    // The workspace has no plan (CON-322 §6.4). The root guard normally sends
+    // the tab to `/plans` before anything asks; this is the fallback for a tab
+    // that was already open when the gate closed, and it goes there once
+    // rather than toasting every refused request in the burst.
+    if (res.status === 402 && error.code === BILLING_REQUIRED) {
+      handleBillingRequired()
+    }
     // A 403 on a request that named a workspace *may* mean this tab is pinned
     // to one it no longer belongs to. `handleForbidden` checks before it acts,
     // because 403 is also the ordinary answer to a member calling an

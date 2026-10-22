@@ -2,16 +2,17 @@ import { useTranslation } from 'react-i18next'
 
 import { PlanBillingCard } from '@/components/workspace-settings/PlanBillingCard'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { useBilling, useBillingPortal } from '@/hooks/useBilling'
+import { useBilling, useOpenBillingPortal } from '@/hooks/useBilling'
 import { useWorkspacePlan } from '@/hooks/useEntitlements'
+import { useChangePlan } from '@/hooks/useTiers'
 import { useWorkspace } from '@/hooks/useWorkspaces'
 import { canChangePlan, canManageBilling } from '@/types/workspace'
 import { toast } from '@/stores/toastStore'
 
 /**
- * The wiring behind `PlanBillingCard` — the reads, the role, and the one
- * side effect. The card itself is pure props so `/design/plan-billing` can
- * render every state of it from fixtures.
+ * The wiring behind `PlanBillingCard` — the reads, the role, and the two side
+ * effects. The card itself is pure props so a design harness can render every
+ * state of it from fixtures.
  */
 export function PlanSection() {
   const { t } = useTranslation()
@@ -19,31 +20,23 @@ export function PlanSection() {
   const workspace = useWorkspace()
   const plan = useWorkspacePlan()
   const billing = useBilling()
-  const portal = useBillingPortal()
+  const portal = useOpenBillingPortal()
+  const change = useChangePlan()
 
   /**
-   * Opens the provider's portal in a new tab.
-   *
-   * The blank tab is opened *inside* the click, before the request: a
-   * `window.open` that happens after an `await` has lost the user gesture and
-   * is blocked by Safari and by strict pop-up settings. `opener` is cleared
-   * because a tab opened this way can otherwise reach back into the app — and
-   * a link that has to keep its handle can't be opened with `noopener`, which
-   * returns null.
+   * Calls off a scheduled downgrade: choosing the tier already held is what
+   * cancels one (CON-325), so there is no second endpoint that could disagree.
    */
-  const openPortal = () => {
-    const tab = window.open('', '_blank')
-    if (tab) tab.opener = null
-    portal.mutate(undefined, {
-      onSuccess: ({ url }) => {
-        if (tab) tab.location.href = url
-        else window.location.assign(url)
+  const keepPlan = () => {
+    const held = plan.data?.tier
+    if (!held) return
+    change.mutate(
+      { tierId: held.tierId },
+      {
+        onSuccess: () => toast.success(t('tiers.changeCancelled')),
+        onError: () => toast.error(t('tiers.changeFailed')),
       },
-      onError: () => {
-        tab?.close()
-        toast.error(t('tiers.portalFailed'))
-      },
-    })
+    )
   }
 
   // Nothing at all with the flag off — not an empty card. See CLAUDE.md: the
@@ -62,8 +55,10 @@ export function PlanSection() {
       // questions the moment `admin` exists — see `canChangePlan`.
       mayChange={workspace ? canChangePlan(workspace.role) : false}
       planFailed={plan.isError}
-      onManage={openPortal}
+      onManage={portal.open}
       managing={portal.isPending}
+      onKeepPlan={keepPlan}
+      keeping={change.isPending}
     />
   )
 }

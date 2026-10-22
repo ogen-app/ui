@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { listTiers, selectTier } from '@/services/api/tiers'
+import { changePlan, listTiers } from '@/services/api/tiers'
+import { QUERY_FIVE_MINUTES } from '@/lib/queryClient'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { ENTITLEMENTS_KEY } from './useEntitlements'
 
@@ -21,10 +22,10 @@ export const TIERS_KEY = ['tiers'] as const
  * purchasable versions, so the one a grandfathered workspace holds is not in
  * here and must be rendered from `useWorkspacePlan` instead.
  *
- * `staleTime: Infinity` — the tier list is editorial data that changes when
- * somebody edits it, not while you are looking at it, and a refetch mid-read
- * would reshuffle the cards under the cursor. The endpoint is cached at the edge
- * for the same reason, one layer down.
+ * Five minutes, the same as the server's own cache on the route. Mostly
+ * editorial data — but the free-month mark can move in Harbor, and an answer
+ * held for the life of the tab would keep offering a month that is no longer
+ * on. Checkout says what was really applied either way (`PlanCheckout.trial`).
  */
 export function useTiers() {
   const gated = useFeatureFlag('workspace-tiers')
@@ -32,29 +33,39 @@ export function useTiers() {
     queryKey: TIERS_KEY,
     queryFn: listTiers,
     enabled: gated,
-    staleTime: Infinity,
+    staleTime: QUERY_FIVE_MINUTES,
   })
 }
 
 /**
- * Moving the workspace onto a tier.
+ * Moving the workspace onto a tier (CON-325).
  *
- * The response is the resolved plan, so the entitlement cache is *set* from it
- * rather than invalidated — the gating on screen changes in the same frame the
- * choice does, with no window where the app is showing the old tier's locks.
+ * Two outcomes, and the server picks: a checkout to redirect to, which changes
+ * nothing yet and so touches no cache, or the plan as it now stands. The second
+ * is *set* into the entitlement cache rather than invalidated — the gating on
+ * screen changes in the same frame — and then everything else is invalidated,
+ * deliberately broadly: a tier change moves limits under lists, forms and
+ * pickers all over the app, and which of them is the server's business.
  *
- * Then everything else is invalidated, deliberately broadly. A tier change
- * moves limits under lists, forms and pickers all over the app, and which of
- * them a given change touches is the server's business — a hand-written list of
- * keys here would go stale the first time a tier learns a new allowance.
+ * No error toast: the refusals are codes the screen words in place
+ * (`PlanChangeError`), and one of them — the free month that cannot be ended
+ * from here — is answered with a dialog, not a toast.
  */
-export function useSelectTier() {
+export function useChangePlan() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (tierId: string) => selectTier(tierId),
-    onSuccess: (plan) => {
-      queryClient.setQueryData(ENTITLEMENTS_KEY, plan)
-      queryClient.invalidateQueries()
+    mutationFn: ({
+      tierId,
+      priceId,
+    }: {
+      tierId: string
+      priceId?: string | null
+    }) => changePlan(tierId, priceId),
+    meta: { errorToast: false },
+    onSuccess: (change) => {
+      if (change.kind !== 'changed') return
+      queryClient.setQueryData(ENTITLEMENTS_KEY, change.plan)
+      void queryClient.invalidateQueries()
     },
   })
 }

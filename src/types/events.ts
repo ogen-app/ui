@@ -44,6 +44,11 @@ export type EventSubject =
   | { kind: 'ideaLists' }
   /** `entity:saved_views:<surface>` — a list's shared smart groups. */
   | { kind: 'savedViews'; surface: string }
+  /**
+   * `entity:billing:<tenant>` and `entity:entitlements:<tenant>` — the
+   * workspace's subscription or the plan it resolves to changed (CON-324).
+   */
+  | { kind: 'plan' }
   /** `entity:brand_distill:<id>` — one brand read (CON-399). */
   | { kind: 'brandDistill'; id: string }
   | { kind: 'unknown'; topic: string }

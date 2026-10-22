@@ -3,7 +3,6 @@ import {
   featureValue,
   isTierFeatureKey,
   type TierFeature,
-  type TierFeatureKey,
   type TierFeatureValue,
 } from '@/lib/tierFeatures'
 import type {
@@ -182,6 +181,26 @@ export function yearlySaving(
 }
 
 /**
+ * The largest yearly saving across these plans, as a whole percentage of
+ * twelve monthly payments — or `null` when none saves anything (CON-328, the
+ * chip beside `/plans`'s billing switch).
+ *
+ * Within one plan's own currency, by `billingOptions`, so it is never an
+ * exchange rate. Floored, so the chip never promises a point more than the
+ * prices give.
+ */
+export function yearlySavingPercent(tiers: readonly Tier[]): number | null {
+  let best = 0
+  for (const tier of tiers) {
+    const { month, year } = billingOptions(tier)
+    if (!month || !year || month.amount <= 0) continue
+    best = Math.max(best, yearlySaving(month, year) / (month.amount * 12))
+  }
+  const percent = Math.floor(best * 100)
+  return percent > 0 ? percent : null
+}
+
+/**
  * The plan `/plans` puts forward in its frame: the cheapest purchasable plan
  * that costs anything.
  *
@@ -204,65 +223,4 @@ export function recommendedPlan(tiers: readonly Tier[]): Tier | null {
     if (!best || amount < best.amount) best = { tier, amount }
   }
   return best?.tier ?? null
-}
-
-/** How many gains a plan card lists; the rest are in the comparison. */
-export const CARD_GAINS = 6
-
-/**
- * The order a card lists its gains in — the pitch's order, not the price
- * list's. What only a bigger plan can do at all leads — separate workspaces,
- * several accounts on one network, campaign types of your own — because a
- * step that is merely "more" of what the card before already had reads as a
- * repeat of that card. The rest follow the order the product is used in.
- */
-const GAIN_ORDER: readonly TierFeatureKey[] = [
-  'workspaces',
-  'multiple_accounts_per_platform',
-  'custom_campaign_types',
-  'connected_accounts',
-  'active_campaigns',
-  'team_seats',
-  'quality_reviews_per_post',
-  'media_storage_bytes',
-  'all_campaign_types',
-  'plan_runs_per_month',
-  'posts_total',
-  'content_bank_assets',
-  'web_page_imports',
-]
-
-/** A feature a plan has more of than the card before it, and what that card had. */
-export type CardGain = { key: TierFeatureKey; from: TierFeatureValue }
-
-/**
- * What a plan card lists: the gains over the card to its left, or nothing.
- *
- * `plus` is true when the plan holds at least everything the previous card
- * does, and then the card says "Everything in …, plus:" over its gains. The
- * dominance check is what keeps that sentence from being said of a plan that
- * lacks something its neighbour has: the order of the list is the server's,
- * and the client does not rank. Otherwise — the first card, or a neighbour
- * neither contains — the card lists what the product does, which is copy and
- * not an allowance, so there is nothing to compute here.
- *
- * `from` is carried so a line can be worded by where it starts: inviting
- * teammates is new on a plan whose predecessor seats one person, and "even
- * more people" on one that already seats several.
- */
-export function cardHighlights(
-  tier: Tier,
-  previous: Tier | null,
-): { plus: boolean; gains: CardGain[] } {
-  if (!previous) return { plus: false, gains: [] }
-  const plus = TIER_FEATURE_ORDER.every(
-    (key) =>
-      grant(featureValue(tier.entitlements[key])) >=
-      grant(featureValue(previous.entitlements[key])),
-  )
-  if (!plus) return { plus, gains: [] }
-  const gains = GAIN_ORDER.filter((key) =>
-    beats(tier.entitlements[key], previous.entitlements[key]),
-  ).map((key) => ({ key, from: featureValue(previous.entitlements[key]) }))
-  return { plus, gains: gains.slice(0, CARD_GAINS) }
 }

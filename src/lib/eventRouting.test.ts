@@ -61,6 +61,18 @@ describe('parseTopic', () => {
 })
 
 describe('invalidationsFor', () => {
+  it('refreshes the plan and the billing read when the subscription moves', () => {
+    // CON-324: checkout finished, a downgrade landed, a payment failed. The id
+    // is the tenant, and the stream only carries this tab's.
+    for (const topic of ['entity:billing:t1', 'entity:entitlements:t1']) {
+      expect(parseTopic(topic)).toEqual({ kind: 'plan' })
+      expect(keys(event(topic, 'updated'))).toEqual([
+        ['entitlements'],
+        ['billing'],
+      ])
+    }
+  })
+
   it('refreshes every Ideas list and the asset rows after a bulk delete', () => {
     const e = event('entity:ideas:list', 'ideas.deleted', { ids: ['i1'] })
     expect(parseTopic('entity:ideas:list')).toEqual({ kind: 'ideaLists' })
