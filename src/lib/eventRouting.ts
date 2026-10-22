@@ -5,6 +5,8 @@ import { campaignKey } from '@/hooks/useCampaigns'
 import { ASSETS_KEY, ASSET_LIST_KEY, assetKey } from '@/hooks/useContent'
 import { ASSET_VIEWS_KEY, IDEA_VIEWS_KEY } from '@/hooks/useSavedViews'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
+import { ENTITLEMENTS_KEY } from '@/hooks/useEntitlements'
+import { BILLING_KEY } from '@/hooks/useBilling'
 import { DISTILL_LIST_KEY, distillRunKey } from '@/hooks/useBrandDistill'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
@@ -96,6 +98,11 @@ export function parseTopic(topic: string): EventSubject {
         return { kind: 'asset', id: parts[2] }
       case 'zernio_account':
         return { kind: 'zernioAccount', id: parts[2] }
+      // The id is the tenant, and the stream only carries this tab's — so it
+      // names nothing a key needs.
+      case 'billing':
+      case 'entitlements':
+        return { kind: 'plan' }
       case 'brand_distill':
         return { kind: 'brandDistill', id: parts[2] }
     }
@@ -300,6 +307,14 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
           ? [{ queryKey: ASSET_VIEWS_KEY }]
           : []
 
+    // The subscription changed, or the plan it grants did: checkout finished,
+    // a downgrade landed, a payment failed. Both reads, because the plan read
+    // carries the gate and the billing read carries the money, and either can
+    // be the one a screen is waiting on — `/plans` after checkout waits on the
+    // first.
+    case 'plan':
+      return [{ queryKey: ENTITLEMENTS_KEY }, { queryKey: BILLING_KEY }]
+
     // A brand read moved on (CON-399). The event never carries the proposal,
     // so the run is read again — which is also how a page watching it learns
     // that it is ready. The list is what resumes a read in another tab.
@@ -356,4 +371,7 @@ export const RECONCILE_FILTERS: QueryFilters[] = [
   IDEA_LISTS,
   WORKSPACE_POST_LIST,
   ...ZERNIO_SURFACES,
+  // A checkout or a plan change that landed while the stream was down.
+  { queryKey: ENTITLEMENTS_KEY },
+  { queryKey: BILLING_KEY },
 ]

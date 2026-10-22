@@ -31,6 +31,7 @@ const MONTHLY: TierSnapshot = {
   effectiveFrom: '2026-08-01T00:00:00Z',
   billingPeriod: 'month',
   renewsAt: BOUNDARY,
+  trialEndsAt: null,
   scheduled: null,
 }
 
@@ -47,6 +48,7 @@ function billed(
       price: null,
     },
     portal: true,
+    testMode: false,
   }
 }
 
@@ -114,6 +116,7 @@ describe('PlanBillingCard', () => {
         ...MONTHLY,
         scheduled: {
           id: 'tier_trial_2026_08_01',
+          tierId: 'trial',
           name: 'Ogen Trial',
           effectiveFrom: BOUNDARY,
           direction: 'downgrade',
@@ -173,7 +176,9 @@ describe('PlanBillingCard', () => {
     // Absent until the endpoint lands would make its arrival read as a new
     // feature rather than a connection completing.
     at(NOW)
-    await render({ billing: { subscription: null, portal: false } })
+    await render({
+      billing: { subscription: null, portal: false, testMode: false },
+    })
 
     expect(screen.getByRole('button', { name: /MANAGE/ })).toBeDisabled()
   })

@@ -28,6 +28,7 @@ const PAID: TierSnapshot = {
   effectiveFrom: '2026-08-22T00:00:00Z',
   billingPeriod: 'month',
   renewsAt: '2026-09-22T00:00:00Z',
+  trialEndsAt: null,
   scheduled: null,
 }
 
@@ -41,6 +42,7 @@ const FREE: TierSnapshot = {
   effectiveFrom: '2026-08-01T00:00:00Z',
   billingPeriod: null,
   renewsAt: null,
+  trialEndsAt: null,
   scheduled: null,
 }
 
@@ -102,6 +104,7 @@ describe('usePlanStatement', () => {
           ...PAID,
           scheduled: {
             id: 'tier_trial_2026_08_01',
+            tierId: 'trial',
             name: 'Ogen Trial',
             effectiveFrom: '2026-09-22T00:00:00Z',
             direction: 'downgrade',
@@ -128,6 +131,7 @@ describe('usePlanStatement', () => {
           ...PAID,
           scheduled: {
             id: 'tier_max_2027_01_01',
+            tierId: 'max',
             name: 'Ogen Max',
             effectiveFrom: '2026-09-22T00:00:00Z',
             direction: 'upgrade',

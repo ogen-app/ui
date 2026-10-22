@@ -79,13 +79,10 @@ export function canManageBilling(actor: WorkspaceRole): boolean {
  * come apart — whoever runs the workspace is a plausible person to choose what
  * it pays for, and an implausible one to be shown the card on file.
  *
- * It is also the one predicate here with **no server rule to mirror yet**. A
- * workspace's version is assigned by an operator through Harbor (CON-294) and
- * `POST /api/workspace/plan` does not exist, so nothing refuses a member's
- * choice today except this line. That makes it a product decision recorded
- * ahead of its endpoint rather than the usual grey-it-out-first mirror — and
- * the reason to write it down now is that every upgrade prompt in the app has
- * to know which half of the audience it is talking to.
+ * It mirrors the server since CON-325: `POST /api/workspace/plan` is owner
+ * only and answers a member with 403. Every upgrade prompt in the app has to
+ * know which half of the audience it is talking to, which is why the predicate
+ * is read on the client at all.
  */
 export function canChangePlan(actor: WorkspaceRole): boolean {
   return actor === 'owner'

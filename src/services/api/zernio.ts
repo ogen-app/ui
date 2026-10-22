@@ -7,7 +7,7 @@ import {
   type ZernioHealth,
 } from '@/types/integrations'
 import { scopedFetch } from './base'
-import { errorMessage } from './errors'
+import { apiErrorFrom, errorMessage } from './errors'
 
 /** Path, not URL: `scopedFetch` resolves the origin and names the workspace. */
 const BASE = '/api/integrations/zernio'
@@ -36,6 +36,11 @@ export async function createConnectLink(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ platform }),
   })
+  // The plan's `connected_accounts` cap (CON-324): an `EntitlementError`, so
+  // the modal can answer it with the upgrade callout instead of prose.
+  if (res.status === 402) {
+    throw await apiErrorFrom(res, 'Unable to create connect link')
+  }
   if (!res.ok) {
     throw await zernioError(res, 'Unable to create connect link')
   }

@@ -3,13 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   SECONDARY_BENEFITS,
   billingOptions,
-  cardHighlights,
   offerBenefits,
   recommendedPlan,
   recommendedTier,
   yearlySaving,
+  yearlySavingPercent,
 } from './upgradeOffer'
-import { featureValue } from '@/lib/tierFeatures'
 import type { RawEntitlement, TierVersionPrice } from '@/types/entitlements'
 import type { Tier } from '@/types/tiers'
 
@@ -17,7 +16,14 @@ const eur = (
   amount: number,
   interval: 'month' | 'year' = 'month',
   countryCode: string | null = null,
-): TierVersionPrice => ({ amount, currency: 'EUR', interval, countryCode })
+): TierVersionPrice => ({
+  id: null,
+  amount,
+  currency: 'EUR',
+  interval,
+  countryCode,
+  available: true,
+})
 
 function tier(
   id: string,
@@ -33,6 +39,9 @@ function tier(
     changeReason: '',
     prices,
     entitlements,
+    available: true,
+    freeTrial: false,
+    trialDays: null,
   }
 }
 
@@ -166,10 +175,12 @@ describe('billingOptions', () => {
 
   it('keeps the yearly price in the monthly one’s currency', () => {
     const usdYear: TierVersionPrice = {
+      id: null,
       amount: 30000,
       currency: 'USD',
       interval: 'year',
       countryCode: null,
+      available: true,
     }
     const t = tier('x', {}, [eur(2900), usdYear])
     expect(billingOptions(t).year).toBeNull()
@@ -200,52 +211,31 @@ describe('recommendedPlan', () => {
     // 2000 yen is fewer units than 29 euros and is not cheaper. With no
     // exchange rates, a price in another currency cannot win.
     const yen = tier('yen', TRIAL, [
-      { amount: 2000, currency: 'JPY', interval: 'month', countryCode: null },
+      {
+        id: null,
+        amount: 2000,
+        currency: 'JPY',
+        interval: 'month',
+        countryCode: null,
+        available: true,
+      },
     ])
     expect(recommendedPlan([PRO, yen])?.id).toBe('pro')
   })
 })
 
-describe('cardHighlights', () => {
-  const trial = tier('trial', TRIAL, [eur(0)])
-
-  it('lists what the plan adds over the card before it, in pitch order', () => {
-    const { plus, gains } = cardHighlights(PRO, trial)
-    expect(plus).toBe(true)
-    expect(gains.map((g) => g.key)).toEqual([
-      'connected_accounts',
-      'active_campaigns',
-      'team_seats',
-      'all_campaign_types',
-      'plan_runs_per_month',
-    ])
+describe('yearlySavingPercent', () => {
+  it('states the best saving across the plans, floored', () => {
+    // Pro: 29000 a year against 12 × 2900 = 34800 → 16.67%, floored to 16.
+    expect(yearlySavingPercent([PRO, MAX])).toBe(16)
   })
 
-  it('carries what the card before had, so a line can say "even more"', () => {
-    const { gains } = cardHighlights(PRO, trial)
-    expect(gains.find((g) => g.key === 'team_seats')?.from).toEqual(
-      featureValue(TRIAL.team_seats),
-    )
+  it('says nothing when no plan is sold yearly', () => {
+    expect(yearlySavingPercent([MAX])).toBeNull()
   })
 
-  it('leads with what only the bigger plan can do at all', () => {
-    // Several accounts on one network is new on Max; more of what Pro already
-    // had follows it, so the card does not open by repeating Pro's.
-    expect(cardHighlights(MAX, PRO).gains.map((g) => g.key)).toEqual([
-      'multiple_accounts_per_platform',
-      'connected_accounts',
-      'active_campaigns',
-      'team_seats',
-      'plan_runs_per_month',
-    ])
-  })
-
-  it('lists no gains on the first card', () => {
-    expect(cardHighlights(trial, null)).toEqual({ plus: false, gains: [] })
-  })
-
-  it('does not claim "everything in" a neighbour it does not contain', () => {
-    const sideways = tier('sideways', { ...TRIAL, team_seats: { limit: 0 } })
-    expect(cardHighlights(sideways, trial)).toEqual({ plus: false, gains: [] })
+  it('says nothing when the year costs as much as twelve months', () => {
+    const flat = tier('flat', TRIAL, [eur(1000), eur(12000, 'year')])
+    expect(yearlySavingPercent([flat])).toBeNull()
   })
 })

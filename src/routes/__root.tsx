@@ -16,7 +16,12 @@ import {
 import { ServerUnavailableError } from '../services/api/errors'
 import { checkSession } from '../services/api/sessions'
 import { listWorkspaces } from '../services/api/workspaces'
+import { getWorkspacePlan } from '../services/api/entitlements'
 import { useAuthStore } from '../stores/authStore'
+import { isFeatureEnabled } from '../config/featureFlags'
+import { ENTITLEMENTS_KEY } from '../hooks/useEntitlements'
+import { isGateExempt } from '../lib/billingGate'
+import { queryClient } from '../lib/queryClient'
 
 const SERVER_DOWN_PATH = '/server-unavailable'
 
@@ -53,7 +58,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       location.pathname === '/auth' ||
       location.pathname.startsWith('/auth/') ||
       location.pathname === '/invite' ||
-      location.pathname.startsWith('/invite/')
+      location.pathname.startsWith('/invite/') ||
+      // The marketing entry (`/signup?plan=pro`) is reached signed out by
+      // definition; it stashes the plan and moves on (CON-328).
+      location.pathname === '/signup' ||
+      location.pathname === '/signup/'
     const isServerDownRoute = location.pathname === SERVER_DOWN_PATH
 
     // CON-97: there is no instance-wide first-run setup anymore — onboarding is
@@ -92,7 +101,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     if (user) useAuthStore.getState().setUser(user)
     else useAuthStore.getState().clearUser()
 
-    if (user) await seedActiveWorkspace()
+    if (user) {
+      adoptReturnWorkspace(location.pathname, location.search)
+      await seedActiveWorkspace()
+      if (await billingGated(location.pathname))
+        throw redirect({ to: '/plans' })
+    }
 
     return { auth: { isAuthenticated: user !== null } }
   },
@@ -122,6 +136,55 @@ async function seedActiveWorkspace(): Promise<void> {
     if (seed) setActiveWorkspaceId(seed.id)
   } catch {
     // Ride the server's default for this page load.
+  }
+}
+
+/**
+ * Pins the tab to the workspace Lemon Squeezy's checkout came back for
+ * (`/plans?billing=return&workspace=…`, CON-328).
+ *
+ * The active workspace is per tab, and checkout returns in a tab that has
+ * either never been pinned — so it would ride the account's default — or is
+ * pinned to wherever it was last. Either way the "finishing up" screen would
+ * be watching the wrong workspace's plan. A pin that changes takes this tab's
+ * cache with it, as a switch does (`useSwitchWorkspace`).
+ */
+function adoptReturnWorkspace(pathname: string, search: unknown): void {
+  if (pathname !== '/plans') return
+  const params = (search ?? {}) as Record<string, unknown>
+  const workspace = params.workspace
+  if (params.billing !== 'return' || typeof workspace !== 'string') return
+  if (!workspace || getActiveWorkspaceId() === workspace) return
+  setActiveWorkspaceId(workspace)
+  queryClient.clear()
+}
+
+/**
+ * Whether this workspace must buy a plan before it can be used (CON-322 §6.4).
+ *
+ * Read as data, once per navigation and off the shared cache, so the redirect
+ * happens before any screen fires the burst of requests the server would
+ * refuse with 402 — that refusal still has a handler, as the fallback for a
+ * tab left open when the gate closed (`handleBillingRequired`). Members are
+ * sent to `/plans` too; it tells them the owner has to choose.
+ *
+ * A failed read lets the navigation through: the server enforces the gate
+ * regardless, and an error here must not lock somebody out of a workspace that
+ * was never gated.
+ */
+async function billingGated(pathname: string): Promise<boolean> {
+  if (!isFeatureEnabled('workspace-tiers') || isGateExempt(pathname)) {
+    return false
+  }
+  try {
+    const plan = await queryClient.fetchQuery({
+      queryKey: ENTITLEMENTS_KEY,
+      queryFn: getWorkspacePlan,
+      staleTime: 30_000,
+    })
+    return plan.billing.required
+  } catch {
+    return false
   }
 }
 

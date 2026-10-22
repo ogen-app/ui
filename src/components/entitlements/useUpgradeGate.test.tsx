@@ -135,10 +135,12 @@ describe('useUpgradeGate', () => {
 })
 
 const eur = (amount: number, interval: 'month' | 'year') => ({
+  id: null,
   amount,
   currency: 'EUR',
   interval,
   countryCode: null,
+  available: true,
 })
 
 /** Where the workspace stands: one campaign, and every one of them used. */
@@ -173,6 +175,9 @@ const PRO: Tier = {
     active_campaigns: { limit: 5, reset: 'standing' },
     team_seats: { limit: 3, reset: 'standing' },
   },
+  available: true,
+  freeTrial: false,
+  trialDays: null,
 }
 
 /** Bigger and dearer — offered only when Pro would not clear the wall. */

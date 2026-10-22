@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { SEED_CATALOG, withSeededUsage } from './entitlements.seed'
+import { SEED_CATALOG } from './entitlements.seed'
 import { TIER_FEATURE_ORDER } from '@/lib/tierFeatures'
-import type { EntitlementKey, WorkspacePlan } from '@/types/entitlements'
+import type { EntitlementKey } from '@/types/entitlements'
 
 /**
  * That the keys this build asks about are keys the server actually has.
@@ -86,59 +86,5 @@ describe('the catalog the client asks against', () => {
     // The catalog's own description ends "never a published number". It stays an
     // entitlement the app may ask about and not a figure it prints.
     expect(TIER_FEATURE_ORDER).not.toContain('assistant_multiplier')
-  })
-})
-
-function plan(entitlements: WorkspacePlan['entitlements']): WorkspacePlan {
-  return {
-    tier: {
-      id: 'ttv-trial-v1',
-      tierId: 'trial',
-      name: 'Trial',
-      purchasable: true,
-      changeReason: '',
-      prices: [],
-      effectiveFrom: null,
-      billingPeriod: null,
-      renewsAt: null,
-      scheduled: null,
-    },
-    entitlements,
-  }
-}
-
-describe('withSeededUsage', () => {
-  it('fills in a counter the server cannot send', () => {
-    const filled = withSeededUsage(
-      plan({ team_seats: { limit: 3, used: null, reset: 'standing' } }),
-    )
-    expect(filled.entitlements.team_seats.used).toBe(2)
-  })
-
-  it('counts against an unlimited allowance too', () => {
-    // `limit: null` still has a tally worth showing — the meter says "4", not
-    // "4 of ∞".
-    const filled = withSeededUsage(
-      plan({ team_seats: { limit: null, used: null, reset: 'standing' } }),
-    )
-    expect(filled.entitlements.team_seats.used).toBe(2)
-  })
-
-  it('leaves a verdict alone', () => {
-    // Nothing to count against a yes/no, and `0 of ∞` under "Several accounts on
-    // one platform" is a meter on a screen with nothing to measure.
-    const filled = withSeededUsage(
-      plan({ multiple_accounts_per_platform: { allowed: false } }),
-    )
-    expect(filled.entitlements.multiple_accounts_per_platform).toEqual({
-      allowed: false,
-    })
-  })
-
-  it('leaves a metered key the seed has no number for uncounted', () => {
-    const filled = withSeededUsage(
-      plan({ something_new: { limit: 5, used: null, reset: 'standing' } }),
-    )
-    expect(filled.entitlements.something_new.used).toBeNull()
   })
 })

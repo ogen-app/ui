@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { listTiers } from './tiers'
+import { ApiError } from './errors'
+import { PlanChangeError, changePlan, listTiers } from './tiers'
 import { setActiveWorkspaceId } from '@/lib/activeWorkspace'
 
 /**
@@ -165,6 +166,141 @@ describe('listTiers', () => {
     stubFetch(jsonResponse(500, { error: 'pricing catalog unavailable' }))
 
     await expect(listTiers()).rejects.toThrow('pricing catalog unavailable')
+  })
+
+  it('reads whether a tier, and each price, can be bought now (CON-325)', async () => {
+    const [tier] = await withTiers([
+      {
+        ...TRIAL,
+        available: true,
+        free_trial: false,
+        trial_days: null,
+        prices: [
+          { ...TRIAL.prices[0], available: true },
+          {
+            ...TRIAL.prices[0],
+            id: 'ttvp-trial-v1-eur-y',
+            billing_interval: 'year',
+            available: false,
+          },
+        ],
+      },
+    ])
+
+    expect(tier.available).toBe(true)
+    expect(tier.prices.map((price) => price.available)).toEqual([true, false])
+    expect(tier.prices[0].id).toBe('ttvp-trial-v1-eur-m')
+  })
+
+  it('reads a tier the server sends without the field as not for sale', async () => {
+    // Billing off, or a server that predates CON-325: nothing can be bought,
+    // and a button that went to a checkout that 503s is worse than none.
+    const [tier] = await withTiers([TRIAL])
+
+    expect(tier.available).toBe(false)
+    expect(tier.freeTrial).toBe(false)
+    expect(tier.trialDays).toBeNull()
+  })
+
+  it('reads the free-month mark and its length', async () => {
+    const [tier] = await withTiers([
+      { ...TRIAL, available: true, free_trial: true, trial_days: 30 },
+    ])
+
+    expect(tier.freeTrial).toBe(true)
+    expect(tier.trialDays).toBe(30)
+  })
+})
+
+describe('changePlan', () => {
+  it('posts the tier and the price, in this tab’s workspace', async () => {
+    setActiveWorkspaceId('ws-1')
+    const fetchMock = stubFetch(
+      jsonResponse(202, {
+        checkout: { url: 'https://checkout', expires_at: null, trial: true },
+      }),
+    )
+
+    await changePlan('pro', 'ttvp-pro-v1-usd-y')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toMatch(/\/api\/workspace\/plan$/)
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body)).toEqual({
+      tier_id: 'pro',
+      price_id: 'ttvp-pro-v1-usd-y',
+    })
+    expect(init.headers['X-Workspace-Id']).toBe('ws-1')
+  })
+
+  it('leaves the price out when none was chosen — the server defaults it', async () => {
+    const fetchMock = stubFetch(
+      jsonResponse(202, { checkout: { url: 'https://checkout' } }),
+    )
+
+    await changePlan('pro')
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      tier_id: 'pro',
+    })
+  })
+
+  it('answers a 202 with the checkout, trusting its trial flag', async () => {
+    stubFetch(
+      jsonResponse(202, {
+        checkout: {
+          url: 'https://checkout',
+          expires_at: '2026-10-22T12:00:00Z',
+          trial: false,
+        },
+      }),
+    )
+
+    await expect(changePlan('pro')).resolves.toEqual({
+      kind: 'checkout',
+      checkout: {
+        url: 'https://checkout',
+        expiresAt: '2026-10-22T12:00:00Z',
+        trial: false,
+      },
+    })
+  })
+
+  it('answers a 200 with the plan as it now stands', async () => {
+    stubFetch(
+      jsonResponse(200, {
+        ...TRIAL,
+        tier_id: 'pro',
+        version_id: 'ttv-pro-v1',
+        billing_required: false,
+        billing_period: 'month',
+      }),
+    )
+
+    const change = await changePlan('pro')
+
+    expect(change.kind).toBe('changed')
+    if (change.kind !== 'changed') return
+    expect(change.plan.tier.tierId).toBe('pro')
+    expect(change.plan.tier.billingPeriod).toBe('month')
+  })
+
+  it('keeps a refusal code so the screen can word it', async () => {
+    stubFetch(jsonResponse(409, { error: 'trial_upgrade_unavailable' }))
+
+    const error = await changePlan('max').catch((err: unknown) => err)
+
+    expect(error).toBeInstanceOf(PlanChangeError)
+    expect((error as PlanChangeError).reason).toBe('trial_upgrade_unavailable')
+  })
+
+  it('leaves a code it does not know as a plain failure', async () => {
+    stubFetch(jsonResponse(409, { error: 'something_new' }))
+
+    const error = await changePlan('max').catch((err: unknown) => err)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).not.toBeInstanceOf(PlanChangeError)
   })
 })
 

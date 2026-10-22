@@ -3,7 +3,12 @@ import { MutationCache, QueryClient } from '@tanstack/react-query'
 import { toast } from '@/stores/toastStore'
 import { i18next } from '@/i18n'
 import { isSessionExpiring } from '@/lib/sessionExpiry'
-import { EntitlementError } from '@/services/api/errors'
+import { isBillingRedirecting } from '@/lib/billingGate'
+import {
+  ApiError,
+  BILLING_REQUIRED,
+  EntitlementError,
+} from '@/services/api/errors'
 
 const FIVE_MINUTES = 1000 * 60 * 5
 
@@ -71,6 +76,15 @@ export const queryClient = new QueryClient({
       // for what was really the session ending. `sessionExpiry.ts` was
       // written to stop exactly that, one layer up.
       if (isSessionExpiring()) return
+      // Same for a workspace with no plan: the tab is on its way to `/plans`
+      // (`handleBillingRequired`), and that is the explanation — a toast per
+      // refused write would blame each of them for the plan.
+      if (
+        isBillingRedirecting() ||
+        (error instanceof ApiError && error.code === BILLING_REQUIRED)
+      ) {
+        return
+      }
       const meta = mutation.options.meta
       if (meta?.errorToast === false) return
       // `apiJson`/`apiVoid` throw with the backend's message, or with the

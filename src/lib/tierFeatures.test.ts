@@ -24,6 +24,9 @@ function tier(entitlements: Tier['entitlements']): Tier {
     changeReason: '',
     prices: [],
     entitlements,
+    available: true,
+    freeTrial: false,
+    trialDays: null,
   }
 }
 

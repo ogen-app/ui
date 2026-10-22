@@ -1,7 +1,10 @@
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import { Button } from '@/components/ui/button'
+import { UpgradeCallout } from '@/components/entitlements/UpgradeCallout'
+import { EntitlementError } from '@/services/api/errors'
 import { ModalContainer } from '@/components/ui/modal'
 import { Spinner } from '@/components/ui/spinner'
 import { useCreateConnectLink } from '@/hooks/useZernio'
@@ -85,7 +88,46 @@ function ConnectPlatformModal({
   onClose: () => void
 }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { info } = view
+
+  // The plan's cap on connected accounts, answered by the server at the moment
+  // the link is asked for (CON-324). The gate on the tile normally catches it
+  // first (`useUpgradeGate`); this is the refusal arriving anyway — a tally
+  // this tab had not refreshed, or an account connected in another tab.
+  if (error instanceof EntitlementError) {
+    return (
+      <ModalContainer
+        isOpen
+        onClose={onClose}
+        title={t('workspaceSettings.connect.modalTitle', {
+          platform: info.name,
+        })}
+        size="default"
+      >
+        <UpgradeCallout
+          entitlement={
+            error.reason === 'tier'
+              ? { state: 'denied', reason: 'tier' }
+              : {
+                  state: 'denied',
+                  reason: 'limit',
+                  usage: {
+                    limit: error.limit,
+                    used: error.current,
+                    reset: 'standing',
+                    resetsAt: null,
+                  },
+                }
+          }
+          onUpgrade={() => {
+            onClose()
+            void navigate({ to: '/plans' })
+          }}
+        />
+      </ModalContainer>
+    )
+  }
 
   return (
     <ModalContainer

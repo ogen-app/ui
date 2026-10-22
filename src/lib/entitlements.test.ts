@@ -30,8 +30,10 @@ function plan(entitlements: WorkspacePlan['entitlements']): WorkspacePlan {
       effectiveFrom: null,
       billingPeriod: null,
       renewsAt: null,
+      trialEndsAt: null,
       scheduled: null,
     },
+    billing: { required: false, trialEligible: null },
     entitlements,
   }
 }
