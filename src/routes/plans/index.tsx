@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { PlansPage } from './page'
 import { isFeatureEnabled } from '@/config/featureFlags'
+import { searchText } from '@/lib/searchText'
 
 /**
  * Outside `_authenticated` on purpose — see `page.tsx`. Auth is still guarded
@@ -14,11 +15,11 @@ import { isFeatureEnabled } from '@/config/featureFlags'
  */
 const plansSearchSchema = z.object({
   /** A tier to preselect — from the marketing link, through signup (CON-328). */
-  plan: z.string().optional(),
+  plan: searchText,
   /** `return` when Lemon Squeezy's checkout sends the buyer back. */
-  billing: z.string().optional(),
+  billing: searchText,
   /** The workspace that checkout was for; `__root.tsx` pins the tab to it. */
-  workspace: z.string().optional(),
+  workspace: searchText,
 })
 
 export const Route = createFileRoute('/plans/')({

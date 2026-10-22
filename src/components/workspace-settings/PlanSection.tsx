@@ -55,6 +55,7 @@ export function PlanSection() {
       // questions the moment `admin` exists — see `canChangePlan`.
       mayChange={workspace ? canChangePlan(workspace.role) : false}
       planFailed={plan.isError}
+      billingFailed={billing.isError}
       onManage={portal.open}
       managing={portal.isPending}
       onKeepPlan={keepPlan}
