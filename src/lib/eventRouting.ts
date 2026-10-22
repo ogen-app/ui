@@ -5,6 +5,7 @@ import { campaignKey } from '@/hooks/useCampaigns'
 import { ASSETS_KEY, ASSET_LIST_KEY, assetKey } from '@/hooks/useContent'
 import { ASSET_VIEWS_KEY, IDEA_VIEWS_KEY } from '@/hooks/useSavedViews'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
+import { DISTILL_LIST_KEY, distillRunKey } from '@/hooks/useBrandDistill'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
 import { localRunKey } from '@/lib/localRuns'
 import {
@@ -95,6 +96,8 @@ export function parseTopic(topic: string): EventSubject {
         return { kind: 'asset', id: parts[2] }
       case 'zernio_account':
         return { kind: 'zernioAccount', id: parts[2] }
+      case 'brand_distill':
+        return { kind: 'brandDistill', id: parts[2] }
     }
   }
   return { kind: 'unknown', topic }
@@ -296,6 +299,15 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
         : subject.surface === 'assets'
           ? [{ queryKey: ASSET_VIEWS_KEY }]
           : []
+
+    // A brand read moved on (CON-399). The event never carries the proposal,
+    // so the run is read again — which is also how a page watching it learns
+    // that it is ready. The list is what resumes a read in another tab.
+    case 'brandDistill':
+      return [
+        { queryKey: distillRunKey(subject.id) },
+        { queryKey: DISTILL_LIST_KEY },
+      ]
 
     case 'unknown':
       return []

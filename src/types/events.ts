@@ -44,6 +44,8 @@ export type EventSubject =
   | { kind: 'ideaLists' }
   /** `entity:saved_views:<surface>` — a list's shared smart groups. */
   | { kind: 'savedViews'; surface: string }
+  /** `entity:brand_distill:<id>` — one brand read (CON-399). */
+  | { kind: 'brandDistill'; id: string }
   | { kind: 'unknown'; topic: string }
 
 /**

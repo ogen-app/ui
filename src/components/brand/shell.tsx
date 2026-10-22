@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import {
+  CaretDownIcon,
   CaretRightIcon,
   ChatCircleTextIcon,
   GlobeIcon,
@@ -16,6 +17,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { cn } from '@/lib'
 import { formatList } from '@/lib/intl'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { siteHost } from '@/lib/brandDistill'
 import type { BrandConsumer, BrandOrigin } from './types'
 
 /**
@@ -274,12 +276,25 @@ const OFFER_NOTE_ID = 'brand-read-from-website'
  * route back is `resetAllSettings`, which resets everything else too. That is
  * acceptable for a card offering a shortcut and would not be for one carrying a
  * feature, so it is worth revisiting when these paths actually work.
+ *
+ * **Live, it is the same card with the tiles drawn whole** (CON-400, behind
+ * `brand-distill`). The sliver and the badge go, the tiles become
+ * `StarterCard`s with a caret, and choosing one opens it *inside this card*
+ * rather than in a modal — `distill/OfferRoutes` owns that. The dismissal stays
+ * exactly where it is, for the reason above: it is still a shortcut.
  */
 export function WholeBrandOffer({
   fills,
+  children,
 }: {
   /** The sections it would populate, named. */
   fills: string[]
+  /**
+   * The three routes, live (CON-400) — given only while `brand-distill` is on.
+   * With them the band is an offer that can be taken: no COMING SOON, and the
+   * tiles drawn whole in place of the sliver.
+   */
+  children?: ReactNode
 }) {
   const { t, i18n } = useTranslation()
   const dismissed = useSettingsStore((s) =>
@@ -316,7 +331,9 @@ export function WholeBrandOffer({
           {/* Beside the heading, because with the buttons gone the tag is
               the card's whole state — the difference between an offer and a
               notice is that one of them can be taken. */}
-          <StatusBadge tone="neutral" label={t('brand.shell.comingSoon')} />
+          {!children && (
+            <StatusBadge tone="neutral" label={t('brand.shell.comingSoon')} />
+          )}
         </div>
         {/* The list is joined by `Intl`, not by this file: the conjunction and
             the serial comma are the language's, and `a, b and c` is an English
@@ -330,32 +347,44 @@ export function WholeBrandOffer({
         </p>
       </header>
 
-      {/* 40px of a 216px stack. `h-10` lands inside the first tile rather than
-          between two of them, which is the whole trick: a clean edge reads as a
-          card that ends, and a tile cut through the middle reads as a list that
-          carries on. The fade is `to-primary` because that is the card's own
-          background — it dissolves into this card, not into the page. */}
-      <div aria-hidden className="relative h-10 overflow-hidden">
-        <div className="grid gap-3">
-          <StarterCard
-            icon={GlobeIcon}
-            title={t('brand.shell.offer.website.title')}
-            body={t('brand.shell.offer.website.body')}
-          />
-          <StarterCard
-            icon={StackIcon}
-            title={t('brand.shell.offer.document.title')}
-            body={t('brand.shell.offer.document.body')}
-          />
-          <StarterCard
-            icon={ChatCircleTextIcon}
-            title={t('brand.shell.offer.questions.title')}
-            body={t('brand.shell.offer.questions.body')}
-          />
-        </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-7 bg-gradient-to-b from-transparent to-primary" />
-      </div>
+      {children ?? <ComingSoonSliver />}
     </section>
+  )
+}
+
+/**
+ * The tiles as they were before CON-400 could take them: 40px of the stack,
+ * clipped and faded, while the routes are named in the sentence above — see
+ * `WholeBrandOffer`. What the band shows while `brand-distill` is off.
+ */
+function ComingSoonSliver() {
+  const { t } = useTranslation()
+  // 40px of a 216px stack. `h-10` lands inside the first tile rather than
+  // between two of them, which is the whole trick: a clean edge reads as a
+  // card that ends, and a tile cut through the middle reads as a list that
+  // carries on. The fade is `to-primary` because that is the card's own
+  // background — it dissolves into this card, not into the page.
+  return (
+    <div aria-hidden className="relative h-10 overflow-hidden">
+      <div className="grid gap-3">
+        <StarterCard
+          icon={GlobeIcon}
+          title={t('brand.shell.offer.website.title')}
+          body={t('brand.shell.offer.website.body')}
+        />
+        <StarterCard
+          icon={StackIcon}
+          title={t('brand.shell.offer.document.title')}
+          body={t('brand.shell.offer.document.body')}
+        />
+        <StarterCard
+          icon={ChatCircleTextIcon}
+          title={t('brand.shell.offer.questions.title')}
+          body={t('brand.shell.offer.questions.body')}
+        />
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-7 bg-gradient-to-b from-transparent to-primary" />
+    </div>
   )
 }
 
@@ -799,6 +828,8 @@ export function StarterCard({
   title,
   body,
   onClick,
+  caret,
+  pressed,
 }: {
   icon: Icon
   /**
@@ -812,26 +843,51 @@ export function StarterCard({
   /**
    * Absent renders the tile as a **description rather than a control**: same
    * box, same glyph, no hover, no cursor, not focusable. That is what the
-   * whole-brand offer needs — three routes worth naming, none of them built —
-   * and it is a better answer than a disabled button, which reads as *not right
-   * now* and gets clicked to find out which permission is withholding it.
+   * whole-brand offer needed while none of its routes was built, and it is a
+   * better answer than a disabled button, which reads as *not right now* and
+   * gets clicked to find out which permission is withholding it.
    */
   onClick?: () => void
+  /**
+   * A caret at the far end — `right` for a tile that goes somewhere, `down`
+   * for one that has opened in place (the offer's routes, CON-400). The
+   * starter groups go without: the whole tile is the target and the next
+   * screen is the editor it forks into.
+   */
+  caret?: 'right' | 'down'
+  /**
+   * The tile that is open. Held in its hover look — the black hairline and
+   * the grey face — so the choice reads as made rather than as passed over.
+   */
+  pressed?: boolean
 }) {
+  const Caret = caret === 'down' ? CaretDownIcon : CaretRightIcon
   const inner = (
     <>
       <span
         className={cn(
           'flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary transition-colors',
           onClick && 'group-hover:bg-primary',
+          pressed && 'bg-primary',
         )}
       >
         <Glyph className="size-6" style={{ color: tone }} />
       </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-base font-medium">{title}</span>
         <span className="text-sm text-secondary-foreground">{body}</span>
       </span>
+      {caret && (
+        <Caret
+          className={cn(
+            'size-4 shrink-0 text-tertiary-foreground',
+            onClick && 'group-hover:text-primary-foreground',
+            pressed && 'text-primary-foreground',
+          )}
+          weight="bold"
+          aria-hidden
+        />
+      )}
     </>
   )
 
@@ -846,9 +902,11 @@ export function StarterCard({
     <button
       type="button"
       onClick={onClick}
+      aria-expanded={caret === 'down' ? pressed : undefined}
       className={cn(
         box,
         'group cursor-pointer transition-colors hover:border-foreground hover:bg-secondary',
+        pressed && 'border-foreground bg-secondary',
       )}
     >
       {inner}
@@ -1029,19 +1087,24 @@ export function OriginLine({
 }) {
   const { t } = useTranslation()
 
-  // Three of the five details are the customer's own words — a template's
-  // name, their URL, a post's title — and stay exactly as they are. Only the
-  // fourth is a sentence of ours, and it is the only one that needs counting.
+  // Four of the details are the customer's own words — a template's name,
+  // their site, a document's title, a post's title — and stay exactly as they
+  // are. Only the post count is a sentence of ours, and it is the only one
+  // that needs counting. The site is its host alone: "Read off the website ·
+  // acme-roasters.com" is the line, and a scheme and a trailing slash are noise
+  // in it. Answers have no detail — the origin is the whole fact.
   const detail =
     origin.kind === 'template'
       ? origin.templateName
       : origin.kind === 'website'
-        ? origin.url
-        : origin.kind === 'posts'
-          ? t('brand.shell.originPostCount', { count: origin.count })
-          : origin.kind === 'promoted'
-            ? origin.fromPost
-            : null
+        ? siteHost(origin.url)
+        : origin.kind === 'document'
+          ? origin.title
+          : origin.kind === 'posts'
+            ? t('brand.shell.originPostCount', { count: origin.count })
+            : origin.kind === 'promoted'
+              ? origin.fromPost
+              : null
 
   return (
     <p className={className}>

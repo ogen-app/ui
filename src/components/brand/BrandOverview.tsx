@@ -20,7 +20,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDate, formatList } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Fetched } from '@/lib/fetched'
-import { isFeatureEnabled } from '@/config/featureFlags'
+import { isFeatureEnabled, useFeatureFlag } from '@/config/featureFlags'
 import { seriesMetaLine } from '@/components/series/format'
 import type { ContentSeries } from '@/components/series/types'
 import {
@@ -38,6 +38,8 @@ import {
 } from './facts'
 import { defaultVoiceLabel, sampleCount, usageLine } from './format'
 import { BrandIntro, DefaultStar, WholeBrandOffer } from './shell'
+import { OfferRoutes } from './distill/OfferRoutes'
+import { SavedCard } from './distill/SavedCard'
 import {
   EXPECTED_RATIOS,
   MIN_VOICE_SAMPLES,
@@ -141,6 +143,7 @@ export function BrandOverview({
   onOpen?: (id: BrandSectionId) => void
 }) {
   const { t } = useTranslation()
+  const distill = useFeatureFlag('brand-distill')
 
   // The brand query still holds the whole screen while it is in flight: its
   // five sections are one fetch, so there is no card here that could have
@@ -183,11 +186,16 @@ export function BrandOverview({
           own module the offer is the screen's one action and belongs where the
           reading stops. Nothing to offer to fill when we could not read what is
           already there — `fills` empty is how this card hides itself. */}
+      {/* What the last brand read saved, once (CON-400). Above the offer,
+          because it is the answer to it. */}
+      {distill && <SavedCard />}
       <WholeBrandOffer
         fills={
           brand.status === 'ready' ? missingSectionNames(t, brand.data) : []
         }
-      />
+      >
+        {distill ? <OfferRoutes /> : undefined}
+      </WholeBrandOffer>
       {SHOWN_BRAND_SECTIONS.map(card)}
     </Wrapper>
   )

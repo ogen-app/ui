@@ -1,6 +1,10 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { uploadAssetFile, uploadAudioFile } from '@/services/api/uploads'
+import {
+  uploadAssetFile,
+  uploadAudioFile,
+  type UploadPurpose,
+} from '@/services/api/uploads'
 import {
   validateUploadFile,
   type UploadFailure,
@@ -33,6 +37,8 @@ export type UploadTarget = {
   campaignId: string | null
   /** The post that should read from it, when it was added on one. */
   postId: string | null
+  /** Why it is uploaded, when not simply to file it — see `UploadPurpose`. */
+  purpose?: UploadPurpose
 }
 
 export type UploadItem = UploadTarget & {
@@ -90,7 +96,10 @@ export const useUploadStore = create<UploadState>()(
         // A recording goes presign → storage → finalize rather than through
         // the multipart endpoint, which refuses it; both answer in one shape.
         const upload = kind === 'audio' ? uploadAudioFile : uploadAssetFile
-        upload(file, { onProgress: (p) => patch(id, { progress: p }) })
+        upload(file, {
+          onProgress: (p) => patch(id, { progress: p }),
+          purpose: target.purpose,
+        })
           .then((result) => {
             if (result.status === 'failed') {
               patch(id, {
@@ -146,6 +155,7 @@ export const useUploadStore = create<UploadState>()(
               id: newId(),
               campaignId: target.campaignId,
               postId: target.postId,
+              purpose: target.purpose,
               file,
               filename: file.name,
               sizeBytes: file.size,
@@ -168,6 +178,7 @@ export const useUploadStore = create<UploadState>()(
               start(item.id, item.file, item.kind, {
                 campaignId: item.campaignId,
                 postId: item.postId,
+                purpose: item.purpose,
               })
           }
         },
@@ -184,6 +195,7 @@ export const useUploadStore = create<UploadState>()(
           start(id, item.file, validation.kind, {
             campaignId: item.campaignId,
             postId: item.postId,
+            purpose: item.purpose,
           })
         },
 

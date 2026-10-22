@@ -3095,6 +3095,8 @@ export const es: Translation = {
         website: 'Leída del sitio web',
         posts: 'Aprendida de publicaciones publicadas',
         promoted: 'Guardada de una publicación',
+        document: 'Sacada de un documento',
+        questions: 'De tus respuestas',
       },
       originPostCount_one: '{{count}} publicación',
       originPostCount_other: '{{count}} publicaciones',
@@ -3119,6 +3121,347 @@ export const es: Translation = {
           audiences: 'audiencias',
           guardrails: 'límites',
           facts: 'los datos',
+        },
+      },
+    },
+
+    distill: {
+      cancel: 'CANCELAR',
+      offer: {
+        or: 'O',
+        resumeReading: 'Leyendo {{what}}',
+        resumeReady: '{{what}} ya está leído: revisa lo que propone',
+        resumeReadingBody:
+          'Sigue sin ti. Ábrelo para verlo, o vuelve cuando Ogen avise de que está listo.',
+        resumeReadyBody:
+          'No se guarda nada en tus Fundamentos hasta que lo hayas revisado.',
+        resumeFiles_one: '{{count}} archivo',
+        resumeFiles_other: '{{count}} archivos',
+        resumeAnswers: 'Tus respuestas',
+      },
+      website: {
+        label: 'Tu sitio web',
+        placeholder: 'acme.com',
+        invalid: 'Eso no parece una dirección web.',
+        what: 'Leemos hasta diez páginas: inicio, quiénes sois, lo que vendes, precios, condiciones y un par de publicaciones recientes. Después se quedan en Recursos, como cualquier página que añadas.',
+        read: 'LEER EL SITIO',
+      },
+      document: {
+        formats:
+          'PDF, Word, PowerPoint, Excel, OpenDocument, EPUB, Markdown, correo, audio, imágenes',
+        inAssets: 'Ya en Recursos',
+        search: 'Buscar en tus recursos',
+        none: 'Todavía no hay nada en Recursos: suelta un archivo arriba.',
+        noMatch: 'Nada en Recursos coincide con eso.',
+        chosen_one: '{{count}} elegido',
+        chosen_other: '{{count}} elegidos',
+        read_one: 'LEER {{count}} ARCHIVO',
+        read_other: 'LEER {{count}} ARCHIVOS',
+        uploading: 'subiendo {{percent}} %',
+        processing: 'leyendo',
+        ready: 'listo',
+        uploadFailed: 'no se pudo subir',
+      },
+      refusal: {
+        invalidUrl:
+          'Esa dirección no se puede leer: tiene que ser un sitio web público.',
+        scrapingUnavailable:
+          'Aquí todavía no está configurada la lectura de sitios web.',
+        gateOff: 'Tu plan no incluye leer una marca.',
+        unavailable:
+          'Leer una marca no está disponible ahora mismo. Vuelve a intentarlo en un minuto.',
+        failed: 'No se ha podido empezar. Vuelve a intentarlo en un minuto.',
+      },
+      page: {
+        reading: 'Leyendo {{what}}',
+        draftingAnswers: 'Redactando a partir de tus respuestas',
+        readOff: 'Lo que leímos en {{what}}',
+        readIn: 'Lo que leímos en {{what}}',
+        fromAnswers: 'Lo que redactamos con tus respuestas',
+        missingHeader: 'No existe esa lectura',
+        missingMessage:
+          'Esta lectura no existe en este espacio de trabajo, o se ha eliminado.',
+      },
+      reading: {
+        steps: {
+          finding: 'Buscando las páginas',
+          readingPages: 'Leyendo las páginas',
+          readingFiles: 'Leyendo los archivos',
+          drafting: 'Redactando voces, audiencias, límites y datos',
+          checking: 'Comprobando cada línea con lo que escribiste',
+          checkingAnswers: 'Comprobando cada línea con tus respuestas',
+        },
+        found_one: '{{count}} encontrada, {{chosen}} elegidas',
+        found_other: '{{count}} encontradas, {{chosen}} elegidas',
+        homepageOnly:
+          'el sitio no tenía mapa, así que solo la página de inicio',
+        progress: '{{done}} de {{total}}',
+        kind: {
+          home: 'inicio',
+          about: 'quiénes sois',
+          product: 'lo que vendes',
+          pricing: 'precios',
+          legal: 'condiciones',
+          article: 'una publicación',
+        },
+        reading: 'leyendo',
+        truncated: 'leída en parte',
+        overLimit: 'por encima de tu límite de páginas',
+        thin: 'demasiado poco texto',
+        timedOut: 'tardó demasiado',
+        failed: 'no se pudo leer',
+        leave:
+          'Esto tarda unos minutos. Puedes irte: sigue en marcha, y Ogen te avisa cuando esté listo para revisarlo. No se guarda nada en tus Fundamentos hasta que tú lo digas.',
+        pagesLand:
+          'Las páginas llegan a Recursos a medida que se leen, así que el asistente también puede buscar en ellas. Volver a leer el sitio más adelante las actualiza en lugar de añadir copias.',
+      },
+      count: {
+        voices_one: '{{count}} voz',
+        voices_other: '{{count}} voces',
+        audiences_one: '{{count}} audiencia',
+        audiences_other: '{{count}} audiencias',
+        lines_one: '{{count}} línea de límites',
+        lines_other: '{{count}} líneas de límites',
+        words_one: '{{count}} palabra prohibida',
+        words_other: '{{count}} palabras prohibidas',
+        disclaimer: 'el aviso legal',
+        facts_one: '{{count}} dato',
+        facts_other: '{{count}} datos',
+      },
+      summary: {
+        fromPages_one: 'A partir de {{count}} página de {{site}}',
+        fromPages_other: 'A partir de {{count}} páginas de {{site}}',
+        fromFile: 'A partir de {{title}}',
+        fromFiles_one: 'A partir de {{count}} archivo',
+        fromFiles_other: 'A partir de {{count}} archivos',
+        fromAnswers: 'A partir de tus respuestas',
+        files_one: '{{count}} archivo',
+        files_other: '{{count}} archivos',
+        proposes:
+          '{{from}}, Ogen propone {{what}}, y cada elemento cita de dónde salió. Conserva, cambia o descarta cada uno; solo se guarda lo que conservas.',
+        nothing: '{{from}}, Ogen no encontró nada nuevo que proponer.',
+        leftOut: 'Se dejó fuera: {{what}}.',
+        leftDuplicate_one: '{{count}} elemento que ya tienes',
+        leftDuplicate_other: '{{count}} elementos que ya tienes',
+        leftUngrounded: {
+          site_one:
+            '{{count}} línea que no estaba palabra por palabra en el sitio',
+          site_other:
+            '{{count}} líneas que no estaban palabra por palabra en el sitio',
+          files_one:
+            '{{count}} línea que no estaba palabra por palabra en los archivos',
+          files_other:
+            '{{count}} líneas que no estaban palabra por palabra en los archivos',
+          answers_one: '{{count}} línea que tus respuestas no respaldaban',
+          answers_other: '{{count}} líneas que tus respuestas no respaldaban',
+        },
+        leftLimit_one:
+          '{{count}} elemento por encima de los límites de tus Fundamentos',
+        leftLimit_other:
+          '{{count}} elementos por encima de los límites de tus Fundamentos',
+        gaps: {
+          website_one: 'Hay {{count}} cosa que el sitio no dijo.',
+          website_other: 'Hay {{count}} cosas que el sitio no dijo.',
+          document_one: 'Hay {{count}} cosa que los archivos no dijeron.',
+          document_other: 'Hay {{count}} cosas que los archivos no dijeron.',
+          questions_one:
+            'Hay {{count}} cosa que tus respuestas dejaron abierta.',
+          questions_other:
+            'Hay {{count}} cosas que tus respuestas dejaron abiertas.',
+        },
+        answer_one: 'Responder {{count}} pregunta',
+        answer_other: 'Responder {{count}} preguntas',
+      },
+      gaps: {
+        close: 'Cerrar las preguntas',
+        title: {
+          website_one: '{{count}} cosa que el sitio no dijo',
+          website_other: '{{count}} cosas que el sitio no dijo',
+          document_one: '{{count}} cosa que los archivos no dijeron',
+          document_other: '{{count}} cosas que los archivos no dijeron',
+          questions_one: '{{count}} cosa que tus respuestas dejaron abierta',
+          questions_other:
+            '{{count}} cosas que tus respuestas dejaron abiertas',
+        },
+        whyJoin: ': ',
+        note: {
+          website:
+            'Responder vuelve a redactar la propuesta con tus respuestas, sin volver a leer el sitio. Lo que has conservado, descartado o editado hasta ahora se queda como lo dejaste.',
+          document:
+            'Responder vuelve a redactar la propuesta con tus respuestas, sin volver a leer los archivos. Lo que has conservado, descartado o editado hasta ahora se queda como lo dejaste.',
+          questions:
+            'Responder vuelve a redactar la propuesta con estas respuestas añadidas. Lo que has conservado, descartado o editado hasta ahora se queda como lo dejaste.',
+        },
+        ask: 'PREGUNTAR DE NUEVO CON ESTAS',
+      },
+      questions: {
+        title: 'Unas cuantas preguntas',
+        intro:
+          'Responde lo que puedas y sáltate el resto. Ogen redacta voces, audiencias, límites y datos a partir de tus palabras, y tú los revisas antes de que se guarde nada, igual que al leer un sitio web.',
+        placeholder: 'Sáltala, o dilo en una o dos líneas',
+        unavailable:
+          'No se han podido cargar las preguntas. Vuelve a intentarlo en un minuto.',
+        answered: '{{answered}} de {{count}} respondidas',
+        draft: 'REDACTARLO',
+        starter: {
+          q_offer: '¿Qué vendes y quién te lo compra?',
+          q_three_words: 'Tres palabras que un cliente usaría sobre ti.',
+          q_never_post: 'Una frase que nunca publicarías.',
+          q_not_for: '¿Para quién no eres?',
+          q_proof: '¿Qué puedes demostrar?',
+          q_legal: '¿Qué no te deja decir el departamento legal?',
+          q_disclaimer: 'El aviso legal que ya usas, si lo hay.',
+        },
+      },
+      source: {
+        from: 'De',
+        answer: 'tu respuesta',
+        answerTo: 'tu respuesta a «{{question}}»',
+      },
+      review: {
+        proposed_one: '{{count}} propuesta',
+        proposed_other: '{{count}} propuestas',
+        proposedNoneYet_one: '{{count}} propuesta · no tienes ninguna',
+        proposedNoneYet_other: '{{count}} propuestas · no tienes ninguna',
+        lines_one: '{{count}} línea',
+        lines_other: '{{count}} líneas',
+        words_one: '{{count}} palabra',
+        words_other: '{{count}} palabras',
+        qualifierJoin: ', ',
+        keepOrDrop: 'Conservar o descartar',
+        keep: 'Conservar',
+        drop: 'Descartar',
+        keepLine: 'Conservar «{{line}}»',
+        dropLine: 'Descartar «{{line}}»',
+        edit: 'EDITAR',
+        done: 'HECHO',
+        undo: 'DESHACER',
+        dropped: 'descartada',
+        becomesDefault: 'pasa a ser la predeterminada',
+        voiceName: 'Nombre',
+        whenToUse: 'Cuándo usarla',
+        audienceName: 'Nombre',
+        who: 'Quiénes son',
+        removeSample: 'Quitar esta muestra',
+        samplesFrom: {
+          site_one: '{{count}} muestra, palabra por palabra del sitio',
+          site_other:
+            '{{count}} muestras, cada una palabra por palabra del sitio',
+          files_one: '{{count}} muestra, palabra por palabra de los archivos',
+          files_other:
+            '{{count}} muestras, cada una palabra por palabra de los archivos',
+          answers_one: '{{count}} muestra, de tus respuestas',
+          answers_other: '{{count}} muestras, de tus respuestas',
+        },
+        thinVoice_one:
+          'Una muestra. Solo había un pasaje con esta voz: uno es un ejemplo, tres son un patrón. Añade otra, o déjala así y añade más tarde.',
+        thinVoice_other:
+          '{{count}} muestras. Solo había {{count}} pasajes con esta voz: uno es un ejemplo, tres son un patrón. Añade otra, o déjala así y añade más tarde.',
+        line: 'Línea',
+        disclaimerDiffers:
+          'El del sitio es distinto del tuyo. Conserva el tuyo salvo que elijas el otro.',
+        compare: 'COMPARAR',
+        keepYours: 'Conservar el tuyo',
+        useTheirs: 'Usar el del sitio',
+        writtenHereOn: 'Escrito aquí · {{date}}',
+        disclaimerRule: 'No se sustituye nada salvo que elijas el del sitio.',
+        factColumns: {
+          statement: 'Afirmación',
+          about: 'Sobre',
+          kind: 'Tipo',
+          expires: 'Caduca',
+        },
+        noExpiry: 'No caduca',
+        moreFacts_one: 'Mostrar {{count}} dato más',
+        moreFacts_other: 'Mostrar {{count}} datos más',
+        openPage: 'Abrir la página',
+        openFile: 'Abrir el archivo',
+        kept: '{{kept}} de {{count}} conservados',
+        keptShort: '{{kept}}/{{count}}',
+        discard: 'DESCARTAR',
+        save: 'GUARDAR EN FUNDAMENTOS',
+      },
+      saved: {
+        title: 'Guardado en tus Fundamentos',
+        dismiss: 'Cerrar',
+        nothing: 'nada nuevo',
+        fromWebsite: '{{what}}, leído de {{site}}.',
+        fromDocument: '{{what}}, sacado de {{title}}.',
+        fromAnswers: '{{what}}, de tus respuestas.',
+        duplicateFacts_one:
+          '{{count}} dato ya estaba en tu registro, así que se dejó como estaba.',
+        duplicateFacts_other:
+          '{{count}} datos ya estaban en tu registro, así que se dejaron como estaban.',
+        duplicateItems_one:
+          '{{count}} elemento ya estaba en tus Fundamentos, así que se dejó como estaba.',
+        duplicateItems_other:
+          '{{count}} elementos ya estaban en tus Fundamentos, así que se dejaron como estaban.',
+        overLimit_one:
+          '{{count}} elemento no cabía en los límites de tus Fundamentos y no se guardó.',
+        overLimit_other:
+          '{{count}} elementos no cabían en los límites de tus Fundamentos y no se guardaron.',
+      },
+      failed: {
+        title: 'Esta lectura no terminó',
+        nothingTitle: {
+          website: 'No hay suficiente en el sitio para seguir',
+          document: 'No hay suficiente en los archivos para seguir',
+          questions: 'No hay suficiente en las respuestas para seguir',
+        },
+        nothingBody: {
+          website_one:
+            'Ogen leyó {{count}} página pero apenas encontró texto: suele ser un sitio que construye sus páginas en el navegador, y lo que llega son menús y un aviso de cookies. No se propuso nada y esta lectura no cuenta en tu asignación.',
+          website_other:
+            'Ogen leyó {{count}} páginas pero apenas encontró texto en ellas: suele ser un sitio que construye sus páginas en el navegador, y lo que llega son menús y un aviso de cookies. No se propuso nada y esta lectura no cuenta en tu asignación.',
+          document_one:
+            'Ogen apenas encontró texto en el archivo: un escaneo, o una imagen sin palabras. No se propuso nada y esta lectura no cuenta en tu asignación.',
+          document_other:
+            'Ogen apenas encontró texto en los {{count}} archivos: escaneos, o imágenes sin palabras. No se propuso nada y esta lectura no cuenta en tu asignación.',
+          questions_one:
+            'Había demasiado poco en las respuestas para redactar. No se propuso nada y esta lectura no cuenta en tu asignación.',
+          questions_other:
+            'Había demasiado poco en las respuestas para redactar. No se propuso nada y esta lectura no cuenta en tu asignación.',
+        },
+        source: {
+          thin: 'demasiado poco texto',
+          failed: 'no se pudo leer',
+          overLimit: 'por encima de tu límite de páginas',
+          timedOut: 'tardó demasiado',
+          read: 'leída',
+        },
+        tryInstead: 'Prueba en su lugar',
+        instead: {
+          website: 'Un sitio suele decir más que un solo archivo.',
+          document:
+            'Un dosier o una guía de estilo se leen mejor que un sitio así.',
+          questions: 'Siete preguntas; sáltate las que quieras.',
+        },
+        reason: {
+          scraping:
+            'Aquí no está configurada la lectura de sitios web, así que no se pudo leer el sitio. No se propuso nada y esta lectura no cuenta en tu asignación.',
+          refused:
+            'El modelo se negó a leer esto. No se propuso nada y esta lectura no cuenta en tu asignación.',
+          plan: 'Tu plan detuvo esta lectura antes de que terminara. No se propuso nada y no cuenta en tu asignación.',
+          internal:
+            'Algo falló por nuestra parte. No se propuso nada y esta lectura no cuenta en tu asignación.',
+        },
+        tryAgain: 'VOLVER A INTENTARLO',
+      },
+      closed: {
+        back: 'VOLVER A FUNDAMENTOS',
+        committed: {
+          title: 'Guardado en tus Fundamentos',
+          body: 'Lo que se conservó de esta lectura ya está en tus Fundamentos, y cada elemento dice de dónde se leyó.',
+          bodyOn:
+            'Lo que se conservó de esta lectura se guardó el {{date}} y ya está en tus Fundamentos, y cada elemento dice de dónde se leyó.',
+        },
+        discarded: {
+          title: 'Esta lectura se descartó',
+          body: 'No se guardó nada de ella. Empieza otra desde Fundamentos cuando quieras.',
+        },
+        expired: {
+          title: 'Esta lectura ha caducado',
+          body: 'Una propuesta espera treinta días a ser revisada, y esta no lo fue. No se guardó nada; empieza otra desde Fundamentos.',
         },
       },
     },

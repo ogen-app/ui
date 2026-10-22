@@ -4117,6 +4117,8 @@ export const en = {
         website: 'Read off the website',
         posts: 'Learned from published posts',
         promoted: 'Saved from a post',
+        document: 'Taken from a document',
+        questions: 'From your answers',
       },
       /** The detail beside `origin.posts` — how many posts it was learned from. */
       originPostCount_one: '{{count}} post',
@@ -4156,6 +4158,345 @@ export const en = {
           audiences: 'audiences',
           guardrails: 'guardrails',
           facts: 'the facts',
+        },
+      },
+    },
+
+    /**
+     * Brand from what you have (CON-400) — reading a brand off the website, a
+     * document or a handful of answers, reviewing what it proposes, and saving
+     * what is kept. Everything under `components/brand/distill`.
+     */
+    distill: {
+      cancel: 'CANCEL',
+      offer: {
+        /** Before the two routes not chosen, demoted to links under a rule. */
+        or: 'Or',
+        resumeReading: 'Reading {{what}}',
+        resumeReady: '{{what}} is read — review what it proposes',
+        resumeReadingBody:
+          'It carries on without you. Open it to watch, or come back when Ogen says it is ready.',
+        resumeReadyBody:
+          'Nothing is saved to your Foundation until you have been through it.',
+        resumeFiles_one: '{{count}} file',
+        resumeFiles_other: '{{count}} files',
+        resumeAnswers: 'Your answers',
+      },
+      website: {
+        label: 'Your website',
+        placeholder: 'acme.com',
+        invalid: "That doesn't look like a web address.",
+        what: 'We read up to ten pages — home, about, what you sell, pricing, terms, and a couple of recent posts. They stay in Assets afterwards, like any page you add.',
+        read: 'READ THE SITE',
+      },
+      document: {
+        formats:
+          'PDF, Word, PowerPoint, Excel, OpenDocument, EPUB, Markdown, email, audio, images',
+        inAssets: 'Already in Assets',
+        search: 'Search your assets',
+        none: 'Nothing in Assets yet — drop a file above.',
+        noMatch: 'Nothing in Assets matches that.',
+        chosen_one: '{{count}} chosen',
+        chosen_other: '{{count}} chosen',
+        read_one: 'READ {{count}} FILE',
+        read_other: 'READ {{count}} FILES',
+        uploading: 'uploading {{percent}}%',
+        processing: 'reading',
+        ready: 'ready',
+        uploadFailed: "couldn't upload",
+      },
+      /** Why a read was refused before it started, said where it was asked. */
+      refusal: {
+        invalidUrl:
+          "That address can't be read — it has to be a public website.",
+        scrapingUnavailable: 'Reading websites is not set up here yet.',
+        gateOff: 'Your plan does not include reading a brand.',
+        unavailable:
+          'Reading a brand is not available right now. Try again in a minute.',
+        failed: "That didn't start. Try again in a minute.",
+      },
+      page: {
+        reading: 'Reading {{what}}',
+        draftingAnswers: 'Drafting from your answers',
+        readOff: 'What we read off {{what}}',
+        readIn: 'What we read in {{what}}',
+        fromAnswers: 'What we drafted from your answers',
+        missingHeader: 'No such read',
+        missingMessage:
+          'This read does not exist in this workspace, or it was removed.',
+      },
+      reading: {
+        steps: {
+          finding: 'Finding the pages',
+          readingPages: 'Reading the pages',
+          readingFiles: 'Reading the files',
+          drafting: 'Drafting voices, audiences, guardrails and facts',
+          checking: 'Checking every line against what you wrote',
+          checkingAnswers: 'Checking every line against your answers',
+        },
+        found_one: '{{count}} found, {{chosen}} chosen',
+        found_other: '{{count}} found, {{chosen}} chosen',
+        homepageOnly: 'the site had no map, so the homepage alone',
+        progress: '{{done}} of {{total}}',
+        /** What a page was read for — judged from its address. */
+        kind: {
+          home: 'home',
+          about: 'about',
+          product: 'what you sell',
+          pricing: 'pricing',
+          legal: 'terms',
+          article: 'a post',
+        },
+        reading: 'reading',
+        truncated: 'read in part',
+        overLimit: 'over your page limit',
+        thin: 'too little text',
+        timedOut: 'took too long',
+        failed: "couldn't be read",
+        leave:
+          'This takes a few minutes. You can leave — it carries on, and Ogen lets you know when it is ready to look at. Nothing is saved to your Foundation until you say so.',
+        pagesLand:
+          'The pages land in Assets as they are read, so the assistant can search them too. Reading the site again later refreshes them instead of adding copies.',
+      },
+      /** Counted phrases, joined by the language's list format. */
+      count: {
+        voices_one: '{{count}} voice',
+        voices_other: '{{count}} voices',
+        audiences_one: '{{count}} audience',
+        audiences_other: '{{count}} audiences',
+        lines_one: '{{count}} guardrail line',
+        lines_other: '{{count}} guardrail lines',
+        words_one: '{{count}} banned word',
+        words_other: '{{count}} banned words',
+        disclaimer: 'the disclaimer',
+        facts_one: '{{count}} fact',
+        facts_other: '{{count}} facts',
+      },
+      summary: {
+        fromPages_one: 'From {{count}} page of {{site}}',
+        fromPages_other: 'From {{count}} pages of {{site}}',
+        fromFile: 'From {{title}}',
+        fromFiles_one: 'From {{count}} file',
+        fromFiles_other: 'From {{count}} files',
+        fromAnswers: 'From your answers',
+        files_one: '{{count}} file',
+        files_other: '{{count}} files',
+        proposes:
+          '{{from}}, Ogen proposes {{what}} — every one quoting where it came from. Keep, change or drop each; only what you keep is saved.',
+        nothing: '{{from}}, Ogen found nothing new to propose.',
+        leftOut: 'Left out: {{what}}.',
+        leftDuplicate_one: '{{count}} item you already have',
+        leftDuplicate_other: '{{count}} items you already have',
+        leftUngrounded: {
+          site_one: "{{count}} line that wasn't word for word on the site",
+          site_other: "{{count}} lines that weren't word for word on the site",
+          files_one: "{{count}} line that wasn't word for word in the files",
+          files_other:
+            "{{count}} lines that weren't word for word in the files",
+          answers_one: "{{count}} line your answers didn't back up",
+          answers_other: "{{count}} lines your answers didn't back up",
+        },
+        leftLimit_one: '{{count}} item over your Foundation’s limits',
+        leftLimit_other: '{{count}} items over your Foundation’s limits',
+        gaps: {
+          website_one: 'There is {{count}} thing the site didn’t say.',
+          website_other: 'There are {{count}} things the site didn’t say.',
+          document_one: 'There is {{count}} thing the files didn’t say.',
+          document_other: 'There are {{count}} things the files didn’t say.',
+          questions_one: 'There is {{count}} thing your answers left open.',
+          questions_other: 'There are {{count}} things your answers left open.',
+        },
+        answer_one: 'Answer {{count}} question',
+        answer_other: 'Answer {{count}} questions',
+      },
+      gaps: {
+        close: 'Close the questions',
+        title: {
+          website_one: '{{count}} thing the site didn’t say',
+          website_other: '{{count}} things the site didn’t say',
+          document_one: '{{count}} thing the files didn’t say',
+          document_other: '{{count}} things the files didn’t say',
+          questions_one: '{{count}} thing your answers left open',
+          questions_other: '{{count}} things your answers left open',
+        },
+        /** Between the section a question would fill and why it is asked. */
+        whyJoin: ' — ',
+        note: {
+          website:
+            'Answering drafts the proposal again with your answers in it, without reading the site again. What you have kept, dropped or edited so far stays as you left it.',
+          document:
+            'Answering drafts the proposal again with your answers in it, without reading the files again. What you have kept, dropped or edited so far stays as you left it.',
+          questions:
+            'Answering drafts the proposal again with these answers added. What you have kept, dropped or edited so far stays as you left it.',
+        },
+        ask: 'ASK AGAIN WITH THESE',
+      },
+      questions: {
+        title: 'A handful of questions',
+        intro:
+          'Answer what you can and skip the rest. Ogen drafts voices, audiences, guardrails and facts from your words, and you review them before anything is saved — the same as reading a website.',
+        placeholder: 'Skip, or say it in a line or two',
+        unavailable: "The questions couldn't be loaded. Try again in a minute.",
+        answered: '{{answered}} of {{count}} answered',
+        draft: 'DRAFT IT',
+        /** The server's seven starter questions, by their stable ids. */
+        starter: {
+          q_offer: 'What do you sell, and who buys it?',
+          q_three_words: 'Three words a customer would use about you.',
+          q_never_post: 'A sentence you would never post.',
+          q_not_for: 'Who are you not for?',
+          q_proof: 'What can you prove?',
+          q_legal: 'What does legal not let you say?',
+          q_disclaimer: 'The disclaimer you already run, if any.',
+        },
+      },
+      source: {
+        from: 'From',
+        answer: 'your answer',
+        answerTo: 'your answer to “{{question}}”',
+      },
+      review: {
+        proposed_one: '{{count}} proposed',
+        proposed_other: '{{count}} proposed',
+        proposedNoneYet_one: '{{count}} proposed · you have none',
+        proposedNoneYet_other: '{{count}} proposed · you have none',
+        lines_one: '{{count}} line',
+        lines_other: '{{count}} lines',
+        words_one: '{{count}} word',
+        words_other: '{{count}} words',
+        qualifierJoin: ', ',
+        keepOrDrop: 'Keep or drop',
+        keep: 'Keep',
+        drop: 'Drop',
+        keepLine: 'Keep “{{line}}”',
+        dropLine: 'Drop “{{line}}”',
+        edit: 'EDIT',
+        done: 'DONE',
+        undo: 'UNDO',
+        dropped: 'dropped',
+        becomesDefault: 'becomes your default',
+        voiceName: 'Name',
+        whenToUse: 'When to use it',
+        audienceName: 'Name',
+        who: 'Who they are',
+        removeSample: 'Remove this sample',
+        samplesFrom: {
+          site_one: '{{count}} sample, word for word from the site',
+          site_other: '{{count}} samples, each word for word from the site',
+          files_one: '{{count}} sample, word for word from the files',
+          files_other: '{{count}} samples, each word for word from the files',
+          answers_one: '{{count}} sample, from your answers',
+          answers_other: '{{count}} samples, from your answers',
+        },
+        thinVoice_one:
+          'One sample. There was only one passage in this voice — one is an example, three is a pattern. Add one, or keep it thin and add later.',
+        thinVoice_other:
+          '{{count}} samples. There were only {{count}} passages in this voice — one is an example, three is a pattern. Add one, or keep it thin and add later.',
+        line: 'Line',
+        disclaimerDiffers:
+          'The site’s differs from yours. Keep yours unless you choose it.',
+        compare: 'COMPARE',
+        keepYours: 'Keep yours',
+        useTheirs: 'Use the one from the site',
+        writtenHereOn: 'Written here · {{date}}',
+        disclaimerRule: 'Nothing is replaced unless you pick the site’s.',
+        factColumns: {
+          statement: 'Statement',
+          about: 'About',
+          kind: 'Kind',
+          expires: 'Expires',
+        },
+        noExpiry: 'Does not expire',
+        moreFacts_one: 'Show {{count}} more fact',
+        moreFacts_other: 'Show {{count}} more facts',
+        openPage: 'Open the page',
+        openFile: 'Open the file',
+        kept: '{{kept}} of {{count}} kept',
+        keptShort: '{{kept}}/{{count}}',
+        discard: 'DISCARD',
+        save: 'SAVE TO FOUNDATION',
+      },
+      saved: {
+        title: 'Saved to your Foundation',
+        dismiss: 'Close',
+        nothing: 'nothing new',
+        fromWebsite: '{{what}}, read off {{site}}.',
+        fromDocument: '{{what}}, taken from {{title}}.',
+        fromAnswers: '{{what}}, from your answers.',
+        duplicateFacts_one:
+          '{{count}} fact was already in your ledger, so it was left as it was.',
+        duplicateFacts_other:
+          '{{count}} facts were already in your ledger, so they were left as they were.',
+        duplicateItems_one:
+          '{{count}} item was already in your Foundation, so it was left as it was.',
+        duplicateItems_other:
+          '{{count}} items were already in your Foundation, so they were left as they were.',
+        overLimit_one:
+          '{{count}} item didn’t fit under your Foundation’s limits and was not saved.',
+        overLimit_other:
+          '{{count}} items didn’t fit under your Foundation’s limits and were not saved.',
+      },
+      failed: {
+        title: 'This read didn’t finish',
+        nothingTitle: {
+          website: 'Not enough on the site to go on',
+          document: 'Not enough in the files to go on',
+          questions: 'Not enough in the answers to go on',
+        },
+        nothingBody: {
+          website_one:
+            'Ogen read {{count}} page but found almost no text on it — often a site that builds its pages in the browser, where what comes back is menus and a cookie banner. Nothing was proposed, and this read did not count against your allowance.',
+          website_other:
+            'Ogen read {{count}} pages but found almost no text on them — often a site that builds its pages in the browser, where what comes back is menus and a cookie banner. Nothing was proposed, and this read did not count against your allowance.',
+          document_one:
+            'Ogen found almost no text in the file — a scan, or an image with no words in it. Nothing was proposed, and this read did not count against your allowance.',
+          document_other:
+            'Ogen found almost no text in the {{count}} files — scans, or images with no words in them. Nothing was proposed, and this read did not count against your allowance.',
+          questions_one:
+            'There was too little in the answers to draft from. Nothing was proposed, and this read did not count against your allowance.',
+          questions_other:
+            'There was too little in the answers to draft from. Nothing was proposed, and this read did not count against your allowance.',
+        },
+        source: {
+          thin: 'too little text',
+          failed: "couldn't be read",
+          overLimit: 'over your page limit',
+          timedOut: 'took too long',
+          read: 'read',
+        },
+        tryInstead: 'Try instead',
+        instead: {
+          website: 'A site often says more than a single file does.',
+          document:
+            'A deck or a style guide reads better than a site like this.',
+          questions: 'Seven questions; skip any you like.',
+        },
+        reason: {
+          scraping:
+            'Reading websites is not set up here, so the site could not be read. Nothing was proposed, and this read did not count against your allowance.',
+          refused:
+            'The model declined to read this. Nothing was proposed, and this read did not count against your allowance.',
+          plan: 'Your plan stopped this read before it finished. Nothing was proposed, and it did not count against your allowance.',
+          internal:
+            'Something went wrong on our side. Nothing was proposed, and this read did not count against your allowance.',
+        },
+        tryAgain: 'TRY AGAIN',
+      },
+      closed: {
+        back: 'BACK TO FOUNDATION',
+        committed: {
+          title: 'Saved to your Foundation',
+          body: 'What was kept from this read is in your Foundation now, each item saying where it was read from.',
+          bodyOn:
+            'What was kept from this read was saved on {{date}}, and is in your Foundation now, each item saying where it was read from.',
+        },
+        discarded: {
+          title: 'This read was discarded',
+          body: 'Nothing from it was saved. Start another from Foundation whenever you like.',
+        },
+        expired: {
+          title: 'This read has expired',
+          body: 'A proposal waits thirty days to be reviewed, and this one was not. Nothing from it was saved; start another from Foundation.',
         },
       },
     },

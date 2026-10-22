@@ -7,6 +7,12 @@ import { uploadAccept } from '@/lib/assetStatus'
 type Props = {
   onFiles: (files: File[]) => void
   className?: string
+  /**
+   * The line under the invitation — what can be dropped. Absent on the upload
+   * modal, which states the limits in full beside it; the brand offer
+   * (CON-400) has no room for those and names the formats instead.
+   */
+  hint?: string
 }
 
 /**
@@ -21,7 +27,7 @@ type Props = {
  * It no longer repeats the limits — the modal states them directly above, and
  * saying them twice in one dialog made the zone itself hard to find.
  */
-export function Dropzone({ onFiles, className }: Props) {
+export function Dropzone({ onFiles, className, hint }: Props) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
@@ -63,6 +69,7 @@ export function Dropzone({ onFiles, className }: Props) {
     >
       <UploadSimpleIcon className="size-6 text-tertiary-foreground" />
       <p className="text-sm text-foreground">{t('uploads.browse')}</p>
+      {hint && <p className="text-xs text-tertiary-foreground">{hint}</p>}
       <input
         ref={inputRef}
         type="file"
