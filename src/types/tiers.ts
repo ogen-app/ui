@@ -1,4 +1,4 @@
-import type { RawEntitlement, TierVersion } from './entitlements'
+import type { RawEntitlement, TierVersion, WorkspacePlan } from './entitlements'
 
 /**
  * The tiers a workspace can move onto — the catalogue, as opposed to the one
@@ -42,4 +42,42 @@ export type Tier = TierVersion & {
    * reads the field.
    */
   entitlements: Record<string, RawEntitlement>
+  /**
+   * Whether the tier can be bought now: billing is on and at least one of its
+   * prices has a Lemon Squeezy variant behind it (CON-325). A tier that is
+   * published but not yet sellable is listed and cannot be chosen.
+   */
+  available: boolean
+  /**
+   * The tier an operator marked in Harbor as carrying the free month (CON-322
+   * §5.7). At most one. Whether *this reader* can have it is the plan read's
+   * `trialEligible`, and whether it was actually applied is checkout's `trial`.
+   */
+  freeTrial: boolean
+  /** How long that free month is, when `freeTrial`; `null` otherwise. */
+  trialDays: number | null
+}
+
+/**
+ * What `POST /api/workspace/plan` answers (CON-325): a hosted checkout to
+ * redirect to, or the plan as it now stands.
+ *
+ * Which of the two is the server's call, made off whether the workspace has a
+ * live subscription — never predicted here.
+ */
+export type PlanChange =
+  | { kind: 'checkout'; checkout: PlanCheckout }
+  | { kind: 'changed'; plan: WorkspacePlan }
+
+/** A Lemon Squeezy checkout, minted for this click. */
+export type PlanCheckout = {
+  /** Signed and short-lived — opened on the click, never stored or cached. */
+  url: string
+  expiresAt: string | null
+  /**
+   * Whether the free month was actually applied to this checkout. The source
+   * of truth for what the reader is told — the badge they clicked was read at
+   * page load, and the mark can move between then and now.
+   */
+  trial: boolean
 }

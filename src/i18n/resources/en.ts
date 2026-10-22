@@ -1507,6 +1507,8 @@ export const en = {
       postPublished: 'A {{channel}} post was published',
       postPublishFailed: 'A {{channel}} post failed to publish',
       postFirstCommentFailed: 'A post’s first comment couldn’t be posted',
+      billingTrialEndedUnpaid:
+        'Your free month ended without a plan, so your social accounts were disconnected. Choose a plan to reconnect them.',
       /**
        * Says nothing about the channel on purpose: this producer carries a
        * platform sqid rather than a network, and it is not ours to resolve
@@ -3480,6 +3482,102 @@ export const en = {
    * screen and a lie on the next.
    */
   tiers: {
+    /**
+     * `/plans` as one ledger of columns (CON-328). Capitals are written out
+     * where the design sets them — labels and actions — and survive any
+     * restyle that way.
+     */
+    ledger: {
+      title: 'Choose a plan',
+      gatedLead:
+        "{{workspace}} needs one before anyone can keep working. Nothing you've made is touched.",
+      waitingTitle: 'Waiting on the owner',
+      waitingBody:
+        'Only an owner of {{workspace}} can choose a plan. This page opens the workspace as soon as they do.',
+      switchWorkspace: 'SWITCH WORKSPACE',
+      signOut: 'SIGN OUT',
+      /** The yearly saving, beside the billing switch. Floored, never rounded up. */
+      save: 'SAVE {{percent}}%',
+      mostPopular: 'MOST POPULAR',
+      chargedToday: 'CHARGED TODAY',
+      freeMonthThen: 'FREE FOR A MONTH, THEN',
+      currentLabel: 'YOUR PLAN',
+      perMonth: '/ month',
+      billedMonthly: 'Billed monthly · excl. VAT',
+      billedYearly: 'Billed {{total}} a year · excl. VAT',
+      allowances: 'ALLOWANCES',
+      /** `name` arrives already in capitals, set for the active language. */
+      chooseNamed: 'CHOOSE {{name}}',
+      startFreeMonth: 'START FREE MONTH',
+      currentPlan: 'CURRENT PLAN',
+      scheduled: 'SCHEDULED',
+      unavailable: 'NOT AVAILABLE YET',
+      noneOnSale: 'No plan is on sale right now.',
+      vatNote:
+        'Prices exclude VAT. Lemon Squeezy sells Ogen as merchant of record and adds it at checkout.',
+    },
+    /** Waiting for Lemon Squeezy to confirm a subscription (CON-328). */
+    checkout: {
+      confirmingTitle: 'Confirming your subscription',
+      confirmingBody:
+        'Lemon Squeezy has your details. {{workspace}} opens as soon as they confirm — usually a few seconds.',
+      stepCheckout: 'Checkout completed',
+      stepConfirm: 'Waiting for Lemon Squeezy to confirm',
+      stepOpen: 'Opening {{workspace}}',
+      openedTitle: 'Finish checking out in the new tab',
+      /** Said only when checkout itself says the free month was applied. */
+      openedTrial: 'Your first month is free — nothing is charged today.',
+      openedCharged: "You're charged when you complete the checkout.",
+      openedBody:
+        'This page carries on by itself once Lemon Squeezy confirms, and opens {{workspace}}.',
+      reopen: 'OPEN CHECKOUT AGAIN',
+      back: 'CHOOSE ANOTHER PLAN',
+      slowTitle: 'Taking longer than usual',
+      slowBody:
+        "Leave this open, or come back later — you won't be charged twice. Your receipt from Lemon Squeezy has the order reference.",
+      subscribed: "You're on {{name}}.",
+    },
+    /** Confirming an in-place plan change on a workspace that already pays. */
+    changeDialog: {
+      title: 'Move to {{name}}?',
+      body: 'Lemon Squeezy works out the difference: a move up starts today, a move down waits for the end of the period you have paid for.',
+      trialBody:
+        'This ends the free month on {{name}} today, and {{target}} is charged now.',
+      cancel: 'CANCEL',
+      /** `name` arrives already in capitals. */
+      confirm: 'MOVE TO {{name}}',
+      blockedTitle: 'Not during the free month',
+      blockedBody:
+        "{{name}} can't be changed until its free month ends on {{when}}. Choose again then, or end the free month in Lemon Squeezy and come back.",
+      blockedBodyBare:
+        "{{name}} can't be changed until its free month ends. End it in Lemon Squeezy, or choose again once it has.",
+      nothingCharged: "Nothing was charged, and you're still on {{name}}.",
+      ok: 'OK',
+    },
+    /** A refused plan change, one sentence per code the server sends. */
+    planError: {
+      stale:
+        "That plan can't be chosen any more. Reload the page to see what's on offer.",
+      notAvailable: "That plan isn't on sale right now.",
+      notChangeable:
+        "This subscription can't be changed from here. Manage it in Lemon Squeezy.",
+      duringTrial: "Your plan can't be changed during the free month.",
+      provider: "Lemon Squeezy didn't answer. Try again in a moment.",
+      unavailable: "Billing isn't available right now.",
+    },
+    /** The Plan & billing card (CON-328). */
+    freeUntil: 'Free until {{when}}, then {{price}}.',
+    freeUntilBare: 'Free until {{when}}.',
+    statusOnTrial: 'Free month',
+    billingUnavailable:
+      "Billing details aren't available right now, so there's nothing to manage from here.",
+    sandbox: 'Sandbox',
+    noPortal: "There's nothing at Lemon Squeezy to manage yet.",
+    priceExclVat: '{{price}}, excl. VAT',
+    perMonth: '{{price}} / month',
+    perYear: '{{price}} / year',
+    /** `name` arrives already in capitals. */
+    keepPlan: 'KEEP {{name}}',
     notInPlan: 'Not in your plan',
     notInPlanBody:
       "This isn't part of the plan your workspace is on. Upgrading turns it on for everyone here.",
@@ -3699,21 +3797,6 @@ export const en = {
       "Your plan changed, so this is read-only for now. Nothing has been deleted — it's all here, and upgrading makes it editable again.",
     suspendedSince: 'Read-only since {{when}}.',
 
-    /**
-     * The plan screen. Note what is *not* here: the names and taglines of the
-     * tiers themselves. The tier list is editorial data the server owns, so its
-     * copy arrives in one language and cannot be put in a catalogue — see
-     * `services/api/tiers.ts`. Everything the app says *about* a tier is here.
-     */
-    plansTitle: 'Select a plan you like',
-    /**
-     * Not an Explainer, and not dismissible. Someone looking at a page of plans
-     * with a button on each is entitled to know that the button does not buy
-     * anything — hiding that behind a note they may have closed months ago is
-     * exactly the case the Explainer rule exists to keep out.
-     */
-    planMock:
-      'Plans are not connected to billing yet. Choosing one only changes what this workspace is allowed to do.',
     planLoadFailed: 'The plans could not be loaded.',
     plansClose: 'Close plans',
     /**
@@ -3732,9 +3815,6 @@ export const en = {
      * word billing.
      */
     billingTitle: 'Plan & billing',
-    /** Same standing as `planMock`, and for the same reason — see below. */
-    billingMock:
-      "Billing isn't connected yet. Nothing here charges anyone, and no payment details are held.",
     /**
      * "& details" because the button beside it opens all of them — the address,
      * the tax id, the invoices — and a row called "Payment method" would make
@@ -3805,10 +3885,6 @@ export const en = {
 
     currentPlan: 'Current plan',
     currentBadge: 'Current',
-    /** The held plan's button on `/plans`: disabled, but drawn as a label, not greyed out. */
-    currentPlanButton: 'Current Plan',
-    /** The tier a change has already been made to, waiting on its date. */
-    scheduledBadge: 'Scheduled',
     /** A tier version that is still held but can no longer be bought. */
     retired: 'No longer offered',
     since: 'On this plan since {{when}}.',
@@ -3836,7 +3912,6 @@ export const en = {
     autoRenews: 'It auto-renews on {{when}}.',
     autoRenewsIn: 'It auto-renews {{relative}}, on {{when}}.',
 
-    choose: 'CHOOSE',
     /** For the button's accessible name, where "CHOOSE" alone says too little. */
     chooseNamed: 'Choose {{name}}',
     /** Undoing a scheduled downgrade — the only way back from one. */
@@ -3887,17 +3962,6 @@ export const en = {
     price: '<price>{{price}}</price> / month',
     priceYear: '<price>{{price}}</price> / year',
     priceFree: 'Free',
-    /**
-     * The band over the plan the page puts forward — the cheapest paid one.
-     * "Recommended" rather than "popular": the client has no sales figures, and
-     * a claim about what other people bought would be one nobody made.
-     */
-    recommended: 'RECOMMENDED',
-    /** Heads a card's checklist when it holds everything the card before it does. */
-    everythingIn: 'Everything in {{name}}, plus:',
-    compareTitle: 'Compare all features',
-    /** The comparison table's first column, read by screen readers only. */
-    compareFeature: 'Feature',
 
     /**
      * The name each entitlement key goes by on screen. Keyed by the key rather
@@ -3918,41 +3982,6 @@ export const en = {
       content_bank_assets: 'Content bank documents',
       web_page_imports: 'Web page imports',
       media_storage_bytes: 'Media storage',
-    },
-    /**
-     * The first plan card's checklist: what the product does, not what the
-     * plan allows. Capabilities, never figures — the figures are in the
-     * comparison under the cards.
-     */
-    capabilities: {
-      voice: 'Build a unique voice that stands out from AI-generated slop',
-      strategy: 'Easily generate your content strategy',
-      store: 'Store files, audio notes, ideas and tasks, all in one place',
-      publish: 'Create, schedule and auto-publish posts across social networks',
-      quality:
-        'Check a post’s quality and how it will perform before it goes out',
-      analytics: 'Unified analytics and insights',
-    },
-    /**
-     * A later card's line for a feature it has more of than the card before
-     * it. No figure on purpose — the card sells the step. `team_seats` has two
-     * because the step reads differently from one seat than from several.
-     */
-    gain: {
-      workspaces: 'Separate workspaces to run isolated campaigns',
-      connected_accounts: 'Add more social networks',
-      active_campaigns: 'Run several targeted campaigns at once',
-      team_seats: 'Invite teammates to a shared workspace',
-      team_seats_more: 'Invite even more people to work with you',
-      quality_reviews_per_post: 'Get more quality reviews',
-      media_storage_bytes: 'Get extended storage',
-      multiple_accounts_per_platform: 'Connect several accounts on one network',
-      all_campaign_types: 'Use every campaign type',
-      custom_campaign_types: 'Create campaign types of your own',
-      plan_runs_per_month: 'Generate more content strategies',
-      posts_total: 'Publish more posts',
-      content_bank_assets: 'Keep more in your content bank',
-      web_page_imports: 'Import more web pages',
     },
   },
 

@@ -1,17 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchBilling, fetchBillingPortalLink } from './billing'
-import { STUBBED } from './tiers.stub'
+import { createBillingPortalLink, getBilling } from './billing'
 
 /**
- * Neither `GET /api/billing` nor `POST /api/billing/portal` exists yet, and no
- * payment provider is connected. Until both do, this file is the executable
- * half of the contract written out in `billing.ts`.
- *
- * Driven against `fetchBilling` rather than `getBilling` for the same reason
- * `entitlements.test.ts` drives `fetchWorkspacePlan`: the app is on the stub,
- * and a contract test that went dark the moment the app stopped making the
- * request would be no contract at all.
+ * The executable half of the contract written out in `billing.ts` —
+ * `GET /api/billing` and `POST /api/billing/portal`, both the server's since
+ * CON-324.
  *
  * What is worth asserting here is mostly *restraint*. The screen this backs is
  * a report and a door — Lemon Squeezy is the merchant of record, so the address,
@@ -37,13 +31,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('fetchBilling', () => {
+describe('getBilling', () => {
   it('reads one flat, workspace-scoped route', async () => {
     const fetchMock = stubFetch(
       jsonResponse(200, { subscription: null, portal: false }),
     )
 
-    await fetchBilling()
+    await getBilling()
 
     expect(fetchMock.mock.calls[0][0]).toBe('/api/billing')
     expect(fetchMock.mock.calls[0][1].method).toBe('GET')
@@ -60,10 +54,11 @@ describe('fetchBilling', () => {
           price: { amount: 4900, currency: 'USD', period: 'month' },
         },
         portal: true,
+        test_mode: false,
       }),
     )
 
-    await expect(fetchBilling()).resolves.toEqual({
+    await expect(getBilling()).resolves.toEqual({
       subscription: {
         status: 'active',
         renewsAt: '2026-09-22T00:00:00Z',
@@ -72,6 +67,26 @@ describe('fetchBilling', () => {
         price: { amount: 4900, currency: 'USD', period: 'month' },
       },
       portal: true,
+      testMode: false,
+    })
+  })
+
+  it('says when the provider is in its sandbox', async () => {
+    // The card shows a badge for it: a staging workspace that looks exactly
+    // like a paying one is how a test card ends up in a believed screenshot.
+    stubFetch(jsonResponse(200, { subscription: null, test_mode: true }))
+
+    await expect(getBilling()).resolves.toMatchObject({ testMode: true })
+  })
+
+  it('reads the free month in the provider’s own word', async () => {
+    stubFetch(
+      jsonResponse(200, { subscription: { status: 'on_trial' }, portal: true }),
+    )
+
+    await expect(getBilling()).resolves.toMatchObject({
+      subscription: { status: 'on_trial' },
+      testMode: false,
     })
   })
 
@@ -80,12 +95,12 @@ describe('fetchBilling', () => {
     // here: a free workspace has no subscription, a paid one with nothing
     // filled in has an empty one.
     stubFetch(jsonResponse(200, { subscription: null, portal: false }))
-    await expect(fetchBilling()).resolves.toMatchObject({ subscription: null })
+    await expect(getBilling()).resolves.toMatchObject({ subscription: null })
 
     stubFetch(
       jsonResponse(200, { subscription: { status: 'active' }, portal: false }),
     )
-    const account = await fetchBilling()
+    const account = await getBilling()
     expect(account.subscription).toEqual({
       status: 'active',
       renewsAt: null,
@@ -109,7 +124,7 @@ describe('fetchBilling', () => {
       }),
     )
 
-    const account = await fetchBilling()
+    const account = await getBilling()
 
     expect(account.subscription?.status).toBe('cancelled')
     expect(account.subscription?.renewsAt).toBeNull()
@@ -126,7 +141,7 @@ describe('fetchBilling', () => {
       }),
     )
 
-    await expect(fetchBilling()).resolves.toMatchObject({
+    await expect(getBilling()).resolves.toMatchObject({
       subscription: { status: 'unknown' },
     })
   })
@@ -136,18 +151,18 @@ describe('fetchBilling', () => {
     // that puts it on screen, so anything short of an explicit `true` is false.
     stubFetch(jsonResponse(200, { subscription: { status: 'active' } }))
 
-    await expect(fetchBilling()).resolves.toMatchObject({ portal: false })
+    await expect(getBilling()).resolves.toMatchObject({ portal: false })
   })
 
   it("surfaces the server's message rather than a generic failure", async () => {
     // Owner-only on the server; a member landing here is told why.
     stubFetch(jsonResponse(403, { error: 'owner role required' }))
 
-    await expect(fetchBilling()).rejects.toThrow('owner role required')
+    await expect(getBilling()).rejects.toThrow('owner role required')
   })
 })
 
-describe('fetchBillingPortalLink', () => {
+describe('createBillingPortalLink', () => {
   it('mints a link with a POST, on the click', async () => {
     // A POST rather than a field on the payload above, because the link is
     // signed and expires within the day: one that rode along on a cached GET
@@ -159,7 +174,7 @@ describe('fetchBillingPortalLink', () => {
       }),
     )
 
-    const link = await fetchBillingPortalLink()
+    const link = await createBillingPortalLink()
 
     expect(fetchMock.mock.calls[0][0]).toBe('/api/billing/portal')
     expect(fetchMock.mock.calls[0][1].method).toBe('POST')
@@ -172,18 +187,9 @@ describe('fetchBillingPortalLink', () => {
   it('accepts a link with no stated expiry', async () => {
     stubFetch(jsonResponse(200, { url: 'https://portal.example/x' }))
 
-    await expect(fetchBillingPortalLink()).resolves.toEqual({
+    await expect(createBillingPortalLink()).resolves.toEqual({
       url: 'https://portal.example/x',
       expiresAt: null,
     })
-  })
-})
-
-describe('while the stub is standing in', () => {
-  it('is switched by one constant, in one file', () => {
-    // The reminder that this whole area is scaffolding: when the endpoints
-    // answer, `STUBBED` goes false and `tiers.stub.ts` is deleted. If this
-    // fails, that already happened — delete this block with it.
-    expect(STUBBED).toBe(true)
   })
 })

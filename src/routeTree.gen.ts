@@ -19,6 +19,7 @@ import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as InviteIndexRouteImport } from './routes/invite/index'
 import { Route as PlansIndexRouteImport } from './routes/plans/index'
 import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
+import { Route as SignupIndexRouteImport } from './routes/signup/index'
 import { Route as WorkspacesIndexRouteImport } from './routes/workspaces/index'
 import { Route as AuthenticatedActivityIndexRouteImport } from './routes/_authenticated/activity/index'
 import { Route as AuthenticatedActivityDateRouteImport } from './routes/_authenticated/activity/$date'
@@ -113,6 +114,11 @@ const PlansIndexRoute = PlansIndexRouteImport.update({
 const ServerUnavailableIndexRoute = ServerUnavailableIndexRouteImport.update({
   id: '/server-unavailable/',
   path: '/server-unavailable/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupIndexRoute = SignupIndexRouteImport.update({
+  id: '/signup/',
+  path: '/signup/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspacesIndexRoute = WorkspacesIndexRouteImport.update({
@@ -393,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/invite/': typeof InviteIndexRoute
   '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
+  '/signup/': typeof SignupIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/activity/$date': typeof AuthenticatedActivityDateRoute
   '/assets/$assetId': typeof AuthenticatedAssetsAssetIdRoute
@@ -448,6 +455,7 @@ export interface FileRoutesByTo {
   '/invite': typeof InviteIndexRoute
   '/plans': typeof PlansIndexRoute
   '/server-unavailable': typeof ServerUnavailableIndexRoute
+  '/signup': typeof SignupIndexRoute
   '/workspaces': typeof WorkspacesIndexRoute
   '/activity/$date': typeof AuthenticatedActivityDateRoute
   '/assets/$assetId': typeof AuthenticatedAssetsAssetIdRoute
@@ -506,6 +514,7 @@ export interface FileRoutesById {
   '/invite/': typeof InviteIndexRoute
   '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
+  '/signup/': typeof SignupIndexRoute
   '/workspaces/': typeof WorkspacesIndexRoute
   '/_authenticated/activity/$date': typeof AuthenticatedActivityDateRoute
   '/_authenticated/assets/$assetId': typeof AuthenticatedAssetsAssetIdRoute
@@ -565,6 +574,7 @@ export interface FileRouteTypes {
     | '/invite/'
     | '/plans/'
     | '/server-unavailable/'
+    | '/signup/'
     | '/workspaces/'
     | '/activity/$date'
     | '/assets/$assetId'
@@ -620,6 +630,7 @@ export interface FileRouteTypes {
     | '/invite'
     | '/plans'
     | '/server-unavailable'
+    | '/signup'
     | '/workspaces'
     | '/activity/$date'
     | '/assets/$assetId'
@@ -677,6 +688,7 @@ export interface FileRouteTypes {
     | '/invite/'
     | '/plans/'
     | '/server-unavailable/'
+    | '/signup/'
     | '/workspaces/'
     | '/_authenticated/activity/$date'
     | '/_authenticated/assets/$assetId'
@@ -732,6 +744,7 @@ export interface RootRouteChildren {
   InviteIndexRoute: typeof InviteIndexRoute
   PlansIndexRoute: typeof PlansIndexRoute
   ServerUnavailableIndexRoute: typeof ServerUnavailableIndexRoute
+  SignupIndexRoute: typeof SignupIndexRoute
   WorkspacesIndexRoute: typeof WorkspacesIndexRoute
   AuthForgotIndexRoute: typeof AuthForgotIndexRoute
   AuthLoginIndexRoute: typeof AuthLoginIndexRoute
@@ -813,6 +826,13 @@ declare module '@tanstack/react-router' {
       path: '/server-unavailable'
       fullPath: '/server-unavailable/'
       preLoaderRoute: typeof ServerUnavailableIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/': {
+      id: '/signup/'
+      path: '/signup'
+      fullPath: '/signup/'
+      preLoaderRoute: typeof SignupIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workspaces/': {
@@ -1296,6 +1316,7 @@ const rootRouteChildren: RootRouteChildren = {
   InviteIndexRoute: InviteIndexRoute,
   PlansIndexRoute: PlansIndexRoute,
   ServerUnavailableIndexRoute: ServerUnavailableIndexRoute,
+  SignupIndexRoute: SignupIndexRoute,
   WorkspacesIndexRoute: WorkspacesIndexRoute,
   AuthForgotIndexRoute: AuthForgotIndexRoute,
   AuthLoginIndexRoute: AuthLoginIndexRoute,

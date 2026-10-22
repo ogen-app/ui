@@ -214,9 +214,16 @@ export type Entitlement =
   | { state: 'denied'; reason: 'tier' }
   | { state: 'denied'; reason: 'limit'; usage: Usage }
 
-/** A tier change the workspace has bought but is not on yet. */
+/**
+ * A tier change the workspace has bought but is not on yet — in practice a
+ * downgrade, which waits for the end of the paid period (CON-325).
+ */
 export type ScheduledTierChange = {
+  /** The target version's id (`scheduled_change.version_id`). Opaque. */
   id: string
+  /** The target tier (`scheduled_change.tier_id`), for comparing with a row. */
+  tierId: string
+  /** Derived from `tierId`, like every tier name — see `TierVersion.name`. */
   name: string
   /** The billing boundary it takes effect on. */
   effectiveFrom: string
@@ -233,6 +240,12 @@ export type ScheduledTierChange = {
 
 /** What a tier version costs, for display only. */
 export type TierVersionPrice = {
+  /**
+   * The price row's id, which is what `POST /api/workspace/plan` takes as
+   * `price_id` to say which interval is being bought. Opaque. `null` only for a
+   * row the server sent without one, which no current endpoint does.
+   */
+  id: string | null
   /** Minor units (`net_minor`), so nothing holds a decimal it might round. */
   amount: number
   /** ISO 4217. The formatter takes it; the client never maps it. */
@@ -240,6 +253,13 @@ export type TierVersionPrice = {
   interval: 'month' | 'year'
   /** ISO 3166, or `null` for the default price of this currency and interval. */
   countryCode: string | null
+  /**
+   * Whether this row can be bought right now — a Lemon Squeezy variant is
+   * mapped to it and billing is on (CON-325). Only the price list says; the
+   * plan read leaves it `true`, because a price somebody already holds is not
+   * on offer either way.
+   */
+  available: boolean
 }
 
 /**
@@ -316,55 +336,79 @@ export type TierVersion = {
  * The tier in force for this workspace: the version, plus everything true about
  * holding it.
  *
- * None of the four fields below comes off `GET /api/me/entitlements`, and that
- * is the point of keeping them on this type rather than on `TierVersion` —
- * they are facts about a *subscription*, which Ogen does not hold (CON-243 §5).
- * They are filled by the stub today and by the billing read when Lemon Squeezy
- * lands.
+ * The subscription half arrives on the same read since CON-325, which grew
+ * `GET /api/me/entitlements` additively with the workspace's billing facts.
+ * Every one of them is `null` for a workspace with no live subscription — the
+ * grandfathered ones, and every workspace while billing is off.
  */
 export type TierSnapshot = TierVersion & {
   /**
    * When this version came into force for this workspace. Display only.
    *
-   * `null` because the payload does not carry it. The binding that knows the
-   * date is `tenant_tier_assignments.valid`, which is server-side and not
-   * exposed on this read — so a screen that wants "on Pro since August" has
-   * nothing to print, and says nothing rather than inventing a day.
+   * Still `null`: the binding that knows the date is
+   * `tenant_tier_assignments.valid`, which no read exposes. A screen that wants
+   * "on Pro since August" says nothing rather than inventing a day.
    */
   effectiveFrom: string | null
   /**
-   * How often the workspace is charged for it — `null` for a tier nobody pays
-   * for, which is why it is not folded into the name.
+   * How often the workspace is charged for it (`billing_period`) — `null`
+   * without a live subscription, which is why it is not folded into the name.
    *
-   * Here rather than on the billing payload because it is half of what the plan
-   * is *called*: "Max, billed monthly" is the answer to "what am I on", and
-   * every member is entitled to it. The card's last four digits are not, and
-   * that is the line `/api/billing` sits on the other side of.
+   * Also the one signal that a subscription *exists*: the server fills it from
+   * the subscription's price, so checkout's return waits on it (see
+   * `subscribed` in `lib/billingGate.ts`) rather than on the redirect.
    */
   billingPeriod: 'month' | 'year' | null
   /**
-   * End of the current billing cycle — when it renews, if it renews.
-   *
-   * `null` for a free tier and for a subscription that has been cancelled: a
-   * cancelled one has an end date instead, and that lives on the billing
-   * payload where the difference can be stated properly. Display only, like
-   * every other date here.
+   * End of the current billing cycle — when it renews, if it renews
+   * (`renews_at`). `null` for a cancelled subscription, which has an end date
+   * on the billing read instead. Display only, like every other date here.
    */
   renewsAt: string | null
   /**
-   * Null when nothing is scheduled — which, from the real endpoint, is always.
-   *
-   * A workspace's version is changed by an operator through Harbor (CON-294),
-   * and the assignment lands in one transaction rather than being announced in
-   * advance, so there is no pending-change state on this read to report. What
-   * would put one here is self-serve plan selection, which has no endpoint.
+   * When the free month ends (`trial_ends_at`), while the subscription is
+   * `on_trial`; `null` otherwise. Display only — "free until 21 November" —
+   * and never compared with the clock to decide whether the trial is over.
    */
+  trialEndsAt: string | null
+  /** A change waiting for its date (`scheduled_change`), or `null`. */
   scheduled: ScheduledTierChange | null
+}
+
+/**
+ * Whether the workspace may be used at all before it buys a plan (CON-322
+ * §6.4), and whether its owner can still have the free month.
+ *
+ * On the plan read rather than anywhere else because it is read on every page
+ * load by the root guard, by every member, and is the same answer the server
+ * enforces with 402 `billing_required` — the gate as data, so the client
+ * redirects once instead of reacting to a burst of refusals.
+ */
+export type PlanBilling = {
+  /**
+   * The workspace has no live subscription and was created after billing
+   * began. Grandfathered workspaces, and every workspace while billing is off,
+   * read `false` and never see the gate.
+   */
+  required: boolean
+  /**
+   * The caller's account has not had its free month yet (in this billing
+   * mode). `null` when the server did not say, which happens only with
+   * billing off — and then no tier is marked `free_trial` anyway.
+   *
+   * The offer is read as "not `false`" (CON-328), and only on a tier the price
+   * list marks: the mark decides that there is a free month, this decides that
+   * the reader cannot have it. And it is never the last word — checkout answers
+   * whether the free month was *applied*, and the screen trusts that instead
+   * (`PlanCheckout.trial`).
+   */
+  trialEligible: boolean | null
 }
 
 /** Everything the client is told about what this workspace has bought. */
 export type WorkspacePlan = {
   tier: TierSnapshot
+  billing: PlanBilling
   /**
    * Keyed by the server's names, not narrowed to `EntitlementKey`: a tier list
    * that is edited by hand will grow keys before this build hears of them, and

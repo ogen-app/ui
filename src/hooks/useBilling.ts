@@ -1,6 +1,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { createBillingPortalLink, getBilling } from '@/services/api/billing'
+import { ApiError } from '@/services/api/errors'
+import { toast } from '@/stores/toastStore'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useWorkspace } from '@/hooks/useWorkspaces'
 import { canManageBilling } from '@/types/workspace'
@@ -29,6 +32,10 @@ export function useBilling() {
     queryKey: BILLING_KEY,
     queryFn: getBilling,
     enabled: gated && !!workspace && canManageBilling(workspace.role),
+    // 503 is billing switched off on this deployment (`BILLING_PROVIDER=none`)
+    // — a state, not a hiccup, and asking again will not change it.
+    retry: (count, error) =>
+      !(error instanceof ApiError && error.status === 503) && count < 3,
   })
 }
 
@@ -44,11 +51,43 @@ export function useBilling() {
  * a `window.open` that happens after an `await` has lost the user gesture and
  * is blocked by Safari and by strict pop-up settings. So the call site opens a
  * blank tab *synchronously* on the click and points it at the URL when it
- * arrives — see the billing page.
+ * arrives — `useOpenBillingPortal` below does exactly that.
  */
 export function useBillingPortal() {
   return useMutation({
     mutationFn: () => createBillingPortalLink(),
     gcTime: 0,
   })
+}
+
+/**
+ * Opens the provider's portal in a new tab from a click.
+ *
+ * The tab is opened *synchronously*, blank, and pointed at the link when it
+ * arrives — a `window.open` after the `await` has lost the gesture and is
+ * blocked. `opener` is cut so the portal cannot script this tab back. A blocked
+ * pop-up falls back to leaving the app for the portal in this tab.
+ *
+ * `open` returns a promise that never rejects, so a click handler can ignore it.
+ */
+export function useOpenBillingPortal() {
+  const { t } = useTranslation()
+  const portal = useBillingPortal()
+  const open = async () => {
+    const tab = window.open('', '_blank')
+    if (tab) tab.opener = null
+    // `mutateAsync`, not `mutate` with callbacks: TanStack drops per-call
+    // callbacks once the component unmounts, and somebody who clicks MANAGE
+    // and then leaves the page would be left with a blank tab. Awaiting the
+    // request ties the tab to it, mounted or not.
+    try {
+      const { url } = await portal.mutateAsync()
+      if (tab) tab.location.href = url
+      else window.location.assign(url)
+    } catch {
+      tab?.close()
+      toast.error(t('tiers.portalFailed'))
+    }
+  }
+  return { open, isPending: portal.isPending }
 }

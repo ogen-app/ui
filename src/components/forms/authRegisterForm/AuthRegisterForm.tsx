@@ -12,6 +12,7 @@ import { FormError } from '@/components/forms/shared/FormError'
 import { focusFirstInvalid } from '@/components/forms/shared/focusFirstInvalid'
 import { PasswordRules } from '@/components/forms/shared/PasswordRules'
 import { GoogleSignInOption } from '@/components/auth/GoogleSignIn'
+import { afterSignupPath } from '@/lib/planIntent'
 
 /**
  * Self-service signup: organization + first admin in one step (CON-97).
@@ -44,8 +45,10 @@ export function AuthRegisterForm() {
     }
 
     signup(data, {
+      // To `/plans` with the tier preselected when the visitor came from the
+      // pricing page (`/signup?plan=…`), the app otherwise (CON-328).
       onSuccess: () => {
-        navigate({ to: '/' })
+        navigate({ href: afterSignupPath() })
       },
     })
   }
@@ -74,7 +77,12 @@ export function AuthRegisterForm() {
       {/* The same button as login: the server decides whether this Google
           account signs in or signs up, so clicking it on the "wrong" screen
           still ends in the right place. */}
-      <GoogleSignInOption divider={t('auth.google.orSignUpWithEmail')} />
+      <GoogleSignInOption
+        divider={t('auth.google.orSignUpWithEmail')}
+        // Google's round trip leaves this tab, so the plan rides on the
+        // server's `return_to` as well as in session storage.
+        returnTo={afterSignupPath()}
+      />
       <div className="flex flex-col gap-2">
         <Label htmlFor="organizationName">
           {t('auth.register.organizationLabel')}

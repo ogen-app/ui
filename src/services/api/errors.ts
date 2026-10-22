@@ -177,7 +177,17 @@ const MAX_VALIDATION_DETAILS = 4
 const MACHINE_ONLY_CODES = new Set([
   'entitlement_exceeded',
   'feature_not_available',
+  'billing_required',
 ])
+
+/**
+ * The code a workspace with no plan is refused with (CON-322 §6.4).
+ *
+ * The root guard redirects a gated workspace to `/plans` before any of this is
+ * reached; a request that still gets it — a tab left open across the moment
+ * the gate closed — is sent there by `handleBillingRequired`, and never toasted.
+ */
+export const BILLING_REQUIRED = 'billing_required'
 
 const ACCOUNT_SELECTION_MESSAGES: Record<string, string> = {
   account_selection_required:
@@ -299,6 +309,9 @@ export async function apiErrorFrom(
   const message = messageFrom(body, fallback)
   const denial = entitlementDenial(res.status, body)
   if (denial) return new EntitlementError(res.status, message, denial)
+  if (res.status === 402 && body?.error === BILLING_REQUIRED) {
+    return new ApiError(res.status, message, BILLING_REQUIRED)
+  }
   const code =
     typeof body?.code === 'string' && body.code ? body.code : undefined
   return new ApiError(res.status, message, code)

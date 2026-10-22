@@ -1,10 +1,10 @@
 import { apiJson } from './http'
-import { withSeededUsage } from './entitlements.seed'
-import { STUBBED, stubWorkspacePlan } from './tiers.stub'
 import { usageReset } from '@/lib/entitlements'
 import type {
   CatalogEntry,
+  PlanBilling,
   RawEntitlement,
+  ScheduledTierChange,
   TierSnapshot,
   TierVersion,
   TierVersionPrice,
@@ -31,22 +31,29 @@ import type {
  * why a button is locked.
  *
  *     200 {
- *       "tier_id": "trial",
- *       "version_id": "ttv-trial-v1",
+ *       "tier_id": "pro",
+ *       "version_id": "ttv-pro-v1",
  *       "version": 1,
  *       "status": "active",
  *       "purchasable": true,
  *       "change_reason": "Initial published version.",
  *       "prices": [
- *         {"currency": "EUR", "billing_interval": "month", "net_minor": 0}
+ *         {"id": "ttvp-pro-v1-usd-m", "currency": "USD",
+ *          "billing_interval": "month", "net_minor": 4900}
  *       ],
  *       "entitlements": [
  *         {"key": "team_seats", "name": "Team seats & invitations",
  *          "category": "workspace_team", "linear_issue": "CON-26",
  *          "status": "live", "value_type": "numeric", "is_material": true,
  *          "reset": "standing", "description": "Owner / member roles, email invites.",
- *          "value": 1}
- *       ]
+ *          "value": 5, "current": 2}
+ *       ],
+ *       "billing_required": false,
+ *       "trial_eligible": false,
+ *       "billing_period": "month",
+ *       "renews_at": "2026-11-21T00:00:00Z",
+ *       "trial_ends_at": null,
+ *       "scheduled_change": null
  *     }
  *
  * ### What each part holds, and what it does not
@@ -73,20 +80,18 @@ import type {
  * posts), `per_post`. Narrowed by `usageReset`, because the catalog is edited
  * server-side and will grow a word before a deployed client hears of it.
  *
- * **There are no counters, and that is the gap that matters.** Nothing on the
- * API reports what a workspace has *used* — CON-243 has a usage read as
- * explicitly future — so a limit arrives with nothing to measure it against.
- * `entitlements.seed.ts` supplies held-still ones to the *stub* meanwhile —
- * never to this read, whose limits are real and must not be denied on an
- * invented tally; `Usage.used` is `number | null` so the day the usage read
- * lands, nothing changes but the parse.
+ * **`current` is the tally, and absent means uncounted.** Each numeric entry
+ * whose counter the server has registered carries how much is in use; the
+ * others omit it. Omitted is not zero — "0 of 5" is a claim nobody made — so it
+ * parses to `used: null` and an uncounted limit can never deny.
  *
- * **There is no name, no start date, and no scheduled change.** The payload
- * carries no display name for the tier (raised on CON-243; Serhii offered to
- * add one), no `effective_from` — the date lives in `tenant_tier_assignments`,
- * which this read does not expose — and no pending-change state, because a
- * version is assigned by an operator through Harbor rather than announced in
- * advance. `name` is derived from the slug below; the other two are `null`.
+ * **The billing half rides along since CON-325**, additively: the gate
+ * (`billing_required`), whether the caller's account can still have the free
+ * month (`trial_eligible`), and the live subscription's period, renewal, trial
+ * end and any scheduled change. All of it is `null` (or `false`) for a
+ * workspace with no live subscription, and with billing off. There is still no
+ * display name for the tier and no start date: `name` is derived from the slug
+ * below, and `effectiveFrom` stays `null`.
  *
  * ### The half that does not live here
  *
@@ -99,10 +104,13 @@ import type {
  */
 
 type PriceBody = {
+  id?: string | null
   currency: string
   billing_interval: 'month' | 'year'
   net_minor: number
   country_code?: string | null
+  /** Only on the price list (CON-325). */
+  available?: boolean | null
 }
 
 export type EntitlementBody = {
@@ -116,6 +124,8 @@ export type EntitlementBody = {
   reset?: string | null
   description?: string
   value?: number | boolean | null
+  /** The tally, on a numeric entry whose counter the server registered. */
+  current?: number | null
 }
 
 /**
@@ -138,6 +148,28 @@ export type TierVersionBody = {
   entitlements?: EntitlementBody[] | null
 }
 
+type ScheduledChangeBody = {
+  tier_id: string
+  version_id: string
+  effective_at: string
+  direction: string
+}
+
+/**
+ * The plan read: a version, plus the workspace's billing facts (CON-325).
+ * Every billing field is optional on the wire — a server without billing
+ * wired sends none of them, and that has to read as "no subscription, no
+ * gate", not as a parse failure.
+ */
+export type PlanBody = TierVersionBody & {
+  billing_required?: boolean | null
+  trial_eligible?: boolean | null
+  billing_period?: string | null
+  renews_at?: string | null
+  trial_ends_at?: string | null
+  scheduled_change?: ScheduledChangeBody | null
+}
+
 /**
  * A readable name for a tier the server did not name.
  *
@@ -157,10 +189,14 @@ function nameFromSlug(tierId: string): string {
 
 function priceFromWire(body: PriceBody): TierVersionPrice {
   return {
+    id: body.id ?? null,
     amount: body.net_minor,
     currency: body.currency,
     interval: body.billing_interval,
     countryCode: body.country_code ?? null,
+    // Only the price list states it. Anywhere else the row is a price somebody
+    // holds, and there is nothing to withhold.
+    available: body.available !== false,
   }
 }
 
@@ -183,16 +219,52 @@ export function versionFromWire(body: TierVersionBody): TierVersion {
   }
 }
 
-function snapshotFromWire(body: TierVersionBody): TierSnapshot {
+function periodFromWire(value: string | null | undefined) {
+  return value === 'month' || value === 'year' ? value : null
+}
+
+/**
+ * A pending change, or `null` for one this build cannot state.
+ *
+ * `direction` is the server's ranking, and it is the only one: a value it has
+ * not heard of drops the whole change rather than guessing which way it goes,
+ * because "you move to Starter" and "Pro starts" are opposite warnings.
+ */
+function scheduledFromWire(
+  body: ScheduledChangeBody | null | undefined,
+): ScheduledTierChange | null {
+  if (!body?.tier_id || !body.effective_at) return null
+  if (body.direction !== 'upgrade' && body.direction !== 'downgrade') {
+    return null
+  }
+  return {
+    id: body.version_id,
+    tierId: body.tier_id,
+    name: nameFromSlug(body.tier_id),
+    effectiveFrom: body.effective_at,
+    direction: body.direction,
+  }
+}
+
+function snapshotFromWire(body: PlanBody): TierSnapshot {
   return {
     ...versionFromWire(body),
-    // The four the payload does not carry. Null rather than a default: there is
-    // no neutral billing period, and a start date or a renewal invented here
-    // would be printed as though somebody had looked it up.
+    // Still not on any read: the start date lives on the assignment, which is
+    // server-side. Null rather than a default — a day invented here would be
+    // printed as though somebody had looked it up.
     effectiveFrom: null,
-    billingPeriod: null,
-    renewsAt: null,
-    scheduled: null,
+    billingPeriod: periodFromWire(body.billing_period),
+    renewsAt: body.renews_at ?? null,
+    trialEndsAt: body.trial_ends_at ?? null,
+    scheduled: scheduledFromWire(body.scheduled_change),
+  }
+}
+
+function billingFromWire(body: PlanBody): PlanBilling {
+  return {
+    required: body.billing_required === true,
+    trialEligible:
+      typeof body.trial_eligible === 'boolean' ? body.trial_eligible : null,
   }
 }
 
@@ -212,8 +284,9 @@ function catalogFromWire(body: EntitlementBody): CatalogEntry | undefined {
  * The three kinds of absence the seam rests on all survive this: a key missing
  * from the array never reaches here at all (ungated), a `boolean` entry states
  * `allowed` and no `limit` (unmetered), and `limit: null` is unlimited. `used`
- * is set to `null` rather than left off — the key *is* metered, it has simply
- * never been counted, and those are different facts.
+ * is the server's `current` when it sent one and `null` when it did not —
+ * never left off, because the key *is* metered, and never defaulted to zero,
+ * because an omitted tally is one nobody took.
  */
 export function entitlementFromWire(body: EntitlementBody): RawEntitlement {
   const entry: RawEntitlement = {}
@@ -232,7 +305,10 @@ export function entitlementFromWire(body: EntitlementBody): RawEntitlement {
   // which is ungated and says so by carrying neither field.
   if (typeof body.value === 'number' || body.value === null) {
     entry.limit = body.value
-    entry.used = null
+    entry.used =
+      typeof body.current === 'number' && Number.isFinite(body.current)
+        ? body.current
+        : null
     entry.reset = usageReset(body.reset)
     entry.resetsAt = null
   }
@@ -256,48 +332,18 @@ export function entitlementsFromWire(
   return entitlements
 }
 
-export function planFromWire(body: TierVersionBody): WorkspacePlan {
+export function planFromWire(body: PlanBody): WorkspacePlan {
   return {
     tier: snapshotFromWire(body),
+    billing: billingFromWire(body),
     entitlements: entitlementsFromWire(body),
   }
 }
 
-/**
- * The request itself, kept as its own function so the contract above stays
- * asserted while the stub is standing in for it (`entitlements.test.ts` drives
- * this one). Without the split, switching the app onto the stub would quietly
- * stop testing the shape the server actually sends — which is the one thing
- * this file exists to hold still.
- *
- * It returns the payload as it arrives, counters and all — which is to say
- * without any, and `getWorkspacePlan` passes it on that way: the seeded
- * counters are the stub's, so that neither a test of this function nor a real
- * workspace can be told something the endpoint never said.
- */
-export function fetchWorkspacePlan(): Promise<WorkspacePlan> {
-  return apiJson<TierVersionBody>(
+/** The plan the app reads — tier, allowances with their tallies, and billing. */
+export function getWorkspacePlan(): Promise<WorkspacePlan> {
+  return apiJson<PlanBody>(
     '/api/me/entitlements',
     'Unable to read your plan',
   ).then(planFromWire)
-}
-
-/**
- * The plan the app reads.
- *
- * `STUBBED` points the call at `tiers.stub.ts`, which answers a whole tier
- * matrix off a JSON seed so the plan screen can be driven before there is any
- * way to *change* tier — there is no plan-selection endpoint, only Harbor.
- *
- * **The seeded counters ride on the stub and never on the server's answer.**
- * `withSeededUsage` invents a tally so the meters and the denied-by-limit branch
- * can be looked at; put on a real plan, it would tell a real trial workspace
- * with a campaign cap of three that it is full, and sell it an upgrade with no
- * refusal behind it. The real read stays uncounted until the usage read lands,
- * and an uncounted limit cannot deny. See `entitlements.seed.ts`.
- */
-export function getWorkspacePlan(): Promise<WorkspacePlan> {
-  return STUBBED
-    ? stubWorkspacePlan().then(withSeededUsage)
-    : fetchWorkspacePlan()
 }

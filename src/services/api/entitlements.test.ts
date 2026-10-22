@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchWorkspacePlan } from './entitlements'
+import { getWorkspacePlan } from './entitlements'
 
 /**
  * The executable half of the contract written out in `entitlements.ts`.
@@ -17,10 +17,9 @@ import { fetchWorkspacePlan } from './entitlements'
  * a limit with no counter means uncounted. Flattening any two of those into one
  * breaks a rule the client cannot recover.
  *
- * Deliberately against `fetchWorkspacePlan` rather than `getWorkspacePlan`: the
- * latter is currently answered by a local stub and has seeded counters laid over
- * it, and a contract test that went dark the moment the app stopped making the
- * request would be no contract at all.
+ * Since CON-325 the read also carries the workspace's billing facts and each
+ * counted allowance's tally (`current`), additively — fixtures without them
+ * stand for a server with billing off, and have to keep parsing.
  */
 
 function stubFetch(res: Response) {
@@ -73,7 +72,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('fetchWorkspacePlan', () => {
+describe('getWorkspacePlan', () => {
   it('reads one flat, workspace-scoped route', async () => {
     // No workspace id in the path: like `/api/tenants/current` and `/api/users`
     // it answers for whichever workspace this tab's `X-Workspace-Id` names.
@@ -81,7 +80,7 @@ describe('fetchWorkspacePlan', () => {
       jsonResponse(200, { ...VERSION, entitlements: [] }),
     )
 
-    await fetchWorkspacePlan()
+    await getWorkspacePlan()
 
     expect(fetchMock.mock.calls[0][0]).toBe('/api/me/entitlements')
     expect(fetchMock.mock.calls[0][1].method).toBe('GET')
@@ -90,7 +89,7 @@ describe('fetchWorkspacePlan', () => {
   it('unwraps the version, keeping both ids opaque', async () => {
     stubFetch(jsonResponse(200, { ...VERSION, entitlements: [] }))
 
-    const { tier } = await fetchWorkspacePlan()
+    const { tier } = await getWorkspacePlan()
 
     expect(tier.id).toBe('ttv-trial-v1')
     expect(tier.tierId).toBe('trial')
@@ -103,10 +102,17 @@ describe('fetchWorkspacePlan', () => {
     // never a formatted string — so a zero price is a real price, not an absence.
     stubFetch(jsonResponse(200, { ...VERSION, entitlements: [] }))
 
-    const { tier } = await fetchWorkspacePlan()
+    const { tier } = await getWorkspacePlan()
 
     expect(tier.prices).toEqual([
-      { amount: 0, currency: 'EUR', interval: 'month', countryCode: null },
+      {
+        id: 'ttvp-trial-v1-eur-m',
+        amount: 0,
+        currency: 'EUR',
+        interval: 'month',
+        countryCode: null,
+        available: true,
+      },
     ])
   })
 
@@ -124,7 +130,7 @@ describe('fetchWorkspacePlan', () => {
       }),
     )
 
-    const { tier } = await fetchWorkspacePlan()
+    const { tier } = await getWorkspacePlan()
 
     expect(tier.prices).toEqual([])
     expect(tier.purchasable).toBe(false)
@@ -134,7 +140,7 @@ describe('fetchWorkspacePlan', () => {
     // Raised on CON-243 and offered; until it lands this is derived rather than
     // looked up, so it cannot disagree with the tier the server resolved.
     stubFetch(jsonResponse(200, { ...VERSION, entitlements: [] }))
-    await expect(fetchWorkspacePlan()).resolves.toMatchObject({
+    await expect(getWorkspacePlan()).resolves.toMatchObject({
       tier: { name: 'Trial' },
     })
 
@@ -145,39 +151,123 @@ describe('fetchWorkspacePlan', () => {
         entitlements: [],
       }),
     )
-    await expect(fetchWorkspacePlan()).resolves.toMatchObject({
+    await expect(getWorkspacePlan()).resolves.toMatchObject({
       tier: { name: 'Pro Annual' },
     })
   })
 
-  it('says nothing about a start date, a renewal or a pending change', async () => {
-    // None of the three is on this read. They are the subscription half of a
-    // plan and Ogen holds no subscription state (CON-243 §5) — inventing any of
-    // them here would put "auto-renews on the 1st" under a plan nobody bills.
+  it('reads no subscription and no gate from a server with billing off', async () => {
+    // None of the billing fields is sent, and that must read as "nothing is
+    // billed and nothing is gated" — never as an outage that locks the app.
     stubFetch(jsonResponse(200, { ...VERSION, entitlements: [] }))
 
-    const { tier } = await fetchWorkspacePlan()
+    const plan = await getWorkspacePlan()
 
-    expect(tier.effectiveFrom).toBeNull()
-    expect(tier.billingPeriod).toBeNull()
-    expect(tier.renewsAt).toBeNull()
+    expect(plan.tier.effectiveFrom).toBeNull()
+    expect(plan.tier.billingPeriod).toBeNull()
+    expect(plan.tier.renewsAt).toBeNull()
+    expect(plan.tier.trialEndsAt).toBeNull()
+    expect(plan.tier.scheduled).toBeNull()
+    expect(plan.billing).toEqual({ required: false, trialEligible: null })
+  })
+
+  it('reads the gate and the free-month eligibility (CON-324)', async () => {
+    stubFetch(
+      jsonResponse(200, {
+        ...VERSION,
+        billing_required: true,
+        trial_eligible: true,
+        billing_period: null,
+        renews_at: null,
+        trial_ends_at: null,
+        scheduled_change: null,
+      }),
+    )
+
+    const plan = await getWorkspacePlan()
+
+    expect(plan.billing).toEqual({ required: true, trialEligible: true })
+  })
+
+  it('reads a live subscription, its free month and its pending change (CON-325)', async () => {
+    stubFetch(
+      jsonResponse(200, {
+        ...VERSION,
+        billing_required: false,
+        trial_eligible: false,
+        billing_period: 'month',
+        renews_at: '2026-11-21T00:00:00Z',
+        trial_ends_at: '2026-11-21T00:00:00Z',
+        scheduled_change: {
+          tier_id: 'starter',
+          version_id: 'ttv-starter-v1',
+          effective_at: '2026-12-21T00:00:00Z',
+          direction: 'downgrade',
+        },
+      }),
+    )
+
+    const { tier } = await getWorkspacePlan()
+
+    expect(tier.billingPeriod).toBe('month')
+    expect(tier.renewsAt).toBe('2026-11-21T00:00:00Z')
+    expect(tier.trialEndsAt).toBe('2026-11-21T00:00:00Z')
+    expect(tier.scheduled).toEqual({
+      id: 'ttv-starter-v1',
+      tierId: 'starter',
+      name: 'Starter',
+      effectiveFrom: '2026-12-21T00:00:00Z',
+      direction: 'downgrade',
+    })
+  })
+
+  it('drops a pending change whose direction it cannot name', async () => {
+    // "You move to Starter" and "Starter starts" are opposite warnings; a word
+    // this build has not heard of must not be guessed into either.
+    stubFetch(
+      jsonResponse(200, {
+        ...VERSION,
+        scheduled_change: {
+          tier_id: 'starter',
+          version_id: 'ttv-starter-v1',
+          effective_at: '2026-12-21T00:00:00Z',
+          direction: 'sideways',
+        },
+      }),
+    )
+
+    const { tier } = await getWorkspacePlan()
+
     expect(tier.scheduled).toBeNull()
   })
 
   it('keys the array by the catalog key', async () => {
     stubFetch(jsonResponse(200, { ...VERSION, entitlements: [SEATS] }))
 
-    const plan = await fetchWorkspacePlan()
+    const plan = await getWorkspacePlan()
 
     expect(Object.keys(plan.entitlements)).toEqual(['team_seats'])
   })
 
+  it('carries the tally the server counted', async () => {
+    stubFetch(
+      jsonResponse(200, {
+        ...VERSION,
+        entitlements: [{ ...SEATS, current: 1 }],
+      }),
+    )
+
+    const plan = await getWorkspacePlan()
+
+    expect(plan.entitlements.team_seats).toMatchObject({ limit: 1, used: 1 })
+  })
+
   it('carries a numeric allowance with its reset word and no counter', async () => {
-    // `used: null` rather than absent or zero. The key *is* metered; it has
-    // simply never been counted, and nothing on the API can count it yet.
+    // `used: null` rather than absent or zero. The key *is* metered; the
+    // server registered no counter for it, and an omitted tally is not zero.
     stubFetch(jsonResponse(200, { ...VERSION, entitlements: [SEATS] }))
 
-    const plan = await fetchWorkspacePlan()
+    const plan = await getWorkspacePlan()
 
     expect(plan.entitlements.team_seats).toMatchObject({
       limit: 1,
@@ -190,7 +280,7 @@ describe('fetchWorkspacePlan', () => {
   it('keeps the catalog metadata the comparison table is drawn from', async () => {
     stubFetch(jsonResponse(200, { ...VERSION, entitlements: [SEATS] }))
 
-    const plan = await fetchWorkspacePlan()
+    const plan = await getWorkspacePlan()
 
     expect(plan.entitlements.team_seats.catalog).toEqual({
       name: 'Team seats & invitations',
@@ -217,7 +307,7 @@ describe('fetchWorkspacePlan', () => {
       }),
     )
 
-    const plan = await fetchWorkspacePlan()
+    const plan = await getWorkspacePlan()
 
     // Stated and unlimited — which is not the same as unsaid.
     expect(plan.entitlements.team_seats.limit).toBeNull()
@@ -242,7 +332,7 @@ describe('fetchWorkspacePlan', () => {
       }),
     )
 
-    const plan = await fetchWorkspacePlan()
+    const plan = await getWorkspacePlan()
 
     expect(plan.entitlements.semantic_grounding.allowed).toBe(true)
   })
@@ -255,7 +345,7 @@ describe('fetchWorkspacePlan', () => {
       }),
     )
 
-    const plan = await fetchWorkspacePlan()
+    const plan = await getWorkspacePlan()
 
     expect(plan.entitlements.team_seats).toMatchObject({
       limit: 1,
@@ -273,7 +363,7 @@ describe('fetchWorkspacePlan', () => {
       }),
     )
 
-    const plan = await fetchWorkspacePlan()
+    const plan = await getWorkspacePlan()
 
     expect(plan.entitlements.something_new).toEqual({})
   })
@@ -284,7 +374,7 @@ describe('fetchWorkspacePlan', () => {
     const { prices: _prices, ...bare } = VERSION
     stubFetch(jsonResponse(200, bare))
 
-    await expect(fetchWorkspacePlan()).resolves.toMatchObject({
+    await expect(getWorkspacePlan()).resolves.toMatchObject({
       entitlements: {},
     })
   })
@@ -292,7 +382,7 @@ describe('fetchWorkspacePlan', () => {
   it("surfaces the server's message rather than a generic failure", async () => {
     stubFetch(jsonResponse(403, { error: 'no workspace on this request' }))
 
-    await expect(fetchWorkspacePlan()).rejects.toThrow(
+    await expect(getWorkspacePlan()).rejects.toThrow(
       'no workspace on this request',
     )
   })

@@ -81,11 +81,16 @@ export type BillingAccount = {
   /**
    * Whether there is a hosted portal to send anyone to.
    *
-   * False before the provider is connected at all, which is where this app is
-   * today — and the reason the screen has to be able to render itself without
-   * one instead of showing a button that goes nowhere.
+   * False for a workspace with nothing at the provider — the reason the screen
+   * has to be able to render itself without one instead of showing a button
+   * that goes nowhere.
    */
   portal: boolean
+  /**
+   * Lemon Squeezy's sandbox is on: nothing here is really charged. Shown as a
+   * small badge beside the card, never hidden — see `services/api/billing.ts`.
+   */
+  testMode: boolean
 }
 
 /**

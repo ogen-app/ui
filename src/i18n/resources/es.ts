@@ -1246,6 +1246,8 @@ export const es: Translation = {
       postPublishFailed: 'No se pudo publicar una publicación de {{channel}}',
       postFirstCommentFailed:
         'No se pudo publicar el primer comentario de una publicación',
+      billingTrialEndedUnpaid:
+        'Tu mes gratis terminó sin un plan, así que tus cuentas sociales se desconectaron. Elige un plan para volver a conectarlas.',
       postManualPublishDue: 'Hay una publicación pendiente de publicar a mano',
       assetReady: 'Un documento terminó de procesarse',
       assetIngestFailed: 'No se pudo procesar un documento',
@@ -2716,6 +2718,88 @@ export const es: Translation = {
     },
   },
   tiers: {
+    ledger: {
+      title: 'Elige un plan',
+      gatedLead:
+        '{{workspace}} necesita uno antes de que nadie pueda seguir trabajando. No se toca nada de lo que has creado.',
+      waitingTitle: 'A la espera de la persona propietaria',
+      waitingBody:
+        'Solo una persona propietaria de {{workspace}} puede elegir un plan. Esta página abre el espacio de trabajo en cuanto lo haga.',
+      switchWorkspace: 'CAMBIAR DE ESPACIO',
+      signOut: 'CERRAR SESIÓN',
+      save: 'AHORRA UN {{percent}} %',
+      mostPopular: 'EL MÁS ELEGIDO',
+      chargedToday: 'SE COBRA HOY',
+      freeMonthThen: 'UN MES GRATIS, LUEGO',
+      currentLabel: 'TU PLAN',
+      perMonth: '/ mes',
+      billedMonthly: 'Facturado cada mes · IVA no incluido',
+      billedYearly: 'Facturado {{total}} al año · IVA no incluido',
+      allowances: 'INCLUYE',
+      chooseNamed: 'ELEGIR {{name}}',
+      startFreeMonth: 'EMPEZAR EL MES GRATIS',
+      currentPlan: 'PLAN ACTUAL',
+      scheduled: 'PROGRAMADO',
+      unavailable: 'AÚN NO DISPONIBLE',
+      noneOnSale: 'Ahora mismo no hay ningún plan a la venta.',
+      vatNote:
+        'Los precios no incluyen IVA. Lemon Squeezy vende Ogen como comerciante registrado y lo añade al pagar.',
+    },
+    checkout: {
+      confirmingTitle: 'Confirmando tu suscripción',
+      confirmingBody:
+        'Lemon Squeezy ya tiene tus datos. {{workspace}} se abre en cuanto lo confirmen; suele tardar unos segundos.',
+      stepCheckout: 'Pago completado',
+      stepConfirm: 'Esperando la confirmación de Lemon Squeezy',
+      stepOpen: 'Abriendo {{workspace}}',
+      openedTitle: 'Termina el pago en la pestaña nueva',
+      openedTrial: 'Tu primer mes es gratis: hoy no se cobra nada.',
+      openedCharged: 'Se te cobra al completar el pago.',
+      openedBody:
+        'Esta página continúa sola en cuanto Lemon Squeezy lo confirme y abre {{workspace}}.',
+      reopen: 'VOLVER A ABRIR EL PAGO',
+      back: 'ELEGIR OTRO PLAN',
+      slowTitle: 'Está tardando más de lo normal',
+      slowBody:
+        'Deja esta página abierta o vuelve más tarde: no se te cobrará dos veces. El recibo de Lemon Squeezy tiene la referencia del pedido.',
+      subscribed: 'Ya tienes {{name}}.',
+    },
+    changeDialog: {
+      title: '¿Pasar a {{name}}?',
+      body: 'Lemon Squeezy calcula la diferencia: subir de plan empieza hoy; bajar espera al final del periodo que ya has pagado.',
+      trialBody:
+        'Esto termina hoy el mes gratis de {{name}} y se cobra {{target}} ahora.',
+      cancel: 'CANCELAR',
+      confirm: 'PASAR A {{name}}',
+      blockedTitle: 'No durante el mes gratis',
+      blockedBody:
+        '{{name}} no se puede cambiar hasta que termine su mes gratis el {{when}}. Vuelve a elegir entonces, o termina el mes gratis en Lemon Squeezy y vuelve.',
+      blockedBodyBare:
+        '{{name}} no se puede cambiar hasta que termine su mes gratis. Termínalo en Lemon Squeezy o vuelve a elegir cuando acabe.',
+      nothingCharged: 'No se ha cobrado nada y sigues en {{name}}.',
+      ok: 'ACEPTAR',
+    },
+    planError: {
+      stale:
+        'Ese plan ya no se puede elegir. Recarga la página para ver lo que hay disponible.',
+      notAvailable: 'Ese plan no está a la venta ahora mismo.',
+      notChangeable:
+        'Esta suscripción no se puede cambiar desde aquí. Gestiónala en Lemon Squeezy.',
+      duringTrial: 'No puedes cambiar de plan durante el mes gratis.',
+      provider: 'Lemon Squeezy no respondió. Inténtalo de nuevo en un momento.',
+      unavailable: 'La facturación no está disponible ahora mismo.',
+    },
+    freeUntil: 'Gratis hasta el {{when}}; después, {{price}}.',
+    freeUntilBare: 'Gratis hasta el {{when}}.',
+    statusOnTrial: 'Mes gratis',
+    billingUnavailable:
+      'Los datos de facturación no están disponibles ahora mismo, así que no hay nada que gestionar desde aquí.',
+    sandbox: 'Pruebas',
+    noPortal: 'Todavía no hay nada que gestionar en Lemon Squeezy.',
+    priceExclVat: '{{price}}, IVA no incluido',
+    perMonth: '{{price}} / mes',
+    perYear: '{{price}} / año',
+    keepPlan: 'MANTENER {{name}}',
     notInPlan: 'No está en tu plan',
     notInPlanBody:
       'Esto no forma parte del plan de tu espacio de trabajo. Al mejorarlo, se activa para todo el equipo.',
@@ -2868,16 +2952,11 @@ export const es: Translation = {
       'Tu plan ha cambiado, así que esto es de solo lectura por ahora. No se ha eliminado nada: sigue todo aquí, y al mejorar el plan vuelve a ser editable.',
     suspendedSince: 'De solo lectura desde el {{when}}.',
 
-    plansTitle: 'Elige el plan que prefieras',
-    planMock:
-      'Los planes todavía no están conectados a la facturación. Elegir uno solo cambia lo que este espacio puede hacer.',
     planLoadFailed: 'No se han podido cargar los planes.',
     plansClose: 'Cerrar los planes',
     changePlan: 'CAMBIAR',
 
     billingTitle: 'Plan y facturación',
-    billingMock:
-      'La facturación todavía no está conectada. Aquí no se cobra nada y no se guarda ningún dato de pago.',
     paymentMethod: 'Método de pago y datos de facturación',
     cardEnding: 'terminada en {{last4}}',
     cardWithProvider: 'Tu método de pago lo guarda Lemon Squeezy.',
@@ -2905,8 +2984,6 @@ export const es: Translation = {
 
     currentPlan: 'Plan actual',
     currentBadge: 'Actual',
-    currentPlanButton: 'Plan actual',
-    scheduledBadge: 'Programado',
     retired: 'Ya no se ofrece',
     since: 'En este plan desde el {{when}}.',
 
@@ -2917,7 +2994,6 @@ export const es: Translation = {
     autoRenews: 'Se renueva automáticamente el {{when}}.',
     autoRenewsIn: 'Se renueva automáticamente {{relative}}, el {{when}}.',
 
-    choose: 'ELEGIR',
     chooseNamed: 'Elegir {{name}}',
     cancelChange: 'CANCELAR EL CAMBIO',
 
@@ -2941,10 +3017,6 @@ export const es: Translation = {
     price: '<price>{{price}}</price> / mes',
     priceYear: '<price>{{price}}</price> / año',
     priceFree: 'Gratis',
-    recommended: 'RECOMENDADO',
-    everythingIn: 'Todo lo de {{name}}, y además:',
-    compareTitle: 'Compara todas las funciones',
-    compareFeature: 'Función',
 
     features: {
       team_seats: 'Miembros del equipo',
@@ -2960,32 +3032,6 @@ export const es: Translation = {
       content_bank_assets: 'Documentos del banco de contenido',
       web_page_imports: 'Importaciones de páginas web',
       media_storage_bytes: 'Almacenamiento multimedia',
-    },
-    capabilities: {
-      voice:
-        'Crea una voz única que destaque entre el contenido genérico de la IA',
-      strategy: 'Genera tu estrategia de contenido sin esfuerzo',
-      store: 'Guarda archivos, notas de voz, ideas y tareas en un solo lugar',
-      publish: 'Crea, programa y publica automáticamente en tus redes sociales',
-      quality:
-        'Revisa la calidad de una publicación y cómo funcionará antes de publicarla',
-      analytics: 'Analíticas e información unificadas',
-    },
-    gain: {
-      workspaces: 'Espacios de trabajo separados para campañas aisladas',
-      connected_accounts: 'Añade más redes sociales',
-      active_campaigns: 'Lleva varias campañas dirigidas a la vez',
-      team_seats: 'Invita a tu equipo a un espacio de trabajo compartido',
-      team_seats_more: 'Invita a aún más personas a trabajar contigo',
-      quality_reviews_per_post: 'Más revisiones de calidad',
-      media_storage_bytes: 'Almacenamiento ampliado',
-      multiple_accounts_per_platform: 'Conecta varias cuentas en una misma red',
-      all_campaign_types: 'Usa todos los tipos de campaña',
-      custom_campaign_types: 'Crea tus propios tipos de campaña',
-      plan_runs_per_month: 'Genera más estrategias de contenido',
-      posts_total: 'Publica más',
-      content_bank_assets: 'Guarda más en tu banco de contenido',
-      web_page_imports: 'Importa más páginas web',
     },
   },
 

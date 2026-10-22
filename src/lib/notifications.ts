@@ -78,6 +78,10 @@ const COPY_KEY = {
   // Sent to the member who approved a Figma plugin pairing (CON-338), so an
   // approval they did not mean to give — a phished link — is visible.
   'integration.plugin_connected': 'activity.notification.pluginConnected',
+  // The free month ran out with no payment (CON-324), so the server tore the
+  // workspace's social connections down. Owners only; the row goes to
+  // `/plans`, where choosing a plan is what reconnects them.
+  'billing.trial_ended_unpaid': 'activity.notification.billingTrialEndedUnpaid',
 } as const satisfies Record<string, string>
 
 /**
@@ -327,6 +331,10 @@ export function notificationTarget(
       // Same page, the Integrations card — where the connection can be seen
       // and, if it was not wanted, disconnected.
       return { to: '/workspace-settings', hash: 'integrations' }
+    case 'billing':
+      // Every billing notice is answered on the plans screen (CON-324): a
+      // trial that ended, a payment that failed, a plan that changed.
+      return { to: '/plans' }
     default:
       return null
   }

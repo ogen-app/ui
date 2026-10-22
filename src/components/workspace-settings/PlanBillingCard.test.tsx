@@ -31,6 +31,7 @@ const MONTHLY: TierSnapshot = {
   effectiveFrom: '2026-08-01T00:00:00Z',
   billingPeriod: 'month',
   renewsAt: BOUNDARY,
+  trialEndsAt: null,
   scheduled: null,
 }
 
@@ -47,6 +48,7 @@ function billed(
       price: null,
     },
     portal: true,
+    testMode: false,
   }
 }
 
@@ -114,6 +116,7 @@ describe('PlanBillingCard', () => {
         ...MONTHLY,
         scheduled: {
           id: 'tier_trial_2026_08_01',
+          tierId: 'trial',
           name: 'Ogen Trial',
           effectiveFrom: BOUNDARY,
           direction: 'downgrade',
@@ -173,9 +176,26 @@ describe('PlanBillingCard', () => {
     // Absent until the endpoint lands would make its arrival read as a new
     // feature rather than a connection completing.
     at(NOW)
-    await render({ billing: { subscription: null, portal: false } })
+    await render({
+      billing: { subscription: null, portal: false, testMode: false },
+    })
 
     expect(screen.getByRole('button', { name: /MANAGE/ })).toBeDisabled()
+  })
+
+  it('says why MANAGE is dead when the billing read fails', async () => {
+    // A 503 is billing switched off on this deployment. The card must not read
+    // the missing subscription as "nothing is being charged" — nobody checked.
+    at(NOW)
+    await render({ billing: undefined, billingFailed: true })
+
+    expect(screen.getByRole('button', { name: /MANAGE/ })).toBeDisabled()
+    expect(
+      screen.getByText(/Billing details aren't available right now/),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText('Nothing is being charged for this workspace.'),
+    ).not.toBeInTheDocument()
   })
 
   it('explains itself to a member rather than failing at them', async () => {
