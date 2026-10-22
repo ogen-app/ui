@@ -1,0 +1,427 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="2740" viewBox="0 0 2400 2740"><defs><linearGradient id="sweep" gradientTransform="rotate(30)"><stop offset="0" stop-color="#3970C2"/><stop offset="1" stop-color="#1A9068"/></linearGradient><linearGradient id="sweepH"><stop offset="0" stop-color="#3970C2"/><stop offset="1" stop-color="#1A9068"/></linearGradient><linearGradient id="fadeW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="0.85" stop-color="#FFFFFF" stop-opacity="1"/></linearGradient><filter id="lg" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#142850" flood-opacity="0.12"/></filter></defs><rect width="2400" height="2740" fill="#D5DAE0"/>
+<text x="40" y="54" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="28" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.3">CON-328 · Plan &amp; billing on the real API</text>
+<text x="40" y="84" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">Drawn in the existing primitives — the segmented Tabs, NoticeShell, PlanBanner, SettingsCard, Modal; the owner gate is the Ledger layout. What is new on each screen is pinned; everything else is what ships today.</text>
+<text x="40" y="136" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="1">1  THE GATE, AS AN OWNER   /plans?plan=pro</text>
+<text x="40" y="158" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start"></text>
+<rect x="40" y="170" width="1480" height="1230" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<rect x="88" y="201" width="10" height="10" rx="2" fill="#00837F" stroke="none" stroke-width="1" />
+<text x="106" y="211" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="1.1">ACME STUDIO</text>
+<text x="1368" y="211" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="end" letter-spacing="0.2">SWITCH WORKSPACE</text>
+<text x="1472" y="211" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="end" letter-spacing="0.2">SIGN OUT</text>
+<circle cx="74" cy="206" r="10" fill="#12151B"/>
+<text x="74" y="210" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="780.0" y="318" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="48" font-weight="300" fill="#12151B" text-anchor="middle" letter-spacing="-1.4">Choose a plan</text>
+<text x="780.0" y="356" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="16" font-weight="400" fill="#656E7B" text-anchor="middle">Acme Studio needs one before anyone can keep working.</text>
+<text x="780.0" y="380" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="16" font-weight="400" fill="#656E7B" text-anchor="middle">Nothing you've made is touched.</text>
+<circle cx="560.0" cy="306" r="10" fill="#12151B"/>
+<text x="560.0" y="310" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">2</text>
+<rect x="660.0" y="414" width="172.20000000000002" height="40" rx="2" fill="#E6E8EC" stroke="none" stroke-width="1" />
+<text x="705.9" y="438.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="middle">Monthly</text>
+<rect x="751.8" y="418" width="76.4" height="32" rx="2" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<text x="790.0" y="438.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#12151B" text-anchor="middle">Yearly</text>
+<rect x="844.2" y="422" width="88" height="24" rx="2" fill="#DDF0EE" stroke="none" stroke-width="1" />
+<text x="888.2" y="438" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="500" fill="#006E6A" text-anchor="middle" letter-spacing="1.1">SAVE 17%</text>
+<circle cx="638.0" cy="434" r="10" fill="#12151B"/>
+<text x="638.0" y="438" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">3</text>
+<rect x="216.0" y="506" width="376" height="792" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<rect x="216.5" y="506.5" width="375" height="791" rx="0" fill="none" stroke="#DBDFE4" stroke-width="1" />
+<text x="244.0" y="554" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="24" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.3">Starter</text>
+<text x="244.0" y="584" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Find your voice and plan a</text>
+<text x="244.0" y="604" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">campaign end to end, alone.</text>
+<line x1="216.0" y1="642" x2="592.0" y2="642" stroke="#DBDFE4" stroke-width="1"/>
+<text x="244.0" y="678" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="500" fill="#656E7B" text-anchor="start" letter-spacing="1.1">CHARGED TODAY</text>
+<text x="242.0" y="736" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="48" font-weight="300" fill="#12151B" text-anchor="start" letter-spacing="-1.4">$16</text>
+<text x="331.0" y="736" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">/ month</text>
+<text x="244.0" y="762" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Billed $190 a year · excl. VAT</text>
+<rect x="244.0" y="794" width="320" height="44" rx="2" fill="#12151B" stroke="none" stroke-width="1" />
+<text x="404.0" y="820.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.2">CHOOSE STARTER</text>
+<line x1="216.0" y1="866" x2="592.0" y2="866" stroke="#DBDFE4" stroke-width="1"/>
+<text x="244.0" y="900" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="500" fill="#656E7B" text-anchor="start" letter-spacing="1.1">ALLOWANCES</text>
+<text x="244.0" y="944" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Team members</text>
+<text x="564.0" y="944" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#12151B" text-anchor="end">1</text>
+<line x1="244.0" y1="958" x2="564.0" y2="958" stroke="#EFF1F4" stroke-width="1"/>
+<text x="244.0" y="984" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Connected accounts</text>
+<text x="564.0" y="984" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#12151B" text-anchor="end">3</text>
+<line x1="244.0" y1="998" x2="564.0" y2="998" stroke="#EFF1F4" stroke-width="1"/>
+<text x="244.0" y="1024" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Active campaigns</text>
+<text x="564.0" y="1024" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#12151B" text-anchor="end">2</text>
+<line x1="244.0" y1="1038" x2="564.0" y2="1038" stroke="#EFF1F4" stroke-width="1"/>
+<text x="244.0" y="1064" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Plan runs a month</text>
+<text x="564.0" y="1064" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#12151B" text-anchor="end">5</text>
+<line x1="244.0" y1="1078" x2="564.0" y2="1078" stroke="#EFF1F4" stroke-width="1"/>
+<text x="244.0" y="1104" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Quality reviews a post</text>
+<text x="564.0" y="1104" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#12151B" text-anchor="end">1</text>
+<line x1="244.0" y1="1118" x2="564.0" y2="1118" stroke="#EFF1F4" stroke-width="1"/>
+<text x="244.0" y="1144" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Brand voices</text>
+<path d="M552.0 1137 l3.5 3.5 l7 -7.5" fill="none" stroke="#12151B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="244.0" y1="1158" x2="564.0" y2="1158" stroke="#EFF1F4" stroke-width="1"/>
+<text x="244.0" y="1184" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Auto-publish</text>
+<path d="M552.0 1177 l3.5 3.5 l7 -7.5" fill="none" stroke="#12151B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="244.0" y1="1198" x2="564.0" y2="1198" stroke="#EFF1F4" stroke-width="1"/>
+<text x="244.0" y="1224" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Analytics and insights</text>
+<text x="564.0" y="1224" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#CBD0D7" text-anchor="end">—</text>
+<line x1="244.0" y1="1238" x2="564.0" y2="1238" stroke="#EFF1F4" stroke-width="1"/>
+<text x="244.0" y="1264" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Learnings</text>
+<text x="564.0" y="1264" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#CBD0D7" text-anchor="end">—</text>
+<rect x="592.0" y="506" width="376" height="792" rx="0" fill="#12151B" stroke="none" stroke-width="1" />
+<text x="620.0" y="554" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="24" font-weight="500" fill="#FFFFFF" text-anchor="start" letter-spacing="-0.3">Pro</text>
+<text x="620.0" y="584" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Several campaigns at once,</text>
+<text x="620.0" y="604" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">with the numbers to steer them.</text>
+<rect x="822.0" y="536" width="118" height="24" rx="2" fill="none" stroke="#474F5C" stroke-width="1" />
+<text x="881.0" y="552" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="500" fill="#FFFFFF" text-anchor="middle" letter-spacing="1.1">MOST POPULAR</text>
+<line x1="592.0" y1="642" x2="968.0" y2="642" stroke="#474F5C" stroke-width="1"/>
+<text x="620.0" y="678" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="500" fill="#BFC5CD" text-anchor="start" letter-spacing="1.1">FREE FOR A MONTH, THEN</text>
+<text x="618.0" y="736" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="48" font-weight="300" fill="#FFFFFF" text-anchor="start" letter-spacing="-1.4">$41</text>
+<text x="707.0" y="736" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#BFC5CD" text-anchor="start">/ month</text>
+<text x="620.0" y="762" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Billed $490 a year from 22 Nov · excl. VAT</text>
+<rect x="620.0" y="794" width="320" height="44" rx="2" fill="#00837F" stroke="none" stroke-width="1" />
+<rect x="621.0" y="795" width="318" height="42" rx="2" fill="none" stroke="#CBD0D7" stroke-width="2" />
+<text x="780.0" y="820.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.2">START FREE MONTH</text>
+<line x1="592.0" y1="866" x2="968.0" y2="866" stroke="#474F5C" stroke-width="1"/>
+<text x="620.0" y="900" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="500" fill="#BFC5CD" text-anchor="start" letter-spacing="1.1">ALLOWANCES</text>
+<text x="620.0" y="944" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Team members</text>
+<text x="940.0" y="944" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#FFFFFF" text-anchor="end">5</text>
+<line x1="620.0" y1="958" x2="940.0" y2="958" stroke="#2A313E" stroke-width="1"/>
+<text x="620.0" y="984" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Connected accounts</text>
+<text x="940.0" y="984" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#FFFFFF" text-anchor="end">10</text>
+<line x1="620.0" y1="998" x2="940.0" y2="998" stroke="#2A313E" stroke-width="1"/>
+<text x="620.0" y="1024" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Active campaigns</text>
+<text x="940.0" y="1024" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#FFFFFF" text-anchor="end">10</text>
+<line x1="620.0" y1="1038" x2="940.0" y2="1038" stroke="#2A313E" stroke-width="1"/>
+<text x="620.0" y="1064" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Plan runs a month</text>
+<text x="940.0" y="1064" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#FFFFFF" text-anchor="end">20</text>
+<line x1="620.0" y1="1078" x2="940.0" y2="1078" stroke="#2A313E" stroke-width="1"/>
+<text x="620.0" y="1104" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Quality reviews a post</text>
+<text x="940.0" y="1104" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#FFFFFF" text-anchor="end">3</text>
+<line x1="620.0" y1="1118" x2="940.0" y2="1118" stroke="#2A313E" stroke-width="1"/>
+<text x="620.0" y="1144" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Brand voices</text>
+<path d="M928.0 1137 l3.5 3.5 l7 -7.5" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="620.0" y1="1158" x2="940.0" y2="1158" stroke="#2A313E" stroke-width="1"/>
+<text x="620.0" y="1184" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Auto-publish</text>
+<path d="M928.0 1177 l3.5 3.5 l7 -7.5" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="620.0" y1="1198" x2="940.0" y2="1198" stroke="#2A313E" stroke-width="1"/>
+<text x="620.0" y="1224" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Analytics and insights</text>
+<path d="M928.0 1217 l3.5 3.5 l7 -7.5" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="620.0" y1="1238" x2="940.0" y2="1238" stroke="#2A313E" stroke-width="1"/>
+<text x="620.0" y="1264" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#BFC5CD" text-anchor="start">Learnings</text>
+<text x="940.0" y="1264" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#474F5C" text-anchor="end">—</text>
+<rect x="968.0" y="506" width="376" height="792" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<rect x="968.5" y="506.5" width="375" height="791" rx="0" fill="none" stroke="#DBDFE4" stroke-width="1" />
+<text x="996.0" y="554" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="24" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.3">Max</text>
+<text x="996.0" y="584" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Every client, every network,</text>
+<text x="996.0" y="604" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">no ceilings to count.</text>
+<line x1="968.0" y1="642" x2="1344.0" y2="642" stroke="#DBDFE4" stroke-width="1"/>
+<text x="996.0" y="678" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="500" fill="#656E7B" text-anchor="start" letter-spacing="1.1">CHARGED TODAY</text>
+<text x="994.0" y="736" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="48" font-weight="300" fill="#12151B" text-anchor="start" letter-spacing="-1.4">$108</text>
+<text x="1110.0" y="736" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">/ month</text>
+<text x="996.0" y="762" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Billed $1,290 a year · excl. VAT</text>
+<rect x="996.0" y="794" width="320" height="44" rx="2" fill="#12151B" stroke="none" stroke-width="1" />
+<text x="1156.0" y="820.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.2">CHOOSE MAX</text>
+<line x1="968.0" y1="866" x2="1344.0" y2="866" stroke="#DBDFE4" stroke-width="1"/>
+<text x="996.0" y="900" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="500" fill="#656E7B" text-anchor="start" letter-spacing="1.1">ALLOWANCES</text>
+<text x="996.0" y="944" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Team members</text>
+<text x="1316.0" y="944" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#12151B" text-anchor="end">Unlimited</text>
+<line x1="996.0" y1="958" x2="1316.0" y2="958" stroke="#EFF1F4" stroke-width="1"/>
+<text x="996.0" y="984" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Connected accounts</text>
+<text x="1316.0" y="984" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="15" font-weight="500" fill="#12151B" text-anchor="end">25</text>
+<line x1="996.0" y1="998" x2="1316.0" y2="998" stroke="#EFF1F4" stroke-width="1"/>
+<text x="996.0" y="1024" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Active campaigns</text>
+<text x="1316.0" y="1024" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#12151B" text-anchor="end">Unlimited</text>
+<line x1="996.0" y1="1038" x2="1316.0" y2="1038" stroke="#EFF1F4" stroke-width="1"/>
+<text x="996.0" y="1064" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Plan runs a month</text>
+<text x="1316.0" y="1064" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#12151B" text-anchor="end">Unlimited</text>
+<line x1="996.0" y1="1078" x2="1316.0" y2="1078" stroke="#EFF1F4" stroke-width="1"/>
+<text x="996.0" y="1104" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Quality reviews a post</text>
+<text x="1316.0" y="1104" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#12151B" text-anchor="end">Unlimited</text>
+<line x1="996.0" y1="1118" x2="1316.0" y2="1118" stroke="#EFF1F4" stroke-width="1"/>
+<text x="996.0" y="1144" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Brand voices</text>
+<path d="M1304.0 1137 l3.5 3.5 l7 -7.5" fill="none" stroke="#12151B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="996.0" y1="1158" x2="1316.0" y2="1158" stroke="#EFF1F4" stroke-width="1"/>
+<text x="996.0" y="1184" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Auto-publish</text>
+<path d="M1304.0 1177 l3.5 3.5 l7 -7.5" fill="none" stroke="#12151B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="996.0" y1="1198" x2="1316.0" y2="1198" stroke="#EFF1F4" stroke-width="1"/>
+<text x="996.0" y="1224" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Analytics and insights</text>
+<path d="M1304.0 1217 l3.5 3.5 l7 -7.5" fill="none" stroke="#12151B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="996.0" y1="1238" x2="1316.0" y2="1238" stroke="#EFF1F4" stroke-width="1"/>
+<text x="996.0" y="1264" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Learnings</text>
+<path d="M1304.0 1257 l3.5 3.5 l7 -7.5" fill="none" stroke="#12151B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1362.0" cy="938" r="10" fill="#12151B"/>
+<text x="1362.0" y="942" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">6</text>
+<circle cx="970.0" cy="548" r="10" fill="#12151B"/>
+<text x="970.0" y="552" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">4</text>
+<circle cx="970.0" cy="816" r="10" fill="#12151B"/>
+<text x="970.0" y="820" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="780.0" y="1342" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="middle">Prices exclude VAT. Lemon Squeezy sells Ogen as merchant of record and adds it at checkout.</text>
+<text x="1560" y="136" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="1">2  THE GATE, AS A MEMBER</text>
+<text x="1560" y="158" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start"></text>
+<rect x="1560" y="170" width="800" height="560" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<line x1="1560" y1="234" x2="2360" y2="234" stroke="#DBDFE4" stroke-width="1"/>
+<text x="1600" y="209" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="20" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.2">Acme Studio needs a plan</text>
+<text x="2232.0" y="206.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="middle" letter-spacing="0.2">SWITCH WORKSPACE</text>
+<rect x="1600" y="274" width="720" height="118" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<path d="M1618 288 h12 M1618 304 h12 M1619 288 c0 6 10 5 10 8 c0 3 -10 2 -10 8 M1629 288 c0 6 -10 5 -10 8 c0 3 10 2 10 8" fill="none" stroke="#868D98" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1644" y="302" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="500" fill="#12151B" text-anchor="start">Waiting on the owner</text>
+<text x="1644" y="324.0" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">Only a workspace owner can choose a plan. Dana Kovács</text>
+<text x="1644" y="343.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">(dana@acme.studio) owns Acme Studio — this page opens</text>
+<text x="1644" y="363.0" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">the workspace as soon as they choose.</text>
+<rect x="2182.0" y="286" width="122.0" height="40" rx="2" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<text x="2243.0" y="310.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#12151B" text-anchor="middle" letter-spacing="0.2">COPY EMAIL</text>
+<circle cx="1586" cy="298" r="10" fill="#12151B"/>
+<text x="1586" y="302" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">7</text>
+<text x="1600" y="442" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">What each plan includes</text>
+<rect x="1600.0" y="460" width="240.0" height="222" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<rect x="1600.5" y="460.5" width="239.0" height="221" rx="0" fill="none" stroke="#DBDFE4" stroke-width="1" />
+<text x="1620.0" y="496" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="18" font-weight="500" fill="#12151B" text-anchor="start">Starter</text>
+<text x="1618.0" y="544" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="32" font-weight="300" fill="#12151B" text-anchor="start">$16</text>
+<text x="1676.0" y="544" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="400" fill="#656E7B" text-anchor="start">/ month</text>
+<line x1="1620.0" y1="568" x2="1820.0" y2="568" stroke="#EFF1F4" stroke-width="1"/>
+<rect x="1620.0" y="577" width="140.0" height="7" rx="1" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="1806.0" y="576" width="14" height="9" rx="1" fill="#E6E8EC" stroke="none" stroke-width="1" />
+<line x1="1620.0" y1="594" x2="1820.0" y2="594" stroke="#EFF1F4" stroke-width="1"/>
+<rect x="1620.0" y="603" width="132.0" height="7" rx="1" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="1806.0" y="602" width="14" height="9" rx="1" fill="#E6E8EC" stroke="none" stroke-width="1" />
+<line x1="1620.0" y1="620" x2="1820.0" y2="620" stroke="#EFF1F4" stroke-width="1"/>
+<rect x="1620.0" y="629" width="124.0" height="7" rx="1" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="1806.0" y="628" width="14" height="9" rx="1" fill="#E6E8EC" stroke="none" stroke-width="1" />
+<line x1="1620.0" y1="646" x2="1820.0" y2="646" stroke="#EFF1F4" stroke-width="1"/>
+<rect x="1620.0" y="655" width="116.0" height="7" rx="1" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="1806.0" y="654" width="14" height="9" rx="1" fill="#E6E8EC" stroke="none" stroke-width="1" />
+<rect x="1840.0" y="460" width="240.0" height="222" rx="0" fill="#12151B" stroke="none" stroke-width="1" />
+<text x="1860.0" y="496" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="18" font-weight="500" fill="#FFFFFF" text-anchor="start">Pro</text>
+<text x="1858.0" y="544" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="32" font-weight="300" fill="#FFFFFF" text-anchor="start">$41</text>
+<text x="1916.0" y="544" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="400" fill="#BFC5CD" text-anchor="start">/ month</text>
+<line x1="1860.0" y1="568" x2="2060.0" y2="568" stroke="#2A313E" stroke-width="1"/>
+<rect x="1860.0" y="577" width="140.0" height="7" rx="1" fill="#2A313E" stroke="none" stroke-width="1" />
+<rect x="2046.0" y="576" width="14" height="9" rx="1" fill="#474F5C" stroke="none" stroke-width="1" />
+<line x1="1860.0" y1="594" x2="2060.0" y2="594" stroke="#2A313E" stroke-width="1"/>
+<rect x="1860.0" y="603" width="132.0" height="7" rx="1" fill="#2A313E" stroke="none" stroke-width="1" />
+<rect x="2046.0" y="602" width="14" height="9" rx="1" fill="#474F5C" stroke="none" stroke-width="1" />
+<line x1="1860.0" y1="620" x2="2060.0" y2="620" stroke="#2A313E" stroke-width="1"/>
+<rect x="1860.0" y="629" width="124.0" height="7" rx="1" fill="#2A313E" stroke="none" stroke-width="1" />
+<rect x="2046.0" y="628" width="14" height="9" rx="1" fill="#474F5C" stroke="none" stroke-width="1" />
+<line x1="1860.0" y1="646" x2="2060.0" y2="646" stroke="#2A313E" stroke-width="1"/>
+<rect x="1860.0" y="655" width="116.0" height="7" rx="1" fill="#2A313E" stroke="none" stroke-width="1" />
+<rect x="2046.0" y="654" width="14" height="9" rx="1" fill="#474F5C" stroke="none" stroke-width="1" />
+<rect x="2080.0" y="460" width="240.0" height="222" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<rect x="2080.5" y="460.5" width="239.0" height="221" rx="0" fill="none" stroke="#DBDFE4" stroke-width="1" />
+<text x="2100.0" y="496" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="18" font-weight="500" fill="#12151B" text-anchor="start">Max</text>
+<text x="2098.0" y="544" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="32" font-weight="300" fill="#12151B" text-anchor="start">$108</text>
+<text x="2174.0" y="544" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="400" fill="#656E7B" text-anchor="start">/ month</text>
+<line x1="2100.0" y1="568" x2="2300.0" y2="568" stroke="#EFF1F4" stroke-width="1"/>
+<rect x="2100.0" y="577" width="140.0" height="7" rx="1" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="2286.0" y="576" width="14" height="9" rx="1" fill="#E6E8EC" stroke="none" stroke-width="1" />
+<line x1="2100.0" y1="594" x2="2300.0" y2="594" stroke="#EFF1F4" stroke-width="1"/>
+<rect x="2100.0" y="603" width="132.0" height="7" rx="1" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="2286.0" y="602" width="14" height="9" rx="1" fill="#E6E8EC" stroke="none" stroke-width="1" />
+<line x1="2100.0" y1="620" x2="2300.0" y2="620" stroke="#EFF1F4" stroke-width="1"/>
+<rect x="2100.0" y="629" width="124.0" height="7" rx="1" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="2286.0" y="628" width="14" height="9" rx="1" fill="#E6E8EC" stroke="none" stroke-width="1" />
+<line x1="2100.0" y1="646" x2="2300.0" y2="646" stroke="#EFF1F4" stroke-width="1"/>
+<rect x="2100.0" y="655" width="116.0" height="7" rx="1" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="2286.0" y="654" width="14" height="9" rx="1" fill="#E6E8EC" stroke="none" stroke-width="1" />
+<text x="1600" y="708" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="400" fill="#656E7B" text-anchor="start">No buttons — the member reads the same Ledger, under the notice.</text>
+<text x="1560" y="766" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="1">3  BACK FROM CHECKOUT   /plans?billing=return&amp;workspace=…</text>
+<text x="1560" y="788" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start"></text>
+<rect x="1560" y="800" width="800" height="540" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<line x1="1560" y1="864" x2="2360" y2="864" stroke="#DBDFE4" stroke-width="1"/>
+<text x="1600" y="839" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="20" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.2">Finishing up</text>
+<circle cx="1612" cy="928" r="9" fill="none" stroke="#12151B" stroke-opacity="0.15" stroke-width="2"/>
+<path d="M1612 919 A9 9 0 0 1 1621 928" fill="none" stroke="#12151B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1600" y="986" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="24" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.3">Confirming your subscription</text>
+<text x="1600" y="1016" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">Lemon Squeezy has your card. Acme Studio opens on Pro as soon as they</text>
+<text x="1600" y="1037" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">confirm — usually a few seconds.</text>
+<path d="M1602 1085.5 l3.6 3.6 l7.6 -8" fill="none" stroke="#1A9068" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1630" y="1090" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">Checkout completed</text>
+<circle cx="1608" cy="1121" r="6.5" fill="none" stroke="#12151B" stroke-opacity="0.15" stroke-width="2"/>
+<path d="M1608 1114.5 A6.5 6.5 0 0 1 1614.5 1121" fill="none" stroke="#12151B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1630" y="1126" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="500" fill="#12151B" text-anchor="start">Waiting for Lemon Squeezy to confirm</text>
+<circle cx="1608" cy="1157" r="6.5" fill="none" stroke="#DBDFE4" stroke-width="1.6"/>
+<text x="1630" y="1162" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#868D98" text-anchor="start">Opening Acme Studio</text>
+<circle cx="1586" cy="1124" r="10" fill="#12151B"/>
+<text x="1586" y="1128" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">8</text>
+<rect x="1600" y="1212" width="720" height="96" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<circle cx="1624" cy="1234" r="7.5" fill="none" stroke="#868D98" stroke-width="1.6"/>
+<path d="M1624 1233 v5 M1624 1230.5 v0.1" fill="none" stroke="#868D98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1644" y="1240" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="500" fill="#12151B" text-anchor="start">Taking longer than usual</text>
+<text x="1644" y="1262.0" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">Leave this open, or come back later — you won't be charged twice.</text>
+<text x="1644" y="1281.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">Your receipt from Lemon Squeezy has the order reference.</text>
+<text x="2320" y="1200" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="12" font-weight="400" fill="#868D98" text-anchor="end">after 30 s</text>
+<circle cx="50" cy="1446" r="10" fill="#12151B"/>
+<text x="50" y="1450" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="70" y="1450" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">The workspace is the section tag; SWITCH WORKSPACE and SIGN OUT sit opposite.</text>
+<text x="70" y="1469" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">A gated workspace has nothing to go back to, so there is no X.</text>
+<circle cx="50" cy="1498" r="10" fill="#12151B"/>
+<text x="50" y="1502" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="70" y="1502" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">“Choose a plan”, and the workspace named once, in the sentence under it.</text>
+<text x="70" y="1521" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Only when billing_required — /plans from Settings keeps today's quiet title.</text>
+<circle cx="50" cy="1550" r="10" fill="#12151B"/>
+<text x="50" y="1554" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="70" y="1554" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">Tabs variant="segmented" — the calendar's control. Yearly swaps every price in place.</text>
+<text x="70" y="1573" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">The saving chip is accent ink on its tint, 4.5:1.</text>
+<circle cx="810" cy="1446" r="10" fill="#12151B"/>
+<text x="810" y="1450" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="830" y="1450" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">The most popular plan is the inverted column; the tag is outlined.</text>
+<text x="830" y="1469" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">free_trial &amp;&amp; trial_eligible !== false relabels it FREE FOR A MONTH, THEN.</text>
+<circle cx="810" cy="1498" r="10" fill="#12151B"/>
+<text x="810" y="1502" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="830" y="1502" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">START FREE MONTH is the page's only teal fill. Focused from ?plan=pro;</text>
+<text x="830" y="1521" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">an unknown or unavailable tier preselects nothing.</text>
+<circle cx="810" cy="1550" r="10" fill="#12151B"/>
+<text x="810" y="1554" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">6</text>
+<text x="830" y="1554" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">The same allowances in the same rows: name left, figure right in Plex Mono, a dash</text>
+<text x="830" y="1573" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">for not included. Rows come from the catalogue — no per-tier copy, no compare link.</text>
+<circle cx="1570" cy="1386" r="10" fill="#12151B"/>
+<text x="1570" y="1390" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">7</text>
+<text x="1590" y="1390" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">The owner is named so the member can go and ask.</text>
+<text x="1590" y="1409" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">The page subscribes to entity:entitlements and opens itself.</text>
+<circle cx="1570" cy="1438" r="10" fill="#12151B"/>
+<text x="1570" y="1442" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">8</text>
+<text x="1590" y="1442" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">Only the /api/events entity event finishes this.</text>
+<text x="1590" y="1461" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">The redirect alone is never treated as payment.</text>
+<text x="40" y="1666" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="1">4  WORKSPACE SETTINGS  ·  PLAN &amp; BILLING</text>
+<text x="40" y="1688" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start"></text>
+<rect x="40" y="1700" width="900" height="820" rx="0" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="120" y="1740" width="740" height="312" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<text x="144" y="1786" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="20" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.2">Plan &amp; billing</text>
+<rect x="144.5" y="1810.5" width="691" height="73" rx="2" fill="none" stroke="#E6E8EC" stroke-width="1" />
+<rect x="160" y="1827" width="40" height="40" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<circle cx="180" cy="1847" r="9" fill="none" stroke="#12151B" stroke-width="1.6" stroke-dasharray="4.2 1.4"/>
+<path d="M176 1847 l3 3 l5 -6" fill="none" stroke="#12151B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="212" y="1842" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="16" font-weight="500" fill="#12151B" text-anchor="start">Pro</text>
+<rect x="212" y="1851" width="90.0" height="24" rx="2" fill="#F7F8FA" stroke="#EFF1F4" stroke-width="1" />
+<text x="219" y="1867" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">Free month</text>
+<text x="310.0" y="1867" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">Free until 21 November 2026, then $49 / month.</text>
+<text x="781.0" y="1851.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="middle" letter-spacing="0.2">CHANGE</text>
+<circle cx="262" cy="1892" r="10" fill="#12151B"/>
+<text x="262" y="1896" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">9</text>
+<line x1="144" y1="1908" x2="836" y2="1908" stroke="#DBDFE4" stroke-width="1"/>
+<text x="144" y="1950" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="16" font-weight="500" fill="#12151B" text-anchor="start">Payment Method &amp; Details</text>
+<rect x="354" y="1934" width="67.19999999999999" height="24" rx="2" fill="#F7F8FA" stroke="#EFF1F4" stroke-width="1" />
+<text x="361" y="1950" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">Sandbox</text>
+<circle cx="444" cy="1945" r="10" fill="#12151B"/>
+<text x="444" y="1949" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">10</text>
+<text x="775.0" y="1950.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="middle" letter-spacing="0.2">MANAGE</text>
+<path d="M816.0 1940.0 h6 v6 M822.0 1940.0 l-6 6 M819.0 1948.0 v4 h-9 v-9 h4" fill="none" stroke="#656E7B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="144" y="1990" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">Visa ending 4242</text>
+<text x="144" y="2012" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#868D98" text-anchor="start">Your payment method, billing address, tax ID, invoices and cancellation are handled</text>
+<text x="144" y="2032" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#868D98" text-anchor="start">by Lemon Squeezy, which sells Ogen as merchant of record. Prices exclude VAT.</text>
+<rect x="120" y="2076" width="740" height="236" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<text x="144" y="2122" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="20" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.2">Plan &amp; billing</text>
+<rect x="144.5" y="2146.5" width="691" height="73" rx="2" fill="none" stroke="#E6E8EC" stroke-width="1" />
+<rect x="160" y="2163" width="40" height="40" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<circle cx="180" cy="2183" r="9" fill="none" stroke="#12151B" stroke-width="1.6" stroke-dasharray="4.2 1.4"/>
+<path d="M176 2183 l3 3 l5 -6" fill="none" stroke="#12151B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="212" y="2178" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="16" font-weight="500" fill="#12151B" text-anchor="start">Pro</text>
+<text x="212" y="2203" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">It auto-renews on 21 November 2026.</text>
+<text x="781.0" y="2187.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="middle" letter-spacing="0.2">CHANGE</text>
+<rect x="144" y="2236" width="692" height="60" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<rect x="160" y="2252" width="16" height="14" rx="1.5" fill="none" stroke="#868D98" stroke-width="1.6" />
+<path d="M160 2256 h16 M164 2250 v3 M172 2250 v3" fill="none" stroke="#868D98" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="188" y="2264" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="500" fill="#12151B" text-anchor="start">You move to Starter on 21 December 2026.</text>
+<rect x="716.0" y="2248" width="104.0" height="40" rx="2" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<text x="768.0" y="2272.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#12151B" text-anchor="middle" letter-spacing="0.2">KEEP PRO</text>
+<circle cx="698" cy="2266" r="10" fill="#12151B"/>
+<text x="698" y="2270" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">11</text>
+<rect x="120" y="2336" width="740" height="186" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<text x="144" y="2382" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="20" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.2">Plan &amp; billing</text>
+<rect x="144.5" y="2406.5" width="691" height="91" rx="2" fill="none" stroke="#E6E8EC" stroke-width="1" />
+<rect x="160" y="2423" width="40" height="40" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<circle cx="180" cy="2443" r="9" fill="none" stroke="#12151B" stroke-width="1.6" stroke-dasharray="4.2 1.4"/>
+<path d="M176 2443 l3 3 l5 -6" fill="none" stroke="#12151B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="212" y="2438" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="16" font-weight="500" fill="#12151B" text-anchor="start">Pro</text>
+<rect x="212" y="2447" width="120.39999999999999" height="24" rx="2" fill="#F7F8FA" stroke="#EFF1F4" stroke-width="1" />
+<text x="219" y="2463" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">Payment failed</text>
+<text x="340.4" y="2463" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">It auto-renews on 21 November 2026.</text>
+<text x="212" y="2485" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="start">The last payment failed, and Lemon Squeezy will try it again.</text>
+<text x="781.0" y="2447.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="middle" letter-spacing="0.2">CHANGE</text>
+<text x="980" y="1666" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="1">5  CHANGING PLAN DURING THE FREE MONTH</text>
+<text x="980" y="1688" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start"></text>
+<rect x="980" y="1700" width="760" height="820" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<rect x="1020.5" y="1780.5" width="212" height="360" rx="3" fill="#FFFFFF" stroke="#DBDFE4" stroke-width="1" />
+<rect x="1252.5" y="1780.5" width="212" height="360" rx="3" fill="#FFFFFF" stroke="#DBDFE4" stroke-width="1" />
+<rect x="1484.5" y="1780.5" width="212" height="360" rx="3" fill="#FFFFFF" stroke="#DBDFE4" stroke-width="1" />
+<rect x="980" y="1700" width="760" height="820" rx="0" fill="#12151B" stroke="none" stroke-width="1" fill-opacity="0.4"/>
+<rect x="1104.0" y="1760" width="512" height="360" rx="3" fill="#FFFFFF" stroke="none" stroke-width="1" filter="url(#lg)"/>
+<line x1="1104.0" y1="1821" x2="1616.0" y2="1821" stroke="#DBDFE4" stroke-width="1"/>
+<text x="1128.0" y="1797" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="16" font-weight="600" fill="#12151B" text-anchor="start">Move to Max now?</text>
+<path d="M1578.0 1783 l14 14 M1592.0 1783 l-14 14" fill="none" stroke="#12151B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1128.0" y="1855" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">This ends Pro's free month today. Max is charged now,</text>
+<text x="1128.0" y="1876" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">and every month from today.</text>
+<rect x="1128.0" y="1895" width="464" height="84" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<text x="1144.0" y="1925" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">Due today</text>
+<text x="1576.0" y="1925" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="500" fill="#12151B" text-anchor="end">$129.00</text>
+<text x="1144.0" y="1957" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">Then every month</text>
+<text x="1576.0" y="1957" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#656E7B" text-anchor="end">$129.00</text>
+<text x="1128.0" y="2007" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">Prices exclude VAT, which Lemon Squeezy adds for your country.</text>
+<rect x="1461.0" y="2056" width="131.0" height="40" rx="2" fill="#12151B" stroke="none" stroke-width="1" />
+<text x="1526.5" y="2080.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.2">MOVE TO MAX</text>
+<text x="1400.0" y="2080.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="middle" letter-spacing="0.2">CANCEL</text>
+<circle cx="1088.0" cy="1851" r="10" fill="#12151B"/>
+<text x="1088.0" y="1855" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">12</text>
+<rect x="1104.0" y="2170" width="512" height="300" rx="3" fill="#FFFFFF" stroke="none" stroke-width="1" filter="url(#lg)"/>
+<line x1="1104.0" y1="2231" x2="1616.0" y2="2231" stroke="#DBDFE4" stroke-width="1"/>
+<text x="1128.0" y="2207" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="16" font-weight="600" fill="#12151B" text-anchor="start">Not during the free month</text>
+<path d="M1578.0 2193 l14 14 M1592.0 2193 l-14 14" fill="none" stroke="#12151B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1128.0" y="2259" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="11" font-weight="400" fill="#868D98" text-anchor="start">409 trial_upgrade_unavailable</text>
+<text x="1128.0" y="2289" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">Pro can't be changed until its free month ends on</text>
+<text x="1128.0" y="2310" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">21 November 2026. Choose Max then — or end the free</text>
+<text x="1128.0" y="2331" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">month in Lemon Squeezy and come back.</text>
+<text x="1128.0" y="2369" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">Nothing was charged, and you're still on Pro.</text>
+<rect x="1528.0" y="2406" width="64" height="40" rx="2" fill="#12151B" stroke="none" stroke-width="1" />
+<text x="1560.0" y="2430.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.2">OK</text>
+<text x="1451.0" y="2430.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="middle" letter-spacing="0.2">MANAGE</text>
+<path d="M1492.0 2420.0 h6 v6 M1498.0 2420.0 l-6 6 M1495.0 2428.0 v4 h-9 v-9 h4" fill="none" stroke="#656E7B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1780" y="1666" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="1">6  NOTIFICATION AND CONNECT LIMIT</text>
+<text x="1780" y="1688" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start"></text>
+<rect x="1780" y="1700" width="580" height="820" rx="0" fill="#EFF1F4" stroke="none" stroke-width="1" />
+<rect x="1804" y="1724" width="532" height="176" rx="2" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<text x="1824" y="1762" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="16" font-weight="500" fill="#12151B" text-anchor="start">Today</text>
+<path d="M1827 1805 l3-3 M1830 1802 l-2-2 l5-5 l4 4 l-5 5 z M1835 1797 l3-3 M1837 1799 l3-3 M1838 1790 l2 2" fill="none" stroke="#868D98" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1856" y="1802" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="400" fill="#12151B" text-anchor="start">Your free month ended without a plan</text>
+<text x="2316" y="1802" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="12" font-weight="400" fill="#868D98" text-anchor="end">09:12</text>
+<text x="1856" y="1826" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="400" fill="#868D98" text-anchor="start">Your social accounts were disconnected.</text>
+<text x="1856" y="1844" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="400" fill="#868D98" text-anchor="start">Choose a plan to reconnect them.</text>
+<text x="1896.5" y="1872.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#656E7B" text-anchor="middle" letter-spacing="0.2">SEE PLANS</text>
+<circle cx="2330" cy="1844" r="10" fill="#12151B"/>
+<text x="2330" y="1848" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">13</text>
+<rect x="1804" y="1930" width="532" height="330" rx="0" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<text x="1828" y="1976" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="20" font-weight="500" fill="#12151B" text-anchor="start" letter-spacing="-0.2">Connect an account</text>
+<rect x="1828.0" y="2006" width="156.0" height="64" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<text x="1906.0" y="2043" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#868D98" text-anchor="middle">Instagram</text>
+<rect x="1992.0" y="2006" width="156.0" height="64" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<text x="2070.0" y="2043" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#868D98" text-anchor="middle">LinkedIn</text>
+<rect x="2156.0" y="2006" width="156.0" height="64" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<text x="2234.0" y="2043" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#868D98" text-anchor="middle">Threads</text>
+<rect x="1828" y="2094" width="484" height="96" rx="2" fill="#F7F8FA" stroke="none" stroke-width="1" />
+<rect x="1845" y="2114" width="13" height="9" rx="1.5" fill="none" stroke="#868D98" stroke-width="1.6" />
+<path d="M1848 2114 v-2 a3.5 3.5 0 0 1 7 0 v2" fill="none" stroke="#868D98" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1872" y="2122" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="14" font-weight="500" fill="#12151B" text-anchor="start">You've reached your limit</text>
+<text x="1872" y="2144.0" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">3 of 3 connected accounts</text>
+<text x="1872" y="2163.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#868D98" text-anchor="start">You've connected every account Starter allows.</text>
+<rect x="2201.0" y="2106" width="95.0" height="40" rx="2" fill="#FFFFFF" stroke="none" stroke-width="1" />
+<text x="2248.5" y="2130.5" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="500" fill="#12151B" text-anchor="middle" letter-spacing="0.2">UPGRADE</text>
+<circle cx="1814" cy="2116" r="10" fill="#12151B"/>
+<text x="1814" y="2120" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">14</text>
+<text x="1828" y="2226" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="12" font-weight="400" fill="#868D98" text-anchor="start">Existing UpgradeCallout; the 402 is read the way every other one is.</text>
+<circle cx="50" cy="2566" r="10" fill="#12151B"/>
+<text x="50" y="2570" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">9</text>
+<text x="70" y="2570" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">A StatusTag for the trial, beside a sentence that dates it.</text>
+<text x="70" y="2589" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Lemon Squeezy's on_trial, worded. past_due and the rest keep today's tags.</text>
+<circle cx="50" cy="2618" r="10" fill="#12151B"/>
+<text x="50" y="2622" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">10</text>
+<text x="70" y="2622" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">Sandbox sits in the row's badges slot while test_mode is true.</text>
+<text x="70" y="2641" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">Never shown on live.</text>
+<circle cx="50" cy="2670" r="10" fill="#12151B"/>
+<text x="50" y="2674" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">11</text>
+<text x="70" y="2674" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">The PlanSummary notice, moved onto the card, with KEEP PRO.</text>
+<text x="70" y="2693" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">It chooses the current tier, which is what cancels the change.</text>
+<circle cx="990" cy="2566" r="10" fill="#12151B"/>
+<text x="990" y="2570" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">12</text>
+<text x="1010" y="2570" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">The money and the date before the click, not in a toast after it.</text>
+<text x="1010" y="2589" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#656E7B" text-anchor="start">The 409 reuses the Modal, re-worded, and says nothing moved.</text>
+<circle cx="1790" cy="2566" r="10" fill="#12151B"/>
+<text x="1790" y="2570" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">13</text>
+<text x="1810" y="2570" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">billing.trial_ended_unpaid, worded from the catalogue.</text>
+<circle cx="1790" cy="2599" r="10" fill="#12151B"/>
+<text x="1790" y="2603" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">14</text>
+<text x="1810" y="2603" font-family="IBM Plex Sans, -apple-system, Helvetica Neue, sans-serif" font-size="13" font-weight="400" fill="#12151B" text-anchor="start">402 entitlement_exceeded on connected_accounts.</text></svg>
