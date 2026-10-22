@@ -289,32 +289,44 @@ function DisclaimerChoice({
     ? formatDate(writtenAt, { day: 'numeric', month: 'short' }, i18n.language)
     : null
 
+  // The radio pattern: one stop in the Tab order — the chosen card — and the
+  // arrow keys move the choice, which with two options is always the other.
+  const other = () => pick(review.disclaimer === 'yours' ? 'site' : 'yours')
+
   return (
-    <div className="flex flex-col gap-3" role="radiogroup">
-      <ChoiceCard
-        selected={review.disclaimer === 'yours'}
-        onSelect={() => pick('yours')}
-        title={t('brand.distill.review.keepYours')}
-        meta={
-          written
-            ? t('brand.distill.review.writtenHereOn', { date: written })
-            : t('brand.shell.origin.blank')
-        }
-        text={current}
-      />
-      <ChoiceCard
-        selected={review.disclaimer === 'site'}
-        onSelect={() => pick('site')}
-        title={t('brand.distill.review.useTheirs')}
-        meta={
-          <SourceLabel
-            evidence={proposed.evidence.slice(0, 1)}
-            answers={answers}
-            bare
-          />
-        }
-        text={lineText(proposed, review)}
-      />
+    <div className="flex flex-col gap-3">
+      <div
+        role="radiogroup"
+        aria-label={t('brand.overview.guardrails.disclaimer')}
+        className="flex flex-col gap-3"
+      >
+        <ChoiceCard
+          selected={review.disclaimer === 'yours'}
+          onSelect={() => pick('yours')}
+          onArrow={other}
+          title={t('brand.distill.review.keepYours')}
+          meta={
+            written
+              ? t('brand.distill.review.writtenHereOn', { date: written })
+              : t('brand.shell.origin.blank')
+          }
+          text={current}
+        />
+        <ChoiceCard
+          selected={review.disclaimer === 'site'}
+          onSelect={() => pick('site')}
+          onArrow={other}
+          title={t('brand.distill.review.useTheirs')}
+          meta={
+            <SourceLabel
+              evidence={proposed.evidence.slice(0, 1)}
+              answers={answers}
+              bare
+            />
+          }
+          text={lineText(proposed, review)}
+        />
+      </div>
       <p className="text-xs text-tertiary-foreground">
         {t('brand.distill.review.disclaimerRule')}
       </p>
@@ -322,15 +334,20 @@ function DisclaimerChoice({
   )
 }
 
+const ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
+
 function ChoiceCard({
   selected,
   onSelect,
+  onArrow,
   title,
   meta,
   text,
 }: {
   selected: boolean
   onSelect: () => void
+  /** An arrow key: move the choice, and the focus with it. */
+  onArrow: () => void
   title: string
   meta: ReactNode
   text: string
@@ -340,7 +357,18 @@ function ChoiceCard({
       type="button"
       role="radio"
       aria-checked={selected}
+      tabIndex={selected ? 0 : -1}
       onClick={onSelect}
+      onKeyDown={(e) => {
+        if (!ARROWS.includes(e.key)) return
+        e.preventDefault()
+        onArrow()
+        const radios = e.currentTarget
+          .closest('[role=radiogroup]')
+          ?.querySelectorAll<HTMLElement>('[role=radio]')
+        const next = [...(radios ?? [])].find((r) => r !== e.currentTarget)
+        next?.focus()
+      }}
       className={cn(
         'flex cursor-pointer flex-col gap-2 rounded-md border px-4 py-3 text-left transition-colors',
         selected

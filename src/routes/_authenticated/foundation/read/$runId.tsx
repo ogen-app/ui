@@ -69,7 +69,9 @@ function ReadPage() {
     )
   }
 
-  if (run.isError || !run.data) {
+  // Missing data, not a failed read: a background poll that fails keeps the
+  // run it had, and a network blip is no reason to say the run is gone.
+  if (!run.data) {
     return (
       <DistillPage>
         <PageError
