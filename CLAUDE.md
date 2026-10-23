@@ -953,17 +953,19 @@ not why the flag is off — the flag is off because a calendar that opens slowly
 is worse than one that isn't offered, and nobody has tried it on a large
 workspace yet.
 
-**Brand from what you have is built and flagged off** (`brand-distill`,
-CON-400). The hub's offer reads a brand off the website, a document or seven
-questions (`/api/brand/distills`, CON-399 — in review, not merged), the run
+**Brand from what you have is live, unflagged** (CON-400; the
+`brand-distill` flag was deleted 2026-10-23). The hub's offer reads a brand off the website, a document or seven
+questions (`/api/brand/distills`, CON-399, merged in ogen#230), the run
 lives at `/foundation/read/:runId` for its whole life, and the review commits
 only what is kept. Two rules to keep: **the review is the client's until the
 commit** (`stores/brandDistillStore`, `sessionStorage`, keyed by `proposalId`
 so a gap-question round's child run inherits it), and **the disclaimer is the
 one thing a commit replaces**, so it is sent only on an explicit pick
 (`lib/brandDistill.buildCommit`). Uploads from the offer carry
-`purpose=brand_source`. The flag comes off after the live pass its doc comment
-lists.
+`purpose=brand_source`. Still owed: the live pass against the merged API — a
+website read end to end, a document read with an upload in flight, the
+questions route, a gap-question round carrying a drop to the child run, a
+commit with a skipped duplicate, and `no_usable_sources` on a JS-only site.
 
 **Calendar preferences are one set per user, shared by every calendar**
 (`calendar.<userId>`). They used to be per campaign as well; see

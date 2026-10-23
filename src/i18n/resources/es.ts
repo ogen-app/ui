@@ -3086,7 +3086,6 @@ export const es: Translation = {
     shell: {
       readByNothing:
         'Todavía nada lee esto: puedes rellenarlo, pero no cambiará lo que sale.',
-      comingSoon: 'PRÓXIMAMENTE',
       default: 'predeterminada',
       chipMore: '+{{count}} más',
       origin: {
