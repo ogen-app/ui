@@ -20,7 +20,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDate, formatList } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Fetched } from '@/lib/fetched'
-import { isFeatureEnabled, useFeatureFlag } from '@/config/featureFlags'
+import { isFeatureEnabled } from '@/config/featureFlags'
 import { seriesMetaLine } from '@/components/series/format'
 import type { ContentSeries } from '@/components/series/types'
 import {
@@ -99,8 +99,8 @@ import {
  * in, except that its cards can actually be opened. Two screens that differ
  * only in whether the content is reachable is one screen and a doorstep. So the
  * hub is what an empty workspace arrives at, its cards say what is missing the
- * way they always have, and the paths that are not built yet are named once, in
- * a band, by `WholeBrandOffer`.
+ * way they always have, and the three routes that read a brand off what the
+ * workspace already has are offered once, in a band, by `WholeBrandOffer`.
  */
 export function BrandOverview({
   brand,
@@ -143,7 +143,6 @@ export function BrandOverview({
   onOpen?: (id: BrandSectionId) => void
 }) {
   const { t } = useTranslation()
-  const distill = useFeatureFlag('brand-distill')
 
   // The brand query still holds the whole screen while it is in flight: its
   // five sections are one fetch, so there is no card here that could have
@@ -188,13 +187,13 @@ export function BrandOverview({
           already there — `fills` empty is how this card hides itself. */}
       {/* What the last brand read saved, once (CON-400). Above the offer,
           because it is the answer to it. */}
-      {distill && <SavedCard />}
+      <SavedCard />
       <WholeBrandOffer
         fills={
           brand.status === 'ready' ? missingSectionNames(t, brand.data) : []
         }
       >
-        {distill ? <OfferRoutes /> : undefined}
+        <OfferRoutes />
       </WholeBrandOffer>
       {SHOWN_BRAND_SECTIONS.map(card)}
     </Wrapper>

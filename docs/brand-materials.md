@@ -327,7 +327,8 @@ the Brand we read off your website", not a blank form.
 > 2026-09-19, because the screen it made way for is the same screen with the
 > same ways in and cards that can actually be opened. What survives of it is
 > `WholeBrandOffer`: one dismissible band at the top of the hub, naming the
-> three routes in a sentence over a stack of tiles clipped to a 40px sliver.
+> three routes in a sentence over a stack of tiles clipped to a 40px sliver —
+> drawn whole and live since CON-400 shipped unflagged (2026-10-23).
 > The open question below is therefore answered in the other direction — the
 > first-run screen did not earn its place; the nav entry is earned by the hub
 > being legible on day one.

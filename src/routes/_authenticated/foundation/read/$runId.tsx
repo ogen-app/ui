@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,6 @@ import {
   ReviewScreen,
 } from '@/components/brand/distill/ReviewScreen'
 import { ClosedRun, FailedRun } from '@/components/brand/distill/RunOutcome'
-import { isFeatureEnabled } from '@/config/featureFlags'
 import { useBrand } from '@/hooks/useBrand'
 import { useDistillRun } from '@/hooks/useBrandDistill'
 import { isRunOpen, runRoute } from '@/lib/brandDistill'
@@ -35,10 +34,6 @@ import type { DistillRun } from '@/types/brandDistill'
  * proposal id.
  */
 export const Route = createFileRoute('/_authenticated/foundation/read/$runId')({
-  beforeLoad: () => {
-    if (!isFeatureEnabled('brand-distill'))
-      throw redirect({ to: '/foundation' })
-  },
   component: ReadPage,
 })
 

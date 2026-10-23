@@ -4107,7 +4107,6 @@ export const en = {
     shell: {
       readByNothing:
         "Nothing reads this yet — you can fill it in, but it won't change what comes out.",
-      comingSoon: 'COMING SOON',
       /** The word beside the star. Lower case is deliberate — it sits in a row of facts. */
       default: 'default',
       chipMore: '+{{count}} more',
@@ -4126,12 +4125,7 @@ export const en = {
       offer: {
         dismiss: "Don't offer this again",
         title: 'Fill this in from what you already have',
-        /**
-         * Names the three routes, because the tiles under it no longer can —
-         * they are clipped to a sliver (`WholeBrandOffer`). A sentence that
-         * said only "one pass" over an unreadable stack would be a band
-         * announcing something it never gets around to saying.
-         */
+        /** Names the three routes, so the sentence stands without its tiles. */
         body: 'One pass fills {{fills}} — from your website, a document you already have, or a handful of questions. Your own words, not a template, and you see everything it proposes before any of it is saved.',
         website: {
           title: 'Read it off your website',

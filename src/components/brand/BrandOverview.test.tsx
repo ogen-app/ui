@@ -1,10 +1,11 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { i18next } from '@/i18n'
 import { brandSectionCopy, SHOWN_BRAND_SECTIONS } from '@/lib/brandSections'
 import { BrandOverview } from './BrandOverview'
 import type { BrandData, BrandVoice } from './types'
 import { NO_STANCE } from '@/hooks/useBrand'
+import { renderWithProviders } from '@/test/renderWithProviders'
 
 /**
  * The hub with its query missing, in the two ways it can be.
@@ -62,16 +63,18 @@ const skeletons = () =>
   document.querySelectorAll('[data-slot="skeleton"]').length
 
 describe('the Foundation hub', () => {
-  it('draws the sections it was given', () => {
-    render(<BrandOverview brand={{ status: 'ready', data: BRAND }} />)
+  it('draws the sections it was given', async () => {
+    await renderWithProviders(
+      <BrandOverview brand={{ status: 'ready', data: BRAND }} />,
+    )
 
     expect(screen.getByText(VOICE.name)).toBeInTheDocument()
     expect(screen.queryByText(unreadable())).not.toBeInTheDocument()
     expect(skeletons()).toBe(0)
   })
 
-  it('admits the failure card by card rather than as a page', () => {
-    render(<BrandOverview brand={{ status: 'error' }} />)
+  it('admits the failure card by card rather than as a page', async () => {
+    await renderWithProviders(<BrandOverview brand={{ status: 'error' }} />)
 
     // One line per card, and every card keeps its heading and its caret: the
     // screen behind the door fetches for itself and is the only place anything
@@ -82,8 +85,8 @@ describe('the Foundation hub', () => {
     expect(skeletons()).toBe(0)
   })
 
-  it('is the same screen for a workspace with nothing in it', () => {
-    render(
+  it('is the same screen for a workspace with nothing in it', async () => {
+    await renderWithProviders(
       <BrandOverview
         brand={{
           status: 'ready',
@@ -101,8 +104,8 @@ describe('the Foundation hub', () => {
     ).toBeInTheDocument()
   })
 
-  it('waits as a whole page while the brand itself is in flight', () => {
-    render(<BrandOverview brand={{ status: 'pending' }} />)
+  it('waits as a whole page while the brand itself is in flight', async () => {
+    await renderWithProviders(<BrandOverview brand={{ status: 'pending' }} />)
 
     // Its five sections are one fetch, so no card here could have drawn
     // sooner, and six cards of skeleton rows is a busier way of saying the

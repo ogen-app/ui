@@ -2,18 +2,14 @@ import type { ReactNode } from 'react'
 import {
   CaretDownIcon,
   CaretRightIcon,
-  ChatCircleTextIcon,
-  GlobeIcon,
   PencilSimpleIcon,
   PlusIcon,
-  StackIcon,
   StarIcon,
   XIcon,
   type Icon,
 } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { StatusBadge } from '@/components/ui/status-badge'
 import { cn } from '@/lib'
 import { formatList } from '@/lib/intl'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -247,23 +243,6 @@ const OFFER_NOTE_ID = 'brand-read-from-website'
  * furniture: the eye reads it as an offer rather than as an announcement, and
  * the screen has one fewer card shape in it.
  *
- * The tiles are **descriptions, not disabled buttons** (see `StarterCard`), and
- * the group says COMING SOON once rather than three times. Naming all three
- * routes is worth a card even while none of them is built: the reason people
- * abandon this screen is the belief that they have to write it all themselves.
- *
- * **And the three tiles are trimmed to a sliver.** They were 216px of card
- * naming things that cannot be clicked, at the top of the one screen where the
- * work is underneath — and this band now carries the whole "some of this is
- * coming" job, since the first-run takeover that used to carry it is gone
- * (`BrandOverview`). So the stack is clipped mid-way through the first tile and
- * faded out into the card: the shape of a list continuing past the cut is what
- * says *there is more of this coming* in 40px, and the three routes are named
- * in the sentence above it rather than left to be read off a tile nobody can
- * finish reading. The cut half is `aria-hidden` for the same reason it is
- * clipped — a screen reader getting three headings and three sentences would be
- * hearing the card this one stopped being.
- *
  * **And it can be closed for good.** Not the `Explainer` contract — that one
  * bans anything the user needs while working. It is safe to lose because it is
  * a shortcut and never the only way in: every section still offers its own
@@ -275,13 +254,12 @@ const OFFER_NOTE_ID = 'brand-read-from-website'
  * The dismissal is one-way and there is no control that undoes it — the only
  * route back is `resetAllSettings`, which resets everything else too. That is
  * acceptable for a card offering a shortcut and would not be for one carrying a
- * feature, so it is worth revisiting when these paths actually work.
+ * feature.
  *
- * **Live, it is the same card with the tiles drawn whole** (CON-400, behind
- * `brand-distill`). The sliver and the badge go, the tiles become
- * `StarterCard`s with a caret, and choosing one opens it *inside this card*
- * rather than in a modal — `distill/OfferRoutes` owns that. The dismissal stays
- * exactly where it is, for the reason above: it is still a shortcut.
+ * **The routes are the caller's** (CON-400): the tiles are `StarterCard`s with
+ * a caret, and choosing one opens it *inside this card* rather than in a modal
+ * — `distill/OfferRoutes` owns that. The dismissal stays exactly where it is,
+ * for the reason above: it is still a shortcut.
  */
 export function WholeBrandOffer({
   fills,
@@ -289,12 +267,8 @@ export function WholeBrandOffer({
 }: {
   /** The sections it would populate, named. */
   fills: string[]
-  /**
-   * The three routes, live (CON-400) — given only while `brand-distill` is on.
-   * With them the band is an offer that can be taken: no COMING SOON, and the
-   * tiles drawn whole in place of the sliver.
-   */
-  children?: ReactNode
+  /** The three routes (CON-400) — `distill/OfferRoutes`. */
+  children: ReactNode
 }) {
   const { t, i18n } = useTranslation()
   const dismissed = useSettingsStore((s) =>
@@ -324,17 +298,9 @@ export function WholeBrandOffer({
       </Button>
 
       <header className="flex max-w-2xl flex-col gap-1 pr-10">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h3 className="font-display text-lg font-medium leading-6 tracking-tight">
-            {t('brand.shell.offer.title')}
-          </h3>
-          {/* Beside the heading, because with the buttons gone the tag is
-              the card's whole state — the difference between an offer and a
-              notice is that one of them can be taken. */}
-          {!children && (
-            <StatusBadge tone="neutral" label={t('brand.shell.comingSoon')} />
-          )}
-        </div>
+        <h3 className="font-display text-lg font-medium leading-6 tracking-tight">
+          {t('brand.shell.offer.title')}
+        </h3>
         {/* The list is joined by `Intl`, not by this file: the conjunction and
             the serial comma are the language's, and `a, b and c` is an English
             rule that Spanish does not follow. `i18n.language` is passed rather
@@ -347,44 +313,8 @@ export function WholeBrandOffer({
         </p>
       </header>
 
-      {children ?? <ComingSoonSliver />}
+      {children}
     </section>
-  )
-}
-
-/**
- * The tiles as they were before CON-400 could take them: 40px of the stack,
- * clipped and faded, while the routes are named in the sentence above — see
- * `WholeBrandOffer`. What the band shows while `brand-distill` is off.
- */
-function ComingSoonSliver() {
-  const { t } = useTranslation()
-  // 40px of a 216px stack. `h-10` lands inside the first tile rather than
-  // between two of them, which is the whole trick: a clean edge reads as a
-  // card that ends, and a tile cut through the middle reads as a list that
-  // carries on. The fade is `to-primary` because that is the card's own
-  // background — it dissolves into this card, not into the page.
-  return (
-    <div aria-hidden className="relative h-10 overflow-hidden">
-      <div className="grid gap-3">
-        <StarterCard
-          icon={GlobeIcon}
-          title={t('brand.shell.offer.website.title')}
-          body={t('brand.shell.offer.website.body')}
-        />
-        <StarterCard
-          icon={StackIcon}
-          title={t('brand.shell.offer.document.title')}
-          body={t('brand.shell.offer.document.body')}
-        />
-        <StarterCard
-          icon={ChatCircleTextIcon}
-          title={t('brand.shell.offer.questions.title')}
-          body={t('brand.shell.offer.questions.body')}
-        />
-      </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-7 bg-gradient-to-b from-transparent to-primary" />
-    </div>
   )
 }
 
