@@ -54,7 +54,9 @@ ENV SENTRY_ORG=${SENTRY_ORG}
 ARG SENTRY_PROJECT=""
 ENV SENTRY_PROJECT=${SENTRY_PROJECT}
 
-RUN pnpm build
+# Vite only: `pnpm build` would also run `tsc`, which repeats CI's typecheck
+# and adds ~35 s to every deploy.
+RUN pnpm exec vite build
 
 # ─── Stage 2: serve with Caddy ───────────────────────────────────────────────
 FROM caddy:2-alpine
