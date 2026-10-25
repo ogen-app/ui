@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Link,
   useCanGoBack,
@@ -27,7 +28,7 @@ import { PlanLedger, type LedgerColumn } from '@/components/tiers/PlanLedger'
 import { PlanSummary } from '@/components/tiers/PlanSummary'
 import { ZIndex } from '@/config/zIndex'
 import { useOpenBillingPortal } from '@/hooks/useBilling'
-import { useWorkspacePlan } from '@/hooks/useEntitlements'
+import { ENTITLEMENTS_KEY, useWorkspacePlan } from '@/hooks/useEntitlements'
 import { useEventStream } from '@/hooks/useEventStream'
 import { useChangePlan, useTiers } from '@/hooks/useTiers'
 import { useCanChangePlan, useWorkspace } from '@/hooks/useWorkspaces'
@@ -123,6 +124,7 @@ export function PlansPage() {
   // `/plans` sits outside `_authenticated`, so it remembers a comped
   // workspace itself as well (`lib/complimentaryMemory`).
   const workspaceId = workspace?.id
+  const queryClient = useQueryClient()
   useEffect(() => {
     noteComplimentary(workspaceId, plan.data)
   }, [workspaceId, plan.data])
@@ -130,8 +132,10 @@ export function PlansPage() {
   /**
    * The gate appeared because an operator ended this workspace's beta access
    * (CON-402) — said once, above the plans, so the owner is not left to guess
-   * why a workspace that never asked for money suddenly does. Latched, then
-   * forgotten, so a later visit to the gate does not say it again.
+   * why a workspace that never asked for money suddenly does. Latched here,
+   * and forgotten by the notice itself once it is on screen — not before, or
+   * a failed price list would swallow it — so a later visit does not say it
+   * again.
    */
   const [compEnded, setCompEnded] = useState(false)
   if (
@@ -142,10 +146,6 @@ export function PlansPage() {
   ) {
     setCompEnded(true)
   }
-  useEffect(() => {
-    if (compEnded && workspaceId) forgetComplimentary(workspaceId)
-  }, [compEnded, workspaceId])
-
   /** A comp switch away from a tier nobody can choose — asked first. */
   const [leaving, setLeaving] = useState<Tier | null>(null)
 
@@ -223,8 +223,9 @@ export function PlansPage() {
     /**
      * Free and at once: the server's comp branch answers 200 with the plan,
      * which `useChangePlan` puts in the cache, so the columns move as the
-     * toast lands. Never a checkout — if one ever came back, it is followed
-     * rather than swallowed.
+     * toast lands. A checkout means the access ended between the read and the
+     * click; a button that promised a free switch must not open a payment, so
+     * the plan is read again and the page becomes the gate, which says why.
      */
     const switchTo = (tier: Tier) => {
       change.mutate(
@@ -233,7 +234,9 @@ export function PlansPage() {
           onSuccess: (result) => {
             setLeaving(null)
             if (result.kind === 'checkout') {
-              window.location.assign(result.checkout.url)
+              void queryClient.invalidateQueries({
+                queryKey: ENTITLEMENTS_KEY,
+              })
               return
             }
             toast.success(
@@ -328,8 +331,12 @@ export function PlansPage() {
    */
   const freeMonth = (tier: Tier) =>
     !live && tier.freeTrial && current.billing.trialEligible !== false
-  /** Named in the comp-ended notice, when there is one to offer. */
-  const freeMonthTier = offered.find(freeMonth) ?? null
+  /**
+   * Named in the comp-ended notice, when there is one to offer — and only one
+   * the ledger lets the owner take, never a column whose button is dead.
+   */
+  const freeMonthTier =
+    offered.find((tier) => tier.available && freeMonth(tier)) ?? null
 
   const columns: LedgerColumn[] = offered.map((tier) => ({
     tier,
@@ -467,16 +474,10 @@ export function PlansPage() {
       )}
 
       {compEnded && (
-        <NoticeShell
-          icon={<InfoIcon size={16} />}
-          title={t('tiers.ledger.compEndedTitle')}
-        >
-          {freeMonthTier
-            ? t('tiers.ledger.compEndedBodyFreeMonth', {
-                name: freeMonthTier.name,
-              })
-            : t('tiers.ledger.compEndedBody')}
-        </NoticeShell>
+        <CompEndedNotice
+          workspaceId={workspaceId}
+          freeMonthName={freeMonthTier?.name ?? null}
+        />
       )}
 
       {memberWaiting && (
@@ -559,6 +560,35 @@ export function PlansPage() {
         />
       )}
     </PlansFrame>
+  )
+}
+
+/**
+ * "Your complimentary beta access has ended", above the owner gate (CON-402).
+ *
+ * Forgets the workspace on mount, so the notice is said once — and only once
+ * it has actually been rendered.
+ */
+function CompEndedNotice({
+  workspaceId,
+  freeMonthName,
+}: {
+  workspaceId: string | undefined
+  freeMonthName: string | null
+}) {
+  const { t } = useTranslation()
+  useEffect(() => {
+    if (workspaceId) forgetComplimentary(workspaceId)
+  }, [workspaceId])
+  return (
+    <NoticeShell
+      icon={<InfoIcon size={16} />}
+      title={t('tiers.ledger.compEndedTitle')}
+    >
+      {freeMonthName
+        ? t('tiers.ledger.compEndedBodyFreeMonth', { name: freeMonthName })
+        : t('tiers.ledger.compEndedBody')}
+    </NoticeShell>
   )
 }
 
