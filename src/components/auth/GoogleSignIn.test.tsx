@@ -206,6 +206,9 @@ describe('AuthGoogleSignupForm', () => {
         invite: INVITE,
         error: 'invite_email_mismatch',
       })
+      // The URL carries it; a stored copy would ride along on a later,
+      // unrelated Google sign-up in this tab.
+      expect(sessionStorage.getItem('ogen.testerInvite')).toBeNull()
     })
 
     it('takes a spent invite back to its screen, which says so', async () => {

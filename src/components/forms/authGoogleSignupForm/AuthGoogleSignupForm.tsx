@@ -87,8 +87,12 @@ export function AuthGoogleSignupForm({ token, pending }: Props) {
       onError: (err) => {
         // Each of these has a screen of its own on `/signup`. A mismatch has
         // spent this pending sign-up but not the invite, so the invite screen
-        // takes over with the reason and both ways in still open.
+        // takes over with the reason and both ways in still open. The stored
+        // copy goes either way: the URL carries the token, the invite screen's
+        // Google button stores it again, and a stale one would ride along on
+        // an unrelated Google sign-up later in this tab.
         if (inviteToken && isInviteEmailMismatch(err)) {
+          clearTesterInvite()
           void router.navigate({
             href: testerInvitePath(inviteToken, INVITE_EMAIL_MISMATCH),
           })

@@ -30,7 +30,11 @@ export function LeaveHiddenTierDialog({
   return (
     <ModalContainer
       isOpen
-      onClose={onClose}
+      // Not dismissable while the switch is in flight: the request carries on
+      // regardless, and the dialog is what says it is still happening.
+      onClose={busy ? () => {} : onClose}
+      closeOnBackdropClick={!busy}
+      closeOnEscape={!busy}
       title={t('tiers.leaveHidden.title', { name: heldName })}
     >
       <div className="flex flex-col gap-5">
