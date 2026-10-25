@@ -1,4 +1,4 @@
-import { type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
@@ -14,6 +14,18 @@ import { useCompleteGoogleSignup } from '@/hooks/useGoogleSignIn'
 import { useFormValidation } from '@/hooks/useFormValidation'
 import { useGoogleSignupSchema } from '@/hooks/useAuthSchemas'
 import { safeRedirect } from '@/lib'
+import { markInviteOnly } from '@/hooks/useSignupAccess'
+import {
+  clearTesterInvite,
+  readTesterInvite,
+  testerInvitePath,
+} from '@/lib/testerInvite'
+import {
+  INVITE_EMAIL_MISMATCH,
+  isInviteEmailMismatch,
+  isInviteGone,
+  isInviteRequired,
+} from '@/services/api/signupAccess'
 import { ApiError } from '@/services/api/errors'
 import {
   googleStartUrl,
@@ -38,12 +50,15 @@ type Props = {
 export function AuthGoogleSignupForm({ token, pending }: Props) {
   const { t } = useTranslation()
   const router = useRouter()
+  // The tester invite this sign-up left for Google with (CON-402), read once:
+  // this step cannot see the `return_to` that also carries it.
+  const [inviteToken] = useState(readTesterInvite)
   const {
     mutate: complete,
     isPending,
     error,
     reset,
-  } = useCompleteGoogleSignup(token)
+  } = useCompleteGoogleSignup(token, inviteToken ?? undefined)
   const { values, setField, fieldErrors, validate } = useFormValidation(
     useGoogleSignupSchema(),
     { organizationName: '' },
@@ -58,9 +73,33 @@ export function AuthGoogleSignupForm({ token, pending }: Props) {
     }
     complete(data.organizationName, {
       // The server keeps `return_to` only as a same-site path, and this passes
-      // it through the client's own check as well before navigating.
-      onSuccess: ({ returnTo }) =>
-        void router.navigate({ href: safeRedirect(returnTo) }),
+      // it through the client's own check as well before navigating. Not for
+      // an invite: its `return_to` is the invite screen, which would greet the
+      // person who just redeemed it as somebody signed in to the wrong account.
+      onSuccess: ({ returnTo }) => {
+        if (inviteToken) {
+          clearTesterInvite()
+          void router.navigate({ to: '/' })
+          return
+        }
+        void router.navigate({ href: safeRedirect(returnTo) })
+      },
+      onError: (err) => {
+        // Each of these has a screen of its own on `/signup`. A mismatch has
+        // spent this pending sign-up but not the invite, so the invite screen
+        // takes over with the reason and both ways in still open.
+        if (inviteToken && isInviteEmailMismatch(err)) {
+          void router.navigate({
+            href: testerInvitePath(inviteToken, INVITE_EMAIL_MISMATCH),
+          })
+        } else if (inviteToken && isInviteGone(err)) {
+          clearTesterInvite()
+          void router.navigate({ href: testerInvitePath(inviteToken) })
+        } else if (isInviteRequired(err)) {
+          markInviteOnly()
+          void router.navigate({ to: '/signup' })
+        }
+      },
     })
   }
 

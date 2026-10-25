@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { useCreateWorkspace, useSwitchWorkspace } from '@/hooks/useWorkspaces'
+import { isWorkspaceLimit } from '@/services/api/signupAccess'
 import { toast } from '@/stores/toastStore'
 
 type Props = {
@@ -50,7 +51,13 @@ export function CreateWorkspaceDialog({ isOpen, onClose }: Props) {
         },
         onError: (err) => {
           toast.error(t('workspaces.createDialog.createFailed'), {
-            description: err instanceof Error ? err.message : undefined,
+            // The beta's per-account cap (CON-333 §6.8) is worded by its code,
+            // not by the server's sentence.
+            description: isWorkspaceLimit(err)
+              ? t('workspaces.createDialog.workspaceLimit')
+              : err instanceof Error
+                ? err.message
+                : undefined,
           })
         },
       },

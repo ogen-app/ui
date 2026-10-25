@@ -39,6 +39,7 @@ export async function signup(payload: SignupPayload): Promise<User> {
           email: payload.email,
           password: payload.password,
         },
+        ...(payload.inviteToken ? { invite_token: payload.inviteToken } : {}),
       },
     },
   )

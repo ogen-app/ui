@@ -61,6 +61,14 @@ function isAccountScoped(path: string): boolean {
     p.startsWith('/api/invitations/accept/') ||
     p.startsWith('/api/security/login-alerts/') ||
     p.startsWith('/api/public/') ||
+    // Public signup reads (CON-333): asked before there is a workspace, and
+    // by a signed-in tab opening an invite meant for somebody else.
+    p === '/api/signup-config' ||
+    // Signup itself — the bare collection, never `/api/tenants/current`. Its
+    // 403s are the signup gate's, and a pin left over in this tab must not
+    // send them to `handleForbidden`.
+    p === '/api/tenants' ||
+    p.startsWith('/api/tenant-invites/') ||
     p.startsWith('/api/auth/') ||
     p.startsWith('/api/account/')
   )

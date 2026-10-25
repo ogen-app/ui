@@ -168,6 +168,50 @@ Things to keep:
 - **`/api/auth/*` and `/api/account/*` are account-scoped** (`services/api/base`):
   a Google identity belongs to the login, not to a workspace.
 
+### 6. Tester invites and the invite-only switch (CON-333/402)
+
+An operator invites a tester from Harbor; the email links to
+`/signup?invite=<token>`, and redeeming it creates a **complimentary**
+workspace — never billed, never gated, on whatever tier the operator chose.
+Separately, a runtime switch (`GET /api/signup-config` → `open` |
+`invite_only`) decides whether strangers may self-register. **Invites work in
+both modes.**
+
+```text
+/signup                      no invite, signed out:
+                               open         → /auth/register
+                               invite_only  → the private-beta screen (no form, no Google)
+/auth/register               invite_only    → /signup  (the login page's "Sign up" link lands here)
+/signup?invite=<token>       GET /api/tenant-invites/:token
+                               200 {email}  → the register form, email locked, SIGN UP sends invite_token
+                               410          → "This invite has expired" (every unusable token, no form)
+                               signed in    → "You're signed in as X" — sign out and come back, or stay
+Google from the invite       start?return_to=/signup?invite=<token>, token also in sessionStorage
+                               → /auth/register/google → POST …/complete { …, invite_token }
+                                 403 invite_email_mismatch → /signup?invite=…&error=invite_email_mismatch
+                                 410                        → the expired screen
+                                 success                    → /  (never the invite's return_to)
+```
+
+Things to keep:
+
+- **The invite rides Google's round trip in `sessionStorage`**
+  (`lib/testerInvite`), written on the click. The "name your workspace" step
+  must send it, and the pending preview does not carry `return_to`.
+- **A mismatch spends the pending Google sign-up but not the invite**, so the
+  invite screen takes over with the reason and both ways in stay open.
+- **The mode reads fail open.** The server refuses with 403 `invite_required`
+  whatever the client thought; that refusal marks the cached mode
+  `invite_only` (`markInviteOnly`) and lands on the private-beta screen.
+- **`complimentary` is read off `GET /api/me/entitlements` only** — the
+  as-built `/api/tenants/current` does not carry it. A comped workspace gets
+  `/plans` without money (a click is a free, in-place switch), a "Beta access"
+  tag on the Plan & billing card, and no payment row. When an operator ends it,
+  the open tab follows the stream's refetch to the owner gate
+  (`useBillingGateWatch`), which says once why it appeared — a per-device memory
+  (`lib/complimentaryMemory`), since the plan read cannot say the workspace
+  used to be free.
+
 ## The root guard — `src/routes/__root.tsx`
 
 Auth is guarded **once**, in the root route's `beforeLoad` (never on
@@ -235,7 +279,9 @@ Details that matter:
 
 | Endpoint | Auth | Purpose | UI wiring |
 | --- | --- | --- | --- |
-| `POST /api/tenants` | public | signup: tenant + first user + session | ✅ `/auth/register` |
+| `POST /api/tenants` | public | signup: tenant + first user + session; `invite_token` redeems a tester invite | ✅ `/auth/register`, `/signup?invite=` |
+| `GET /api/signup-config` | public | `open` \| `invite_only` | ✅ `/signup`, `/auth/register` guards |
+| `GET /api/tenant-invites/:token` | public | the invited address, or 410 | ✅ `/signup?invite=` |
 | `POST /api/sessions` / `DELETE` | public / cookie | login / logout | ✅ `/auth/login`, logout |
 | `GET /api/current_user` | session | user + embedded tenant | ✅ session probe + store |
 | `GET /api/tenants/current` | session | caller's tenant | ✅ workspace settings |

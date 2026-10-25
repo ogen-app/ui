@@ -6,6 +6,7 @@ import { UploadTracker } from '@/components/uploads/UploadTracker'
 import { RightSidebar } from '@/components/layout/RightSidebar'
 import { ShortcutsSheet } from '@/components/layout/ShortcutsSheet'
 import { useAppShortcuts } from '@/hooks/useAppShortcuts'
+import { useBillingGateWatch } from '@/hooks/useBillingGateWatch'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useEventStream } from '@/hooks/useEventStream'
 import { useNotificationStream } from '@/hooks/useNotifications'
@@ -32,6 +33,10 @@ function AuthenticatedLayout() {
   useNotificationStream()
   // The app's keys (CON-394): `[`, `]`, `o`, `?` and `g` then a letter.
   useAppShortcuts()
+  // A billing gate that closes while the tab is open — a tester's comp ended
+  // by an operator (CON-402) — redirects on the stream's refetch, not on the
+  // next click.
+  useBillingGateWatch()
 
   return (
     <AnnouncementFrame>

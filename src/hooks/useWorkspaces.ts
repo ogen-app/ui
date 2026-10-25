@@ -329,6 +329,9 @@ export function useCreateWorkspace() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateWorkspacePayload) => createWorkspace(payload),
+    // `CreateWorkspaceDialog` words its own refusal — the beta's workspace cap
+    // among them (CON-402) — so the global toast would say it twice.
+    meta: { errorToast: false },
     onSuccess: () => qc.invalidateQueries({ queryKey: WORKSPACES_KEY }),
   })
 }

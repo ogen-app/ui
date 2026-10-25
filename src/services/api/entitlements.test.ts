@@ -168,7 +168,11 @@ describe('getWorkspacePlan', () => {
     expect(plan.tier.renewsAt).toBeNull()
     expect(plan.tier.trialEndsAt).toBeNull()
     expect(plan.tier.scheduled).toBeNull()
-    expect(plan.billing).toEqual({ required: false, trialEligible: null })
+    expect(plan.billing).toEqual({
+      required: false,
+      trialEligible: null,
+      complimentary: false,
+    })
   })
 
   it('reads the gate and the free-month eligibility (CON-324)', async () => {
@@ -186,7 +190,43 @@ describe('getWorkspacePlan', () => {
 
     const plan = await getWorkspacePlan()
 
-    expect(plan.billing).toEqual({ required: true, trialEligible: true })
+    expect(plan.billing).toEqual({
+      required: true,
+      trialEligible: true,
+      complimentary: false,
+    })
+  })
+
+  it("reads a tester's complimentary workspace (CON-333)", async () => {
+    // As ogen#233 sends it: the flag beside the gate, which it never opens.
+    stubFetch(
+      jsonResponse(200, {
+        ...VERSION,
+        billing_required: false,
+        complimentary: true,
+        trial_eligible: true,
+        billing_period: null,
+        renews_at: null,
+        trial_ends_at: null,
+        scheduled_change: null,
+      }),
+    )
+
+    const plan = await getWorkspacePlan()
+
+    expect(plan.billing).toEqual({
+      required: false,
+      trialEligible: true,
+      complimentary: true,
+    })
+  })
+
+  it('reads anything but a literal true as an ordinary workspace', async () => {
+    stubFetch(jsonResponse(200, { ...VERSION, complimentary: 'yes' }))
+
+    const plan = await getWorkspacePlan()
+
+    expect(plan.billing.complimentary).toBe(false)
   })
 
   it('reads a live subscription, its free month and its pending change (CON-325)', async () => {
