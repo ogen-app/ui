@@ -7,7 +7,12 @@ import {
   useRouter,
   useSearch,
 } from '@tanstack/react-router'
-import { HourglassIcon, XIcon } from '@phosphor-icons/react'
+import {
+  FlaskIcon,
+  HourglassIcon,
+  InfoIcon,
+  XIcon,
+} from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -17,6 +22,7 @@ import { PageError } from '@/components/page-primitives/PageError'
 import { NoticeShell, formatDay } from '@/components/entitlements/parts'
 import { ChangePlanDialog } from '@/components/tiers/ChangePlanDialog'
 import { CheckoutWait } from '@/components/tiers/CheckoutWait'
+import { LeaveHiddenTierDialog } from '@/components/tiers/LeaveHiddenTierDialog'
 import { PlanLedger, type LedgerColumn } from '@/components/tiers/PlanLedger'
 import { PlanSummary } from '@/components/tiers/PlanSummary'
 import { ZIndex } from '@/config/zIndex'
@@ -26,6 +32,15 @@ import { useEventStream } from '@/hooks/useEventStream'
 import { useChangePlan, useTiers } from '@/hooks/useTiers'
 import { useCanChangePlan, useWorkspace } from '@/hooks/useWorkspaces'
 import { subscribed } from '@/lib/billingGate'
+import {
+  complimentaryEnded,
+  forgetComplimentary,
+  noteComplimentary,
+} from '@/lib/complimentaryMemory'
+import {
+  complimentaryColumns,
+  isComplimentaryPicker,
+} from '@/lib/complimentaryPlans'
 import { awaiting } from '@/lib/fetched'
 import { planChangeMessage } from '@/lib/planChange'
 import { clearPlanIntent, readPlanIntent } from '@/lib/planIntent'
@@ -59,7 +74,9 @@ type Interval = TierVersionPrice['interval']
  * 3. **The gate** — an owner of a workspace with no plan. No X: there is
  *    nowhere to go back to, so the ways out are another workspace and signing
  *    out.
- * 4. **The plans** — anybody else, with an X that goes back.
+ * 4. **The plans** — anybody else, with an X that goes back. A tester's
+ *    complimentary workspace (CON-402) gets them with no money on the page:
+ *    no prices, no interval, and a click switches the tier in place.
  *
  * What a click does is the server's call: no live subscription and it mints a
  * Lemon Squeezy checkout, opened in a new tab synchronously on the click (a
@@ -102,6 +119,35 @@ export function PlansPage() {
 
   const gated = plan.data?.billing.required === true
   const memberWaiting = gated && !mayChange && workspace !== undefined
+
+  // `/plans` sits outside `_authenticated`, so it remembers a comped
+  // workspace itself as well (`lib/complimentaryMemory`).
+  const workspaceId = workspace?.id
+  useEffect(() => {
+    noteComplimentary(workspaceId, plan.data)
+  }, [workspaceId, plan.data])
+
+  /**
+   * The gate appeared because an operator ended this workspace's beta access
+   * (CON-402) — said once, above the plans, so the owner is not left to guess
+   * why a workspace that never asked for money suddenly does. Latched, then
+   * forgotten, so a later visit to the gate does not say it again.
+   */
+  const [compEnded, setCompEnded] = useState(false)
+  if (
+    !compEnded &&
+    gated &&
+    mayChange &&
+    complimentaryEnded(workspaceId, plan.data)
+  ) {
+    setCompEnded(true)
+  }
+  useEffect(() => {
+    if (compEnded && workspaceId) forgetComplimentary(workspaceId)
+  }, [compEnded, workspaceId])
+
+  /** A comp switch away from a tier nobody can choose — asked first. */
+  const [leaving, setLeaving] = useState<Tier | null>(null)
 
   // The tier the marketing link asked for, carried through signup. Read once;
   // `/plans` is where it is spent.
@@ -172,6 +218,98 @@ export function PlansPage() {
   // Published only if purchasable — this filter is a guard, not a selection.
   const offered = tiers.data.filter((tier) => tier.purchasable)
   const retired = !offered.some((tier) => tier.tierId === held.tierId)
+
+  if (isComplimentaryPicker(current)) {
+    /**
+     * Free and at once: the server's comp branch answers 200 with the plan,
+     * which `useChangePlan` puts in the cache, so the columns move as the
+     * toast lands. Never a checkout — if one ever came back, it is followed
+     * rather than swallowed.
+     */
+    const switchTo = (tier: Tier) => {
+      change.mutate(
+        { tierId: tier.tierId },
+        {
+          onSuccess: (result) => {
+            setLeaving(null)
+            if (result.kind === 'checkout') {
+              window.location.assign(result.checkout.url)
+              return
+            }
+            toast.success(
+              t('tiers.switched', { name: result.plan.tier.name }),
+              { description: t('tiers.switchedBody') },
+            )
+          },
+          onError: (error) => {
+            setLeaving(null)
+            toast.error(planChangeMessage(t, error))
+          },
+        },
+      )
+    }
+
+    return (
+      <PlansFrame workspaceName={workspaceName} exits="close">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <h1 className="font-display text-5xl font-light tracking-tight">
+            {t('tiers.ledger.compTitle')}
+          </h1>
+          <p className="max-w-xl text-base text-secondary-foreground">
+            {t('tiers.ledger.compLead', { workspace: workspaceName })}
+            <br />
+            {t('tiers.ledger.compTryAny')}
+          </p>
+        </div>
+
+        {!mayChange && (
+          <p className="text-center text-[13px] text-secondary-foreground">
+            {t('tiers.ownersOnlyPlan')}
+          </p>
+        )}
+
+        {/* A tier the Ogen team set up is not among the columns, and leaving
+            it is the one move that cannot be made back from here. */}
+        {retired && (
+          <NoticeShell
+            icon={<FlaskIcon size={16} />}
+            title={t('tiers.ledger.hiddenTierTitle', { name: held.name })}
+          >
+            {t('tiers.ledger.hiddenTierBody', { name: held.name })}
+          </NoticeShell>
+        )}
+
+        {offered.length > 0 ? (
+          <PlanLedger
+            columns={complimentaryColumns(offered, held.tierId, mayChange)}
+            interval="month"
+            popularTierId={null}
+            focusTierId={null}
+            onChoose={(tier) => (retired ? setLeaving(tier) : switchTo(tier))}
+            busy={change.isPending}
+          />
+        ) : (
+          <p className="text-center text-sm text-secondary-foreground">
+            {t('tiers.ledger.noneOnSale')}
+          </p>
+        )}
+
+        <p className="text-center text-[13px] text-secondary-foreground">
+          {t('tiers.ledger.compNote')}
+        </p>
+
+        {leaving && (
+          <LeaveHiddenTierDialog
+            heldName={held.name}
+            target={leaving}
+            busy={change.isPending}
+            onConfirm={() => switchTo(leaving)}
+            onClose={() => setLeaving(null)}
+          />
+        )}
+      </PlansFrame>
+    )
+  }
   const popular = recommendedPlan(offered)
   const yearly = offered.some((tier) => billingOptions(tier).year !== null)
   const saving = yearly ? yearlySavingPercent(offered) : null
@@ -190,6 +328,8 @@ export function PlansPage() {
    */
   const freeMonth = (tier: Tier) =>
     !live && tier.freeTrial && current.billing.trialEligible !== false
+  /** Named in the comp-ended notice, when there is one to offer. */
+  const freeMonthTier = offered.find(freeMonth) ?? null
 
   const columns: LedgerColumn[] = offered.map((tier) => ({
     tier,
@@ -324,6 +464,19 @@ export function PlansPage() {
         <p className="text-center text-[13px] text-secondary-foreground">
           {t('tiers.ownersOnlyPlan')}
         </p>
+      )}
+
+      {compEnded && (
+        <NoticeShell
+          icon={<InfoIcon size={16} />}
+          title={t('tiers.ledger.compEndedTitle')}
+        >
+          {freeMonthTier
+            ? t('tiers.ledger.compEndedBodyFreeMonth', {
+                name: freeMonthTier.name,
+              })
+            : t('tiers.ledger.compEndedBody')}
+        </NoticeShell>
       )}
 
       {memberWaiting && (

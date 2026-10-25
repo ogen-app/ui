@@ -32,9 +32,18 @@ export type LedgerAction =
   | { kind: 'held' | 'scheduled' | 'unavailable' }
   /** Buys or moves to this tier. `freeMonth` changes the label only. */
   | { kind: 'choose'; freeMonth: boolean }
+  /**
+   * Moves a complimentary workspace to this tier, free and at once (CON-402).
+   * No price is involved, so it needs none to be pressable.
+   */
+  | { kind: 'switch' }
 
-/** The line above the price, in small capitals. */
-export type LedgerLabel = 'chargedToday' | 'freeMonthThen' | 'current' | null
+/**
+ * The line above the price, in small capitals. `freeWhileTesting` stands in
+ * for the price as well: a complimentary workspace is shown no money at all.
+ */
+export type LedgerLabel =
+  'chargedToday' | 'freeMonthThen' | 'current' | 'freeWhileTesting' | null
 
 export type LedgerColumn = {
   tier: Tier
@@ -171,7 +180,9 @@ function Column({
           >
             {label ? t(LABEL_KEY[label]) : null}
           </p>
-          <Price price={price} interval={interval} sub={sub} t={t} />
+          {label !== 'freeWhileTesting' && (
+            <Price price={price} interval={interval} sub={sub} t={t} />
+          )}
         </div>
         <ColumnButton
           tier={tier}
@@ -228,6 +239,7 @@ const LABEL_KEY = {
   chargedToday: 'tiers.ledger.chargedToday',
   freeMonthThen: 'tiers.ledger.freeMonthThen',
   current: 'tiers.ledger.currentLabel',
+  freeWhileTesting: 'tiers.ledger.freeWhileTesting',
 } as const
 
 /**
@@ -305,6 +317,23 @@ function ColumnButton({
   const { i18n } = useTranslation()
   if (action.kind === 'none') return null
   const className = 'w-full justify-center'
+  if (action.kind === 'switch') {
+    return (
+      <Button
+        variant="defaultInverted"
+        size="xl"
+        className={className}
+        disabled={busy}
+        autoFocus={focus}
+        onClick={() => onChoose(tier, null)}
+        aria-label={t('tiers.switchNamed', { name: tier.name })}
+      >
+        {t('tiers.ledger.switchNamed', {
+          name: tier.name.toLocaleUpperCase(i18n.language),
+        })}
+      </Button>
+    )
+  }
   if (action.kind !== 'choose' || !price) {
     const key =
       action.kind === 'held'

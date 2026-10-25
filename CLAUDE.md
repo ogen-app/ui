@@ -618,6 +618,23 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   So gating applies to **creating and choosing**, never to displaying what
   exists: suspended things stay in their lists and still open, and every picker
   has to tolerate a current value that is no longer among its options.
+- **A tester's workspace is complimentary, and that is its own flag**
+  (CON-333/402). `billing.complimentary` on the plan read — not
+  `billing_required: false` with no subscription, which a grandfathered
+  workspace also reads and which must still check out. While it holds,
+  `/plans` is the Ledger with no money on it (`lib/complimentaryPlans`: one
+  label, a free in-place SWITCH TO, no interval, no popular column), the
+  Plan & billing card says "Beta access", and the paywall shows no price.
+  `Tier.available` is not consulted there — it is "Lemon Squeezy can sell
+  this", false for everything while billing is off, and the comp branch runs
+  before billing. Signing up with an invite is `/signup?invite=<token>`; the
+  invite-only switch (`/api/signup-config`) governs strangers only, and its
+  read fails **open** because the server refuses with `invite_required`
+  regardless. The invite crosses Google's round trip in `sessionStorage`
+  (`lib/testerInvite`) because the pending preview has no `return_to`. A gate
+  that closes while a tab is open — comp ended by an operator — redirects on
+  the stream's refetch through `useBillingGateWatch`, not on the next click.
+  See `docs/onboarding.md` §6.
 - **Two long-lived streams, and they are not interchangeable.** `/api/events`
   is an invalidation bus — at-most-once, no log, `Last-Event-ID` ignored — so an
   event is a *hint* that a cache is stale and the recovery path is refetch.

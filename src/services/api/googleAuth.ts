@@ -122,11 +122,20 @@ type RawCompleteResponse = {
 export async function completeGoogleSignup(
   token: string,
   tenantName: string,
+  /** A tester invite to redeem (CON-333) — refused with the same codes as `POST /api/tenants`. */
+  inviteToken?: string,
 ): Promise<{ user: User; returnTo: string }> {
   const body = await apiJson<RawCompleteResponse>(
     '/api/auth/google/complete',
     'Unable to create the workspace',
-    { method: 'POST', body: { token, tenant_name: tenantName.trim() } },
+    {
+      method: 'POST',
+      body: {
+        token,
+        tenant_name: tenantName.trim(),
+        ...(inviteToken ? { invite_token: inviteToken } : {}),
+      },
+    },
   )
   return {
     user: rawUserToUser({ ...body.user, tenant: body.tenant }),

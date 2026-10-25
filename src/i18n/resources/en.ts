@@ -131,6 +131,39 @@ export const en = {
       haveAccount: 'Already have an account?',
       logInLink: 'Log in here',
     },
+    /** A tester invite (CON-402): the register screen in invite mode, and what else `/signup?invite=` can say. */
+    testerInvite: {
+      title: 'Join the Ogen beta',
+      subtitle:
+        'You were invited by the Ogen team. Your workspace is complimentary.',
+      /** Under the locked email field. */
+      emailLocked: 'This is the address your invite was sent to.',
+      /** Google came back with another address; the invite is untouched. */
+      mismatch:
+        'This invite is for <strong>{{email}}</strong>. Sign up with that address, or use the form below.',
+      /** Every unusable token gets the same 410, so this lists the reasons rather than picking one. */
+      expiredTitle: 'This invite has expired',
+      expiredBody:
+        'The link is no longer valid. It may have expired, been replaced by a newer invite, or already been used. Ask the Ogen team to send you a new one.',
+      logInInstead: 'LOG IN INSTEAD',
+      /** The preview failed for a reason that says nothing about the invite — retryable. */
+      previewFailedTitle: "We couldn't check this invite",
+      previewFailedSubtitle:
+        'Something went wrong on our side — the link itself may still be fine',
+      signedInTitle: "You're signed in as {{name}}",
+      signedInBody:
+        'This invite is for {{email}}. Sign out to accept it with that address. Your current workspaces stay exactly as they are.',
+      signOutAndContinue: 'SIGN OUT AND CONTINUE',
+      staySignedIn: 'STAY SIGNED IN',
+    },
+    /** Self-registration is switched off and there is no invite (CON-402). */
+    privateBeta: {
+      title: 'Ogen is in private beta',
+      body: "We're letting people in by invitation while we finish the product. If you were invited, open the link in your invitation email to create your workspace.",
+      /** Placeholder until product picks the request-access route. */
+      contact:
+        "No invite yet? Write to <mail>{{email}}</mail> and tell us what you'd use Ogen for.",
+    },
     /** Sign in with Google (CON-396) — the button, the divider, and what each `?error=` says. */
     google: {
       /** Google's branding allows this wording; the caps are the app's CTA convention. */
@@ -1899,6 +1932,9 @@ export const en = {
       created: '{{name}} created',
       createdNote: 'Switch to it from the workspace menu when you need it.',
       createFailed: 'Unable to create the workspace',
+      /** 403 `workspace_limit` — the per-account cap while signup is invite-only (CON-333). */
+      workspaceLimit:
+        "You've reached the number of workspaces available during the beta.",
     },
   },
 
@@ -3515,6 +3551,29 @@ export const en = {
       noneOnSale: 'No plan is on sale right now.',
       vatNote:
         'Prices exclude VAT. Lemon Squeezy sells Ogen as merchant of record and adds it at checkout.',
+      /**
+       * A tester's complimentary workspace (CON-402): the same ledger with no
+       * money on it. These replace the title, the price block and the VAT note.
+       */
+      compTitle: 'Select a plan you like',
+      compLead: '{{workspace}} has complimentary beta access.',
+      compTryAny: 'Try any plan for as long as you like — nothing is charged.',
+      freeWhileTesting: 'FREE WHILE YOU TEST',
+      /** `name` arrives already in capitals, set for the active language. */
+      switchNamed: 'SWITCH TO {{name}}',
+      compNote:
+        'Beta access is free while you test. If it ends, Ogen tells you first and nothing you made is touched.',
+      /** The tier held is one the Ogen team set up and nobody can choose. */
+      hiddenTierTitle:
+        "You're on {{name}}, the plan the Ogen team set up for your testing",
+      hiddenTierBody:
+        "It isn't one of the plans below. Switching to one is free and takes effect at once — but only the Ogen team can move this workspace back to {{name}}.",
+      /** Above the owner gate, once, after an operator ends a tester's access. */
+      compEndedTitle: 'Your complimentary beta access has ended',
+      compEndedBodyFreeMonth:
+        'Thanks for testing Ogen. Choose a plan to keep going — your first month is free on {{name}}, because this account has never had one.',
+      compEndedBody:
+        'Thanks for testing Ogen. Choose a plan to keep going — nothing you made has been touched.',
     },
     /** Waiting for Lemon Squeezy to confirm a subscription (CON-328). */
     checkout: {
@@ -3940,6 +3999,24 @@ export const en = {
       "Nothing will be deleted. If you're over the new plan's limits, some things become read-only until you move back up.",
     changeFailed: 'Your plan could not be changed.',
     changedNow: "You're now on {{name}}.",
+    /** A complimentary workspace's switch — free and at once (CON-402). */
+    switched: 'Switched to {{name}}',
+    switchedBody: 'New limits apply straight away.',
+    /** For the button's accessible name, where "SWITCH TO" alone says too little. */
+    switchNamed: 'Switch to {{name}}',
+    /** Leaving a tier the Ogen team set up — the one switch that cannot be made back. */
+    leaveHidden: {
+      title: 'Leave {{name}}?',
+      body: 'Switching to {{target}} is free and takes effect at once. Only the Ogen team can move this workspace back to {{name}}.',
+      cancel: 'CANCEL',
+    },
+    /** The Plan & billing card while a workspace has complimentary beta access. */
+    comp: {
+      tag: 'Beta access',
+      sentence: 'Complimentary — nothing to pay.',
+      payment:
+        "No card on file, and none is needed while this workspace has complimentary beta access. If it ends, you'll be asked to choose a plan and Lemon Squeezy will take your payment details then.",
+    },
     changeCancelled: 'That change has been called off.',
 
     /**

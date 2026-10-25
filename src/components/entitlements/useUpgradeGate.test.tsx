@@ -157,6 +157,7 @@ const TRIAL = {
     renewsAt: null,
     scheduled: null,
   },
+  billing: { required: false, trialEligible: true, complimentary: false },
   entitlements: {
     active_campaigns: { limit: 1, reset: 'standing' },
     team_seats: { limit: 1, reset: 'standing' },
@@ -288,6 +289,23 @@ describe('UpgradeDialog', () => {
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
     expect(
       screen.getByText('Everything on Trial, with more room to grow.'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows a tester no price — moving up is free (CON-402)', () => {
+    answer.current = SPENT
+    catalogue.current = [PRO]
+    held.current = {
+      ...TRIAL,
+      billing: { ...TRIAL.billing, complimentary: true },
+    }
+    render(<OpenGate />)
+
+    expect(screen.getByText('FREE WHILE YOU TEST')).toBeInTheDocument()
+    expect(screen.queryByText('€24')).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'UPGRADE TO PRO' }),
     ).toBeInTheDocument()
   })
 

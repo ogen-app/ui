@@ -60,6 +60,7 @@ export function PlanSection() {
       managing={portal.isPending}
       onKeepPlan={keepPlan}
       keeping={change.isPending}
+      complimentary={plan.data?.billing.complimentary === true}
     />
   )
 }

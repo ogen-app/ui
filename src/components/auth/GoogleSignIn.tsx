@@ -11,6 +11,8 @@ type Props = {
   /** Where to land after signing in — already passed through `safeRedirect`. */
   returnTo?: string
   inviteToken?: string
+  /** Runs on the click, before the browser leaves for Google. */
+  onClick?: () => void
 }
 
 /**
@@ -22,7 +24,12 @@ type Props = {
  * the primary action. The same words on login and register, because the
  * server decides which of the two a Google account needs.
  */
-export function GoogleSignInButton({ intent, returnTo, inviteToken }: Props) {
+export function GoogleSignInButton({
+  intent,
+  returnTo,
+  inviteToken,
+  onClick,
+}: Props) {
   const { t } = useTranslation()
   return (
     <Button
@@ -31,7 +38,10 @@ export function GoogleSignInButton({ intent, returnTo, inviteToken }: Props) {
       size="default"
       className="w-full justify-start gap-3"
     >
-      <a href={googleStartUrl({ intent, returnTo, inviteToken })}>
+      <a
+        href={googleStartUrl({ intent, returnTo, inviteToken })}
+        onClick={onClick}
+      >
         <GoogleMark />
         <span>{t('auth.google.continue')}</span>
       </a>
