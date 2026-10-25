@@ -110,6 +110,32 @@ export const es: Translation = {
       haveAccount: '¿Ya tienes cuenta?',
       logInLink: 'Inicia sesión aquí',
     },
+    testerInvite: {
+      title: 'Únete a la beta de Ogen',
+      subtitle:
+        'El equipo de Ogen te ha invitado. Tu espacio de trabajo es gratuito.',
+      emailLocked: 'Esta es la dirección a la que se envió tu invitación.',
+      mismatch:
+        'Esta invitación es para <strong>{{email}}</strong>. Regístrate con esa dirección o usa el formulario de abajo.',
+      expiredTitle: 'Esta invitación ha caducado',
+      expiredBody:
+        'El enlace ya no es válido. Puede que haya caducado, que lo haya sustituido una invitación más reciente o que ya se haya usado. Pide al equipo de Ogen que te envíe una nueva.',
+      logInInstead: 'INICIAR SESIÓN',
+      previewFailedTitle: 'No hemos podido comprobar esta invitación',
+      previewFailedSubtitle:
+        'Algo ha fallado por nuestra parte; puede que el enlace siga siendo válido',
+      signedInTitle: 'Has iniciado sesión como {{name}}',
+      signedInBody:
+        'Esta invitación es para {{email}}. Cierra la sesión para aceptarla con esa dirección. Tus espacios de trabajo actuales se quedan tal como están.',
+      signOutAndContinue: 'CERRAR SESIÓN Y CONTINUAR',
+      staySignedIn: 'SEGUIR CON ESTA SESIÓN',
+    },
+    privateBeta: {
+      title: 'Ogen está en beta privada',
+      body: 'Estamos dando acceso por invitación mientras terminamos el producto. Si te han invitado, abre el enlace de tu correo de invitación para crear tu espacio de trabajo.',
+      contact:
+        '¿Aún no tienes invitación? Escribe a <mail>{{email}}</mail> y cuéntanos para qué usarías Ogen.',
+    },
     google: {
       continue: 'CONTINUAR CON GOOGLE',
       orWithEmail: 'o con tu correo electrónico',
@@ -1450,6 +1476,8 @@ export const es: Translation = {
       created: '{{name}} creado',
       createdNote: 'Cambia a él desde el menú de espacios cuando lo necesites.',
       createFailed: 'No se ha podido crear el espacio',
+      workspaceLimit:
+        'Has alcanzado el número de espacios disponibles durante la beta.',
     },
   },
 
@@ -2744,6 +2772,23 @@ export const es: Translation = {
       noneOnSale: 'Ahora mismo no hay ningún plan a la venta.',
       vatNote:
         'Los precios no incluyen IVA. Lemon Squeezy vende Ogen como comerciante registrado y lo añade al pagar.',
+      compTitle: 'Elige el plan que quieras',
+      compLead: '{{workspace}} tiene acceso gratuito a la beta.',
+      compTryAny:
+        'Prueba cualquier plan todo el tiempo que quieras: no se cobra nada.',
+      freeWhileTesting: 'GRATIS MIENTRAS PRUEBAS',
+      switchNamed: 'CAMBIAR A {{name}}',
+      compNote:
+        'El acceso a la beta es gratuito mientras pruebas. Si termina, Ogen te avisa antes y no se toca nada de lo que hayas creado.',
+      hiddenTierTitle:
+        'Estás en {{name}}, el plan que el equipo de Ogen preparó para tus pruebas',
+      hiddenTierBody:
+        'No es uno de los planes de abajo. Cambiar a uno es gratis y se aplica al momento, pero solo el equipo de Ogen puede volver a poner este espacio en {{name}}.',
+      compEndedTitle: 'Tu acceso gratuito a la beta ha terminado',
+      compEndedBodyFreeMonth:
+        'Gracias por probar Ogen. Elige un plan para continuar: tu primer mes en {{name}} es gratis, porque esta cuenta nunca ha tenido uno.',
+      compEndedBody:
+        'Gracias por probar Ogen. Elige un plan para continuar: no se ha tocado nada de lo que hayas creado.',
     },
     checkout: {
       confirmingTitle: 'Confirmando tu suscripción',
@@ -3005,6 +3050,20 @@ export const es: Translation = {
       'No se borrará nada. Si superas los límites del nuevo plan, algunas cosas pasarán a ser de solo lectura hasta que vuelvas a subir.',
     changeFailed: 'No se ha podido cambiar tu plan.',
     changedNow: 'Ya estás en {{name}}.',
+    switched: 'Has cambiado a {{name}}',
+    switchedBody: 'Los nuevos límites se aplican al momento.',
+    switchNamed: 'Cambiar a {{name}}',
+    leaveHidden: {
+      title: '¿Dejar {{name}}?',
+      body: 'Cambiar a {{target}} es gratis y se aplica al momento. Solo el equipo de Ogen puede volver a poner este espacio en {{name}}.',
+      cancel: 'CANCELAR',
+    },
+    comp: {
+      tag: 'Acceso beta',
+      sentence: 'Gratuito: no hay nada que pagar.',
+      payment:
+        'No hay ninguna tarjeta guardada, y no hace falta mientras este espacio tenga acceso gratuito a la beta. Si termina, te pediremos que elijas un plan y Lemon Squeezy te pedirá los datos de pago entonces.',
+    },
     changeCancelled: 'Se ha anulado ese cambio.',
 
     limitFlat: '{{value}}',

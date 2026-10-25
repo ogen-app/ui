@@ -189,6 +189,7 @@ function Paywall({
           <OfferColumn
             tier={offer}
             currentName={data.plan.tier.name}
+            complimentary={data.plan.billing.complimentary}
             mayChange={mayChange}
             onUpgrade={toPlans}
             onCompare={toPlans}
@@ -319,6 +320,7 @@ function Heading({
 function OfferColumn({
   tier,
   currentName,
+  complimentary = false,
   mayChange,
   onUpgrade,
   onCompare,
@@ -327,6 +329,11 @@ function OfferColumn({
   tier: Tier
   /** The plan being left, named in the line under the offered one. */
   currentName: string
+  /**
+   * A tester's workspace (CON-402): moving up is free, so the offer shows no
+   * price and no billing interval — the same rule as `/plans`.
+   */
+  complimentary?: boolean
   mayChange: boolean
   onUpgrade: () => void
   onCompare: () => void
@@ -337,7 +344,7 @@ function OfferColumn({
   // Yearly first: it is the cheaper way to hold the plan, and the saving is
   // stated under the price rather than left to be discovered.
   const [interval, setBilling] = useState<'month' | 'year'>('year')
-  const both = month !== null && year !== null
+  const both = !complimentary && month !== null && year !== null
   const shown = both ? interval : month ? 'month' : 'year'
 
   return (
@@ -392,19 +399,25 @@ function OfferColumn({
               </p>
             </div>
 
-            <div className="flex flex-col gap-1">
-              {shown === 'month' && month && <MonthlyPrice price={month} />}
-              {shown === 'year' && year && (
-                <YearlyPrice price={year} month={month} />
-              )}
-              {/* A plan the catalogue has not priced says so. Nothing at all read
+            {complimentary ? (
+              <p className="text-[11px] font-medium leading-4 tracking-[0.1em] text-secondary-foreground">
+                {t('tiers.ledger.freeWhileTesting')}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {shown === 'month' && month && <MonthlyPrice price={month} />}
+                {shown === 'year' && year && (
+                  <YearlyPrice price={year} month={month} />
+                )}
+                {/* A plan the catalogue has not priced says so. Nothing at all read
                 as a card that failed to load, and "€0" would be a promise. */}
-              {!month && !year && (
-                <p className="font-display text-xl font-medium tracking-tight text-tertiary-foreground">
-                  {t('tiers.paywall.unpriced')}
-                </p>
-              )}
-            </div>
+                {!month && !year && (
+                  <p className="font-display text-xl font-medium tracking-tight text-tertiary-foreground">
+                    {t('tiers.paywall.unpriced')}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-3">

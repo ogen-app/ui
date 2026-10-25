@@ -163,6 +163,7 @@ type ScheduledChangeBody = {
  */
 export type PlanBody = TierVersionBody & {
   billing_required?: boolean | null
+  complimentary?: boolean | null
   trial_eligible?: boolean | null
   billing_period?: string | null
   renews_at?: string | null
@@ -265,6 +266,9 @@ function billingFromWire(body: PlanBody): PlanBilling {
     required: body.billing_required === true,
     trialEligible:
       typeof body.trial_eligible === 'boolean' ? body.trial_eligible : null,
+    // Only a literal `true`: a server that predates CON-333 sends nothing,
+    // and that is an ordinary workspace, not a free one.
+    complimentary: body.complimentary === true,
   }
 }
 

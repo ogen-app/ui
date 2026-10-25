@@ -178,6 +178,43 @@ describe('PlanLedger', () => {
   })
 })
 
+describe('PlanLedger for a complimentary workspace (CON-402)', () => {
+  const free = (
+    t: Tier,
+    action: LedgerColumn['action'] = { kind: 'switch' },
+  ): LedgerColumn => ({ tier: t, label: 'freeWhileTesting', action })
+
+  it('shows no price at all, only that it is free while testing', () => {
+    ledger([free(STARTER), free(PRO, { kind: 'held' })], {
+      popularTierId: null,
+    })
+
+    expect(screen.getAllByText('FREE WHILE YOU TEST')).toHaveLength(2)
+    expect(screen.queryByText(/\$/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/excl\. VAT/)).not.toBeInTheDocument()
+    expect(screen.queryByText('MOST POPULAR')).not.toBeInTheDocument()
+  })
+
+  it('switches without a price, and states the tier held', async () => {
+    const onChoose = vi.fn()
+    ledger([free(STARTER), free(PRO, { kind: 'held' })], {
+      popularTierId: null,
+      onChoose,
+    })
+
+    expect(
+      within(screen.getByRole('region', { name: 'Pro' })).getByRole('button', {
+        name: 'CURRENT PLAN',
+      }),
+    ).toBeDisabled()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Switch to Starter' }),
+    )
+    expect(onChoose).toHaveBeenCalledWith(STARTER, null)
+    expect(screen.getByText('SWITCH TO STARTER')).toBeInTheDocument()
+  })
+})
+
 describe('PlanLedger in Spanish', () => {
   beforeAll(async () => {
     await loadLocaleResources('es')

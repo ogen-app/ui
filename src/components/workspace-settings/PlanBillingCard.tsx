@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
@@ -51,6 +52,13 @@ type Props = {
    */
   onKeepPlan?: () => void
   keeping?: boolean
+  /**
+   * A tester's workspace (CON-402): never billed. The card keeps its shape and
+   * says so — a tag and one sentence on the plan, and the payment row without
+   * its button, its sandbox tag or a card line. `subscription: null,
+   * portal: false` means "nothing to pay" here, not "never bought".
+   */
+  complimentary?: boolean
 }
 
 /**
@@ -88,6 +96,7 @@ export function PlanBillingCard({
   managing = false,
   onKeepPlan,
   keeping = false,
+  complimentary = false,
 }: Props) {
   const { t } = useTranslation()
   const subscription = billing?.subscription ?? null
@@ -103,10 +112,19 @@ export function PlanBillingCard({
             mayChange={mayChange}
             onKeepPlan={onKeepPlan}
             keeping={keeping}
+            complimentary={complimentary}
           />
         </SettingsRow>
 
-        {mayManage ? (
+        {mayManage && complimentary ? (
+          // Nothing to manage and nothing charged, so neither the portal door
+          // nor the sandbox tag — only why no card is needed, and what happens
+          // if that changes.
+          <SettingsRow
+            title={t('tiers.paymentMethod')}
+            description={t('tiers.comp.payment')}
+          />
+        ) : mayManage ? (
           <SettingsRow
             title={t('tiers.paymentMethod')}
             badges={
@@ -190,6 +208,7 @@ export function PlanBanner({
   mayChange,
   onKeepPlan,
   keeping = false,
+  complimentary = false,
 }: {
   tier: TierSnapshot | undefined
   subscription: BillingSubscription | null
@@ -197,6 +216,7 @@ export function PlanBanner({
   mayChange: boolean
   onKeepPlan?: () => void
   keeping?: boolean
+  complimentary?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const { headline, timing } = usePlanStatement(tier)
@@ -227,27 +247,30 @@ export function PlanBanner({
     : null
   const secondLine = planFailed
     ? t('tiers.planLoadFailed')
-    : tier?.scheduled
-      ? timing
-      : trialEnds
-        ? trialPrice
-          ? t('tiers.freeUntil', {
-              when: formatDay(trialEnds, i18n.language),
-              price: trialPrice,
-            })
-          : t('tiers.freeUntilBare', {
-              when: formatDay(trialEnds, i18n.language),
-            })
-        : !ending
-          ? timing
-          : t(
-              subscription?.status === 'expired'
-                ? 'tiers.accessEnded'
-                : 'tiers.accessEnds',
-              {
-                when: formatDay(ending, i18n.language),
-              },
-            )
+    : complimentary
+      ? // No renewal and no change pending: a comped plan has no clock.
+        t('tiers.comp.sentence')
+      : tier?.scheduled
+        ? timing
+        : trialEnds
+          ? trialPrice
+            ? t('tiers.freeUntil', {
+                when: formatDay(trialEnds, i18n.language),
+                price: trialPrice,
+              })
+            : t('tiers.freeUntilBare', {
+                when: formatDay(trialEnds, i18n.language),
+              })
+          : !ending
+            ? timing
+            : t(
+                subscription?.status === 'expired'
+                  ? 'tiers.accessEnded'
+                  : 'tiers.accessEnds',
+                {
+                  when: formatDay(ending, i18n.language),
+                },
+              )
 
   /**
    * A third line, for the two statuses that are a problem to be *solved* rather
@@ -286,7 +309,11 @@ export function PlanBanner({
             padded box against text sits it a pixel or two high — the kind of
             misalignment you see without being able to name. */}
         <span className="flex flex-wrap items-baseline gap-2 text-sm text-secondary-foreground">
-          {subscription && <StatusTag status={subscription.status} />}
+          {complimentary ? (
+            <Tag>{t('tiers.comp.tag')}</Tag>
+          ) : (
+            subscription && <StatusTag status={subscription.status} />
+          )}
           <span>{secondLine}</span>
         </span>
         {failureLine && (
@@ -415,9 +442,14 @@ function StatusTag({ status }: { status: BillingStatus }) {
 
   const key = status in keys ? keys[status as keyof typeof keys] : null
   if (!key) return null
+  return <Tag>{t(key)}</Tag>
+}
+
+/** The tag's surface, shared by the provider's states and Beta access. */
+function Tag({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex shrink-0 items-center rounded-[2px] border border-tertiary bg-secondary px-1.5 py-1 text-primary-foreground">
-      {t(key)}
+      {children}
     </span>
   )
 }

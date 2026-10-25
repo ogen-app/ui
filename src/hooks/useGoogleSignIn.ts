@@ -47,12 +47,13 @@ export function usePendingGoogleSignup(token: string | undefined) {
  * Finishing a Google sign-up. Like `useSignup`: the response opens the session,
  * so the cached probe is dropped and the store seeded from the response.
  */
-export function useCompleteGoogleSignup(token: string) {
+export function useCompleteGoogleSignup(token: string, inviteToken?: string) {
   const setUser = useAuthStore((s) => s.setUser)
   return useMutation({
     // The form shows the refusal under its button, with the way out beside it.
     meta: { errorToast: false },
-    mutationFn: (tenantName: string) => completeGoogleSignup(token, tenantName),
+    mutationFn: (tenantName: string) =>
+      completeGoogleSignup(token, tenantName, inviteToken),
     onSuccess: ({ user }) => {
       invalidateSession()
       setUser(user)

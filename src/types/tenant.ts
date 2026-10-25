@@ -17,4 +17,9 @@ export type SignupPayload = {
   lastName: string
   email: string
   password: string
+  /**
+   * A tester invite to redeem (CON-333): the workspace is created
+   * complimentary, and `email` must be the invited address.
+   */
+  inviteToken?: string
 }

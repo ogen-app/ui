@@ -27,6 +27,7 @@ vi.mock('@/services/api/sessions', () => ({
 beforeEach(() => {
   providers.mockReset().mockResolvedValue({ google: { enabled: true } })
   completeGoogleSignup.mockReset()
+  sessionStorage.clear()
 })
 
 describe('Continue with Google on the login form', () => {
@@ -123,7 +124,12 @@ describe('AuthGoogleSignupForm', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/campaigns'),
     )
-    expect(completeGoogleSignup.mock.calls[0]).toEqual(['tok', 'Acme Studio'])
+    // No tester invite was remembered, so none is sent.
+    expect(completeGoogleSignup.mock.calls[0]).toEqual([
+      'tok',
+      'Acme Studio',
+      undefined,
+    ])
   })
 
   it('sends a taken address back to Google, which now finds the account', async () => {
@@ -145,5 +151,86 @@ describe('AuthGoogleSignupForm', () => {
     expect(
       screen.getByRole('link', { name: 'Continue with Google' }),
     ).toBeInTheDocument()
+  })
+
+  describe('redeeming a tester invite (CON-402)', () => {
+    const INVITE = 'tok_tester_invite_1'
+
+    async function submit() {
+      const user = userEvent.setup()
+      const rendered = await render()
+      await user.type(
+        await screen.findByLabelText('Organization name'),
+        'Acme Studio',
+      )
+      await user.click(
+        screen.getByRole('button', { name: /create workspace/i }),
+      )
+      return rendered
+    }
+
+    beforeEach(() => {
+      sessionStorage.setItem('ogen.testerInvite', INVITE)
+    })
+
+    it('sends the invite it left for Google with, and goes into the app', async () => {
+      completeGoogleSignup.mockResolvedValue({
+        user: { id: 'u1', email: 'jane@acme.com' },
+        // The invite screen, which would greet the new owner as signed in to
+        // the wrong account.
+        returnTo: `/signup?invite=${INVITE}`,
+      })
+
+      const { router } = await submit()
+
+      await waitFor(() => expect(router.state.location.pathname).toBe('/'))
+      expect(completeGoogleSignup.mock.calls[0]).toEqual([
+        'tok',
+        'Acme Studio',
+        INVITE,
+      ])
+      expect(sessionStorage.getItem('ogen.testerInvite')).toBeNull()
+    })
+
+    it('takes a refused address back to the invite, which is still usable', async () => {
+      completeGoogleSignup.mockRejectedValue(
+        new ApiError(403, 'different address', 'invite_email_mismatch'),
+      )
+
+      const { router } = await submit()
+
+      await waitFor(() =>
+        expect(router.state.location.pathname).toBe('/signup'),
+      )
+      expect(router.state.location.search).toEqual({
+        invite: INVITE,
+        error: 'invite_email_mismatch',
+      })
+    })
+
+    it('takes a spent invite back to its screen, which says so', async () => {
+      completeGoogleSignup.mockRejectedValue(new ApiError(410, 'gone'))
+
+      const { router } = await submit()
+
+      await waitFor(() =>
+        expect(router.state.location.pathname).toBe('/signup'),
+      )
+      expect(router.state.location.search).toEqual({ invite: INVITE })
+      expect(sessionStorage.getItem('ogen.testerInvite')).toBeNull()
+    })
+
+    it('shows the private beta when the switch went on meanwhile', async () => {
+      sessionStorage.clear()
+      completeGoogleSignup.mockRejectedValue(
+        new ApiError(403, 'private beta', 'invite_required'),
+      )
+
+      const { router } = await submit()
+
+      await waitFor(() =>
+        expect(router.state.location.pathname).toBe('/signup'),
+      )
+    })
   })
 })

@@ -64,6 +64,8 @@ export async function renderWithProviders(
     '/',
     '/auth/login/',
     '/auth/forgot/',
+    '/signup/',
+    '/plans/',
     '/workspace-settings',
   ]) {
     if (other === path) continue

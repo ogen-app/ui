@@ -209,4 +209,52 @@ describe('PlanBillingCard', () => {
       screen.queryByRole('button', { name: /MANAGE/ }),
     ).not.toBeInTheDocument()
   })
+
+  describe('with complimentary beta access (CON-402)', () => {
+    const COMP: TierSnapshot = {
+      ...MONTHLY,
+      billingPeriod: null,
+      renewsAt: null,
+    }
+    // What `GET /api/billing` answers for a comped workspace — which here means
+    // "nothing to pay", not "never bought, pick a plan".
+    const NOTHING: BillingAccount = {
+      subscription: null,
+      portal: false,
+      testMode: true,
+    }
+
+    it('tags the plan and says nothing is owed, with no renewal', async () => {
+      at(NOW)
+      await render({ tier: COMP, billing: NOTHING, complimentary: true })
+
+      expect(screen.getByText('Beta access')).toBeInTheDocument()
+      expect(
+        screen.getByText('Complimentary — nothing to pay.'),
+      ).toBeInTheDocument()
+      expect(screen.queryByText(/auto-renews/)).not.toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'CHANGE' })).toHaveAttribute(
+        'href',
+        '/plans',
+      )
+    })
+
+    it('drops MANAGE, the sandbox tag and the card line from the payment row', async () => {
+      at(NOW)
+      await render({ tier: COMP, billing: NOTHING, complimentary: true })
+
+      expect(
+        screen.getByText(
+          /none is needed while this workspace has complimentary/,
+        ),
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /MANAGE/ }),
+      ).not.toBeInTheDocument()
+      expect(screen.queryByText('Sandbox')).not.toBeInTheDocument()
+      expect(
+        screen.queryByText('Nothing is being charged for this workspace.'),
+      ).not.toBeInTheDocument()
+    })
+  })
 })

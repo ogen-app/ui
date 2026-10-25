@@ -403,6 +403,16 @@ export type PlanBilling = {
    * (`PlanCheckout.trial`).
    */
   trialEligible: boolean | null
+  /**
+   * A tester's workspace (CON-333/402): never billed, never gated, and moved
+   * between tiers for free — choosing a plan answers 200 in place, never a
+   * checkout. The server never pairs it with `required`.
+   *
+   * Its own field rather than read off `required: false` with no subscription,
+   * because a grandfathered workspace looks exactly like that and must still
+   * check out. Sent whether or not billing is on.
+   */
+  complimentary: boolean
 }
 
 /** Everything the client is told about what this workspace has bought. */
