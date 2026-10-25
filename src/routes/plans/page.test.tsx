@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-import { noteComplimentary } from '@/lib/complimentaryMemory'
+import {
+  complimentaryEnded,
+  noteComplimentary,
+} from '@/lib/complimentaryMemory'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { useToastStore } from '@/stores/toastStore'
 import type { WorkspacePlan } from '@/types/entitlements'
@@ -28,14 +31,15 @@ vi.mock('@/hooks/useEntitlements', async (importOriginal) => ({
   }),
 }))
 
-const tiers = vi.fn<() => Tier[]>()
+/** `null` is a price list that failed to load. */
+const tiers = vi.fn<() => Tier[] | null>()
 const changePlan = vi.fn<(v: { tierId: string }) => Promise<PlanChange>>()
 vi.mock('@/hooks/useTiers', async () => {
   const { useMutation } = await import('@tanstack/react-query')
   return {
     useTiers: () => ({
-      data: tiers(),
-      isError: false,
+      data: tiers() ?? undefined,
+      isError: tiers() === null,
       isPending: false,
       isFetching: false,
       status: 'success',
@@ -202,6 +206,58 @@ describe('/plans for a complimentary workspace', () => {
     )
   })
 
+  it('never opens a payment from a free switch — the plan is read again', async () => {
+    // Access ended between the read and the click, so the server answered
+    // with a checkout rather than the switch the button promised.
+    plan.mockReturnValue(held('pro'))
+    changePlan.mockResolvedValue({
+      kind: 'checkout',
+      checkout: { url: 'https://pay.example/x', expiresAt: null, trial: true },
+    })
+    const assign = vi.fn()
+    const original = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...original, assign },
+    })
+    try {
+      const { queryClient } = await open()
+      const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Switch to Max' }),
+      )
+
+      await waitFor(() =>
+        expect(invalidate).toHaveBeenCalledWith({
+          queryKey: ['entitlements'],
+        }),
+      )
+      expect(assign).not.toHaveBeenCalled()
+      expect(useToastStore.getState().toasts).toHaveLength(0)
+    } finally {
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: original,
+      })
+    }
+  })
+
+  it('cannot be dismissed while leaving a hidden tier is in flight', async () => {
+    plan.mockReturnValue(held('beta'))
+    changePlan.mockReturnValue(new Promise(() => {}))
+    await open()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Switch to Max' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'SWITCH TO MAX' }),
+    )
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
   it('shows a member the plans with nothing to press', async () => {
     mayChange.mockReturnValue(false)
     plan.mockReturnValue(held('pro'))
@@ -229,6 +285,33 @@ describe('the owner gate after beta access ends', () => {
       screen.getByText(/your first month is free on Pro/),
     ).toBeInTheDocument()
     expect(screen.getByText('START FREE MONTH')).toBeInTheDocument()
+  })
+
+  it('names no free month on a tier that cannot be bought right now', async () => {
+    noteComplimentary('ws-1', held('pro'))
+    tiers.mockReturnValue([
+      tier('starter'),
+      { ...tier('pro', true), available: false },
+    ])
+    plan.mockReturnValue(GATED)
+    await open()
+
+    expect(
+      screen.getByText('Your complimentary beta access has ended'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/first month is free/)).not.toBeInTheDocument()
+  })
+
+  it('keeps the notice owed when the page could not show it', async () => {
+    noteComplimentary('ws-1', held('pro'))
+    plan.mockReturnValue(GATED)
+    tiers.mockReturnValue(null)
+    await open()
+
+    expect(
+      screen.queryByText('Your complimentary beta access has ended'),
+    ).not.toBeInTheDocument()
+    expect(complimentaryEnded('ws-1', GATED)).toBe(true)
   })
 
   it('does not say it to a workspace that was never comped', async () => {
