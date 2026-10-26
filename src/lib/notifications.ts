@@ -88,10 +88,8 @@ const COPY_KEY = {
  * The plan-limit warnings, which are two types over four features (CON-295).
  *
  * `entitlement.limit_reached` and `entitlement.limit_approaching` are raised
- * by the server's quota limiter, unconditionally — they are **not** behind
- * `workspace-tiers`, which gates the screens that talk about a plan and not
- * the counting. They arrived before this table did and fell through to the
- * server's English.
+ * by the server's quota limiter, unconditionally. They arrived before this
+ * table did and fell through to the server's English.
  *
  * A key per feature rather than one sentence with the feature's name slotted
  * in. Two reasons, and the second is the real one: the wire carries

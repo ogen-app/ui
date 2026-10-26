@@ -201,58 +201,6 @@ const FEATURE_FLAGS = {
   'post-version-delete': false,
 
   /**
-   * Workspace tiers and billing — what the plan a workspace is on allows, how
-   * the app says so, and buying one through Lemon Squeezy (CON-232, CON-328).
-   * **Off — waiting on CON-322's back end reaching staging.**
-   *
-   * Note what this flag is and isn't. A flag decides whether a feature is built
-   * yet; it is never who is allowed to see what. That is exactly why tiers get
-   * their own seam (`useEntitlement`) instead of entries in this file: the
-   * question "has anyone paid for this" is the server's, answered per
-   * workspace. This flag switches off *the asking*, not the answer.
-   *
-   * **The client is written against the real contract, with no stub left**
-   * (CON-328). The reads are the two CON-243 shipped, grown additively by
-   * CON-324/325: `GET /api/me/entitlements` now carries the gate
-   * (`billing_required`), the free-month eligibility, the live subscription's
-   * period, renewal, trial end and scheduled change, and each allowance's tally
-   * (`current`); `GET /api/public/pricing` carries whether each tier and price
-   * can be bought and which tier has the free month. The change is
-   * `POST /api/workspace/plan` — a Lemon Squeezy checkout or an in-place change,
-   * the server's choice — and the money is `GET /api/billing` and
-   * `POST /api/billing/portal`. The shapes were read off ogen PR #229.
-   *
-   * What turning it on switches on:
-   *
-   * - **The billing gate.** `__root.tsx` reads `billing_required` and sends a
-   *   workspace with no plan to `/plans` once; a 402 `billing_required` that
-   *   still arrives is the fallback (`lib/billingGate`). Members see "waiting on
-   *   the owner". Grandfathered workspaces read `false` and never see it.
-   * - **`/plans`** as the Ledger, with checkout opened in a new tab, the
-   *   confirmation for in-place changes, and the "finishing up" wait after
-   *   checkout, which resolves on `entity:billing:<tenant>` and never on the
-   *   redirect.
-   * - **The Plan & billing card**, the gating at every control (`useEntitlement`)
-   *   and the connect-limit callout.
-   *
-   * What does **not** wait on it: the marketing entry `/signup?plan=` (it only
-   * remembers a tier id and lands on `/plans` when that exists), and being
-   * refused (CON-295) — 402 `entitlement_exceeded` and 403
-   * `feature_not_available` are read unflagged, because declining to show a
-   * machine code to a user is not a tiers feature.
-   *
-   * **Turn it on once CON-322's back end is on staging**, after re-testing the
-   * whole flow there against Lemon Squeezy's test mode (CON-328's "done when").
-   * Then delete this flag with its off-branch, on the next merge after a deploy.
-   *
-   * One thing that still belongs elsewhere: a downgrade suspends rather than
-   * deletes, and the server picks which campaign goes read-only — so the
-   * `suspended` flag has to ride on the resource. There is no such flag on the
-   * API yet. The client must never work it out by counting.
-   */
-  'workspace-tiers': false,
-
-  /**
    * The workspace's calendar — every campaign's posts on one grid.
    *
    * The campaign already has one (`/campaigns/:id/calendar`), which is the

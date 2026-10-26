@@ -53,11 +53,16 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 | S3 | **Campaign-scoped assets**, with the workspace bank staying on as workspace-wide knowledge storage (CON-211). | CON-210 | — |
 | B1 | **Session-authenticated email preferences.** CON-155 shipped the suppression engine, but every endpoint it exposes verifies a signature lifted from an email footer, not a session. | CON-155 | `email-preferences` |
 | E1 | **`post.attachments.changed` on `entity:post:<id>`** after every committed attachment write — upload, video finalize, bank attach (the Figma plugin's path), update, reorder, delete — tenant-stamped with no `UserID`, so every member with the post open hears it. The client routes it already (`lib/eventRouting`); until it is published, a file the Figma plugin attaches to an open post appears only on reload or the 10-minute presign refetch. | **CON-345** | — |
-| B2 | **The entitlements and billing reads** — `/entitlements`, `/tiers`, `/workspace/plan`, `/billing`, `/billing/portal`. The tiers and counters exist (CON-208, CON-86); the workspace-scoped REST read that puts them together does not. | CON-243 | `workspace-tiers` |
 
 ## Closed since the last review
 
 Kept for one cycle so nobody re-raises them, then deleted.
+
+- **B2 — the entitlements and billing reads.** Shipped in CON-243 and grown by
+  CON-324/325 (ogen#229): `GET /api/me/entitlements`, `GET /api/public/pricing`,
+  `POST /api/workspace/plan`, `GET /api/billing` and `POST /api/billing/portal`.
+  Tiers and billing are on by default and the `workspace-tiers` flag is deleted
+  (2026-10-26).
 
 - **S2 — the bridge that attaches a bank image to a post.** Shipped in CON-290
   (ogen#187, 2026-10-03): `POST /api/posts/:id/attachments/from-asset` copies

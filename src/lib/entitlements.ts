@@ -48,10 +48,6 @@ import type {
 
 /**
  * The answer for a feature nobody has decided to charge for.
- *
- * Also the answer while tier gating is switched off entirely, which is what
- * keeps the flag's off-branch honest: with no plan in play every call site
- * takes the same path it took before this feature existed.
  */
 export const UNGATED: Entitlement = Object.freeze({
   state: 'allowed',

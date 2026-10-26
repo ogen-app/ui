@@ -166,9 +166,9 @@ adding one is a coordinated change.
 | `connection.action_required` | Exception | A connection needs reauthorisation | Owners (CON-219) |
 | `entitlement.limit_approaching` / `entitlement.limit_reached` | Exception | A create pushes a capped resource over the warn threshold, or fills the cap (CON-295 §12). `dedupe_key = entitlement_limit:<feature>:<state>`, and the row expires after seven days — it is "you are running out", not a record | Owners |
 
-The entitlement pair is **not** gated by `workspace-tiers`: the limiter is
-wired unconditionally at boot, so these rows reach an inbox whether or not the
-screens that talk about a plan are switched on. Their copy is keyed by feature
+The limiter behind the entitlement pair is wired unconditionally at boot, so
+these rows reach an inbox whether or not the workspace has ever opened a plan
+screen. Their copy is keyed by feature
 as well as by type — four capped resources today (`team_seats`,
 `active_campaigns`, `content_bank_assets`, `media_storage_bytes`), each with a
 sentence of its own, because a cap counted in bytes and a cap counted in

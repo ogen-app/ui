@@ -20,8 +20,7 @@ import { noteComplimentary } from '@/lib/complimentaryMemory'
  * It also remembers a comped workspace while it is one, so the gate can say
  * why it appeared (`lib/complimentaryMemory`).
  *
- * Mounted once, in `_authenticated`. With `workspace-tiers` off the plan is
- * never read and this does nothing.
+ * Mounted once, in `_authenticated`.
  */
 export function useBillingGateWatch(): void {
   const navigate = useNavigate()

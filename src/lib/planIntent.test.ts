@@ -1,17 +1,14 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
-vi.mock('@/config/featureFlags', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/config/featureFlags')>()
-  return { ...actual, isFeatureEnabled: vi.fn(() => true) }
-})
-
-const { isFeatureEnabled } = await import('@/config/featureFlags')
-const { afterSignupPath, clearPlanIntent, readPlanIntent, rememberPlanIntent } =
-  await import('./planIntent')
+import {
+  afterSignupPath,
+  clearPlanIntent,
+  readPlanIntent,
+  rememberPlanIntent,
+} from './planIntent'
 
 afterEach(() => {
   sessionStorage.clear()
-  vi.mocked(isFeatureEnabled).mockReturnValue(true)
 })
 
 describe('the plan picked on the pricing page', () => {
@@ -40,12 +37,5 @@ describe('the plan picked on the pricing page', () => {
     clearPlanIntent()
 
     expect(readPlanIntent()).toBeNull()
-  })
-
-  it('goes to the app with tiers switched off, plan or not', () => {
-    vi.mocked(isFeatureEnabled).mockReturnValue(false)
-    rememberPlanIntent('pro')
-
-    expect(afterSignupPath()).toBe('/')
   })
 })
