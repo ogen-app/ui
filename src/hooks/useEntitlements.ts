@@ -2,8 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 
 import { getWorkspacePlan } from '@/services/api/entitlements'
-import { UNGATED, resolveEntitlement } from '@/lib/entitlements'
-import { useFeatureFlag } from '@/config/featureFlags'
+import { resolveEntitlement } from '@/lib/entitlements'
 import type {
   Entitlement,
   EntitlementKey,
@@ -72,10 +71,6 @@ export function invalidateEntitlements(client: QueryClient): void {
 
 /**
  * The plan itself. Undefined until it answers.
- *
- * With the flag off the query never runs, so this stays undefined and every
- * `useEntitlement` below reports `UNGATED` — the app behaves exactly as it did
- * before tiers existed, which is what the off-branch is required to do.
  */
 export function useWorkspacePlan(
   options: {
@@ -89,12 +84,10 @@ export function useWorkspacePlan(
     pollWhile?: (plan: WorkspacePlan | undefined) => boolean
   } = {},
 ) {
-  const gated = useFeatureFlag('workspace-tiers')
   const { pollWhile } = options
   return useQuery({
     queryKey: ENTITLEMENTS_KEY,
     queryFn: getWorkspacePlan,
-    enabled: gated,
     staleTime: 30_000,
     refetchInterval: pollWhile
       ? (query) => (pollWhile(query.state.data) ? PLAN_POLL_MS : false)
@@ -114,9 +107,7 @@ const PLAN_POLL_MS = 5_000
  * didn't mention either: that is a feature nobody has decided to charge for.
  */
 export function useEntitlement(key: EntitlementKey): Entitlement {
-  const gated = useFeatureFlag('workspace-tiers')
   const { data: plan } = useWorkspacePlan()
-  if (!gated) return UNGATED
   return resolveEntitlement(key, plan)
 }
 

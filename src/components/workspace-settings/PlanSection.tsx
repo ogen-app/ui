@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
 import { PlanBillingCard } from '@/components/workspace-settings/PlanBillingCard'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useBilling, useOpenBillingPortal } from '@/hooks/useBilling'
 import { useWorkspacePlan } from '@/hooks/useEntitlements'
 import { useChangePlan } from '@/hooks/useTiers'
@@ -16,7 +15,6 @@ import { toast } from '@/stores/toastStore'
  */
 export function PlanSection() {
   const { t } = useTranslation()
-  const gated = useFeatureFlag('workspace-tiers')
   const workspace = useWorkspace()
   const plan = useWorkspacePlan()
   const billing = useBilling()
@@ -38,10 +36,6 @@ export function PlanSection() {
       },
     )
   }
-
-  // Nothing at all with the flag off — not an empty card. See CLAUDE.md: the
-  // off-branch has to leave the app exactly as it was before tiers existed.
-  if (!gated) return null
 
   return (
     <PlanBillingCard

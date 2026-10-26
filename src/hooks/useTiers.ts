@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { changePlan, listTiers } from '@/services/api/tiers'
 import { QUERY_FIVE_MINUTES } from '@/lib/queryClient'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { ENTITLEMENTS_KEY } from './useEntitlements'
 
 /**
@@ -28,11 +27,9 @@ export const TIERS_KEY = ['tiers'] as const
  * on. Checkout says what was really applied either way (`PlanCheckout.trial`).
  */
 export function useTiers() {
-  const gated = useFeatureFlag('workspace-tiers')
   return useQuery({
     queryKey: TIERS_KEY,
     queryFn: listTiers,
-    enabled: gated,
     staleTime: QUERY_FIVE_MINUTES,
   })
 }

@@ -1032,16 +1032,14 @@ contract is in `services/api/emailPreferences.ts` and asserted by its test.
 Flip the flag when the handler answers. See
 `docs/technical-decisions.md#email-preferences`.
 
-**Workspace tiers and billing are built against the real API and flagged off**
-(`workspace-tiers`, CON-232, CON-328). The seam — `types/entitlements.ts`,
+**Workspace tiers and billing are live, unflagged** (CON-232, CON-328; the
+`workspace-tiers` flag was deleted 2026-10-26). The seam — `types/entitlements.ts`,
 `lib/entitlements.ts`, `useEntitlement`, the shared renderings in
 `components/entitlements` — is wired at every control, and three surfaces talk
 *about* the plan: the **Plan & billing card** in Workspace Settings
 (`components/workspace-settings/PlanSection`), **`/plans`**, and the **billing
 gate** in `__root.tsx`. There is no stub left: `tiers.stub.ts`, its `STUBBED`
-branches and the seeded usage counters were deleted in CON-328. The flag waits
-on CON-322's back end (ogen PR #229) reaching staging and a re-test against
-Lemon Squeezy's test mode.
+branches and the seeded usage counters were deleted in CON-328.
 
 **The two reads are CON-243's, grown additively by CON-324/325.**
 `GET /api/me/entitlements` answers with a resolved tier **version** — `tier_id`
@@ -1148,16 +1146,13 @@ says "excl. VAT"; a `test_mode` workspace shows a Sandbox badge. The door is
 day** — never cache, store or put it in a `href` at render time, and open the
 tab synchronously on the click (`useOpenBillingPortal`).
 
-**The call sites are wired, and the flag is the only thing holding them**
-(CON-232). Twelve of the fourteen keys are consulted at the control they govern;
+**The call sites are wired** (CON-232). Twelve of the fourteen keys are consulted at the control they govern;
 which of hide / lock / lock-with-upgrade each one gets is decided and recorded on
 `EntitlementKey` in `types/entitlements.ts`, along with the reason the other two
 are not wired — `custom_campaign_types` has no authoring screen to hide, and
 `workspaces` is an *account* allowance that only a *workspace*-scoped read can
-answer, so it is left to the server. Everything goes through `useEntitlement`,
-which returns `UNGATED` while the flag is down; nothing reads `FEATURE_FLAGS` or
-the plan directly. The flag stays **off** on `develop` until the billing back
-end is on staging (see above).
+answer, so it is left to the server. Everything goes through `useEntitlement`;
+nothing reads the plan directly.
 
 **Selling is one behaviour, not eleven.** The sell disposition is always the
 same moment — a control the user just clicked — so it is one hook and one

@@ -234,9 +234,8 @@ describe('notificationTarget', () => {
 
 describe('notificationCopy — plan limits', () => {
   /**
-   * These two arrive whether or not `workspace-tiers` is on: the server's
-   * limiter is wired unconditionally, so a workspace that has never seen a
-   * plan screen still gets the row. They were falling through to the server's
+   * The server's limiter is wired unconditionally, so a workspace that has
+   * never seen a plan screen still gets the row. They were falling through to the server's
    * English — which is where an untranslatable sentence is *correct* for an
    * unknown type, and simply a gap for a known one.
    */

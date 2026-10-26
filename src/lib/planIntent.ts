@@ -1,5 +1,3 @@
-import { isFeatureEnabled } from '@/config/featureFlags'
-
 /**
  * The plan a visitor picked on the marketing site, carried through signup
  * (CON-328, CON-322 §5.7).
@@ -55,7 +53,6 @@ export function clearPlanIntent(): void {
  * keeps only as a same-site path.
  */
 export function afterSignupPath(): string {
-  if (!isFeatureEnabled('workspace-tiers')) return '/'
   const tier = readPlanIntent()
   return tier ? `/plans?plan=${encodeURIComponent(tier)}` : '/'
 }

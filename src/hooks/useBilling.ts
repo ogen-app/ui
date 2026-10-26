@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { createBillingPortalLink, getBilling } from '@/services/api/billing'
 import { ApiError } from '@/services/api/errors'
 import { toast } from '@/stores/toastStore'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useWorkspace } from '@/hooks/useWorkspaces'
 import { canManageBilling } from '@/types/workspace'
 
@@ -26,12 +25,11 @@ export const BILLING_KEY = ['billing'] as const
  * is the one it holds in the default workspace (CON-147).
  */
 export function useBilling() {
-  const gated = useFeatureFlag('workspace-tiers')
   const workspace = useWorkspace()
   return useQuery({
     queryKey: BILLING_KEY,
     queryFn: getBilling,
-    enabled: gated && !!workspace && canManageBilling(workspace.role),
+    enabled: !!workspace && canManageBilling(workspace.role),
     // 503 is billing switched off on this deployment (`BILLING_PROVIDER=none`)
     // — a state, not a hiccup, and asking again will not change it.
     retry: (count, error) =>

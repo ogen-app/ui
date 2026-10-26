@@ -18,7 +18,6 @@ import { checkSession } from '../services/api/sessions'
 import { listWorkspaces } from '../services/api/workspaces'
 import { getWorkspacePlan } from '../services/api/entitlements'
 import { useAuthStore } from '../stores/authStore'
-import { isFeatureEnabled } from '../config/featureFlags'
 import { ENTITLEMENTS_KEY } from '../hooks/useEntitlements'
 import { isGateExempt } from '../lib/billingGate'
 import { searchTextOf } from '../lib/searchText'
@@ -175,9 +174,7 @@ function adoptReturnWorkspace(pathname: string, search: unknown): void {
  * was never gated.
  */
 async function billingGated(pathname: string): Promise<boolean> {
-  if (!isFeatureEnabled('workspace-tiers') || isGateExempt(pathname)) {
-    return false
-  }
+  if (isGateExempt(pathname)) return false
   try {
     const plan = await queryClient.fetchQuery({
       queryKey: ENTITLEMENTS_KEY,

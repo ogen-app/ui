@@ -13,10 +13,6 @@ import { useBillingGateWatch } from './useBillingGateWatch'
  * tab goes to `/plans` on that, without a reload or a refused click.
  */
 
-vi.mock('@/config/featureFlags', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/config/featureFlags')>()),
-  useFeatureFlag: () => true,
-}))
 vi.mock('@/hooks/useWorkspaces', () => ({
   useWorkspace: () => ({ id: 'ws-1', name: 'Acme Roasters', role: 'owner' }),
 }))
