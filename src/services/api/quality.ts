@@ -46,7 +46,16 @@ export type AssessEvent =
        */
       cached: boolean
     }
-  | { type: 'error'; message: string }
+  | {
+      type: 'error'
+      message: string
+      /**
+       * The HTTP status the failure would have had. `402` is the post's
+       * `quality_reviews_per_post` allowance being used up — a plan limit,
+       * not a breakage.
+       */
+      code: number | null
+    }
 
 /**
  * Runs a fresh assessment and dispatches its SSE events.
@@ -96,6 +105,7 @@ export async function streamPostAssessment(
             typeof parsed.message === 'string'
               ? parsed.message
               : 'The assessment failed',
+          code: typeof parsed.code === 'number' ? parsed.code : null,
         })
         break
     }

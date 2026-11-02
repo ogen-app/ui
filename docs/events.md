@@ -81,6 +81,7 @@ a skipped event is caught up rather than lost. The match is exact: a write on
 | --- | --- | --- | --- |
 | `entity:post:<id>` | `assistant.completed` / `assistant.failed` | A post-assistant run ends | Invalidate the post; muted for the tab that started it |
 | | `assessment.completed` / `assessment.failed` | A quality assessment ends | Invalidate the post's quality; muted for the starting tab |
+| | `assessment.started` | An **automatic** assessment begins at a lifecycle checkpoint — marked ready, version saved, scheduled, published (CON-438). Payload `{postId, trigger}`; never sent for a manual run | Show "Assessing…" in the quality panel (`autoAssessmentStore`) until the run's `completed`/`failed`, or three minutes, or a reconnect. Automatic endings carry the same `trigger` and raise no toast |
 | | `post.cloned` | A post is duplicated | Invalidate the campaign's post list. The topic names the **clone**, not its source — `payload.sourcePostId` is the post it came from |
 | | `post.restored` | A post version is restored | Invalidate the post |
 | | `post.scheduled` | A post is scheduled | Invalidate the post and its campaign's list |
@@ -161,7 +162,7 @@ adding one is a coordinated change.
 | `campaign.content_plan_ready` | Resolution | Content-plan generation succeeded | Initiator |
 | `content_plan.failed` | Resolution | Its failure twin | Initiator |
 | `assistant.completed` / `assistant.failed` | Resolution | A post- or campaign-assistant run ends. The campaign flow **skips the success** when the run generated a content plan — `campaign.content_plan_ready` already says that, better | Initiator |
-| `assessment.completed` / `assessment.failed` | Resolution | A post quality assessment ends | Initiator |
+| `assessment.completed` / `assessment.failed` | Resolution | A **manual** post quality assessment ends. Automatic runs (CON-438) write no inbox row | Initiator |
 | `connection.expiring_soon` | Exception | The expiry sweep finds a connection near its end | Owners (CON-219) |
 | `connection.action_required` | Exception | A connection needs reauthorisation | Owners (CON-219) |
 | `entitlement.limit_approaching` / `entitlement.limit_reached` | Exception | A create pushes a capped resource over the warn threshold, or fills the cap (CON-295 §12). `dedupe_key = entitlement_limit:<feature>:<state>`, and the row expires after seven days — it is "you are running out", not a record | Owners |

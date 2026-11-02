@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import type { PostEvaluation, QualityDimension } from '@/types/quality'
+import type {
+  PostEvaluation,
+  QualityDimension,
+  QualitySuggestion,
+} from '@/types/quality'
 import {
   ASSESS_STEPS,
   QUALITY_DIMENSIONS,
-  isAssessmentStale,
+  automaticTrigger,
   overallBand,
   overallPct,
+  postSuggestions,
+  runsLeft,
   scoreBand,
+  staleReason,
   stepLabel,
   suggestionsOf,
-  totalSuggestions,
 } from './postQuality.ts'
 
 function dimension(
@@ -17,8 +23,7 @@ function dimension(
 ): QualityDimension {
   return {
     score: 7,
-    rationale: 'Reads cleanly but the hook is generic.',
-    weakness: 'The opening line could open any post.',
+    verdict: 'Reads cleanly, but the opening line could open any post.',
     suggestions: null,
     weight: 0.25,
     contribution: 17.5,
@@ -44,6 +49,10 @@ function evaluation(overrides: Partial<PostEvaluation> = {}): PostEvaluation {
     input_hash: 'abc123',
     created_at: '2026-07-20T10:00:00Z',
     updated_at: '2026-07-20T10:00:00Z',
+    trigger: 'manual',
+    stale: false,
+    runs_used: 1,
+    runs_limit: null,
     ...overrides,
   }
 }
@@ -99,56 +108,127 @@ describe('suggestionsOf', () => {
   })
 })
 
-describe('totalSuggestions', () => {
-  it('counts across all four dimensions', () => {
-    const one = [
-      {
-        dimension: 'clarity' as const,
-        severity: 'high' as const,
-        issue: 'Buried lede',
-        fix: 'Lead with the outcome.',
-        span: 'After twelve years',
-      },
-    ]
+function suggestion(
+  overrides: Partial<QualitySuggestion> = {},
+): QualitySuggestion {
+  return {
+    dimension: 'clarity',
+    severity: 'medium',
+    span: 'After twelve years',
+    advice: 'Lead with the outcome so the claim lands before the fold.',
+    ...overrides,
+  }
+}
+
+describe('postSuggestions', () => {
+  it('gathers every dimension into one list, most severe first', () => {
     const evaluated = evaluation({
       result: {
-        correctness: dimension({ suggestions: null }),
-        clarity: dimension({ suggestions: one }),
-        engagement: dimension({ suggestions: [...one, ...one] }),
-        delivery: dimension({ suggestions: [] }),
+        correctness: dimension({
+          suggestions: [suggestion({ dimension: 'correctness', severity: 'low' })],
+        }),
+        clarity: dimension({
+          suggestions: [suggestion({ dimension: 'clarity', severity: 'medium' })],
+        }),
+        engagement: dimension({
+          suggestions: [
+            suggestion({ dimension: 'engagement', severity: 'high' }),
+            suggestion({ dimension: 'engagement', severity: 'low' }),
+          ],
+        }),
+        delivery: dimension({ suggestions: null }),
       },
     })
-    expect(totalSuggestions(evaluated)).toBe(3)
+    expect(
+      postSuggestions(evaluated).map((s) => [s.dimension, s.severity]),
+    ).toEqual([
+      ['engagement', 'high'],
+      ['clarity', 'medium'],
+      ['correctness', 'low'],
+      ['engagement', 'low'],
+    ])
   })
 
-  it('is zero when the model raised nothing', () => {
-    expect(totalSuggestions(evaluation())).toBe(0)
+  // Stable, so the same result never reshuffles between two renders.
+  it('keeps rubric order between suggestions of the same severity', () => {
+    const evaluated = evaluation({
+      result: {
+        correctness: dimension(),
+        clarity: dimension({
+          suggestions: [suggestion({ dimension: 'clarity', severity: 'high' })],
+        }),
+        engagement: dimension(),
+        delivery: dimension({
+          suggestions: [suggestion({ dimension: 'delivery', severity: 'high' })],
+        }),
+      },
+    })
+    expect(postSuggestions(evaluated).map((s) => s.dimension)).toEqual([
+      'clarity',
+      'delivery',
+    ])
+  })
+
+  it('is empty when the model raised nothing', () => {
+    expect(postSuggestions(evaluation())).toEqual([])
   })
 })
 
-describe('isAssessmentStale', () => {
-  it('flags a post edited after it was scored', () => {
-    expect(isAssessmentStale(evaluation(), '2026-07-21T09:00:00Z')).toBe(true)
+describe('staleReason', () => {
+  it('is null for a current score', () => {
+    expect(staleReason(evaluation({ stale: false }))).toBeNull()
   })
 
-  it('does not flag a post untouched since it was scored', () => {
-    expect(isAssessmentStale(evaluation(), '2026-07-19T09:00:00Z')).toBe(false)
-  })
-
-  // The assessment is written after the post is read, so equal timestamps
-  // mean "scored at the last save" — current, not stale.
-  it('treats identical timestamps as current', () => {
-    expect(isAssessmentStale(evaluation(), '2026-07-20T10:00:00Z')).toBe(false)
-  })
-
-  it('stays quiet rather than guessing when a timestamp is unparseable', () => {
-    expect(isAssessmentStale(evaluation(), '')).toBe(false)
+  it("passes the server's reason through", () => {
     expect(
-      isAssessmentStale(
-        evaluation({ updated_at: 'nope' }),
-        '2026-07-21T09:00:00Z',
-      ),
-    ).toBe(false)
+      staleReason(evaluation({ stale: true, stale_reason: 'context' })),
+    ).toBe('context')
+    expect(staleReason(evaluation({ stale: true, stale_reason: 'both' }))).toBe(
+      'both',
+    )
+  })
+
+  it('reads a reasonless stale as a content change', () => {
+    expect(staleReason(evaluation({ stale: true }))).toBe('content')
+  })
+
+  // A run's `complete` evaluation carries no staleness at all.
+  it('treats a missing flag as current', () => {
+    expect(staleReason(evaluation({ stale: undefined }))).toBeNull()
+  })
+})
+
+describe('runsLeft', () => {
+  it('says nothing on an unlimited plan', () => {
+    expect(runsLeft(evaluation({ runs_limit: null }))).toBeNull()
+    expect(runsLeft(evaluation({ runs_limit: undefined }))).toBeNull()
+    expect(runsLeft(null)).toBeNull()
+  })
+
+  it('counts what is left of the cap', () => {
+    expect(runsLeft(evaluation({ runs_used: 3, runs_limit: 5 }))).toEqual({
+      left: 2,
+      limit: 5,
+    })
+  })
+
+  it('never goes below zero', () => {
+    expect(runsLeft(evaluation({ runs_used: 7, runs_limit: 5 }))?.left).toBe(0)
+  })
+})
+
+describe('automaticTrigger', () => {
+  it('names a lifecycle checkpoint', () => {
+    expect(automaticTrigger(evaluation({ trigger: 'ready' }))).toBe('ready')
+    expect(automaticTrigger(evaluation({ trigger: 'published' }))).toBe(
+      'published',
+    )
+  })
+
+  it('says nothing for a manual run or a pre-CON-438 row', () => {
+    expect(automaticTrigger(evaluation({ trigger: 'manual' }))).toBeNull()
+    expect(automaticTrigger(evaluation({ trigger: '' }))).toBeNull()
+    expect(automaticTrigger(evaluation({ trigger: undefined }))).toBeNull()
   })
 })
 

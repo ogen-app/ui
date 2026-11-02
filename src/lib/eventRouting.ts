@@ -311,9 +311,14 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
     // a downgrade landed, a payment failed. Both reads, because the plan read
     // carries the gate and the billing read carries the money, and either can
     // be the one a screen is waiting on — `/plans` after checkout waits on the
-    // first.
+    // first. The assessments come along because each read carries the post's
+    // run allowance (CON-438), and the plan is what sets it.
     case 'plan':
-      return [{ queryKey: ENTITLEMENTS_KEY }, { queryKey: BILLING_KEY }]
+      return [
+        { queryKey: ENTITLEMENTS_KEY },
+        { queryKey: BILLING_KEY },
+        { queryKey: ['postAssessment'] },
+      ]
 
     // A brand read moved on (CON-399). The event never carries the proposal,
     // so the run is read again — which is also how a page watching it learns

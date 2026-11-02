@@ -3358,6 +3358,103 @@ export const en = {
       assessing: 'Assessing…',
       neverScored: 'This post was never scored.',
       scoringIsForDrafts: 'Scoring is for a post you can still change.',
+
+      title: 'Quality',
+      inlineHeading: 'Post content quality',
+      seeBreakdown: 'See the full breakdown',
+      overall: 'Overall quality',
+      assessPost: 'Assess this post',
+      reassessPost: 'Re-assess this post',
+      assessingPost: 'Assessing this post…',
+      scored: 'Scored',
+      scoredAt: 'Scored {{when}}',
+      scoredCached: 'Scored · unchanged since the last run',
+      scoredAtCached: 'Scored {{when}} · unchanged since the last run',
+      captionScoped:
+        "Only the text was scored. This post carries media the model can't see, so the visual is not part of the number above.",
+      runFailed: "The assessment didn't finish",
+      loadFailed: "Couldn't load the assessment",
+      suggestionCount_one: '{{count}} suggestion',
+      suggestionCount_other: '{{count}} suggestions',
+      /** A section label, so its capitals are part of the copy. */
+      suggestionsHeading: 'SUGGESTIONS',
+      severity: {
+        high: 'High',
+        medium: 'Medium',
+        low: 'Low',
+      },
+
+      /**
+       * What started the stored score, when it wasn't the author (CON-438).
+       * A manual run says nothing — "you asked for this" is no news.
+       */
+      trigger: {
+        ready: 'Assessed automatically when it was marked ready',
+        version: 'Assessed automatically when a version was saved',
+        scheduled: 'Assessed automatically when it was scheduled',
+        published: 'Assessed automatically when it was published',
+      },
+
+      /** An automatic run in progress, which no button in this tab started. */
+      auto: {
+        running: {
+          ready: 'Assessing automatically, as the post was marked ready.',
+          version: 'Assessing automatically, as a version was saved.',
+          scheduled: 'Assessing automatically, as the post was scheduled.',
+          published: 'Assessing automatically, as the post was published.',
+        },
+        runningGeneric: 'Assessing automatically.',
+      },
+
+      /**
+       * The score no longer describes the post. The reasons are worded apart
+       * because they behave apart: a content change is caught by the next
+       * checkpoint, a context change never is — re-assessing is the only way.
+       */
+      stale: {
+        badge: 'May be outdated',
+        content:
+          "The post has changed since it was scored. It's re-scored automatically at the next checkpoint, or you can re-assess now.",
+        context:
+          "The campaign brief, its assets or the way posts are scored have changed since this was scored. That's never re-scored automatically.",
+        both: "The post and its campaign context have both changed since this was scored. Re-assess to see where it stands now.",
+        action: 'Re-assess',
+      },
+
+      /**
+       * The post's `quality_reviews_per_post` allowance (CON-438). Automatic
+       * and manual runs share it; an unchanged post re-assessed is free.
+       * `count` is what selects the plural, so it is the number left — or,
+       * in `none`, the cap.
+       */
+      runs: {
+        left_one: '{{count}} of {{limit}} reviews left for this post',
+        left_other: '{{count}} of {{limit}} reviews left for this post',
+        none_one: "You've used the one review your plan allows for this post.",
+        none_other:
+          "You've used all {{count}} reviews your plan allows for this post.",
+        noneFlat: "You've used every review your plan allows for this post.",
+        noneShort: 'No reviews left',
+        limitTitle: 'No reviews left for this post',
+      },
+
+      /** Everything the rail says when there is no score on screen. */
+      empty: {
+        unavailable: 'Scoring is switched off for this workspace.',
+        unavailableHint:
+          'Someone with admin rights can turn it on in settings.',
+        goToSettings: 'Go to workspace settings',
+        broke: 'Oops, something broke.',
+        loadFailed: "We couldn't fetch this post's score just now.",
+        tryAgain: 'Try again',
+        runFailed:
+          'The assessment stopped before it finished. Nothing was saved, so running it again is safe.',
+        notScored: "This post hasn't been scored yet.",
+        notScoredHow:
+          "Ogen reads it against the campaign brief and the channel's conventions, then scores correctness, clarity, engagement and delivery.",
+        notScoredAuto:
+          "It's also scored automatically once you mark it ready for publish.",
+      },
     },
 
     /**
@@ -3378,6 +3475,16 @@ export const en = {
       liveDraftNote: 'Not snapshotted yet',
       liveSubmitted: 'Current text',
       liveSubmittedNote: 'Never snapshotted',
+      /**
+       * Who took a snapshot. `system` is the server keeping a record at a
+       * lifecycle moment — marked ready, submitted, published — and its note
+       * says which; the author didn't take it, so it isn't "You".
+       */
+      creator: {
+        user: 'You',
+        assistant: 'Assistant',
+        system: 'Ogen',
+      },
     },
 
     /**

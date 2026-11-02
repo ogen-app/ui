@@ -258,7 +258,10 @@ export function verifyExternalPost(
  * or schedule, so restoring one changes the words and nothing else.
  *
  * `creator` says who took the snapshot: the assistant saves one before it
- * rewrites, the user saves one by asking.
+ * rewrites, the user saves one by asking, and the server — `system` — keeps a
+ * record at the lifecycle moments that matter: marked ready for publish
+ * (CON-438), submitted to the publisher and published (CON-251). Those carry
+ * the server's note ("Marked ready for publish", …), which the row shows.
  */
 export type PostVersion = {
   id: string
@@ -266,7 +269,7 @@ export type PostVersion = {
   version_number: number
   content: string
   note: string
-  creator: 'user' | 'assistant'
+  creator: 'user' | 'assistant' | 'system'
   created_at: string
 }
 

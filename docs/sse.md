@@ -98,7 +98,7 @@ From `origin/main`. Every publisher and every type:
 
 | Topic | Types |
 | --- | --- |
-| `entity:post:<id>` | `assistant.completed`, `assistant.failed`, `assessment.completed`, `assessment.failed`, `post.cloned`, `post.restored`, `post.scheduled`, `post.analytics.updated` |
+| `entity:post:<id>` | `assistant.completed`, `assistant.failed`, `assessment.started`, `assessment.completed`, `assessment.failed`, `post.cloned`, `post.restored`, `post.scheduled`, `post.analytics.updated` |
 | `entity:campaign:<id>` | `assistant.completed`, `assistant.failed`, `content_plan.completed`, `content_plan.failed` |
 | `entity:zernio_account:<id>` | `zernio.account.attached`, `zernio.account.attach_failed`, `zernio.account.updated`, `zernio.account.disconnected`, `zernio.account.revived` |
 | `zernio:sync` | `zernio.sync.ok`, `zernio.sync.failed` |

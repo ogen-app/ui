@@ -1,31 +1,50 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import i18next from 'i18next'
 import {
   QualityUnavailableError,
   getPostAssessment,
   streamPostAssessment,
 } from '@/services/api/quality'
 import { beginLocalRun } from '@/lib/localRuns'
+import { runsLeft } from '@/lib/postQuality'
 import { toast } from '@/stores/toastStore'
-import type { PostEvaluation } from '@/types/quality'
+import { useAutoAssessment } from '@/stores/autoAssessmentStore'
+import type { PostEvaluation, QualityTrigger } from '@/types/quality'
 
 /**
  * Why a run failed goes to a toast rather than into the panel: the reason is
- * a server message ("usage limit reached", "the model returned an unparseable
- * response") that the panel has nothing useful to do with, and printing it
- * mid-rail buries the one thing the user can act on — the button. The panel
- * says something broke and offers the retry; this says what broke, once.
+ * a server message ("the model returned an unparseable response") that the
+ * panel has nothing useful to do with, and printing it mid-rail buries the
+ * one thing the user can act on — the button. The panel says something broke
+ * and offers the retry; this says what broke, once.
  */
 function reportFailure(message: string): void {
-  toast.error("The assessment didn't finish", { description: message })
+  toast.error(i18next.t('posts.quality.runFailed'), { description: message })
+}
+
+/**
+ * The post's allowance is used up (CON-438). Worded like every other plan
+ * refusal — what was refused as the title, the plan's reason under it
+ * (`denialReason`) — and with our sentence rather than the server's, which is
+ * a machine string (`entitlement_exceeded: quality_reviews_per_post …`).
+ */
+function reportLimit(limit: number | null): void {
+  toast.error(i18next.t('posts.quality.runs.limitTitle'), {
+    description:
+      limit === null
+        ? i18next.t('tiers.deniedLimitFlat')
+        : i18next.t('tiers.deniedLimit', { count: limit }),
+  })
 }
 
 /**
  * Its own namespace rather than `['post', id, 'assessment']` on purpose: the
  * editor invalidates `['post', id]` on every autosave, and prefix matching
  * would drag the assessment along with it — refetching a scored result once
- * per keystroke pause. The assessment only changes when a run finishes, and a
- * run writes the cache itself.
+ * per keystroke pause. The assessment changes when a run finishes, and when
+ * the post first moves away from what was scored (see the staleness effect
+ * below), and nothing else needs it read again.
  */
 export const postAssessmentKey = (postId: string) =>
   ['postAssessment', postId] as const
@@ -43,11 +62,21 @@ type UsePostAssessmentResult = {
   /** Starts a fresh run. A no-op while one is already streaming. */
   assess: () => void
   assessing: boolean
+  /**
+   * The server is scoring this post on its own, at a lifecycle checkpoint
+   * (CON-438) — what started it, while it runs.
+   */
+  autoAssessing: QualityTrigger | null
   /** Stages completed so far in the running assessment, in arrival order. */
   steps: string[]
   /** The last run returned the stored result without calling the model. */
   cached: boolean
   assessError: string | null
+  /**
+   * The post's run allowance is used up: the read says so, or the last run
+   * was refused with a 402. Nothing to retry until the plan changes.
+   */
+  exhausted: boolean
 }
 
 /**
@@ -57,10 +86,16 @@ type UsePostAssessmentResult = {
  * The run is a stream rather than a mutation — it reports six stages over SSE
  * and takes long enough that showing them matters. It writes its result
  * straight into the query cache, because the flow persists before it emits
- * `complete`: what arrives *is* the stored assessment, so refetching to
- * confirm would only cost a round trip.
+ * `complete`: what arrives *is* the stored assessment, so the only thing a
+ * refetch adds is what the read endpoint knows on top — the allowance.
+ *
+ * `postUpdatedAt` is the live post's, and is what makes the server's `stale`
+ * flag hold up while the user types: see the effect that reads it.
  */
-export function usePostAssessment(postId: string): UsePostAssessmentResult {
+export function usePostAssessment(
+  postId: string,
+  postUpdatedAt?: string,
+): UsePostAssessmentResult {
   const qc = useQueryClient()
   const query = useQuery({
     queryKey: postAssessmentKey(postId),
@@ -70,11 +105,13 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
     retry: (count, error) =>
       !(error instanceof QualityUnavailableError) && count < 2,
   })
+  const autoRun = useAutoAssessment(postId)
 
   const [assessing, setAssessing] = useState(false)
   const [steps, setSteps] = useState<string[]>([])
   const [cached, setCached] = useState(false)
   const [assessError, setAssessError] = useState<string | null>(null)
+  const [refused, setRefused] = useState(false)
   const [unavailableFromRun, setUnavailableFromRun] = useState(false)
 
   // A run outlives the panel being closed (the sidebar keeps panels mounted),
@@ -89,11 +126,36 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
     setSteps([])
     setCached(false)
     setAssessError(null)
+    setRefused(false)
     return () => {
       abortRef.current?.abort()
       abortRef.current = null
     }
   }, [postId])
+
+  // The server's `stale` is true as of the read, and the read is not repeated
+  // per autosave (see `postAssessmentKey`). So the first save after a current
+  // score asks again — the one edit that can turn "current" into "outdated".
+  // Once the read says stale, later edits can't make it more so, and the
+  // query is left alone until a run lands.
+  const data = query.data
+  const scoredCurrent = !!data && !data.stale
+  const seenUpdatedAt = useRef(postUpdatedAt)
+  useEffect(() => {
+    if (postUpdatedAt === seenUpdatedAt.current) return
+    seenUpdatedAt.current = postUpdatedAt
+    if (scoredCurrent && !abortRef.current) {
+      void qc.invalidateQueries({ queryKey: postAssessmentKey(postId) })
+    }
+  }, [postUpdatedAt, scoredCurrent, postId, qc])
+
+  // A refusal stands until the next read, which counts the runs itself — so
+  // a plan upgrade (which refetches every assessment, `eventRouting`) gives
+  // the button back rather than leaving it locked on an old 402.
+  const { dataUpdatedAt } = query
+  useEffect(() => {
+    setRefused(false)
+  }, [dataUpdatedAt])
 
   // The panel says a load failed; this says why, once. Keyed on the message
   // so TanStack's retries and every re-render after them stay silent — only a
@@ -104,7 +166,9 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
       : null
   useEffect(() => {
     if (loadFailure) {
-      toast.error("Couldn't load the assessment", { description: loadFailure })
+      toast.error(i18next.t('posts.quality.loadFailed'), {
+        description: loadFailure,
+      })
     }
   }, [loadFailure])
 
@@ -120,6 +184,7 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
     setSteps([])
     setCached(false)
     setAssessError(null)
+    setRefused(false)
 
     // Set when the stream reports its own outcome. Without one, the stream
     // was cut short — the run may still have persisted, so we go and look.
@@ -134,13 +199,35 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
           terminal = true
           setCached(event.cached)
           if (event.evaluation) {
-            qc.setQueryData(postAssessmentKey(postId), event.evaluation)
-          } else {
-            // `complete` without a readable evaluation is a malformed payload,
-            // not "nothing stored" — the flow persists before it emits
-            // `complete`. Don't write null over a real score; go look instead.
-            void qc.invalidateQueries({ queryKey: postAssessmentKey(postId) })
+            // The run's copy is the bare evaluation: current by definition,
+            // and silent about the allowance, which only the read reports. So
+            // the cap is carried over from the read before, and the read is
+            // asked again for the rest — a fingerprint check, no model call.
+            const fresh = event.evaluation
+            qc.setQueryData<PostEvaluation | null>(
+              postAssessmentKey(postId),
+              (prev) => ({
+                ...fresh,
+                stale: false,
+                stale_reason: undefined,
+                runs_limit: prev?.runs_limit ?? null,
+              }),
+            )
           }
+          // Either way: `complete` without a readable evaluation is a
+          // malformed payload, not "nothing stored" — the flow persists
+          // before it emits `complete`. Don't write null over a real score.
+          void qc.invalidateQueries({ queryKey: postAssessmentKey(postId) })
+        } else if (event.code === 402) {
+          terminal = true
+          setRefused(true)
+          reportLimit(
+            qc.getQueryData<PostEvaluation | null>(postAssessmentKey(postId))
+              ?.runs_limit ?? null,
+          )
+          // The read we hold under-counted, or the refusal would have come
+          // from it. Ask for the real numbers, which take over from here.
+          void qc.invalidateQueries({ queryKey: postAssessmentKey(postId) })
         } else {
           terminal = true
           setAssessError(event.message)
@@ -182,7 +269,7 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
   }, [refetch])
 
   return {
-    assessment: query.data,
+    assessment: data,
     loading: query.isPending,
     unavailable:
       query.error instanceof QualityUnavailableError || unavailableFromRun,
@@ -190,8 +277,12 @@ export function usePostAssessment(postId: string): UsePostAssessmentResult {
     reload,
     assess,
     assessing,
+    // The manual run's own progress wins: it has steps to show, and the two
+    // can only overlap when a checkpoint fires mid-run.
+    autoAssessing: autoRun && !assessing ? autoRun.trigger : null,
     steps,
     cached,
     assessError,
+    exhausted: refused || runsLeft(data)?.left === 0,
   }
 }

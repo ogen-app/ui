@@ -1,10 +1,9 @@
-import { WarningIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import {
   bandLabel,
   QUALITY_DIMENSIONS,
-  isAssessmentStale,
+  staleReason,
   overallBand,
   overallPct,
   scoreBand,
@@ -13,13 +12,12 @@ import {
 import { relativeTime } from '@/lib/relativeTime.ts'
 import type { PostEvaluation } from '@/types/quality'
 import { Button } from '@/components/ui/button.tsx'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { ScoreRing } from './ScoreRing.tsx'
 import { BAND_TEXT, DIMENSION_ICON } from './tokens.ts'
 
 type Props = {
   assessment: PostEvaluation
-  /** The live post's `updated_at` — what the staleness check reads. */
-  postUpdatedAt: string
   onOpenPanel: () => void
 }
 
@@ -32,8 +30,7 @@ type Props = {
  * same fact twice.
  *
  * A digest, not a second panel. Everything that needs reading rather than
- * glancing — the model's reasoning, the named weakness, the suggestions
- * themselves — stays in the rail, which this links to. Two full breakdowns
+ * glancing — the model's verdicts and the suggestions themselves — stays in the rail, which this links to. Two full breakdowns
  * would be two things to keep in step and twice the height above the editor.
  *
  * Only ever rendered against a stored assessment. The states around one —
@@ -42,14 +39,13 @@ type Props = {
  */
 export function QualityInlineSummary({
   assessment,
-  postUpdatedAt,
   onOpenPanel,
 }: Props) {
   const { t } = useTranslation()
   const pct = overallPct(assessment)
   const band = overallBand(pct)
-  const stale = isAssessmentStale(assessment, postUpdatedAt)
-  const scored = relativeTime(assessment.updated_at)
+  const stale = staleReason(assessment)
+  const when = relativeTime(assessment.updated_at)
 
   return (
     // The rule and the space around it are what separate this from the
@@ -62,7 +58,7 @@ export function QualityInlineSummary({
           heading in the same voice as the sidebar's says "new section" without
           competing with anything in the editor. */}
       <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
-        Post content quality
+        {t('posts.quality.inlineHeading')}
       </h3>
 
       <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-3">
@@ -81,7 +77,9 @@ export function QualityInlineSummary({
               {bandLabel(t, band)}
             </p>
             <p className="text-sm text-tertiary-foreground">
-              {scored ? `Scored ${scored}` : 'Scored'}
+              {when
+                ? t('posts.quality.scoredAt', { when })
+                : t('posts.quality.scored')}
             </p>
           </div>
         </div>
@@ -102,18 +100,16 @@ export function QualityInlineSummary({
         />
       </div>
 
+      {/* The badge and the reason, not the action: re-assessing is the
+          bar's own link, one row up, and the rail's — a third copy here
+          would be the same run offered twice in one glance. */}
       {stale && (
-        <p className="flex items-start gap-1.5 text-sm/[1.5] text-secondary-foreground">
-          <WarningIcon
-            aria-hidden
-            weight="regular"
-            className="mt-[3px] size-4 shrink-0 text-warning"
-          />
-          <span>
-            This post has been edited since it was scored — re-assess to see
-            where it stands now.
-          </span>
-        </p>
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge tone="warn" label={t('posts.quality.stale.badge')} />
+          <p className="text-sm/[1.5] text-secondary-foreground">
+            {t(`posts.quality.stale.${stale}`)}
+          </p>
+        </div>
       )}
 
       {/* Its own row under everything it summarises: the button is the one
@@ -132,7 +128,7 @@ export function QualityInlineSummary({
           onClick={onOpenPanel}
           className="-ml-3 uppercase"
         >
-          See the full breakdown
+          {t('posts.quality.seeBreakdown')}
         </Button>
       </div>
     </section>
