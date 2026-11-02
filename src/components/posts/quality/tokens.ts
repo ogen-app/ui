@@ -27,11 +27,16 @@ export const BAND_WASH: Record<QualityBand, string> = {
 
 /**
  * Severity reads as a tag — the severity colour over a tenth-opacity wash of
- * itself. Matches the assistant's review findings, which use the same
- * high/medium/low vocabulary; they should not look like two different scales.
+ * itself. Matches the assistant's review findings (`assistant/ResultCard`),
+ * which use the same high/medium/low vocabulary; they should not look like two
+ * different scales.
+ *
+ * Medium is the exception to "the colour on its own wash": `--warning` is too
+ * light to carry text at AA, so its label is foreground ink and the wash alone
+ * says orange — the same split the band tag makes.
  */
 export const SEVERITY_CLASS: Record<QualitySeverity, string> = {
   high: 'bg-destructive/10 text-destructive',
-  medium: 'bg-warning/10 text-warning',
+  medium: 'bg-warning/15 text-foreground',
   low: 'bg-tertiary-foreground/10 text-tertiary-foreground',
 }

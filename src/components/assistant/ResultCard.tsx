@@ -276,11 +276,13 @@ function CardHeader({
 /**
  * Severity reads as a tag: the severity colour for the type, over a
  * tenth-opacity wash of the same colour. Small caps at 10px need the contrast
- * a tint alone doesn't give them.
+ * a tint alone doesn't give them. Medium is the exception: `--warning` is too
+ * light to carry text at AA, so its label is foreground ink over the wash. The
+ * quality panel's tags (`posts/quality/tokens.ts`) use the same scale.
  */
 const SEVERITY_CLASS: Record<ReviewSeverity, string> = {
   high: 'bg-destructive/10 text-destructive',
-  medium: 'bg-warning/10 text-warning',
+  medium: 'bg-warning/15 text-foreground',
   low: 'bg-tertiary-foreground/10 text-tertiary-foreground',
 }
 
