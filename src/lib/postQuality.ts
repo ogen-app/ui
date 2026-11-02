@@ -14,47 +14,47 @@ import type {
  * the panel does the drawing, this decides what the numbers mean.
  */
 
+/**
+ * Where a dimension sits on the radar (CON-440). The web is a square turned on
+ * its corner, so the four dimensions take the diagonals — which is what lets
+ * the vertical centre line mean something: the writing on the left, the fit
+ * for the channel on the right.
+ */
+export type RadarCorner = 'nw' | 'sw' | 'ne' | 'se'
+
 export type QualityDimensionMeta = {
   key: QualityDimensionKey
-  label: string
-  /** The one-line question the dimension answers. */
-  blurb: string
   /**
    * Whether the score depends on which channel the post targets. Correctness
    * and Clarity read the same everywhere; Engagement and Delivery are judged
-   * against the platform's own conventions, which is worth saying on the card
-   * — it explains why the same copy scores differently on two channels.
+   * against the platform's own conventions — it explains why the same copy
+   * scores differently on two channels, and it is why those two take the
+   * radar's right-hand side.
    */
   platformAware: boolean
+  corner: RadarCorner
 }
 
-/** In the order CON-85 defines them; the panel renders them in this order. */
+/**
+ * In the order CON-85 defines them; lists render them in this order. The
+ * names live in the catalogue (`posts.quality.dimensions`) and are read
+ * through `dimensionLabel`.
+ */
 export const QUALITY_DIMENSIONS: QualityDimensionMeta[] = [
-  {
-    key: 'correctness',
-    label: 'Correctness',
-    blurb: 'True and well-formed',
-    platformAware: false,
-  },
-  {
-    key: 'clarity',
-    label: 'Clarity',
-    blurb: 'Understood on one pass',
-    platformAware: false,
-  },
-  {
-    key: 'engagement',
-    label: 'Engagement',
-    blurb: 'Makes people care and act',
-    platformAware: true,
-  },
-  {
-    key: 'delivery',
-    label: 'Delivery',
-    blurb: 'Fits the channel',
-    platformAware: true,
-  },
+  { key: 'correctness', platformAware: false, corner: 'nw' },
+  { key: 'clarity', platformAware: false, corner: 'sw' },
+  { key: 'engagement', platformAware: true, corner: 'ne' },
+  { key: 'delivery', platformAware: true, corner: 'se' },
 ]
+
+/**
+ * The dimension's name as a user reads it. Not the API key: "Correctness" and
+ * "Delivery" are the rubric's words, and the panel says Accuracy and Channel
+ * fit (CON-440).
+ */
+export function dimensionLabel(t: TFunction, key: QualityDimensionKey): string {
+  return t(`posts.quality.dimensions.${key}` as const)
+}
 
 /**
  * How a score reads. Named for the rubric's bands rather than for a colour,
@@ -133,6 +133,98 @@ export function postSuggestions(
       (SEVERITY_RANK[a.severity] ?? 3) - (SEVERITY_RANK[b.severity] ?? 3),
   )
 }
+
+/**
+ * The dimension this post type's weight profile leans on hardest — what the
+ * summary names to explain why the overall isn't the plain average. `null`
+ * when the weights are missing or all equal, where naming one would be a
+ * claim the profile doesn't make.
+ */
+export function heaviestDimension(
+  evaluation: PostEvaluation,
+): QualityDimensionKey | null {
+  const weighted = QUALITY_DIMENSIONS.flatMap((meta) => {
+    const w = evaluation.result?.[meta.key]?.weight
+    return typeof w === 'number' && Number.isFinite(w)
+      ? [{ key: meta.key, w }]
+      : []
+  })
+  if (weighted.length === 0) return null
+  const top = Math.max(...weighted.map((d) => d.w))
+  const leaders = weighted.filter((d) => d.w === top)
+  return leaders.length === 1 ? leaders[0].key : null
+}
+
+/**
+ * The lowest-scoring dimension, which the radar sets in bold and its label
+ * names. `null` on a tie for last: picking one of two equal scores would
+ * single out a dimension for no reason the user could see.
+ */
+export function lowestDimension(
+  evaluation: PostEvaluation,
+): QualityDimensionKey | null {
+  const scored = QUALITY_DIMENSIONS.flatMap((meta) => {
+    const d = evaluation.result?.[meta.key]
+    return d ? [{ key: meta.key, score: d.score ?? 0 }] : []
+  })
+  if (scored.length === 0) return null
+  const bottom = Math.min(...scored.map((d) => d.score))
+  const trailing = scored.filter((d) => d.score === bottom)
+  return trailing.length === 1 ? trailing[0].key : null
+}
+
+/**
+ * How far a dimension moved since the previous run, or `null` when there is
+ * nothing to compare — no previous run, or the dimension missing from either.
+ * Zero is a real answer ("unchanged") and comes back as 0, not `null`.
+ */
+export function scoreDelta(
+  current: PostEvaluation,
+  previous: PostEvaluation | null | undefined,
+  key: QualityDimensionKey,
+): number | null {
+  const now = current.result?.[key]
+  const before = previous?.result?.[key]
+  if (!now || !before) return null
+  return (now.score ?? 0) - (before.score ?? 0)
+}
+
+/** "+2", "−1", "±0" — a signed change, with a real minus sign. */
+export function formatDelta(delta: number): string {
+  if (delta > 0) return `+${delta}`
+  if (delta < 0) return `\u2212${Math.abs(delta)}`
+  return '\u00b10'
+}
+
+/** A "Why these scores" row's DOM id, so a radar corner can scroll to it. */
+export const reasonRowId = (key: QualityDimensionKey) => `quality-reason-${key}`
+
+/** Clamps a dimension score onto the radar's 0–10 axis. */
+export function radarScore(score: number | undefined): number {
+  if (typeof score !== 'number' || !Number.isFinite(score)) return 0
+  return Math.min(10, Math.max(0, score))
+}
+
+/**
+ * Where a score lands on its corner's axis, as an offset from the centre. The
+ * web is a square, so a 10 sits on the outer ring's corner at `(±reach,
+ * ±reach)` and every ring is the same square scaled — `reach` is half the
+ * outer ring's side.
+ */
+export function radarPoint(
+  corner: RadarCorner,
+  score: number | undefined,
+  reach: number,
+): { x: number; y: number } {
+  const r = (radarScore(score) / 10) * reach
+  const sx = corner === 'nw' || corner === 'sw' ? -1 : 1
+  const sy = corner === 'nw' || corner === 'ne' ? -1 : 1
+  // `+ 0` folds a zero score's -0 into 0.
+  return { x: sx * r + 0, y: sy * r + 0 }
+}
+
+/** The band thresholds the radar draws as rings — `scoreBand`'s own cut-offs. */
+export const RADAR_RINGS = [5, 8] as const
 
 /**
  * Why the stored score may no longer describe the post, or `null` when it

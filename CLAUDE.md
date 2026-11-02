@@ -473,8 +473,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   Some screens are converted whole: the auth screens, sidebar, Profile,
   Workspace Settings, the campaign calendar, the analytics surfaces, **Brand**,
   `/workspaces`, `/invite`, `/plans` with the Plan & billing card and the
-  entitlement renderings, Activity, and Tasks, which was written catalogued
-  from the start behind its flag. Others hold **islands** of catalogued copy
+  entitlement renderings, Activity, the post's Quality panel and its
+  checks-bar digest (CON-440), and Tasks, which was written catalogued from
+  the start behind its flag. Others hold **islands** of catalogued copy
   inside hard-coded English, because a PR converted the strings it touched and
   correctly left the rest alone — the post editor, the Campaigns list and the
   Content Bank are all islands today. So a literal sitting beside a `t()` call
@@ -884,8 +885,9 @@ post's own numbers and the three view mappers behind them), Brand (the
 Overview, all five sections, the three editors and the routes — plus the two
 tables behind them, `lib/brandSections` and the starters, which now carry
 behaviour only), `/workspaces`,
-`/invite`, `/plans` with the Plan & billing card, Activity, and the flag-gated
-Tasks. Islands only: the post editor (`posts.*` — status and
+`/invite`, `/plans` with the Plan & billing card, Activity, the post's Quality
+panel and checks-bar digest (CON-440), and the flag-gated Tasks. Islands
+only: the post editor (`posts.*` — status and
 publish labels, the published link, sources, notes, quality, versions,
 duplicate and the performance card), the Campaigns list (the archive drawer and
 its Danger Zone, the posts toolbar and the empty state) and the Content Bank

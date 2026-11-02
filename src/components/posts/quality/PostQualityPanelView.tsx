@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import {
   ArrowClockwiseIcon,
@@ -15,24 +15,39 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { QualityEmptyState } from './QualityEmptyState.tsx'
 import {
-  QUALITY_DIMENSIONS,
   automaticTrigger,
+  dimensionLabel,
+  heaviestDimension,
   overallBand,
   overallPct,
   postSuggestions,
+  reasonRowId,
   runsLeft,
   staleReason,
 } from '@/lib/postQuality.ts'
 import { relativeTime } from '@/lib/relativeTime.ts'
-import type { PostEvaluation, QualityTrigger } from '@/types/quality'
+import type {
+  PostEvaluation,
+  QualityDimensionKey,
+  QualitySuggestion,
+  QualityTrigger,
+} from '@/types/quality'
 import { AssessProgress } from './AssessProgress.tsx'
-import { QualityDimensionCard } from './QualityDimensionCard.tsx'
-import { QualitySuggestionList } from './QualitySuggestionList.tsx'
-import { CompositionBar, ScoreRing } from './ScoreRing.tsx'
+import { BandTag } from './BandTag.tsx'
+import { FixFirstList } from './FixFirstList.tsx'
+import { QualityRadar } from './QualityRadar.tsx'
+import { ScoreReasons } from './ScoreReasons.tsx'
 
 export type PostQualityPanelViewProps = {
   /** `null` means never assessed; `undefined` means not loaded yet. */
   assessment: PostEvaluation | null | undefined
+  /**
+   * The assessment a newer run replaced while the post was open — the radar's
+   * dashed outline and every "before your edits" (CON-440). `null` if none.
+   */
+  previous?: PostEvaluation | null
+  /** The scored platform's display name, e.g. "LinkedIn"; `null` if unknown. */
+  platformName?: string | null
   loading: boolean
   unavailable: boolean
   loadError: string | null
@@ -61,7 +76,12 @@ export type PostQualityPanelViewProps = {
 
 /**
  * "Quality" for the right sidebar: the post scored across the four CON-85
- * dimensions, with the guidance that falls out of the scoring.
+ * dimensions, and what to do about it.
+ *
+ * A result reads top to bottom in the order a user asks about it (CON-440):
+ * how did it go (the summary and the radar), what do I fix (every suggestion
+ * in one list, most severe first), and why (the model's verdict per
+ * dimension).
  *
  * Since CON-438 the server also scores a post on its own, at the lifecycle
  * checkpoints — marked ready, a version saved, scheduled, published — so the
@@ -75,6 +95,8 @@ export type PostQualityPanelViewProps = {
  */
 export function PostQualityPanelView({
   assessment,
+  previous = null,
+  platformName = null,
   loading,
   unavailable,
   loadError,
@@ -163,7 +185,7 @@ export function PostQualityPanelView({
       ) : loading ? (
         <div className="flex flex-col gap-3">
           <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-64 w-full" />
           <Skeleton className="h-28 w-full" />
         </div>
       ) : loadError ? (
@@ -239,21 +261,14 @@ export function PostQualityPanelView({
               <span>{autoRunningLine(t, autoAssessing)}</span>
             </p>
           )}
-          <Overall
+          <Result
             evaluation={assessment}
+            previous={previous}
+            platformName={platformName}
+            suggestions={suggestions}
             cached={cached}
             onReassess={!locked && canRun ? onAssess : undefined}
           />
-          <div className="flex flex-col gap-3">
-            {QUALITY_DIMENSIONS.map((meta) => (
-              <QualityDimensionCard
-                key={meta.key}
-                meta={meta}
-                dimension={assessment.result?.[meta.key]}
-              />
-            ))}
-          </div>
-          <QualitySuggestionList suggestions={suggestions} />
         </>
       )}
     </RailPanel>
@@ -325,55 +340,137 @@ function RunsHint({
   return <p className="text-center text-xs text-tertiary-foreground">{text}</p>
 }
 
-/** The overall percentage, what it is made of, and how much to trust it. */
-export function Overall({
+/** A stored score, read top to bottom: how it went, what to fix, and why. */
+function Result({
   evaluation,
+  previous,
+  platformName,
+  suggestions,
   cached,
   onReassess,
 }: {
   evaluation: PostEvaluation
+  previous: PostEvaluation | null
+  platformName: string | null
+  suggestions: QualitySuggestion[]
+  cached: boolean
+  onReassess?: () => void
+}) {
+  // A radar corner brings its dimension's verdict into view and hands it
+  // focus, so a screen reader lands on the answer it asked for.
+  const showReason = useCallback((key: QualityDimensionKey) => {
+    const row = document.getElementById(reasonRowId(key))
+    row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    row?.focus({ preventScroll: true })
+  }, [])
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Summary
+        evaluation={evaluation}
+        previous={previous}
+        cached={cached}
+        onReassess={onReassess}
+      />
+      <div className="border-t border-border pt-5">
+        <QualityRadar
+          evaluation={evaluation}
+          previous={previous}
+          platformName={platformName}
+          onSelectDimension={showReason}
+        />
+      </div>
+      <div className="border-t border-border pt-5">
+        <FixFirstList suggestions={suggestions} />
+      </div>
+      <div className="border-t border-border pt-5">
+        <ScoreReasons evaluation={evaluation} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The overall, how it moved, where it came from and how far to trust it. Each
+ * line says one of those; none of them repeats the number in another form.
+ */
+function Summary({
+  evaluation,
+  previous,
+  cached,
+  onReassess,
+}: {
+  evaluation: PostEvaluation
+  previous: PostEvaluation | null
   cached: boolean
   /** Absent when a run can't be started here — locked, busy or spent. */
   onReassess?: () => void
 }) {
   const { t } = useTranslation()
-  const pct = overallPct(evaluation)
+  const pct = Math.round(overallPct(evaluation))
   const band = overallBand(pct)
+  const before = previous ? Math.round(overallPct(previous)) : null
   const stale = staleReason(evaluation)
   const trigger = automaticTrigger(evaluation)
   const when = relativeTime(evaluation.updated_at)
+  const heaviest = heaviestDimension(evaluation)
 
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <ScoreRing pct={pct} band={band} />
-        <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-medium text-foreground">
-            {t('posts.quality.overall')}
-          </h3>
-          <p className="text-xs text-tertiary-foreground">
-            {when
-              ? cached
-                ? t('posts.quality.scoredAtCached', { when })
-                : t('posts.quality.scoredAt', { when })
-              : cached
-                ? t('posts.quality.scoredCached')
-                : t('posts.quality.scored')}
-          </p>
-          {trigger && (
-            <p className="text-xs text-tertiary-foreground">
-              {t(`posts.quality.trigger.${trigger}`)}
+        <p className="font-display text-[44px]/none font-medium tracking-[-0.03em] text-foreground tabular-nums">
+          {pct}
+        </p>
+        <div className="flex min-w-0 flex-col items-start gap-1.5">
+          <BandTag band={band} />
+          {before !== null && (
+            <p className="text-sm text-secondary-foreground">
+              {before === pct ? (
+                t('posts.quality.summary.sameAs')
+              ) : (
+                <Trans
+                  i18nKey={
+                    pct > before
+                      ? 'posts.quality.summary.upFrom'
+                      : 'posts.quality.summary.downFrom'
+                  }
+                  values={{ score: before }}
+                  components={{
+                    strong: (
+                      <span className="font-medium text-foreground tabular-nums" />
+                    ),
+                  }}
+                />
+              )}
             </p>
           )}
         </div>
       </div>
 
-      <CompositionBar evaluation={evaluation} />
+      <div className="flex flex-col gap-0.5 text-[13px]/[1.5] text-secondary-foreground">
+        <p>
+          {when
+            ? cached
+              ? t('posts.quality.scoredAtCached', { when })
+              : t('posts.quality.scoredAt', { when })
+            : cached
+              ? t('posts.quality.scoredCached')
+              : t('posts.quality.scored')}
+        </p>
+        {trigger && <p>{t(`posts.quality.trigger.${trigger}`)}</p>}
+        {heaviest && (
+          <p>
+            {t('posts.quality.summary.weighsMost', {
+              dimension: dimensionLabel(t, heaviest),
+            })}
+          </p>
+        )}
+      </div>
 
       {stale && (
         <div className="flex flex-col items-start gap-1.5">
           <StatusBadge tone="warn" label={t('posts.quality.stale.badge')} />
-          <p className="text-xs/[1.5] text-secondary-foreground">
+          <p className="text-[13px]/[1.5] text-secondary-foreground">
             {t(`posts.quality.stale.${stale}`)}
           </p>
           {onReassess && (

@@ -825,6 +825,7 @@ function PostEditorSurface({
                 checks={allChecks}
                 status={doc.status}
                 assessment={assessment}
+                previousAssessment={quality.previous}
                 qualityUnavailable={quality.unavailable}
                 assessing={assessing || !!quality.autoAssessing}
                 exhausted={quality.exhausted}
@@ -991,6 +992,15 @@ function PostEditorSurface({
           createPortal(
             <PostQualityPanelView
               assessment={assessment}
+              previous={quality.previous}
+              // The platform the stored score was taken against, which is not
+              // always the one the editor shows now: the score keeps
+              // describing the channel it read.
+              platformName={
+                assessment
+                  ? (platformInfo(assessment.platform_id)?.name ?? null)
+                  : null
+              }
               loading={quality.loading}
               unavailable={quality.unavailable}
               loadError={quality.loadError}

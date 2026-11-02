@@ -1,0 +1,200 @@
+import { describe, expect, it, vi } from 'vitest'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import type {
+  PostEvaluation,
+  QualityDimension,
+  QualityDimensionKey,
+  QualitySuggestion,
+} from '@/types/quality'
+import { reasonRowId } from '@/lib/postQuality'
+import { PostQualityPanelView } from './PostQualityPanelView'
+
+// jsdom has no layout; the corner click scrolls its verdict into view.
+Element.prototype.scrollIntoView = () => {}
+
+function suggestion(
+  dimension: QualityDimensionKey,
+  severity: QualitySuggestion['severity'],
+  advice: string,
+): QualitySuggestion {
+  return { dimension, severity, advice, span: `Span for ${advice}` }
+}
+
+function dimension(
+  score: number,
+  weight: number,
+  suggestions: QualitySuggestion[] | null = null,
+): QualityDimension {
+  return {
+    score,
+    verdict: `Verdict at ${score}.`,
+    suggestions,
+    weight,
+    contribution: score * weight * 10,
+  }
+}
+
+function evaluation(overrides: Partial<PostEvaluation> = {}): PostEvaluation {
+  return {
+    id: 'e1',
+    post_id: 'p1',
+    platform_id: 'li',
+    platform_post_type: 'text-post',
+    caption_scoped: false,
+    overall_pct: 63,
+    result: {
+      correctness: dimension(6, 0.2, [
+        suggestion('correctness', 'medium', 'Source the figure.'),
+      ]),
+      clarity: dimension(7, 0.2, [
+        suggestion('clarity', 'low', 'Lead with one argument.'),
+      ]),
+      engagement: dimension(7, 0.35, null),
+      delivery: dimension(5, 0.25, [
+        suggestion('delivery', 'high', 'Remove the internal tag.'),
+      ]),
+    },
+    model_id: 'm',
+    input_hash: 'h',
+    created_at: '2026-11-02T10:00:00Z',
+    updated_at: '2026-11-02T10:00:00Z',
+    ...overrides,
+  }
+}
+
+function renderPanel(
+  props: Partial<Parameters<typeof PostQualityPanelView>[0]> = {},
+) {
+  return render(
+    <PostQualityPanelView
+      assessment={evaluation()}
+      platformName="LinkedIn"
+      loading={false}
+      unavailable={false}
+      loadError={null}
+      onReload={vi.fn()}
+      onAssess={vi.fn()}
+      assessing={false}
+      steps={[]}
+      cached={false}
+      assessError={null}
+      {...props}
+    />,
+  )
+}
+
+describe('PostQualityPanelView', () => {
+  it('states the band in words and explains the weighting', () => {
+    renderPanel()
+    expect(screen.getByText('63')).toBeInTheDocument()
+    expect(screen.getByText('Workable')).toBeInTheDocument()
+    expect(
+      screen.getByText('Engagement weighs most for this format.'),
+    ).toBeInTheDocument()
+  })
+
+  it('names every score and the lowest in the radar’s accessible name', () => {
+    renderPanel()
+    expect(
+      screen.getByRole('img', {
+        name: 'Accuracy 6, Clarity 7, Engagement 7, and Channel fit 5. Channel fit is lowest.',
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('lists every suggestion in one list, most severe first', () => {
+    renderPanel()
+    const list = screen
+      .getByRole('heading', { name: /Fix first/ })
+      .closest('section')!
+    const advice = within(list)
+      .getAllByRole('listitem')
+      .map((li) => li.querySelector('p:last-child')?.textContent)
+    expect(advice).toEqual([
+      'Remove the internal tag.',
+      'Source the figure.',
+      'Lead with one argument.',
+    ])
+  })
+
+  it('opens and closes the radar guide, returning focus to the button', async () => {
+    renderPanel()
+    const button = screen.getByRole('button', { name: 'How to read the radar' })
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+
+    await userEvent.click(button)
+    const dialog = screen.getByRole('dialog', { name: 'Reading the radar' })
+    expect(within(dialog).getByText('Rings at 5 and 8')).toBeInTheDocument()
+    expect(
+      within(dialog).getByText('Left: the writing. Right: fit for LinkedIn.'),
+    ).toBeInTheDocument()
+    expect(dialog).toHaveFocus()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(button).toHaveFocus()
+  })
+
+  it('closes the guide on a click outside it', async () => {
+    renderPanel()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'How to read the radar' }),
+    )
+    await userEvent.click(screen.getByText('Workable'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('takes a radar corner to its dimension’s verdict', async () => {
+    renderPanel()
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Channel fit: 5 out of 10. Show why.',
+      }),
+    )
+    const row = document.getElementById(reasonRowId('delivery'))!
+    expect(row).toHaveFocus()
+    expect(within(row).getByText('Verdict at 5.')).toBeInTheDocument()
+  })
+
+  it('draws no comparison without a previous run', () => {
+    renderPanel()
+    expect(screen.queryByText('Before your edits')).not.toBeInTheDocument()
+    expect(screen.queryByText(/before your edits/)).not.toBeInTheDocument()
+  })
+
+  it('compares against the run it replaced', () => {
+    const previous = evaluation({
+      overall_pct: 58,
+      updated_at: '2026-11-01T10:00:00Z',
+    })
+    previous.result.delivery = dimension(3, 0.25)
+    renderPanel({ previous })
+    expect(screen.getByText('Before your edits')).toBeInTheDocument()
+    expect(screen.getByText(/Up from/)).toHaveTextContent(
+      'Up from 58 before your edits',
+    )
+    expect(screen.getByText('+2')).toBeInTheDocument()
+  })
+
+  it('reads an empty suggestion list without failing', () => {
+    const quiet = evaluation()
+    for (const key of [
+      'correctness',
+      'clarity',
+      'engagement',
+      'delivery',
+    ] as const) {
+      quiet.result[key] = { ...quiet.result[key], suggestions: null }
+    }
+    renderPanel({ assessment: quiet })
+    expect(screen.getByText('No suggestions on this run.')).toBeInTheDocument()
+  })
+
+  it('keeps the server’s staleness badge', () => {
+    renderPanel({
+      assessment: evaluation({ stale: true, stale_reason: 'content' }),
+    })
+    expect(screen.getByText('May be outdated')).toBeInTheDocument()
+  })
+})

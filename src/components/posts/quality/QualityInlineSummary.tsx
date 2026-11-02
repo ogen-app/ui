@@ -1,100 +1,180 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import {
-  bandLabel,
   QUALITY_DIMENSIONS,
-  staleReason,
+  dimensionLabel,
+  formatDelta,
+  lowestDimension,
   overallBand,
   overallPct,
-  scoreBand,
-  type QualityDimensionMeta,
+  postSuggestions,
+  radarScore,
+  scoreDelta,
+  staleReason,
 } from '@/lib/postQuality.ts'
-import { relativeTime } from '@/lib/relativeTime.ts'
 import type { PostEvaluation } from '@/types/quality'
 import { Button } from '@/components/ui/button.tsx'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { ScoreRing } from './ScoreRing.tsx'
-import { BAND_TEXT, DIMENSION_ICON } from './tokens.ts'
+import { BandTag } from './BandTag.tsx'
+import { CornerGlyph, QualityRadarMini } from './QualityRadar.tsx'
+import { SEVERITY_CLASS } from './tokens.ts'
 
 type Props = {
   assessment: PostEvaluation
+  /** The run this one replaced while the post was open, if any (CON-440). */
+  previous?: PostEvaluation | null
   onOpenPanel: () => void
 }
 
+/** The checks bar has room for the start of the list, not the list. */
+const FIXES_SHOWN = 2
+
 /**
- * The quality score as it appears inside the expanded checks bar (CON-183).
+ * The quality score as it appears inside the expanded checks bar (CON-183,
+ * reworked in CON-440).
  *
- * Three columns: the overall with everything that qualifies it, then the four
- * dimensions two to a column. The rail's composition bar is not repeated —
- * the ring already draws the overall, and two pictures of one number is the
- * same fact twice.
+ * Three columns: the overall beside the radar's shape, the four scores — each
+ * with a glyph naming its corner of that shape — and the first fixes from the
+ * rail's list, word for word. A glance here says what to do next, not only how
+ * it went.
  *
- * A digest, not a second panel. Everything that needs reading rather than
- * glancing — the model's verdicts and the suggestions themselves — stays in the rail, which this links to. Two full breakdowns
- * would be two things to keep in step and twice the height above the editor.
+ * A digest, not a second panel. The verdicts and the rest of the list stay in
+ * the rail, which this links to. Two full breakdowns would be two things to
+ * keep in step and twice the height above the editor.
  *
  * Only ever rendered against a stored assessment. The states around one —
  * never scored, running, failed, switched off — belong to the bar's header,
  * where they stay reachable without expanding anything.
  */
-export function QualityInlineSummary({ assessment, onOpenPanel }: Props) {
+export function QualityInlineSummary({
+  assessment,
+  previous = null,
+  onOpenPanel,
+}: Props) {
   const { t } = useTranslation()
-  const pct = overallPct(assessment)
+  const pct = Math.round(overallPct(assessment))
   const band = overallBand(pct)
+  const before = previous ? Math.round(overallPct(previous)) : null
   const stale = staleReason(assessment)
-  const when = relativeTime(assessment.updated_at)
+  const lowest = lowestDimension(assessment)
+  const suggestions = postSuggestions(assessment)
 
   return (
     // The rule and the space around it are what separate this from the
     // requirements list above — matching the `pt-5` that opens that one, so
     // both sections stand off their neighbours by the same amount.
-    <section className="mt-5 flex flex-col gap-3 border-t border-border pt-5">
+    <section className="mt-5 flex flex-col gap-4 border-t border-border pt-5">
       {/* The app's section-label typography — `AppSidebar`'s `SectionLabel`
           recipe. This region sits inside a bar that is already about the post,
-          so it needs to say which of the two questions it answers, and a
-          heading in the same voice as the sidebar's says "new section" without
-          competing with anything in the editor. */}
+          so it needs to say which of the two questions it answers. */}
       <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
         {t('posts.quality.inlineHeading')}
       </h3>
 
-      <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-3">
-        <div className="flex items-center gap-3">
-          <ScoreRing pct={pct} band={band} />
-          {/* The verdict and its date, and nothing else. Anything further
-              beside the ring makes a three-line column against two-line ones
-              and drags the grid out of alignment for a fact that reads just as
-              well below it. */}
-          <div className="flex min-w-0 flex-col">
-            {/* The band alone. "Overall quality:" repeated the heading two
-                rows up, and the ring beside it already says this is the
-                overall — the label was only there to introduce a word that
-                needs no introduction. */}
-            <p className="text-sm font-medium text-foreground">
-              {bandLabel(t, band)}
+      <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.3fr)]">
+        <div className="flex items-center gap-4">
+          <QualityRadarMini evaluation={assessment} previous={previous} />
+          <div className="flex flex-col items-start gap-1.5">
+            <p className="font-display text-[34px]/none font-medium tracking-[-0.03em] text-foreground tabular-nums">
+              {pct}
             </p>
-            <p className="text-sm text-tertiary-foreground">
-              {when
-                ? t('posts.quality.scoredAt', { when })
-                : t('posts.quality.scored')}
-            </p>
+            <BandTag band={band} />
+            {before !== null && before !== pct && (
+              <p className="text-xs font-medium text-secondary-foreground tabular-nums">
+                {formatDelta(pct - before)}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Two per column in the order CON-85 defines them, so the pairing
-            matches the rail's list rather than inventing a second order. The
-            last column drops the gutter its scores would otherwise sit on:
-            there is no next column for them to collide with, and keeping it
-            left the row's right edge ragged against the section's. */}
-        <DimensionColumn
-          assessment={assessment}
-          metas={QUALITY_DIMENSIONS.slice(0, 2)}
-        />
-        <DimensionColumn
-          assessment={assessment}
-          metas={QUALITY_DIMENSIONS.slice(2)}
-          last
-        />
+        <ul className="flex flex-col justify-center gap-1.5">
+          {QUALITY_DIMENSIONS.map((meta) => {
+            const dimension = assessment.result?.[meta.key]
+            // A dimension missing from the payload is a shape we don't
+            // understand; drawing a zero would assert a score never given.
+            if (!dimension) return null
+            const delta = scoreDelta(assessment, previous, meta.key)
+            const isLowest = lowest === meta.key
+            return (
+              <li key={meta.key} className="flex items-center gap-2 text-sm">
+                <CornerGlyph corner={meta.corner} />
+                <span
+                  className={cn(
+                    'min-w-0 flex-1 truncate text-foreground',
+                    isLowest && 'font-semibold',
+                  )}
+                >
+                  {dimensionLabel(t, meta.key)}
+                </span>
+                <span className="shrink-0 text-xs tabular-nums">
+                  <span
+                    className={cn(
+                      'font-display text-sm text-foreground',
+                      isLowest ? 'font-bold' : 'font-medium',
+                    )}
+                  >
+                    {radarScore(dimension.score)}
+                  </span>
+                  <span className="text-tertiary-foreground">
+                    {t('posts.quality.outOfTen')}
+                  </span>
+                </span>
+                <span className="w-6 shrink-0 text-right text-xs text-secondary-foreground tabular-nums">
+                  {delta !== null && delta !== 0 ? formatDelta(delta) : null}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+
+        <div className="flex flex-col gap-2 md:border-l md:border-border md:pl-8">
+          {suggestions.length > 0 && (
+            <>
+              <span className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.06em] text-tertiary-foreground">
+                {t('posts.quality.inline.fixFirst')}
+              </span>
+              <ol className="flex flex-col gap-1.5">
+                {suggestions.slice(0, FIXES_SHOWN).map((s, i) => {
+                  const severity =
+                    s.severity in SEVERITY_CLASS ? s.severity : 'low'
+                  return (
+                    <li key={i} className="flex items-baseline gap-2 text-sm">
+                      <span
+                        className={cn(
+                          'shrink-0 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]',
+                          SEVERITY_CLASS[severity],
+                        )}
+                      >
+                        {t(`posts.quality.severity.${severity}`)}
+                      </span>
+                      <span className="min-w-0 text-foreground">
+                        {s.advice}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ol>
+            </>
+          )}
+          {/* `-ml-3` cancels the ghost's own left padding so the label starts
+              on the column's edge — the padding is there for the hover
+              surface, not for indentation. */}
+          <div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onOpenPanel}
+              className="-ml-3 uppercase"
+            >
+              {suggestions.length > 0
+                ? t('posts.quality.inline.seeAll', {
+                    count: suggestions.length,
+                  })
+                : t('posts.quality.seeBreakdown')}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* The badge and the reason, not the action: re-assessing is the
@@ -108,79 +188,6 @@ export function QualityInlineSummary({ assessment, onOpenPanel }: Props) {
           </p>
         </div>
       )}
-
-      {/* Its own row under everything it summarises: the button is the one
-          thing here that does something, and beside the ring it was competing
-          with the score for the same corner of the eye.
-
-          `-ml-3` cancels the ghost's own left padding so the label starts on
-          the section's left edge rather than inside it — the padding is there
-          for the hover surface, not for indentation. `uppercase` matches every
-          other button in the quality rail. */}
-      <div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onOpenPanel}
-          className="-ml-3 uppercase"
-        >
-          {t('posts.quality.seeBreakdown')}
-        </Button>
-      </div>
     </section>
-  )
-}
-
-function DimensionColumn({
-  assessment,
-  metas,
-  last = false,
-}: {
-  assessment: PostEvaluation
-  metas: QualityDimensionMeta[]
-  /** The rightmost column, which needs no gutter against a next one. */
-  last?: boolean
-}) {
-  return (
-    <ul className="flex flex-col justify-center gap-1.5">
-      {metas.map((meta) => {
-        const dimension = assessment.result?.[meta.key]
-        // A dimension missing from the payload is a shape we don't understand;
-        // drawing a zero would assert a score the model never gave.
-        if (!dimension) return null
-        const score = dimension.score ?? 0
-        const Icon = DIMENSION_ICON[meta.key]
-        return (
-          <li key={meta.key} className="flex items-center gap-2 text-sm">
-            <Icon
-              aria-hidden
-              weight="fill"
-              className="size-4 shrink-0 text-quaternary-foreground"
-            />
-            <span className="min-w-0 flex-1 truncate text-foreground">
-              {meta.label}
-            </span>
-            {/* `pr-4` on top of the grid's column gap: the score sits on the
-                column's right edge, which is otherwise the next column's left
-                edge, and "10/10" ended up touching "Engagement". The last
-                column has nothing to its right, so it goes without. */}
-            <span
-              className={cn('shrink-0 text-xs tabular-nums', !last && 'pr-4')}
-            >
-              <span
-                className={cn(
-                  'font-display font-medium',
-                  BAND_TEXT[scoreBand(score)],
-                )}
-              >
-                {score}
-              </span>
-              <span className="text-tertiary-foreground">/10</span>
-            </span>
-          </li>
-        )
-      })}
-    </ul>
   )
 }
