@@ -48,6 +48,18 @@ export const QUALITY_DIMENSIONS: QualityDimensionMeta[] = [
 ]
 
 /**
+ * The dimensions in the order the radar's shape joins them: round the square,
+ * clockwise from the top-left corner. Not `QUALITY_DIMENSIONS`, whose rubric
+ * order (nw, sw, ne, se) zig-zags across the web — joining the corners in that
+ * order drew a crossed bow-tie instead of a four-sided shape (CON-443).
+ */
+const PERIMETER: readonly RadarCorner[] = ['nw', 'ne', 'se', 'sw']
+
+export const RADAR_PERIMETER: readonly QualityDimensionMeta[] = PERIMETER.map(
+  (corner) => QUALITY_DIMENSIONS.find((meta) => meta.corner === corner)!,
+)
+
+/**
  * The dimension's name as a user reads it. Not the API key: "Correctness" and
  * "Delivery" are the rubric's words, and the panel says Accuracy and Channel
  * fit (CON-440).
@@ -221,6 +233,23 @@ export function radarPoint(
   const sy = corner === 'nw' || corner === 'ne' ? -1 : 1
   // `+ 0` folds a zero score's -0 into 0.
   return { x: sx * r + 0, y: sy * r + 0 }
+}
+
+/**
+ * The radar shape's vertices, as offsets from the centre, in the order the
+ * polygon joins them (`RADAR_PERIMETER`). A dimension missing from the payload
+ * is left out rather than drawn at zero, which would assert a score the model
+ * never gave.
+ */
+export function radarVertices(
+  evaluation: PostEvaluation,
+  reach: number,
+): { key: QualityDimensionKey; x: number; y: number }[] {
+  return RADAR_PERIMETER.flatMap((meta) => {
+    const d = evaluation.result?.[meta.key]
+    if (!d) return []
+    return [{ key: meta.key, ...radarPoint(meta.corner, d.score, reach) }]
+  })
 }
 
 /** The band thresholds the radar draws as rings — `scoreBand`'s own cut-offs. */

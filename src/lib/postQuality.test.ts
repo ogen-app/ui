@@ -7,12 +7,14 @@ import type {
 import {
   ASSESS_STEPS,
   QUALITY_DIMENSIONS,
+  RADAR_PERIMETER,
   automaticTrigger,
   formatDelta,
   heaviestDimension,
   lowestDimension,
   radarPoint,
   radarScore,
+  radarVertices,
   scoreDelta,
   overallBand,
   overallPct,
@@ -363,5 +365,50 @@ describe('radarPoint', () => {
     expect(radarScore(14)).toBe(10)
     expect(radarScore(-2)).toBe(0)
     expect(radarScore(NaN)).toBe(0)
+  })
+})
+
+// CON-443: joined in rubric order (nw, sw, ne, se) the corners drew a crossed
+// bow-tie. The polygon has to go round the square.
+describe('RADAR_PERIMETER', () => {
+  it('walks the corners round the square, clockwise from the top-left', () => {
+    expect(RADAR_PERIMETER.map((d) => d.corner)).toEqual([
+      'nw',
+      'ne',
+      'se',
+      'sw',
+    ])
+    expect(RADAR_PERIMETER.map((d) => d.key)).toEqual([
+      'correctness',
+      'engagement',
+      'delivery',
+      'clarity',
+    ])
+  })
+})
+
+describe('radarVertices', () => {
+  it('gives the shape in perimeter order, never rubric order', () => {
+    const e = evaluation()
+    e.result.correctness = dimension({ score: 7 })
+    e.result.engagement = dimension({ score: 5 })
+    e.result.delivery = dimension({ score: 4 })
+    e.result.clarity = dimension({ score: 7 })
+    expect(radarVertices(e, 10)).toEqual([
+      { key: 'correctness', x: -7, y: -7 },
+      { key: 'engagement', x: 5, y: -5 },
+      { key: 'delivery', x: 4, y: 4 },
+      { key: 'clarity', x: -7, y: 7 },
+    ])
+  })
+
+  it('leaves out a dimension the payload lacks rather than drawing a zero', () => {
+    const e = evaluation()
+    delete (e.result as Partial<typeof e.result>).engagement
+    expect(radarVertices(e, 10).map((v) => v.key)).toEqual([
+      'correctness',
+      'delivery',
+      'clarity',
+    ])
   })
 })

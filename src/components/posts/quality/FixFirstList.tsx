@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { dimensionLabel } from '@/lib/postQuality.ts'
 import type { QualitySuggestion } from '@/types/quality'
+import { EmphasisText } from './EmphasisText.tsx'
 import { SEVERITY_CLASS } from './tokens.ts'
 
 /**
@@ -76,7 +77,10 @@ export function FixFirstList({
                   </p>
                 )}
                 {s.advice && (
-                  <p className="text-sm/[1.5] text-foreground">{s.advice}</p>
+                  <EmphasisText
+                    text={s.advice}
+                    className="text-sm/[1.5] text-foreground"
+                  />
                 )}
               </li>
             )

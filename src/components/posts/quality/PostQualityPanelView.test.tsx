@@ -9,6 +9,7 @@ import type {
 } from '@/types/quality'
 import { reasonRowId } from '@/lib/postQuality'
 import { PostQualityPanelView } from './PostQualityPanelView'
+import { QualityInlineSummary } from './QualityInlineSummary'
 
 // jsdom has no layout; the corner click scrolls its verdict into view.
 Element.prototype.scrollIntoView = () => {}
@@ -129,7 +130,8 @@ describe('PostQualityPanelView', () => {
     expect(
       within(dialog).getByText('Left: the writing. Right: fit for LinkedIn.'),
     ).toBeInTheDocument()
-    expect(dialog).toHaveFocus()
+    // Radix moves focus into the pop-over, onto its first control.
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
 
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -196,5 +198,51 @@ describe('PostQualityPanelView', () => {
       assessment: evaluation({ stale: true, stale_reason: 'content' }),
     })
     expect(screen.getByText('May be outdated')).toBeInTheDocument()
+  })
+
+  // CON-443: the model wraps the phrase that matters in `**…**`.
+  it('sets the marked phrase in semibold and strips the markers', () => {
+    const marked = evaluation()
+    marked.result.delivery = {
+      ...marked.result.delivery,
+      verdict: 'Facts hold, but **the hashtags read as LinkedIn**.',
+      suggestions: [
+        {
+          dimension: 'delivery',
+          severity: 'high',
+          span: '#bees',
+          advice: 'Five tags is a lot, so **keep one topic tag**.',
+        },
+      ],
+    }
+    renderPanel({ assessment: marked })
+    const strong = screen.getByText('keep one topic tag')
+    expect(strong.tagName).toBe('STRONG')
+    expect(strong).toHaveClass('font-semibold')
+    expect(screen.getByText('the hashtags read as LinkedIn').tagName).toBe(
+      'STRONG',
+    )
+    expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument()
+  })
+
+  it('leads Why these scores with its icon', () => {
+    renderPanel()
+    const heading = screen.getByRole('heading', { name: 'Why these scores' })
+    expect(heading.querySelector('svg')).not.toBeNull()
+  })
+})
+
+describe('QualityInlineSummary', () => {
+  it('counts the suggestions instead of quoting them', () => {
+    render(
+      <QualityInlineSummary assessment={evaluation()} onOpenPanel={vi.fn()} />,
+    )
+    expect(
+      screen.getByText('3 suggestions, 1 of them high.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Fix first')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Remove the internal tag.'),
+    ).not.toBeInTheDocument()
   })
 })

@@ -2725,7 +2725,14 @@ export const es: Translation = {
       },
 
       inline: {
-        fixFirst: 'Corrige primero',
+        countNoneHigh_one: '{{count}} sugerencia, no prioritaria.',
+        countNoneHigh_other: '{{count}} sugerencias, ninguna prioritaria.',
+        countAllHigh_one: '{{count}} sugerencia, prioritaria.',
+        countAllHigh_other: '{{count}} sugerencias, todas prioritarias.',
+        countSomeHigh_one:
+          '{{count}} sugerencias, {{high}} de ellas prioritarias.',
+        countSomeHigh_other:
+          '{{count}} sugerencias, {{high}} de ellas prioritarias.',
         seeAll_one: 'Ver la sugerencia',
         seeAll_other: 'Ver las {{count}} sugerencias',
       },

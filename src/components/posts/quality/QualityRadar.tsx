@@ -10,6 +10,7 @@ import {
   lowestDimension,
   radarPoint,
   radarScore,
+  radarVertices,
   scoreDelta,
   type RadarCorner,
 } from '@/lib/postQuality.ts'
@@ -46,14 +47,10 @@ function points(
   cx: number,
   cy: number,
 ): string {
-  return QUALITY_DIMENSIONS.flatMap((meta) => {
-    const d = evaluation.result?.[meta.key]
-    // A dimension missing from the payload is a shape we don't understand;
-    // drawing a zero would assert a score the model never gave.
-    if (!d) return []
-    const p = radarPoint(meta.corner, d.score, reach)
-    return [`${cx + p.x},${cy + p.y}`]
-  }).join(' ')
+  // Round the square, never in rubric order — see `RADAR_PERIMETER`.
+  return radarVertices(evaluation, reach)
+    .map((p) => `${cx + p.x},${cy + p.y}`)
+    .join(' ')
 }
 
 /** A square ring at `score` on the 0–10 scale, as a rect. */
@@ -165,6 +162,17 @@ export function QualityRadar({
             y2={outer.y + outer.height + 14}
             strokeDasharray="1 3"
             className="stroke-tertiary-foreground"
+          />
+          {/* Its horizontal twin, a step paler: it marks the halfway point,
+              while the vertical one carries meaning — the writing on the
+              left, the channel fit on the right — and stays the stronger. */}
+          <line
+            x1={outer.x - 14}
+            y1={CY}
+            x2={outer.x + outer.width + 14}
+            y2={CY}
+            strokeDasharray="1 3"
+            className="stroke-quaternary-foreground"
           />
 
           {previous && (
@@ -381,6 +389,24 @@ export function QualityRadarMini({
           className="stroke-quaternary-foreground"
         />
       ))}
+      {/* The rail radar's two centre lines, so the glyph reads as the same
+          chart at a smaller size. */}
+      <line
+        x1={c}
+        y1={0}
+        x2={c}
+        y2={size}
+        strokeDasharray="1 3"
+        className="stroke-tertiary-foreground"
+      />
+      <line
+        x1={0}
+        y1={c}
+        x2={size}
+        y2={c}
+        strokeDasharray="1 3"
+        className="stroke-quaternary-foreground"
+      />
       {previous && (
         <polygon
           points={points(previous, reach, c, c)}
