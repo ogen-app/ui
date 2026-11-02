@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import {
   ArrowUUpLeftIcon,
   CaretLeftIcon,
@@ -57,8 +58,30 @@ type Entry =
  * owns how these read, so it is renamed on the way in rather than left to two
  * spellings sitting one row apart.
  */
-function versionNote(note: string): string {
-  return note.replace(/\bv(\d+)\b/g, 'version $1')
+function versionNote(t: TFunction, version: PostVersion): string {
+  if (version.creator === 'system') {
+    const key = SYSTEM_NOTE_KEY[version.note]
+    if (key) return t(key)
+  }
+  return version.note.replace(/\bv(\d+)\b/g, 'version $1')
+}
+
+/**
+ * The notes the server stamps on its own snapshots (`models.PostVersionNote*`
+ * in the Go backend), mapped to their catalogue entries so they read in the
+ * user's language. Matched exactly and only on `system` snapshots — a person
+ * who types "Published" as their own note keeps their words. A system note
+ * missing from here falls back to the server's English rather than to nothing.
+ */
+const SYSTEM_NOTE_KEY: Record<
+  string,
+  | 'posts.versions.systemNote.markedReady'
+  | 'posts.versions.systemNote.submitted'
+  | 'posts.versions.systemNote.published'
+> = {
+  'Marked ready for publish': 'posts.versions.systemNote.markedReady',
+  'Submitted for scheduled publishing': 'posts.versions.systemNote.submitted',
+  Published: 'posts.versions.systemNote.published',
 }
 
 function buildEntries(doc: Post, versions: PostVersion[]): Entry[] {
@@ -325,9 +348,9 @@ function EntryRow({
         {version?.note && (
           <span
             className="truncate text-xs text-secondary-foreground"
-            title={versionNote(version.note)}
+            title={versionNote(t, version)}
           >
-            · {versionNote(version.note)}
+            · {versionNote(t, version)}
           </span>
         )}
       </div>
@@ -410,6 +433,7 @@ function VersionReader({
   restoring: boolean
   onClose?: () => void
 }) {
+  const { t } = useTranslation()
   const version = entry.kind === 'live' ? entry.saved : entry.version
   const content = entry.kind === 'live' ? entry.content : entry.version.content
 
@@ -447,9 +471,9 @@ function VersionReader({
           {version?.note && (
             <span
               className="truncate text-xs text-secondary-foreground"
-              title={versionNote(version.note)}
+              title={versionNote(t, version)}
             >
-              · {versionNote(version.note)}
+              · {versionNote(t, version)}
             </span>
           )}
         </div>

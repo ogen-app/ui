@@ -2745,6 +2745,11 @@ export const es: Translation = {
         assistant: 'Asistente',
         system: 'Ogen',
       },
+      systemNote: {
+        markedReady: 'Marcada como lista para publicar',
+        submitted: 'Enviada para su publicación programada',
+        published: 'Publicada',
+      },
     },
 
     firstComment: {

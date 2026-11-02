@@ -3485,6 +3485,12 @@ export const en = {
         assistant: 'Assistant',
         system: 'Ogen',
       },
+      /** The notes the server stamps on its own snapshots, in our words. */
+      systemNote: {
+        markedReady: 'Marked ready for publish',
+        submitted: 'Submitted for scheduled publishing',
+        published: 'Published',
+      },
     },
 
     /**
