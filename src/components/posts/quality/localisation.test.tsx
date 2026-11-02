@@ -18,7 +18,7 @@ import { QualityInlineSummary } from './QualityInlineSummary'
 function dimension(score: number, weight: number): QualityDimension {
   return {
     score,
-    verdict: 'Valoración.',
+    verdict: 'Los datos se sostienen, pero **falta anclar la afirmación**.',
     suggestions: [
       {
         dimension: 'delivery',
@@ -91,6 +91,11 @@ describe('quality panel in Spanish', () => {
       }),
     ).toBeInTheDocument()
 
+    // The marked phrase is model text in the post's language (CON-443).
+    for (const phrase of screen.getAllByText('falta anclar la afirmación')) {
+      expect(phrase.tagName).toBe('STRONG')
+    }
+
     await userEvent.click(
       screen.getByRole('button', { name: 'Cómo leer el radar' }),
     )
@@ -116,8 +121,10 @@ describe('quality panel in Spanish', () => {
     expect(
       screen.getByRole('button', { name: 'Ver las 4 sugerencias' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Corrige primero')).toBeInTheDocument()
-    for (const english of ['Fix first', 'See all', 'Accuracy']) {
+    expect(
+      screen.getByText('4 sugerencias, todas prioritarias.'),
+    ).toBeInTheDocument()
+    for (const english of ['Fix first', 'See all', 'Accuracy', 'suggestions']) {
       expect(screen.queryByText(new RegExp(english))).not.toBeInTheDocument()
     }
   })

@@ -3454,7 +3454,13 @@ export const en = {
 
       /** The digest inside the expanded checks bar (CON-183). */
       inline: {
-        fixFirst: 'Fix first',
+        /** The teaser's count line, one whole sentence per case (CON-443). */
+        countNoneHigh_one: '{{count}} suggestion, not high.',
+        countNoneHigh_other: '{{count}} suggestions, none high.',
+        countAllHigh_one: '{{count}} suggestion, high.',
+        countAllHigh_other: '{{count}} suggestions, all high.',
+        countSomeHigh_one: '{{count}} suggestions, {{high}} of them high.',
+        countSomeHigh_other: '{{count}} suggestions, {{high}} of them high.',
         seeAll_one: 'See the suggestion',
         seeAll_other: 'See all {{count}} suggestions',
       },

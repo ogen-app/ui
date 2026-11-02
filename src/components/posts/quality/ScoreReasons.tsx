@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { InformationSquareIcon } from '@hugeicons/core-free-icons'
 import { cn } from '@/lib'
 import {
   QUALITY_DIMENSIONS,
@@ -8,6 +10,7 @@ import {
   reasonRowId,
 } from '@/lib/postQuality.ts'
 import type { PostEvaluation } from '@/types/quality'
+import { EmphasisText } from './EmphasisText.tsx'
 
 /**
  * "Why these scores": each dimension's name, score and the model's verdict on
@@ -23,7 +26,15 @@ export function ScoreReasons({ evaluation }: { evaluation: PostEvaluation }) {
 
   return (
     <section className="flex flex-col gap-1">
-      <h3 className="text-[15px] font-semibold text-foreground">
+      {/* One row so the icon and the title share a vertical centre. */}
+      <h3 className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
+        <HugeiconsIcon
+          icon={InformationSquareIcon}
+          size={24}
+          strokeWidth={1.5}
+          aria-hidden
+          className="shrink-0"
+        />
         {t('posts.quality.reasons.title')}
       </h3>
       <ul className="flex flex-col">
@@ -59,9 +70,10 @@ export function ScoreReasons({ evaluation }: { evaluation: PostEvaluation }) {
                 </span>
               </div>
               {d.verdict && (
-                <p className="text-[13px]/[1.5] text-secondary-foreground">
-                  {d.verdict}
-                </p>
+                <EmphasisText
+                  text={d.verdict}
+                  className="text-[13px]/[1.5] text-secondary-foreground"
+                />
               )}
             </li>
           )

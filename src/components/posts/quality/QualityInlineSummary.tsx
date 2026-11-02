@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import {
@@ -12,12 +13,11 @@ import {
   scoreDelta,
   staleReason,
 } from '@/lib/postQuality.ts'
-import type { PostEvaluation } from '@/types/quality'
+import type { PostEvaluation, QualitySuggestion } from '@/types/quality'
 import { Button } from '@/components/ui/button.tsx'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { BandTag } from './BandTag.tsx'
 import { CornerGlyph, QualityRadarMini } from './QualityRadar.tsx'
-import { SEVERITY_CLASS } from './tokens.ts'
 
 type Props = {
   assessment: PostEvaluation
@@ -26,20 +26,17 @@ type Props = {
   onOpenPanel: () => void
 }
 
-/** The checks bar has room for the start of the list, not the list. */
-const FIXES_SHOWN = 2
-
 /**
  * The quality score as it appears inside the expanded checks bar (CON-183,
  * reworked in CON-440).
  *
  * Three columns: the overall beside the radar's shape, the four scores — each
- * with a glyph naming its corner of that shape — and the first fixes from the
- * rail's list, word for word. A glance here says what to do next, not only how
- * it went.
+ * with a glyph naming its corner of that shape — and how many suggestions are
+ * waiting, with the way to them. A glance here says whether there is work to
+ * do, not only how it went; the rail says what the work is.
  *
- * A digest, not a second panel. The verdicts and the rest of the list stay in
- * the rail, which this links to. Two full breakdowns would be two things to
+ * A digest, not a second panel. The verdicts and the suggestions themselves
+ * stay in the rail, which this links to. Two full breakdowns would be two things to
  * keep in step and twice the height above the editor.
  *
  * Only ever rendered against a stored assessment. The states around one —
@@ -127,34 +124,15 @@ export function QualityInlineSummary({
           })}
         </ul>
 
-        <div className="flex flex-col gap-2 md:border-l md:border-border md:pl-8">
+        <div className="flex flex-col justify-center gap-1 md:border-l md:border-border md:pl-8">
+          {/* A count, not the advice itself (CON-443): quoted whole, two
+              suggestions ran to eight lines each and made the bar taller than
+              the editor area it summarises. This still says whether there is
+              something to fix; the rail says what. */}
           {suggestions.length > 0 && (
-            <>
-              <span className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.06em] text-tertiary-foreground">
-                {t('posts.quality.inline.fixFirst')}
-              </span>
-              <ol className="flex flex-col gap-1.5">
-                {suggestions.slice(0, FIXES_SHOWN).map((s, i) => {
-                  const severity =
-                    s.severity in SEVERITY_CLASS ? s.severity : 'low'
-                  return (
-                    <li key={i} className="flex items-baseline gap-2 text-sm">
-                      <span
-                        className={cn(
-                          'shrink-0 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]',
-                          SEVERITY_CLASS[severity],
-                        )}
-                      >
-                        {t(`posts.quality.severity.${severity}`)}
-                      </span>
-                      <span className="min-w-0 text-foreground">
-                        {s.advice}
-                      </span>
-                    </li>
-                  )
-                })}
-              </ol>
-            </>
+            <p className="text-sm text-secondary-foreground">
+              {suggestionCountLine(t, suggestions)}
+            </p>
           )}
           {/* `-ml-3` cancels the ghost's own left padding so the label starts
               on the column's edge — the padding is there for the hover
@@ -190,4 +168,19 @@ export function QualityInlineSummary({
       )}
     </section>
   )
+}
+
+/**
+ * "5 suggestions, 2 of them high." — one whole sentence per case rather than a
+ * count with a clause bolted on, so each language words all three its own way.
+ */
+function suggestionCountLine(
+  t: TFunction,
+  suggestions: QualitySuggestion[],
+): string {
+  const count = suggestions.length
+  const high = suggestions.filter((s) => s.severity === 'high').length
+  if (high === 0) return t('posts.quality.inline.countNoneHigh', { count })
+  if (high === count) return t('posts.quality.inline.countAllHigh', { count })
+  return t('posts.quality.inline.countSomeHigh', { count, high })
 }
