@@ -133,6 +133,19 @@ describe('qualityHighlightPlugin', () => {
     expect(classes(state)).toEqual([])
   })
 
+  it('counts every lookup, so a new run with the same result still reports', () => {
+    const once = set(start(), SPANS)
+    const twice = set(once, SPANS)
+    expect(qualityHighlightKey.getState(twice)!.run).toBe(
+      qualityHighlightKey.getState(once)!.run + 1,
+    )
+  })
+
+  it('keeps the chosen span when the spans are looked up again', () => {
+    const state = set(choose(set(start(), SPANS), 0), SPANS)
+    expect(qualityHighlightKey.getState(state)!.chosen).toBe(0)
+  })
+
   it('clears every mark when the panel closes', () => {
     const state = set(choose(set(start(), SPANS), 0), null)
     expect(classes(state)).toEqual([])

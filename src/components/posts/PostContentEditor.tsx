@@ -116,8 +116,12 @@ export function PostContentEditor({
       editor.document,
       next.length > 0 ? next : DEFAULT_CONTENT,
     )
+    // A body replaced from outside — the assistant's rewrite — is a new text,
+    // not an edit of the old one: look the spans up again rather than map
+    // every mark through the replacement and call them all edited.
+    if (highlights) setHighlights(editor.prosemirrorView, highlights)
     readyRef.current = true
-  }, [editor, content])
+  }, [editor, content, highlights])
 
   // After the load above, so a session's spans are looked for in the post that
   // is actually on screen.

@@ -39,11 +39,13 @@ function startSession(
   const body: HighlightSpan[] = []
   const titleMarks: TitleMark[] = []
   postSuggestions(evaluation).forEach((s, index) => {
-    const range = s.span ? findSpan(title, s.span) : null
+    // Nothing quoted, nothing to find — and nothing to call edited.
+    if (!s.span) return
+    const range = findSpan(title, s.span)
     if (range) {
       titleMarks.push({ ...range, index, severity: s.severity, edited: false })
     } else {
-      body.push({ index, span: s.span ?? '', severity: s.severity })
+      body.push({ index, span: s.span, severity: s.severity })
     }
   })
   return { key, body, title, titleMarks, titleLost: [], chosen: null }
