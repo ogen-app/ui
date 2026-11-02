@@ -3417,7 +3417,7 @@ export const en = {
           "The post has changed since it was scored. It's re-scored automatically at the next checkpoint, or you can re-assess now.",
         context:
           "The campaign brief, its assets or the way posts are scored have changed since this was scored. That's never re-scored automatically.",
-        both: "The post and its campaign context have both changed since this was scored. Re-assess to see where it stands now.",
+        both: 'The post and its campaign context have both changed since this was scored. Re-assess to see where it stands now.',
         action: 'Re-assess',
       },
 

@@ -37,10 +37,7 @@ type Props = {
  * never scored, running, failed, switched off — belong to the bar's header,
  * where they stay reachable without expanding anything.
  */
-export function QualityInlineSummary({
-  assessment,
-  onOpenPanel,
-}: Props) {
+export function QualityInlineSummary({ assessment, onOpenPanel }: Props) {
   const { t } = useTranslation()
   const pct = overallPct(assessment)
   const band = overallBand(pct)
