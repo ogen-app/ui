@@ -2700,7 +2700,8 @@ export const es: Translation = {
       },
 
       runs: {
-        left_one: 'Te queda {{count}} de {{limit}} revisiones para esta publicación',
+        left_one:
+          'Te queda {{count}} de {{limit}} revisiones para esta publicación',
         left_other:
           'Te quedan {{count}} de {{limit}} revisiones para esta publicación',
         none_one:
@@ -2714,7 +2715,8 @@ export const es: Translation = {
       },
 
       empty: {
-        unavailable: 'La evaluación está desactivada en este espacio de trabajo.',
+        unavailable:
+          'La evaluación está desactivada en este espacio de trabajo.',
         unavailableHint:
           'Alguien con permisos de administración puede activarla en los ajustes.',
         goToSettings: 'Ir a los ajustes del espacio de trabajo',

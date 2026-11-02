@@ -125,10 +125,14 @@ describe('postSuggestions', () => {
     const evaluated = evaluation({
       result: {
         correctness: dimension({
-          suggestions: [suggestion({ dimension: 'correctness', severity: 'low' })],
+          suggestions: [
+            suggestion({ dimension: 'correctness', severity: 'low' }),
+          ],
         }),
         clarity: dimension({
-          suggestions: [suggestion({ dimension: 'clarity', severity: 'medium' })],
+          suggestions: [
+            suggestion({ dimension: 'clarity', severity: 'medium' }),
+          ],
         }),
         engagement: dimension({
           suggestions: [
@@ -159,7 +163,9 @@ describe('postSuggestions', () => {
         }),
         engagement: dimension(),
         delivery: dimension({
-          suggestions: [suggestion({ dimension: 'delivery', severity: 'high' })],
+          suggestions: [
+            suggestion({ dimension: 'delivery', severity: 'high' }),
+          ],
         }),
       },
     })
