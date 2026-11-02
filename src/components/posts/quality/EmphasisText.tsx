@@ -15,19 +15,22 @@ import { emphasisParts } from '@/lib/qualityEmphasis'
 export function EmphasisText({
   text,
   className,
+  as: Tag = 'p',
 }: {
   text: string
   /** The paragraph's type and its unemphasised ink. */
   className?: string
+  /** `span` inside a button, where a `<p>` isn't allowed. */
+  as?: 'p' | 'span'
 }) {
   const parts = emphasisParts(text)
 
   if (!parts.some((part) => part.strong)) {
-    return <p className={className}>{parts[0]?.text ?? ''}</p>
+    return <Tag className={className}>{parts[0]?.text ?? ''}</Tag>
   }
 
   return (
-    <p className={cn(className, 'text-secondary-foreground')}>
+    <Tag className={cn(className, 'text-secondary-foreground')}>
       {parts.map((part, i) =>
         part.strong ? (
           <strong key={i} className="font-semibold text-foreground">
@@ -37,6 +40,6 @@ export function EmphasisText({
           <span key={i}>{part.text}</span>
         ),
       )}
-    </p>
+    </Tag>
   )
 }

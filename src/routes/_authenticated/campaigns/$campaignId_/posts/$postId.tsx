@@ -28,6 +28,7 @@ import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
 import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
+import { TitleHighlights } from '@/components/posts/quality/TitleHighlights'
 import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
 import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
 import { PostFirstCommentCard } from '@/components/posts/firstComment/PostFirstCommentCard'
@@ -55,6 +56,7 @@ import {
   type VerifyExternalResult,
 } from '@/hooks/usePost'
 import { usePostAssessment } from '@/hooks/usePostAssessment'
+import { useQualityHighlights } from '@/hooks/useQualityHighlights'
 import { usePostMedia } from '@/hooks/usePostMedia'
 import { usePostNotes } from '@/hooks/usePostNotes'
 import { usePostStatusActions } from '@/hooks/usePostStatusActions'
@@ -413,6 +415,23 @@ function PostEditorSurface({
   // again whether it still is — staleness is the server's call (CON-438).
   const quality = usePostAssessment(doc.id, doc.updated_at)
   const { assessment, assess: startAssessment, assessing } = quality
+  // While the panel is open, every suggestion's span is marked in the title
+  // and the body, and the list and the post choose together (CON-441).
+  const highlights = useQualityHighlights({
+    assessment,
+    open: qualityOpen,
+    title: titleDraft,
+  })
+  const { pick: pickHighlight, titleMarks } = highlights
+  // A click inside a marked span in the title chooses its suggestion; the
+  // caret still lands where it was put.
+  const pickTitleHighlight = useCallback(
+    (caret: number) => {
+      const hit = titleMarks.find((m) => m.start <= caret && caret <= m.end)
+      if (hit) pickHighlight(hit.index)
+    },
+    [titleMarks, pickHighlight],
+  )
   // One gate for both places a run can be started — the checks bar and the
   // rail panel — because they start the same run and would otherwise disagree
   // about whether there is one left.
@@ -836,22 +855,35 @@ function PostEditorSurface({
             <div className="w-content bg-primary px-10 py-8">
               <div className="flex flex-col">
                 <div className="mb-4 flex flex-col">
-                  <textarea
-                    ref={titleRef}
-                    value={titleDraft}
-                    onChange={(e) => {
-                      const next = e.target.value.replace(/\n/g, '')
-                      handleTitleChange(next)
-                    }}
-                    // No placeholder once locked: "Title" under a published
-                    // post reads as a field waiting to be filled in, and
-                    // nobody can fill it in. An untitled post that has gone
-                    // out simply has no title.
-                    placeholder={locked ? undefined : 'Title'}
-                    readOnly={locked}
-                    rows={1}
-                    className="resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground"
-                  />
+                  <div className="relative">
+                    {/* Same type as the textarea, or the marks drift off
+                      their letters. */}
+                    <TitleHighlights
+                      title={titleDraft}
+                      marks={titleMarks}
+                      chosen={highlights.chosen}
+                      className="text-4xl font-bold tracking-tight"
+                    />
+                    <textarea
+                      ref={titleRef}
+                      value={titleDraft}
+                      onChange={(e) => {
+                        const next = e.target.value.replace(/\n/g, '')
+                        handleTitleChange(next)
+                      }}
+                      onClick={(e) =>
+                        pickTitleHighlight(e.currentTarget.selectionStart)
+                      }
+                      // No placeholder once locked: "Title" under a published
+                      // post reads as a field waiting to be filled in, and
+                      // nobody can fill it in. An untitled post that has gone
+                      // out simply has no title.
+                      placeholder={locked ? undefined : 'Title'}
+                      readOnly={locked}
+                      rows={1}
+                      className="relative block resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground"
+                    />
+                  </div>
                   {/* Only where the platform publishes a title and caps it —
                       YouTube today. Elsewhere the title is Ogen's own label
                       and a counter on it would be noise. Deliberately not a
@@ -876,6 +908,10 @@ function PostEditorSurface({
                   onContentChange={handleContentChange}
                   readOnly={locked}
                   busy={assistantRunning}
+                  highlights={highlights.bodySpans}
+                  chosenHighlight={highlights.chosen}
+                  onChooseHighlight={pickHighlight}
+                  onHighlightStatus={highlights.onBodyStatus}
                 />
                 {isSequence && (
                   <ThreadSplitNote plan={plan} stale={media.previewStale} />
@@ -1016,6 +1052,15 @@ function PostEditorSurface({
               assessError={quality.assessError}
               exhausted={quality.exhausted}
               locked={locked}
+              highlight={
+                highlights.active
+                  ? {
+                      statuses: highlights.statuses,
+                      chosen: highlights.chosen,
+                      onToggle: highlights.toggle,
+                    }
+                  : undefined
+              }
               onClose={closeRightPanel}
             />,
             qualityHost,

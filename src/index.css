@@ -1119,3 +1119,85 @@
     transition: opacity 0.15s ease-in-out;
   }
 }
+
+/*
+ * Quality marks in the post (CON-441): every suggestion's span, painted in
+ * its severity's colour. The editor's body draws them as ProseMirror
+ * decorations and the title through `TitleHighlights`, so both read these.
+ * Pale is the severity tag's own wash; chosen is about two and a half times
+ * that plus a 2px underline; edited drops the wash for a 1.5px underline.
+ *
+ * Unlayered on purpose: BlockNote's stylesheet is unlayered too, and a rule in
+ * `@layer components` loses to it on any property both set.
+ */
+.quality-mark--high {
+  --quality-mark: var(--destructive);
+  --quality-pale: 10%;
+  --quality-strong: 24%;
+}
+.quality-mark--medium {
+  --quality-mark: var(--warning);
+  --quality-pale: 17%;
+  --quality-strong: 40%;
+}
+.quality-mark--low {
+  --quality-mark: var(--tertiary-foreground);
+  --quality-pale: 12%;
+  --quality-strong: 26%;
+}
+.quality-mark--pale {
+  background-color: color-mix(
+    in oklch,
+    var(--quality-mark) var(--quality-pale),
+    transparent
+  );
+}
+.quality-mark--chosen,
+.quality-mark--edited {
+  text-decoration-line: underline;
+  /* Under the descenders rather than broken around them, so the line reads
+     as one mark the length of the span. */
+  text-decoration-skip-ink: none;
+  text-underline-offset: 0.22em;
+}
+.quality-mark--chosen {
+  background-color: color-mix(
+    in oklch,
+    var(--quality-mark) var(--quality-strong),
+    transparent
+  );
+  text-decoration-color: var(--quality-mark);
+  text-decoration-thickness: 2px;
+}
+.quality-mark--edited {
+  text-decoration-color: color-mix(
+    in oklch,
+    var(--quality-mark) 85%,
+    transparent
+  );
+  text-decoration-thickness: 1.5px;
+}
+
+/* E2's square in the margin, on the paragraph the chosen span starts in.
+   `::after`, because BlockNote draws list markers with the block's
+   `::before`. */
+.quality-line {
+  position: relative;
+}
+.quality-line::after {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: calc(3px + 0.55em);
+  width: 8px;
+  height: 8px;
+}
+.quality-line--high::after {
+  background-color: var(--destructive);
+}
+.quality-line--medium::after {
+  background-color: var(--warning);
+}
+.quality-line--low::after {
+  background-color: var(--tertiary-foreground);
+}

@@ -114,6 +114,38 @@ describe('quality panel in Spanish', () => {
     }
   })
 
+  // CON-441: the marks' words in the list.
+  it('words the highlight states in Spanish', () => {
+    render(
+      <PostQualityPanelView
+        assessment={EVALUATION}
+        platformName="LinkedIn"
+        loading={false}
+        unavailable={false}
+        loadError={null}
+        onReload={vi.fn()}
+        onAssess={vi.fn()}
+        assessing={false}
+        steps={[]}
+        cached={false}
+        assessError={null}
+        highlight={{
+          statuses: ['edited', 'whole', 'marked', 'marked'],
+          chosen: 2,
+          onToggle: vi.fn(),
+        }}
+      />,
+    )
+    expect(screen.getByText('Editado')).toBeInTheDocument()
+    expect(screen.getByText('Todo el post')).toBeInTheDocument()
+    expect(
+      screen.getByText('Resaltado en el post: [ai playground]'),
+    ).toBeInTheDocument()
+    for (const english of ['Edited', 'The whole post', 'Highlighted']) {
+      expect(screen.queryByText(new RegExp(english))).not.toBeInTheDocument()
+    }
+  })
+
   it('renders the checks-bar digest without its English literals', () => {
     render(
       <QualityInlineSummary assessment={EVALUATION} onOpenPanel={vi.fn()} />,

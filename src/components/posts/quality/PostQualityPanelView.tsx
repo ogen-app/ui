@@ -34,7 +34,7 @@ import type {
 } from '@/types/quality'
 import { AssessProgress } from './AssessProgress.tsx'
 import { BandTag } from './BandTag.tsx'
-import { FixFirstList } from './FixFirstList.tsx'
+import { FixFirstList, type FixFirstHighlight } from './FixFirstList.tsx'
 import { QualityRadar } from './QualityRadar.tsx'
 import { ScoreReasons } from './ScoreReasons.tsx'
 
@@ -71,6 +71,11 @@ export type PostQualityPanelViewProps = {
    * would buy a verdict about text nobody can act on.
    */
   locked?: boolean
+  /**
+   * The list's link to the post's marks (CON-441). Absent, the rows are
+   * plain text — the harness and anything else without an editor beside it.
+   */
+  highlight?: FixFirstHighlight
   onClose?: () => void
 }
 
@@ -109,6 +114,7 @@ export function PostQualityPanelView({
   assessError,
   exhausted = false,
   locked = false,
+  highlight,
   onClose,
 }: PostQualityPanelViewProps) {
   const { t } = useTranslation()
@@ -268,6 +274,7 @@ export function PostQualityPanelView({
             suggestions={suggestions}
             cached={cached}
             onReassess={!locked && canRun ? onAssess : undefined}
+            highlight={highlight}
           />
         </>
       )}
@@ -348,6 +355,7 @@ function Result({
   suggestions,
   cached,
   onReassess,
+  highlight,
 }: {
   evaluation: PostEvaluation
   previous: PostEvaluation | null
@@ -355,6 +363,7 @@ function Result({
   suggestions: QualitySuggestion[]
   cached: boolean
   onReassess?: () => void
+  highlight?: FixFirstHighlight
 }) {
   // A radar corner brings its dimension's verdict into view and hands it
   // focus, so a screen reader lands on the answer it asked for.
@@ -381,7 +390,7 @@ function Result({
         />
       </div>
       <div className="border-t border-border pt-5">
-        <FixFirstList suggestions={suggestions} />
+        <FixFirstList suggestions={suggestions} highlight={highlight} />
       </div>
       <div className="border-t border-border pt-5">
         <ScoreReasons evaluation={evaluation} />

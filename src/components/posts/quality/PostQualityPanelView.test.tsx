@@ -232,6 +232,75 @@ describe('PostQualityPanelView', () => {
   })
 })
 
+// CON-441: the list chooses which span the post shows at full strength.
+describe('PostQualityPanelView with highlights', () => {
+  function renderHighlighted(
+    highlight: Partial<
+      NonNullable<Parameters<typeof PostQualityPanelView>[0]['highlight']>
+    > = {},
+  ) {
+    const onToggle = vi.fn()
+    renderPanel({
+      highlight: {
+        statuses: ['marked', 'marked', 'marked'],
+        chosen: null,
+        onToggle,
+        ...highlight,
+      },
+    })
+    return onToggle
+  }
+
+  it('makes each quote and its advice one toggle', async () => {
+    const onToggle = renderHighlighted()
+    const button = screen.getByRole('button', {
+      name: /Span for Source the figure\..*Source the figure\./,
+    })
+    expect(button).toHaveAttribute('aria-pressed', 'false')
+    await userEvent.click(button)
+    // Second in the list: high first, then medium.
+    expect(onToggle).toHaveBeenCalledWith(1)
+  })
+
+  it('fills the chosen row’s tag and announces its span', () => {
+    renderHighlighted({ chosen: 0 })
+    const button = screen.getByRole('button', { pressed: true })
+    const row = button.closest('li')!
+    expect(row).toHaveAttribute('data-chosen')
+    expect(within(row).getByText('High')).toHaveClass('bg-destructive')
+    expect(
+      screen.getByText(
+        'Highlighted in the post: Span for Remove the internal tag.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('says Edited once a span has changed', () => {
+    renderHighlighted({ statuses: ['edited', 'marked', 'marked'] })
+    const row = screen
+      .getByRole('button', { name: /Remove the internal tag/ })
+      .closest('li')!
+    expect(within(row).getByText('Edited')).toBeInTheDocument()
+    expect(screen.getAllByText('Edited')).toHaveLength(1)
+  })
+
+  it('names a whole-post suggestion instead of quoting it', () => {
+    renderHighlighted({ statuses: ['whole', 'marked', 'marked'] })
+    expect(screen.getByText('The whole post')).toBeInTheDocument()
+    expect(screen.getByText('· not marked in the text')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Span for Remove the internal tag.'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps plain rows without an editor beside the panel', () => {
+    renderPanel()
+    expect(
+      screen.queryByRole('button', { name: /Remove the internal tag/ }),
+    ).not.toBeInTheDocument()
+  })
+})
+
 describe('QualityInlineSummary', () => {
   it('counts the suggestions instead of quoting them', () => {
     render(

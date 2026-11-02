@@ -2718,6 +2718,10 @@ export const es: Translation = {
         title: 'Corrige primero',
         order: 'Primero lo de mayor impacto',
         none: 'Esta evaluación no tiene sugerencias.',
+        edited: 'Editado',
+        wholePost: 'Todo el post <muted>· sin marcar en el texto</muted>',
+        announce: 'Resaltado en el post: {{span}}',
+        announceWhole: 'Esta sugerencia trata del post entero.',
       },
 
       reasons: {
