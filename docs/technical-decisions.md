@@ -1364,6 +1364,36 @@ the list, filter and groups in `query/`, the rail's row), its wiring in
 `components/layout/nav/WorkspaceLevel.tsx`, the two `ideas` routes, and the
 `ideas.*` catalogue entries in both languages.
 
+## A quality score's staleness is the server's call {#quality-staleness}
+
+_(CON-438 backend, CON-439 UI.)_ The panel used to decide for itself whether a
+stored score still described the post, by comparing the post's `updated_at`
+with the evaluation's. It was cheap and it was wrong in both directions:
+rescheduling a post bumped `updated_at` without touching a word the model
+reads, and a brief edit — which changes what the model reads — never touched
+the post at all.
+
+`GET /api/posts/:id/assessment` now answers it: the server renders the prompt
+the next run would use, compares its fingerprints with the stored ones, and
+returns `stale` with a `stale_reason` of `content`, `context` or `both`. The
+two reasons are worded apart in the UI because they behave apart — a content
+change is re-scored automatically at the next lifecycle checkpoint, a context
+change never is, so the badge's **Re-assess** is the only way to clear it.
+
+The cost is that the answer is only as fresh as the read, and the read lives in
+its own namespace (`postAssessmentKey`) precisely so that autosave doesn't
+refetch it. `usePostAssessment` takes the live post's `updated_at` and asks
+again on the **first** save after a current score — the one edit that can turn
+current into outdated. Once the read says stale, later edits can't make it more
+so and nothing is refetched until a run lands. A plan change refetches every
+assessment too, because each read carries the post's run allowance
+(`runs_used` / `runs_limit`), which the plan sets.
+
+Automatic runs are announced on the post's topic (`assessment.started`) and
+tracked in `autoAssessmentStore`. The stream is at-most-once, so a start can
+lose its ending: a run is forgotten after three minutes, and a reconnect
+forgets them all.
+
 ## Two form systems, on purpose
 
 **Decision.** Auth forms use the minimal `useFormValidation` hook + plain

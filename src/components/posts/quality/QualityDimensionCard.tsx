@@ -1,29 +1,17 @@
-import type { ReactNode } from 'react'
-import { Collapse } from '@/components/ui/collapse'
 import { BAND_TEXT, BAND_FILL, DIMENSION_ICON } from './tokens.ts'
 import { cn } from '@/lib'
-import {
-  scoreBand,
-  suggestionsOf,
-  type QualityDimensionMeta,
-} from '@/lib/postQuality.ts'
-import type { QualityDimension, QualitySeverity } from '@/types/quality'
+import { scoreBand, type QualityDimensionMeta } from '@/lib/postQuality.ts'
+import type { QualityDimension } from '@/types/quality'
 
 /**
- * Severity reads as a tag — the severity colour over a tenth-opacity wash of
- * itself. Matches the assistant's review findings, which use the same
- * high/medium/low vocabulary; they should not look like two different scales.
- */
-const SEVERITY_CLASS: Record<QualitySeverity, string> = {
-  high: 'bg-destructive/10 text-destructive',
-  medium: 'bg-warning/10 text-warning',
-  low: 'bg-tertiary-foreground/10 text-tertiary-foreground',
-}
-
-/**
- * One dimension's card: the score and what the weighting did with it, the
- * model's reasoning, the weakness it was made to name, and the suggestions
- * that fall out of both.
+ * One dimension's card: the score, and the model's one- or two-sentence
+ * verdict on it (CON-438).
+ *
+ * The suggestions used to live here too, two or three to a card behind a
+ * disclosure, with a mandatory "worth tightening" line above them. With at
+ * most five across the whole post most cards would hold one line or none, so
+ * they moved into one list under the cards (`QualitySuggestionList`) and the
+ * card is back to answering a single question: how did this dimension do.
  */
 export function QualityDimensionCard({
   meta,
@@ -38,7 +26,6 @@ export function QualityDimensionCard({
 
   const score = dimension.score ?? 0
   const band = scoreBand(score)
-  const suggestions = suggestionsOf(dimension)
   const Icon = DIMENSION_ICON[meta.key]
 
   return (
@@ -90,86 +77,12 @@ export function QualityDimensionCard({
           />
         </div>
 
-        {dimension.rationale && (
+        {dimension.verdict && (
           <p className="text-sm/[1.5] text-secondary-foreground">
-            {dimension.rationale}
+            {dimension.verdict}
           </p>
         )}
-
-        {/* CON-85 makes the model name a weakness for every dimension, even
-            on a 10 — it is the counterweight to sycophantic scoring, not a
-            finding. A warning triangle said "defect" about a line that is
-            mandatory by design; a section label says what it actually is. */}
-        {dimension.weakness && (
-          <section className="flex flex-col gap-0.5">
-            <SubHeader>WORTH TIGHTENING</SubHeader>
-            <p className="text-sm/[1.5] text-secondary-foreground">
-              {dimension.weakness}
-            </p>
-          </section>
-        )}
       </div>
-
-      {suggestions.length > 0 && (
-        <Collapse
-          // A plain string, so `Collapse` styles it as its own section
-          // heading — this is a control the reader is meant to reach for,
-          // not a label like the one above it.
-          title={`${suggestions.length} suggestion${suggestions.length === 1 ? '' : 's'}`}
-          // Collapsed: four cards' worth of open suggestions is a wall, and
-          // the score plus the weakness is what most reads need.
-          className="border-t border-border px-3"
-        >
-          {/* `Collapse`'s trigger only carries 8px of its own padding below
-              the label, which left the first suggestion sitting on it. */}
-          <ul className="flex flex-col gap-2.5 pt-1 pb-3">
-            {suggestions.map((suggestion, i) => (
-              <li key={i} className="flex flex-col gap-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
-                    {suggestion.issue}
-                  </span>
-                  <span
-                    className={cn(
-                      'shrink-0 px-[3px] py-[2px] text-[10px] font-semibold uppercase tracking-[0.08em]',
-                      SEVERITY_CLASS[suggestion.severity] ?? SEVERITY_CLASS.low,
-                    )}
-                  >
-                    {suggestion.severity}
-                  </span>
-                </div>
-                {suggestion.fix && (
-                  <p className="text-sm/[1.5] text-secondary-foreground">
-                    → {suggestion.fix}
-                  </p>
-                )}
-                {/* The quoted span is the point of a suggestion — it is what
-                    makes "tighten the hook" into something you can act on. */}
-                {suggestion.span && (
-                  <p className="border-l-2 border-quinary pl-2 text-xs/[1.5] italic text-tertiary-foreground">
-                    {suggestion.span}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </Collapse>
-      )}
     </section>
-  )
-}
-
-/**
- * The card's section label. Matches the "NOTES" heading in the post preview
- * panel — the app's existing idiom for naming a block without competing with
- * what is in it. Written in capitals in the copy, so they survive a restyle;
- * small and heavy, with letterspacing to keep the caps legible at 11px, is
- * how a label reads as a label rather than as a quiet first line of the text.
- */
-function SubHeader({ children }: { children: ReactNode }) {
-  return (
-    <span className="text-[11px] font-semibold tracking-[0.05em] text-tertiary-foreground">
-      {children}
-    </span>
   )
 }

@@ -409,7 +409,9 @@ function PostEditorSurface({
   // progress. Two `usePostAssessment` instances would share the cached result
   // but not the run — the bar would stream while the panel sat on its "assess
   // this post" empty state, offering a second one.
-  const quality = usePostAssessment(doc.id)
+  // `doc.updated_at` so the first edit after a current score asks the server
+  // again whether it still is — staleness is the server's call (CON-438).
+  const quality = usePostAssessment(doc.id, doc.updated_at)
   const { assessment, assess: startAssessment, assessing } = quality
   // One gate for both places a run can be started — the checks bar and the
   // rail panel — because they start the same run and would otherwise disagree
@@ -823,9 +825,9 @@ function PostEditorSurface({
                 checks={allChecks}
                 status={doc.status}
                 assessment={assessment}
-                postUpdatedAt={doc.updated_at}
                 qualityUnavailable={quality.unavailable}
-                assessing={assessing}
+                assessing={assessing || !!quality.autoAssessing}
+                exhausted={quality.exhausted}
                 onAssess={runAssessment}
                 onOpenQuality={openQuality}
               />
@@ -987,21 +989,19 @@ function PostEditorSurface({
 
         {qualityHost &&
           createPortal(
-            /* `doc.updated_at` rather than the stored evaluation's copy of the
-               post, so the panel can tell a score that still describes what is
-               in the editor from one taken before the last edit. */
             <PostQualityPanelView
               assessment={assessment}
-              postUpdatedAt={doc.updated_at}
               loading={quality.loading}
               unavailable={quality.unavailable}
               loadError={quality.loadError}
               onReload={quality.reload}
               onAssess={runAssessment}
               assessing={assessing}
+              autoAssessing={quality.autoAssessing}
               steps={quality.steps}
               cached={quality.cached}
               assessError={quality.assessError}
+              exhausted={quality.exhausted}
               locked={locked}
               onClose={closeRightPanel}
             />,

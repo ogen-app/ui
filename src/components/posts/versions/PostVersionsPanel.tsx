@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowUUpLeftIcon,
   CaretLeftIcon,
+  ClockCounterClockwiseIcon,
   DotsThreeVerticalIcon,
   EyeIcon,
   FloppyDiskIcon,
@@ -193,13 +194,26 @@ export function PostVersionsPanel({ doc, onClose }: Props) {
   )
 }
 
-/** Who took the snapshot — the assistant saves one before it rewrites. */
+const CREATOR_ICON = {
+  user: UserIcon,
+  assistant: SparkleIcon,
+  system: ClockCounterClockwiseIcon,
+} satisfies Record<PostVersion['creator'], unknown>
+
+/**
+ * Who took the snapshot — the assistant saves one before it rewrites, and
+ * the server one at each lifecycle moment it keeps a record of. Those are not
+ * "You": the author marked the post ready, but Ogen chose to keep the copy,
+ * and the note beside the mark says which moment it was.
+ */
 function CreatorMark({ creator }: { creator: PostVersion['creator'] }) {
-  const Icon = creator === 'assistant' ? SparkleIcon : UserIcon
+  const { t } = useTranslation()
+  const known = creator in CREATOR_ICON ? creator : 'user'
+  const Icon = CREATOR_ICON[known]
   return (
     <span className="inline-flex shrink-0 items-center gap-1 text-xs text-tertiary-foreground">
       <Icon className="size-3.5" weight="regular" aria-hidden />
-      {creator === 'assistant' ? 'Assistant' : 'You'}
+      {t(`posts.versions.creator.${known}`)}
     </span>
   )
 }

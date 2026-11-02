@@ -28,12 +28,15 @@ type Props = {
   status: PostStatus
   /** The stored score: `null` never assessed, `undefined` not loaded yet. */
   assessment: PostEvaluation | null | undefined
-  /** The live post's `updated_at`, for the staleness flag. */
-  postUpdatedAt: string
   /** Scoring is switched off for this workspace — the bar says nothing of it. */
   qualityUnavailable: boolean
-  /** A run is streaming, here or in the rail — they are the same run. */
+  /**
+   * A run is going — streaming here or in the rail (they are the same run),
+   * or one the server started at a checkpoint (CON-438).
+   */
   assessing: boolean
+  /** The post's run allowance is used up, so there is no run to offer. */
+  exhausted?: boolean
   /** Starts a run without leaving the bar. */
   onAssess: () => void
   /** Opens the quality rail, where a result can actually be read. */
@@ -76,9 +79,9 @@ export function PostValidationsSection({
   checks,
   status,
   assessment,
-  postUpdatedAt,
   qualityUnavailable,
   assessing,
+  exhausted = false,
   onAssess,
   onOpenQuality,
   className,
@@ -145,6 +148,7 @@ export function PostValidationsSection({
             <AssessLink
               assessment={assessment}
               assessing={assessing}
+              exhausted={exhausted}
               onAssess={onAssess}
             />
           )}
@@ -235,7 +239,6 @@ export function PostValidationsSection({
           {hasScore && assessment && (
             <QualityInlineSummary
               assessment={assessment}
-              postUpdatedAt={postUpdatedAt}
               onOpenPanel={onOpenQuality}
             />
           )}
@@ -260,10 +263,12 @@ export function PostValidationsSection({
 function AssessLink({
   assessment,
   assessing,
+  exhausted,
   onAssess,
 }: {
   assessment: PostEvaluation | null | undefined
   assessing: boolean
+  exhausted: boolean
   onAssess: () => void
 }) {
   const { t } = useTranslation()
@@ -274,6 +279,16 @@ function AssessLink({
       <span className="flex shrink-0 items-center gap-1.5 text-tertiary-foreground">
         <CircleDashedIcon className="size-4 animate-spin" />
         <span>{t('posts.quality.assessing')}</span>
+      </span>
+    )
+  }
+
+  // Said rather than hidden: a link that vanishes reads as a glitch, and the
+  // rail's hint says the rest.
+  if (exhausted) {
+    return (
+      <span className="shrink-0 text-tertiary-foreground">
+        {t('posts.quality.runs.noneShort')}
       </span>
     )
   }

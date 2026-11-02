@@ -2644,6 +2644,92 @@ export const es: Translation = {
       neverScored: 'Esta publicación nunca se evaluó.',
       scoringIsForDrafts:
         'La evaluación es para una publicación que todavía puedes cambiar.',
+
+      title: 'Calidad',
+      inlineHeading: 'Calidad del contenido',
+      seeBreakdown: 'Ver el desglose completo',
+      overall: 'Calidad general',
+      assessPost: 'Evaluar esta publicación',
+      reassessPost: 'Volver a evaluar esta publicación',
+      assessingPost: 'Evaluando esta publicación…',
+      scored: 'Evaluada',
+      scoredAt: 'Evaluada {{when}}',
+      scoredCached: 'Evaluada · sin cambios desde la última vez',
+      scoredAtCached: 'Evaluada {{when}} · sin cambios desde la última vez',
+      captionScoped:
+        'Solo se evaluó el texto. Esta publicación lleva contenido multimedia que el modelo no puede ver, así que lo visual no cuenta en la cifra de arriba.',
+      runFailed: 'La evaluación no terminó',
+      loadFailed: 'No se ha podido cargar la evaluación',
+      suggestionCount_one: '{{count}} sugerencia',
+      suggestionCount_other: '{{count}} sugerencias',
+      suggestionsHeading: 'SUGERENCIAS',
+      severity: {
+        high: 'Alta',
+        medium: 'Media',
+        low: 'Baja',
+      },
+
+      trigger: {
+        ready: 'Evaluada automáticamente al marcarla como lista',
+        version: 'Evaluada automáticamente al guardar una versión',
+        scheduled: 'Evaluada automáticamente al programarla',
+        published: 'Evaluada automáticamente al publicarla',
+      },
+
+      auto: {
+        running: {
+          ready:
+            'Evaluando automáticamente, porque la publicación se marcó como lista.',
+          version: 'Evaluando automáticamente, porque se guardó una versión.',
+          scheduled:
+            'Evaluando automáticamente, porque la publicación se programó.',
+          published:
+            'Evaluando automáticamente, porque la publicación se publicó.',
+        },
+        runningGeneric: 'Evaluando automáticamente.',
+      },
+
+      stale: {
+        badge: 'Puede estar desactualizada',
+        content:
+          'La publicación ha cambiado desde que se evaluó. Se vuelve a evaluar automáticamente en el siguiente punto de control, o puedes hacerlo ahora.',
+        context:
+          'El briefing de la campaña, sus recursos o la forma de evaluar han cambiado desde esta evaluación. Esto nunca se vuelve a evaluar automáticamente.',
+        both: 'Tanto la publicación como el contexto de su campaña han cambiado desde esta evaluación. Vuelve a evaluarla para ver cómo está ahora.',
+        action: 'Volver a evaluar',
+      },
+
+      runs: {
+        left_one: 'Te queda {{count}} de {{limit}} revisiones para esta publicación',
+        left_other:
+          'Te quedan {{count}} de {{limit}} revisiones para esta publicación',
+        none_one:
+          'Has usado la única revisión que tu plan permite para esta publicación.',
+        none_other:
+          'Has usado las {{count}} revisiones que tu plan permite para esta publicación.',
+        noneFlat:
+          'Has usado todas las revisiones que tu plan permite para esta publicación.',
+        noneShort: 'Sin revisiones',
+        limitTitle: 'No quedan revisiones para esta publicación',
+      },
+
+      empty: {
+        unavailable: 'La evaluación está desactivada en este espacio de trabajo.',
+        unavailableHint:
+          'Alguien con permisos de administración puede activarla en los ajustes.',
+        goToSettings: 'Ir a los ajustes del espacio de trabajo',
+        broke: 'Vaya, algo ha fallado.',
+        loadFailed:
+          'Ahora mismo no hemos podido obtener la evaluación de esta publicación.',
+        tryAgain: 'Reintentar',
+        runFailed:
+          'La evaluación se detuvo antes de terminar. No se guardó nada, así que puedes volver a ejecutarla sin problema.',
+        notScored: 'Esta publicación todavía no se ha evaluado.',
+        notScoredHow:
+          'Ogen la lee frente al briefing de la campaña y las convenciones del canal, y evalúa la corrección, la claridad, el engagement y la entrega.',
+        notScoredAuto:
+          'También se evalúa automáticamente cuando la marcas como lista para publicar.',
+      },
     },
 
     versions: {
@@ -2652,6 +2738,11 @@ export const es: Translation = {
       liveDraftNote: 'Todavía sin instantánea',
       liveSubmitted: 'Texto actual',
       liveSubmittedNote: 'Nunca se guardó una instantánea',
+      creator: {
+        user: 'Tú',
+        assistant: 'Asistente',
+        system: 'Ogen',
+      },
     },
 
     firstComment: {

@@ -3,7 +3,10 @@ import type {
   PostEvaluation,
   QualityDimension,
   QualityDimensionKey,
+  QualitySeverity,
+  QualityStaleReason,
   QualitySuggestion,
+  QualityTrigger,
 } from '@/types/quality'
 
 /**
@@ -103,33 +106,77 @@ export function suggestionsOf(
   return dimension?.suggestions ?? []
 }
 
-/** Across all four dimensions — the count the panel's title carries. */
-export function totalSuggestions(evaluation: PostEvaluation): number {
-  return QUALITY_DIMENSIONS.reduce(
-    (sum, meta) => sum + suggestionsOf(evaluation.result?.[meta.key]).length,
-    0,
+const SEVERITY_RANK: Record<QualitySeverity, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+}
+
+/**
+ * The post's suggestions as the one list the panel shows (CON-438): every
+ * dimension's, most severe first.
+ *
+ * One list rather than one per dimension because there are at most five of
+ * them now, and two per card left most cards holding one line under a
+ * heading. Ties keep rubric order — the sort is stable and the input is built
+ * in `QUALITY_DIMENSIONS` order — so the list doesn't reshuffle between two
+ * renders of the same result. Not capped here: the server caps at five, and a
+ * client that dropped a sixth would hide the one the server thought mattered.
+ */
+export function postSuggestions(
+  evaluation: PostEvaluation,
+): QualitySuggestion[] {
+  return QUALITY_DIMENSIONS.flatMap((meta) =>
+    suggestionsOf(evaluation.result?.[meta.key]),
+  ).sort(
+    (a, b) =>
+      (SEVERITY_RANK[a.severity] ?? 3) - (SEVERITY_RANK[b.severity] ?? 3),
   )
 }
 
 /**
- * Whether the post has been edited since it was scored.
+ * Why the stored score may no longer describe the post, or `null` when it
+ * still does.
  *
- * Deliberately a coarse timestamp comparison, not an inputs comparison: only
- * the backend knows which fields the model actually read (it hashes the
- * rendered prompt — CON-92). So this over-reports — rescheduling a post bumps
- * `updated_at` without changing a word the model sees — and that is the safe
- * direction to be wrong in. Re-assessing an over-reported post costs nothing:
- * the input hash still matches and the server returns the stored result
- * without calling the model.
+ * The server decides it (CON-438) by rendering the prompt the next run would
+ * use and comparing fingerprints, which is the only place that knows which
+ * fields the model reads — the old client-side `updated_at` comparison
+ * flagged a rescheduled post as edited. A `stale` without a reason reads as
+ * `content`: that is the side a re-assessment is least likely to surprise.
  */
-export function isAssessmentStale(
+export function staleReason(
   evaluation: PostEvaluation,
-  postUpdatedAt: string,
-): boolean {
-  const scored = Date.parse(evaluation.updated_at)
-  const edited = Date.parse(postUpdatedAt)
-  if (Number.isNaN(scored) || Number.isNaN(edited)) return false
-  return edited > scored
+): QualityStaleReason | null {
+  if (!evaluation.stale) return null
+  return evaluation.stale_reason ?? 'content'
+}
+
+/**
+ * Runs left on this post's `quality_reviews_per_post` allowance, or `null`
+ * when the plan sets none (or the server didn't say). Automatic and manual
+ * runs draw on the same allowance; a reused, unchanged assessment draws on
+ * neither.
+ */
+export function runsLeft(evaluation: PostEvaluation | null | undefined): {
+  left: number
+  limit: number
+} | null {
+  const limit = evaluation?.runs_limit
+  if (limit === null || limit === undefined) return null
+  return { left: Math.max(0, limit - (evaluation?.runs_used ?? 0)), limit }
+}
+
+/**
+ * The lifecycle checkpoint that produced the stored score, when it was one.
+ * A manual run, and a row written before triggers were recorded, say nothing:
+ * "you asked for this" is not news to the person who asked.
+ */
+export function automaticTrigger(
+  evaluation: PostEvaluation,
+): Exclude<QualityTrigger, 'manual'> | null {
+  const trigger = evaluation.trigger
+  if (!trigger || trigger === 'manual') return null
+  return trigger
 }
 
 /**

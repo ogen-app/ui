@@ -69,6 +69,8 @@ describe('invalidationsFor', () => {
       expect(keys(event(topic, 'updated'))).toEqual([
         ['entitlements'],
         ['billing'],
+        // Each read carries the post's run allowance, which the plan sets.
+        ['postAssessment'],
       ])
     }
   })

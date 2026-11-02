@@ -8,11 +8,18 @@ import {
   heldByLocalWrite,
   invalidationsFor,
   localRunKeyFor,
+  parseTopic,
 } from '@/lib/eventRouting'
 import { createStreamConnection } from '@/lib/streamConnection'
 import { streamAppEvents } from '@/services/api/events'
 import { toast } from '@/stores/toastStore'
+import {
+  autoAssessmentEnded,
+  autoAssessmentStarted,
+  clearAutoAssessments,
+} from '@/stores/autoAssessmentStore'
 import type { AppEvent, EventStreamStatus } from '@/types/events'
+import type { QualityTrigger } from '@/types/quality'
 
 /**
  * The single connection to `GET /api/events`, and what it is currently doing.
@@ -132,6 +139,8 @@ export function reconnectEvents(): void {
  */
 async function reconcile(): Promise<void> {
   set({ reconciling: true })
+  // The gap may have held a run's ending; the refetch below brings its score.
+  clearAutoAssessments()
   try {
     await flushAllPendingSaves()
     await Promise.all(
@@ -146,6 +155,8 @@ async function reconcile(): Promise<void> {
 
 /** Exported for tests; the stream is the only caller. */
 export function handleEvent(event: AppEvent): void {
+  trackAutoAssessment(event)
+
   // A run this tab is streaming reports its own outcome; the hub copy of it is
   // an echo, and acting on it would refetch a cache the run is still writing.
   const runKey = localRunKeyFor(event)
@@ -161,4 +172,35 @@ export function handleEvent(event: AppEvent): void {
 
   const notice = TOASTED[event.type]
   if (notice) toast.warning(notice.title, { description: notice.description })
+}
+
+/**
+ * Keeps `autoAssessmentStore` in step with the server's automatic runs
+ * (CON-438).
+ *
+ * Ahead of the local-run check on purpose: an automatic run can end while
+ * this tab is streaming a manual one on the same post, and that ending is
+ * filtered out as an echo — skipping it here too would leave the automatic
+ * spinner up behind the finished manual run. Clearing on either ending is
+ * right whichever run it reports: both leave the stored score current.
+ */
+function trackAutoAssessment(event: AppEvent): void {
+  const subject = parseTopic(event.topic)
+  if (subject.kind !== 'post') return
+  switch (event.type) {
+    case 'assessment.started': {
+      // Only automatic runs announce a start; a manual one has its own
+      // stream to watch, so a `manual` here would be a second spinner.
+      const trigger = event.payload?.trigger
+      if (typeof trigger === 'string' && trigger !== 'manual') {
+        autoAssessmentStarted(subject.id, trigger as QualityTrigger)
+      }
+      return
+    }
+    // No toast for a failure: the server retries an automatic run once, and
+    // the author asked for nothing.
+    case 'assessment.completed':
+    case 'assessment.failed':
+      autoAssessmentEnded(subject.id)
+  }
 }
