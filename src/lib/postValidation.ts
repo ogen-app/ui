@@ -11,6 +11,7 @@ import {
 } from '@/lib/postMedia'
 import type { PublishingAccountResolution } from '@/lib/publishingAccount'
 import { charCount, markdownToSocialText } from '@/lib/socialText'
+import { altTextState, describableImages } from '@/lib/altText'
 import { formatNumber } from '@/lib/intl'
 
 /**
@@ -262,6 +263,9 @@ function mediaChecks({
     })
   }
 
+  const alt = altTextCheck(policy, attachments)
+  if (alt) checks.push(alt)
+
   // Soft per-file and post-level failures the server already computed
   // against the post's platform (size, format, animated GIF, image+PDF mix).
   const fileIssues = new Set<string>()
@@ -280,6 +284,37 @@ function mediaChecks({
   }
 
   return checks
+}
+
+/**
+ * Whether the images say what they show. A warning at most: a post publishes
+ * without alt text, it is only less readable for anyone using a screen reader.
+ * Silent where it means nothing — no images, a post type that publishes none,
+ * or a platform that takes no alt text. A description over the platform's cap
+ * is not this row's to report: the server flags it per file, and that arrives
+ * with the other media rules.
+ */
+function altTextCheck(
+  policy: MediaPolicy,
+  attachments: PostAttachmentWithValidation[],
+): PostCheck | null {
+  if (!policy.accepts || policy.altTextMax === 0) return null
+  const images = describableImages(attachments)
+  if (images.length === 0) return null
+  const missing = images.filter((a) => altTextState(a) === 'missing').length
+  return {
+    id: 'alt-text',
+    label: 'Alt text',
+    status: missing > 0 ? 'warn' : 'pass',
+    detail:
+      missing === 0
+        ? images.length === 1
+          ? 'The image is described'
+          : `All ${images.length} images are described`
+        : images.length === 1
+          ? 'The image has no alt text'
+          : `${missing} of ${images.length} images ${missing === 1 ? 'has' : 'have'} no alt text`,
+  }
 }
 
 /**
