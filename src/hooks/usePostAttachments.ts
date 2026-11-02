@@ -412,6 +412,6 @@ export function usePostAttachments(postId: string) {
     reorder: reorder.mutate,
     reordering: reorder.isPending,
     assignSegment: assignSegment.mutate,
-    describe: describe.mutate,
+    describe: describe.mutateAsync,
   }
 }

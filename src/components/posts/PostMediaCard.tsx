@@ -79,8 +79,8 @@ type Props = {
   attachedAssetIds: ReadonlySet<string>
   remove: (attachmentId: string) => Promise<void>
   reorder: (ordered: PostAttachmentWithValidation[]) => void
-  /** Saves an image's alt text. */
-  describe: (attachmentId: string, altText: string) => void
+  /** Saves an image's alt text; rejects when the save fails. */
+  describe: (attachmentId: string, altText: string) => Promise<unknown>
   /** Absent for every post that is not a thread, which is nearly all of them. */
   thread?: ThreadMediaTargets
   className?: string
