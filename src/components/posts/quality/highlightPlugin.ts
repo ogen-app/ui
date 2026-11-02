@@ -60,6 +60,11 @@ type HighlightState = {
   unmarked: Map<number, Exclude<SpanStatus, 'marked'>>
   chosen: number | null
   decorations: DecorationSet
+  /**
+   * Bumped by every `set`, so a new run whose statuses match the last one
+   * still reports them — the page files statuses under the run they belong to.
+   */
+  run: number
 }
 
 type Meta =
@@ -217,6 +222,7 @@ const EMPTY: HighlightState = {
   unmarked: new Map(),
   chosen: null,
   decorations: DecorationSet.empty,
+  run: 0,
 }
 
 /** The plugin; the editor mounts one per instance. */
@@ -235,9 +241,11 @@ export function qualityHighlightPlugin() {
           next = { ...value, marks, unmarked }
         }
         if (meta?.type === 'set') {
-          if (!meta.spans) return EMPTY
+          if (!meta.spans) return { ...EMPTY, run: value.run + 1 }
+          // The choice is the page's, and it says so with its own meta; a
+          // re-located session keeps whichever span was chosen.
           const found = locate(state.doc, meta.spans)
-          next = { ...next, ...found, chosen: null }
+          next = { ...next, ...found, run: value.run + 1 }
         } else if (meta?.type === 'choose') {
           next = { ...next, chosen: meta.chosen }
         }
@@ -277,7 +285,7 @@ export function qualityHighlightPlugin() {
           const value = qualityHighlightKey.getState(view.state)
           if (!value) return
           const statuses = statusesOf(value)
-          const key = JSON.stringify(statuses)
+          const key = `${value.run}:${JSON.stringify(statuses)}`
           if (key === reported) return
           reported = key
           view.dom.dispatchEvent(

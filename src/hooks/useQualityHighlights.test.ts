@@ -94,6 +94,16 @@ describe('useQualityHighlights', () => {
     expect(result.current.statuses[0]).toBe('edited')
   })
 
+  it('looks for nothing when a suggestion quotes nothing', () => {
+    const unquoted = structuredClone(EVALUATION)
+    unquoted.result.correctness.suggestions![0].span = ''
+    const { result } = renderHook(() =>
+      useQualityHighlights({ assessment: unquoted, open: true, title: TITLE }),
+    )
+    expect(result.current.bodySpans).toEqual([])
+    expect(result.current.statuses[1]).toBeUndefined()
+  })
+
   it('takes the body’s statuses for the spans it was given', () => {
     const { result } = setup()
     act(() => result.current.onBodyStatus({ 1: 'whole' }))
