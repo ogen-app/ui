@@ -1,9 +1,22 @@
-import { useTranslation } from 'react-i18next'
+import { useEffect, useRef } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { dimensionLabel } from '@/lib/postQuality.ts'
+import type { SpanStatus } from '@/lib/qualityHighlights.ts'
 import type { QualitySuggestion } from '@/types/quality'
 import { EmphasisText } from './EmphasisText.tsx'
-import { SEVERITY_CLASS } from './tokens.ts'
+import { SEVERITY_CLASS, SEVERITY_SOLID, SEVERITY_SWATCH } from './tokens.ts'
+
+/**
+ * Where the list meets the post (CON-441): what each suggestion's span became
+ * in the editor, which one is chosen, and how to choose one.
+ */
+export type FixFirstHighlight = {
+  /** By the suggestion's index; `undefined` while the body is still looking. */
+  statuses: (SpanStatus | undefined)[]
+  chosen: number | null
+  onToggle: (index: number) => void
+}
 
 /**
  * Every suggestion from the four dimensions in one list, most severe first
@@ -15,14 +28,38 @@ import { SEVERITY_CLASS } from './tokens.ts'
  * behind a click. Each item quotes the span first and the advice under it —
  * the quote is what makes "move the number up" into something the reader can
  * find in the post, so it is what they should see before what to do with it.
+ *
+ * With `highlight`, the post is a map of the list (CON-441): each row's quote
+ * and advice are one button that brings its span to full strength in the
+ * editor. The chosen row is the only patterned surface in the panel, so it
+ * reads as picked up rather than boxed.
  */
 export function FixFirstList({
   suggestions,
+  highlight,
 }: {
   /** Already ordered — `postSuggestions`. */
   suggestions: QualitySuggestion[]
+  highlight?: FixFirstHighlight
 }) {
   const { t } = useTranslation()
+  const chosen = highlight?.chosen ?? null
+  const rows = useRef<(HTMLLIElement | null)[]>([])
+
+  // A span clicked in the post brings its row into view, so the advice for it
+  // is on screen beside it.
+  useEffect(() => {
+    if (chosen === null) return
+    const reduce = window.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+    rows.current[chosen]?.scrollIntoView?.({
+      block: 'nearest',
+      behavior: reduce ? 'auto' : 'smooth',
+    })
+  }, [chosen])
+
+  const announced = chosen !== null ? suggestions[chosen] : undefined
 
   return (
     <section className="flex flex-col gap-1">
@@ -50,16 +87,68 @@ export function FixFirstList({
         <ol className="flex flex-col">
           {suggestions.map((s, i) => {
             const severity = s.severity in SEVERITY_CLASS ? s.severity : 'low'
+            const status = highlight?.statuses[i]
+            const picked = chosen === i
+            const quote =
+              status === 'whole' ? (
+                <span className="block bg-tertiary px-2.5 py-1.5 text-[13px]/[1.45] text-foreground">
+                  <Trans
+                    i18nKey="posts.quality.fixFirst.wholePost"
+                    components={{
+                      muted: <span className="text-tertiary-foreground" />,
+                    }}
+                  />
+                </span>
+              ) : s.span ? (
+                // A wash rather than a rule down the side: it is a quotation,
+                // not an alert. `<q>` so the quotation marks are the
+                // language's own.
+                <span
+                  className={cn(
+                    'block px-2.5 py-1.5 text-[13px]/[1.45] text-foreground italic',
+                    picked ? 'bg-primary' : 'bg-tertiary',
+                  )}
+                >
+                  <q>{s.span}</q>
+                </span>
+              ) : null
+            const advice = s.advice ? (
+              <EmphasisText
+                as={highlight ? 'span' : 'p'}
+                text={s.advice}
+                className="block text-sm/[1.5] text-foreground"
+              />
+            ) : null
+
             return (
               <li
                 key={i}
-                className="flex flex-col gap-1.5 border-b border-border py-4 last:border-b-0"
+                ref={(el) => {
+                  rows.current[i] = el
+                }}
+                data-chosen={picked || undefined}
+                className={cn(
+                  'relative flex flex-col gap-1.5 border-b border-border py-4 last:border-b-0',
+                  // The rule above the chosen row goes with the one under it.
+                  '[&:has(+li[data-chosen])]:border-b-transparent',
+                  picked &&
+                    '-mx-3 my-2 border-b-transparent bg-[repeating-linear-gradient(45deg,var(--color-tertiary)_0_4px,var(--color-primary)_4px_8px)] px-3 py-5 lg:-mx-6 lg:px-6',
+                )}
               >
+                {picked && (
+                  // Points at the editor from the panel's edge.
+                  <span
+                    aria-hidden
+                    className="absolute top-1/2 left-0 size-0 -translate-y-1/2 border-y-[6px] border-r-[8px] border-y-transparent border-r-foreground"
+                  />
+                )}
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
                       'px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]',
-                      SEVERITY_CLASS[severity],
+                      picked
+                        ? SEVERITY_SOLID[severity]
+                        : SEVERITY_CLASS[severity],
                     )}
                   >
                     {t(`posts.quality.severity.${severity}`)}
@@ -67,25 +156,49 @@ export function FixFirstList({
                   <span className="text-xs text-secondary-foreground">
                     {dimensionLabel(t, s.dimension)}
                   </span>
+                  {status === 'edited' && (
+                    <span className="ml-auto flex items-center gap-1.5 text-xs text-tertiary-foreground">
+                      <span
+                        aria-hidden
+                        className={cn(
+                          'h-[1.5px] w-3',
+                          SEVERITY_SWATCH[severity],
+                        )}
+                      />
+                      {t('posts.quality.fixFirst.edited')}
+                    </span>
+                  )}
                 </div>
-                {/* A wash rather than a rule down the side: it is a
-                    quotation, not an alert. `<q>` so the quotation marks are
-                    the language's own. */}
-                {s.span && (
-                  <p className="bg-tertiary px-2.5 py-1.5 text-[13px]/[1.45] text-foreground italic">
-                    <q>{s.span}</q>
-                  </p>
-                )}
-                {s.advice && (
-                  <EmphasisText
-                    text={s.advice}
-                    className="text-sm/[1.5] text-foreground"
-                  />
+                {highlight ? (
+                  <button
+                    type="button"
+                    aria-pressed={picked}
+                    onClick={() => highlight.onToggle(i)}
+                    className="flex cursor-pointer flex-col gap-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-primary"
+                  >
+                    {quote}
+                    {advice}
+                  </button>
+                ) : (
+                  <>
+                    {quote && <p>{quote}</p>}
+                    {advice}
+                  </>
                 )}
               </li>
             )
           })}
         </ol>
+      )}
+
+      {highlight && (
+        <p aria-live="polite" className="sr-only">
+          {announced
+            ? highlight.statuses[chosen ?? -1] === 'whole'
+              ? t('posts.quality.fixFirst.announceWhole')
+              : t('posts.quality.fixFirst.announce', { span: announced.span })
+            : ''}
+        </p>
       )}
     </section>
   )

@@ -40,3 +40,21 @@ export const SEVERITY_CLASS: Record<QualitySeverity, string> = {
   medium: 'bg-warning/15 text-foreground',
   low: 'bg-tertiary-foreground/10 text-tertiary-foreground',
 }
+
+/**
+ * The severity tag on the chosen Fix first row (CON-441): the colour itself
+ * rather than its wash, so the row the editor is showing carries the loudest
+ * tag in the list. Medium keeps foreground ink for the same reason as above.
+ */
+export const SEVERITY_SOLID: Record<QualitySeverity, string> = {
+  high: 'bg-destructive text-primary',
+  medium: 'bg-warning text-foreground',
+  low: 'bg-tertiary-foreground text-primary',
+}
+
+/** The severity colour as a fill — the swatch beside "Edited". */
+export const SEVERITY_SWATCH: Record<QualitySeverity, string> = {
+  high: 'bg-destructive',
+  medium: 'bg-warning',
+  low: 'bg-tertiary-foreground',
+}

@@ -3445,6 +3445,13 @@ export const en = {
         title: 'Fix first',
         order: 'Highest impact first',
         none: 'No suggestions on this run.',
+        /** The span has changed since the run (CON-441); nothing knows yet whether it is fixed. */
+        edited: 'Edited',
+        /** In place of the quote when the span is most of the post, so nothing is marked. */
+        wholePost: 'The whole post <muted>· not marked in the text</muted>',
+        /** Read out when a suggestion is chosen and its span marked in the post. */
+        announce: 'Highlighted in the post: {{span}}',
+        announceWhole: 'This suggestion is about the whole post.',
       },
 
       /** One line per dimension: the model's verdict on it. */
