@@ -198,6 +198,15 @@ describe('staleReason', () => {
     expect(staleReason(evaluation({ stale: true }))).toBe('content')
   })
 
+  // The reason names a catalogue key; one from a newer server must not
+  // render as the raw key.
+  it('reads a reason it has no copy for as a content change', () => {
+    const unknown = { stale: true, stale_reason: 'rubric' } as unknown
+    expect(staleReason(evaluation(unknown as Partial<PostEvaluation>))).toBe(
+      'content',
+    )
+  })
+
   // A run's `complete` evaluation carries no staleness at all.
   it('treats a missing flag as current', () => {
     expect(staleReason(evaluation({ stale: undefined }))).toBeNull()
@@ -235,6 +244,13 @@ describe('automaticTrigger', () => {
     expect(automaticTrigger(evaluation({ trigger: 'manual' }))).toBeNull()
     expect(automaticTrigger(evaluation({ trigger: '' }))).toBeNull()
     expect(automaticTrigger(evaluation({ trigger: undefined }))).toBeNull()
+  })
+
+  it('says nothing for a checkpoint it has no copy for', () => {
+    const unknown = { trigger: 'imported' } as unknown
+    expect(
+      automaticTrigger(evaluation(unknown as Partial<PostEvaluation>)),
+    ).toBeNull()
   })
 })
 

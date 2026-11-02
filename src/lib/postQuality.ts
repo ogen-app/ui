@@ -141,15 +141,31 @@ export function postSuggestions(
  * The server decides it (CON-438) by rendering the prompt the next run would
  * use and comparing fingerprints, which is the only place that knows which
  * fields the model reads — the old client-side `updated_at` comparison
- * flagged a rescheduled post as edited. A `stale` without a reason reads as
- * `content`: that is the side a re-assessment is least likely to surprise.
+ * flagged a rescheduled post as edited. A `stale` without a reason — or with
+ * one this build has no copy for — reads as `content`: that is the side a
+ * re-assessment is least likely to surprise. The result names a catalogue
+ * key, so it must never be a value off the wire unchecked.
  */
 export function staleReason(
   evaluation: PostEvaluation,
 ): QualityStaleReason | null {
   if (!evaluation.stale) return null
-  return evaluation.stale_reason ?? 'content'
+  const reason = evaluation.stale_reason
+  return reason && STALE_REASONS.includes(reason) ? reason : 'content'
 }
+
+const STALE_REASONS: readonly QualityStaleReason[] = [
+  'content',
+  'context',
+  'both',
+]
+
+const AUTOMATIC_TRIGGERS: readonly Exclude<QualityTrigger, 'manual'>[] = [
+  'ready',
+  'version',
+  'scheduled',
+  'published',
+]
 
 /**
  * Runs left on this post's `quality_reviews_per_post` allowance, or `null`
@@ -169,14 +185,15 @@ export function runsLeft(evaluation: PostEvaluation | null | undefined): {
 /**
  * The lifecycle checkpoint that produced the stored score, when it was one.
  * A manual run, and a row written before triggers were recorded, say nothing:
- * "you asked for this" is not news to the person who asked.
+ * "you asked for this" is not news to the person who asked. Neither does a
+ * checkpoint the server added after this build: it names a catalogue key.
  */
 export function automaticTrigger(
   evaluation: PostEvaluation,
 ): Exclude<QualityTrigger, 'manual'> | null {
   const trigger = evaluation.trigger
   if (!trigger || trigger === 'manual') return null
-  return trigger
+  return AUTOMATIC_TRIGGERS.includes(trigger) ? trigger : null
 }
 
 /**

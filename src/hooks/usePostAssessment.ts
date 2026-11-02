@@ -138,13 +138,19 @@ export function usePostAssessment(
   // score asks again — the one edit that can turn "current" into "outdated".
   // Once the read says stale, later edits can't make it more so, and the
   // query is left alone until a run lands.
+  //
+  // Not held back while a run streams: a save that lands mid-run would be
+  // dropped for good — nothing re-runs this effect when the run ends — and
+  // the run's own result, current as of the text it read, would then sit
+  // over the edit as "current". Invalidating mid-run is harmless; `complete`
+  // writes over whatever the refetch brought.
   const data = query.data
   const scoredCurrent = !!data && !data.stale
   const seenUpdatedAt = useRef(postUpdatedAt)
   useEffect(() => {
     if (postUpdatedAt === seenUpdatedAt.current) return
     seenUpdatedAt.current = postUpdatedAt
-    if (scoredCurrent && !abortRef.current) {
+    if (scoredCurrent) {
       void qc.invalidateQueries({ queryKey: postAssessmentKey(postId) })
     }
   }, [postUpdatedAt, scoredCurrent, postId, qc])
