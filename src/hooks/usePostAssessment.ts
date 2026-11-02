@@ -77,6 +77,14 @@ type UsePostAssessmentResult = {
    * was refused with a 402. Nothing to retry until the plan changes.
    */
   exhausted: boolean
+  /**
+   * The assessment a newer run replaced while this post was open, for the
+   * radar's "before your edits" outline and the per-dimension changes
+   * (CON-440). Manual or automatic, whichever landed. Memory only: the server
+   * keeps one evaluation per post, so after a reload there is nothing to
+   * compare against and the comparison simply isn't drawn.
+   */
+  previous: PostEvaluation | null
 }
 
 /**
@@ -162,6 +170,23 @@ export function usePostAssessment(
   useEffect(() => {
     setRefused(false)
   }, [dataUpdatedAt])
+
+  // A new run is a new `updated_at`; a refetch of the same score (staleness,
+  // the allowance) is not, and a cached run hands back the same row. Kept as
+  // state adjusted during render rather than in an effect, so the outline
+  // arrives in the same render as the score it is compared with. Keyed by post
+  // so a comparison never shows under another one — the sidebar keeps this
+  // hook mounted across post switches.
+  const [history, setHistory] = useState<{
+    postId: string
+    latest: PostEvaluation | null
+    previous: PostEvaluation | null
+  }>({ postId, latest: data ?? null, previous: null })
+  if (history.postId !== postId) {
+    setHistory({ postId, latest: data ?? null, previous: null })
+  } else if (data && data.updated_at !== history.latest?.updated_at) {
+    setHistory({ postId, latest: data, previous: history.latest })
+  }
 
   // The panel says a load failed; this says why, once. Keyed on the message
   // so TanStack's retries and every re-render after them stay silent — only a
@@ -290,5 +315,6 @@ export function usePostAssessment(
     cached,
     assessError,
     exhausted: refused || runsLeft(data)?.left === 0,
+    previous: history.postId === postId ? history.previous : null,
   }
 }

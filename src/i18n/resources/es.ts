@@ -2645,10 +2645,72 @@ export const es: Translation = {
       scoringIsForDrafts:
         'La evaluación es para una publicación que todavía puedes cambiar.',
 
+      dimensions: {
+        correctness: 'Precisión',
+        clarity: 'Claridad',
+        engagement: 'Interacción',
+        delivery: 'Encaje con el canal',
+      },
+      outOfTen: '/10',
+
+      summary: {
+        upFrom: 'Sube desde <strong>{{score}}</strong> antes de tus cambios',
+        downFrom: 'Baja desde <strong>{{score}}</strong> antes de tus cambios',
+        sameAs: 'Igual que antes de tus cambios',
+        weighsMost: '{{dimension}} es lo que más pesa en este formato.',
+      },
+
+      radar: {
+        writing: 'El texto',
+        channel: 'Encaje con {{platform}}',
+        channelGeneric: 'Encaje con el canal',
+        scores: '{{scores}}.',
+        scoreItem: '{{dimension}} {{score}}',
+        lowest: '{{dimension}} es la más baja.',
+        corner: '{{dimension}}: {{score}} de 10. Ver por qué.',
+        legendNow: 'Esta evaluación',
+        legendBefore: 'Antes de tus cambios',
+        legendGood: '8+ es buena',
+      },
+
+      guide: {
+        open: 'Cómo leer el radar',
+        title: 'Cómo leer el radar',
+        close: 'Cerrar',
+        ringsTitle: 'Anillos en 5 y 8',
+        ringsBody: 'Por debajo de 5 es floja, de 5 a 7 aceptable, 8+ buena.',
+        halvesTitle: 'Dos mitades',
+        halvesBody: 'Izquierda: el texto. Derecha: encaje con {{platform}}.',
+        halvesBodyGeneric: 'Izquierda: el texto. Derecha: encaje con el canal.',
+        linesTitle: 'Continua y discontinua',
+        linesBody:
+          'La línea continua es esta evaluación. La discontinua, la anterior a tus cambios.',
+        cornersTitle: 'Esquinas',
+        cornersBody:
+          'Nombre, puntuación y cambio desde la última evaluación. Pulsa una para ver su valoración.',
+        zoneTitle: 'Borde sombreado',
+        zoneBody: 'Aquí caen las puntuaciones de 8 o más.',
+      },
+
+      fixFirst: {
+        title: 'Corrige primero',
+        order: 'Primero lo de mayor impacto',
+        none: 'Esta evaluación no tiene sugerencias.',
+      },
+
+      reasons: {
+        title: 'Por qué estas puntuaciones',
+      },
+
+      inline: {
+        fixFirst: 'Corrige primero',
+        seeAll_one: 'Ver la sugerencia',
+        seeAll_other: 'Ver las {{count}} sugerencias',
+      },
+
       title: 'Calidad',
       inlineHeading: 'Calidad del contenido',
       seeBreakdown: 'Ver el desglose completo',
-      overall: 'Calidad general',
       assessPost: 'Evaluar esta publicación',
       reassessPost: 'Volver a evaluar esta publicación',
       assessingPost: 'Evaluando esta publicación…',
@@ -2662,7 +2724,6 @@ export const es: Translation = {
       loadFailed: 'No se ha podido cargar la evaluación',
       suggestionCount_one: '{{count}} sugerencia',
       suggestionCount_other: '{{count}} sugerencias',
-      suggestionsHeading: 'SUGERENCIAS',
       severity: {
         high: 'Alta',
         medium: 'Media',

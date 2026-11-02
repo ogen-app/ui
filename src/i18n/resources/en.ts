@@ -3359,10 +3359,85 @@ export const en = {
       neverScored: 'This post was never scored.',
       scoringIsForDrafts: 'Scoring is for a post you can still change.',
 
+      /**
+       * The rubric's names as a user reads them (CON-440). "Correctness" and
+       * "Delivery" are the API's keys; the panel says Accuracy and Channel fit.
+       */
+      dimensions: {
+        correctness: 'Accuracy',
+        clarity: 'Clarity',
+        engagement: 'Engagement',
+        delivery: 'Channel fit',
+      },
+      outOfTen: '/10',
+
+      /**
+       * The lines beside and under the overall (CON-440). The `<strong>` is
+       * the previous run's score.
+       */
+      summary: {
+        upFrom: 'Up from <strong>{{score}}</strong> before your edits',
+        downFrom: 'Down from <strong>{{score}}</strong> before your edits',
+        sameAs: 'The same as before your edits',
+        weighsMost: '{{dimension}} weighs most for this format.',
+      },
+
+      /** The four dimensions drawn as a square web (CON-440). */
+      radar: {
+        writing: 'The writing',
+        channel: 'Fit for {{platform}}',
+        channelGeneric: 'Fit for the channel',
+        /** The chart's accessible name: every score, then the lowest. */
+        scores: '{{scores}}.',
+        scoreItem: '{{dimension}} {{score}}',
+        lowest: '{{dimension}} is lowest.',
+        corner: '{{dimension}}: {{score}} out of 10. Show why.',
+        legendNow: 'This run',
+        legendBefore: 'Before your edits',
+        legendGood: '8+ is good',
+      },
+
+      /** The ⓘ pop-over beside the radar. */
+      guide: {
+        open: 'How to read the radar',
+        title: 'Reading the radar',
+        close: 'Close',
+        ringsTitle: 'Rings at 5 and 8',
+        ringsBody: 'Inside 5 is weak, 5–7 workable, 8+ good.',
+        halvesTitle: 'Two halves',
+        halvesBody: 'Left: the writing. Right: fit for {{platform}}.',
+        halvesBodyGeneric: 'Left: the writing. Right: fit for the channel.',
+        linesTitle: 'Solid and dashed',
+        linesBody: 'Solid is this run. Dashed is the run before your edits.',
+        cornersTitle: 'Corners',
+        cornersBody:
+          'Name, score and change since last run. Click one to see its verdict.',
+        zoneTitle: 'Shaded edge',
+        zoneBody: 'Scores of 8 and up land here.',
+      },
+
+      /** Every suggestion in one list, most severe first. */
+      fixFirst: {
+        title: 'Fix first',
+        order: 'Highest impact first',
+        none: 'No suggestions on this run.',
+      },
+
+      /** One line per dimension: the model's verdict on it. */
+      reasons: {
+        title: 'Why these scores',
+      },
+
+      /** The digest inside the expanded checks bar (CON-183). */
+      inline: {
+        fixFirst: 'Fix first',
+        seeAll_one: 'See the suggestion',
+        seeAll_other: 'See all {{count}} suggestions',
+      },
+
       title: 'Quality',
       inlineHeading: 'Post content quality',
       seeBreakdown: 'See the full breakdown',
-      overall: 'Overall quality',
       assessPost: 'Assess this post',
       reassessPost: 'Re-assess this post',
       assessingPost: 'Assessing this post…',
@@ -3376,8 +3451,6 @@ export const en = {
       loadFailed: "Couldn't load the assessment",
       suggestionCount_one: '{{count}} suggestion',
       suggestionCount_other: '{{count}} suggestions',
-      /** A section label, so its capitals are part of the copy. */
-      suggestionsHeading: 'SUGGESTIONS',
       severity: {
         high: 'High',
         medium: 'Medium',

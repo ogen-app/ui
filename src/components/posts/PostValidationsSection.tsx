@@ -28,6 +28,8 @@ type Props = {
   status: PostStatus
   /** The stored score: `null` never assessed, `undefined` not loaded yet. */
   assessment: PostEvaluation | null | undefined
+  /** The assessment a newer run replaced while the post was open (CON-440). */
+  previousAssessment?: PostEvaluation | null
   /** Scoring is switched off for this workspace — the bar says nothing of it. */
   qualityUnavailable: boolean
   /**
@@ -79,6 +81,7 @@ export function PostValidationsSection({
   checks,
   status,
   assessment,
+  previousAssessment = null,
   qualityUnavailable,
   assessing,
   exhausted = false,
@@ -239,6 +242,7 @@ export function PostValidationsSection({
           {hasScore && assessment && (
             <QualityInlineSummary
               assessment={assessment}
+              previous={previousAssessment}
               onOpenPanel={onOpenQuality}
             />
           )}

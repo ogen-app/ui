@@ -8,6 +8,12 @@ import {
   ASSESS_STEPS,
   QUALITY_DIMENSIONS,
   automaticTrigger,
+  formatDelta,
+  heaviestDimension,
+  lowestDimension,
+  radarPoint,
+  radarScore,
+  scoreDelta,
   overallBand,
   overallPct,
   postSuggestions,
@@ -284,5 +290,78 @@ describe('QUALITY_DIMENSIONS', () => {
     expect(
       QUALITY_DIMENSIONS.filter((d) => d.platformAware).map((d) => d.key),
     ).toEqual(['engagement', 'delivery'])
+  })
+
+  // The radar's left half is the writing, the right half the channel fit
+  // (CON-440); the corners are what put each dimension on its side.
+  it('puts the platform-aware dimensions on the right-hand corners', () => {
+    for (const d of QUALITY_DIMENSIONS) {
+      expect(d.corner.endsWith('e')).toBe(d.platformAware)
+    }
+  })
+})
+
+describe('heaviestDimension', () => {
+  it('names the dimension with the largest weight', () => {
+    const e = evaluation()
+    e.result.engagement = dimension({ weight: 0.4 })
+    expect(heaviestDimension(e)).toBe('engagement')
+  })
+
+  // Equal weights are the plain average; naming one would invent a lean.
+  it('names none when the top weight is shared', () => {
+    expect(heaviestDimension(evaluation())).toBeNull()
+  })
+})
+
+describe('lowestDimension', () => {
+  it('names the single lowest score', () => {
+    const e = evaluation()
+    e.result.delivery = dimension({ score: 5 })
+    expect(lowestDimension(e)).toBe('delivery')
+  })
+
+  it('names none on a tie for last', () => {
+    expect(lowestDimension(evaluation())).toBeNull()
+  })
+})
+
+describe('scoreDelta', () => {
+  it('is the change since the previous run, zero included', () => {
+    const before = evaluation()
+    const after = evaluation()
+    after.result.delivery = dimension({ score: 9 })
+    expect(scoreDelta(after, before, 'delivery')).toBe(2)
+    expect(scoreDelta(after, before, 'clarity')).toBe(0)
+  })
+
+  it('is null with nothing to compare against', () => {
+    expect(scoreDelta(evaluation(), null, 'clarity')).toBeNull()
+  })
+})
+
+describe('formatDelta', () => {
+  it('signs every change, with a real minus and a ±0 for none', () => {
+    expect(formatDelta(2)).toBe('+2')
+    expect(formatDelta(-1)).toBe('\u22121')
+    expect(formatDelta(0)).toBe('\u00b10')
+  })
+})
+
+describe('radarPoint', () => {
+  it('puts a 10 on the outer corner and a 0 on the centre', () => {
+    expect(radarPoint('nw', 10, 90)).toEqual({ x: -90, y: -90 })
+    expect(radarPoint('se', 10, 90)).toEqual({ x: 90, y: 90 })
+    expect(radarPoint('ne', 0, 90)).toEqual({ x: 0, y: 0 })
+  })
+
+  it('scales linearly along the diagonal', () => {
+    expect(radarPoint('sw', 5, 90)).toEqual({ x: -45, y: 45 })
+  })
+
+  it('clamps scores outside the 0-10 axis', () => {
+    expect(radarScore(14)).toBe(10)
+    expect(radarScore(-2)).toBe(0)
+    expect(radarScore(NaN)).toBe(0)
   })
 })

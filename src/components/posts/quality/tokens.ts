@@ -1,41 +1,37 @@
-import {
-  EyeIcon,
-  HeartIcon,
-  PaperPlaneTiltIcon,
-  SealCheckIcon,
-  type Icon as PhosphorIcon,
-} from '@phosphor-icons/react'
 import type { QualityBand } from '@/lib/postQuality.ts'
-import type { QualityDimensionKey } from '@/types/quality'
+import type { QualitySeverity } from '@/types/quality'
 
 /**
- * The panel's shared vocabulary: how a score is coloured, and what each
- * dimension looks like. In one place so the ring, the overall bar and the
- * dimension cards can't drift apart.
+ * The panel's shared vocabulary: how a band and a severity are painted. In one
+ * place so the rail, the radar and the checks bar can't drift apart.
+ *
+ * A band never colours text (CON-440). `--warning` is too light to carry words
+ * at AA on white, and a whole panel of workable scores painted orange said
+ * nothing anyway — so the band is a word on a tinted chip with a solid marker,
+ * and the numbers stay in the foreground ink.
  */
 
-/** How a score reads: strong is good news, weak is a problem to fix. */
-export const BAND_TEXT: Record<QualityBand, string> = {
-  strong: 'text-positive',
-  workable: 'text-warning',
-  weak: 'text-destructive',
-}
-
-export const BAND_FILL: Record<QualityBand, string> = {
+/** The chip's solid marker. */
+export const BAND_SWATCH: Record<QualityBand, string> = {
   strong: 'bg-positive',
   workable: 'bg-warning',
   weak: 'bg-destructive',
 }
 
+/** The chip's wash — the band hue at low opacity, under foreground text. */
+export const BAND_WASH: Record<QualityBand, string> = {
+  strong: 'bg-positive/15',
+  workable: 'bg-warning/15',
+  weak: 'bg-destructive/10',
+}
+
 /**
- * One glyph per dimension, standing in for the name so the card can lead with
- * what the dimension *means* instead of what it is called. Categorical only —
- * an icon says which dimension, never how it scored; that is the bar's job,
- * and giving both a colour made the card argue with itself.
+ * Severity reads as a tag — the severity colour over a tenth-opacity wash of
+ * itself. Matches the assistant's review findings, which use the same
+ * high/medium/low vocabulary; they should not look like two different scales.
  */
-export const DIMENSION_ICON: Record<QualityDimensionKey, PhosphorIcon> = {
-  correctness: SealCheckIcon,
-  clarity: EyeIcon,
-  engagement: HeartIcon,
-  delivery: PaperPlaneTiltIcon,
+export const SEVERITY_CLASS: Record<QualitySeverity, string> = {
+  high: 'bg-destructive/10 text-destructive',
+  medium: 'bg-warning/10 text-warning',
+  low: 'bg-tertiary-foreground/10 text-tertiary-foreground',
 }
