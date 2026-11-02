@@ -14,7 +14,8 @@ type Props = {
   limit: number | null
   /** A submitted post's media is a record: the text can be read, not changed. */
   frozen: boolean
-  onSave: (altText: string) => void
+  /** Rejects when the save fails; the mutation has already toasted why. */
+  onSave: (altText: string) => Promise<unknown>
 }
 
 /**
@@ -63,10 +64,7 @@ export function AltTextControl({ attachment, limit, frozen, onSave }: Props) {
           attachment={attachment}
           limit={Math.min(limit ?? MAX_ALT_TEXT_CHARS, MAX_ALT_TEXT_CHARS)}
           readOnly={frozen}
-          onSave={(text) => {
-            onSave(text)
-            setOpen(false)
-          }}
+          onSave={onSave}
           onClose={() => setOpen(false)}
         />
       )}
@@ -84,12 +82,26 @@ function AltTextDialog({
   attachment: PostAttachmentWithValidation
   limit: number
   readOnly: boolean
-  onSave: (altText: string) => void
+  onSave: (altText: string) => Promise<unknown>
   onClose: () => void
 }) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState(attachment.alt_text)
+  const [saving, setSaving] = useState(false)
   const state = altTextState(attachment)
+
+  // Closes only once the server has the text. A failed save keeps the dialog
+  // and the draft, so the author can retry rather than retype; the mutation
+  // has already rolled the tile back and said why.
+  const save = async () => {
+    setSaving(true)
+    try {
+      await onSave(draft.trim())
+      onClose()
+    } catch {
+      setSaving(false)
+    }
+  }
   // Counted in code points, as the server counts runes.
   const length = Array.from(draft.trim()).length
   const over = length > limit
@@ -100,7 +112,7 @@ function AltTextDialog({
   return (
     <ModalContainer
       isOpen
-      onClose={onClose}
+      onClose={saving ? () => {} : onClose}
       title={t('posts.media.altText.title')}
       size="small"
     >
@@ -147,7 +159,12 @@ function AltTextDialog({
           </span>
         )}
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={saving}
+          >
             {t(
               readOnly
                 ? 'posts.media.altText.close'
@@ -157,8 +174,9 @@ function AltTextDialog({
           {!readOnly && (
             <Button
               type="button"
-              onClick={() => onSave(draft.trim())}
-              disabled={over || !changed}
+              onClick={() => void save()}
+              loading={saving}
+              disabled={over || (!changed && !saving)}
             >
               {t('posts.media.altText.save')}
             </Button>
