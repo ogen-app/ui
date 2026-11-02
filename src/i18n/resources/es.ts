@@ -2548,6 +2548,28 @@ export const es: Translation = {
           noFile: 'Este recurso no tiene una imagen guardada que adjuntar.',
         },
       },
+      /**
+       * Descripción accesible de una imagen, que se publica con ella.
+       */
+      altText: {
+        state: {
+          missing: 'Sin texto alternativo',
+          generated: 'Auto · revisar',
+          written: 'Texto alternativo',
+        },
+        edit: 'Editar texto alternativo',
+        view: 'Ver texto alternativo',
+        title: 'Texto alternativo',
+        help: 'Describe lo que muestra la imagen para quienes usan un lector de pantalla. Se publica con la imagen.',
+        generatedNote:
+          'Ogen escribió esta descripción a partir de la imagen. Se publica tal cual salvo que la cambies; guardarla, aunque no la cambies, evita que se reescriba.',
+        placeholder: 'p. ej., Un barista dibuja arte latte en una taza blanca',
+        count: '{{length}} / {{limit}} caracteres',
+        over: '{{length}} / {{limit}} caracteres — {{over}} de más',
+        save: 'GUARDAR',
+        cancel: 'CANCELAR',
+        close: 'CERRAR',
+      },
     },
 
     /**

@@ -109,6 +109,12 @@ export type Platform = {
   constraints: string
   text_constraints: TextConstraints
   video_constraints: VideoConstraints
+  /**
+   * Only the alt-text cap is read off the image rules — the rest are
+   * overridden in `lib/platformMedia.ts`. Optional because an API older than
+   * the cap sends no such key; read it through `altTextLimit()`.
+   */
+  image_constraints?: { max_alt_text_chars?: number }
   created_at: string
   updated_at: string
   publishers?: PlatformPublisher[]

@@ -3218,6 +3218,30 @@ export const en = {
           noFile: 'This asset has no stored image to attach.',
         },
       },
+      /**
+       * An image's accessibility description, published with it on the
+       * platforms that take one. "Generated" is image-service's own text,
+       * which publishes as-is until someone reads it.
+       */
+      altText: {
+        state: {
+          missing: 'No alt text',
+          generated: 'Auto · review',
+          written: 'Alt text',
+        },
+        edit: 'Edit alt text',
+        view: 'View alt text',
+        title: 'Alt text',
+        help: 'Describe what the image shows for people using a screen reader. It publishes with the image.',
+        generatedNote:
+          'Ogen wrote this description from the image. It publishes as it is unless you change it — saving it, even unchanged, keeps it from being rewritten.',
+        placeholder: 'e.g. A barista pouring latte art into a white cup',
+        count: '{{length}} / {{limit}} characters',
+        over: '{{length}} / {{limit}} characters — {{over}} over',
+        save: 'SAVE',
+        cancel: 'CANCEL',
+        close: 'CLOSE',
+      },
     },
 
     /**

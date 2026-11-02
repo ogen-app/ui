@@ -5,6 +5,7 @@ import {
 } from '@/types/attachments'
 import type { Platform } from '@/types/campaigns'
 import type { ResolvedPostTypeRule } from '@/types/validation'
+import { altTextLimit } from '@/lib/altText'
 import {
   describeImageConstraints,
   formatBytes,
@@ -48,6 +49,11 @@ export type MediaPolicy = {
    * upload that will be rejected.
    */
   videoUnsupported: boolean
+  /**
+   * The platform's alt-text cap for images — see `altTextLimit`. `0` takes
+   * none; `null` is not known yet.
+   */
+  altTextMax: number | null
   image?: ImageMediaConstraints
   document?: DocumentMediaConstraints
   video?: VideoMediaConstraints
@@ -70,6 +76,7 @@ export function mediaPolicy(
 ): MediaPolicy {
   const media = getPlatformMedia(zernioId ?? '')
   const video = resolveVideoConstraints(platform)
+  const altTextMax = altTextLimit(platform)
 
   // The per-post cap for the kinds this type actually takes. The server has
   // already folded its own cap into `rule.max_attachments`, so this is only a
@@ -92,6 +99,7 @@ export function mediaPolicy(
       max: capFor(SUPPORTED_KINDS),
       kinds: SUPPORTED_KINDS,
       videoUnsupported: false,
+      altTextMax,
       image: media.image,
       document: media.document,
       video,
@@ -133,6 +141,7 @@ export function mediaPolicy(
     max,
     kinds,
     videoUnsupported,
+    altTextMax,
     image: media.image,
     document: media.document,
     video,

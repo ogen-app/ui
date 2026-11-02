@@ -50,6 +50,7 @@ import type {
   UploadResult,
 } from '@/hooks/usePostAttachments.ts'
 import { AddFromAssetsModal } from './AddFromAssetsModal.tsx'
+import { AltTextControl } from './AltTextControl.tsx'
 import type { Post } from '@/types/posts.ts'
 
 /**
@@ -78,6 +79,8 @@ type Props = {
   attachedAssetIds: ReadonlySet<string>
   remove: (attachmentId: string) => Promise<void>
   reorder: (ordered: PostAttachmentWithValidation[]) => void
+  /** Saves an image's alt text. */
+  describe: (attachmentId: string, altText: string) => void
   /** Absent for every post that is not a thread, which is nearly all of them. */
   thread?: ThreadMediaTargets
   className?: string
@@ -103,6 +106,7 @@ export function PostMediaCard({
   attachedAssetIds,
   remove,
   reorder,
+  describe,
   thread,
   className,
 }: Props) {
@@ -325,6 +329,18 @@ export function PostMediaCard({
                 await remove(att.id).catch(() => {})
               }}
             />
+            {/* Images only, and not on a platform that publishes none: a field
+                whose text goes nowhere would let the author think they had
+                done the accessible thing. */}
+            {attachmentKind(att.mime_type) === 'image' &&
+              policy.altTextMax !== 0 && (
+                <AltTextControl
+                  attachment={att}
+                  limit={policy.altTextMax}
+                  frozen={frozen}
+                  onSave={(altText) => describe(att.id, altText)}
+                />
+              )}
             {thread && !frozen && (
               <ThreadPostPicker attachmentId={att.id} thread={thread} />
             )}
@@ -577,7 +593,7 @@ function MediaTile({
         <>
           <img
             src={src}
-            alt=""
+            alt={kind === 'image' ? attachment.alt_text : ''}
             className="size-full object-cover"
             draggable={false}
           />

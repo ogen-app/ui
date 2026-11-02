@@ -905,6 +905,9 @@ function PostEditorSurface({
                 attachedAssetIds={media.attachedAssetIds}
                 remove={media.remove}
                 reorder={media.reorder}
+                describe={(attachmentId, altText) =>
+                  media.describe({ attachmentId, altText })
+                }
                 thread={threadTargets}
               />
             </div>

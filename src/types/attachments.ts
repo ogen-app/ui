@@ -59,6 +59,18 @@ export type PostAttachment = {
   duration_ms: number
   codec: string
   checksum_sha256: string
+  /**
+   * The image's accessibility description, published with it on platforms
+   * that take one. `''` when there is none. Images only — the server keeps
+   * whatever is written on other kinds but never publishes it.
+   */
+  alt_text: string
+  /**
+   * `false` while the text is image-service's own description (or empty):
+   * generation fills the field only until a person writes in it, and never
+   * after. `true` once anyone has saved alt text here.
+   */
+  alt_text_edited_by_user: boolean
   s3_key: string
   thumbnail_s3_key?: string
   created_by: string

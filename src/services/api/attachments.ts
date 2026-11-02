@@ -239,6 +239,28 @@ export function setAttachmentSegment(
 }
 
 /**
+ * Sets one attachment's alt text. Its own call for the same reason as
+ * `setAttachmentSegment`: the PATCH is presence-aware, and sending `alt_text`
+ * also marks the text as written by a person, so generation never replaces it
+ * afterwards. An empty string clears it — and still counts as written.
+ *
+ * 400 past the global ceiling (2000 characters). The platform's own, usually
+ * lower, cap comes back as a `max_alt_text_chars` entry in
+ * `platform_validation` rather than a refusal.
+ */
+export function setAttachmentAltText(
+  postId: string,
+  attachmentId: string,
+  altText: string,
+): Promise<PostAttachmentWithValidation> {
+  return apiJson<PostAttachmentWithValidation>(
+    `${base(postId)}/${attachmentId}`,
+    'Unable to save alt text',
+    { method: 'PATCH', body: { alt_text: altText } },
+  )
+}
+
+/**
  * Sets one attachment's `position`. The server writes the value verbatim —
  * it neither swaps nor re-packs the siblings (`UpdatePosition` in
  * `src/repository/post_attachments.go`) — and `post_attachments` carries a

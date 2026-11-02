@@ -71,6 +71,8 @@ function makeAttachment(
     height: 1080,
     is_animated: false,
     page_count: 0,
+    alt_text: '',
+    alt_text_edited_by_user: false,
     duration_ms: 0,
     codec: '',
     checksum_sha256: 'abc',
@@ -673,5 +675,89 @@ describe('hasVisibleProblem', () => {
         LINKEDIN_INFO,
       ),
     ).toBe(false)
+  })
+})
+
+describe('alt text', () => {
+  const withAltCap = (cap: number | undefined) =>
+    makePlatform({
+      image_constraints:
+        cap === undefined ? undefined : { max_alt_text_chars: cap },
+    })
+
+  const evaluate = (
+    attachments: PostAttachmentWithValidation[],
+    cap: number | undefined,
+  ) =>
+    evaluatePost({
+      platform: LINKEDIN_INFO,
+      ready: true,
+      postValidation: [],
+      requiresContent: false,
+      maxContentChars: 3000,
+      maxTitleChars: null,
+      sequence: false,
+      post: makePost(),
+      policy: mediaPolicy(
+        LINKEDIN,
+        rule({ min_attachments: 0 }),
+        withAltCap(cap),
+      ),
+      attachments,
+    }).find((c) => c.id === 'alt-text')
+
+  it("reads the platform's cap into the policy, unknown when it sends none", () => {
+    expect(mediaPolicy(LINKEDIN, rule(), withAltCap(1000)).altTextMax).toBe(
+      1000,
+    )
+    expect(mediaPolicy(LINKEDIN, rule(), withAltCap(0)).altTextMax).toBe(0)
+    expect(
+      mediaPolicy(LINKEDIN, rule(), withAltCap(undefined)).altTextMax,
+    ).toBeNull()
+    expect(mediaPolicy(LINKEDIN, null).altTextMax).toBeNull()
+  })
+
+  it('warns with a count when some images have no alt text', () => {
+    const check = evaluate(
+      [
+        makeAttachment({ alt_text: 'A red bicycle' }),
+        makeAttachment(),
+        makeAttachment({ alt_text: '   ' }),
+      ],
+      1000,
+    )
+    expect(check?.status).toBe('warn')
+    expect(check?.detail).toBe('2 of 3 images have no alt text')
+  })
+
+  it('passes once every image is described, generated text included', () => {
+    const check = evaluate(
+      [
+        makeAttachment({ alt_text: 'Written', alt_text_edited_by_user: true }),
+        makeAttachment({ alt_text: 'Generated' }),
+      ],
+      1000,
+    )
+    expect(check?.status).toBe('pass')
+  })
+
+  it('counts images only', () => {
+    const check = evaluate(
+      [
+        makeAttachment({ alt_text: 'A red bicycle' }),
+        makeAttachment({ mime_type: 'video/mp4' }),
+        makeAttachment({ mime_type: 'application/pdf' }),
+      ],
+      1000,
+    )
+    expect(check?.status).toBe('pass')
+    expect(check?.detail).toBe('The image is described')
+  })
+
+  it('stays silent where alt text means nothing', () => {
+    expect(evaluate([makeAttachment()], 0)).toBeUndefined()
+    expect(
+      evaluate([makeAttachment({ mime_type: 'video/mp4' })], 1000),
+    ).toBeUndefined()
   })
 })

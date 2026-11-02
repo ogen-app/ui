@@ -5,6 +5,7 @@ import {
   deleteAttachment,
   listAttachments,
   reorderAttachment,
+  setAttachmentAltText,
   setAttachmentSegment,
   uploadAttachment,
   uploadVideoAttachment,
@@ -216,7 +217,7 @@ export function usePostAttachments(postId: string) {
   }, [attachments, assetOf])
 
   /**
-   * Marks the three writes below as this tab's own, so a broadcast about the
+   * Marks the writes below as this tab's own, so a broadcast about the
    * same list waits for them rather than refetching mid-flight (CON-345) —
    * a reorder is n requests, and each will announce itself. The last of them
    * to settle refreshes the list, which is what the key promises.
@@ -351,6 +352,51 @@ export function usePostAttachments(postId: string) {
     onSettled: invalidateAfterLastWrite,
   })
 
+  /**
+   * Saves one image's alt text. Optimistic like `assignSegment`: the editor
+   * closes on save, and the tile's badge should already say what was written.
+   * The optimistic row is marked as written by a person, which is what the
+   * server records too — so a generated description never comes back over it.
+   */
+  const describe = useMutation({
+    mutationKey: writeKey,
+    meta: { errorTitle: 'Unable to save alt text' },
+    mutationFn: ({
+      attachmentId,
+      altText,
+    }: {
+      attachmentId: string
+      altText: string
+    }) => setAttachmentAltText(postId, attachmentId, altText),
+    onMutate: async ({ attachmentId, altText }) => {
+      await qc.cancelQueries({ queryKey: postAttachmentsKey(postId) })
+      const previous = qc.getQueryData<AttachmentListResponse>(
+        postAttachmentsKey(postId),
+      )
+      if (previous) {
+        qc.setQueryData<AttachmentListResponse>(postAttachmentsKey(postId), {
+          ...previous,
+          attachments: previous.attachments.map((a) =>
+            a.id === attachmentId
+              ? {
+                  ...a,
+                  alt_text: altText.trim(),
+                  alt_text_edited_by_user: true,
+                }
+              : a,
+          ),
+        })
+      }
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        qc.setQueryData(postAttachmentsKey(postId), ctx.previous)
+      }
+    },
+    onSettled: invalidateAfterLastWrite,
+  })
+
   return {
     attachments: attachments ?? [],
     /** Post-level rule failures (count cap, image+PDF mix). */
@@ -366,5 +412,6 @@ export function usePostAttachments(postId: string) {
     reorder: reorder.mutate,
     reordering: reorder.isPending,
     assignSegment: assignSegment.mutate,
+    describe: describe.mutate,
   }
 }
