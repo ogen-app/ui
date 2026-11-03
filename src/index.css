@@ -256,6 +256,7 @@
   --color-destructive: var(--destructive);
   --color-warning: var(--warning);
   --color-accent: var(--accent);
+  --color-tape: var(--tape);
   /* The Assets list's kind marks (CON-378/382) — `text-kind-pdf` and the rest. */
   --color-kind-pdf: var(--kind-pdf);
   --color-kind-doc: var(--kind-doc);
@@ -384,6 +385,10 @@
      It never carries text — it is 8px of fill — so it is free to be a stronger
      orange than `--warning`, which has to stay legible under one. */
   --notification: oklch(0.65 0.18 48);
+  /* The Fix first row the editor is showing (CON-441): police tape, a warm
+     yellow. Fill only, never ink — and not a status: it says "this one",
+     which is why it is not `--warning`'s orange. */
+  --tape: oklch(88% 46% 86deg);
   /* Selected/active affordance accent — teal, #00837F.
      The brand hue at a lightness that reads. Two things it changes:
 
@@ -1200,4 +1205,54 @@
 }
 .quality-line--low::after {
   background-color: var(--tertiary-foreground);
+}
+
+/* The chosen Fix first row (CON-441) as police tape: 8px stripes of `--tape`
+   at 45°, sharp along the row's top edge, then blurred and faded out by a
+   quarter of the way down and towards both sides. Two layers — a blurred one
+   that carries the fade and a sharp one only near the top — so the tape
+   melts into the panel rather than ending on a line. They sit behind the
+   row's text (`-z-10` inside the row's `isolate`). */
+.quality-tape {
+  position: absolute;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--tape) 0 8px,
+    transparent 8px 16px
+  );
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+.quality-tape--soft {
+  filter: blur(2.4px);
+  mask-image:
+    linear-gradient(to bottom, #000, transparent 25%),
+    linear-gradient(to right, transparent, #000 20%, #000 80%, transparent);
+  -webkit-mask-image:
+    linear-gradient(to bottom, #000, transparent 25%),
+    linear-gradient(to right, transparent, #000 20%, #000 80%, transparent);
+}
+.quality-tape--sharp {
+  filter: blur(0.5px);
+  mask-image:
+    linear-gradient(to bottom, #000 6%, transparent 14%),
+    linear-gradient(
+      to right,
+      transparent 12%,
+      #000 26%,
+      #000 74%,
+      transparent 88%
+    );
+  -webkit-mask-image:
+    linear-gradient(to bottom, #000 6%, transparent 14%),
+    linear-gradient(
+      to right,
+      transparent 12%,
+      #000 26%,
+      #000 74%,
+      transparent 88%
+    );
 }

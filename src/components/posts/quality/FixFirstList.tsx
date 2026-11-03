@@ -31,8 +31,10 @@ export type FixFirstHighlight = {
  *
  * With `highlight`, the post is a map of the list (CON-441): each row's quote
  * and advice are one button that brings its span to full strength in the
- * editor. The chosen row is the only patterned surface in the panel, so it
- * reads as picked up rather than boxed.
+ * editor. The chosen row is taped off — yellow stripes fading down from its
+ * top edge, 2px tape edges in place of the rules — and the only patterned
+ * surface in the panel, so it reads as picked up rather than boxed. All of it
+ * is drawn inside the row's own padding, so choosing a row moves nothing.
  */
 export function FixFirstList({
   suggestions,
@@ -128,19 +130,38 @@ export function FixFirstList({
                 }}
                 data-chosen={picked || undefined}
                 className={cn(
-                  'relative flex flex-col gap-1.5 border-b border-border py-4 last:border-b-0',
-                  // The rule above the chosen row goes with the one under it.
+                  'relative isolate flex flex-col gap-1.5 border-b border-border py-4 last:border-b-0',
+                  // The tape edges stand in for the rules on either side.
                   '[&:has(+li[data-chosen])]:border-b-transparent',
-                  picked &&
-                    '-mx-3 my-2 border-b-transparent bg-[repeating-linear-gradient(45deg,var(--color-tertiary)_0_4px,var(--color-primary)_4px_8px)] px-3 py-5 lg:-mx-6 lg:px-6',
+                  // Out to the panel's edges, sideways only: the padding the
+                  // tape needs above and below is every row's own.
+                  picked && '-mx-3 border-b-transparent px-3 lg:-mx-6 lg:px-6',
                 )}
               >
                 {picked && (
-                  // Points at the editor from the panel's edge.
-                  <span
-                    aria-hidden
-                    className="absolute top-1/2 left-0 size-0 -translate-y-1/2 border-y-[6px] border-r-[8px] border-y-transparent border-r-foreground"
-                  />
+                  <>
+                    <span
+                      aria-hidden
+                      className="quality-tape quality-tape--soft"
+                    />
+                    <span
+                      aria-hidden
+                      className="quality-tape quality-tape--sharp"
+                    />
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-0 top-0 h-0.5 bg-tape"
+                    />
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-0 bottom-0 h-0.5 bg-tape"
+                    />
+                    {/* Points at the editor from the panel's edge. */}
+                    <span
+                      aria-hidden
+                      className="absolute top-1/2 left-0 size-0 -translate-y-1/2 border-y-[6px] border-r-[8px] border-y-transparent border-r-foreground"
+                    />
+                  </>
                 )}
                 <div className="flex items-center gap-2.5">
                   <span
@@ -153,7 +174,14 @@ export function FixFirstList({
                   >
                     {t(`posts.quality.severity.${severity}`)}
                   </span>
-                  <span className="text-xs text-secondary-foreground">
+                  <span
+                    className={cn(
+                      'text-xs text-secondary-foreground',
+                      // A halo of panel white, so no stripe runs through it.
+                      picked &&
+                        '[text-shadow:0_0_2px_var(--color-primary),0_0_4px_var(--color-primary)]',
+                    )}
+                  >
                     {dimensionLabel(t, s.dimension)}
                   </span>
                   {status === 'edited' && (
