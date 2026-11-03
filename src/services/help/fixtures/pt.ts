@@ -60,7 +60,6 @@ const block = (style: string, parts: Part[], extra = {}): HelpBlock => ({
 
 export const p = (...parts: Part[]) => block('normal', parts)
 export const h2 = (text: string) => block('h2', [text])
-export const h3 = (text: string) => block('h3', [text])
 
 /** A bulleted list — one array of parts per item. */
 export const bullets = (...items: Part[][]): HelpBlock[] =>
