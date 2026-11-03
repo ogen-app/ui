@@ -1215,9 +1215,9 @@
    row's text (`-z-10` inside the row's `isolate`). */
 .quality-tape {
   position: absolute;
-  inset: 0;
   z-index: -10;
   pointer-events: none;
+  opacity: 0;
   background-image: repeating-linear-gradient(
     45deg,
     var(--tape) 0 8px,
@@ -1255,4 +1255,74 @@
       #000 74%,
       transparent 88%
     );
+}
+[data-chosen] > .quality-tape {
+  opacity: 1;
+}
+
+/* The 2px tape edges, pulled across the row: the top from the left, the
+   bottom from the right, a beat behind. */
+.quality-tape-edge {
+  position: absolute;
+  height: 2px;
+  pointer-events: none;
+  background-color: var(--tape);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.quality-tape-edge--bottom {
+  transform-origin: right;
+}
+[data-chosen] > .quality-tape-edge {
+  transform: scaleX(1);
+}
+
+/* The notch on the panel's edge, sliding in towards the editor it points at. */
+.quality-notch {
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(6px, -50%);
+}
+[data-chosen] > .quality-notch {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+/* A chosen span rises from its pale wash to full strength, its underline
+   inking in. An entrance rather than a transition: ProseMirror redraws a
+   decorated span when its class changes, so there is no "before" to
+   transition from. */
+@keyframes quality-mark-choose {
+  from {
+    background-color: color-mix(
+      in oklch,
+      var(--quality-mark) var(--quality-pale),
+      transparent
+    );
+    text-decoration-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .quality-tape {
+    transition: opacity 280ms cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .quality-tape-edge {
+    transition: transform 360ms cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  [data-chosen] > .quality-tape-edge--bottom {
+    transition-delay: 80ms;
+  }
+  .quality-notch {
+    transition:
+      opacity 200ms ease-out,
+      transform 280ms cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .quality-mark--chosen {
+    animation: quality-mark-choose 360ms cubic-bezier(0.25, 1, 0.5, 1);
+  }
 }

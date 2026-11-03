@@ -1058,6 +1058,7 @@ function PostEditorSurface({
                       statuses: highlights.statuses,
                       chosen: highlights.chosen,
                       onToggle: highlights.toggle,
+                      reveal: highlights.reveal,
                     }
                   : undefined
               }

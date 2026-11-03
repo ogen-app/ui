@@ -251,6 +251,38 @@ describe('PostQualityPanelView with highlights', () => {
     return onToggle
   }
 
+  function panel(
+    highlight: Partial<
+      NonNullable<Parameters<typeof PostQualityPanelView>[0]['highlight']>
+    >,
+  ) {
+    return (
+      <PostQualityPanelView
+        assessment={evaluation()}
+        platformName="LinkedIn"
+        loading={false}
+        unavailable={false}
+        loadError={null}
+        onReload={vi.fn()}
+        onAssess={vi.fn()}
+        assessing={false}
+        steps={[]}
+        cached={false}
+        assessError={null}
+        highlight={{
+          statuses: ['marked', 'marked', 'marked'],
+          chosen: null,
+          onToggle: vi.fn(),
+          ...highlight,
+        }}
+      />
+    )
+  }
+
+  function renderPanelWith(highlight: Parameters<typeof panel>[0]) {
+    return render(panel(highlight))
+  }
+
   it('makes each quote and its advice one toggle', async () => {
     const onToggle = renderHighlighted()
     const button = screen.getByRole('button', {
@@ -291,6 +323,35 @@ describe('PostQualityPanelView with highlights', () => {
     expect(
       screen.queryByText('Span for Remove the internal tag.'),
     ).not.toBeInTheDocument()
+  })
+
+  it('brings the row into view when its span is clicked in the post', () => {
+    const scrolled: Element[] = []
+    const original = Element.prototype.scrollIntoView
+    Element.prototype.scrollIntoView = function (this: Element) {
+      scrolled.push(this)
+    }
+    try {
+      const { rerender } = renderPanelWith({ chosen: 1, reveal: 0 })
+      expect(scrolled).toEqual([])
+      rerender(panel({ chosen: 1, reveal: 1 }))
+      const row = screen.getByRole('button', { pressed: true }).closest('li')
+      expect(scrolled).toEqual([row])
+    } finally {
+      Element.prototype.scrollIntoView = original
+    }
+  })
+
+  it('keeps the tape mounted on every row, shown only on the chosen one', () => {
+    renderHighlighted({ chosen: 0 })
+    const list = screen
+      .getByRole('heading', { name: /Fix first/ })
+      .closest('section')!
+    const rows = within(list).getAllByRole('listitem')
+    for (const row of rows) {
+      expect(row.querySelectorAll('.quality-tape')).toHaveLength(2)
+    }
+    expect(rows.filter((r) => r.hasAttribute('data-chosen'))).toHaveLength(1)
   })
 
   it('keeps plain rows without an editor beside the panel', () => {

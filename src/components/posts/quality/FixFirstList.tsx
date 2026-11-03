@@ -16,6 +16,13 @@ export type FixFirstHighlight = {
   statuses: (SpanStatus | undefined)[]
   chosen: number | null
   onToggle: (index: number) => void
+  /**
+   * Bumped each time a span is clicked in the post, so the list brings that
+   * suggestion into view — again, if the author has scrolled the panel away
+   * since. Choices made in the list itself leave it alone: that row is
+   * already under the pointer.
+   */
+  reveal?: number
 }
 
 /**
@@ -46,12 +53,15 @@ export function FixFirstList({
 }) {
   const { t } = useTranslation()
   const chosen = highlight?.chosen ?? null
+  const reveal = highlight?.reveal ?? 0
   const rows = useRef<(HTMLLIElement | null)[]>([])
 
   // A span clicked in the post brings its row into view, so the advice for it
-  // is on screen beside it.
+  // is on screen beside it. `nearest` with the row's scroll margin: a row
+  // already in full view stays put, and one that isn't clears the panel's
+  // sticky header.
   useEffect(() => {
-    if (chosen === null) return
+    if (reveal === 0 || chosen === null) return
     const reduce = window.matchMedia?.(
       '(prefers-reduced-motion: reduce)',
     ).matches
@@ -59,7 +69,9 @@ export function FixFirstList({
       block: 'nearest',
       behavior: reduce ? 'auto' : 'smooth',
     })
-  }, [chosen])
+    // Keyed on the reveal alone: a choice made in the list doesn't scroll.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reveal])
 
   const announced = chosen !== null ? suggestions[chosen] : undefined
 
@@ -107,7 +119,7 @@ export function FixFirstList({
                 // language's own.
                 <span
                   className={cn(
-                    'block px-2.5 py-1.5 text-[13px]/[1.45] text-foreground italic',
+                    'block px-2.5 py-1.5 text-[13px]/[1.45] text-foreground italic transition-colors duration-200',
                     picked ? 'bg-primary' : 'bg-tertiary',
                   )}
                 >
@@ -130,43 +142,46 @@ export function FixFirstList({
                 }}
                 data-chosen={picked || undefined}
                 className={cn(
-                  'relative isolate flex flex-col gap-1.5 border-b border-border py-4 last:border-b-0',
+                  'relative isolate flex scroll-my-20 flex-col gap-1.5 border-b border-border py-4 last:border-b-0',
                   // The tape edges stand in for the rules on either side.
                   '[&:has(+li[data-chosen])]:border-b-transparent',
-                  // Out to the panel's edges, sideways only: the padding the
-                  // tape needs above and below is every row's own.
-                  picked && '-mx-3 border-b-transparent px-3 lg:-mx-6 lg:px-6',
+                  picked && 'border-b-transparent',
                 )}
               >
-                {picked && (
+                {/* Always there while the list is linked to the post, and
+                    shown by `data-chosen`: so the tape can be pulled across
+                    and taken down again rather than appear and vanish. Out to
+                    the panel's edges; the padding above and below is every
+                    row's own, so choosing a row moves nothing. */}
+                {highlight && (
                   <>
                     <span
                       aria-hidden
-                      className="quality-tape quality-tape--soft"
+                      className="quality-tape quality-tape--soft inset-y-0 -inset-x-3 lg:-inset-x-6"
                     />
                     <span
                       aria-hidden
-                      className="quality-tape quality-tape--sharp"
+                      className="quality-tape quality-tape--sharp inset-y-0 -inset-x-3 lg:-inset-x-6"
                     />
                     <span
                       aria-hidden
-                      className="absolute inset-x-0 top-0 h-0.5 bg-tape"
+                      className="quality-tape-edge top-0 -inset-x-3 lg:-inset-x-6"
                     />
                     <span
                       aria-hidden
-                      className="absolute inset-x-0 bottom-0 h-0.5 bg-tape"
+                      className="quality-tape-edge quality-tape-edge--bottom bottom-0 -inset-x-3 lg:-inset-x-6"
                     />
                     {/* Points at the editor from the panel's edge. */}
                     <span
                       aria-hidden
-                      className="absolute top-1/2 left-0 size-0 -translate-y-1/2 border-y-[6px] border-r-[8px] border-y-transparent border-r-foreground"
+                      className="quality-notch -left-3 border-y-[6px] border-r-[8px] border-y-transparent border-r-foreground lg:-left-6"
                     />
                   </>
                 )}
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      'px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]',
+                      'px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] transition-colors duration-200',
                       picked
                         ? SEVERITY_SOLID[severity]
                         : SEVERITY_CLASS[severity],

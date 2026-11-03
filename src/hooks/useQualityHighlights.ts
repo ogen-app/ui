@@ -29,6 +29,8 @@ type Session = {
   /** Title matches an edit removed entirely. */
   titleLost: number[]
   chosen: number | null
+  /** Bumped by every click on a span in the post, to bring its row into view. */
+  reveal: number
 }
 
 function startSession(
@@ -48,7 +50,15 @@ function startSession(
       body.push({ index, span: s.span, severity: s.severity })
     }
   })
-  return { key, body, title, titleMarks, titleLost: [], chosen: null }
+  return {
+    key,
+    body,
+    title,
+    titleMarks,
+    titleLost: [],
+    chosen: null,
+    reveal: 0,
+  }
 }
 
 function followTitle(session: Session, title: string): Session {
@@ -116,7 +126,7 @@ export function useQualityHighlights({
     )
   }, [])
   const pick = useCallback((index: number) => {
-    setSession((s) => (s && s.chosen !== index ? { ...s, chosen: index } : s))
+    setSession((s) => (s ? { ...s, chosen: index, reveal: s.reveal + 1 } : s))
   }, [])
 
   const clear = useCallback(() => {
@@ -152,6 +162,8 @@ export function useQualityHighlights({
     /** Whether the panel is open on a run, so there is anything to mark. */
     active: session !== null,
     chosen,
+    /** For the list: scroll to the chosen row when this changes. */
+    reveal: session?.reveal ?? 0,
     toggle,
     pick,
     statuses,

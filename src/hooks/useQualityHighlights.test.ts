@@ -126,6 +126,15 @@ describe('useQualityHighlights', () => {
     expect(result.current.chosen).toBeNull()
   })
 
+  it('asks the list to reveal a row on every pick in the post, not on a toggle', () => {
+    const { result } = setup()
+    act(() => result.current.toggle(1))
+    expect(result.current.reveal).toBe(0)
+    act(() => result.current.pick(1))
+    act(() => result.current.pick(1))
+    expect(result.current.reveal).toBe(2)
+  })
+
   it('forgets everything when the panel closes', () => {
     const { result, rerender } = setup()
     act(() => result.current.toggle(0))
