@@ -17,6 +17,7 @@ import type { PostSummary } from '@/types/posts'
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/overview',
 )({
+  staticData: { help: 'campaign.overview' },
   component: CampaignOverviewScreen,
 })
 

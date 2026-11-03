@@ -7,6 +7,7 @@ import { ActivityFeed } from '@/components/activity/ActivityFeed'
  * reader back where they were rather than refetching the page they came from.
  */
 export const Route = createFileRoute('/_authenticated/activity')({
+  staticData: { help: 'activity' },
   component: ActivityLayout,
 })
 

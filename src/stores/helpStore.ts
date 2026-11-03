@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { HelpPage } from '@/lib/helpTopics'
 
 /**
  * The help drawer's own state (CON-173).
@@ -41,6 +42,12 @@ type HelpState = {
    */
   history: string[]
   width: number
+  /**
+   * The screen on view, as its route declares it (`staticData.help`). Written
+   * by the router subscription in `main.tsx` and nothing else — the drawer is
+   * mounted outside the router, so it learns where the reader is from here.
+   */
+  page: HelpPage | null
 
   open: (articleKey: string) => void
   close: () => void
@@ -48,6 +55,7 @@ type HelpState = {
   push: (articleKey: string) => void
   back: () => void
   setWidth: (px: number) => void
+  setPage: (page: HelpPage | null) => void
 }
 
 export const useHelpStore = create<HelpState>()(
@@ -56,6 +64,7 @@ export const useHelpStore = create<HelpState>()(
       isOpen: false,
       history: [],
       width: HELP_DEFAULT_WIDTH,
+      page: null,
 
       // Opening from a trigger starts a fresh trail: the reader asked about
       // *this*, and inheriting where they were last time would put a Back
@@ -77,6 +86,8 @@ export const useHelpStore = create<HelpState>()(
       },
 
       setWidth: (px) => set({ width: clampHelpWidth(px) }),
+
+      setPage: (page) => set({ page }),
     }),
     {
       name: 'ogen.help',

@@ -54,6 +54,7 @@ function isGranularity(value: string): value is CalendarGranularity {
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view',
 )({
+  staticData: { help: 'calendar' },
   // The posts list's filter, in the same words (CON-472).
   validateSearch: parsePostListSearch,
   beforeLoad: ({ params, search }) => {

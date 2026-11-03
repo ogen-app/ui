@@ -1,20 +1,28 @@
 import { PortableText, type PortableTextComponents } from '@portabletext/react'
 import { useRouter } from '@tanstack/react-router'
-import { InfoIcon, LightbulbIcon, WarningIcon } from '@phosphor-icons/react'
+import {
+  ArrowSquareOutIcon,
+  InfoIcon,
+  LightbulbIcon,
+  WarningIcon,
+} from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { useHelpStore } from '@/stores/helpStore'
-import type { HelpBlock } from '@/types/help'
+import type { HelpBlock, HelpEmbeddedArticle } from '@/types/help'
 
 /**
  * Renders an article's Portable Text (CON-173).
  *
- * The three custom nodes are the reason help content is not markdown:
+ * The four custom nodes are the reason help content is not markdown:
  *
  * - **`articleLink`** carries the target's *key*, so following it stays inside
  *   the drawer and lands on the reader's own language.
  * - **`appLink`** navigates the app underneath without closing the drawer —
  *   help you read while working is the whole point.
  * - **`helpCallout`** is set apart from the prose it interrupts.
+ * - **`helpEmbed`** places a whole concept inside the article — written once,
+ *   read on every screen that embeds it.
  */
 
 const CALLOUT_ICONS = {
@@ -57,6 +65,45 @@ function Callout({ value }: { value: HelpBlock }) {
         />
       </div>
     </aside>
+  )
+}
+
+/**
+ * A concept, placed whole inside the article that embeds it.
+ *
+ * It reads as a section of the page rather than as a card: the reader came for
+ * the page, and the concept is part of the answer, not a detour from it. Its
+ * title becomes the section's heading, and one quiet control opens the concept
+ * on its own — which is where its related articles and its own link live.
+ *
+ * An embed whose concept did not resolve (unpublished, or an embed nested
+ * inside an embedded concept, which the query does not follow) renders
+ * nothing. A heading over an empty section would be the apology this feature
+ * keeps refusing to show.
+ */
+function Embed({ value }: { value: HelpBlock }) {
+  const { t } = useTranslation()
+  const push = useHelpStore((s) => s.push)
+  const article = value.article as HelpEmbeddedArticle | null | undefined
+  if (!article?.body?.length) return null
+  return (
+    <section className="border-border mt-6 border-t pt-4">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <h2 className="text-base font-semibold">{article.title}</h2>
+        <button
+          type="button"
+          onClick={() => push(article.key)}
+          aria-label={t('help.embed.openLabel', { title: article.title })}
+          className="text-tertiary-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs"
+        >
+          {t('help.embed.open')}
+          <ArrowSquareOutIcon className="size-3.5" />
+        </button>
+      </div>
+      <div className="space-y-3">
+        <PortableText value={article.body as never} components={embedded} />
+      </div>
+    </section>
   )
 }
 
@@ -171,7 +218,23 @@ const components: PortableTextComponents = {
   },
   types: {
     helpCallout: ({ value }) => <Callout value={value as HelpBlock} />,
+    helpEmbed: ({ value }) => <Embed value={value as HelpBlock} />,
   },
+}
+
+/**
+ * Inside an embed the concept's own headings step down a level: the concept's
+ * title is the section's `h2`, so its sub-headings are `h3`s of it, and a
+ * page that embeds two concepts keeps one outline rather than four peers.
+ */
+const embedded: PortableTextComponents = {
+  ...components,
+  block: {
+    ...(components.block as Record<string, unknown>),
+    h2: ({ children }: { children?: React.ReactNode }) => (
+      <h3 className="mt-4 mb-1 text-sm font-semibold">{children}</h3>
+    ),
+  } as PortableTextComponents['block'],
 }
 
 export function HelpArticleBody({ body }: { body: HelpBlock[] }) {
