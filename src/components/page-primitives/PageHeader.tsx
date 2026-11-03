@@ -6,6 +6,7 @@ import { cn } from '@/lib'
 import { findScrollParent } from '@/lib/scrollParent'
 import { Button } from '@/components/ui/button.tsx'
 import { useIsMobile } from '@/hooks/use-mobile.ts'
+import { PageHelpButton } from '@/components/help/PageHelpButton'
 
 type PageHeaderProps = {
   title?: string
@@ -136,16 +137,20 @@ export function PageHeader({
             <div className="flex items-center">{center}</div>
           </div>
         )}
-        {actions && (
-          <div
-            className={cn(
-              'relative flex shrink-0 items-center gap-2',
-              fadeOnScroll && 'pointer-events-auto',
-            )}
-          >
-            {actions}
-          </div>
-        )}
+        {/* Always rendered, because the help button is always a candidate:
+            it is the screen's, not the caller's, and renders nothing itself
+            when the screen has no article — an empty flex group takes no
+            room. Last in the group, so the page's own views keep their places
+            whether or not help is there. */}
+        <div
+          className={cn(
+            'relative flex shrink-0 items-center gap-2',
+            fadeOnScroll && 'pointer-events-auto',
+          )}
+        >
+          {actions}
+          <PageHelpButton />
+        </div>
       </div>
     </div>
   )

@@ -8,5 +8,6 @@ import { AnalyticsPage } from './page'
  * someone turns the flag off.
  */
 export const Route = createFileRoute('/_authenticated/analytics/')({
+  staticData: { help: 'analytics' },
   component: AnalyticsPage,
 })

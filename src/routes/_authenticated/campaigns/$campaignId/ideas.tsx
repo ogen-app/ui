@@ -21,6 +21,7 @@ import { parseIdeaListSearch, type IdeaListSearch } from '@/lib/ideaFilter'
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/ideas',
 )({
+  staticData: { help: 'ideas' },
   component: CampaignIdeasView,
   validateSearch: parseIdeaListSearch,
 })

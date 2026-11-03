@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchHelpArticle, fetchHelpTopicMap } from '@/services/help'
-import type { HelpArticle, HelpTopicMap } from '@/types/help'
+import { fetchHelpArticle, fetchHelpIndex } from '@/services/help'
+import { useLocale } from '@/hooks/useLocale'
+import { useHelpStore } from '@/stores/helpStore'
+import type { HelpArticle, HelpIndex } from '@/types/help'
 
 /**
  * Reading help content (CON-173).
@@ -14,39 +16,49 @@ import type { HelpArticle, HelpTopicMap } from '@/types/help'
 
 const HELP_STALE_TIME = 60 * 60 * 1000 // an hour
 
-export const helpArticleKey = (key: string) => ['help', 'article', key] as const
-export const HELP_TOPICS_KEY = ['help', 'topics'] as const
+/** Per language: the same key is a different document in each. */
+const helpArticleKey = (locale: string, key: string) =>
+  ['help', locale, 'article', key] as const
+const HELP_INDEX_KEY = ['help', 'index'] as const
 
 export function useHelpArticle(articleKey: string | null) {
+  const locale = useLocale()
   return useQuery<HelpArticle | null>({
-    queryKey: helpArticleKey(articleKey ?? ''),
-    queryFn: () => fetchHelpArticle(articleKey!),
+    queryKey: helpArticleKey(locale, articleKey ?? ''),
+    queryFn: () => fetchHelpArticle(articleKey!, locale),
     enabled: articleKey !== null,
     staleTime: HELP_STALE_TIME,
   })
 }
 
 /**
- * Which article answers each topic.
+ * Which article answers each topic and each screen.
  *
- * Every `<HelpTrigger>` reads this to decide whether it should exist, so it
- * runs on screens with no help open. One shared query, cached for the session.
+ * Every `<HelpTrigger>` and every page header reads this to decide whether a
+ * "?" should exist, so it runs on screens with no help open. One shared query,
+ * cached for the session.
  *
  * `enabled` is the feature flag, and it is a parameter rather than a read
  * inside this hook because the flag belongs to the call site. It matters more
  * than it looks: the triggers sit on ordinary screens, so with the flag off and
- * this query unconditional every post editor would open a cross-origin request
- * to Sanity for a drawer that cannot be opened. Fixtures hide that today — the
- * cost only appears on the deploy that swaps in the real read, which is the
- * worst moment to discover it.
+ * this query unconditional every screen would open a cross-origin request to
+ * Sanity for a drawer that cannot be opened.
  */
-export function useHelpTopicMap({
-  enabled = true,
-}: { enabled?: boolean } = {}) {
-  return useQuery<HelpTopicMap>({
-    queryKey: HELP_TOPICS_KEY,
-    queryFn: fetchHelpTopicMap,
+export function useHelpIndex({ enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery<HelpIndex>({
+    queryKey: HELP_INDEX_KEY,
+    queryFn: fetchHelpIndex,
     enabled,
     staleTime: HELP_STALE_TIME,
   })
+}
+
+/**
+ * The page article for the screen on view, or null — no screen declared, or
+ * no article written for it yet.
+ */
+export function usePageHelpArticle({ enabled }: { enabled: boolean }) {
+  const page = useHelpStore((s) => s.page)
+  const { data: index } = useHelpIndex({ enabled })
+  return (page && index?.pages[page]) || null
 }

@@ -15,5 +15,6 @@ import { createFileRoute, Outlet } from '@tanstack/react-router'
  * fullscreen.
  */
 export const Route = createFileRoute('/_authenticated/foundation')({
+  staticData: { help: 'foundation' },
   component: Outlet,
 })

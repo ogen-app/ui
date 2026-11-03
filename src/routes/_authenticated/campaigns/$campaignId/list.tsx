@@ -20,6 +20,7 @@ import { awaiting } from '@/lib/fetched'
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/list',
 )({
+  staticData: { help: 'posts' },
   component: CampaignListView,
 })
 

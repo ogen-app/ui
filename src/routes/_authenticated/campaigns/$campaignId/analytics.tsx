@@ -9,6 +9,7 @@ import { CampaignAnalyticsPanel } from '@/components/campaigns/analytics/Campaig
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/analytics',
 )({
+  staticData: { help: 'analytics' },
   component: CampaignAnalytics,
 })
 

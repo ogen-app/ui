@@ -41,7 +41,7 @@ afterEach(() => {
 
 describe('HelpTrigger', () => {
   it('renders nothing and asks for nothing while the flag is off', async () => {
-    const topics = vi.spyOn(help, 'fetchHelpTopicMap')
+    const index = vi.spyOn(help, 'fetchHelpIndex')
     render(<HelpTrigger topic="post.status" />, { wrapper })
 
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
@@ -49,12 +49,15 @@ describe('HelpTrigger', () => {
     // query: these triggers sit in the post editor, so an unconditional read
     // would open a cross-origin request to Sanity on a screen where the drawer
     // cannot be opened at all.
-    expect(topics).not.toHaveBeenCalled()
+    expect(index).not.toHaveBeenCalled()
   })
 
   it('stays invisible when no article claims its topic', async () => {
     vi.mocked(useFeatureFlag).mockReturnValue(true)
-    vi.spyOn(help, 'fetchHelpTopicMap').mockResolvedValue({})
+    vi.spyOn(help, 'fetchHelpIndex').mockResolvedValue({
+      topics: {},
+      pages: {},
+    })
 
     render(<HelpTrigger topic="post.status" />, { wrapper })
 
@@ -68,8 +71,9 @@ describe('HelpTrigger', () => {
 
   it('opens the article that claims its topic', async () => {
     vi.mocked(useFeatureFlag).mockReturnValue(true)
-    vi.spyOn(help, 'fetchHelpTopicMap').mockResolvedValue({
-      'post.status': 'post-statuses',
+    vi.spyOn(help, 'fetchHelpIndex').mockResolvedValue({
+      topics: { 'post.status': 'post-statuses' },
+      pages: {},
     })
 
     render(<HelpTrigger topic="post.status" />, { wrapper })

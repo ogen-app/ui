@@ -6,6 +6,7 @@ import { useCampaign } from '@/hooks/useCampaigns.ts'
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/settings',
 )({
+  staticData: { help: 'campaign.settings' },
   component: CampaignSettings,
 })
 

@@ -12,6 +12,7 @@ import { PageNotBuiltYet } from '@/components/page-primitives/PageNotBuiltYet.ts
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/activity',
 )({
+  staticData: { help: 'activity' },
   component: CampaignActivityView,
 })
 

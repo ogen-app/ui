@@ -27,6 +27,7 @@ import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
 type CampaignsSearch = { archived?: boolean }
 
 export const Route = createFileRoute('/_authenticated/campaigns/')({
+  staticData: { help: 'campaigns' },
   component: Campaigns,
   validateSearch: (search: Record<string, unknown>): CampaignsSearch =>
     search.archived === true || search.archived === 'true'

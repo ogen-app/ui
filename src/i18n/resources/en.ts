@@ -6173,6 +6173,17 @@ export const en = {
     trigger: {
       label: 'What is this?',
     },
+    /** The "?" at the end of every page header: the screen's own article. */
+    page: {
+      label: 'Help for this page',
+    },
+    /** A concept placed inside a page article, and the way to read it alone. */
+    embed: {
+      open: 'Open',
+      openLabel: 'Open “{{title}}” on its own',
+    },
+    /** Under the summary when the article has no translation yet. */
+    untranslated: 'This article isn’t available in your language yet.',
   },
 
   /**

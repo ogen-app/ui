@@ -41,6 +41,7 @@ import { toast } from '@/stores/toastStore'
 export const Route = createFileRoute(
   '/_authenticated/foundation_/voices/$voiceId',
 )({
+  staticData: { help: 'foundation' },
   /**
    * Which starter this was forked from, when arriving from an empty library.
    *

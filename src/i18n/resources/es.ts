@@ -4826,6 +4826,14 @@ export const es: Translation = {
     trigger: {
       label: '¿Qué es esto?',
     },
+    page: {
+      label: 'Ayuda sobre esta página',
+    },
+    embed: {
+      open: 'Abrir',
+      openLabel: 'Abrir «{{title}}» por separado',
+    },
+    untranslated: 'Este artículo todavía no está disponible en tu idioma.',
   },
 
   announcements: {

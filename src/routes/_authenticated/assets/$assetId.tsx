@@ -4,6 +4,7 @@ import { AssetDocument } from '@/components/content/AssetDocument'
 import { parseAssetSearch } from '@/lib/assetSearch'
 
 export const Route = createFileRoute('/_authenticated/assets/$assetId')({
+  staticData: { help: 'asset' },
   component: BankDocument,
   // `?lens=` and `?verdict=` — see `lib/assetSearch`.
   validateSearch: parseAssetSearch,

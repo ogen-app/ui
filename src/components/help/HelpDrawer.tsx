@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { ZIndex } from '@/config/zIndex'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { useHelpArticle } from '@/hooks/useHelp'
+import { useHelpArticle, usePageHelpArticle } from '@/hooks/useHelp'
+import { useLocale } from '@/hooks/useLocale'
 import { Spinner } from '@/components/ui/spinner'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { HelpArticleBody } from '@/components/help/HelpArticleBody'
@@ -61,6 +62,7 @@ export function HelpDrawer() {
   const previousKey = useHelpStore(selectPreviousArticle)
   const { open, close, back, setWidth } = useHelpStore.getState()
 
+  const locale = useLocale()
   const query = useHelpArticle(isOpen ? articleKey : null)
   const article = query.data
   // `awaiting`, not `isLoading` — see `lib/fetched`. It answers false for the
@@ -89,6 +91,28 @@ export function HelpDrawer() {
     window.addEventListener('hashchange', sync)
     return () => window.removeEventListener('hashchange', sync)
   }, [enabled, open])
+
+  // Page help follows the page. While the drawer shows the help for the
+  // screen you were on, and you have not gone anywhere from it, moving to
+  // another screen moves the help with you — reading "Posts" over the calendar
+  // would be help for a place you have left. Once you have followed a link the
+  // trail is yours, and navigating leaves it alone; so does arriving on a
+  // screen with no article, which keeps what you were reading rather than
+  // emptying the drawer.
+  const pageArticle = usePageHelpArticle({ enabled })
+  const lastPageArticle = useRef(pageArticle)
+  useEffect(() => {
+    const previous = lastPageArticle.current
+    lastPageArticle.current = pageArticle
+    if (!pageArticle || pageArticle === previous) return
+    const state = useHelpStore.getState()
+    if (
+      state.isOpen &&
+      state.history.length === 1 &&
+      state.history[0] === previous
+    )
+      state.open(pageArticle)
+  }, [pageArticle])
 
   // Keep the address bar in step, without adding history entries — `replace`
   // rather than `push`, so the browser's Back button still means "the previous
@@ -164,6 +188,14 @@ export function HelpDrawer() {
                 <p className="bg-tertiary text-foreground rounded-md p-3 text-sm">
                   {article.summary}
                 </p>
+                {/* Per-article fallback: an untranslated article arrives in
+                    English, and says so rather than leaving the reader to
+                    wonder why the app changed language. */}
+                {article.language !== locale && (
+                  <p className="text-tertiary-foreground text-xs">
+                    {t('help.untranslated')}
+                  </p>
+                )}
                 <HelpArticleBody body={article.body} />
                 <RelatedArticles keys={article.related} />
               </>

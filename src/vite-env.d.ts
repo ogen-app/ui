@@ -23,6 +23,15 @@ interface ImportMetaEnv {
   readonly VITE_SENTRY_TRACES_SAMPLE_RATE?: string
   /** Release tag (build SHA), aligned with the API's `SENTRY_RELEASE`. */
   readonly VITE_APP_RELEASE?: string
+
+  /**
+   * The Sanity project the help centre reads (CON-173) — `getogen.com`'s,
+   * `s5ikqvpd`. Empty ⇒ `services/help` serves its fixtures. Public values
+   * both: the dataset is read token-free.
+   */
+  readonly VITE_SANITY_PROJECT_ID?: string
+  /** Which dataset. Defaults to `production`, the only public one. */
+  readonly VITE_SANITY_DATASET?: string
 }
 
 interface ImportMeta {

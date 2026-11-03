@@ -35,6 +35,7 @@ function isGranularity(value: string): value is CalendarGranularity {
 }
 
 export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
+  staticData: { help: 'calendar' },
   beforeLoad: ({ params }) => {
     if (!isFeatureEnabled('workspace-calendar'))
       throw redirect({ to: '/campaigns' })

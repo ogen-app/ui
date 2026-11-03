@@ -27,6 +27,7 @@ import { toast } from '@/stores/toastStore'
 export const Route = createFileRoute(
   '/_authenticated/foundation_/audiences/$audienceId',
 )({
+  staticData: { help: 'foundation' },
   /** Which starter this was forked from, when arriving from an empty library. */
   validateSearch: (search: Record<string, unknown>): { from?: string } =>
     typeof search.from === 'string' ? { from: search.from } : {},

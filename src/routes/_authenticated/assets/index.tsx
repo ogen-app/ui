@@ -5,6 +5,7 @@ import { ContentPage } from '@/components/content/ContentPage'
 import { parseAssetListSearch, type AssetListSearch } from '@/lib/assetFilter'
 
 export const Route = createFileRoute('/_authenticated/assets/')({
+  staticData: { help: 'assets' },
   component: Assets,
   // The list's filter — the same keys the Assets query takes, so the
   // address is the request and a link reopens the same list (CON-371). Per

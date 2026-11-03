@@ -9,6 +9,7 @@ import { parseIdeaListSearch, type IdeaListSearch } from '@/lib/ideaFilter'
  * campaign.
  */
 export const Route = createFileRoute('/_authenticated/ideas/')({
+  staticData: { help: 'ideas' },
   component: WorkspaceIdeasView,
   // The list's filter, pile, sort and grouping — the keys `GET /api/ideas`
   // takes, so the address is the request (CON-388). Read only under

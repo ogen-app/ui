@@ -41,6 +41,7 @@ import { toast } from '@/stores/toastStore'
 export const Route = createFileRoute(
   '/_authenticated/foundation_/series/$seriesId',
 )({
+  staticData: { help: 'foundation' },
   beforeLoad: () => {
     if (!isFeatureEnabled('series')) throw redirect({ to: '/campaigns' })
   },
