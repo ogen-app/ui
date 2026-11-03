@@ -18,6 +18,7 @@ import {
   useHelpStore,
 } from '@/stores/helpStore'
 import { awaiting } from '@/lib/fetched'
+import type { HelpBlock, HelpEmbeddedArticle } from '@/types/help'
 
 /**
  * The help centre (CON-173).
@@ -168,7 +169,14 @@ export function HelpDrawer() {
             subheader={
               <Trail
                 previousKey={previousKey}
-                category={article?.category.title}
+                // A page article's category is usually its own title
+                // ("Campaigns" over "Campaigns"), so it says where the article
+                // belongs instead: to the screen behind it.
+                category={
+                  article?.kind === 'page'
+                    ? t('help.page.label')
+                    : article?.category.title
+                }
                 onBack={back}
               />
             }
@@ -197,7 +205,11 @@ export function HelpDrawer() {
                   </p>
                 )}
                 <HelpArticleBody body={article.body} />
-                <RelatedArticles keys={article.related} />
+                <RelatedArticles
+                  keys={article.related.filter(
+                    (key) => !embeddedKeys(article.body).includes(key),
+                  )}
+                />
               </>
             ) : (
               <p className="text-tertiary-foreground py-8 text-center text-sm">
@@ -249,6 +261,16 @@ function Trail({
     </span>
   )
 }
+
+/**
+ * The concepts an article already shows in full. Offering one again under
+ * Related would send the reader to text they have just scrolled past.
+ */
+const embeddedKeys = (body: HelpBlock[]): string[] =>
+  body.flatMap((block) => {
+    const key = (block.article as HelpEmbeddedArticle | null | undefined)?.key
+    return block._type === 'helpEmbed' && key ? [key] : []
+  })
 
 /** The cards at the foot of an article. */
 function RelatedArticles({ keys }: { keys: string[] }) {
