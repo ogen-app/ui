@@ -235,19 +235,20 @@ const FEATURE_FLAGS = {
   'workspace-calendar': false,
 
   /**
-   * The contextual help centre (CON-173) — the drawer, its triggers and the
-   * `#help/<key>` deep link. **Off — waiting on content, not on an endpoint.**
+   * The help centre (CON-173) — the drawer, the "?" in every page header, the
+   * contextual triggers and the `#help/<key>` deep link. **Off — waiting on
+   * content, not on an endpoint.**
    *
    * There is no API to wait for: articles live in the Sanity project
-   * `getogen.com` already runs, and the app reads them from the public
-   * `production` dataset. What is missing is the reading itself —
-   * `services/help` serves fixtures today, because the starter articles were
-   * bootstrapped into the private `staging` dataset that a browser cannot
-   * authenticate against. Switching on means seeding `production`, registering
-   * the app's origins for CORS (without credentials — it only ever reads), and
-   * replacing the two functions in `services/help/index.ts` with the GROQ
-   * query. Delete the flag once the drawer has been exercised against the real
-   * dataset.
+   * `getogen.com` already runs (schema: `studio/schemaTypes/helpArticle.ts` on
+   * that repo's `alec/con-173-help-content`), and the app reads them from the
+   * public `production` dataset. The read is built (`services/help/sanity.ts`)
+   * and switches on with `VITE_SANITY_PROJECT_ID`; without it the app serves
+   * the fixtures in `services/help/fixtures`. What is missing: the schema
+   * deployed, the articles written and published to `production`, and the
+   * app's origins registered for CORS (without credentials). Then set the env,
+   * re-test the drawer against the real dataset — the queries have not yet run
+   * against it — and decide this flag's fate. See `docs/help-centre.md`.
    */
   'help-center': false,
 

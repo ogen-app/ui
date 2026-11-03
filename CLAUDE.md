@@ -1006,25 +1006,36 @@ override table cannot be retired either, and an operator editing Instagram's
 image cap changes nothing the editor checks.
 
 **The help centre waits on content, not on an endpoint** (`help-center`,
-CON-173). The drawer, its triggers and the `#help/<key>` deep link are built;
-`services/help` serves fixtures. There is no API in the way — articles live in
-the Sanity project `getogen.com` already runs, and the app reads the **public
-`production` dataset** — so switching on is: seed `production`, register the
-app's origins for CORS (**without** credentials; it only ever reads), and
-replace the two functions in `services/help/index.ts` with the GROQ query. The
-starter articles were bootstrapped into the private `staging` dataset, which a
-browser cannot authenticate against, and that is the whole of why the flag is
-off. Three things to keep hold of when it lands. Help content must **never** go
-through `services/api/http.ts` — every request in there carries
-`credentials: 'include'`, and Sanity is a third party. An article is identified
-by a language-independent `key` and cross-linked by reference rather than by
-title, so a translation cannot break a link; the catalogue holds only the
-drawer's own chrome (`help.*`), because prose is content and belongs in the
-CMS. And the trigger is the feature's only presence on ordinary screens, so it
-reads the flag and passes it to `useHelpTopicMap({ enabled })` — an
-unconditional read would open a cross-origin request from the post editor for a
-drawer that cannot be opened, which fixtures hide right up until the deploy
-that swaps them out.
+CON-173; [`docs/help-centre.md`](./docs/help-centre.md)). **Every screen has a
+page article, and shared ideas are written once.** A route names the screen it
+is with `staticData: { help: '<page>' }` (`HELP_PAGES` in `lib/helpTopics`;
+deepest match wins, and `ideas` is both levels' Ideas, by the nav rule), and
+`PageHeader` carries the "?" that opens that screen's article — so a new
+screen gets help by declaring its key, never by placing a button. An article is
+a **page** (explains one screen, may talk about it) or a **concept** (one idea
+several screens share, never mentions a screen); page articles **embed**
+concepts whole through a `helpEmbed` block, which is how post statuses read the
+same on the Posts list, the calendar and the post editor — and later on the
+website — without a copy. Embeds go one level deep. The drawer follows the page
+while it shows that page's help and the reader has not gone anywhere of their
+own. Every "?" **renders nothing while nothing is written for it**, and reads
+nothing while the flag is off — `PageHelpButton` checks the flag before it
+touches the Query client, because `PageHeader` is in a great many tests.
+
+The content lives in the Sanity project `getogen.com` already runs (schema on
+that repo's `alec/con-173-help-content`), read from the **public
+`production` dataset**, so everything published is world-readable. The read
+is built (`services/help/sanity.ts`) and switches on with
+`VITE_SANITY_PROJECT_ID`; until then `services/help/fixtures` serves the same
+payload. Switching on is: deploy the schema, write and publish the articles,
+register the app's origins for CORS (**without** credentials), set the env and
+re-test — the GROQ has not yet run against the dataset. Three things to keep
+hold of. Help must **never** go through `services/api/http.ts` — Sanity is a
+third party, and the one bare `fetch` in `sanity.ts` omits credentials on
+purpose. An article is identified by a language-independent `key` and linked
+and embedded by reference, so a translation cannot break a link; an
+untranslated article falls back to English and says so. And the catalogue holds
+only the drawer's chrome (`help.*`), because prose is content.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's
