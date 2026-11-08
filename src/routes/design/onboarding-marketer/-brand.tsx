@@ -68,21 +68,19 @@ export const BRAND_SECTIONS: {
 /* ------------------------------------------------------------------------ */
 
 /**
- * The review, one section at a time with the sections listed beside it, so
- * the length is visible and nothing is a surprise. Each item says where it
+ * The review, one section at a time, with the sections listed in the rail's
+ * open stage, so the length is visible and nothing is a surprise. Each item says where it
  * came from; anything can be edited, dropped or added. It saves as you type.
  *
  * In the marketer's words this time — positioning, voice, audiences, rules —
  * because those are the words this person already uses.
  */
 export function BrandStep({
-  business,
   brand,
   onChange,
   onBack,
   onNext,
 }: {
-  business: string
   brand: Brand
   onChange: (b: Brand) => void
   onBack: () => void
@@ -101,68 +99,57 @@ export function BrandStep({
     setSeen((s) => (s.includes(id) ? s : [...s, id]))
   }
 
+  const sections = (
+    <nav aria-label="Brand sections" className="-mx-2 flex flex-col">
+      {BRAND_SECTIONS.map((s) => {
+        const count = s.count?.(brand)
+        const checked = seen.includes(s.id) && s.id !== section
+        return (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => go(s.id)}
+            aria-current={s.id === section ? 'step' : undefined}
+            className={cn(
+              'flex h-8 items-center gap-2 px-2 text-left text-xs transition-colors',
+              s.id === section
+                ? 'bg-primary font-medium text-primary-foreground'
+                : 'text-secondary-foreground hover:text-primary-foreground',
+            )}
+          >
+            <span className="flex size-3.5 items-center justify-center">
+              {checked && (
+                <CheckIcon weight="bold" className="size-3 text-accent" />
+              )}
+            </span>
+            {s.label}
+            {count !== undefined && (
+              <span className="ml-auto tabular-nums text-tertiary-foreground">
+                {count}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </nav>
+  )
+
   return (
     <OnboardingFrame
       step="brand"
-      width="full"
       progress={seen.length / (BRAND_SECTIONS.length + 1)}
       aside={<SaveMark saving={saving} />}
+      detail={sections}
     >
-      <div className="grid gap-10 md:grid-cols-[200px_1fr]">
-        <nav aria-label="Brand sections" className="flex flex-col gap-1">
-          <p className="mb-3 text-xs text-tertiary-foreground">
-            {business}’s brand
-          </p>
-          {BRAND_SECTIONS.map((s) => {
-            const count = s.count?.(brand)
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => go(s.id)}
-                aria-current={s.id === section ? 'step' : undefined}
-                className={cn(
-                  'flex h-9 items-center gap-2 px-2.5 text-left text-sm transition-colors',
-                  s.id === section
-                    ? 'bg-secondary font-medium text-primary-foreground'
-                    : 'text-secondary-foreground hover:text-primary-foreground',
-                )}
-              >
-                <span className="flex size-4 items-center justify-center">
-                  {seen.includes(s.id) && s.id !== section ? (
-                    <CheckIcon weight="bold" className="size-3.5 text-accent" />
-                  ) : null}
-                </span>
-                {s.label}
-                {count !== undefined && (
-                  <span className="ml-auto text-xs tabular-nums text-tertiary-foreground">
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </nav>
+      <h1 className="font-display text-[1.75rem] font-medium leading-10 tracking-tight">
+        {current.label}
+      </h1>
+      <p className="mb-8 mt-1 text-sm leading-5 text-secondary-foreground">
+        {current.sub}
+      </p>
+      <BrandSectionBody section={section} brand={brand} onChange={onChange} />
 
-        <div className="min-w-0">
-          <h1 className="font-display text-[1.75rem] font-medium leading-10 tracking-tight">
-            {current.label}
-          </h1>
-          <p className="mb-8 mt-1 text-sm leading-5 text-secondary-foreground">
-            {current.sub}
-          </p>
-          <BrandSectionBody
-            section={section}
-            brand={brand}
-            onChange={onChange}
-          />
-        </div>
-      </div>
-
-      <StepFooter
-        onBack={prev ? () => go(prev.id) : onBack}
-        note={`${seen.length} of ${BRAND_SECTIONS.length} checked`}
-      >
+      <StepFooter onBack={prev ? () => go(prev.id) : onBack}>
         {next ? (
           <Button variant="accent" size="xl" onClick={() => go(next.id)}>
             Next: {next.label}

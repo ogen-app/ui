@@ -35,6 +35,7 @@ import {
   Chip,
   Field,
   OnboardingFrame,
+  RailCaption,
   SaveMark,
   StepFooter,
   Title,
@@ -78,15 +79,12 @@ export function AccountsStep({
   )
 
   return (
-    <OnboardingFrame step="accounts" width="wide">
+    <OnboardingFrame
+      step="accounts"
+      progress={connected.length / (accounts.length + 1)}
+    >
       <Title
-        sub={
-          <>
-            We found these linked from {isClient ? 'their' : 'your'} website.
-            Connecting lets Ogen schedule posts and read how they perform. It
-            never posts anything you haven’t scheduled.
-          </>
-        }
+        sub={`Found on ${isClient ? 'their' : 'your'} website. Ogen never posts anything you haven’t scheduled.`}
       >
         Connect {business}’s accounts
       </Title>
@@ -136,12 +134,7 @@ export function AccountsStep({
         </div>
       )}
 
-      <StepFooter
-        onBack={onBack}
-        note={
-          connected.length > 0 ? `${connected.length} connected` : undefined
-        }
-      >
+      <StepFooter onBack={onBack}>
         {connected.length === 0 && (
           <Button variant="ghost" onClick={onNext}>
             Connect later
@@ -298,14 +291,45 @@ export function CampaignStep({
     brief.name.trim() !== '' &&
     brief.platforms.length > 0 &&
     brief.audienceIds.length > 0
+  const needs = [
+    { label: 'An idea', done: brief !== null },
+    { label: 'A name', done: !!brief?.name.trim() },
+    { label: 'Channels', done: (brief?.platforms.length ?? 0) > 0 },
+    { label: 'An audience', done: (brief?.audienceIds.length ?? 0) > 0 },
+  ]
 
   return (
     <OnboardingFrame
       step="campaign"
-      width="wide"
+      progress={needs.filter((n) => n.done).length / (needs.length + 2)}
       aside={brief && <SaveMark saving={saving} />}
+      detail={
+        <div>
+          <RailCaption>The brief needs</RailCaption>
+          <ul className="flex flex-col gap-1.5">
+            {needs.map((n) => (
+              <li
+                key={n.label}
+                className={cn(
+                  'flex items-center gap-2 text-xs',
+                  n.done
+                    ? 'text-secondary-foreground'
+                    : 'text-tertiary-foreground',
+                )}
+              >
+                {n.done ? (
+                  <CheckIcon weight="bold" className="size-3.5 text-accent" />
+                ) : (
+                  <CircleIcon className="size-3.5 text-quaternary-foreground" />
+                )}
+                {n.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      }
     >
-      <Title sub="Ogen suggests these from the brand and the time of year. Pick one and make the brief yours — the plan is built from it.">
+      <Title sub="Suggested from the brand and the time of year.">
         Your first campaign
       </Title>
 
@@ -346,10 +370,6 @@ export function CampaignStep({
           key={brief.idea}
           className="animate-in fade-in slide-in-from-bottom-2 duration-300 mt-10 flex flex-col gap-7 border-t border-quaternary pt-8"
         >
-          <p className="text-xs font-medium uppercase tracking-wide text-tertiary-foreground">
-            The brief
-          </p>
-
           <BriefForm
             brief={brief}
             brand={brand}
@@ -616,7 +636,7 @@ export function PlanningStep({
   )
 
   return (
-    <OnboardingFrame step="planning" width="wide">
+    <OnboardingFrame step="planning" progress={0.5 + done / steps / 2}>
       <Title
         sub={
           finished

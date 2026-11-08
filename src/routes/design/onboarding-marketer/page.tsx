@@ -20,7 +20,8 @@ import {
   type Brief,
   type PlatformId,
 } from './-fixtures'
-import { STEPS, type Step } from './-flow'
+import { RailProvider } from './-frame'
+import { STAGES, STEPS, type Step } from './-flow'
 import {
   ReadingStep,
   SourcesStep,
@@ -134,8 +135,33 @@ export function MarketerOnboardingHarness() {
     setRun((r) => r + 1)
   }
 
+  /** One line per finished stage, for the rail. */
+  const summaries = [
+    setup.role === 'founder'
+      ? 'Own business'
+      : setup.role
+        ? 'For clients'
+        : undefined,
+    setup.files.length > 0
+      ? `Website + ${setup.files.length} doc${setup.files.length === 1 ? '' : 's'}`
+      : 'Website',
+    brand
+      ? `${brand.traits.length} traits · ${brand.rules.length} rules`
+      : undefined,
+    connected.length > 0 ? `${connected.length} connected` : 'Later',
+    brief?.name,
+  ]
+
   return (
-    <>
+    <RailProvider
+      value={{
+        title: setup.business.trim()
+          ? `Setting up ${setup.business.trim()}`
+          : 'Setting up Ogen',
+        summaries,
+        onStage: (i) => setStep(STAGES[i].steps[0]),
+      }}
+    >
       <div key={`${step}-${run}`}>
         {step === 'you' && (
           <YouStep
@@ -165,7 +191,6 @@ export function MarketerOnboardingHarness() {
         )}
         {step === 'brand' && brand && (
           <BrandStep
-            business={setup.business}
             brand={brand}
             onChange={setBrand}
             onBack={() => setStep('sources')}
@@ -227,7 +252,7 @@ export function MarketerOnboardingHarness() {
           onRestart={restart}
         />
       )}
-    </>
+    </RailProvider>
   )
 }
 

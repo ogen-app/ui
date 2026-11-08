@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import {
   ArrowLeftIcon,
   CheckIcon,
@@ -12,95 +19,225 @@ import { cn } from '@/lib'
 import { sourceLabel, type Cited } from './-fixtures'
 import { STAGES, type Step } from './-flow'
 
+/** What the rail knows about the stages behind you — filled by the harness. */
+type Rail = {
+  /** "Setting up Haus Aurelia", once there is a name. */
+  title: string
+  /** One short line per finished stage, by stage index. */
+  summaries: (string | undefined)[]
+  /** Going back to a finished stage. */
+  onStage?: (stage: number) => void
+}
+
+const RailContext = createContext<Rail>({
+  title: 'Setting up Ogen',
+  summaries: [],
+})
+
+export const RailProvider = RailContext.Provider
+
 /**
- * The onboarding frame: the logo, the five stages as one bar that fills (this
- * onboarding is long on purpose, so it shows how far along you are at every
- * width), and one white column. No menu — nothing here is a place to go yet.
+ * The onboarding frame: the work on a white card, and beside it, on the page
+ * rather than on the card, the rail — the five stages in one fixed shape that
+ * never changes between steps. Finished stages fold to a tick and what they
+ * settled; the current one opens to show what the step is doing (what the
+ * sources will teach Ogen, the brand's sections, what the brief still needs);
+ * the rest are a name and a few minutes. The line between them fills as you
+ * go, so progress is felt rather than counted.
+ *
+ * Below `sm` the rail folds to one line above the card.
  */
 export function OnboardingFrame({
   step,
-  width = 'base',
   progress,
   aside,
+  detail,
   children,
 }: {
   step: Step
-  width?: 'base' | 'wide' | 'full'
   /** How far through the current stage, 0–1. Defaults by sub-step. */
   progress?: number
-  /** Right of the progress bar — the save mark, usually. */
+  /** Top right of the rail — the save mark, usually. */
   aside?: ReactNode
+  /** What the current stage shows when open. */
+  detail?: ReactNode
   children: ReactNode
 }) {
+  const rail = useContext(RailContext)
   const current = STAGES.findIndex((s) => s.steps.includes(step))
   const stage = STAGES[current]
-  const within =
-    progress ?? (stage.steps.indexOf(step) + 1) / (stage.steps.length + 1)
+  const within = Math.max(
+    0,
+    Math.min(
+      1,
+      progress ?? (stage.steps.indexOf(step) + 1) / (stage.steps.length + 1),
+    ),
+  )
+  const left = Math.round(
+    STAGES.slice(current + 1).reduce((n, s) => n + s.minutes, 0) +
+      stage.minutes * (1 - within),
+  )
+
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
-      <header className="flex shrink-0 items-start gap-6 px-6 pt-5 md:px-10">
-        <LogoFull className="mt-0.5 h-6 w-auto shrink-0" />
-        <div className="mx-auto w-full max-w-[640px]">
-          <ol className="grid grid-cols-5 gap-1.5" aria-label="Progress">
+      <header className="shrink-0 px-4 pt-5 sm:px-6 md:px-10">
+        <LogoFull className="h-6 w-auto" />
+      </header>
+      <main className="mx-auto grid w-full max-w-[1060px] flex-1 content-start gap-5 px-4 pb-16 pt-6 sm:grid-cols-[minmax(0,1fr)_220px] sm:gap-6 sm:px-6 md:pt-10 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-10">
+        <div
+          key={step}
+          className="animate-in fade-in slide-in-from-bottom-2 order-2 min-w-0 bg-primary px-6 py-8 duration-300 sm:order-1 md:px-10 md:py-10"
+        >
+          {children}
+        </div>
+
+        <aside className="order-1 self-start sm:sticky sm:top-6 sm:order-2 sm:pt-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="truncate text-sm font-medium">{rail.title}</p>
+            {aside}
+          </div>
+          <p className="mt-1 text-xs text-tertiary-foreground">
+            {left > 0 ? `About ${left} min left` : 'Almost there'}
+          </p>
+
+          {/* Narrow: one line and five segments. */}
+          <div className="mt-3 sm:hidden">
+            <div className="grid grid-cols-5 gap-1">
+              {STAGES.map((s, i) => (
+                <Fill
+                  key={s.label}
+                  value={i < current ? 1 : i === current ? within : 0}
+                  className="h-1"
+                />
+              ))}
+            </div>
+            <p className="mt-2 text-xs">
+              <span className="text-tertiary-foreground">
+                {current + 1} of {STAGES.length} ·{' '}
+              </span>
+              <span className="font-medium">{stage.label}</span>
+            </p>
+          </div>
+
+          <ol className="mt-6 hidden flex-col sm:flex" aria-label="Progress">
             {STAGES.map((s, i) => {
-              const fill = i < current ? 1 : i === current ? within : 0
+              const state =
+                i < current ? 'done' : i === current ? 'active' : 'todo'
+              const last = i === STAGES.length - 1
+              const back = state === 'done' && rail.onStage
+              const Label = back ? 'button' : 'div'
               return (
                 <li
                   key={s.label}
-                  aria-current={i === current ? 'step' : undefined}
-                  className="flex min-w-0 flex-col gap-2"
+                  aria-current={state === 'active' ? 'step' : undefined}
+                  className="flex gap-3"
                 >
-                  <span className="h-1 w-full overflow-hidden rounded-full bg-quaternary">
+                  <div className="flex flex-col items-center">
                     <span
-                      className="block h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
-                      style={{
-                        width: `${Math.max(0, Math.min(1, fill)) * 100}%`,
-                      }}
-                    />
-                  </span>
-                  <span
-                    className={cn(
-                      'hidden items-center gap-1 truncate text-xs md:flex',
-                      i < current && 'text-secondary-foreground',
-                      i === current && 'font-medium text-primary-foreground',
-                      i > current && 'text-tertiary-foreground',
-                    )}
-                  >
-                    {i < current && (
-                      <CheckIcon
-                        weight="bold"
-                        className="size-3 shrink-0 text-accent"
+                      className={cn(
+                        'flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] tabular-nums transition-colors duration-500',
+                        state === 'done' && 'bg-accent text-primary',
+                        state === 'active' &&
+                          'bg-primary-foreground text-primary',
+                        state === 'todo' &&
+                          'border border-quaternary text-tertiary-foreground',
+                      )}
+                    >
+                      {state === 'done' ? (
+                        <CheckIcon weight="bold" className="size-3" />
+                      ) : (
+                        i + 1
+                      )}
+                    </span>
+                    {!last && (
+                      <Fill
+                        vertical
+                        value={
+                          state === 'done' ? 1 : state === 'active' ? within : 0
+                        }
+                        className="my-1 w-0.5 flex-1"
                       />
                     )}
-                    {s.label}
-                  </span>
+                  </div>
+                  <div className={cn('min-w-0 flex-1', !last && 'pb-5')}>
+                    <Label
+                      {...(back
+                        ? { type: 'button', onClick: () => rail.onStage?.(i) }
+                        : {})}
+                      className={cn(
+                        'flex w-full items-baseline justify-between gap-3 text-left text-sm leading-5',
+                        back && 'group',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'shrink-0',
+                          state === 'active' && 'font-medium',
+                          state === 'done' &&
+                            'text-secondary-foreground group-hover:text-primary-foreground',
+                          state === 'todo' && 'text-tertiary-foreground',
+                        )}
+                      >
+                        {s.label}
+                      </span>
+                      <span className="truncate text-xs tabular-nums text-tertiary-foreground">
+                        {state === 'done'
+                          ? rail.summaries[i]
+                          : state === 'todo'
+                            ? `${s.minutes} min`
+                            : null}
+                      </span>
+                    </Label>
+                    {state === 'active' && detail && (
+                      <div className="animate-in fade-in mt-3 duration-300">
+                        {detail}
+                      </div>
+                    )}
+                  </div>
                 </li>
               )
             })}
           </ol>
-          <p className="mt-2 text-xs md:hidden">
-            <span className="text-tertiary-foreground">
-              {current + 1} of {STAGES.length} ·{' '}
-            </span>
-            <span className="font-medium">{stage.label}</span>
-          </p>
-        </div>
-        <div className="flex w-24 shrink-0 justify-end">{aside}</div>
-      </header>
-      <main className="flex flex-1 items-start justify-center px-4 pb-16 pt-6 md:pt-10">
-        <div
-          className={cn(
-            'animate-in fade-in slide-in-from-bottom-2 duration-300 w-full bg-primary px-6 py-8 md:px-10 md:py-10',
-            width === 'base' && 'max-w-[620px]',
-            width === 'wide' && 'max-w-[780px]',
-            width === 'full' && 'max-w-[1040px]',
-          )}
-        >
-          {children}
-        </div>
+        </aside>
       </main>
     </div>
   )
+}
+
+/** A track with an accent fill — horizontal, or down the rail. */
+export function Fill({
+  value,
+  vertical,
+  className,
+}: {
+  value: number
+  vertical?: boolean
+  className?: string
+}) {
+  const pct = `${Math.max(0, Math.min(1, value)) * 100}%`
+  return (
+    <span
+      className={cn(
+        'relative block overflow-hidden rounded-full bg-quaternary',
+        className,
+      )}
+    >
+      <span
+        className={cn(
+          'absolute left-0 top-0 rounded-full bg-accent ease-out',
+          vertical
+            ? 'w-full transition-[height] duration-700'
+            : 'h-full transition-[width] duration-500',
+        )}
+        style={vertical ? { height: pct } : { width: pct }}
+      />
+    </span>
+  )
+}
+
+/** A small caption inside the rail's open stage. */
+export function RailCaption({ children }: { children: ReactNode }) {
+  return <p className="mb-2.5 text-xs text-tertiary-foreground">{children}</p>
 }
 
 export function Title({
