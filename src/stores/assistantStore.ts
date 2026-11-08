@@ -504,6 +504,13 @@ export const useAssistantStore = create<AssistantState>()(
               })
               break
 
+            case 'calendar_findings':
+              patchLastTurn(threadId, (t) => ({
+                ...t,
+                findings: event.findings,
+              }))
+              break
+
             case 'ui_action':
               uiActions = [...uiActions, event.action]
               break
@@ -746,9 +753,11 @@ export const useAssistantStore = create<AssistantState>()(
         confirmProposal: async (threadId, proposalId, optionId) => {
           const thread = get().threads[threadId]
           if (!thread || thread.status === 'running') return
+          // An offer behind a finding's fix has no card of its own in the
+          // thread; it runs all the same, with nothing to collapse.
           const found = findProposal(thread, proposalId)
-          if (!found || found.status !== 'pending') return
-          setProposal(threadId, proposalId, { status: 'confirming' })
+          if (found && found.status !== 'pending') return
+          if (found) setProposal(threadId, proposalId, { status: 'confirming' })
           const saveKey = saveKeyFor(thread.subject)
           if (saveKey) await flushPendingSave(saveKey)
           await runTurn(

@@ -2091,6 +2091,198 @@ export const en = {
         running: 'Reading the campaign posts',
         done: 'Read the campaign posts',
       },
+      findIdeas: {
+        running: 'Finding ideas',
+        done: 'Found ideas',
+      },
+      findDuplicateIdeas: {
+        running: 'Looking for near-duplicates',
+        done: 'Looked for near-duplicates',
+      },
+      setIdeaVerdict: {
+        running: 'Answering an idea',
+        done: 'Answered an idea',
+      },
+      setIdeaVerdicts: {
+        running: 'Answering ideas',
+        done: 'Answered ideas',
+      },
+      compileIdeas: {
+        running: 'Compiling ideas into a post',
+        done: 'Compiled ideas into a post',
+      },
+      draftIdeas: {
+        running: 'Writing drafts from ideas',
+        done: 'Wrote drafts from ideas',
+      },
+      moveIdeas: {
+        running: 'Moving ideas',
+        done: 'Moved ideas',
+      },
+      deleteIdeas: {
+        running: 'Deleting ideas',
+        done: 'Deleted ideas',
+      },
+      mergeIdeas: {
+        running: 'Merging ideas',
+        done: 'Merged ideas',
+      },
+      findAssets: {
+        running: 'Finding assets',
+        done: 'Found assets',
+      },
+      askAssets: {
+        running: 'Reading the assets',
+        done: 'Read the assets',
+      },
+      analyseAsset: {
+        running: 'Analysing an asset',
+        done: 'Analysed an asset',
+      },
+      distillMoreIdeas: {
+        running: 'Distilling ideas',
+        done: 'Distilled ideas',
+      },
+      importPage: {
+        running: 'Reading a web page',
+        done: 'Read a web page',
+      },
+      tagAssets: {
+        running: 'Tagging assets',
+        done: 'Tagged assets',
+      },
+      attachAssets: {
+        running: 'Attaching assets',
+        done: 'Attached assets',
+      },
+      checkCalendar: {
+        running: 'Checking the calendar',
+        done: 'Checked the calendar',
+      },
+      optimiseCalendar: {
+        running: 'Planning a better calendar',
+        done: 'Planned a better calendar',
+      },
+      applyCalendarMoves: {
+        running: 'Moving posts',
+        done: 'Moved posts',
+      },
+      reviewCampaign: {
+        running: 'Reviewing the campaign',
+        done: 'Reviewed the campaign',
+      },
+      analyticsOverview: {
+        running: 'Reading the numbers',
+        done: 'Read the numbers',
+      },
+      topPosts: {
+        running: 'Ranking the posts',
+        done: 'Ranked the posts',
+      },
+      analyticsLessons: {
+        running: 'Reading what worked',
+        done: 'Read what worked',
+      },
+      postStats: {
+        running: 'Reading a post’s numbers',
+        done: 'Read a post’s numbers',
+      },
+      moreLikeThese: {
+        running: 'Planning more like these',
+        done: 'Planned more like these',
+      },
+      getBrand: {
+        running: 'Reading the foundation',
+        done: 'Read the foundation',
+      },
+      addFact: {
+        running: 'Adding a fact',
+        done: 'Added a fact',
+      },
+      updateFact: {
+        running: 'Updating a fact',
+        done: 'Updated a fact',
+      },
+      removeFact: {
+        running: 'Retiring a fact',
+        done: 'Retired a fact',
+      },
+      activityReport: {
+        running: 'Reading the activity',
+        done: 'Read the activity',
+      },
+      workspaceSetup: {
+        running: 'Checking the workspace setup',
+        done: 'Checked the workspace setup',
+      },
+      navigate: {
+        running: 'Opening a screen',
+        done: 'Opened a screen',
+      },
+      setFilter: {
+        running: 'Setting a filter',
+        done: 'Set a filter',
+      },
+      select: {
+        running: 'Selecting',
+        done: 'Selected',
+      },
+      openSavedView: {
+        running: 'Opening a smart group',
+        done: 'Opened a smart group',
+      },
+      getSelection: {
+        running: 'Reading the selection',
+        done: 'Read the selection',
+      },
+      getFocus: {
+        running: 'Reading what is open',
+        done: 'Read what is open',
+      },
+      loadPack: {
+        running: 'Reaching for more tools',
+        done: 'Reached for more tools',
+      },
+      confirmOffer: {
+        running: 'Running the offer',
+        done: 'Ran the offer',
+      },
+      dismissOffer: {
+        running: 'Dismissing the offer',
+        done: 'Dismissed the offer',
+      },
+      updateCampaignPlatforms: {
+        running: 'Updating the platforms',
+        done: 'Updated the platforms',
+      },
+      draftPost: {
+        running: 'Writing drafts',
+        done: 'Wrote drafts',
+      },
+      editPost: {
+        running: 'Editing the post',
+        done: 'Edited the post',
+      },
+      clonePost: {
+        running: 'Cloning the post',
+        done: 'Cloned the post',
+      },
+      restoreVersion: {
+        running: 'Restoring a version',
+        done: 'Restored a version',
+      },
+      createNote: {
+        running: 'Writing a note',
+        done: 'Wrote a note',
+      },
+      schedulePost: {
+        running: 'Scheduling the post',
+        done: 'Scheduled the post',
+      },
+      askCampaignAssets: {
+        running: 'Reading the campaign’s assets',
+        done: 'Read the campaign’s assets',
+      },
       getCampaignBrief: {
         running: 'Reading the campaign brief',
         done: 'Read the campaign brief',
@@ -2196,6 +2388,114 @@ export const en = {
       whatWorked: {
         label: 'What worked?',
         text: 'What worked best over the last 30 days?',
+      },
+      findIdeas: {
+        label: 'Find ideas about…',
+        text: 'Find the ideas about ',
+      },
+      mergeDuplicates: {
+        label: 'Merge near-duplicates',
+        text: 'Are any of these ideas saying the same thing?',
+      },
+      setAsideWeak: {
+        label: 'Set aside the weak ones',
+        text: 'Set aside the ideas that fit worst.',
+      },
+      distillMore: {
+        label: 'Distill more',
+        text: 'Distill more ideas from the sources.',
+      },
+      draftSelected: {
+        label: 'Draft the selected',
+        text: 'Draft the selected ideas for ',
+      },
+      compileSelected: {
+        label: 'Compile into one post',
+        text: 'Compile the selected ideas into one planned post.',
+      },
+      whatShare: {
+        label: 'What do these share?',
+        text: 'What do these have in common?',
+      },
+      findSimilar: {
+        label: 'Find similar ideas',
+        text: 'Find ideas like these.',
+      },
+      askAssets: {
+        label: 'Ask the assets',
+        text: 'What do the assets say about ',
+      },
+      ideasFromAssets: {
+        label: 'Ideas from the bank',
+        text: 'Which assets haven’t given us ideas yet?',
+      },
+      summariseSelected: {
+        label: 'Summarise these',
+        text: 'Summarise the selected assets.',
+      },
+      planFromSelected: {
+        label: 'Plan from only these',
+        text: 'Plan the campaign from only these assets.',
+      },
+      tagSelected: {
+        label: 'Tag them',
+        text: 'Tag the selected assets as ',
+      },
+      summariseIt: {
+        label: 'Summarise it',
+        text: 'Summarise this asset.',
+      },
+      askTheAsset: {
+        label: 'Ask the asset',
+        text: 'What does it say about ',
+      },
+      ideasFromThis: {
+        label: 'Ideas from this',
+        text: 'Distill ideas from this asset.',
+      },
+      whyTopPost: {
+        label: 'Why did the top post work?',
+        text: 'Why did the top post do so well?',
+      },
+      compareMonth: {
+        label: 'Compare to last month',
+        text: 'How does this period compare with the one before?',
+      },
+      moreLikeThese: {
+        label: 'Make more like these',
+        text: 'Make more like these.',
+      },
+      whySelected: {
+        label: 'Why did these work?',
+        text: 'Why did the selected posts do well?',
+      },
+      checkWeek: {
+        label: 'Anything wrong this week?',
+        text: 'Anything wrong with this week?',
+      },
+      optimise: {
+        label: 'Optimise the calendar',
+        text: 'Optimise the calendar.',
+      },
+      stanceOn: {
+        label: 'What’s our stance on…',
+        text: 'What’s our stance on ',
+      },
+      factsStale: {
+        label: 'Facts going stale',
+        text: 'Which facts go out of date this month?',
+      },
+      checkGuardrails: {
+        label: 'Check against guardrails',
+        text: 'Do the scheduled posts respect our guardrails?',
+      },
+      thisWeek: {
+        label: 'This week so far',
+        text: 'What has happened this week so far?',
+      },
+      autoPublish: {
+        label: 'Explain auto-publish',
+        text: 'How do the timezone and auto-publish settings work here?',
       },
       connections: {
         label: 'Check connections',
@@ -2326,6 +2626,21 @@ export const en = {
       superseded: '{{summary}} · not answered',
       closed: '{{summary}} · not run',
       working: '{{summary}} · working…',
+    },
+
+    /**
+     * A calendar check (CON-454). The findings and their fixes are the
+     * server's words; the client counts and frames them.
+     */
+    findings: {
+      title_one: '{{count}} thing to look at',
+      title_other: '{{count}} things to look at',
+      warnings_one: '{{count}} needs attention',
+      warnings_other: '{{count}} need attention',
+      none: 'Nothing wrong with the calendar.',
+      or: 'or {{fix}}',
+      dismissed_one: '{{count}} dismissed finding left out.',
+      dismissed_other: '{{count}} dismissed findings left out.',
     },
 
     /** Reversing a change a turn made. */
@@ -3049,6 +3364,7 @@ export const en = {
       best: 'Best {{count}}',
       worst: 'Worst {{count}}',
       all: 'All {{count}}',
+      select: 'Select {{title}}',
       singleListNote:
         'Too few posts to have two ends — this is all of them, best first.',
       nothingTitle: 'Nothing to rank in this period',

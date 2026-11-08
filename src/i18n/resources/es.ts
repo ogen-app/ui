@@ -1615,6 +1615,198 @@ export const es: Translation = {
         running: 'Leyendo las publicaciones de la campaña',
         done: 'Leídas las publicaciones de la campaña',
       },
+      findIdeas: {
+        running: 'Buscando ideas',
+        done: 'Encontradas las ideas',
+      },
+      findDuplicateIdeas: {
+        running: 'Buscando casi duplicadas',
+        done: 'Buscadas las casi duplicadas',
+      },
+      setIdeaVerdict: {
+        running: 'Respondiendo a una idea',
+        done: 'Respondida una idea',
+      },
+      setIdeaVerdicts: {
+        running: 'Respondiendo a ideas',
+        done: 'Respondidas las ideas',
+      },
+      compileIdeas: {
+        running: 'Compilando ideas en una publicación',
+        done: 'Compiladas las ideas en una publicación',
+      },
+      draftIdeas: {
+        running: 'Escribiendo borradores a partir de ideas',
+        done: 'Escritos los borradores a partir de ideas',
+      },
+      moveIdeas: {
+        running: 'Moviendo ideas',
+        done: 'Movidas las ideas',
+      },
+      deleteIdeas: {
+        running: 'Eliminando ideas',
+        done: 'Eliminadas las ideas',
+      },
+      mergeIdeas: {
+        running: 'Fusionando ideas',
+        done: 'Fusionadas las ideas',
+      },
+      findAssets: {
+        running: 'Buscando recursos',
+        done: 'Encontrados los recursos',
+      },
+      askAssets: {
+        running: 'Leyendo los recursos',
+        done: 'Leídos los recursos',
+      },
+      analyseAsset: {
+        running: 'Analizando un recurso',
+        done: 'Analizado un recurso',
+      },
+      distillMoreIdeas: {
+        running: 'Destilando ideas',
+        done: 'Destiladas las ideas',
+      },
+      importPage: {
+        running: 'Leyendo una página web',
+        done: 'Leída una página web',
+      },
+      tagAssets: {
+        running: 'Etiquetando recursos',
+        done: 'Etiquetados los recursos',
+      },
+      attachAssets: {
+        running: 'Adjuntando recursos',
+        done: 'Adjuntados los recursos',
+      },
+      checkCalendar: {
+        running: 'Revisando el calendario',
+        done: 'Revisado el calendario',
+      },
+      optimiseCalendar: {
+        running: 'Planificando un calendario mejor',
+        done: 'Planificado un calendario mejor',
+      },
+      applyCalendarMoves: {
+        running: 'Moviendo publicaciones',
+        done: 'Movidas las publicaciones',
+      },
+      reviewCampaign: {
+        running: 'Revisando la campaña',
+        done: 'Revisada la campaña',
+      },
+      analyticsOverview: {
+        running: 'Leyendo las cifras',
+        done: 'Leídas las cifras',
+      },
+      topPosts: {
+        running: 'Ordenando las publicaciones',
+        done: 'Ordenadas las publicaciones',
+      },
+      analyticsLessons: {
+        running: 'Leyendo lo que funcionó',
+        done: 'Leído lo que funcionó',
+      },
+      postStats: {
+        running: 'Leyendo las cifras de una publicación',
+        done: 'Leídas las cifras de una publicación',
+      },
+      moreLikeThese: {
+        running: 'Planificando más como estas',
+        done: 'Planificadas más como estas',
+      },
+      getBrand: {
+        running: 'Leyendo los fundamentos',
+        done: 'Leídos los fundamentos',
+      },
+      addFact: {
+        running: 'Añadiendo un dato',
+        done: 'Añadido un dato',
+      },
+      updateFact: {
+        running: 'Actualizando un dato',
+        done: 'Actualizado un dato',
+      },
+      removeFact: {
+        running: 'Retirando un dato',
+        done: 'Retirado un dato',
+      },
+      activityReport: {
+        running: 'Leyendo la actividad',
+        done: 'Leída la actividad',
+      },
+      workspaceSetup: {
+        running: 'Revisando la configuración',
+        done: 'Revisada la configuración',
+      },
+      navigate: {
+        running: 'Abriendo una pantalla',
+        done: 'Abierta una pantalla',
+      },
+      setFilter: {
+        running: 'Aplicando un filtro',
+        done: 'Aplicado un filtro',
+      },
+      select: {
+        running: 'Seleccionando',
+        done: 'Seleccionado',
+      },
+      openSavedView: {
+        running: 'Abriendo un grupo inteligente',
+        done: 'Abierto un grupo inteligente',
+      },
+      getSelection: {
+        running: 'Leyendo la selección',
+        done: 'Leída la selección',
+      },
+      getFocus: {
+        running: 'Leyendo lo que está abierto',
+        done: 'Leído lo que está abierto',
+      },
+      loadPack: {
+        running: 'Buscando más herramientas',
+        done: 'Encontradas más herramientas',
+      },
+      confirmOffer: {
+        running: 'Ejecutando la propuesta',
+        done: 'Ejecutada la propuesta',
+      },
+      dismissOffer: {
+        running: 'Descartando la propuesta',
+        done: 'Descartada la propuesta',
+      },
+      updateCampaignPlatforms: {
+        running: 'Actualizando las plataformas',
+        done: 'Actualizadas las plataformas',
+      },
+      draftPost: {
+        running: 'Escribiendo borradores',
+        done: 'Escritos los borradores',
+      },
+      editPost: {
+        running: 'Editando la publicación',
+        done: 'Editada la publicación',
+      },
+      clonePost: {
+        running: 'Clonando la publicación',
+        done: 'Clonada la publicación',
+      },
+      restoreVersion: {
+        running: 'Restaurando una versión',
+        done: 'Restaurada una versión',
+      },
+      createNote: {
+        running: 'Escribiendo una nota',
+        done: 'Escrita una nota',
+      },
+      schedulePost: {
+        running: 'Programando la publicación',
+        done: 'Programada la publicación',
+      },
+      askCampaignAssets: {
+        running: 'Leyendo los recursos de la campaña',
+        done: 'Leídos los recursos de la campaña',
+      },
       getCampaignBrief: {
         running: 'Leyendo el briefing de la campaña',
         done: 'Leído el briefing de la campaña',
@@ -1711,6 +1903,114 @@ export const es: Translation = {
       whatWorked: {
         label: '¿Qué funcionó?',
         text: '¿Qué funcionó mejor en los últimos 30 días?',
+      },
+      findIdeas: {
+        label: 'Buscar ideas sobre…',
+        text: 'Busca las ideas sobre ',
+      },
+      mergeDuplicates: {
+        label: 'Fusionar casi duplicadas',
+        text: '¿Alguna de estas ideas dice lo mismo?',
+      },
+      setAsideWeak: {
+        label: 'Apartar las flojas',
+        text: 'Aparta las ideas que peor encajan.',
+      },
+      distillMore: {
+        label: 'Destilar más',
+        text: 'Destila más ideas de las fuentes.',
+      },
+      draftSelected: {
+        label: 'Redactar las seleccionadas',
+        text: 'Redacta las ideas seleccionadas para ',
+      },
+      compileSelected: {
+        label: 'Compilar en una publicación',
+        text: 'Compila las ideas seleccionadas en una publicación planificada.',
+      },
+      whatShare: {
+        label: '¿Qué tienen en común?',
+        text: '¿Qué tienen en común estas?',
+      },
+      findSimilar: {
+        label: 'Buscar ideas parecidas',
+        text: 'Busca ideas parecidas a estas.',
+      },
+      askAssets: {
+        label: 'Preguntar a los recursos',
+        text: '¿Qué dicen los recursos sobre ',
+      },
+      ideasFromAssets: {
+        label: 'Ideas del banco',
+        text: '¿Qué recursos aún no nos han dado ideas?',
+      },
+      summariseSelected: {
+        label: 'Resumir estos',
+        text: 'Resume los recursos seleccionados.',
+      },
+      planFromSelected: {
+        label: 'Planificar solo con estos',
+        text: 'Planifica la campaña solo con estos recursos.',
+      },
+      tagSelected: {
+        label: 'Etiquetarlos',
+        text: 'Etiqueta los recursos seleccionados como ',
+      },
+      summariseIt: {
+        label: 'Resumirlo',
+        text: 'Resume este recurso.',
+      },
+      askTheAsset: {
+        label: 'Preguntar al recurso',
+        text: '¿Qué dice sobre ',
+      },
+      ideasFromThis: {
+        label: 'Ideas de este',
+        text: 'Destila ideas de este recurso.',
+      },
+      whyTopPost: {
+        label: '¿Por qué funcionó la mejor?',
+        text: '¿Por qué le fue tan bien a la mejor publicación?',
+      },
+      compareMonth: {
+        label: 'Comparar con el mes pasado',
+        text: '¿Cómo se compara este periodo con el anterior?',
+      },
+      moreLikeThese: {
+        label: 'Hacer más como estas',
+        text: 'Haz más como estas.',
+      },
+      whySelected: {
+        label: '¿Por qué funcionaron?',
+        text: '¿Por qué funcionaron bien las publicaciones seleccionadas?',
+      },
+      checkWeek: {
+        label: '¿Algo mal esta semana?',
+        text: '¿Hay algo mal en esta semana?',
+      },
+      optimise: {
+        label: 'Optimizar el calendario',
+        text: 'Optimiza el calendario.',
+      },
+      stanceOn: {
+        label: '¿Cuál es nuestra postura sobre…?',
+        text: '¿Cuál es nuestra postura sobre ',
+      },
+      factsStale: {
+        label: 'Datos a punto de caducar',
+        text: '¿Qué datos caducan este mes?',
+      },
+      checkGuardrails: {
+        label: 'Comprobar los límites',
+        text: '¿Respetan nuestros límites las publicaciones programadas?',
+      },
+      thisWeek: {
+        label: 'Esta semana hasta ahora',
+        text: '¿Qué ha pasado esta semana hasta ahora?',
+      },
+      autoPublish: {
+        label: 'Explicar la publicación automática',
+        text: '¿Cómo funcionan aquí la zona horaria y la publicación automática?',
       },
       connections: {
         label: 'Revisar conexiones',
@@ -1818,6 +2118,17 @@ export const es: Translation = {
       superseded: '{{summary}} · sin responder',
       closed: '{{summary}} · no ejecutada',
       working: '{{summary}} · en marcha…',
+    },
+
+    findings: {
+      title_one: '{{count}} cosa que revisar',
+      title_other: '{{count}} cosas que revisar',
+      warnings_one: '{{count}} requiere atención',
+      warnings_other: '{{count}} requieren atención',
+      none: 'No hay nada mal en el calendario.',
+      or: 'o {{fix}}',
+      dismissed_one: 'Se ha omitido {{count}} hallazgo descartado.',
+      dismissed_other: 'Se han omitido {{count}} hallazgos descartados.',
     },
 
     undo: {
@@ -2451,6 +2762,7 @@ export const es: Translation = {
       best: 'Mejores {{count}}',
       worst: 'Peores {{count}}',
       all: 'Todas ({{count}})',
+      select: 'Seleccionar {{title}}',
       singleListNote:
         'Hay muy pocas publicaciones para tener dos extremos — estas son todas, las mejores primero.',
       nothingTitle: 'Nada que clasificar en este periodo',

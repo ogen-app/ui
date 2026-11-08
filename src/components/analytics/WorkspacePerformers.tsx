@@ -16,6 +16,9 @@ import {
 } from '@/lib/analyticsPerformersView'
 import type { AnalyticsPerformersResult } from '@/hooks/useAnalyticsPerformers'
 import type { PerformerSort } from '@/types/analytics'
+import { createContext, useContext } from 'react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { cn } from '@/lib/styles'
 
 /**
  * Performers and outliers — both ends of the window (CON-238).
@@ -292,9 +295,21 @@ function PostList({
   )
 }
 
+/**
+ * Ticking performers, for the assistant (CON-455): "make more like these" is
+ * about the posts the reader picked. Provided by the page that sends the
+ * selection with the next turn; absent, the rows have no box.
+ */
+export const PerformerSelection = createContext<{
+  selected: ReadonlySet<string>
+  toggle: (id: string) => void
+} | null>(null)
+
 function PostRow({ row, leader }: { row: PerformerRowView; leader: number }) {
   const { t } = useTranslation()
   const platform = usePlatformCatalog().resolve(row.platform)
+  const selection = useContext(PerformerSelection)
+  const ticked = selection?.selected.has(row.id) ?? false
 
   /*
     Top-aligned, not centred. The three things a reader compares down the list —
@@ -303,7 +318,20 @@ function PostRow({ row, leader }: { row: PerformerRowView; leader: number }) {
     figure half a line below the title it belongs to.
   */
   return (
-    <li className="flex items-start gap-3 border-b border-border py-2.5 last:border-0">
+    <li
+      className={cn(
+        'flex items-start gap-3 border-b border-border py-2.5 last:border-0',
+        ticked && 'bg-accent/5',
+      )}
+    >
+      {selection && (
+        <Checkbox
+          checked={ticked}
+          onCheckedChange={() => selection.toggle(row.id)}
+          aria-label={t('analytics.performers.select', { title: row.title })}
+          className="mt-2.5 shrink-0"
+        />
+      )}
       {/* The picture first, and spanning both lines, because the account is how
           a workspace with four Instagram profiles reads its own list. */}
       <AccountAvatar

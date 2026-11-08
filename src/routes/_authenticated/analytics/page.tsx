@@ -4,7 +4,10 @@ import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { WorkspaceScopeBar } from '@/components/analytics/WorkspaceScopeBar'
 import { WorkspaceLearningsView } from '@/components/analytics/WorkspaceLearnings'
 import { WorkspaceOverviewView } from '@/components/analytics/WorkspaceOverview'
-import { WorkspacePerformersView } from '@/components/analytics/WorkspacePerformers'
+import {
+  PerformerSelection,
+  WorkspacePerformersView,
+} from '@/components/analytics/WorkspacePerformers'
 import {
   DEFAULT_OVERVIEW_WINDOW,
   OVERVIEW_WINDOWS,
@@ -79,8 +82,24 @@ export function AnalyticsPage() {
     connected.length > 1 ? connected.filter((p) => selected.includes(p.id)) : []
   const slugs = counted.map((p) => p.id)
 
+  // Performers the reader ticked, for "make more like these" (CON-455).
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set())
+  const performerSelection = useMemo(
+    () => ({
+      selected: picked,
+      toggle: (id: string) =>
+        setPicked((prev) => {
+          const next = new Set(prev)
+          if (!next.delete(id)) next.add(id)
+          return next
+        }),
+    }),
+    [picked],
+  )
+
   // The assistant reads the same period and platforms as the cards, so a
-  // question about "this month" is about what is on screen (CON-451).
+  // question about "this month" is about what is on screen (CON-451), and the
+  // performers ticked.
   const days = Number.parseInt(window, 10)
   const slugKey = slugs.join(',')
   useAssistantPage(
@@ -89,9 +108,18 @@ export function AnalyticsPage() {
         Number.isFinite(days)
           ? {
               window: trailingWindow(days, slugKey ? slugKey.split(',') : []),
+              ...(picked.size > 0
+                ? {
+                    selection: {
+                      kind: 'post' as const,
+                      ids: [...picked],
+                      count: picked.size,
+                    },
+                  }
+                : {}),
             }
           : null,
-      [days, slugKey],
+      [days, slugKey, picked],
     ),
   )
 
@@ -131,12 +159,14 @@ export function AnalyticsPage() {
             {...overview}
             narrowedTo={namesOf(overview.platforms)}
           />
-          <WorkspacePerformersView
-            result={performers}
-            by={by}
-            onChangeBasis={setBy}
-            narrowedTo={namesOf(performers.platforms)}
-          />
+          <PerformerSelection.Provider value={performerSelection}>
+            <WorkspacePerformersView
+              result={performers}
+              by={by}
+              onChangeBasis={setBy}
+              narrowedTo={namesOf(performers.platforms)}
+            />
+          </PerformerSelection.Provider>
           <WorkspaceLearningsView
             result={learnings}
             metric={metric}
