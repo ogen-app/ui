@@ -16,6 +16,7 @@ import type { BulkPlan } from '@/lib/bulkPostEdits'
 import { postToPayload } from '@/services/api/posts'
 import type { Post } from '@/types/posts'
 import { awaiting } from '@/lib/fetched'
+import { useAssistantPage } from '@/hooks/useAssistantContext'
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/list',
@@ -67,6 +68,24 @@ function CampaignListView() {
   const selectedPosts = useMemo(
     () => rows.filter((p) => selectedIds.has(p.id)),
     [rows, selectedIds],
+  )
+
+  // The assistant sees the ticked posts (CON-451). The table has no filter
+  // the server could resolve, so a selection is always its ids.
+  useAssistantPage(
+    useMemo(
+      () =>
+        selectedPosts.length > 0
+          ? {
+              selection: {
+                kind: 'post' as const,
+                ids: selectedPosts.map((p) => p.id),
+                count: selectedPosts.length,
+              },
+            }
+          : null,
+      [selectedPosts],
+    ),
   )
 
   const toggleRow = useCallback((id: string) => {

@@ -1893,6 +1893,84 @@ export const en = {
       placeholderWorkspace: 'Ask for anything on this screen...',
     },
 
+    /**
+     * Each screen the assistant can be asked from, as the view context names
+     * it with its dots turned to underscores. A detail screen is "an asset",
+     * not the asset's title, which the client doesn't hold here.
+     */
+    screen: {
+      home: 'Home',
+      ideas: 'Ideas',
+      assets: 'Assets',
+      asset: 'an asset',
+      analytics: 'Analytics',
+      analytics_post: 'a post’s numbers',
+      calendar: 'Calendar',
+      campaigns: 'Campaigns',
+      tasks: 'Tasks',
+      activity: 'Activity',
+      settings: 'Settings',
+      profile: 'Profile',
+      post: 'a post',
+      foundation: 'Foundation',
+      foundation_voices: 'Voices',
+      foundation_voice: 'a voice',
+      foundation_audiences: 'Audiences',
+      foundation_audience: 'an audience',
+      foundation_facts: 'Facts',
+      foundation_guardrails: 'Guardrails',
+      foundation_look: 'Look',
+      foundation_questions: 'Questions',
+      foundation_series: 'Series',
+      foundation_series_item: 'a series',
+      foundation_templates: 'Templates',
+      campaign_overview: 'Overview',
+      campaign_strategy: 'Strategy',
+      campaign_list: 'Posts',
+      campaign_ideas: 'Ideas',
+      campaign_assets: 'Assets',
+      campaign_asset: 'an asset',
+      campaign_analytics: 'Analytics',
+      campaign_calendar: 'Calendar',
+      campaign_activity: 'Activity',
+      campaign_settings: 'Settings',
+    },
+
+    /**
+     * The composer's chip: what goes with the next message. Dismissing it
+     * sends that message with the screen alone.
+     */
+    chip: {
+      selected_one: '{{count}} selected · {{screen}}',
+      selected_other: '{{count}} selected · {{screen}}',
+      matching_one: 'All {{count}} matching · {{screen}}',
+      matching_other: 'All {{count}} matching · {{screen}}',
+      focusAsset: 'This asset is open',
+      focusVoice: 'This voice is open',
+      focusAudience: 'This audience is open',
+      focusSeries: 'This series is open',
+      focusPost: 'This post is open',
+      helper: 'The assistant sees this with your message',
+      dismiss: 'Send without this',
+    },
+
+    /**
+     * The quiet line a thread draws where the screen changed between turns,
+     * written from each turn's stored view context so it replays in history.
+     */
+    marker: {
+      on: 'On {{screen}}',
+      onSelected_one: 'On {{screen}} · {{count}} selected',
+      onSelected_other: 'On {{screen}} · {{count}} selected',
+      onMatching_one: 'On {{screen}} · all {{count}} matching',
+      onMatching_other: 'On {{screen}} · all {{count}} matching',
+      now: 'Now on {{screen}}',
+      nowSelected_one: 'Now on {{screen}} · {{count}} selected',
+      nowSelected_other: 'Now on {{screen}} · {{count}} selected',
+      nowMatching_one: 'Now on {{screen}} · all {{count}} matching',
+      nowMatching_other: 'Now on {{screen}} · all {{count}} matching',
+    },
+
     composer: {
       placeholder: 'Write a message...',
       suggestions: 'Suggestions',

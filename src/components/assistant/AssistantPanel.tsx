@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -17,6 +18,9 @@ import { useAssistantStore } from '@/stores/assistantStore'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { AssistantComposer } from './AssistantComposer'
 import { AssistantReply } from './AssistantReply'
+import { ContextChip } from './ContextChip'
+import { ScreenMarker } from './ScreenMarker'
+import { turnMarkers } from '@/lib/assistantView'
 import { StarterChips } from './StarterChips'
 import { ThreadStatusSummary } from './ThreadStatusSummary'
 import { ThreadEmptyState } from './ThreadEmptyState'
@@ -179,6 +183,10 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
                 disabled={running}
               />
             )}
+            <ContextChip
+              subject={thread.subject}
+              firstRun={thread.loaded && thread.turns.length === 0}
+            />
             <AssistantComposer
               onSend={(text) =>
                 gate.intent(() => {
@@ -221,6 +229,7 @@ function ThreadView({
   onPick: (text: string) => void
   showStarters: boolean
 }) {
+  const { t } = useTranslation()
   if (!thread.loaded) {
     return (
       <div className="flex flex-col gap-3" aria-busy>
@@ -241,15 +250,25 @@ function ThreadView({
     )
   }
 
+  // Where the screen changed between turns, a quiet line says so — from each
+  // turn's stored view context, so a reloaded thread draws the same markers.
+  const markers = turnMarkers(t, thread.turns)
+  const rows = thread.turns.map((turn) => {
+    if (turn.role !== 'user') {
+      return <AssistantReply key={turn.id} turn={turn} />
+    }
+    const marker = markers.get(turn.id)
+    return (
+      <Fragment key={turn.id}>
+        {marker && <ScreenMarker text={marker} />}
+        <UserMessage content={turn.content} />
+      </Fragment>
+    )
+  })
+
   return (
     <>
-      {thread.turns.map((turn) =>
-        turn.role === 'user' ? (
-          <UserMessage key={turn.id} content={turn.content} />
-        ) : (
-          <AssistantReply key={turn.id} turn={turn} />
-        ),
-      )}
+      {rows}
       {thread.status === 'running' && (
         <Logo variant="mark" loading className="size-8 shrink-0 text-accent" />
       )}

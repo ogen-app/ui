@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { WorkspaceScopeBar } from '@/components/analytics/WorkspaceScopeBar'
@@ -17,6 +17,8 @@ import { DEFAULT_LEARNINGS_METRIC } from '@/lib/analyticsLearningsView'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { connectedAccounts } from '@/lib/platformDictionary.ts'
 import type { LearningsMetric, PerformerSort } from '@/types/analytics'
+import { useAssistantPage } from '@/hooks/useAssistantContext'
+import { trailingWindow } from '@/lib/viewContext'
 
 /**
  * Analytics — the workspace's own numbers: what happened (CON-237), which posts
@@ -76,6 +78,22 @@ export function AnalyticsPage() {
   const counted =
     connected.length > 1 ? connected.filter((p) => selected.includes(p.id)) : []
   const slugs = counted.map((p) => p.id)
+
+  // The assistant reads the same period and platforms as the cards, so a
+  // question about "this month" is about what is on screen (CON-451).
+  const days = Number.parseInt(window, 10)
+  const slugKey = slugs.join(',')
+  useAssistantPage(
+    useMemo(
+      () =>
+        Number.isFinite(days)
+          ? {
+              window: trailingWindow(days, slugKey ? slugKey.split(',') : []),
+            }
+          : null,
+      [days, slugKey],
+    ),
+  )
 
   const overview = useAnalyticsOverview(window, slugs)
   const performers = useAnalyticsPerformers(window, by, slugs)
