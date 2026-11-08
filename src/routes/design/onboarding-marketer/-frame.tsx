@@ -13,57 +13,78 @@ import { sourceLabel, type Cited } from './-fixtures'
 import { STAGES, type Step } from './-flow'
 
 /**
- * The onboarding frame: the logo, the five stages named (this onboarding is
- * long on purpose, so it says how long), and one white column. No menu —
- * nothing here is a place to go yet.
+ * The onboarding frame: the logo, the five stages as one bar that fills (this
+ * onboarding is long on purpose, so it shows how far along you are at every
+ * width), and one white column. No menu — nothing here is a place to go yet.
  */
 export function OnboardingFrame({
   step,
   width = 'base',
+  progress,
   aside,
   children,
 }: {
   step: Step
   width?: 'base' | 'wide' | 'full'
-  /** Right of the stepper — the save mark, usually. */
+  /** How far through the current stage, 0–1. Defaults by sub-step. */
+  progress?: number
+  /** Right of the progress bar — the save mark, usually. */
   aside?: ReactNode
   children: ReactNode
 }) {
   const current = STAGES.findIndex((s) => s.steps.includes(step))
+  const stage = STAGES[current]
+  const within =
+    progress ?? (stage.steps.indexOf(step) + 1) / (stage.steps.length + 1)
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
-      <header className="flex h-16 shrink-0 items-center gap-6 px-6 md:px-10">
-        <LogoFull className="h-6 w-auto shrink-0" />
-        <ol
-          className="mx-auto hidden items-center gap-1 md:flex"
-          aria-label="Progress"
-        >
-          {STAGES.map((stage, i) => (
-            <li
-              key={stage.label}
-              aria-current={i === current ? 'step' : undefined}
-              className="flex items-center gap-1"
-            >
-              {i > 0 && <span className="h-px w-5 bg-quaternary" />}
-              <span
-                className={cn(
-                  'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-colors',
-                  i < current && 'text-secondary-foreground',
-                  i === current &&
-                    'bg-primary-foreground font-medium text-primary',
-                  i > current && 'text-tertiary-foreground',
-                )}
-              >
-                {i < current ? (
-                  <CheckIcon weight="bold" className="size-3 text-accent" />
-                ) : (
-                  <span className="tabular-nums">{i + 1}</span>
-                )}
-                {stage.label}
-              </span>
-            </li>
-          ))}
-        </ol>
+      <header className="flex shrink-0 items-start gap-6 px-6 pt-5 md:px-10">
+        <LogoFull className="mt-0.5 h-6 w-auto shrink-0" />
+        <div className="mx-auto w-full max-w-[640px]">
+          <ol className="grid grid-cols-5 gap-1.5" aria-label="Progress">
+            {STAGES.map((s, i) => {
+              const fill = i < current ? 1 : i === current ? within : 0
+              return (
+                <li
+                  key={s.label}
+                  aria-current={i === current ? 'step' : undefined}
+                  className="flex min-w-0 flex-col gap-2"
+                >
+                  <span className="h-1 w-full overflow-hidden rounded-full bg-quaternary">
+                    <span
+                      className="block h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
+                      style={{
+                        width: `${Math.max(0, Math.min(1, fill)) * 100}%`,
+                      }}
+                    />
+                  </span>
+                  <span
+                    className={cn(
+                      'hidden items-center gap-1 truncate text-xs md:flex',
+                      i < current && 'text-secondary-foreground',
+                      i === current && 'font-medium text-primary-foreground',
+                      i > current && 'text-tertiary-foreground',
+                    )}
+                  >
+                    {i < current && (
+                      <CheckIcon
+                        weight="bold"
+                        className="size-3 shrink-0 text-accent"
+                      />
+                    )}
+                    {s.label}
+                  </span>
+                </li>
+              )
+            })}
+          </ol>
+          <p className="mt-2 text-xs md:hidden">
+            <span className="text-tertiary-foreground">
+              {current + 1} of {STAGES.length} ·{' '}
+            </span>
+            <span className="font-medium">{stage.label}</span>
+          </p>
+        </div>
         <div className="flex w-24 shrink-0 justify-end">{aside}</div>
       </header>
       <main className="flex flex-1 items-start justify-center px-4 pb-16 pt-6 md:pt-10">

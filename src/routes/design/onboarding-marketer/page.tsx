@@ -32,7 +32,6 @@ import { Workspace } from './-workspace'
 
 const EMPTY_SETUP: Setup = {
   role: null,
-  clients: '1',
   business: '',
   website: '',
   files: [],
@@ -42,7 +41,6 @@ const EMPTY_SETUP: Setup = {
 /** What a moderator's jump fills in for the screens it skips. */
 const PERSONA_SETUP: Setup = {
   role: 'freelancer',
-  clients: '2-4',
   business: CLIENT.name,
   website: CLIENT.website,
   files: SOURCE_FILES.map((f) => f.id),

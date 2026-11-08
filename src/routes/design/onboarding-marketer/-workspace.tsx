@@ -186,7 +186,7 @@ export function Workspace({
         },
       },
     },
-    ...(isClient && setup.clients !== '1'
+    ...(isClient
       ? [{ label: 'Set up your next client', done: false, later: true }]
       : []),
   ]

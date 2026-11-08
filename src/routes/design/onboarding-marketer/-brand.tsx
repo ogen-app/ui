@@ -105,6 +105,7 @@ export function BrandStep({
     <OnboardingFrame
       step="brand"
       width="full"
+      progress={seen.length / (BRAND_SECTIONS.length + 1)}
       aside={<SaveMark saving={saving} />}
     >
       <div className="grid gap-10 md:grid-cols-[200px_1fr]">

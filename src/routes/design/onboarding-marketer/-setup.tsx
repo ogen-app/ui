@@ -28,7 +28,6 @@ import {
 } from './-fixtures'
 import {
   ChoiceCard,
-  Chip,
   Field,
   OnboardingFrame,
   SaveMark,
@@ -38,11 +37,9 @@ import {
 } from './-frame'
 
 export type Role = 'freelancer' | 'founder'
-export type ClientCount = '1' | '2-4' | '5+'
 
 export type Setup = {
   role: Role | null
-  clients: ClientCount
   /** The client being set up, or the founder's own business. */
   business: string
   website: string
@@ -59,15 +56,62 @@ export function givenSources(setup: Setup): SourceId[] {
   ]
 }
 
+/** `haus-aurelia.ch` → "Haus Aurelia": a name to start from, not to keep. */
+export function nameFromDomain(website: string): string {
+  const host = website
+    .trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .split(/[./]/)[0]
+  return host
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(' ')
+}
+
+export const isWebsite = (w: string) => /\w+\.\w{2,}/.test(w.trim())
+
 /* ------------------------------------------------------------------------ */
 /* 1 · About you                                                            */
 /* ------------------------------------------------------------------------ */
 
+/** What the rest of the setup asks for, and what each part buys. */
+function roadmap(isClient: boolean) {
+  const whose = isClient ? 'the client’s' : 'your'
+  return [
+    {
+      label: 'What Ogen reads',
+      minutes: 3,
+      gives: `${isClient ? 'The client’s' : 'Your'} website, plus a brand book or press kit if you have one to hand.`,
+    },
+    {
+      label: 'The brand',
+      minutes: 5,
+      gives:
+        'Check what Ogen understood — positioning, voice, audiences, rules and facts. It writes from this.',
+    },
+    {
+      label: 'Accounts',
+      minutes: 2,
+      gives: isClient
+        ? 'Connect the client’s channels, or send them a link to do it.'
+        : 'Connect the channels you post to.',
+    },
+    {
+      label: 'First campaign',
+      minutes: 5,
+      gives: `Pick a campaign for ${whose} brand, adjust the brief, and get the first week of drafts.`,
+    },
+  ]
+}
+
 /**
- * Two questions that change the shape of everything after: do you market for
- * clients or for yourself, and — for a freelancer — who first. A client is a
- * workspace of its own (brand, accounts, campaigns), so a freelancer is told
- * now that the others come later, rather than finding out on day three.
+ * One question, and it says what it changes. Nothing is asked here that is
+ * only used later — the client's name comes from their website on the next
+ * screen, where it is obviously needed. Underneath, the road ahead: what each
+ * stage asks for and what it gives back, so the fifteen minutes are a plan
+ * rather than a surprise.
  */
 export function YouStep({
   setup,
@@ -79,97 +123,76 @@ export function YouStep({
   onNext: () => void
 }) {
   const saving = useSavePulse(setup)
-  const ready = setup.role !== null && setup.business.trim().length > 1
+  const isClient = setup.role !== 'founder'
+  const steps = roadmap(isClient)
 
   return (
     <OnboardingFrame step="you" aside={<SaveMark saving={saving} />}>
-      <Title sub="About fifteen minutes, and it’s worth it: Ogen writes from what you set up here. Everything saves as you go, so you can stop and come back.">
+      <Title sub="Ogen writes from what you set up here, so it’s worth fifteen minutes. It saves as you go — stop whenever and come back.">
         Hi {PERSONA.firstName}, let’s set Ogen up for the way you work
       </Title>
 
-      <div className="flex flex-col gap-8">
-        <Field label="How do you work?">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <ChoiceCard
-              on={setup.role === 'freelancer'}
-              onClick={() => onChange({ ...setup, role: 'freelancer' })}
-              title="I market for clients"
-            >
-              Freelancer or a small agency
-            </ChoiceCard>
-            <ChoiceCard
-              on={setup.role === 'founder'}
-              onClick={() => onChange({ ...setup, role: 'founder' })}
-              title="I market my own business"
-            >
-              Founder or owner
-            </ChoiceCard>
-          </div>
-        </Field>
+      <Field label="How do you work?">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <RoleCard
+            on={setup.role === 'freelancer'}
+            onClick={() => onChange({ ...setup, role: 'freelancer' })}
+            title="I market for clients"
+            who="Freelancer or a small agency"
+            means={[
+              'Each client gets its own brand, accounts and campaigns',
+              'Posts can go to the client for approval',
+            ]}
+          />
+          <RoleCard
+            on={setup.role === 'founder'}
+            onClick={() => onChange({ ...setup, role: 'founder' })}
+            title="I market my own business"
+            who="Founder or owner"
+            means={['One brand — yours', 'Posts go straight to your calendar']}
+          />
+        </div>
+      </Field>
 
-        {setup.role === 'freelancer' && (
-          <>
-            <Field label="How many clients do you look after?">
-              <div className="flex gap-2">
-                {(
-                  [
-                    ['1', 'One'],
-                    ['2-4', 'Two to four'],
-                    ['5+', 'Five or more'],
-                  ] as const
-                ).map(([id, label]) => (
-                  <Chip
-                    key={id}
-                    on={setup.clients === id}
-                    onClick={() => onChange({ ...setup, clients: id })}
-                  >
-                    {label}
-                  </Chip>
-                ))}
+      <div className="mt-10">
+        <p className="mb-4 text-sm font-medium">What happens next</p>
+        <ol className="flex flex-col">
+          {steps.map((s, i) => (
+            <li key={s.label} className="flex gap-4">
+              <div className="flex flex-col items-center">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-quaternary text-xs tabular-nums text-secondary-foreground">
+                  {i + 2}
+                </span>
+                {i < steps.length - 1 && (
+                  <span className="w-px flex-1 bg-quaternary" />
+                )}
               </div>
-            </Field>
-            <Field
-              label="Which client shall we set up first?"
-              hint="Each client gets its own brand, accounts and campaigns"
-            >
-              <Input
-                variant="primary"
-                inputSize="lg"
-                placeholder="Client name"
-                value={setup.business}
-                onChange={(e) =>
-                  onChange({ ...setup, business: e.target.value })
-                }
-              />
-              {setup.clients !== '1' && (
-                <p className="mt-2 text-xs text-tertiary-foreground">
-                  You’ll add the others from the client switcher once this one
-                  is running.
+              <div className="flex-1 pb-5">
+                <p className="flex items-baseline justify-between gap-4 text-sm font-medium leading-6">
+                  {s.label}
+                  <span className="text-xs font-normal tabular-nums text-tertiary-foreground">
+                    ~{s.minutes} min
+                  </span>
                 </p>
-              )}
-            </Field>
-          </>
-        )}
-
-        {setup.role === 'founder' && (
-          <Field label="What’s your business called?">
-            <Input
-              variant="primary"
-              inputSize="lg"
-              placeholder="Business name"
-              value={setup.business}
-              onChange={(e) => onChange({ ...setup, business: e.target.value })}
-            />
-          </Field>
-        )}
+                <p className="text-xs leading-4 text-secondary-foreground">
+                  {s.gives}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="pl-10 text-xs text-tertiary-foreground">
+          You finish with a week of drafts to review — nothing posts until you
+          say so.
+        </p>
       </div>
 
-      <StepFooter note="Step 1 of 5">
+      <StepFooter>
         <Button
           variant="accent"
           className="disabled:opacity-40"
           size="xl"
-          disabled={!ready}
+          disabled={setup.role === null}
           onClick={onNext}
         >
           Continue
@@ -179,22 +202,57 @@ export function YouStep({
   )
 }
 
+function RoleCard({
+  on,
+  onClick,
+  title,
+  who,
+  means,
+}: {
+  on: boolean
+  onClick: () => void
+  title: string
+  who: string
+  means: string[]
+}) {
+  return (
+    <ChoiceCard on={on} onClick={onClick} title={title}>
+      <span className="block">{who}</span>
+      <span className="mt-3 flex flex-col gap-1.5 border-t border-quaternary pt-3">
+        {means.map((m) => (
+          <span key={m} className="flex gap-2 text-primary-foreground">
+            <CheckIcon
+              weight="bold"
+              className={cn(
+                'mt-px size-3 shrink-0',
+                on ? 'text-accent' : 'text-tertiary-foreground',
+              )}
+            />
+            {m}
+          </span>
+        ))}
+      </span>
+    </ChoiceCard>
+  )
+}
+
 /* ------------------------------------------------------------------------ */
 /* 2 · Sources                                                              */
 /* ------------------------------------------------------------------------ */
 
-const SUGGESTED_KINDS = [
-  'Brand guidelines',
-  'Press kit',
-  'Positioning or a brief',
-  'Offers and packages',
-]
+/** Everything the read could find, for measuring a partial read against. */
+const FULL = proposalFrom(['web', 'brandbook', 'presskit', 'offers', 'notes'])
 
 /**
- * Everything Ogen should read, on one screen. The website is the one thing
- * required; documents are where a marketer's real material lives (the brand
- * book, the press kit), and the notes field is for what nobody wrote down —
- * which in practice is half of a client's rules.
+ * Everything Ogen should read, as three sources of one shape — numbered, each
+ * saying what to give and ticking when given. Beside them, what Ogen will be
+ * able to fill from what's there so far: adding the brand book visibly moves
+ * Voice and Rules, which is the answer to "why should I upload this?". Only
+ * the website is required; the rest can be added later from the Library, so
+ * nobody has to chase a client mid-setup.
+ *
+ * The client's name is read off the website rather than asked for up front,
+ * and stays editable in place.
  */
 export function SourcesStep({
   setup,
@@ -208,112 +266,152 @@ export function SourcesStep({
   onNext: () => void
 }) {
   const saving = useSavePulse(setup)
-  const valid = /\w+\.\w{2,}/.test(setup.website.trim())
-  const isClient = setup.role === 'freelancer'
+  const valid = isWebsite(setup.website)
+  const isClient = setup.role !== 'founder'
   const next = SOURCE_FILES.find((f) => !setup.files.includes(f.id))
 
+  const setWebsite = (website: string) => {
+    const derived = nameFromDomain(setup.website)
+    const renamed = setup.business.trim() && setup.business !== derived
+    onChange({
+      ...setup,
+      website,
+      business: renamed ? setup.business : nameFromDomain(website),
+    })
+  }
+
   return (
-    <OnboardingFrame step="sources" aside={<SaveMark saving={saving} />}>
-      <Title
-        sub={
-          <>
-            The more Ogen reads, the less you’ll correct. Sources are only ever
-            read — nothing here gets posted.
-          </>
-        }
-      >
-        What can Ogen read about {setup.business || 'the business'}?
+    <OnboardingFrame
+      step="sources"
+      width="wide"
+      aside={<SaveMark saving={saving} />}
+    >
+      <Title sub="Ogen builds the brand from these, and every line it proposes names the source it came from. Nothing here gets posted.">
+        {isClient
+          ? 'What can Ogen read about your first client?'
+          : 'What can Ogen read about your business?'}
       </Title>
 
-      <div className="flex flex-col gap-8">
-        <Field label={isClient ? 'Their website' : 'Your website'}>
-          <Input
-            variant="primary"
-            inputSize="lg"
-            autoFocus
-            placeholder={isClient ? 'their-website.com' : 'your-website.com'}
-            value={setup.website}
-            onChange={(e) => onChange({ ...setup, website: e.target.value })}
-          />
-        </Field>
+      <div className="grid gap-8 md:grid-cols-[1fr_220px]">
+        <div className="flex flex-col gap-3">
+          <SourceBlock
+            n={1}
+            done={valid}
+            icon={GlobeSimpleIcon}
+            title={isClient ? 'Their website' : 'Your website'}
+            tag="Required"
+            what="Ogen reads every page for how the brand talks and what it offers."
+          >
+            <Input
+              autoFocus
+              placeholder={isClient ? 'their-website.com' : 'your-website.com'}
+              value={setup.website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+            {valid && (
+              <label className="mt-3 flex items-center gap-2 text-xs text-secondary-foreground">
+                {isClient ? 'Client name' : 'Business name'}
+                <input
+                  value={setup.business}
+                  onChange={(e) =>
+                    onChange({ ...setup, business: e.target.value })
+                  }
+                  className="min-w-0 flex-1 border-b border-dashed border-quaternary bg-transparent pb-0.5 text-sm font-medium text-primary-foreground outline-none focus:border-primary-foreground"
+                />
+              </label>
+            )}
+          </SourceBlock>
 
-        <Field label="Documents" hint="PDF, Word or slides">
-          <p className="mb-3 text-xs leading-4 text-secondary-foreground">
-            The ones that help most:{' '}
-            {SUGGESTED_KINDS.map((k, i) => (
-              <span key={k}>
-                {i > 0 && ' · '}
-                {k}
-              </span>
-            ))}
-          </p>
-          {setup.files.length > 0 && (
-            <ul className="mb-2 flex flex-col">
-              {setup.files.map((id) => {
-                const file = SOURCE_FILES.find((f) => f.id === id)!
-                return (
-                  <li
-                    key={id}
-                    className="flex items-center gap-3 border-b border-quaternary py-2.5"
-                  >
-                    <FilePdfIcon className="size-5 shrink-0 text-tertiary-foreground" />
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-sm">{file.name}</span>
-                      <span className="text-xs text-tertiary-foreground">
-                        {file.kind} · {file.pages} pages
-                      </span>
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${file.name}`}
-                      className="text-tertiary-foreground hover:text-primary-foreground"
-                      onClick={() =>
-                        onChange({
-                          ...setup,
-                          files: setup.files.filter((f) => f !== id),
-                        })
-                      }
+          <SourceBlock
+            n={2}
+            done={setup.files.length > 0}
+            icon={FileTextIcon}
+            title="Documents"
+            tag="Optional"
+            what="Brand guidelines, a press kit, offers — whatever you have to hand."
+          >
+            {setup.files.length > 0 && (
+              <ul className="mb-2 flex flex-col">
+                {setup.files.map((id) => {
+                  const file = SOURCE_FILES.find((f) => f.id === id)!
+                  return (
+                    <li
+                      key={id}
+                      className="flex items-center gap-3 border-b border-quaternary py-2"
                     >
-                      <XIcon className="size-4" />
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-          {next && (
-            <button
-              type="button"
-              onClick={() =>
-                onChange({ ...setup, files: [...setup.files, next.id] })
-              }
-              className="flex h-20 w-full flex-col items-center justify-center gap-1 border border-dashed border-quaternary text-[13px] text-secondary-foreground transition-colors hover:border-primary-foreground hover:text-primary-foreground"
-            >
-              <UploadSimpleIcon className="size-4" />
-              Drop files here, or browse
-            </button>
-          )}
-        </Field>
+                      <FilePdfIcon className="size-4 shrink-0 text-tertiary-foreground" />
+                      <span className="min-w-0 flex-1 truncate text-sm">
+                        {file.name}
+                      </span>
+                      <span className="shrink-0 text-xs text-tertiary-foreground">
+                        {file.pages} pages
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${file.name}`}
+                        className="text-tertiary-foreground hover:text-primary-foreground"
+                        onClick={() =>
+                          onChange({
+                            ...setup,
+                            files: setup.files.filter((f) => f !== id),
+                          })
+                        }
+                      >
+                        <XIcon className="size-3.5" />
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            {next && (
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({ ...setup, files: [...setup.files, next.id] })
+                }
+                className="flex h-10 w-full items-center gap-2 border-b border-quaternary bg-input px-4 text-sm text-tertiary-foreground transition-colors hover:text-primary-foreground"
+              >
+                <UploadSimpleIcon className="size-4" />
+                Drop files here, or browse
+                <span className="ml-auto text-xs">PDF, Word or slides</span>
+              </button>
+            )}
+          </SourceBlock>
 
-        <Field
-          label="Anything that isn’t written down?"
-          hint="Ogen treats this as coming from you"
-        >
-          <Textarea
-            className="min-h-20"
-            placeholder="e.g. The family dislikes the word “luxury”. Always send people to our own booking page, never to Booking.com."
-            value={setup.notes}
-            onChange={(e) => onChange({ ...setup, notes: e.target.value })}
-          />
-        </Field>
+          <SourceBlock
+            n={3}
+            done={setup.notes.trim().length > 0}
+            icon={NotePencilIcon}
+            title="What isn’t written down"
+            tag="Optional"
+            what={
+              isClient
+                ? 'Things the client has told you — words they dislike, links to always use.'
+                : 'Things you know but never wrote down — words you avoid, links to always use.'
+            }
+          >
+            <Textarea
+              className="min-h-16"
+              placeholder="e.g. The family dislikes the word “luxury”. Always send people to our own booking page, never to Booking.com."
+              value={setup.notes}
+              onChange={(e) => onChange({ ...setup, notes: e.target.value })}
+            />
+          </SourceBlock>
+        </div>
+
+        <Coverage setup={setup} web={valid} />
       </div>
 
-      <StepFooter onBack={onBack}>
+      <StepFooter
+        onBack={onBack}
+        note={valid ? 'You can add more later' : undefined}
+      >
         <Button
           variant="accent"
           className="disabled:opacity-40"
           size="xl"
-          disabled={!valid}
+          disabled={!valid || setup.business.trim().length < 2}
           onClick={onNext}
         >
           <SparkleIcon weight="fill" />
@@ -322,6 +420,132 @@ export function SourcesStep({
       </StepFooter>
     </OnboardingFrame>
   )
+}
+
+/** One source, in the one shape all three share. */
+function SourceBlock({
+  n,
+  done,
+  icon: Icon,
+  title,
+  tag,
+  what,
+  children,
+}: {
+  n: number
+  done: boolean
+  icon: typeof GlobeSimpleIcon
+  title: string
+  tag: string
+  what: string
+  children: ReactNode
+}) {
+  return (
+    <section
+      className={cn(
+        'border px-4 pb-4 pt-3.5 transition-colors',
+        done ? 'border-tertiary-foreground/40' : 'border-quaternary',
+      )}
+    >
+      <div className="mb-3 flex items-start gap-3">
+        <span
+          className={cn(
+            'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-xs tabular-nums transition-colors',
+            done
+              ? 'bg-accent text-primary'
+              : 'border border-quaternary text-secondary-foreground',
+          )}
+        >
+          {done ? <CheckIcon weight="bold" className="size-3" /> : n}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 text-sm font-medium leading-6">
+            <Icon className="size-4 text-tertiary-foreground" />
+            {title}
+            <span className="ml-auto text-xs font-normal text-tertiary-foreground">
+              {tag}
+            </span>
+          </p>
+          <p className="text-xs leading-4 text-secondary-foreground">{what}</p>
+        </div>
+      </div>
+      <div className="pl-9">{children}</div>
+    </section>
+  )
+}
+
+/**
+ * What the read will be able to fill, from what has been given so far. The
+ * bars are against everything the read could find for this client — a
+ * prototype's luxury, but the shape is the real one: each source visibly
+ * buys something.
+ */
+function Coverage({ setup, web }: { setup: Setup; web: boolean }) {
+  const given = givenSources(setup).filter((s) => web || s !== 'web')
+  const b = proposalFrom(given)
+  const rows: { label: string; have: number; of: number; text: string }[] = [
+    {
+      label: 'Positioning',
+      have: web ? 1 : 0,
+      of: 1,
+      text: web ? 'From the website' : 'Needs the website',
+    },
+    {
+      label: 'Voice',
+      have: b.traits.length,
+      of: FULL.traits.length,
+      text: count(b.traits.length, 'trait'),
+    },
+    {
+      label: 'Audiences',
+      have: b.audiences.length,
+      of: FULL.audiences.length,
+      text: count(b.audiences.length, 'audience'),
+    },
+    {
+      label: 'Rules',
+      have: b.rules.length,
+      of: FULL.rules.length,
+      text: count(b.rules.length, 'rule'),
+    },
+    {
+      label: 'Facts',
+      have: b.facts.length,
+      of: FULL.facts.length,
+      text: count(b.facts.length, 'fact'),
+    },
+  ]
+
+  return (
+    <aside className="self-start md:sticky md:top-6">
+      <p className="text-sm font-medium">What Ogen will learn</p>
+      <p className="mb-4 mt-1 text-xs leading-4 text-tertiary-foreground">
+        You’ll check each of these next.
+      </p>
+      <ul className="flex flex-col gap-3.5">
+        {rows.map((r) => (
+          <li key={r.label}>
+            <p className="flex items-baseline justify-between text-[13px]">
+              <span className="font-medium">{r.label}</span>
+              <span className="text-xs tabular-nums text-tertiary-foreground">
+                {r.text}
+              </span>
+            </p>
+            <span className="mt-1.5 block h-1 w-full overflow-hidden rounded-full bg-quaternary">
+              <span
+                className="block h-full rounded-full bg-accent transition-[width] duration-500 ease-out"
+                style={{ width: `${(r.have / r.of) * 100}%` }}
+              />
+            </span>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  )
+}
+
+function count(n: number, noun: string) {
+  return n === 0 ? 'Nothing yet' : `${n} ${noun}${n === 1 ? '' : 's'}`
 }
 
 /* ------------------------------------------------------------------------ */
