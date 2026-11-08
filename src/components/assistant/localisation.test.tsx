@@ -79,17 +79,17 @@ describe('assistant in Spanish', () => {
           content: 'Listo.',
           action: 'edited',
           saveVersion: true,
-          steps: [step({ endedAt: 1000, tool: 'listAssets' })],
+          steps: [step({ endedAt: 15000, tool: 'listAssets' })],
           startedAt: 0,
-          endedAt: 1000,
+          endedAt: 15000,
         }}
       />,
     )
     expect(screen.getByText(/Publicación actualizada/)).toBeTruthy()
     expect(screen.getByText('Versión guardada')).toBeTruthy()
-    expect(screen.getByText(/Pensó durante/)).toBeTruthy()
+    expect(screen.getByText(/Trabajó durante/)).toBeTruthy()
     expect(screen.queryByText('Post updated')).toBeNull()
-    expect(screen.queryByText(/Thought for/)).toBeNull()
+    expect(screen.queryByText(/Worked for/)).toBeNull()
   })
 
   it('words the composer controls', () => {

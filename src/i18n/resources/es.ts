@@ -1530,7 +1530,7 @@ export const es: Translation = {
 
     timeline: {
       thinking: 'Pensando… {{duration}}',
-      thought: 'Pensó durante {{duration}}',
+      thought: 'Trabajó durante {{duration}}',
     },
 
     step: {
@@ -1766,6 +1766,20 @@ export const es: Translation = {
       workingPost: 'Trabajando en la publicación',
       workingWorkspace: 'Trabajando',
       running: '{{step}} · {{elapsed}}',
+    },
+
+    word: {
+      done: 'HECHO',
+      reviewed: 'REVISADO',
+      notApplied: 'SIN APLICAR',
+      proposal: 'PROPUESTA',
+    },
+
+    sources: {
+      label: 'Fuentes',
+      yourMaterial: 'tu material',
+      notGrounded: 'Sin fuentes',
+      generalKnowledge: '— conocimiento general',
     },
 
     result: {

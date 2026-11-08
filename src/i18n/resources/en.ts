@@ -1992,7 +1992,7 @@ export const en = {
      */
     timeline: {
       thinking: 'Thinking… {{duration}}',
-      thought: 'Thought for {{duration}}',
+      thought: 'Worked for {{duration}}',
     },
 
     /**
@@ -2259,6 +2259,28 @@ export const en = {
       workingPost: 'Working on the post',
       workingWorkspace: 'Working',
       running: '{{step}} · {{elapsed}}',
+    },
+
+    /**
+     * The status word above a result's headline (CON-451): small capitals,
+     * written in literal capitals because they are a label, not a sentence.
+     */
+    word: {
+      done: 'DONE',
+      reviewed: 'REVIEWED',
+      notApplied: 'NOT APPLIED',
+      proposal: 'PROPOSAL',
+    },
+
+    /**
+     * The one slot every generating result ends on: where its output came
+     * from, or that it came from nowhere of yours.
+     */
+    sources: {
+      label: 'Sources',
+      yourMaterial: 'your material',
+      notGrounded: 'Not grounded',
+      generalKnowledge: '— general knowledge',
     },
 
     /** The structured result under a campaign turn. */
