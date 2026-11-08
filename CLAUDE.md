@@ -18,8 +18,11 @@ accounts. The front-end multi-tenancy cutover landed 2026-07 (real
 removed — see [`docs/onboarding.md`](./docs/onboarding.md)). The Post Assistant
 UI that used to be named here as the current priority **shipped** — CON-61
 closed 2026-08-05, and CON-42 is the backend Genkit flow behind it. **Current
-front-end priority:** the **campaign-scoped Content Bank** (CON-210), then the
-two analytics surfaces waiting on their live-API pass (CON-175/250). See
+front-end priority:** the **universal assistant** (CON-444; UI in CON-451,
+PRs #227–#234, stacked), which waits on the backend stack (ogen #251–#282)
+reaching `main` for its live pass; then the **campaign-scoped Content Bank**
+(CON-210) and the two analytics surfaces waiting on their live-API pass
+(CON-175/250). See
 [`docs/product.md`](./docs/product.md#direction--current-priorities).
 
 - **Product & domain:** [`docs/product.md`](./docs/product.md)
@@ -530,6 +533,71 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   own copy is the one string that must *not* come from the catalogue — it lives
   in `i18n/bootMessages.ts`, in the main chunk, because it renders while the
   catalogue is being fetched. Keep that file to those two lines.
+- **There is one assistant, with one thread per scope** (CON-444/450/451).
+  Every turn is `POST /api/assistant` with `{instruction, viewContext}`;
+  threads are `workspace | campaign:<id> | post:<id>` and their history is
+  `GET /api/assistant/threads/:scope/messages`. The per-subject
+  `/api/{posts,campaigns}/:id/assistant` streams are gone server-side — never
+  reintroduce a call to them. The campaign layout and the post editor bind
+  their threads on arrival; every workspace-level screen binds the workspace
+  thread through `useWorkspaceThread`, and only on the way *out* of a
+  campaign, so browsing the thread list isn't interrupted. The campaign and
+  post assistants are *packs* behind the one endpoint, and their events still
+  stream through it.
+- **A turn carries what the user sees, as references only** (D3). The
+  location is read once off the router (`useViewLocation`, mapping the deepest
+  route through `lib/viewContext`'s `SCREENS` — **a new route the assistant
+  should know needs a row there**, and a detail screen a row in `FOCUS`). A
+  screen adds its selection, filter, window or visible rows through
+  `useAssistantPage` (`useListAssistantPage` for a list); the store is
+  token-guarded so a screen unmounting late can't wipe its successor's page.
+  The scope is always the thread's; the screen is wherever the user is. A
+  whole match goes out as `allMatching` plus the filter — the list endpoint's
+  own query string — never as ids, and `buildViewContext` applies the
+  server's caps. The composer's chip says what goes with the next message;
+  its × sends that one message with the screen alone.
+- **What a turn changed is refreshed from its `touched[]`**
+  (`lib/assistantTouched`), never from per-subject rules: `refreshSubject()`
+  is gone. A turn that never reached `complete` refreshes its whole subject
+  (`subjectTouches`). A kind the server starts sending needs a case there.
+- **The assistant's replies follow one grammar** (approved 2026-11-08,
+  `components/assistant/blocks.tsx`). A box means it waits on the user — only
+  an offer or a choice is bordered (`PendingBox`); results, answers and history
+  are a small-caps status word, a headline and hairline rows (`ResultBlock`).
+  Every generating result ends on one sources slot (`SourcesLine`): teal names,
+  or amber "Not grounded" in the same place. The user's message is a light
+  fill, so the one dark thing in the rail is the next action. A finished turn
+  under ten seconds leaves no timing behind. Labels — tool steps included — are
+  worded at render time from the stored tool and input (`stepLabel`), never
+  stored as sentences. The empty thread's centred starters are deliberately
+  unchanged; starters themselves follow the screen and the selection
+  (`StarterChips`).
+- **Offers run exactly as proposed** (CON-446). Bulk work, generating more
+  than three items, the calendar and anything external arrive as offers
+  (`proposal_created`). Confirming from the card is `POST
+  …/proposals/:id/confirm`, streamed into a reply turn of its own with **no
+  user turn** — the server records the answer as a `Confirmed: <summary>` /
+  `Dismissed: <summary>` turn, which history draws as the resolved line, and
+  which `settleHistory` reads to settle a reloaded thread's offers. That
+  prefix is the server's fixed wording; change both ends together. A typed
+  "yes" runs the same stored offer, and the composer says so while one waits.
+  UNDO calls `…/actions/:id/undo` with the result's `undoId`; a 409 means the
+  entity changed again since and is said as such.
+- **The assistant can change the screen** (D5). A turn's `ui_action`s are
+  applied in order when it completes (`useAssistantUiActions` registers the
+  applier with the router; `lib/assistantUiActions.destinationFor` maps screen,
+  campaign and focus to a route — keep it in step with `SCREENS`). A filter
+  lands as the list's search params, which is why those pages name their
+  params as the endpoint does. Ticking rows and opening a smart group are the
+  list's own state, so the list picks the request up with
+  `useAssistantRequest`. Each applied action keeps the address it replaced, for
+  UNDO / BACK.
+- **A planned post is a post with theses and no body** (CON-449). `planned`
+  can only become `draft`, and only by gaining a body — the server moves it,
+  so it has no button. Ideas are never posts: on the week calendar an idea
+  with a target date is a dashed IDEA slot (`/api/ideas/slots`) that isn't
+  counted, and COMPILE / DRAFT (`/api/ideas/compile`, `/api/ideas/draft`) turn
+  ideas into a planned post or finished drafts, neither scheduled.
 - **The right sidebar never stores which panel is open.** It persists one
   remembered choice per screen (`panelMemory` in `settingsStore`) and derives
   the rest: ask `selectActivePanel`, never `panelMemory` directly. A route makes
@@ -855,6 +923,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   unused locals/params.
 
 ## Known stubs / gaps
+
+**The universal assistant waits on the API's merge, and on four API
+follow-ups** (CON-451). The UI (#227–#234) replaces endpoints the backend stack
+removes, so the two ship together, and neither has had a live pass yet. Until
+the follow-ups land: the ideas, assets, foundation, workspace and analytics
+packs send no typed results or `undoId`, so their turns are prose plus
+`touched` — the merge card, cited Q&A, facts ledger, connection card and
+provenance trail are unbuilt; an offer has no `recommended` option, so its
+choices are drawn with equal weight; a reloaded thread infers an offer's
+state instead of reading it; and an idea row has no post count, so "used in N
+posts" isn't shown. Idea slots are in the week view only, and the analytics
+period is page state, not the address.
 
 Inviting teammates is live end to end (People, in Workspace Settings; the
 emailed link lands on `/invite?token=…`, which is public, and accepting either
