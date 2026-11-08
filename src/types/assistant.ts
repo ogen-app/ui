@@ -125,6 +125,46 @@ export type StreamedPost = {
   scheduled_at: string | null
 }
 
+/**
+ * An offer the assistant made and is holding for the user's yes (CON-446):
+ * bulk work, generating more than a few items, the calendar, anything external
+ * or destructive. Confirming runs exactly what was proposed — from the card,
+ * or by replying "yes" — with no model re-planning.
+ */
+export type AssistantProposal = {
+  id: string
+  tool: string
+  /** What it would do, in the server's words. */
+  summary: string
+  expiresAt?: string
+  /** A choice of ways forward (a budget conflict); empty for a plain offer. */
+  options: { id: string; title: string; description?: string }[]
+  /** The option the assistant would pick, when it says. */
+  recommended?: string
+  status: ProposalStatus
+  /** The option it was answered with. */
+  chosen?: string
+  /** Why it could not be answered — gone, expired, refused. */
+  error?: string
+}
+
+/**
+ * `pending` waits on the user; `superseded` is an offer a later turn moved
+ * past without answering — it may still be live server-side, but the card no
+ * longer stands in the thread as the thing to answer.
+ */
+export type ProposalStatus =
+  | 'pending'
+  | 'confirming'
+  | 'confirmed'
+  | 'dismissed'
+  | 'expired'
+  | 'closed'
+  | 'superseded'
+
+/** Where an undo stands, by the action's undo id. */
+export type UndoState = 'pending' | 'undone' | 'changed' | 'gone'
+
 export type ThreadStatus = 'idle' | 'running' | 'error'
 
 /**
@@ -164,6 +204,16 @@ export type AssistantTurn = {
   action?: AssistantAction
   /** Campaign turns only — the structured result behind the action. */
   details?: AssistantResultDetails
+  /** Offers this turn made (CON-446). */
+  proposals?: AssistantProposal[]
+  /** Undos asked for from this turn's results, by undo id. */
+  undo?: Record<string, UndoState>
+  /**
+   * User turns: this is the server's record of an offer answered from its
+   * card ("Confirmed: …"), drawn as a resolved line rather than as words the
+   * user typed.
+   */
+  answer?: 'confirmed' | 'dismissed'
   /** Post turns only. */
   saveVersion?: boolean
   versionNote?: string

@@ -20,6 +20,7 @@ import { AssistantComposer } from './AssistantComposer'
 import { AssistantReply } from './AssistantReply'
 import { ContextChip } from './ContextChip'
 import { ScreenMarker } from './ScreenMarker'
+import { ResolvedLine } from './blocks'
 import { turnMarkers } from '@/lib/assistantView'
 import { StarterChips } from './StarterChips'
 import { ThreadStatusSummary } from './ThreadStatusSummary'
@@ -195,7 +196,11 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
               }
               running={running}
               onCancel={() => cancel(thread.id)}
-              placeholder={t(PLACEHOLDER[thread.subject.kind])}
+              placeholder={
+                hasLiveOffer(thread)
+                  ? t('assistant.proposal.placeholder')
+                  : t(PLACEHOLDER[thread.subject.kind])
+              }
               prefill={prefill}
               onToggleSuggestions={() => setSuggesting((s) => !s)}
               suggestionsOpen={suggesting}
@@ -211,6 +216,13 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
         <ThreadList />
       )}
     </RailPanel>
+  )
+}
+
+/** An offer is waiting on the user, so a typed "yes" would run it. */
+function hasLiveOffer(thread: AssistantThread): boolean {
+  return thread.turns.some((turn) =>
+    turn.proposals?.some((p) => p.status === 'pending'),
   )
 }
 
@@ -255,7 +267,25 @@ function ThreadView({
   const markers = turnMarkers(t, thread.turns)
   const rows = thread.turns.map((turn) => {
     if (turn.role !== 'user') {
-      return <AssistantReply key={turn.id} turn={turn} />
+      return (
+        <AssistantReply
+          key={turn.id}
+          turn={turn}
+          threadId={thread.id}
+          running={thread.status === 'running'}
+        />
+      )
+    }
+    // The server's record of an offer answered from its card is not something
+    // the user typed: it reads as the line the card collapsed into.
+    if (turn.answer) {
+      return (
+        <ResolvedLine key={turn.id}>
+          {t(`assistant.proposal.${turn.answer}`, {
+            summary: turn.content.replace(/^(Confirmed|Dismissed): /, ''),
+          })}
+        </ResolvedLine>
+      )
     }
     const marker = markers.get(turn.id)
     return (

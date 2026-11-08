@@ -7,6 +7,7 @@ import { humanizeStep } from '@/lib/assistantTools'
 import type { ViewContext } from '@/lib/viewContext'
 import type {
   AssistantAction,
+  AssistantProposal,
   AssistantResultDetails,
   CampaignAssistantAction,
   Grounding,
@@ -54,6 +55,8 @@ export type AssistantTurnResult = {
   touched: Touched[]
   /** The turn ran but could not be stored, so it won't survive a reload. */
   unsaved: boolean
+  /** Offers the turn made, waiting for the user's yes (CON-446). */
+  proposals: AssistantProposal[]
 }
 
 export type AssistantStreamEvent =
@@ -79,7 +82,17 @@ export type AssistantStreamEvent =
   | { type: 'post_generated'; post: StreamedPost }
   /** The assistant cloned the post into a new, already-persisted one (CON-59). */
   | { type: 'clone_complete'; newPostId: string }
-  | { type: 'error'; message: string; code?: string }
+  /** An offer made this turn, once the reply is final. */
+  | { type: 'proposal_created'; proposal: AssistantProposal }
+  /** An offer answered — by a typed "yes", or from its card. */
+  | {
+      type: 'proposal_resolved'
+      id: string
+      status: 'confirmed' | 'dismissed'
+      chosen?: string
+    }
+  /** `status` is the HTTP status the server put on the failure, when it did. */
+  | { type: 'error'; message: string; status?: number }
   /** Namespaced sub-flow progress, annotating the running tool step. */
   | { type: 'progress'; step: string }
 
@@ -155,6 +168,7 @@ function emptyResult(): AssistantTurnResult {
     saveVersion: false,
     touched: [],
     unsaved: false,
+    proposals: [],
   }
 }
 
@@ -189,7 +203,40 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
 
   result.touched = touched(parsed.touched)
   result.unsaved = parsed.unsaved === true
+  result.proposals = Array.isArray(parsed.proposals)
+    ? parsed.proposals
+        .filter(isRecord)
+        .map(proposal)
+        .filter((p): p is AssistantProposal => p !== null)
+    : []
   return result
+}
+
+/** Reads a proposal card; null for one without an id or a summary. */
+function proposal(card: Record<string, unknown>): AssistantProposal | null {
+  const id = str(card.id)
+  const summary = str(card.summary)
+  if (!id || !summary) return null
+  return {
+    id,
+    tool: str(card.tool),
+    summary,
+    expiresAt: optStr(card.expiresAt),
+    options: Array.isArray(card.options)
+      ? card.options
+          .filter(isRecord)
+          .map((o) => ({
+            id: str(o.id),
+            title: str(o.title),
+            description: optStr(o.description),
+          }))
+          .filter((o) => o.id && o.title)
+      : [],
+    // Not sent yet: the option the assistant would pick (API ask). When it
+    // arrives, that option gets the one dark button.
+    recommended: optStr(card.recommended),
+    status: 'pending',
+  }
 }
 
 /**
@@ -199,12 +246,65 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
  * that has already happened, and aborting does not roll any of it back. Never
  * write a result back; refresh what the turn touched instead.
  */
-export async function streamAssistantTurn(
+export function streamAssistantTurn(
   body: { instruction: string; viewContext: ViewContext },
   onEvent: (event: AssistantStreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const res = await scopedFetch('/api/assistant', {
+  return streamTurn('/api/assistant', body, onEvent, signal)
+}
+
+/**
+ * Runs an offer exactly as it was proposed (CON-446) — the same work a typed
+ * "yes" does, without a model call — and streams it like a turn: the work's
+ * own events, `proposal_resolved`, then `complete`. An offer that is gone,
+ * already answered or expired ends in an `error` event with its status.
+ */
+export function confirmProposal(
+  proposalId: string,
+  optionId: string | undefined,
+  onEvent: (event: AssistantStreamEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  return streamTurn(
+    `/api/assistant/proposals/${encodeURIComponent(proposalId)}/confirm`,
+    optionId ? { optionId } : {},
+    onEvent,
+    signal,
+  )
+}
+
+/** Withdraws an offer. Nothing runs; the answer joins the thread. */
+export async function dismissProposal(proposalId: string): Promise<void> {
+  await apiJson<unknown>(
+    `/api/assistant/proposals/${encodeURIComponent(proposalId)}/dismiss`,
+    'Unable to dismiss the offer',
+    { method: 'POST' },
+  )
+}
+
+/**
+ * Reverses a change the assistant made (CON-446). 409 when the entity was
+ * changed again since — the undo would bury that change — or was already
+ * undone; 404 when there is nothing to undo.
+ */
+export function undoAssistantAction(
+  actionId: string,
+): Promise<{ undone: boolean; kind: string; entityId: string }> {
+  return apiJson(
+    `/api/assistant/actions/${encodeURIComponent(actionId)}/undo`,
+    'Unable to undo',
+    { method: 'POST' },
+  )
+}
+
+async function streamTurn(
+  path: string,
+  body: unknown,
+  onEvent: (event: AssistantStreamEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const res = await scopedFetch(path, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -254,6 +354,24 @@ export async function streamAssistantTurn(
       case 'complete':
         onEvent({ type: 'complete', result: turnResult(parsed) })
         return
+      case 'proposal_created': {
+        const card = proposal(parsed)
+        if (card) onEvent({ type: 'proposal_created', proposal: card })
+        return
+      }
+      case 'proposal_resolved':
+        if (
+          typeof parsed.id === 'string' &&
+          (parsed.status === 'confirmed' || parsed.status === 'dismissed')
+        ) {
+          onEvent({
+            type: 'proposal_resolved',
+            id: parsed.id,
+            status: parsed.status,
+            chosen: optStr(parsed.chosen),
+          })
+        }
+        return
       // The draftPost sub-flow forwards each draft it has written.
       case 'draft_post_post': {
         const post = streamedPost(parsed)
@@ -274,7 +392,7 @@ export async function streamAssistantTurn(
             typeof parsed.message === 'string'
               ? parsed.message
               : 'The assistant failed',
-          code: optStr(parsed.code),
+          status: typeof parsed.code === 'number' ? parsed.code : undefined,
         })
         return
       default:
