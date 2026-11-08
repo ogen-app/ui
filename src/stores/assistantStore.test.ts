@@ -48,7 +48,8 @@ vi.mock('@/lib/assistantTouched', async (importOriginal) => {
   return { ...actual, refreshTouched }
 })
 
-const { useAssistantStore } = await import('./assistantStore')
+const { useAssistantStore, setUiActionApplier } =
+  await import('./assistantStore')
 const { useViewContextStore } = await import('./viewContextStore')
 
 function result(changes: Record<string, unknown> = {}) {
@@ -60,6 +61,7 @@ function result(changes: Record<string, unknown> = {}) {
     touched: [],
     unsaved: false,
     proposals: [],
+    uiActions: [],
     ...changes,
   }
 }
@@ -387,5 +389,75 @@ describe('settleHistory', () => {
     expect(turns[1].proposals?.[0].status).toBe('confirmed')
     expect(turns[3].proposals?.[0].status).toBe('expired')
     expect(turns[5].proposals?.[0].status).toBe('pending')
+  })
+})
+
+describe('screen changes', () => {
+  it('applies a turn’s ui actions in order, and remembers where each left', async () => {
+    const applied: string[] = []
+    const restored: string[] = []
+    setUiActionApplier({
+      apply: async (action) => {
+        applied.push(action.type)
+        return action.type === 'select' ? undefined : `/before-${action.type}`
+      },
+      restore: async (href) => {
+        restored.push(href)
+      },
+    })
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'workspace' }, '', '')
+    stream.events = [
+      { type: 'ui_action', action: { type: 'navigate', screen: 'ideas' } },
+      {
+        type: 'ui_action',
+        action: { type: 'set_filter', screen: 'ideas', filter: 'pile=waiting' },
+      },
+      {
+        type: 'ui_action',
+        action: {
+          type: 'select',
+          screen: 'ideas',
+          selection: { kind: 'idea', ids: ['i1'] },
+        },
+      },
+      { type: 'complete', result: result() },
+    ]
+    await useAssistantStore.getState().send(id, 'Show me what is waiting')
+
+    expect(applied).toEqual(['navigate', 'set_filter', 'select'])
+    const turn = lastTurn(id)
+    expect(turn.uiActions?.map((a) => a.before)).toEqual([
+      '/before-navigate',
+      '/before-set_filter',
+      undefined,
+    ])
+
+    await useAssistantStore.getState().undoUiAction(id, turn.id, 1)
+    expect(restored).toEqual(['/before-set_filter'])
+    expect(lastTurn(id).uiActions?.[1].undone).toBe(true)
+    setUiActionApplier(null)
+  })
+
+  it('runs nothing on the screen for a turn that failed', async () => {
+    const applied: string[] = []
+    setUiActionApplier({
+      apply: async (action) => {
+        applied.push(action.type)
+        return '/x'
+      },
+      restore: async () => {},
+    })
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'workspace' }, '', '')
+    stream.events = [
+      { type: 'ui_action', action: { type: 'navigate', screen: 'ideas' } },
+      { type: 'error', message: 'Something went wrong on my side.' },
+    ]
+    await useAssistantStore.getState().send(id, 'Open ideas')
+    expect(applied).toEqual([])
+    setUiActionApplier(null)
   })
 })

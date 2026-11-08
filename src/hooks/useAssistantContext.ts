@@ -7,6 +7,7 @@ import {
   type ViewPage,
 } from '@/lib/viewContext'
 import { useViewContextStore } from '@/stores/viewContextStore'
+import type { UIAction } from '@/lib/assistantUiActions'
 
 /**
  * Keeps the view context's location in step with the router: the deepest
@@ -107,4 +108,25 @@ export function useListAssistantPage({
     return out
   }, [kind, params, ticked, allMatching, total, rowIds, savedViewId])
   useAssistantPage(page)
+}
+
+/**
+ * Picks up what the assistant asked this list to do — tick rows, open a smart
+ * group (`viewContextStore.request`). `handle` returns whether it acted; a
+ * request it can't act on yet (its smart groups still loading) waits, and is
+ * tried again when `ready` changes.
+ */
+export function useAssistantRequest(
+  handle: (action: UIAction) => boolean,
+  ready?: unknown,
+) {
+  const request = useViewContextStore((s) => s.request)
+  const consume = useViewContextStore((s) => s.consume)
+  const latest = useRef(handle)
+  useEffect(() => {
+    latest.current = handle
+  })
+  useEffect(() => {
+    if (request && latest.current(request.action)) consume(request.seq)
+  }, [request, consume, ready])
 }

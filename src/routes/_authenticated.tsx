@@ -12,6 +12,7 @@ import { useEventStream } from '@/hooks/useEventStream'
 import { useNotificationStream } from '@/hooks/useNotifications'
 import { useWorkspaceThread } from '@/hooks/useWorkspaceThread'
 import { useViewLocation } from '@/hooks/useAssistantContext'
+import { useAssistantUiActions } from '@/hooks/useAssistantUiActions'
 import { prefetchReferenceData } from '@/lib/prefetch'
 
 export const Route = createFileRoute('/_authenticated')({
@@ -43,6 +44,8 @@ function AuthenticatedLayout() {
   useWorkspaceThread()
   // And they see the screen: the route is the view context's location.
   useViewLocation()
+  // And they can change it: navigate, filter, tick rows, open a smart group.
+  useAssistantUiActions()
 
   return (
     <AnnouncementFrame>

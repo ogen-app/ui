@@ -2271,6 +2271,19 @@ export const en = {
       notApplied: 'NOT APPLIED',
       proposal: 'PROPOSAL',
       choose: 'CHOOSE ONE',
+      onScreen: 'ON SCREEN',
+    },
+
+    /** What a turn did to the screen behind the rail (CON-450, D5). */
+    uiAction: {
+      navigate: 'Opened {{screen}}',
+      setFilter: 'Filtered {{screen}}',
+      clearFilter: 'Cleared the filter on {{screen}}',
+      select_one: 'Selected {{count}} on {{screen}}',
+      select_other: 'Selected {{count}} on {{screen}}',
+      openSavedView: 'Opened a smart group on {{screen}}',
+      back: 'BACK',
+      putBack: 'Put back',
     },
 
     /**

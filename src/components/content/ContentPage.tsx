@@ -69,6 +69,7 @@ import { ContentList } from './ContentList'
 import { ASSET_MODEL } from './smartFilter/assetModel'
 import { useFilterVocabulary } from './smartFilter/useFilterVocabulary'
 import { awaiting } from '@/lib/fetched'
+import { useAssistantRequest } from '@/hooks/useAssistantContext'
 
 /**
  * Documents, in the scope that holds them.
@@ -216,6 +217,14 @@ export function ContentPage({
           }
         : {},
     )
+  // The assistant can open one of the smart groups here.
+  useAssistantRequest((action) => {
+    if (action.type !== 'open_saved_view' || !action.savedViewId) return false
+    const view = views.data?.find((v) => v.id === action.savedViewId)
+    if (!view) return false
+    openView(view)
+    return true
+  }, views.data)
   const currentQuery = () => assetViewQuery(search, { sort, group: grouping })
   /** The name a new group is offered: what its clauses say. */
   const suggestedName = ASSET_MODEL.tokensOf(filter)

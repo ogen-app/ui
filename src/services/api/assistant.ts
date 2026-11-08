@@ -4,7 +4,8 @@ import { errorMessage } from './errors'
 import { isRecord } from './json'
 import { readSSEStream } from '@/lib/sse'
 import { humanizeStep } from '@/lib/assistantTools'
-import type { ViewContext } from '@/lib/viewContext'
+import type { ViewContext, ViewEntityKind, ViewScreen } from '@/lib/viewContext'
+import type { UIAction } from '@/lib/assistantUiActions'
 import type {
   AssistantAction,
   AssistantProposal,
@@ -57,6 +58,8 @@ export type AssistantTurnResult = {
   unsaved: boolean
   /** Offers the turn made, waiting for the user's yes (CON-446). */
   proposals: AssistantProposal[]
+  /** Changes to the screen, in order (CON-450, D5). */
+  uiActions: UIAction[]
 }
 
 export type AssistantStreamEvent =
@@ -82,6 +85,8 @@ export type AssistantStreamEvent =
   | { type: 'post_generated'; post: StreamedPost }
   /** The assistant cloned the post into a new, already-persisted one (CON-59). */
   | { type: 'clone_complete'; newPostId: string }
+  /** A change to the user's screen, applied when the turn completes. */
+  | { type: 'ui_action'; action: UIAction }
   /** An offer made this turn, once the reply is final. */
   | { type: 'proposal_created'; proposal: AssistantProposal }
   /** An offer answered — by a typed "yes", or from its card. */
@@ -169,6 +174,7 @@ function emptyResult(): AssistantTurnResult {
     touched: [],
     unsaved: false,
     proposals: [],
+    uiActions: [],
   }
 }
 
@@ -209,7 +215,46 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
         .map(proposal)
         .filter((p): p is AssistantProposal => p !== null)
     : []
+  result.uiActions = Array.isArray(parsed.uiActions)
+    ? parsed.uiActions
+        .filter(isRecord)
+        .map(uiAction)
+        .filter((a): a is UIAction => a !== null)
+    : []
   return result
+}
+
+const UI_ACTION_TYPES: UIAction['type'][] = [
+  'navigate',
+  'set_filter',
+  'select',
+  'open_saved_view',
+]
+
+/** Reads a `ui_action`; null for a type or screen this build can't apply. */
+function uiAction(raw: Record<string, unknown>): UIAction | null {
+  const type = UI_ACTION_TYPES.find((t) => t === raw.type)
+  const screen = str(raw.screen)
+  if (!type || !screen) return null
+  const focus = record(raw.focus)
+  const selection = record(raw.selection)
+  return {
+    type,
+    screen: screen as ViewScreen,
+    campaignId: optStr(raw.campaignId),
+    focus:
+      focus && typeof focus.id === 'string'
+        ? { kind: str(focus.kind) as ViewEntityKind, id: focus.id }
+        : undefined,
+    filter: typeof raw.filter === 'string' ? raw.filter : undefined,
+    selection: selection
+      ? {
+          kind: str(selection.kind) as ViewEntityKind,
+          ids: strings(selection.ids),
+        }
+      : undefined,
+    savedViewId: optStr(raw.savedViewId),
+  }
 }
 
 /** Reads a proposal card; null for one without an id or a summary. */
@@ -354,6 +399,11 @@ async function streamTurn(
       case 'complete':
         onEvent({ type: 'complete', result: turnResult(parsed) })
         return
+      case 'ui_action': {
+        const action = uiAction(parsed)
+        if (action) onEvent({ type: 'ui_action', action })
+        return
+      }
       case 'proposal_created': {
         const card = proposal(parsed)
         if (card) onEvent({ type: 'proposal_created', proposal: card })

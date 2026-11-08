@@ -18,6 +18,7 @@ import {
   type AssistantTurnResult,
 } from '@/services/api/assistant'
 import { ApiError } from '@/services/api/errors'
+import type { AppliedUIAction, UIAction } from '@/lib/assistantUiActions'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { toast } from '@/stores/toastStore'
 import { i18next } from '@/i18n'
@@ -43,6 +44,24 @@ import type {
  * leaving the page can't cancel work in flight. Same reasoning as
  * `uploadStore`.
  */
+
+/**
+ * What applies a turn's screen changes. Registered by the authenticated
+ * layout (`useAssistantUiActions`), which holds the router; null outside it,
+ * where a turn's `ui_action`s are kept but not run.
+ */
+export type UiActionApplier = {
+  /** Runs one action; returns the address it replaced, or undefined. */
+  apply: (action: UIAction) => Promise<string | undefined>
+  /** Puts the screen back to `href`, undoing `action`. */
+  restore: (href: string, action: UIAction) => Promise<void>
+}
+
+let uiApplier: UiActionApplier | null = null
+
+export function setUiActionApplier(applier: UiActionApplier | null) {
+  uiApplier = applier
+}
 
 /** In-flight runs, keyed by thread id. Never rendered — kept out of state. */
 const runners = new Map<string, AbortController>()
@@ -133,6 +152,12 @@ type AssistantState = {
   dismissProposal: (threadId: string, proposalId: string) => Promise<void>
   /** Reverses a change a turn made, by the undo id its result carried. */
   undo: (threadId: string, turnId: string, undoId: string) => Promise<void>
+  /** Puts the screen back to before one of a turn's `ui_action`s. */
+  undoUiAction: (
+    threadId: string,
+    turnId: string,
+    index: number,
+  ) => Promise<void>
   /** Abort the running turn. Work already written server-side stands. */
   cancel: (threadId: string) => void
   /** Forget a thread (its server history is untouched). */
@@ -154,6 +179,29 @@ export const useAssistantStore = create<AssistantState>()(
               }
             : s,
         )
+
+      /**
+       * Runs a turn's screen changes in order, and keeps each on the turn with
+       * the address it replaced. One that fails is kept without one, so it
+       * offers no way back to a screen it never left.
+       */
+      const applyUiActions = async (
+        threadId: string,
+        turnId: string,
+        actions: UIAction[],
+      ) => {
+        const applied: AppliedUIAction[] = []
+        for (const action of actions) {
+          let before: string | undefined
+          try {
+            before = (await uiApplier?.apply(action)) ?? undefined
+          } catch {
+            before = undefined
+          }
+          applied.push({ action, before })
+        }
+        patchTurn(threadId, turnId, (t) => ({ ...t, uiActions: applied }))
+      }
 
       /** Replace one turn of a thread, by id. */
       const patchTurn = (
@@ -316,6 +364,8 @@ export const useAssistantStore = create<AssistantState>()(
         // What the turn says it changed. Null until `complete` arrives: a
         // turn that never got there refreshes its whole subject instead.
         let touched: Touched[] | null = null
+        // Changes to the screen, in order, applied once the turn completes.
+        let uiActions: UIAction[] = []
 
         const onEvent = (event: AssistantStreamEvent) => {
           const now = performance.now()
@@ -429,6 +479,9 @@ export const useAssistantStore = create<AssistantState>()(
 
             case 'complete':
               touched = event.result.touched
+              // Each was streamed just before `complete`; a stream that
+              // dropped them still has the result's copy.
+              if (uiActions.length === 0) uiActions = event.result.uiActions
               patchLastTurn(threadId, (t) => {
                 const fields = turnFields(subject, event.result)
                 return {
@@ -449,6 +502,10 @@ export const useAssistantStore = create<AssistantState>()(
                   streaming: false,
                 }
               })
+              break
+
+            case 'ui_action':
+              uiActions = [...uiActions, event.action]
               break
 
             case 'proposal_created':
@@ -482,6 +539,9 @@ export const useAssistantStore = create<AssistantState>()(
 
         try {
           await start(onEvent, controller.signal)
+          if (!sawErrorEvent && uiActions.length > 0) {
+            await applyUiActions(threadId, assistantTurnId, uiActions)
+          }
 
           // The server writes the result itself — the payload describes what
           // it already saved. Never write it back; just refresh.
@@ -729,6 +789,21 @@ export const useAssistantStore = create<AssistantState>()(
                   : errorText(err),
             })
           }
+        },
+
+        undoUiAction: async (threadId, turnId, index) => {
+          const turn = get().threads[threadId]?.turns.find(
+            (t) => t.id === turnId,
+          )
+          const applied = turn?.uiActions?.[index]
+          if (!applied?.before || applied.undone || !uiApplier) return
+          await uiApplier.restore(applied.before, applied.action)
+          patchTurn(threadId, turnId, (t) => ({
+            ...t,
+            uiActions: t.uiActions?.map((a, i) =>
+              i === index ? { ...a, undone: true } : a,
+            ),
+          }))
         },
 
         undo: async (threadId, turnId, undoId) => {

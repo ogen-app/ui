@@ -1774,6 +1774,18 @@ export const es: Translation = {
       notApplied: 'SIN APLICAR',
       proposal: 'PROPUESTA',
       choose: 'ELIGE UNA',
+      onScreen: 'EN PANTALLA',
+    },
+
+    uiAction: {
+      navigate: 'Abrió {{screen}}',
+      setFilter: 'Filtró {{screen}}',
+      clearFilter: 'Quitó el filtro de {{screen}}',
+      select_one: 'Seleccionó {{count}} en {{screen}}',
+      select_other: 'Seleccionó {{count}} en {{screen}}',
+      openSavedView: 'Abrió un grupo inteligente en {{screen}}',
+      back: 'VOLVER',
+      putBack: 'Restablecido',
     },
 
     proposal: {
