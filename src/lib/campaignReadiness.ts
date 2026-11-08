@@ -273,6 +273,7 @@ export function contentSnapshot<T extends PostSummary>(
   limit = 5,
 ): ContentSnapshot<T> {
   const byStatus: Record<PostStatus, number> = {
+    planned: 0,
     draft: 0,
     ready_for_publish: 0,
     scheduled: 0,

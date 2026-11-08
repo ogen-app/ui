@@ -4,6 +4,7 @@ import { postStatusLabel } from '@/lib/postStatusLabel'
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge'
 
 const POST_STATUS_TONE: Record<PostStatus, StatusTone> = {
+  planned: 'neutral',
   draft: 'neutral',
   ready_for_publish: 'progress',
   scheduled: 'positive',

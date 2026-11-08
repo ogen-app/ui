@@ -3,7 +3,13 @@ import type { Campaign, PublisherAccount } from '@/types/campaigns'
 import type { Asset } from '@/types/content'
 import type { ContentFormatId } from '@/lib/contentFormats'
 
+/**
+ * `planned` is a post with theses and no body yet (CON-449): compiled from
+ * ideas, it holds a title and its `draft_thesis` note, counts toward the goal,
+ * and becomes a `draft` the moment it gains a body. It can only move to draft.
+ */
 export type PostStatus =
+  | 'planned'
   | 'draft'
   | 'ready_for_publish'
   | 'scheduled'

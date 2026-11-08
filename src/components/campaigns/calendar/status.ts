@@ -2,6 +2,7 @@ import type { Icon } from '@phosphor-icons/react'
 import {
   CheckCircleIcon,
   ClockIcon,
+  ListBulletsIcon,
   PaperPlaneTiltIcon,
 } from '@phosphor-icons/react'
 import type { PostStatus } from '@/types/posts'
@@ -17,6 +18,8 @@ import type { PostStatus } from '@/types/posts'
  * it; the month card leaves that distinction to the tooltip.
  */
 export const STATUS_ACCENT_COLOR: Record<PostStatus, string> = {
+  // A planned post has no body yet (CON-449): as pale as a draft.
+  planned: 'border-l-border',
   draft: 'border-l-border',
   ready_for_publish: 'border-l-info',
   scheduled: 'border-l-positive',
@@ -56,6 +59,7 @@ export const STATUS_ACCENT_COLOR: Record<PostStatus, string> = {
  * where being pale is the problem.
  */
 export const STATUS_TEXT_COLOR: Record<PostStatus, string> = {
+  planned: 'text-current',
   draft: 'text-current',
   ready_for_publish: 'text-info',
   scheduled: 'text-positive',
@@ -85,6 +89,8 @@ export const STATUS_TEXT_COLOR: Record<PostStatus, string> = {
  * says so.
  */
 export const STATUS_ICON: Record<PostStatus, Icon> = {
+  // Theses, not a body: the list mark says what it holds.
+  planned: ListBulletsIcon,
   draft: ClockIcon,
   ready_for_publish: ClockIcon,
   scheduled: PaperPlaneTiltIcon,

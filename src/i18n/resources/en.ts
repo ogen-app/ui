@@ -1048,6 +1048,29 @@ export const en = {
       },
     },
     /** Selecting ideas and deleting them together (CON-388 §6). */
+    /**
+     * Ideas becoming posts (CON-449). COMPILE makes a planned post — a title
+     * and theses, no body; DRAFT writes the body. Neither schedules.
+     */
+    lifecycle: {
+      /** Literal capitals: the slot's tag on the calendar. */
+      slot: 'IDEA',
+      compile: 'COMPILE',
+      draft: 'DRAFT',
+      compiled: 'Compiled into a planned post',
+      drafted_one: '{{count}} draft written, not scheduled',
+      drafted_other: '{{count}} drafts written, not scheduled',
+      draftFailed: 'The drafts could not all be written',
+      draftsKept_one: 'The {{count}} already written was kept.',
+      draftsKept_other: 'The {{count}} already written were kept.',
+      tooMany: 'Pick up to 10 ideas to compile or draft them',
+      noBody: 'No body yet.',
+      noBodyHint: 'Write it from the theses, or ask the assistant.',
+      write: 'WRITE THE POST',
+      writePrompt: 'Write this post in full from its theses.',
+      builtFrom_one: 'Built from {{count}} idea',
+      builtFrom_other: 'Built from {{count}} ideas',
+    },
     bulk: {
       select: 'Select “{{title}}”',
       selectAll_one: 'Select {{formatted}} idea',
@@ -3436,6 +3459,7 @@ export const en = {
      */
     status: {
       draft: 'Draft',
+      planned: 'Planned',
       ready_for_publish: 'Ready for Publish',
       scheduled: 'Auto-publish',
       scheduled_for_manual_publishing: 'Manual publish',

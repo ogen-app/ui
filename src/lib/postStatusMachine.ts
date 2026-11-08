@@ -24,7 +24,10 @@ import type { Post, PostStatus } from '@/types/posts'
 // editing is the point, and reopening as far as `draft` rather than only
 // `ready_for_publish` is the rest of it, because needing the words changed is
 // exactly how a post reaches them.
+// `planned` (CON-449) leaves only for `draft`, and only by gaining a body —
+// the server moves it as the words land, so it has no button of its own.
 const POST_STATUS_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
+  planned: ['draft'],
   draft: ['ready_for_publish'],
   ready_for_publish: ['scheduled', 'scheduled_for_manual_publishing', 'draft'],
   scheduled: [
@@ -132,6 +135,7 @@ const ACTION_META: Record<
   PostStatus,
   Partial<Record<PostStatus, ActionMeta>>
 > = {
+  planned: {},
   draft: {
     ready_for_publish: {
       buttonLabel: 'MARK AS READY',

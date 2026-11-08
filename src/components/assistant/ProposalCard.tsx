@@ -82,6 +82,7 @@ export function ProposalCard({
                 </div>
                 {recommended ? (
                   <Button
+                    variant="defaultInverted"
                     size="sm"
                     disabled={disabled}
                     onClick={() =>
@@ -107,6 +108,7 @@ export function ProposalCard({
       ) : (
         <div className="mt-3 flex items-center gap-4">
           <Button
+            variant="defaultInverted"
             size="sm"
             disabled={disabled}
             onClick={() => void confirm(threadId, proposal.id)}

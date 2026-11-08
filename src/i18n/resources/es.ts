@@ -875,6 +875,24 @@ export const es: Translation = {
         noAuthor: 'De documentos',
       },
     },
+    lifecycle: {
+      slot: 'IDEA',
+      compile: 'COMPILAR',
+      draft: 'REDACTAR',
+      compiled: 'Compilada en una publicación planificada',
+      drafted_one: '{{count}} borrador escrito, sin programar',
+      drafted_other: '{{count}} borradores escritos, sin programar',
+      draftFailed: 'No se pudieron escribir todos los borradores',
+      draftsKept_one: 'Se ha conservado el {{count}} ya escrito.',
+      draftsKept_other: 'Se han conservado los {{count}} ya escritos.',
+      tooMany: 'Elige hasta 10 ideas para compilarlas o redactarlas',
+      noBody: 'Aún sin cuerpo.',
+      noBodyHint: 'Escríbela a partir de las tesis, o pídeselo al asistente.',
+      write: 'ESCRIBIR LA PUBLICACIÓN',
+      writePrompt: 'Escribe esta publicación completa a partir de sus tesis.',
+      builtFrom_one: 'Hecha a partir de {{count}} idea',
+      builtFrom_other: 'Hecha a partir de {{count}} ideas',
+    },
     bulk: {
       select: 'Seleccionar «{{title}}»',
       selectAll_one: 'Seleccionar {{formatted}} idea',
@@ -2894,6 +2912,7 @@ export const es: Translation = {
 
     status: {
       draft: 'Borrador',
+      planned: 'Planificada',
       ready_for_publish: 'Lista para publicar',
       scheduled: 'Publicación automática',
       scheduled_for_manual_publishing: 'Publicación manual',
