@@ -57,8 +57,9 @@ export function describeTool(
         : t(`assistant.tool.generatePosts.${status}`)
     }
     default:
-      // An unrecognised tool still gets a row — better a raw name than a gap.
-      return name
+      // A tool this build has no words for yet still gets a row, with its
+      // name spelled out — better than a gap, and better than `findIdeas`.
+      return sentenceCase(humanizeStep(name))
   }
 }
 
@@ -116,12 +117,19 @@ function query(t: TFunction, q: unknown): string {
  * notification names the row the user will go looking for.
  */
 export function threadName(thread: AssistantThread): string {
+  if (thread.subject.kind === 'workspace') {
+    return i18next.t('assistant.workspaceThread')
+  }
   if (thread.subject.kind === 'campaign') {
     return (
       thread.campaignTitle.trim() || i18next.t('assistant.untitledCampaign')
     )
   }
   return thread.title.trim() || i18next.t('assistant.untitledPost')
+}
+
+function sentenceCase(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 /** Turns a sub-flow step key (`resolveTargets`, `build_context`) into a phrase. */

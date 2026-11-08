@@ -106,7 +106,6 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   }, [activeId, turns?.length, streamLength])
 
   const running = thread?.status === 'running'
-  const isCampaign = thread?.subject.kind === 'campaign'
   // An unused thread *is* the starter menu, so the lightbulb starts lit and
   // keeps owning the chips — it just toggles them where they already are.
   const isEmpty = Boolean(thread?.loaded && thread.turns.length === 0)
@@ -188,11 +187,7 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
               }
               running={running}
               onCancel={() => cancel(thread.id)}
-              placeholder={
-                isCampaign
-                  ? t('assistant.panel.placeholderCampaign')
-                  : t('assistant.panel.placeholderPost')
-              }
+              placeholder={t(PLACEHOLDER[thread.subject.kind])}
               prefill={prefill}
               onToggleSuggestions={() => setSuggesting((s) => !s)}
               suggestionsOpen={suggesting}
@@ -210,6 +205,12 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
     </RailPanel>
   )
 }
+
+const PLACEHOLDER = {
+  campaign: 'assistant.panel.placeholderCampaign',
+  post: 'assistant.panel.placeholderPost',
+  workspace: 'assistant.panel.placeholderWorkspace',
+} as const satisfies Record<AssistantThread['subject']['kind'], string>
 
 function ThreadView({
   thread,

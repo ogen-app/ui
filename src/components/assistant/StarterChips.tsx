@@ -2,11 +2,13 @@ import {
   ArrowsClockwiseIcon,
   CalendarBlankIcon,
   ChartBarIcon,
+  LightbulbIcon,
   ListChecksIcon,
   MagicWandIcon,
   MegaphoneIcon,
   NotePencilIcon,
   PaperclipIcon,
+  PlugsConnectedIcon,
   ScissorsIcon,
   SealCheckIcon,
   SlidersHorizontalIcon,
@@ -36,6 +38,10 @@ type StarterKey =
   | 'useAsset'
   | 'callToAction'
   | 'missing'
+  | 'yesterday'
+  | 'waitingIdeas'
+  | 'whatWorked'
+  | 'connections'
 
 /**
  * The assistant's capabilities, one starter per shipped tool. They are
@@ -66,6 +72,19 @@ const POST_STARTERS: Starter[] = [
   { icon: QuestionIcon, key: 'missing' },
 ]
 
+const WORKSPACE_STARTERS: Starter[] = [
+  { icon: CalendarBlankIcon, key: 'yesterday' },
+  { icon: LightbulbIcon, key: 'waitingIdeas' },
+  { icon: ChartBarIcon, key: 'whatWorked' },
+  { icon: PlugsConnectedIcon, key: 'connections' },
+]
+
+const STARTERS: Record<ThreadSubject['kind'], Starter[]> = {
+  campaign: CAMPAIGN_STARTERS,
+  post: POST_STARTERS,
+  workspace: WORKSPACE_STARTERS,
+}
+
 export function StarterChips({
   kind,
   onPick,
@@ -76,7 +95,7 @@ export function StarterChips({
   disabled?: boolean
 }) {
   const { t } = useTranslation()
-  const starters = kind === 'campaign' ? CAMPAIGN_STARTERS : POST_STARTERS
+  const starters = STARTERS[kind]
   return (
     <div className="flex flex-wrap justify-center gap-1.5">
       {starters.map(({ icon: Icon, key }) => {

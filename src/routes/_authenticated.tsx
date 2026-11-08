@@ -10,6 +10,7 @@ import { useBillingGateWatch } from '@/hooks/useBillingGateWatch'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useEventStream } from '@/hooks/useEventStream'
 import { useNotificationStream } from '@/hooks/useNotifications'
+import { useWorkspaceThread } from '@/hooks/useWorkspaceThread'
 import { prefetchReferenceData } from '@/lib/prefetch'
 
 export const Route = createFileRoute('/_authenticated')({
@@ -37,6 +38,8 @@ function AuthenticatedLayout() {
   // by an operator (CON-402) — redirects on the stream's refetch, not on the
   // next click.
   useBillingGateWatch()
+  // Workspace-level screens talk to the workspace's own assistant thread.
+  useWorkspaceThread()
 
   return (
     <AnnouncementFrame>

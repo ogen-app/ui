@@ -113,9 +113,9 @@ describe('assistant in Spanish', () => {
       ),
     ).toBe('Leyendo 2 fragmentos de recurso a1')
     expect(stepDetail(t, step({ generated: 3 }))).toBe('3 generadas')
-    // A tool this build has never heard of keeps its raw name.
+    // A tool this build has no words for yet is spelled out from its name.
     expect(describeTool(t, 'brandNewTool', undefined, 'done')).toBe(
-      'brandNewTool',
+      'Brand new tool',
     )
   })
 })

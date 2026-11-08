@@ -1436,6 +1436,7 @@ export const es: Translation = {
 
     untitledCampaign: 'Campaña sin título',
     untitledPost: 'Publicación sin título',
+    workspaceThread: 'Espacio de trabajo',
 
     finished: 'El estratega ha terminado',
     failed: 'El estratega no ha podido terminar',
@@ -1445,6 +1446,7 @@ export const es: Translation = {
       back: 'Volver a todas las conversaciones',
       placeholderCampaign: 'Pide un plan o una revisión...',
       placeholderPost: 'Pide un cambio en esta publicación...',
+      placeholderWorkspace: 'Pide lo que quieras en esta pantalla...',
     },
 
     composer: {
@@ -1553,6 +1555,9 @@ export const es: Translation = {
       post1: 'Reescribe la publicación, o solo su arranque.',
       post2: 'Cambia el tono, la extensión, el cierre.',
       post3: 'Incorpora lo que haya en los recursos.',
+      workspace1: 'Encuentra y ordena ideas. Pregunta a tus recursos.',
+      workspace2: 'Explica qué funcionó y haz más de eso.',
+      workspace3: 'Cuenta qué pasó mientras no estabas.',
     },
 
     starter: {
@@ -1612,6 +1617,22 @@ export const es: Translation = {
         label: '¿Qué falta?',
         text: '¿Qué le falta a esta publicación antes de salir?',
       },
+      yesterday: {
+        label: '¿Qué pasó ayer?',
+        text: '¿Qué pasó ayer en el espacio de trabajo?',
+      },
+      waitingIdeas: {
+        label: 'Ideas pendientes',
+        text: '¿Qué ideas siguen esperando una decisión?',
+      },
+      whatWorked: {
+        label: '¿Qué funcionó?',
+        text: '¿Qué funcionó mejor en los últimos 30 días?',
+      },
+      connections: {
+        label: 'Revisar conexiones',
+        text: '¿Siguen conectadas todas mis cuentas sociales?',
+      },
     },
 
     footer: {
@@ -1625,6 +1646,12 @@ export const es: Translation = {
       posts_redistributed: 'Publicaciones redistribuidas',
       brief_reviewed: 'Briefing revisado',
       posts_reviewed: 'Publicaciones revisadas',
+      proposed: 'Esperando tu visto bueno',
+      post_drafted: 'Borradores escritos',
+      platforms_updated: 'Plataformas actualizadas',
+      cloned: 'Publicación clonada',
+      restored: 'Versión restaurada',
+      scheduled: 'Publicación programada',
       versionSaved: 'Versión guardada',
     },
 
@@ -1659,6 +1686,12 @@ export const es: Translation = {
       posts_redistributed: 'Redistribuyó las publicaciones',
       brief_reviewed: 'Revisó el briefing',
       posts_reviewed: 'Comprobó las publicaciones con el briefing',
+      proposed: 'Esperando tu visto bueno',
+      post_drafted: 'Escribió borradores',
+      platforms_updated: 'Actualizó las plataformas',
+      cloned: 'Clonó la publicación',
+      restored: 'Restauró una versión',
+      scheduled: 'Programó la publicación',
       waiting: 'Esperando una respuesta',
       notStarted: 'Aún sin empezar',
       stopped: 'Detenido',
@@ -1666,6 +1699,7 @@ export const es: Translation = {
       answeredGeneric: 'Respondido',
       workingCampaign: 'Trabajando en la campaña',
       workingPost: 'Trabajando en la publicación',
+      workingWorkspace: 'Trabajando',
       running: '{{step}} · {{elapsed}}',
     },
 
@@ -1692,9 +1726,13 @@ export const es: Translation = {
         'Nueva fecha para {{count}} publicaciones en {{phases}}.',
       phases_one: '{{count}} fase',
       phases_other: '{{count}} fases',
-      generatedNone: 'No se añadió ningún borrador',
-      generated_one: '+{{count}} borrador añadido',
-      generated_other: '+{{count}} borradores añadidos',
+      ideasNone: 'No se planificó ninguna idea',
+      ideas_one: '+{{count}} idea en la pestaña Ideas',
+      ideas_other: '+{{count}} ideas en la pestaña Ideas',
+      draftsNone: 'No se escribió ningún borrador',
+      drafts_one: '+{{count}} borrador, sin programar',
+      drafts_other: '+{{count}} borradores, sin programar',
+      platformsUpdated: 'Plataformas actualizadas',
       briefApplied: 'Briefing actualizado y guardado',
       briefNotApplied: 'Briefing sugerido pero no aplicado',
       severity: {

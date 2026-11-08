@@ -1,7 +1,18 @@
-/** What an assistant thread is attached to. One thread per subject. */
+/**
+ * What an assistant thread is attached to — its scope (CON-450). One thread
+ * per subject: the workspace, a campaign, or a post. The screen a turn was sent
+ * from is recorded per turn, not per thread, so moving from Ideas to Assets
+ * inside a campaign carries on the same conversation.
+ */
 export type ThreadSubject =
   | { kind: 'post'; postId: string; campaignId: string }
   | { kind: 'campaign'; campaignId: string }
+  | { kind: 'workspace' }
+
+/** The campaign a subject sits in, if any. */
+export function subjectCampaignId(subject: ThreadSubject): string | undefined {
+  return subject.kind === 'workspace' ? undefined : subject.campaignId
+}
 
 /**
  * What the post assistant did with the instruction (CON-42).
@@ -10,7 +21,8 @@ export type ThreadSubject =
  * (CON-188). A turn that did both reports `edited` and carries the notes
  * alongside — so this value is "notes *only*", not "notes happened".
  */
-export type PostAssistantAction = 'edited' | 'declined' | 'noted'
+export type PostAssistantAction =
+  'edited' | 'declined' | 'noted' | 'cloned' | 'restored' | 'scheduled'
 
 /**
  * What the campaign assistant did (CON-112 and its sub-issues). Every action
@@ -20,10 +32,13 @@ export type PostAssistantAction = 'edited' | 'declined' | 'noted'
 export type CampaignAssistantAction =
   | 'answered'
   | 'declined'
+  | 'proposed'
   | 'content_plan_generated'
   | 'posts_generated'
+  | 'post_drafted'
   | 'brief_enriched'
   | 'dates_updated'
+  | 'platforms_updated'
   | 'posts_redistributed'
   | 'brief_reviewed'
   | 'posts_reviewed'
@@ -31,6 +46,23 @@ export type CampaignAssistantAction =
 export type AssistantAction = PostAssistantAction | CampaignAssistantAction
 
 export type ReviewSeverity = 'high' | 'medium' | 'low'
+
+/**
+ * Whether generated output came from the workspace's own material (CON-448).
+ * Exploratory output is labelled by the client from this, never from the
+ * model's wording.
+ */
+export type Grounding = {
+  mode: 'grounded' | 'exploratory'
+  sources: { id: string; title: string }[]
+}
+
+/** An entity kind a turn changed, for the client to refresh. */
+export type TouchedKind =
+  'idea' | 'post' | 'asset' | 'campaign' | 'fact' | 'note'
+
+/** What a turn changed. No `id` means every entity of that kind. */
+export type Touched = { kind: string; id?: string }
 
 /**
  * One item from a consistency review (CON-116). The backend names the subject
@@ -49,10 +81,23 @@ export type ReviewFinding = {
  * else, so the reply has to render them.
  */
 export type AssistantResultDetails = {
-  contentPlan?: { postCount: number; warnings: string[] }
-  generatedPosts?: { postCount: number; warnings: string[] }
-  brief?: { applied: boolean }
-  dates?: { startDate: string; endDate: string; postsOutsideRange: number }
+  /** Planning writes ideas, not posts (CON-449). */
+  contentPlan?: { ideaCount: number; warnings: string[]; grounding?: Grounding }
+  generatedPosts?: {
+    ideaCount: number
+    warnings: string[]
+    grounding?: Grounding
+  }
+  /** Content-first drafts the draftPost tool wrote. */
+  draftedPosts?: { postCount: number; warnings: string[] }
+  brief?: { applied: boolean; undoId?: string }
+  dates?: {
+    startDate: string
+    endDate: string
+    postsOutsideRange: number
+    undoId?: string
+  }
+  platforms?: { added: string; undoId?: string }
   redistribute?: { postsUpdated: number; phaseCount: number }
   briefReview?: { consistent: boolean; findings: ReviewFinding[] }
   postsReview?: {
