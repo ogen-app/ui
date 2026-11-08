@@ -92,9 +92,14 @@ export type AssistantStep = {
   tool?: string
   input?: Record<string, unknown>
   ref?: string
-  label: string
-  /** Live sub-flow progress, from namespaced `{ step }` events. */
-  detail?: string
+  /**
+   * The sub-flow's latest step key, from namespaced `{ step }` events. Worded
+   * at render time (`stepDetail`), like the label itself (`stepLabel`), so a
+   * step never carries a sentence frozen in the language it ran in.
+   */
+  progress?: string
+  /** Posts a generation step has persisted so far. */
+  generated?: number
   startedAt: number
   endedAt: number | null
 }

@@ -1,6 +1,8 @@
 import { Fragment } from 'react'
 import { ArrowRightIcon, CopyIcon, WarningIcon } from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
 import { hasResultCard, ResultCard } from './ResultCard'
@@ -29,11 +31,12 @@ function Inline({ spans }: { spans: InlineSpan[] }) {
  * user's own bubbles are the only punctuation in the column.
  */
 export function AssistantReply({ turn }: { turn: AssistantTurn }) {
+  const { t } = useTranslation()
   const blocks = parseAssistantMarkup(turn.content)
   const steps = turn.steps ?? []
   const settled = !turn.streaming && !turn.failed
   const showCard = settled && hasResultCard(turn.details)
-  const footer = !showCard && turn.action ? actionLabel(turn.action) : null
+  const footer = !showCard && turn.action ? actionLabel(t, turn.action) : null
 
   return (
     <div className="flex flex-col gap-3">
@@ -79,7 +82,9 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
           {turn.saveVersion && (
             <>
               {' · '}
-              <span className="text-foreground">Version saved</span>
+              <span className="text-foreground">
+                {t('assistant.footer.versionSaved')}
+              </span>
               {turn.versionNote && `: ${turn.versionNote}`}
             </>
           )}
@@ -94,24 +99,12 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
  * did — the card always says it better — which in practice means turns
  * restored from history, whose result payload the server doesn't persist.
  */
-const ACTION_LABELS: Record<AssistantAction, string | null> = {
-  edited: 'Post updated',
-  declined: 'No changes made',
-  // The body was deliberately left alone (CON-188), so "post updated" would be
-  // wrong — the note is the whole of what happened.
-  noted: 'Note added',
-  answered: null,
-  content_plan_generated: 'Content plan generated',
-  posts_generated: 'Posts added',
-  brief_enriched: 'Brief updated',
-  dates_updated: 'Campaign dates updated',
-  posts_redistributed: 'Posts redistributed',
-  brief_reviewed: 'Brief reviewed',
-  posts_reviewed: 'Posts reviewed',
-}
-
-function actionLabel(action: AssistantAction): string | null {
-  return ACTION_LABELS[action] ?? null
+function actionLabel(t: TFunction, action: AssistantAction): string | null {
+  // A plain answer needs no footer: the prose is the whole of what happened.
+  // `noted` gets its own line rather than "post updated" — the body was
+  // deliberately left alone (CON-188), so the note is all that changed.
+  if (action === 'answered') return null
+  return t(`assistant.footer.${action}`)
 }
 
 /**
@@ -122,6 +115,7 @@ function actionLabel(action: AssistantAction): string | null {
  * see the clone, not to dismiss the assistant that made it.
  */
 function CloneCard({ clone }: { clone: NonNullable<AssistantTurn['clone']> }) {
+  const { t } = useTranslation()
   return (
     <Link
       to="/campaigns/$campaignId/posts/$postId"
@@ -134,7 +128,7 @@ function CloneCard({ clone }: { clone: NonNullable<AssistantTurn['clone']> }) {
         className="size-4 shrink-0 text-tertiary-foreground"
       />
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-        Open the clone
+        {t('assistant.reply.openClone')}
       </span>
       <ArrowRightIcon
         aria-hidden

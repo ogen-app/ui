@@ -1439,6 +1439,270 @@ export const es: Translation = {
 
     finished: 'El estratega ha terminado',
     failed: 'El estratega no ha podido terminar',
+
+    panel: {
+      title: 'Estratega de contenido',
+      back: 'Volver a todas las conversaciones',
+      placeholderCampaign: 'Pide un plan o una revisión...',
+      placeholderPost: 'Pide un cambio en esta publicación...',
+    },
+
+    composer: {
+      placeholder: 'Escribe un mensaje...',
+      suggestions: 'Sugerencias',
+      showActions: 'Mostrar acciones',
+      input: 'Escribe al asistente',
+      stop: 'Detener al asistente',
+      send: 'Enviar mensaje',
+    },
+
+    userMessage: {
+      showAll: 'Mostrar todo',
+      showLess: 'Mostrar menos',
+    },
+
+    timeline: {
+      thinking: 'Pensando… {{duration}}',
+      thought: 'Pensó durante {{duration}}',
+    },
+
+    step: {
+      plan: 'Analizando la petición',
+      compose: 'Escribiendo la publicación',
+      generated_one: '{{count}} generada',
+      generated_other: '{{count}} generadas',
+    },
+
+    tool: {
+      listAssets: {
+        running: 'Listando los recursos adjuntos',
+        done: 'Listados los recursos adjuntos',
+      },
+      getAssetChunks: {
+        running: 'Leyendo {{target}}',
+        done: 'Leído {{target}}',
+      },
+      searchAssetChunks: {
+        running: 'Buscando {{query}} en {{asset}}',
+        done: 'Buscado {{query}} en {{asset}}',
+      },
+      getCurrentContent: {
+        running: 'Releyendo la publicación actual',
+        done: 'Releída la publicación actual',
+      },
+      runContentPlan: {
+        running: 'Generando un plan de contenido',
+        done: 'Generado un plan de contenido',
+      },
+      generatePosts: {
+        running: 'Añadiendo publicaciones',
+        done: 'Añadidas publicaciones',
+      },
+      generatePostsFor: {
+        running: 'Añadiendo publicaciones para {{platform}}',
+        done: 'Añadidas publicaciones para {{platform}}',
+      },
+      enrichBrief: {
+        running: 'Mejorando el briefing',
+        done: 'Mejorado el briefing',
+      },
+      setCampaignDates: {
+        running: 'Actualizando las fechas de la campaña',
+        done: 'Actualizadas las fechas de la campaña',
+      },
+      redistributePosts: {
+        running: 'Redistribuyendo las publicaciones en el calendario',
+        done: 'Redistribuidas las publicaciones en el calendario',
+      },
+      checkBrief: {
+        running: 'Revisando el briefing',
+        done: 'Revisado el briefing',
+      },
+      checkPostsConsistency: {
+        running: 'Comprobando las publicaciones con el briefing',
+        done: 'Comprobadas las publicaciones con el briefing',
+      },
+      getCampaignOverview: {
+        running: 'Preparando el resumen de la campaña',
+        done: 'Preparado el resumen de la campaña',
+      },
+      listCampaignPosts: {
+        running: 'Leyendo las publicaciones de la campaña',
+        done: 'Leídas las publicaciones de la campaña',
+      },
+      getCampaignBrief: {
+        running: 'Leyendo el briefing de la campaña',
+        done: 'Leído el briefing de la campaña',
+      },
+    },
+
+    toolTarget: {
+      anAsset: 'un recurso',
+      asset: 'recurso {{id}}',
+      allOf: 'todo el contenido de {{asset}}',
+      chunks_one: '{{count}} fragmento de {{asset}}',
+      chunks_other: '{{count}} fragmentos de {{asset}}',
+      anyContent: 'contenido',
+      query: '«{{query}}»',
+    },
+
+    empty: {
+      campaign1: 'Planifica la campaña y llénala de publicaciones.',
+      campaign2: 'Afina el briefing. Mueve el calendario.',
+      campaign3: 'Revisa lo que hay y señala lo que se desvía.',
+      post1: 'Reescribe la publicación, o solo su arranque.',
+      post2: 'Cambia el tono, la extensión, el cierre.',
+      post3: 'Incorpora lo que haya en los recursos.',
+    },
+
+    starter: {
+      contentPlan: {
+        label: 'Generar un plan de contenido',
+        text: 'Genera un plan de contenido para esta campaña.',
+      },
+      addPosts: {
+        label: 'Añadir algunas publicaciones',
+        text: 'Añade algunas publicaciones de Threads en la fase actual para las próximas semanas.',
+      },
+      improveBrief: {
+        label: 'Mejorar el briefing',
+        text: 'Mejora el briefing de la campaña: haz el tono más técnico y basado en datos.',
+      },
+      reviewBrief: {
+        label: 'Revisar la coherencia',
+        text: '¿Es coherente el briefing? Revísalo y sugiere mejoras.',
+      },
+      moveEnd: {
+        label: 'Mover la fecha de fin',
+        text: 'Mueve el final de la campaña al principio del mes que viene.',
+      },
+      redistribute: {
+        label: 'Redistribuir borradores',
+        text: 'Redistribuye los borradores y las publicaciones sin publicar a lo largo de la campaña.',
+      },
+      overview: {
+        label: 'Resumen rápido',
+        text: 'Dame un resumen rápido de esta campaña y de cómo se reparte el contenido.',
+      },
+      checkPosts: {
+        label: 'Comprobar con el briefing',
+        text: '¿Siguen las publicaciones el briefing? Señala las que se desvíen.',
+      },
+      tightenOpening: {
+        label: 'Afinar el arranque',
+        text: 'Afina el arranque: una idea, sin rodeos.',
+      },
+      changeTone: {
+        label: 'Cambiar el tono',
+        text: 'Reescríbela con un tono más llano y directo.',
+      },
+      shorter: {
+        label: 'Acortarla',
+        text: 'Déjala en la mitad de su extensión sin perder el argumento.',
+      },
+      useAsset: {
+        label: 'Usar un recurso',
+        text: 'Incorpora a esta publicación las cifras clave de los recursos adjuntos.',
+      },
+      callToAction: {
+        label: 'Añadir una llamada a la acción',
+        text: 'Termínala con una llamada a la acción acorde con el briefing de la campaña.',
+      },
+      missing: {
+        label: '¿Qué falta?',
+        text: '¿Qué le falta a esta publicación antes de salir?',
+      },
+    },
+
+    footer: {
+      edited: 'Publicación actualizada',
+      declined: 'Sin cambios',
+      noted: 'Nota añadida',
+      content_plan_generated: 'Plan de contenido generado',
+      posts_generated: 'Publicaciones añadidas',
+      brief_enriched: 'Briefing actualizado',
+      dates_updated: 'Fechas de la campaña actualizadas',
+      posts_redistributed: 'Publicaciones redistribuidas',
+      brief_reviewed: 'Briefing revisado',
+      posts_reviewed: 'Publicaciones revisadas',
+      versionSaved: 'Versión guardada',
+    },
+
+    reply: {
+      openClone: 'Abrir la copia',
+      done: 'Hecho.',
+      cancelledPost: 'Cancelado.',
+      cancelledCampaign:
+        'Detenido. Lo que ya se había escrito en la campaña se ha conservado.',
+      failed: 'El asistente ha fallado',
+    },
+
+    list: {
+      empty1: 'Aún no hay conversaciones.',
+      empty2: 'Abre una campaña o una publicación para empezar una.',
+      empty3: 'El estratega trabaja sobre lo que tengas abierto.',
+      current: 'ACTUAL',
+      openCampaign: 'Abrir la campaña',
+      openPost: 'Abrir la publicación',
+      close: 'Cerrar esta conversación',
+    },
+
+    status: {
+      answered: 'Respondió una pregunta',
+      declined: 'Rechazó la petición',
+      edited: 'Editó la publicación',
+      noted: 'Añadió una nota',
+      content_plan_generated: 'Generó un plan de contenido',
+      posts_generated: 'Añadió publicaciones',
+      brief_enriched: 'Mejoró el briefing',
+      dates_updated: 'Actualizó las fechas de la campaña',
+      posts_redistributed: 'Redistribuyó las publicaciones',
+      brief_reviewed: 'Revisó el briefing',
+      posts_reviewed: 'Comprobó las publicaciones con el briefing',
+      waiting: 'Esperando una respuesta',
+      notStarted: 'Aún sin empezar',
+      stopped: 'Detenido',
+      failed: 'Ha fallado',
+      answeredGeneric: 'Respondido',
+      workingCampaign: 'Trabajando en la campaña',
+      workingPost: 'Trabajando en la publicación',
+      running: '{{step}} · {{elapsed}}',
+    },
+
+    result: {
+      briefConsistent: 'El briefing es coherente',
+      briefIssues: 'El briefing tiene problemas',
+      findings_one: '{{count}} hallazgo',
+      findings_other: '{{count}} hallazgos',
+      nothingToFlag: 'Nada que señalar.',
+      checkedPosts: 'Comprobadas {{checked}} de {{total}} publicaciones',
+      drifts_one: '{{count}} desviación',
+      drifts_other: '{{count}} desviaciones',
+      capped: '{{drifts}} · limitado',
+      everyPostFollows: 'Todas las publicaciones siguen el briefing.',
+      datesUpdated: 'Fechas de la campaña actualizadas',
+      outsideRange_one:
+        '{{count}} publicación queda fuera del rango: pide que se redistribuya.',
+      outsideRange_other:
+        '{{count}} publicaciones quedan fuera del rango: pide que se redistribuyan.',
+      postsRedistributed: 'Publicaciones redistribuidas',
+      redistributed_one:
+        'Nueva fecha para {{count}} publicación en {{phases}}.',
+      redistributed_other:
+        'Nueva fecha para {{count}} publicaciones en {{phases}}.',
+      phases_one: '{{count}} fase',
+      phases_other: '{{count}} fases',
+      generatedNone: 'No se añadió ningún borrador',
+      generated_one: '+{{count}} borrador añadido',
+      generated_other: '+{{count}} borradores añadidos',
+      briefApplied: 'Briefing actualizado y guardado',
+      briefNotApplied: 'Briefing sugerido pero no aplicado',
+      severity: {
+        high: 'alta',
+        medium: 'media',
+        low: 'baja',
+      },
+    },
   },
 
   workspace: {

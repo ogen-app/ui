@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Logo } from '@/components/Logo'
 import { StarterChips } from './StarterChips'
 import type { ThreadSubject } from '@/types/assistant'
@@ -10,18 +11,18 @@ import type { ThreadSubject } from '@/types/assistant'
  * Three lines, not a paragraph: each one is a capability the user can act on,
  * and the chips below are the same list in a form they can click.
  */
-const LINES: Record<ThreadSubject['kind'], string[]> = {
+const LINES = {
   campaign: [
-    'Plan the campaign and fill it with posts.',
-    'Sharpen the brief. Move the schedule.',
-    'Review what is here and flag the drift.',
+    'assistant.empty.campaign1',
+    'assistant.empty.campaign2',
+    'assistant.empty.campaign3',
   ],
   post: [
-    'Rewrite the post, or just its opening.',
-    'Shift the tone, the length, the ending.',
-    'Work in anything from the assets.',
+    'assistant.empty.post1',
+    'assistant.empty.post2',
+    'assistant.empty.post3',
   ],
-}
+} as const satisfies Record<ThreadSubject['kind'], readonly string[]>
 
 export function ThreadEmptyState({
   kind,
@@ -35,12 +36,13 @@ export function ThreadEmptyState({
   showStarters?: boolean
   disabled?: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
       <Logo variant="mark" className="size-8 text-quinary-foreground" />
       <div className="flex max-w-72 flex-col gap-1 text-sm text-tertiary-foreground">
-        {LINES[kind].map((line) => (
-          <p key={line}>{line}</p>
+        {LINES[kind].map((key) => (
+          <p key={key}>{t(key)}</p>
         ))}
       </div>
       {showStarters && (

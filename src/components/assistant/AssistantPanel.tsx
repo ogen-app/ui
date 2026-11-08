@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react'
 import { ListBulletsIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
@@ -40,6 +41,7 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
   const selectThread = useAssistantStore((s) => s.selectThread)
   const send = useAssistantStore((s) => s.send)
   const cancel = useAssistantStore((s) => s.cancel)
+  const { t } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
   // Gated on the send, not on opening the panel. The assistant is the rail's
   // floor — it is open before anyone decides to use it — so "opened it" is not
@@ -115,7 +117,7 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
 
   return (
     <RailPanel
-      title="Content Strategist"
+      title={t('assistant.panel.title')}
       onClose={onClose}
       className="h-full"
       bodyClassName="flex-1 gap-6"
@@ -147,7 +149,7 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
       // Only inside a thread does the header have somewhere to go; on the list
       // itself it is just a heading.
       onTitleClick={thread ? () => selectThread(null) : undefined}
-      titleLabel={thread ? 'Back to all conversations' : undefined}
+      titleLabel={thread ? t('assistant.panel.back') : undefined}
       // Solid across the 24px below the composer only — the whole 56px row is on
       // the ramp. That is what puts a trace of the thread at the height of the
       // placeholder: the field's own fill covers the words, so what shows is the
@@ -188,8 +190,8 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
               onCancel={() => cancel(thread.id)}
               placeholder={
                 isCampaign
-                  ? 'Ask for a plan or a review...'
-                  : 'Ask for a change to this post...'
+                  ? t('assistant.panel.placeholderCampaign')
+                  : t('assistant.panel.placeholderPost')
               }
               prefill={prefill}
               onToggleSuggestions={() => setSuggesting((s) => !s)}

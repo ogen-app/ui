@@ -1881,6 +1881,306 @@ export const en = {
      */
     finished: 'The strategist finished',
     failed: 'The strategist could not finish',
+
+    panel: {
+      title: 'Content Strategist',
+      /** The title block's label inside a thread, where it leads back out. */
+      back: 'Back to all conversations',
+      placeholderCampaign: 'Ask for a plan or a review...',
+      placeholderPost: 'Ask for a change to this post...',
+    },
+
+    composer: {
+      placeholder: 'Write a message...',
+      suggestions: 'Suggestions',
+      showActions: 'Show actions',
+      input: 'Message the assistant',
+      stop: 'Stop the assistant',
+      send: 'Send message',
+    },
+
+    /** A long instruction folds after five lines. */
+    userMessage: {
+      showAll: 'Show all',
+      showLess: 'Show less',
+    },
+
+    /**
+     * The thinking timeline's header. The elapsed time is the label while the
+     * turn runs and part of the label once it ends.
+     */
+    timeline: {
+      thinking: 'Thinking… {{duration}}',
+      thought: 'Thought for {{duration}}',
+    },
+
+    /**
+     * Steps the client opens itself, rather than the tools the backend
+     * reports. `generated` is the running count a generation step carries.
+     */
+    step: {
+      plan: 'Analyzing the request',
+      compose: 'Writing the post',
+      generated_one: '{{count}} generated',
+      generated_other: '{{count}} generated',
+    },
+
+    /**
+     * Each tool in two tenses: while it runs, and once it has. The mutating
+     * campaign tools write as they run, so their past tense states a fact.
+     * A tool this build has no entry for shows its raw name.
+     */
+    tool: {
+      listAssets: {
+        running: 'Listing attached assets',
+        done: 'Listed attached assets',
+      },
+      getAssetChunks: {
+        running: 'Reading {{target}}',
+        done: 'Read {{target}}',
+      },
+      searchAssetChunks: {
+        running: 'Searching {{asset}} for {{query}}',
+        done: 'Searched {{asset}} for {{query}}',
+      },
+      getCurrentContent: {
+        running: 'Re-reading the current post',
+        done: 'Re-read the current post',
+      },
+      runContentPlan: {
+        running: 'Generating a content plan',
+        done: 'Generated a content plan',
+      },
+      generatePosts: {
+        running: 'Adding posts',
+        done: 'Added posts',
+      },
+      generatePostsFor: {
+        running: 'Adding posts for {{platform}}',
+        done: 'Added posts for {{platform}}',
+      },
+      enrichBrief: {
+        running: 'Improving the brief',
+        done: 'Improved the brief',
+      },
+      setCampaignDates: {
+        running: 'Updating the campaign dates',
+        done: 'Updated the campaign dates',
+      },
+      redistributePosts: {
+        running: 'Redistributing posts across the timeline',
+        done: 'Redistributed posts across the timeline',
+      },
+      checkBrief: {
+        running: 'Reviewing the brief',
+        done: 'Reviewed the brief',
+      },
+      checkPostsConsistency: {
+        running: 'Checking posts against the brief',
+        done: 'Checked posts against the brief',
+      },
+      getCampaignOverview: {
+        running: 'Building the campaign overview',
+        done: 'Built the campaign overview',
+      },
+      listCampaignPosts: {
+        running: 'Reading the campaign posts',
+        done: 'Read the campaign posts',
+      },
+      getCampaignBrief: {
+        running: 'Reading the campaign brief',
+        done: 'Read the campaign brief',
+      },
+    },
+
+    /** The nouns the tool labels name what they are reading with. */
+    toolTarget: {
+      anAsset: 'an asset',
+      asset: 'asset {{id}}',
+      allOf: 'all of {{asset}}',
+      chunks_one: '{{count}} chunk of {{asset}}',
+      chunks_other: '{{count}} chunks of {{asset}}',
+      anyContent: 'content',
+      query: '“{{query}}”',
+    },
+
+    /**
+     * What an unused thread says for itself: three things the assistant can
+     * do here, one per line, above the starters that do them.
+     */
+    empty: {
+      campaign1: 'Plan the campaign and fill it with posts.',
+      campaign2: 'Sharpen the brief. Move the schedule.',
+      campaign3: 'Review what is here and flag the drift.',
+      post1: 'Rewrite the post, or just its opening.',
+      post2: 'Shift the tone, the length, the ending.',
+      post3: 'Work in anything from the assets.',
+    },
+
+    /**
+     * A starter prefills the composer and never sends, so `text` is a draft
+     * the user edits: it is written as the user would say it.
+     */
+    starter: {
+      contentPlan: {
+        label: 'Generate a content plan',
+        text: 'Generate a content plan for this campaign.',
+      },
+      addPosts: {
+        label: 'Add a few posts',
+        text: 'Add a few Threads posts in the current phase for the upcoming weeks.',
+      },
+      improveBrief: {
+        label: 'Improve the brief',
+        text: 'Improve the campaign brief — make the tone more technical and benchmark-driven.',
+      },
+      reviewBrief: {
+        label: 'Review consistency',
+        text: 'Is the brief consistent? Review it and suggest improvements.',
+      },
+      moveEnd: {
+        label: 'Move the end date',
+        text: 'Move the campaign end to the beginning of next month.',
+      },
+      redistribute: {
+        label: 'Redistribute drafts',
+        text: 'Redistribute the drafts and unpublished posts across the campaign timeline.',
+      },
+      overview: {
+        label: 'Quick overview',
+        text: 'Give me a quick overview of this campaign and how the content is distributed.',
+      },
+      checkPosts: {
+        label: 'Check posts vs brief',
+        text: 'Do the posts follow the brief? Flag any that drift.',
+      },
+      tightenOpening: {
+        label: 'Tighten the opening',
+        text: 'Tighten the opening — one claim, no throat-clearing.',
+      },
+      changeTone: {
+        label: 'Change the tone',
+        text: 'Rewrite this in a plainer, more direct tone.',
+      },
+      shorter: {
+        label: 'Make it shorter',
+        text: 'Cut this down to about half its length without losing the argument.',
+      },
+      useAsset: {
+        label: 'Work in an asset',
+        text: 'Work the key numbers from the attached assets into this post.',
+      },
+      callToAction: {
+        label: 'Add a call to action',
+        text: 'End this with a call to action that matches the campaign brief.',
+      },
+      missing: {
+        label: 'What’s missing?',
+        text: 'What’s missing from this post before it goes out?',
+      },
+    },
+
+    /**
+     * The one-line footer under a reply when no result card says it better —
+     * in practice, turns restored from history.
+     */
+    footer: {
+      edited: 'Post updated',
+      declined: 'No changes made',
+      noted: 'Note added',
+      content_plan_generated: 'Content plan generated',
+      posts_generated: 'Posts added',
+      brief_enriched: 'Brief updated',
+      dates_updated: 'Campaign dates updated',
+      posts_redistributed: 'Posts redistributed',
+      brief_reviewed: 'Brief reviewed',
+      posts_reviewed: 'Posts reviewed',
+      versionSaved: 'Version saved',
+    },
+
+    reply: {
+      openClone: 'Open the clone',
+      /** A turn that finished with nothing to say. */
+      done: 'Done.',
+      /** A post turn writes once, at the end, so stopping it undoes nothing. */
+      cancelledPost: 'Cancelled.',
+      /** Campaign flows persist as they go; a stop is not a rollback. */
+      cancelledCampaign:
+        'Stopped. Anything already written to the campaign was kept.',
+      failed: 'The assistant failed',
+    },
+
+    /** Every open thread, in the rail's list. */
+    list: {
+      empty1: 'No conversations yet.',
+      empty2: 'Open a campaign or a post to start one.',
+      empty3: 'The strategist works on whatever you are in.',
+      /** Literal capitals: a tag, not a sentence. */
+      current: 'CURRENT',
+      openCampaign: 'Open the campaign',
+      openPost: 'Open the post',
+      close: 'Close this conversation',
+    },
+
+    /**
+     * A thread's state in the list: what the assistant did, in the timeline's
+     * vocabulary, or what it is doing now.
+     */
+    status: {
+      answered: 'Answered a question',
+      declined: 'Declined the request',
+      edited: 'Edited the post',
+      noted: 'Added a note',
+      content_plan_generated: 'Generated a content plan',
+      posts_generated: 'Added posts',
+      brief_enriched: 'Improved the brief',
+      dates_updated: 'Updated the campaign dates',
+      posts_redistributed: 'Redistributed posts',
+      brief_reviewed: 'Reviewed the brief',
+      posts_reviewed: 'Checked posts against the brief',
+      waiting: 'Waiting for a reply',
+      notStarted: 'Not started yet',
+      stopped: 'Stopped',
+      failed: 'Failed',
+      answeredGeneric: 'Answered',
+      workingCampaign: 'Working on the campaign',
+      workingPost: 'Working on the post',
+      running: '{{step}} · {{elapsed}}',
+    },
+
+    /** The structured result under a campaign turn. */
+    result: {
+      briefConsistent: 'Brief is consistent',
+      briefIssues: 'Brief has issues',
+      findings_one: '{{count}} finding',
+      findings_other: '{{count}} findings',
+      nothingToFlag: 'Nothing to flag.',
+      checkedPosts: 'Checked {{checked}} of {{total}} posts',
+      drifts_one: '{{count}} drift',
+      drifts_other: '{{count}} drifts',
+      capped: '{{drifts}} · capped',
+      everyPostFollows: 'Every post follows the brief.',
+      datesUpdated: 'Campaign dates updated',
+      outsideRange_one:
+        '{{count}} post now falls outside the range — ask to redistribute it.',
+      outsideRange_other:
+        '{{count}} posts now fall outside the range — ask to redistribute them.',
+      postsRedistributed: 'Posts redistributed',
+      redistributed_one: 'Re-dated {{count}} post across {{phases}}.',
+      redistributed_other: 'Re-dated {{count}} posts across {{phases}}.',
+      phases_one: '{{count}} phase',
+      phases_other: '{{count}} phases',
+      generatedNone: 'No draft posts added',
+      generated_one: '+{{count}} draft post added',
+      generated_other: '+{{count}} draft posts added',
+      briefApplied: 'Brief updated and saved',
+      briefNotApplied: 'Brief suggested but not applied',
+      severity: {
+        high: 'high',
+        medium: 'medium',
+        low: 'low',
+      },
+    },
   },
 
   /**

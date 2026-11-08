@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CaretDownIcon, CaretRightIcon, CheckIcon } from '@phosphor-icons/react'
-import { formatDuration } from '@/lib/assistantTools'
+import { formatDuration, stepDetail, stepLabel } from '@/lib/assistantTools'
 import { useTick } from '@/hooks/useTick'
 import { cn } from '@/lib'
 import type { AssistantStep } from '@/types/assistant'
@@ -25,6 +26,7 @@ export function ThinkingTimeline({
   endedAt,
 }: ThinkingTimelineProps) {
   useTick(streaming)
+  const { t } = useTranslation()
   const [open, setOpen] = useState(streaming)
 
   useEffect(() => {
@@ -61,9 +63,14 @@ export function ThinkingTimeline({
         <span className="flex-1">
           {/* The elapsed time is the label while running and part of the label
               once done, so there is never a second copy of it on the right. */}
-          {streaming
-            ? `Thinking… ${formatDuration(total)}`
-            : `Thought for ${formatDuration(total)}`}
+          {t(
+            streaming
+              ? 'assistant.timeline.thinking'
+              : 'assistant.timeline.thought',
+            {
+              duration: formatDuration(total),
+            },
+          )}
         </span>
       </button>
 
@@ -72,6 +79,7 @@ export function ThinkingTimeline({
           {steps.map((step) => {
             const running = step.endedAt === null
             const end = step.endedAt ?? (streaming ? now : step.startedAt)
+            const detail = stepDetail(t, step)
             return (
               <li
                 key={step.id}
@@ -98,11 +106,11 @@ export function ThinkingTimeline({
                     running ? 'text-foreground' : 'text-tertiary-foreground',
                   )}
                 >
-                  {step.label}
-                  {step.detail && (
+                  {stepLabel(t, step)}
+                  {detail && (
                     <span className="text-quaternary-foreground">
                       {' '}
-                      · {step.detail}
+                      · {detail}
                     </span>
                   )}
                 </span>
