@@ -5,6 +5,7 @@ import {
   PaperPlaneRightIcon,
   StopIcon,
 } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib'
@@ -52,11 +53,12 @@ export function AssistantComposer({
   running = false,
   onCancel,
   disabled = false,
-  placeholder = 'Write a message...',
+  placeholder,
   prefill,
   onToggleSuggestions,
   suggestionsOpen = false,
 }: AssistantComposerProps) {
+  const { t } = useTranslation()
   const [draft, setDraft] = useState('')
   const [active, setActive] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -117,7 +119,7 @@ export function AssistantComposer({
             onClick={onToggleSuggestions}
             disabled={disabled || !onToggleSuggestions}
             active={suggestionsOpen}
-            aria-label="Suggestions"
+            aria-label={t('assistant.composer.suggestions')}
             aria-expanded={suggestionsOpen}
             // Selected reads as an outline, not a fill: the button sits in the
             // field's own surface colour, so a matching fill would only merge
@@ -140,7 +142,7 @@ export function AssistantComposer({
             variant="ghost"
             size="smIcon"
             onClick={() => setActive(false)}
-            aria-label="Show actions"
+            aria-label={t('assistant.composer.showActions')}
             className="bg-primary text-tertiary-foreground"
           >
             <CaretRightIcon />
@@ -169,8 +171,8 @@ export function AssistantComposer({
             }
           }}
           disabled={disabled}
-          placeholder={placeholder}
-          aria-label="Message the assistant"
+          placeholder={placeholder ?? t('assistant.composer.placeholder')}
+          aria-label={t('assistant.composer.input')}
           // 20px line + 6px padding either side = 32, the height of the
           // buttons flanking it. At 1.5 line-height the row came out a pixel
           // taller than them and nothing lined up.
@@ -183,7 +185,7 @@ export function AssistantComposer({
           variant="ghost"
           size="smIcon"
           onClick={onCancel}
-          aria-label="Stop the assistant"
+          aria-label={t('assistant.composer.stop')}
           className="self-end bg-primary text-accent hover:text-foreground"
         >
           <StopIcon weight="fill" />
@@ -194,7 +196,7 @@ export function AssistantComposer({
           size="smIcon"
           onClick={submit}
           disabled={!canSend}
-          aria-label="Send message"
+          aria-label={t('assistant.composer.send')}
           className="self-end bg-primary disabled:text-senary-foreground"
         >
           <PaperPlaneRightIcon />

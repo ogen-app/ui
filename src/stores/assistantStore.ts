@@ -4,7 +4,7 @@ import { queryClient } from '@/lib/queryClient'
 import { postKey } from '@/hooks/usePost'
 import { postNotesKey, postVersionsKey } from '@/lib/queryKeys'
 import { campaignKey } from '@/hooks/useCampaigns'
-import { describeTool, humanizeStep, threadName } from '@/lib/assistantTools'
+import { threadName } from '@/lib/assistantTools'
 import { flushPendingSave } from '@/lib/pendingSaves'
 import { invalidateCampaignPosts } from '@/lib/postCache'
 import { beginLocalRun } from '@/lib/localRuns'
@@ -289,7 +289,6 @@ export const useAssistantStore = create<AssistantState>()(
           const planStep: AssistantStep = {
             id: 'plan',
             kind: 'plan',
-            label: 'Analyzing the request',
             startedAt,
             endedAt: null,
           }
@@ -414,8 +413,10 @@ export const useAssistantStore = create<AssistantState>()(
                   const steps = (t.steps ?? []).slice()
                   const idx = lastOpenToolIndex(steps)
                   if (idx < 0) return t
-                  const count = countOf(steps[idx].detail) + 1
-                  steps[idx] = { ...steps[idx], detail: `${count} generated` }
+                  steps[idx] = {
+                    ...steps[idx],
+                    generated: (steps[idx].generated ?? 0) + 1,
+                  }
                   return { ...t, steps }
                 })
                 break
@@ -433,7 +434,6 @@ export const useAssistantStore = create<AssistantState>()(
                     tool: event.name,
                     input: event.input,
                     ref: event.ref,
-                    label: describeTool(event.name, event.input, 'running'),
                     startedAt: now,
                     endedAt: null,
                   })
@@ -448,11 +448,7 @@ export const useAssistantStore = create<AssistantState>()(
                     s.kind === 'tool' &&
                     s.ref === event.ref &&
                     s.endedAt === null
-                      ? {
-                          ...s,
-                          endedAt: now,
-                          label: describeTool(s.tool ?? '', s.input, 'done'),
-                        }
+                      ? { ...s, endedAt: now }
                       : s,
                   ),
                 }))
@@ -463,10 +459,7 @@ export const useAssistantStore = create<AssistantState>()(
                   const steps = (t.steps ?? []).slice()
                   const idx = lastOpenToolIndex(steps)
                   if (idx < 0) return t
-                  steps[idx] = {
-                    ...steps[idx],
-                    detail: humanizeStep(event.step),
-                  }
+                  steps[idx] = { ...steps[idx], progress: event.step }
                   return { ...t, steps }
                 })
                 break
@@ -487,7 +480,10 @@ export const useAssistantStore = create<AssistantState>()(
               case 'complete':
                 patchLastTurn(threadId, (t) => ({
                   ...t,
-                  content: event.result.explanation || t.content || 'Done.',
+                  content:
+                    event.result.explanation ||
+                    t.content ||
+                    i18next.t('assistant.reply.done'),
                   action: event.result.action,
                   saveVersion: event.result.saveVersion,
                   versionNote: event.result.versionNote,
@@ -500,7 +496,10 @@ export const useAssistantStore = create<AssistantState>()(
               case 'campaign_complete':
                 patchLastTurn(threadId, (t) => ({
                   ...t,
-                  content: event.result.explanation || t.content || 'Done.',
+                  content:
+                    event.result.explanation ||
+                    t.content ||
+                    i18next.t('assistant.reply.done'),
                   action: event.result.action,
                   details: event.result.details,
                   steps: closeSteps(t.steps ?? [], now),
@@ -667,12 +666,6 @@ function upsertPost(posts: StreamedPost[], post: StreamedPost): StreamedPost[] {
   return next
 }
 
-/** Reads the running count back out of a `"3 generated"` detail line. */
-function countOf(detail: string | undefined): number {
-  const match = detail?.match(/^(\d+) generated$/)
-  return match ? Number(match[1]) : 0
-}
-
 function lastOpenToolIndex(steps: AssistantStep[]): number {
   for (let i = steps.length - 1; i >= 0; i--) {
     if (steps[i].kind === 'tool' && steps[i].endedAt === null) return i
@@ -694,7 +687,6 @@ function withWritingStep(steps: AssistantStep[], now: number): AssistantStep[] {
     {
       id: 'compose',
       kind: 'compose',
-      label: 'Writing the post',
       startedAt: now,
       endedAt: null,
     },
@@ -712,10 +704,12 @@ function closeSteps(steps: AssistantStep[], now: number): AssistantStep[] {
  */
 function cancelledText(subject: ThreadSubject): string {
   return subject.kind === 'post'
-    ? 'Cancelled.'
-    : 'Stopped. Anything already written to the campaign was kept.'
+    ? i18next.t('assistant.reply.cancelledPost')
+    : i18next.t('assistant.reply.cancelledCampaign')
 }
 
 function errorText(err: unknown): string {
-  return err instanceof Error ? err.message : 'The assistant failed'
+  return err instanceof Error
+    ? err.message
+    : i18next.t('assistant.reply.failed')
 }

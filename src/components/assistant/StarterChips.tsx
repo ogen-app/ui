@@ -15,9 +15,27 @@ import {
   QuestionIcon,
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import type { ThreadSubject } from '@/types/assistant'
 
-type Starter = { icon: Icon; label: string; text: string }
+/** `key` names the starter's label and draft under `assistant.starter`. */
+type Starter = { icon: Icon; key: StarterKey }
+
+type StarterKey =
+  | 'contentPlan'
+  | 'addPosts'
+  | 'improveBrief'
+  | 'reviewBrief'
+  | 'moveEnd'
+  | 'redistribute'
+  | 'overview'
+  | 'checkPosts'
+  | 'tightenOpening'
+  | 'changeTone'
+  | 'shorter'
+  | 'useAsset'
+  | 'callToAction'
+  | 'missing'
 
 /**
  * The assistant's capabilities, one starter per shipped tool. They are
@@ -29,79 +47,23 @@ type Starter = { icon: Icon; label: string; text: string }
  * headings, and the groups only made the menu look like a settings screen.
  */
 const CAMPAIGN_STARTERS: Starter[] = [
-  {
-    icon: SparkleIcon,
-    label: 'Generate a content plan',
-    text: 'Generate a content plan for this campaign.',
-  },
-  {
-    icon: NotePencilIcon,
-    label: 'Add a few posts',
-    text: 'Add a few Threads posts in the current phase for the upcoming weeks.',
-  },
-  {
-    icon: MagicWandIcon,
-    label: 'Improve the brief',
-    text: 'Improve the campaign brief — make the tone more technical and benchmark-driven.',
-  },
-  {
-    icon: SealCheckIcon,
-    label: 'Review consistency',
-    text: 'Is the brief consistent? Review it and suggest improvements.',
-  },
-  {
-    icon: CalendarBlankIcon,
-    label: 'Move the end date',
-    text: 'Move the campaign end to the beginning of next month.',
-  },
-  {
-    icon: ArrowsClockwiseIcon,
-    label: 'Redistribute drafts',
-    text: 'Redistribute the drafts and unpublished posts across the campaign timeline.',
-  },
-  {
-    icon: ChartBarIcon,
-    label: 'Quick overview',
-    text: 'Give me a quick overview of this campaign and how the content is distributed.',
-  },
-  {
-    icon: ListChecksIcon,
-    label: 'Check posts vs brief',
-    text: 'Do the posts follow the brief? Flag any that drift.',
-  },
+  { icon: SparkleIcon, key: 'contentPlan' },
+  { icon: NotePencilIcon, key: 'addPosts' },
+  { icon: MagicWandIcon, key: 'improveBrief' },
+  { icon: SealCheckIcon, key: 'reviewBrief' },
+  { icon: CalendarBlankIcon, key: 'moveEnd' },
+  { icon: ArrowsClockwiseIcon, key: 'redistribute' },
+  { icon: ChartBarIcon, key: 'overview' },
+  { icon: ListChecksIcon, key: 'checkPosts' },
 ]
 
 const POST_STARTERS: Starter[] = [
-  {
-    icon: ScissorsIcon,
-    label: 'Tighten the opening',
-    text: 'Tighten the opening — one claim, no throat-clearing.',
-  },
-  {
-    icon: SlidersHorizontalIcon,
-    label: 'Change the tone',
-    text: 'Rewrite this in a plainer, more direct tone.',
-  },
-  {
-    icon: TextAaIcon,
-    label: 'Make it shorter',
-    text: 'Cut this down to about half its length without losing the argument.',
-  },
-  {
-    icon: PaperclipIcon,
-    label: 'Work in an asset',
-    text: 'Work the key numbers from the attached assets into this post.',
-  },
-  {
-    icon: MegaphoneIcon,
-    label: 'Add a call to action',
-    text: 'End this with a call to action that matches the campaign brief.',
-  },
-  {
-    icon: QuestionIcon,
-    label: "What's missing?",
-    text: "What's missing from this post before it goes out?",
-  },
+  { icon: ScissorsIcon, key: 'tightenOpening' },
+  { icon: SlidersHorizontalIcon, key: 'changeTone' },
+  { icon: TextAaIcon, key: 'shorter' },
+  { icon: PaperclipIcon, key: 'useAsset' },
+  { icon: MegaphoneIcon, key: 'callToAction' },
+  { icon: QuestionIcon, key: 'missing' },
 ]
 
 export function StarterChips({
@@ -113,22 +75,27 @@ export function StarterChips({
   onPick: (text: string) => void
   disabled?: boolean
 }) {
+  const { t } = useTranslation()
   const starters = kind === 'campaign' ? CAMPAIGN_STARTERS : POST_STARTERS
   return (
     <div className="flex flex-wrap justify-center gap-1.5">
-      {starters.map(({ icon: Icon, label, text }) => (
-        <button
-          key={label}
-          type="button"
-          disabled={disabled}
-          onClick={() => onPick(text)}
-          title={text}
-          className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-sm text-secondary-foreground transition-colors cursor-pointer hover:bg-tertiary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-        >
-          <Icon className="size-4 shrink-0 text-tertiary-foreground" />
-          {label}
-        </button>
-      ))}
+      {starters.map(({ icon: Icon, key }) => {
+        const label = t(`assistant.starter.${key}.label`)
+        const text = t(`assistant.starter.${key}.text`)
+        return (
+          <button
+            key={key}
+            type="button"
+            disabled={disabled}
+            onClick={() => onPick(text)}
+            title={text}
+            className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-sm text-secondary-foreground transition-colors cursor-pointer hover:bg-tertiary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+          >
+            <Icon className="size-4 shrink-0 text-tertiary-foreground" />
+            {label}
+          </button>
+        )
+      })}
     </div>
   )
 }

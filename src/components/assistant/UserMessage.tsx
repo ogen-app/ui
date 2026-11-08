@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 /** How much of a long instruction the bubble shows before it is folded away. */
 const COLLAPSED_LINES = 5
@@ -14,6 +15,7 @@ const COLLAPSED_LINES = 5
  * the rest.
  */
 export function UserMessage({ content }: { content: string }) {
+  const { t } = useTranslation()
   const textRef = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState(false)
   // Both in px, so the open/close transition has two numbers to animate
@@ -100,7 +102,7 @@ export function UserMessage({ content }: { content: string }) {
                 onClick={toggle}
                 className="px-2 py-0.5 text-xs font-medium cursor-pointer"
               >
-                Show all
+                {t('assistant.userMessage.showAll')}
               </button>
             </div>
           )}
@@ -110,7 +112,7 @@ export function UserMessage({ content }: { content: string }) {
               onClick={toggle}
               className="mt-1 block text-xs font-medium opacity-0 transition-opacity duration-150 cursor-pointer group-hover:opacity-100 focus-visible:opacity-100"
             >
-              Show less
+              {t('assistant.userMessage.showLess')}
             </button>
           )}
         </div>

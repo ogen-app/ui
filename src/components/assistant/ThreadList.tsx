@@ -1,4 +1,6 @@
 import type { CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { Link } from '@tanstack/react-router'
 import {
   SignInIcon,
@@ -10,7 +12,7 @@ import { Logo } from '@/components/Logo'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { useTick } from '@/hooks/useTick'
 import { cn } from '@/lib/styles'
-import { formatDuration, threadName } from '@/lib/assistantTools'
+import { formatDuration, stepLabel, threadName } from '@/lib/assistantTools'
 import type { AssistantAction, AssistantThread } from '@/types/assistant'
 
 /**
@@ -28,6 +30,7 @@ export function ThreadList() {
   const currentThreadId = useAssistantStore((s) => s.currentThreadId)
   const select = useAssistantStore((s) => s.selectThread)
   const close = useAssistantStore((s) => s.closeThread)
+  const { t } = useTranslation()
   const list = order(Object.values(threads), threads[currentThreadId ?? ''])
   const anyRunning = list.some((t) => t.status === 'running')
   useTick(anyRunning, 1000)
@@ -38,9 +41,9 @@ export function ThreadList() {
       <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
         <Logo variant="mark" className="size-8 text-quinary-foreground" />
         <div className="flex max-w-72 flex-col gap-1 text-sm text-tertiary-foreground">
-          <p>No conversations yet.</p>
-          <p>Open a campaign or a post to start one.</p>
-          <p>The strategist works on whatever you are in.</p>
+          <p>{t('assistant.list.empty1')}</p>
+          <p>{t('assistant.list.empty2')}</p>
+          <p>{t('assistant.list.empty3')}</p>
         </div>
       </div>
     )
@@ -102,11 +105,11 @@ export function ThreadList() {
                   </span>
                   {thread.id === currentThreadId && (
                     <span className="shrink-0 bg-accent/10 px-[3px] py-[2px] text-[10px] font-semibold tracking-[0.08em] text-accent">
-                      CURRENT
+                      {t('assistant.list.current')}
                     </span>
                   )}
                 </span>
-                <ThreadStatusLine thread={thread} />
+                <ThreadStatusLine thread={thread} t={t} />
               </span>
             </button>
 
@@ -129,8 +132,8 @@ export function ThreadList() {
                   {...openLink(thread)}
                   aria-label={
                     thread.subject.kind === 'campaign'
-                      ? 'Open the campaign'
-                      : 'Open the post'
+                      ? t('assistant.list.openCampaign')
+                      : t('assistant.list.openPost')
                   }
                   className="flex size-6 shrink-0 items-center justify-center text-secondary-foreground hover:text-foreground"
                 >
@@ -149,7 +152,7 @@ export function ThreadList() {
                 <button
                   type="button"
                   onClick={() => close(thread.id)}
-                  aria-label="Close this conversation"
+                  aria-label={t('assistant.list.close')}
                   className="flex size-6 shrink-0 items-center justify-center text-secondary-foreground hover:text-foreground cursor-pointer"
                 >
                   <XIcon className="size-5" />
@@ -191,37 +194,33 @@ function order(
  * a finished one reports the action it landed, which is what the user came
  * back to find out.
  */
-const ACTION_LABELS: Record<AssistantAction, string> = {
-  answered: 'Answered a question',
-  declined: 'Declined the request',
-  edited: 'Edited the post',
-  noted: 'Added a note',
-  content_plan_generated: 'Generated a content plan',
-  posts_generated: 'Added posts',
-  brief_enriched: 'Improved the brief',
-  dates_updated: 'Updated the campaign dates',
-  posts_redistributed: 'Redistributed posts',
-  brief_reviewed: 'Reviewed the brief',
-  posts_reviewed: 'Checked posts against the brief',
+function idleStatus(t: TFunction, thread: AssistantThread): string {
+  const last = [...thread.turns]
+    .reverse()
+    .find((turn) => turn.role === 'assistant')
+  if (!last)
+    return thread.turns.length > 0
+      ? t('assistant.status.waiting')
+      : t('assistant.status.notStarted')
+  if (last.cancelled) return t('assistant.status.stopped')
+  if (last.failed) return t('assistant.status.failed')
+  return last.action
+    ? actionStatus(t, last.action)
+    : t('assistant.status.answeredGeneric')
 }
 
-function idleStatus(thread: AssistantThread): string {
-  const last = [...thread.turns].reverse().find((t) => t.role === 'assistant')
-  if (!last)
-    return thread.turns.length > 0 ? 'Waiting for a reply' : 'Not started yet'
-  if (last.cancelled) return 'Stopped'
-  if (last.failed) return 'Failed'
-  return last.action ? ACTION_LABELS[last.action] : 'Answered'
+function actionStatus(t: TFunction, action: AssistantAction): string {
+  return t(`assistant.status.${action}`)
 }
 
 /** The step the running turn is on right now, else a generic stand-in. */
-function runningStatus(thread: AssistantThread): string {
+function runningStatus(t: TFunction, thread: AssistantThread): string {
   const steps = thread.turns[thread.turns.length - 1]?.steps ?? []
   const live = [...steps].reverse().find((s) => s.endedAt === null)
-  if (live) return live.label
+  if (live) return stepLabel(t, live)
   return thread.subject.kind === 'campaign'
-    ? 'Working on the campaign'
-    : 'Working on the post'
+    ? t('assistant.status.workingCampaign')
+    : t('assistant.status.workingPost')
 }
 
 /** Where the jump-to arrow goes, per subject kind. */
@@ -241,7 +240,13 @@ function openLink(thread: AssistantThread) {
   } as const
 }
 
-function ThreadStatusLine({ thread }: { thread: AssistantThread }) {
+function ThreadStatusLine({
+  thread,
+  t,
+}: {
+  thread: AssistantThread
+  t: TFunction
+}) {
   if (thread.status === 'running') {
     const elapsed = thread.runStartedAt ? Date.now() - thread.runStartedAt : 0
     // Same colour as any other status — the pulsing mark on the icon says it
@@ -257,20 +262,23 @@ function ThreadStatusLine({ thread }: { thread: AssistantThread }) {
           } as CSSProperties
         }
       >
-        {runningStatus(thread)} · {formatDuration(elapsed)}
+        {t('assistant.status.running', {
+          step: runningStatus(t, thread),
+          elapsed: formatDuration(elapsed),
+        })}
       </span>
     )
   }
   if (thread.status === 'error') {
     return (
       <span className="block w-full truncate text-sm text-destructive">
-        Failed
+        {t('assistant.status.failed')}
       </span>
     )
   }
   return (
     <span className="block w-full truncate text-sm text-foreground">
-      {idleStatus(thread)}
+      {idleStatus(t, thread)}
     </span>
   )
 }

@@ -7,6 +7,8 @@ import {
   WarningIcon,
 } from '@phosphor-icons/react'
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { cn } from '@/lib'
 import type {
   AssistantResultDetails,
@@ -40,13 +42,14 @@ export function hasResultCard(
  * precisely the half the user needs to know about.
  */
 export function ResultCard({ details }: { details: AssistantResultDetails }) {
+  const { t } = useTranslation()
   const cards = [
-    briefReviewCard(details),
-    postsReviewCard(details),
-    datesCard(details),
-    redistributeCard(details),
-    generatedCard(details),
-    briefCard(details),
+    briefReviewCard(t, details),
+    postsReviewCard(t, details),
+    datesCard(t, details),
+    redistributeCard(t, details),
+    generatedCard(t, details),
+    briefCard(t, details),
   ].filter(Boolean)
 
   if (cards.length === 0) return null
@@ -59,7 +62,7 @@ export function ResultCard({ details }: { details: AssistantResultDetails }) {
   )
 }
 
-function briefReviewCard(details: AssistantResultDetails) {
+function briefReviewCard(t: TFunction, details: AssistantResultDetails) {
   if (details.briefReview) {
     const { consistent, findings } = details.briefReview
     return (
@@ -67,17 +70,24 @@ function briefReviewCard(details: AssistantResultDetails) {
         <CardHeader
           icon={consistent ? CheckCircleIcon : WarningIcon}
           tone={consistent ? 'positive' : 'warning'}
-          title={consistent ? 'Brief is consistent' : 'Brief has issues'}
-          detail={countLabel(findings.length, 'finding')}
+          title={
+            consistent
+              ? t('assistant.result.briefConsistent')
+              : t('assistant.result.briefIssues')
+          }
+          detail={t('assistant.result.findings', { count: findings.length })}
         />
-        <Findings findings={findings} emptyLabel="Nothing to flag." />
+        <Findings
+          findings={findings}
+          emptyLabel={t('assistant.result.nothingToFlag')}
+        />
       </Card>
     )
   }
   return null
 }
 
-function postsReviewCard(details: AssistantResultDetails) {
+function postsReviewCard(t: TFunction, details: AssistantResultDetails) {
   if (details.postsReview) {
     const { checked, total, capped, findings } = details.postsReview
     return (
@@ -85,12 +95,20 @@ function postsReviewCard(details: AssistantResultDetails) {
         <CardHeader
           icon={findings.length === 0 ? CheckCircleIcon : WarningIcon}
           tone={findings.length === 0 ? 'positive' : 'warning'}
-          title={`Checked ${checked} of ${total} posts`}
-          detail={`${countLabel(findings.length, 'drift')}${capped ? ' · capped' : ''}`}
+          title={t('assistant.result.checkedPosts', { checked, total })}
+          detail={
+            capped
+              ? t('assistant.result.capped', {
+                  drifts: t('assistant.result.drifts', {
+                    count: findings.length,
+                  }),
+                })
+              : t('assistant.result.drifts', { count: findings.length })
+          }
         />
         <Findings
           findings={findings}
-          emptyLabel="Every post follows the brief."
+          emptyLabel={t('assistant.result.everyPostFollows')}
         />
       </Card>
     )
@@ -98,12 +116,15 @@ function postsReviewCard(details: AssistantResultDetails) {
   return null
 }
 
-function datesCard(details: AssistantResultDetails) {
+function datesCard(t: TFunction, details: AssistantResultDetails) {
   if (details.dates) {
     const { startDate, endDate, postsOutsideRange } = details.dates
     return (
       <Card>
-        <CardHeader icon={CalendarBlankIcon} title="Campaign dates updated" />
+        <CardHeader
+          icon={CalendarBlankIcon}
+          title={t('assistant.result.datesUpdated')}
+        />
         <CardRow className="pt-0">
           <p className="text-sm text-secondary-foreground">
             <span className="text-foreground">{startDate}</span>
@@ -118,8 +139,7 @@ function datesCard(details: AssistantResultDetails) {
             className="border-t border-border"
           >
             <p className="text-sm text-warning">
-              {countLabel(postsOutsideRange, 'post')} now fall outside the range
-              — ask to redistribute them.
+              {t('assistant.result.outsideRange', { count: postsOutsideRange })}
             </p>
           </CardRow>
         )}
@@ -129,22 +149,21 @@ function datesCard(details: AssistantResultDetails) {
   return null
 }
 
-function redistributeCard(details: AssistantResultDetails) {
+function redistributeCard(t: TFunction, details: AssistantResultDetails) {
   if (details.redistribute) {
     const { postsUpdated, phaseCount } = details.redistribute
     return (
       <Card>
         <CardHeader
           icon={ArrowsOutLineHorizontalIcon}
-          title="Posts redistributed"
+          title={t('assistant.result.postsRedistributed')}
         />
         <CardRow className="pt-0">
           <p className="text-sm text-secondary-foreground">
-            Re-dated{' '}
-            <span className="text-foreground">
-              {countLabel(postsUpdated, 'post')}
-            </span>{' '}
-            across {countLabel(phaseCount, 'phase')}.
+            {t('assistant.result.redistributed', {
+              count: postsUpdated,
+              phases: t('assistant.result.phases', { count: phaseCount }),
+            })}
           </p>
         </CardRow>
       </Card>
@@ -153,16 +172,18 @@ function redistributeCard(details: AssistantResultDetails) {
   return null
 }
 
-function generatedCard(details: AssistantResultDetails) {
+function generatedCard(t: TFunction, details: AssistantResultDetails) {
   const generated = details.contentPlan ?? details.generatedPosts
   if (generated) {
     return (
       <Card>
         <CardHeader
           icon={NotePencilIcon}
-          title={`${generated.postCount === 0 ? 'No' : `+${generated.postCount}`} ${
-            generated.postCount === 1 ? 'draft post' : 'draft posts'
-          } added`}
+          title={
+            generated.postCount === 0
+              ? t('assistant.result.generatedNone')
+              : t('assistant.result.generated', { count: generated.postCount })
+          }
         />
         {generated.warnings.length > 0 && (
           <ul className="flex flex-col border-t border-border">
@@ -181,7 +202,7 @@ function generatedCard(details: AssistantResultDetails) {
   return null
 }
 
-function briefCard(details: AssistantResultDetails) {
+function briefCard(t: TFunction, details: AssistantResultDetails) {
   if (details.brief) {
     return (
       <Card>
@@ -190,8 +211,8 @@ function briefCard(details: AssistantResultDetails) {
           tone={details.brief.applied ? 'positive' : 'warning'}
           title={
             details.brief.applied
-              ? 'Brief updated and saved'
-              : 'Brief suggested but not applied'
+              ? t('assistant.result.briefApplied')
+              : t('assistant.result.briefNotApplied')
           }
         />
       </Card>
@@ -293,6 +314,7 @@ function Findings({
   findings: ReviewFinding[]
   emptyLabel: string
 }) {
+  const { t } = useTranslation()
   if (findings.length === 0) {
     return (
       <CardRow className="border-t border-border">
@@ -320,7 +342,7 @@ function Findings({
                         SEVERITY_CLASS[finding.severity],
                       )}
                     >
-                      {finding.severity}
+                      {t(`assistant.result.severity.${finding.severity}`)}
                     </span>
                   )}
                 </div>
@@ -337,8 +359,4 @@ function Findings({
       ))}
     </ul>
   )
-}
-
-function countLabel(n: number, noun: string): string {
-  return `${n} ${noun}${n === 1 ? '' : 's'}`
 }
