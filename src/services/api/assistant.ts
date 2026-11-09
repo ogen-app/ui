@@ -229,8 +229,9 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
 
 function calendarFindings(raw: Record<string, unknown>): CalendarFindings {
   const findings = Array.isArray(raw.findings) ? raw.findings : []
+  const campaignId = str(raw.campaignId)
   return {
-    campaignId: str(raw.campaignId),
+    campaignId,
     dismissed: num(raw.dismissed),
     findings: findings.filter(isRecord).map((f) => ({
       key: str(f.key),
@@ -246,7 +247,10 @@ function calendarFindings(raw: Record<string, unknown>): CalendarFindings {
           postId: optStr(x.postId),
           proposalId: optStr(x.proposalId),
         }))
-        .filter((x) => x.title),
+        // Only a fix the row can act on: an offer to confirm, or a post to
+        // open — which needs the campaign too. One with neither would take
+        // the primary slot and leave the row without an action.
+        .filter((x) => x.title && (x.proposalId || (x.postId && campaignId))),
     })),
   }
 }
@@ -556,9 +560,20 @@ function resultDetails(
 
   const drafted = record(parsed.draftedPosts)
   if (drafted) {
+    // A draft names the documents it drew on (`usedAssets`) rather than a
+    // grounding mode, so a non-empty list reads as grounded and an empty one
+    // as nothing said — never as "not grounded".
+    const used = Array.isArray(drafted.usedAssets)
+      ? drafted.usedAssets
+          .filter(isRecord)
+          .map((s) => ({ id: str(s.id), title: str(s.title) }))
+      : []
     details.draftedPosts = {
       postCount: num(drafted.postCount),
       warnings: strings(drafted.warnings),
+      ...(used.length > 0
+        ? { grounding: { mode: 'grounded' as const, sources: used } }
+        : {}),
     }
   }
 

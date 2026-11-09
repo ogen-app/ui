@@ -200,6 +200,7 @@ function drafts(t: TFunction, details: AssistantResultDetails) {
       }
     >
       <Warnings warnings={drafted.warnings} />
+      {drafted.grounding && <SourcesLine grounding={drafted.grounding} />}
     </ResultBlock>
   )
 }

@@ -55,6 +55,24 @@ export function PlannedPostPanel({ post }: { post: Post }) {
 export function BuiltFromIdeas({ postId }: { postId: string }) {
   const { t } = useTranslation()
   const ideas = usePostIdeas(postId)
+  // A failed read is said as such, not drawn as a post built from nothing.
+  if (ideas.isError) {
+    return (
+      <section className="flex items-center gap-4 bg-primary px-10 py-6">
+        <p className="min-w-0 flex-1 text-sm text-secondary-foreground">
+          {t('ideas.lifecycle.builtFromFailed')}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={ideas.isFetching}
+          onClick={() => void ideas.refetch()}
+        >
+          {ideas.isFetching ? t('common.trying') : t('common.tryAgain')}
+        </Button>
+      </section>
+    )
+  }
   const list = ideas.data ?? []
   if (list.length === 0) return null
   return (

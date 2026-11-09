@@ -95,6 +95,9 @@ function saveKeyFor(subject: ThreadSubject): string | null {
 let turnCounter = 0
 const nextTurnId = (role: AssistantTurn['role']) => `${role}-${++turnCounter}`
 
+/** How a streamed turn ended. */
+type TurnOutcome = 'answered' | 'failed' | 'cancelled'
+
 type AssistantState = {
   threads: Record<string, AssistantThread>
   /** The thread the panel is showing, or null for the thread list. */
@@ -267,9 +270,9 @@ export const useAssistantStore = create<AssistantState>()(
           signal: AbortSignal,
         ) => Promise<void>,
         onStreamError?: (status: number | undefined, message: string) => void,
-      ) => {
+      ): Promise<TurnOutcome | null> => {
         const thread = get().threads[threadId]
-        if (!thread) return
+        if (!thread) return null
         const { subject } = thread
         const saveKey = saveKeyFor(subject)
         const startedAt = performance.now()
@@ -331,7 +334,7 @@ export const useAssistantStore = create<AssistantState>()(
         // composer, so the person it would inform is the person who did it.
         const finish = (
           status: AssistantThread['status'],
-          outcome: 'answered' | 'failed' | 'cancelled',
+          outcome: TurnOutcome,
         ) => {
           // The *resolved* panel, not the remembered one: the assistant can
           // be remembered as open while a post panel covers it, and nobody
@@ -447,7 +450,11 @@ export const useAssistantStore = create<AssistantState>()(
                 ...t,
                 steps: (t.steps ?? []).map((s) =>
                   s.kind === 'tool' && s.ref === event.ref && s.endedAt === null
-                    ? { ...s, endedAt: now }
+                    ? {
+                        ...s,
+                        endedAt: now,
+                        ...(event.ok ? {} : { failed: true }),
+                      }
                     : s,
                 ),
               }))
@@ -553,7 +560,9 @@ export const useAssistantStore = create<AssistantState>()(
           // The server writes the result itself — the payload describes what
           // it already saved. Never write it back; just refresh.
           await refreshTouched(queryClient, touched ?? subjectTouches(subject))
-          finish('idle', sawErrorEvent ? 'failed' : 'answered')
+          const outcome = sawErrorEvent ? 'failed' : 'answered'
+          finish('idle', outcome)
+          return outcome
         } catch (err) {
           const aborted =
             err instanceof DOMException && err.name === 'AbortError'
@@ -573,6 +582,7 @@ export const useAssistantStore = create<AssistantState>()(
           // an unrelated refetch.
           await refreshTouched(queryClient, subjectTouches(subject))
           finish(aborted ? 'idle' : 'error', aborted ? 'cancelled' : 'failed')
+          return aborted ? 'cancelled' : 'failed'
         } finally {
           runners.delete(threadId)
           endLocalRun()
@@ -716,14 +726,9 @@ export const useAssistantStore = create<AssistantState>()(
           if (!thread || !text || thread.status === 'running') return
           const { subject } = thread
 
-          // The assistant writes the post or campaign server-side, so any
-          // queued autosave must land first or it would overwrite the edit a
-          // moment later.
-          const saveKey = saveKeyFor(subject)
-          if (saveKey) await flushPendingSave(saveKey)
-
-          // What the user is looking at, as the turn leaves. A dismissed chip
-          // sends the screen alone, once.
+          // What the user is looking at when they sent it — read before the
+          // flush below, which can wait on a write while they move on. A
+          // dismissed chip sends the screen alone, once.
           const view = useViewContextStore.getState()
           const viewContext = buildViewContext(
             subject,
@@ -732,6 +737,12 @@ export const useAssistantStore = create<AssistantState>()(
             view.dismissed,
           )
           if (view.dismissed) view.restore()
+
+          // The assistant writes the post or campaign server-side, so any
+          // queued autosave must land first or it would overwrite the edit a
+          // moment later.
+          const saveKey = saveKeyFor(subject)
+          if (saveKey) await flushPendingSave(saveKey)
 
           await runTurn(
             threadId,
@@ -760,7 +771,7 @@ export const useAssistantStore = create<AssistantState>()(
           if (found) setProposal(threadId, proposalId, { status: 'confirming' })
           const saveKey = saveKeyFor(thread.subject)
           if (saveKey) await flushPendingSave(saveKey)
-          await runTurn(
+          const outcome = await runTurn(
             threadId,
             null,
             (onEvent, signal) =>
@@ -775,11 +786,26 @@ export const useAssistantStore = create<AssistantState>()(
                     : message,
               }),
           )
-          // A confirm that ended without saying so still ran or failed — either
-          // way the card is no longer the thing to answer.
+          // Only a turn that answered ran the offer. One that failed before or
+          // during the stream, or was stopped, did not finish it — the card
+          // says so rather than claim it was confirmed, and the reply below it
+          // carries the reason. (An `error` event has closed it already.)
           const after = findProposal(get().threads[threadId], proposalId)
-          if (after?.status === 'confirming')
-            setProposal(threadId, proposalId, { status: 'confirmed' })
+          if (after?.status !== 'confirming') return
+          setProposal(
+            threadId,
+            proposalId,
+            outcome === 'answered'
+              ? { status: 'confirmed' }
+              : {
+                  status: 'closed',
+                  error: i18next.t(
+                    outcome === 'cancelled'
+                      ? 'assistant.proposal.stopped'
+                      : 'assistant.proposal.failed',
+                  ),
+                },
+          )
         },
 
         dismissProposal: async (threadId, proposalId) => {
@@ -831,7 +857,20 @@ export const useAssistantStore = create<AssistantState>()(
             await refreshTouched(queryClient, undoTouches(kind, thread))
           } catch (err) {
             const status = err instanceof ApiError ? err.status : 0
-            state(status === 409 ? 'changed' : 'gone')
+            // 404 is the server saying there is nothing left to undo and 409
+            // that it was changed again since; both are final. Anything else —
+            // a 500, a dropped connection — says nothing about the change, so
+            // UNDO comes back to be tried again.
+            if (status === 404) return state('gone')
+            if (status === 409) return state('changed')
+            patchTurn(threadId, turnId, (t) => {
+              const rest = { ...t.undo }
+              delete rest[undoId]
+              return { ...t, undo: rest }
+            })
+            toast.error(i18next.t('assistant.undo.failed'), {
+              description: errorText(err),
+            })
           }
         },
 

@@ -883,6 +883,7 @@ export const es: Translation = {
       drafted_one: '{{count}} borrador escrito, sin programar',
       drafted_other: '{{count}} borradores escritos, sin programar',
       draftFailed: 'No se pudieron escribir todos los borradores',
+      compileFailed: 'No se pudo compilar la idea',
       draftsKept_one: 'Se ha conservado el {{count}} ya escrito.',
       draftsKept_other: 'Se han conservado los {{count}} ya escritos.',
       tooMany: 'Elige hasta 10 ideas para compilarlas o redactarlas',
@@ -892,6 +893,8 @@ export const es: Translation = {
       writePrompt: 'Escribe esta publicación completa a partir de sus tesis.',
       builtFrom_one: 'Hecha a partir de {{count}} idea',
       builtFrom_other: 'Hecha a partir de {{count}} ideas',
+      builtFromFailed:
+        'No se pudieron cargar las ideas a partir de las que se hizo esta publicación.',
     },
     bulk: {
       select: 'Seleccionar «{{title}}»',
@@ -1508,6 +1511,8 @@ export const es: Translation = {
     chip: {
       selected_one: '{{count}} seleccionada · {{screen}}',
       selected_other: '{{count}} seleccionadas · {{screen}}',
+      selectedCapped:
+        'Las primeras {{limit}} de {{total}} seleccionadas · {{screen}}',
       matching_one: 'La {{count}} coincidente · {{screen}}',
       matching_other: 'Las {{count}} coincidentes · {{screen}}',
       focusAsset: 'Este recurso está abierto',
@@ -1556,6 +1561,7 @@ export const es: Translation = {
       compose: 'Escribiendo la publicación',
       generated_one: '{{count}} generada',
       generated_other: '{{count}} generadas',
+      failed: 'no se completó',
     },
 
     tool: {
@@ -2112,6 +2118,9 @@ export const es: Translation = {
       choose: 'ELEGIR',
       dismiss: 'DESCARTAR',
       gone: 'Esta propuesta ya no existe.',
+      failed: 'No se completó. Pídelo de nuevo para reintentarlo.',
+      stopped:
+        'Se detuvo antes de terminar. Lo que hizo está en la respuesta de abajo.',
       confirmed: '{{summary}} · confirmada',
       dismissed: '{{summary}} · descartada',
       expired: '{{summary}} · caducada',
@@ -2136,6 +2145,7 @@ export const es: Translation = {
       undone: 'Deshecho',
       changed: 'No se puede deshacer: ha vuelto a cambiar desde entonces.',
       gone: 'Ya no se puede deshacer.',
+      failed: 'No se pudo deshacer. Inténtalo de nuevo.',
     },
 
     sources: {

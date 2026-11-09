@@ -302,6 +302,17 @@ describe('assistantStore', () => {
       })
     })
 
+    it('does not call an offer confirmed when its stream never answered', async () => {
+      const id = await withOffer()
+      const { confirmProposal } = await import('@/services/api/assistant')
+      vi.mocked(confirmProposal).mockRejectedValueOnce(new Error('HTTP 500'))
+      await useAssistantStore.getState().confirmProposal(id, 'pr1')
+      expect(offer(id)).toMatchObject({
+        status: 'closed',
+        error: 'It didn’t go through. Ask again to retry.',
+      })
+    })
+
     it('dismisses from the card', async () => {
       const id = await withOffer()
       await useAssistantStore.getState().dismissProposal(id, 'pr1')
@@ -342,6 +353,20 @@ describe('assistantStore', () => {
       api.undo.mockRejectedValueOnce(new ApiError(409, 'changed'))
       await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u2')
       expect(lastTurn(id).undo).toEqual({ u2: 'changed' })
+    })
+
+    it('offers UNDO again after a failure that says nothing about the change', async () => {
+      const id = useAssistantStore
+        .getState()
+        .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+      stream.events = [{ type: 'complete', result: result() }]
+      await useAssistantStore.getState().send(id, 'Move the end date')
+      const { ApiError } = await import('@/services/api/errors')
+      api.undo.mockRejectedValueOnce(new ApiError(500, 'boom'))
+      await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u3')
+      expect(lastTurn(id).undo).toEqual({})
+      await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u3')
+      expect(lastTurn(id).undo).toEqual({ u3: 'undone' })
     })
   })
 })

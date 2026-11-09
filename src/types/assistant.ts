@@ -92,7 +92,11 @@ export type AssistantResultDetails = {
     grounding?: Grounding
   }
   /** Content-first drafts the draftPost tool wrote. */
-  draftedPosts?: { postCount: number; warnings: string[] }
+  draftedPosts?: {
+    postCount: number
+    warnings: string[]
+    grounding?: Grounding
+  }
   brief?: { applied: boolean; undoId?: string }
   dates?: {
     startDate: string
@@ -212,6 +216,8 @@ export type AssistantStep = {
   progress?: string
   /** Posts a generation step has persisted so far. */
   generated?: number
+  /** The tool refused the call or hit a conflict (`tool_result.ok: false`). */
+  failed?: boolean
   startedAt: number
   endedAt: number | null
 }

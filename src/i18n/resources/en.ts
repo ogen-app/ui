@@ -1061,6 +1061,7 @@ export const en = {
       drafted_one: '{{count}} draft written, not scheduled',
       drafted_other: '{{count}} drafts written, not scheduled',
       draftFailed: 'The drafts could not all be written',
+      compileFailed: 'Couldn’t compile the idea',
       draftsKept_one: 'The {{count}} already written was kept.',
       draftsKept_other: 'The {{count}} already written were kept.',
       tooMany: 'Pick up to 10 ideas to compile or draft them',
@@ -1070,6 +1071,7 @@ export const en = {
       writePrompt: 'Write this post in full from its theses.',
       builtFrom_one: 'Built from {{count}} idea',
       builtFrom_other: 'Built from {{count}} ideas',
+      builtFromFailed: 'Couldn’t load the ideas this post was built from.',
     },
     bulk: {
       select: 'Select “{{title}}”',
@@ -1966,6 +1968,7 @@ export const en = {
     chip: {
       selected_one: '{{count}} selected · {{screen}}',
       selected_other: '{{count}} selected · {{screen}}',
+      selectedCapped: 'First {{limit}} of {{total}} selected · {{screen}}',
       matching_one: 'All {{count}} matching · {{screen}}',
       matching_other: 'All {{count}} matching · {{screen}}',
       focusAsset: 'This asset is open',
@@ -2027,6 +2030,7 @@ export const en = {
       compose: 'Writing the post',
       generated_one: '{{count}} generated',
       generated_other: '{{count}} generated',
+      failed: 'didn’t go through',
     },
 
     /**
@@ -2620,6 +2624,9 @@ export const en = {
       choose: 'CHOOSE',
       dismiss: 'DISMISS',
       gone: 'This offer no longer exists.',
+      failed: 'It didn’t go through. Ask again to retry.',
+      stopped:
+        'Stopped before it finished. Anything it did is in the reply below.',
       confirmed: '{{summary}} · confirmed',
       dismissed: '{{summary}} · dismissed',
       expired: '{{summary}} · expired',
@@ -2649,6 +2656,7 @@ export const en = {
       undone: 'Undone',
       changed: 'Can’t undo: it was changed again since.',
       gone: 'This can no longer be undone.',
+      failed: 'Couldn’t undo that. Try again.',
     },
 
     /**

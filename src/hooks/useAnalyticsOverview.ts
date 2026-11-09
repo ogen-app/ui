@@ -8,6 +8,7 @@ import {
 import { buildNowView } from '@/lib/analyticsOverviewView'
 import { canonicalPlatforms, platformsKey } from '@/lib/analyticsPlatformScope'
 import type { NowView } from '@/components/analytics/types'
+import type { AnalyticsWindow } from '@/types/analytics'
 
 /**
  * The workspace's cumulative overview (CON-237): one call, five cards, a series
@@ -70,6 +71,12 @@ export type AnalyticsOverviewResult = {
    * that counted everything.
    */
   platforms: readonly string[]
+  /**
+   * The window the answer on screen covers, as the server resolved it — what
+   * the assistant is told the reader is looking at, never one worked out here
+   * from the shorthand.
+   */
+  range?: AnalyticsWindow
 }
 
 export function useAnalyticsOverview(
@@ -118,5 +125,6 @@ export function useAnalyticsOverview(
     isUnavailable: withheld && envelope?.reason !== 'no_data',
     isEmpty: withheld && envelope?.reason === 'no_data',
     platforms: query.data?.platforms ?? scope,
+    range: overview?.window,
   }
 }

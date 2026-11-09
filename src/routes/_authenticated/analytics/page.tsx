@@ -21,7 +21,6 @@ import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { connectedAccounts } from '@/lib/platformDictionary.ts'
 import type { LearningsMetric, PerformerSort } from '@/types/analytics'
 import { useAssistantPage } from '@/hooks/useAssistantContext'
-import { trailingWindow } from '@/lib/viewContext'
 
 /**
  * Analytics — the workspace's own numbers: what happened (CON-237), which posts
@@ -97,34 +96,41 @@ export function AnalyticsPage() {
     [picked],
   )
 
-  // The assistant reads the same period and platforms as the cards, so a
-  // question about "this month" is about what is on screen (CON-451), and the
-  // performers ticked.
-  const days = Number.parseInt(window, 10)
-  const slugKey = slugs.join(',')
-  useAssistantPage(
-    useMemo(
-      () =>
-        Number.isFinite(days)
-          ? {
-              window: trailingWindow(days, slugKey ? slugKey.split(',') : []),
-              ...(picked.size > 0
-                ? {
-                    selection: {
-                      kind: 'post' as const,
-                      ids: [...picked],
-                      count: picked.size,
-                    },
-                  }
-                : {}),
-            }
-          : null,
-      [days, slugKey, picked],
-    ),
-  )
-
   const overview = useAnalyticsOverview(window, slugs)
   const performers = useAnalyticsPerformers(window, by, slugs)
+
+  // The assistant reads the period and platforms the overview on screen
+  // answered for (CON-451) — the server's resolved dates, never ones worked out
+  // here, so "this month" means what the card shows even near midnight UTC —
+  // and the performers ticked.
+  const range = overview.range
+  const answeredKey = overview.platforms.join(',')
+  useAssistantPage(
+    useMemo(() => {
+      if (!range && picked.size === 0) return null
+      return {
+        ...(range
+          ? {
+              window: {
+                from: range.from,
+                to: range.to,
+                ...(answeredKey ? { platforms: answeredKey.split(',') } : {}),
+              },
+            }
+          : {}),
+        ...(picked.size > 0
+          ? {
+              selection: {
+                kind: 'post' as const,
+                ids: [...picked],
+                count: picked.size,
+              },
+            }
+          : {}),
+      }
+    }, [range, answeredKey, picked]),
+  )
+
   const learnings = useAnalyticsLearnings(metric, slugs)
 
   // Each card names the platforms *its* answer counted, not the selection: a

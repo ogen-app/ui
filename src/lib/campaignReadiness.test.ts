@@ -287,6 +287,15 @@ describe('setupChecks', () => {
 })
 
 describe('contentSnapshot', () => {
+  it('counts a planned post as work left, beside the drafts', () => {
+    const snapshot = contentSnapshot([
+      makePost({ status: 'planned' }),
+      makePost({ status: 'draft' }),
+      makePost({ status: 'scheduled', scheduled_at: '2026-08-02T10:00:00Z' }),
+    ])
+    expect(snapshot.notReady).toBe(2)
+  })
+
   it('counts statuses and caps + orders the lists', () => {
     const posts = [
       makePost({

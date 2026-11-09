@@ -14,6 +14,10 @@ export const IDEA_SLOT_HEIGHT = 52
  * pointer it offers its two verbs — COMPILE into a planned post (theses
  * only), or DRAFT a full body — and neither schedules: the post takes the
  * slot's date as a suggestion.
+ *
+ * Without a pointer to hover with, a tap focuses the card and that reveals the
+ * verbs; until then the overlay takes no taps, so a first touch can never
+ * land on a button nobody could see.
  */
 export function IdeaSlotCard({
   slot,
@@ -35,7 +39,8 @@ export function IdeaSlotCard({
 
   return (
     <div
-      className="group relative shrink-0 overflow-hidden border border-dashed border-quinary-foreground px-2 py-1.5"
+      tabIndex={-1}
+      className="group relative shrink-0 overflow-hidden border border-dashed border-quinary-foreground px-2 py-1.5 outline-none"
       style={{ height: IDEA_SLOT_HEIGHT }}
     >
       <p className="flex items-center gap-1 text-[10px] font-semibold tracking-[0.08em] text-tertiary-foreground">
@@ -53,7 +58,8 @@ export function IdeaSlotCard({
       <div
         className={cn(
           'absolute inset-0 flex items-center justify-center gap-1.5 bg-primary/95',
-          'opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100',
+          'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100',
+          '[@media(hover:none)]:pointer-events-none [@media(hover:none)]:group-focus-within:pointer-events-auto',
           busy && 'opacity-100',
         )}
       >

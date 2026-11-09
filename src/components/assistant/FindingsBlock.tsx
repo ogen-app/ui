@@ -35,8 +35,9 @@ export function FindingsBlock({
 
   type Fix = CalendarFindings['findings'][number]['fixes'][number]
   const act = (fix: Fix, primary: boolean) => {
-    if (fix.proposalId) {
-      const run = () => void confirm(threadId, fix.proposalId!)
+    const { proposalId } = fix
+    if (proposalId) {
+      const run = () => void confirm(threadId, proposalId)
       return primary ? (
         <Button variant="outline" size="sm" disabled={disabled} onClick={run}>
           {fix.title}
