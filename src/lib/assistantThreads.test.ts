@@ -27,6 +27,7 @@ function summary(
     subject,
     title: 'Listed',
     campaignTitle: 'Listed campaign',
+    archived: false,
     lastMessageAt,
     preview: 'Last words.',
     ...changes,

@@ -23,7 +23,7 @@ function serve(threads: object[]) {
     'fetch',
     vi.fn(async (url: RequestInfo | URL) =>
       String(url).includes('/api/assistant/threads')
-        ? new Response(JSON.stringify({ threads, next_cursor: null }), {
+        ? new Response(JSON.stringify(threads), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
           })
@@ -38,7 +38,10 @@ const listed = {
   scope_id: 'c9',
   title: 'Autumn sale',
   last_message_at: new Date(Date.now() - 5 * 60_000).toISOString(),
-  last_preview: 'Spread the posts across October.',
+  last_role: 'model',
+  preview: 'Spread the posts across October.',
+  message_count: 4,
+  archived: false,
 }
 
 beforeEach(() => useAssistantStore.getState().reset())
@@ -63,6 +66,12 @@ describe('ThreadList', () => {
     const state = useAssistantStore.getState()
     expect(state.activeThreadId).toBe('campaign:c9')
     expect(state.currentThreadId).toBe(here)
+  })
+
+  it('tags a thread whose campaign is archived', async () => {
+    serve([{ ...listed, archived: true }])
+    await renderWithProviders(<ThreadList />)
+    expect(await screen.findByText('ARCHIVED')).toBeTruthy()
   })
 
   it('says nothing about an empty workspace until the list has answered', async () => {

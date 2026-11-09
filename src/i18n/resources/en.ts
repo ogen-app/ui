@@ -2563,6 +2563,8 @@ export const en = {
       empty3: 'The strategist works on whatever you are in.',
       /** Literal capitals: a tag, not a sentence. */
       current: 'CURRENT',
+      /** Literal capitals: the thread's campaign is archived. */
+      archived: 'ARCHIVED',
       openCampaign: 'Open the campaign',
       openPost: 'Open the post',
       /** A thread not opened yet: `when` is "5 min ago", `preview` its last message. */

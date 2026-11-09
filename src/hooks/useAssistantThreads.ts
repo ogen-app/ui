@@ -16,7 +16,7 @@ export function useAssistantThreads() {
     queryKey: ASSISTANT_THREADS_KEY,
     queryFn: ({ pageParam }) => listThreads(pageParam),
     initialPageParam: null as string | null,
-    getNextPageParam: (last) => last.nextCursor,
+    getNextPageParam: (last) => last.next,
     staleTime: 30_000,
   })
   const summaries = useMemo<ThreadSummary[]>(
