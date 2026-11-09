@@ -54,7 +54,19 @@ export const useViewContextStore = create<ViewContextState>()((set, get) => ({
     if (get().request?.seq === seq) set({ request: null })
   },
 
-  setLocation: (location) => set({ location }),
+  // A new screen is a new thing for the chip to describe, so a dismissal
+  // made on the last one lifts (`useViewLocation` sets this only when the
+  // route changes). A request for another screen goes too: one that no list
+  // took up must not fire later, when the user opens that list themselves.
+  setLocation: (location) =>
+    set((s) => ({
+      location,
+      dismissed: false,
+      request:
+        s.request && s.request.action.screen !== location.screen
+          ? null
+          : s.request,
+    })),
 
   registerPage: (page) => {
     const token = ++nextToken

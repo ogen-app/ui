@@ -54,14 +54,17 @@ export function useAssistantUiActions() {
         }
       },
       restore: async (href: string, action: UIAction) => {
-        await router.navigate({ href } as never)
-        // Ticked rows are the list's own state, not the address.
+        // Ticked rows are the list's own state, not the address, so the list
+        // is asked to clear them *before* the address moves: while it is
+        // still mounted to take the request up. If it isn't, leaving the
+        // screen drops the request (`setLocation`).
         if (action.type === 'select' && action.selection) {
           useViewContextStore.getState().ask({
             ...action,
             selection: { kind: action.selection.kind, ids: [] },
           })
         }
+        await router.navigate({ href } as never)
       },
     })
     return () => setUiActionApplier(null)

@@ -1966,6 +1966,7 @@ export const en = {
     chip: {
       selected_one: '{{count}} selected · {{screen}}',
       selected_other: '{{count}} selected · {{screen}}',
+      selectedCapped: 'First {{limit}} of {{total}} selected · {{screen}}',
       matching_one: 'All {{count}} matching · {{screen}}',
       matching_other: 'All {{count}} matching · {{screen}}',
       focusAsset: 'This asset is open',
@@ -2320,6 +2321,9 @@ export const en = {
       choose: 'CHOOSE',
       dismiss: 'DISMISS',
       gone: 'This offer no longer exists.',
+      failed: 'It didn’t go through. Ask again to retry.',
+      stopped:
+        'Stopped before it finished. Anything it did is in the reply below.',
       confirmed: '{{summary}} · confirmed',
       dismissed: '{{summary}} · dismissed',
       expired: '{{summary}} · expired',
@@ -2334,6 +2338,7 @@ export const en = {
       undone: 'Undone',
       changed: 'Can’t undo: it was changed again since.',
       gone: 'This can no longer be undone.',
+      failed: 'Couldn’t undo that. Try again.',
     },
 
     /**
