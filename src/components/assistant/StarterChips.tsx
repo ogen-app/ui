@@ -82,6 +82,7 @@ type StarterKey =
   | 'whatAnalysisFound'
   | 'readBrand'
   | 'summariseVoice'
+  | 'whichVoice'
   | 'checkAgainstVoice'
   | 'expiredFacts'
   | 'ourSeries'
@@ -243,10 +244,20 @@ const FOUNDATION: ScreenStarters = {
 }
 
 /** Each Foundation section's own verbs (CON-461). */
-const FOUNDATION_VOICES: ScreenStarters = {
+/** One voice open: verbs about that voice. */
+const FOUNDATION_VOICE: ScreenStarters = {
   none: [
     { icon: ListBulletsIcon, key: 'summariseVoice' },
     { icon: SealCheckIcon, key: 'checkAgainstVoice' },
+    { icon: QuestionIcon, key: 'stanceOn' },
+  ],
+}
+
+/** The voices list: no voice is open, so the verbs are about all of them. */
+const FOUNDATION_VOICES: ScreenStarters = {
+  none: [
+    { icon: ListBulletsIcon, key: 'whichVoice' },
+    { icon: SealCheckIcon, key: 'checkGuardrails' },
     { icon: QuestionIcon, key: 'stanceOn' },
   ],
 }
@@ -301,8 +312,8 @@ function screenStarters(screen: ViewScreen | null): ScreenStarters | null {
   if (screen === 'analytics' || screen === 'campaign.analytics')
     return ANALYTICS
   if (screen === 'calendar' || screen === 'campaign.calendar') return CALENDAR
-  if (screen === 'foundation.voices' || screen === 'foundation.voice')
-    return FOUNDATION_VOICES
+  if (screen === 'foundation.voice') return FOUNDATION_VOICE
+  if (screen === 'foundation.voices') return FOUNDATION_VOICES
   if (screen === 'foundation.facts') return FOUNDATION_FACTS
   if (screen === 'foundation.series' || screen === 'foundation.series_item')
     return FOUNDATION_SERIES

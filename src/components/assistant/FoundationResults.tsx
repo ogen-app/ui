@@ -5,8 +5,6 @@ import type { TFunction } from 'i18next'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib/styles'
 import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
-import { rulesLine } from '@/components/brand/format'
-import type { VoiceRules } from '@/components/brand/types'
 import { subjectCampaignId } from '@/types/assistant'
 import type {
   AudienceChange,
@@ -63,47 +61,99 @@ export function FoundationResults({
   }
   const r = results
 
-  const blocks = [
-    r.brandCheck && (
-      <BrandCheckCard
-        t={t}
-        check={r.brandCheck}
-        campaignId={subjectCampaignId(subject)}
-        onConfirm={(id) => void confirm(threadId, id)}
-        disabled={disabled}
-      />
-    ),
-    r.voice && <VoiceCard t={t} voice={r.voice} undo={undoFor} />,
-    r.audience && <AudienceCard t={t} audience={r.audience} undo={undoFor} />,
-    r.guardrails && (
-      <GuardrailsCard t={t} guardrails={r.guardrails} undo={undoFor} />
-    ),
-    r.fact && <FactCard t={t} fact={r.fact} undo={undoFor} />,
-    r.bulk && <BulkCard t={t} bulk={r.bulk} undo={undoFor} />,
-    r.expiredFacts && (
-      <ExpiredFactsCard
-        t={t}
-        facts={r.expiredFacts}
-        onRenew={(text) => void send(threadId, text)}
-        onEdit={(text) => askFor(threadId, text)}
-        disabled={disabled}
-      />
-    ),
-    r.distill && <DistillCard t={t} distill={r.distill} />,
-    r.distillSaved && <DistillSavedCard t={t} saved={r.distillSaved} />,
-    r.seriesList && <SeriesListCard t={t} list={r.seriesList} />,
-    r.series && <SeriesCard t={t} series={r.series} undo={undoFor} />,
-    r.run && <RunCard t={t} run={r.run} undo={undoFor} />,
-  ].filter(Boolean)
+  const entries: [string, React.ReactNode][] = [
+    [
+      'brandCheck',
+      r.brandCheck && (
+        <BrandCheckCard
+          t={t}
+          check={r.brandCheck}
+          campaignId={subjectCampaignId(subject)}
+          onConfirm={(id) => void confirm(threadId, id)}
+          disabled={disabled}
+        />
+      ),
+    ],
+    ['voice', r.voice && <VoiceCard t={t} voice={r.voice} undo={undoFor} />],
+    [
+      'audience',
+      r.audience && <AudienceCard t={t} audience={r.audience} undo={undoFor} />,
+    ],
+    [
+      'guardrails',
+      r.guardrails && (
+        <GuardrailsCard t={t} guardrails={r.guardrails} undo={undoFor} />
+      ),
+    ],
+    ['fact', r.fact && <FactCard t={t} fact={r.fact} undo={undoFor} />],
+    ['bulk', r.bulk && <BulkCard t={t} bulk={r.bulk} undo={undoFor} />],
+    [
+      'expiredFacts',
+      r.expiredFacts && (
+        <ExpiredFactsCard
+          t={t}
+          facts={r.expiredFacts}
+          onRenew={(text) => void send(threadId, text)}
+          onEdit={(text) => askFor(threadId, text)}
+          disabled={disabled}
+        />
+      ),
+    ],
+    ['distill', r.distill && <DistillCard t={t} distill={r.distill} />],
+    [
+      'distillSaved',
+      r.distillSaved && <DistillSavedCard t={t} saved={r.distillSaved} />,
+    ],
+    [
+      'seriesList',
+      r.seriesList && <SeriesListCard t={t} list={r.seriesList} />,
+    ],
+    [
+      'series',
+      r.series && <SeriesCard t={t} series={r.series} undo={undoFor} />,
+    ],
+    ['run', r.run && <RunCard t={t} run={r.run} undo={undoFor} />],
+  ]
+  const blocks = entries.filter(([, node]) => Boolean(node))
 
   if (blocks.length === 0) return null
   return (
     <div className="flex flex-col gap-5">
-      {blocks.map((block, i) => (
-        <Fragment key={i}>{block}</Fragment>
+      {blocks.map(([key, block]) => (
+        <Fragment key={key}>{block}</Fragment>
       ))}
     </div>
   )
+}
+
+/** The values each voice rule can hold, as the library words them. */
+const RULE_VALUES = {
+  formality: ['casual', 'neutral', 'formal'],
+  person: ['i', 'we', 'third', 'none'],
+  emoji: ['never', 'sparingly', 'freely'],
+  length: ['short', 'medium', 'long'],
+} as const
+
+/**
+ * The library's one-line description of a voice (`rulesLine`), from only the
+ * rules the voice actually sets: an empty or unknown value is left out rather
+ * than printed as a catalogue key, or guessed — an unset narrator is not
+ * "no narrator".
+ */
+function voiceRulesText(
+  t: TFunction,
+  rules: NonNullable<VoiceChange['rules']>,
+): string {
+  const parts = (Object.keys(RULE_VALUES) as (keyof typeof RULE_VALUES)[])
+    .filter((rule) =>
+      (RULE_VALUES[rule] as readonly string[]).includes(rules[rule]),
+    )
+    .map((rule) =>
+      t(
+        `brand.voices.rules.${rule}.${rules[rule]}` as 'brand.voices.rules.person.we',
+      ),
+    )
+  return parts.join(t('brand.facts.separator'))
 }
 
 function shortDate(value: string): string | null {
@@ -163,9 +213,17 @@ function VoiceCard({
   voice: VoiceChange
   undo: ResultUndo
 }) {
-  const rules = voice.rules
-    ? rulesLine(t, { ...voice.rules, opening: '', closing: '' } as VoiceRules)
-    : ''
+  const rules = voice.rules ? voiceRulesText(t, voice.rules) : ''
+  const open =
+    voice.change !== 'removed' ? (
+      <Link
+        to="/foundation/voices/$voiceId"
+        params={{ voiceId: voice.id }}
+        className={OPEN_CLASS}
+      >
+        {t('assistant.foundation.open')}
+      </Link>
+    ) : undefined
   return (
     <ResultBlock
       status={changeWord(t, voice.change)}
@@ -174,23 +232,20 @@ function VoiceCard({
       action={<UndoAction t={t} undoId={voice.undoId} undo={undo} />}
     >
       {voice.whenToUse && <Row title={voice.whenToUse} />}
-      {voice.change !== 'removed' && (rules || voice.isDefault) && (
+      {voice.change !== 'removed' && (
         <Row
-          title={rules || t('assistant.foundation.voice.default')}
+          title={
+            rules ||
+            (voice.isDefault
+              ? t('assistant.foundation.voice.default')
+              : t('assistant.foundation.voice.noRules'))
+          }
           sub={
             rules && voice.isDefault
               ? t('assistant.foundation.voice.default')
               : undefined
           }
-          action={
-            <Link
-              to="/foundation/voices/$voiceId"
-              params={{ voiceId: voice.id }}
-              className={OPEN_CLASS}
-            >
-              {t('assistant.foundation.open')}
-            </Link>
-          }
+          action={open}
         />
       )}
       {voice.change === 'removed' && voice.unbound > 0 && (
@@ -347,17 +402,23 @@ function BulkCard({
   bulk: BulkBrandEdit
   undo: ResultUndo
 }) {
+  // Each change was logged under its own id, so each answers on its own: an
+  // id with no state yet (never asked, or a failure that cleared it) is still
+  // undoable, and UNDO asks again for exactly those.
   const states = bulk.undoIds.map((id) => undo.states[id])
-  const asked = states.some(Boolean)
+  const open = bulk.undoIds.filter((id) => !undo.states[id])
+  const pending = states.includes('pending')
   const allUndone =
     bulk.undoIds.length > 0 && states.every((s) => s === 'undone')
+  const changed = states.filter((s) => s === 'changed').length
+  const gone = states.filter((s) => s === 'gone').length
   return (
     <ResultBlock
       status={t('assistant.word.done')}
       title={t('assistant.foundation.bulk.title', counted(bulk.done))}
       action={
-        bulk.undoIds.length > 0 && !asked ? (
-          <TextAction onClick={() => bulk.undoIds.forEach(undo.onUndo)}>
+        open.length > 0 && !pending ? (
+          <TextAction onClick={() => open.forEach(undo.onUndo)}>
             {t('assistant.undo.undo')}
           </TextAction>
         ) : undefined
@@ -375,6 +436,16 @@ function BulkCard({
       ))}
       {bulk.stopped && <Row title={<Muted>{bulk.stopped}</Muted>} />}
       {allUndone && <ResolvedLine>{t('assistant.undo.undone')}</ResolvedLine>}
+      {changed > 0 && (
+        <p className="text-[12.5px] text-tertiary-foreground">
+          {t('assistant.foundation.bulk.undoChanged', counted(changed))}
+        </p>
+      )}
+      {gone > 0 && (
+        <p className="text-[12.5px] text-tertiary-foreground">
+          {t('assistant.foundation.bulk.undoGone', counted(gone))}
+        </p>
+      )}
     </ResultBlock>
   )
 }

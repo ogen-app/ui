@@ -2013,6 +2013,10 @@ export const es: Translation = {
         label: 'Leer la marca',
         text: 'Lee nuestra marca desde nuestro sitio web: ',
       },
+      whichVoice: {
+        label: '¿Qué voz para qué?',
+        text: '¿Cuándo debemos usar cada una de nuestras voces?',
+      },
       summariseVoice: {
         label: 'Resumir esta voz',
         text: 'Resume esta voz.',
@@ -2238,6 +2242,7 @@ export const es: Translation = {
         'Retirado de {{formatted}} campañas y publicaciones que lo usaban',
       voice: {
         default: 'La voz predeterminada',
+        noRules: 'Aún sin reglas',
       },
       audience: {
         readsOn: 'Lee en {{where}}',
@@ -2256,6 +2261,12 @@ export const es: Translation = {
         title_one: '{{formatted}} cambio',
         title_other: '{{formatted}} cambios',
         failed: 'No se pudo {{what}}: {{reason}}',
+        undoChanged_one:
+          'No se pudo deshacer {{formatted}} cambio: ha vuelto a cambiar desde entonces.',
+        undoChanged_other:
+          'No se pudieron deshacer {{formatted}} cambios: han vuelto a cambiar desde entonces.',
+        undoGone_one: '{{formatted}} cambio ya no se puede deshacer.',
+        undoGone_other: '{{formatted}} cambios ya no se pueden deshacer.',
       },
       facts: {
         word: 'Datos',
