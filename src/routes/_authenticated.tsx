@@ -11,6 +11,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useEventStream } from '@/hooks/useEventStream'
 import { useNotificationStream } from '@/hooks/useNotifications'
 import { useWorkspaceThread } from '@/hooks/useWorkspaceThread'
+import { useViewLocation } from '@/hooks/useAssistantContext'
 import { prefetchReferenceData } from '@/lib/prefetch'
 
 export const Route = createFileRoute('/_authenticated')({
@@ -40,6 +41,8 @@ function AuthenticatedLayout() {
   useBillingGateWatch()
   // Workspace-level screens talk to the workspace's own assistant thread.
   useWorkspaceThread()
+  // And they see the screen: the route is the view context's location.
+  useViewLocation()
 
   return (
     <AnnouncementFrame>

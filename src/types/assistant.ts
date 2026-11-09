@@ -1,3 +1,5 @@
+import type { ViewContext } from '@/lib/viewContext'
+
 /**
  * What an assistant thread is attached to — its scope (CON-450). One thread
  * per subject: the workspace, a campaign, or a post. The screen a turn was sent
@@ -154,6 +156,11 @@ export type AssistantTurn = {
   role: 'user' | 'assistant'
   /** The user's instruction, or the assistant's explanation. */
   content: string
+  /**
+   * User turns: the screen the turn was sent from (CON-450). The thread draws a
+   * quiet marker where it changes between turns, and history replays it.
+   */
+  view?: ViewContext
   action?: AssistantAction
   /** Campaign turns only — the structured result behind the action. */
   details?: AssistantResultDetails

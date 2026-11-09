@@ -28,6 +28,7 @@ vi.mock('@/lib/assistantTouched', async (importOriginal) => {
 })
 
 const { useAssistantStore } = await import('./assistantStore')
+const { useViewContextStore } = await import('./viewContextStore')
 
 function result(changes: Record<string, unknown> = {}) {
   return {
@@ -55,6 +56,12 @@ beforeEach(() => {
   stream.events = []
   stream.body = null
   refreshTouched.mockClear()
+  useViewContextStore.setState({
+    location: { screen: null },
+    page: null,
+    pageToken: 0,
+    dismissed: false,
+  })
 })
 
 describe('assistantStore', () => {
@@ -158,5 +165,52 @@ describe('assistantStore', () => {
     await useAssistantStore.getState().send(id, 'Draft two posts')
     unsubscribe()
     expect(seen).toBe(0)
+  })
+
+  it('sends what the screen has selected, and keeps it on the turn', async () => {
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+    useViewContextStore.getState().setLocation({ screen: 'campaign.ideas' })
+    useViewContextStore.getState().registerPage({
+      selection: { kind: 'idea', ids: ['i1', 'i2', 'i3'], count: 3 },
+      filter: 'pile=waiting',
+    })
+    stream.events = [{ type: 'complete', result: result() }]
+    await useAssistantStore.getState().send(id, 'What do these share?')
+
+    const sent = {
+      version: 1,
+      screen: 'campaign.ideas',
+      scope: { kind: 'campaign', id: 'c1' },
+      selection: { kind: 'idea', ids: ['i1', 'i2', 'i3'], count: 3 },
+      filter: 'pile=waiting',
+    }
+    expect(stream.body).toEqual({
+      instruction: 'What do these share?',
+      viewContext: sent,
+    })
+    const turns = useAssistantStore.getState().threads[id].turns
+    expect(turns[turns.length - 2].view).toEqual(sent)
+  })
+
+  it('sends the screen alone once after the chip is dismissed', async () => {
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'workspace' }, '', '')
+    useViewContextStore.getState().setLocation({ screen: 'assets' })
+    useViewContextStore.getState().registerPage({
+      selection: { kind: 'asset', ids: ['a1'], count: 1 },
+    })
+    useViewContextStore.getState().dismiss()
+    stream.events = [{ type: 'complete', result: result() }]
+    await useAssistantStore.getState().send(id, 'Summarise everything')
+
+    expect((stream.body as { viewContext: unknown }).viewContext).toEqual({
+      version: 1,
+      screen: 'assets',
+      scope: { kind: 'workspace' },
+    })
+    expect(useViewContextStore.getState().dismissed).toBe(false)
   })
 })

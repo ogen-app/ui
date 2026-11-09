@@ -5,7 +5,8 @@ import { threadName } from '@/lib/assistantTools'
 import { refreshTouched, subjectTouches } from '@/lib/assistantTouched'
 import { flushPendingSave } from '@/lib/pendingSaves'
 import { beginLocalRun } from '@/lib/localRuns'
-import { baseViewContext } from '@/lib/viewContext'
+import { buildViewContext, type ViewContext } from '@/lib/viewContext'
+import { useViewContextStore } from '@/stores/viewContextStore'
 import {
   listThreadMessages,
   parseHistoryResult,
@@ -242,7 +243,12 @@ export const useAssistantStore = create<AssistantState>()(
 
             const turns: AssistantTurn[] = rows.map((row) => {
               if (row.role === 'user') {
-                return { id: row.id, role: 'user', content: row.content }
+                return {
+                  id: row.id,
+                  role: 'user',
+                  content: row.content,
+                  view: storedView(row.view_context),
+                }
               }
               return {
                 id: row.id,
@@ -277,6 +283,18 @@ export const useAssistantStore = create<AssistantState>()(
           if (!thread || !text || thread.status === 'running') return
           const { subject } = thread
 
+          // What the user is looking at when they sent it — read before the
+          // flush below, which can wait on a write while they move on. A
+          // dismissed chip sends the screen alone, once.
+          const view = useViewContextStore.getState()
+          const viewContext = buildViewContext(
+            subject,
+            view.location,
+            view.page,
+            view.dismissed,
+          )
+          if (view.dismissed) view.restore()
+
           // The assistant writes the post or campaign server-side, so any
           // queued autosave must land first or it would overwrite the edit a
           // moment later.
@@ -305,7 +323,12 @@ export const useAssistantStore = create<AssistantState>()(
                   streamedPosts: [],
                   turns: [
                     ...current.turns,
-                    { id: nextTurnId('user'), role: 'user', content: text },
+                    {
+                      id: nextTurnId('user'),
+                      role: 'user',
+                      content: text,
+                      view: viewContext,
+                    },
                     {
                       id: assistantTurnId,
                       role: 'assistant',
@@ -523,7 +546,7 @@ export const useAssistantStore = create<AssistantState>()(
 
           try {
             await streamAssistantTurn(
-              { instruction: text, viewContext: baseViewContext(subject) },
+              { instruction: text, viewContext },
               onEvent,
               controller.signal,
             )
@@ -570,6 +593,18 @@ export const useAssistantStore = create<AssistantState>()(
     { name: 'assistant' },
   ),
 )
+
+/**
+ * A stored user turn's view context. The server keeps what the client sent; a
+ * row without one, or of a version this build can't read, draws no marker.
+ */
+function storedView(value: unknown): ViewContext | undefined {
+  if (!value || typeof value !== 'object') return undefined
+  const view = value as Partial<ViewContext>
+  return view.version === 1 && typeof view.screen === 'string'
+    ? (view as ViewContext)
+    : undefined
+}
 
 /** The parts of a turn its result decides, for a live or a reloaded turn. */
 function turnFields(

@@ -37,6 +37,7 @@ import {
 import { formatNumber } from '@/lib/intl'
 import { uploadErrorMessage } from '@/lib/uploadError'
 import { queryAssetIds } from '@/services/api/content'
+import { useListAssistantPage } from '@/hooks/useAssistantContext'
 import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Tag } from '@/types/content'
@@ -173,6 +174,18 @@ export function ContentList({
     setTicked(new Set())
     setAllMatching(false)
   }, [question])
+
+  // The assistant sees what is ticked, the filter it is under and the rows on
+  // screen (CON-451) — a whole match as the filter, never as the ids.
+  const visibleIds = useMemo(() => rows.slice(0, 50).map((r) => r.id), [rows])
+  useListAssistantPage({
+    kind: 'asset',
+    params,
+    ticked,
+    allMatching,
+    total,
+    rowIds: visibleIds,
+  })
 
   const narrowed = isFilterActive(filter)
 

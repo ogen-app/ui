@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { WorkspaceScopeBar } from '@/components/analytics/WorkspaceScopeBar'
@@ -17,6 +17,7 @@ import { DEFAULT_LEARNINGS_METRIC } from '@/lib/analyticsLearningsView'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { connectedAccounts } from '@/lib/platformDictionary.ts'
 import type { LearningsMetric, PerformerSort } from '@/types/analytics'
+import { useAssistantPage } from '@/hooks/useAssistantContext'
 
 /**
  * Analytics — the workspace's own numbers: what happened (CON-237), which posts
@@ -79,6 +80,28 @@ export function AnalyticsPage() {
 
   const overview = useAnalyticsOverview(window, slugs)
   const performers = useAnalyticsPerformers(window, by, slugs)
+
+  // The assistant reads the period and platforms the overview on screen
+  // answered for (CON-451) — the server's resolved dates, never ones worked out
+  // here, so "this month" means what the card shows even near midnight UTC.
+  const range = overview.range
+  const answeredKey = overview.platforms.join(',')
+  useAssistantPage(
+    useMemo(
+      () =>
+        range
+          ? {
+              window: {
+                from: range.from,
+                to: range.to,
+                ...(answeredKey ? { platforms: answeredKey.split(',') } : {}),
+              },
+            }
+          : null,
+      [range, answeredKey],
+    ),
+  )
+
   const learnings = useAnalyticsLearnings(metric, slugs)
 
   // Each card names the platforms *its* answer counted, not the selection: a

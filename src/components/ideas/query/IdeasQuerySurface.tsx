@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useListAssistantPage } from '@/hooks/useAssistantContext'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowDown01Icon,
@@ -214,6 +215,22 @@ export function IdeasQuerySurface({
   useEffect(() => {
     asked.current = question
   }, [question])
+
+  // The assistant sees what is ticked, the filter it is under and the rows on
+  // screen (CON-451) — a whole match as the filter, never as five thousand ids.
+  const visibleIds = useMemo(
+    () => visibleRows.slice(0, 50).map((r) => r.id),
+    [visibleRows],
+  )
+  useListAssistantPage({
+    kind: 'idea',
+    params,
+    ticked,
+    allMatching,
+    total,
+    rowIds: visibleIds,
+    savedViewId: search.view,
+  })
 
   const change = (next: Partial<IdeaListSearch>) =>
     onSearchChange(
