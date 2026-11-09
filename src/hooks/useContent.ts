@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query'
 import {
   queryAssets,
+  getAssetsState,
   getAsset,
   getAudioStatus,
   getAudioTranscript,
@@ -49,6 +50,21 @@ const PROCESSING_POLL_MS = 3000
  * (an idea answered, a campaign joined) need not refetch an open document.
  */
 export const ASSET_LIST_KEY = ['assets', 'list'] as const
+
+/**
+ * The bank's state (CON-460): its counts by status and its undecided ideas,
+ * for a campaign's sources or the workspace's. Read by the assistant's
+ * suggestions on the Assets screens, which offer only what is waiting. Under
+ * `ASSETS_KEY`, so an upload, an analysis or a delete refreshes it.
+ */
+export function useAssetsState(campaignId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: [...ASSETS_KEY, 'state', campaignId ?? 'workspace'],
+    queryFn: () => getAssetsState(campaignId),
+    enabled,
+    staleTime: 30_000,
+  })
+}
 
 /** How many rows a page of the list brings in. */
 export const ASSET_PAGE_SIZE = 50

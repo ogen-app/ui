@@ -306,3 +306,115 @@ describe('listThreads', () => {
     )
   })
 })
+
+describe('the assets pack’s results (CON-460)', () => {
+  const read = (results: object) =>
+    parseHistoryResult(
+      JSON.stringify({ explanation: 'Here.', action: 'answered', results }),
+      'workspace',
+    ).assets
+
+  it('reads each tool’s output, and the smart groups beside them', () => {
+    const assets = read({
+      assets: {
+        ask: {
+          scope: 'open_asset',
+          excerpts: [{ assetId: 'a1', title: 'Brochure', pages: 'p. 12' }],
+        },
+        analysis: {
+          assetId: 'a1',
+          title: 'Brochure',
+          lens: { status: 'ready', readAt: '2026-11-06T10:00:00Z' },
+          gist: 'Sells the slow stay.',
+          keyPoints: ['Spa', 'Terrace'],
+          ideas: { undecided: 5, yes: 2, later: 1, no: 0 },
+          topIdeas: [{ id: 'i1', title: 'The thermal pool' }],
+          otherLenses: [
+            { campaignId: 'c1', campaignName: 'Spring', status: 'ready' },
+          ],
+        },
+        compare: {
+          mode: 'compare',
+          assets: [
+            { id: 'a1', title: 'Brochure', letter: 'A', from: 'analysis' },
+            { id: 'a2', title: 'Press kit', letter: 'B', from: 'passages' },
+          ],
+          shared: [
+            {
+              text: 'Opens 14 March',
+              assetIds: ['a1', 'a2'],
+              letters: ['A', 'B'],
+            },
+          ],
+          partial: [],
+          conflicts: [
+            { text: 'Spa hours', assetIds: ['a1', 'a2'], letters: ['A', 'B'] },
+          ],
+          grounding: {
+            mode: 'grounded',
+            sources: [{ id: 'a1', title: 'Brochure' }],
+          },
+        },
+        campaign: {
+          campaignId: 'c9',
+          name: 'Spring reopening',
+          type: 'Launch',
+          startDate: '2026-03-02T00:00:00Z',
+          assetIds: ['a1', 'a2'],
+          undoId: 'u7',
+        },
+      },
+      savedViews: {
+        list: 'assets',
+        views: [
+          {
+            id: 'v1',
+            name: 'Needs analysis',
+            filter: 'status=new',
+            shared: true,
+            count: 12,
+          },
+        ],
+      },
+    })
+    expect(assets?.ask).toEqual({
+      scope: 'open_asset',
+      excerpts: [{ assetId: 'a1', title: 'Brochure', pages: 'p. 12' }],
+    })
+    expect(assets?.analysis).toMatchObject({
+      assetId: 'a1',
+      lens: { status: 'ready' },
+      ideas: { undecided: 5, yes: 2, later: 1, no: 0 },
+      otherLenses: [
+        { campaignId: 'c1', campaignName: 'Spring', status: 'ready' },
+      ],
+    })
+    expect(assets?.compare).toMatchObject({
+      mode: 'compare',
+      assets: [
+        { letter: 'A', from: 'analysis' },
+        { letter: 'B', from: 'passages' },
+      ],
+      conflicts: [{ text: 'Spa hours', letters: ['A', 'B'] }],
+    })
+    expect(assets?.campaign).toMatchObject({ campaignId: 'c9', undoId: 'u7' })
+    expect(assets?.savedViews).toEqual({
+      list: 'assets',
+      views: [{ id: 'v1', name: 'Needs analysis', shared: true, count: 12 }],
+    })
+  })
+
+  it('leaves out what it can’t read, and is absent when nothing ran', () => {
+    expect(read({})).toBeUndefined()
+    expect(
+      read({
+        assets: {
+          ask: { scope: 'somewhere', excerpts: [] },
+          analysis: { title: 'No id', lens: { status: 'ready' } },
+          compare: { mode: 'compare', assets: [] },
+        },
+        savedViews: { list: 'posts', views: [] },
+      }),
+    ).toBeUndefined()
+  })
+})

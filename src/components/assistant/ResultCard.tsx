@@ -256,7 +256,7 @@ function brief(
 }
 
 /** UNDO on the headline it undoes; gone once it has been asked for. */
-function UndoAction({
+export function UndoAction({
   t,
   undoId,
   undo,
@@ -279,7 +279,7 @@ function UndoAction({
 }
 
 /** What became of an undo: done, or why it could not be. */
-function UndoNote({
+export function UndoNote({
   t,
   undoId,
   undo,

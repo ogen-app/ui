@@ -9,6 +9,7 @@ import { hasResultCard, ResultCard } from './ResultCard'
 import { ProposalCard } from './ProposalCard'
 import { UiActionRows } from './UiActionRows'
 import { FindingsBlock } from './FindingsBlock'
+import { AssetsResults } from './AssetsResults'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib'
 import type { AssistantAction, AssistantTurn } from '@/types/assistant'
@@ -49,6 +50,7 @@ export function AssistantReply({
   const blocks = parseAssistantMarkup(turn.content)
   const steps = turn.steps ?? []
   const settled = !turn.streaming && !turn.failed
+  const subject = useAssistantStore((s) => s.threads[threadId]?.subject)
   const showCard = settled && hasResultCard(turn.details)
   const footer = !showCard && turn.action ? actionLabel(t, turn.action) : null
 
@@ -98,6 +100,18 @@ export function AssistantReply({
         <FindingsBlock
           threadId={threadId}
           findings={turn.findings}
+          disabled={running}
+        />
+      )}
+
+      {/* What the assets pack's tools found (CON-460). */}
+      {settled && turn.assets && subject && (
+        <AssetsResults
+          threadId={threadId}
+          turnId={turn.id}
+          subject={subject}
+          results={turn.assets}
+          undoStates={turn.undo ?? {}}
           disabled={running}
         />
       )}

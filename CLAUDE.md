@@ -603,6 +603,18 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   list's own state, so the list picks the request up with
   `useAssistantRequest`. Each applied action keeps the address it replaced, for
   UNDO / BACK.
+- **The assets pack's results are cards** (CON-460). `complete.results.assets`
+  holds each tool's last output in the turn — `ask` (what was searched, with
+  page citations), `analysis`, `compare`, `campaign` (with its `undoId`) —
+  and the core `listSavedViews` sits beside it as `results.savedViews`; the
+  turn keeps them as `assets` and `AssetsResults` draws one card each. A
+  follow-up that only reads (search wider, another lens, settle a
+  disagreement) is sent on the click; one that writes (analyse) fills the
+  composer. A smart group's OPEN goes through `applyScreenAction`, the same
+  applier a turn's `ui_action`s use. The Assets list's suggestions lead with
+  what is waiting, read from `GET /api/content-bank/assets-state`
+  (`useAssetsState`) — the same counts the assistant reads — and each shows
+  only when its count is above zero.
 - **A planned post is a post with theses and no body** (CON-449). `planned`
   can only become `draft`, and only by gaining a body — the server moves it,
   so it has no button. Ideas are never posts: on the week calendar an idea
@@ -938,10 +950,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 **The universal assistant waits on the API's merge, and on five API
 follow-ups** (CON-451). The UI (#227–#234) replaces endpoints the backend stack
 removes, so the two ship together, and neither has had a live pass yet. Until
-the follow-ups land: the ideas, assets, foundation, workspace and analytics
-packs send no typed results or `undoId`, so their turns are prose plus
-`touched` — the merge card, cited Q&A, facts ledger, connection card and
-provenance trail are unbuilt; an offer has no `recommended` option, so its
+the follow-ups land: the ideas, foundation, workspace and analytics packs
+send no typed results or `undoId`, so their turns are prose plus `touched` —
+the merge card, facts ledger, connection card and provenance trail are
+unbuilt (the assets pack's arrived with CON-460); an offer has no `recommended` option, so its
 choices are drawn with equal weight; a reloaded thread infers an offer's
 state instead of reading it; an idea row has no post count, so "used in N
 posts" isn't shown; and the calendar's findings are only streamed, never

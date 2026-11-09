@@ -64,6 +64,14 @@ export function setUiActionApplier(applier: UiActionApplier | null) {
   uiApplier = applier
 }
 
+/**
+ * Runs one screen change the user asked for from a result — a smart group's
+ * OPEN — through the same applier a turn's `ui_action`s use.
+ */
+export async function applyScreenAction(action: UIAction): Promise<void> {
+  await uiApplier?.apply(action)
+}
+
 /** In-flight runs, keyed by thread id. Never rendered — kept out of state. */
 const runners = new Map<string, AbortController>()
 
@@ -953,9 +961,11 @@ function turnFields(
   | 'versionNote'
   | 'clone'
   | 'proposals'
+  | 'assets'
 > {
   return {
     proposals: result.proposals.length > 0 ? result.proposals : undefined,
+    assets: result.assets,
     content: result.explanation,
     action: result.action,
     details: result.details,
@@ -1099,7 +1109,7 @@ function undoTouches(
 ): Touched[] {
   if (kind === 'idea_verdict') return [{ kind: 'idea' }]
   if (kind === 'brand_fact') return [{ kind: 'fact' }]
-  if (kind === 'campaign_assets')
+  if (kind === 'campaign_assets' || kind === 'campaign_created')
     return [{ kind: 'asset' }, { kind: 'campaign' }]
   const campaignId =
     thread && thread.subject.kind !== 'workspace'

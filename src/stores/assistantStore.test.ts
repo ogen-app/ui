@@ -371,6 +371,26 @@ describe('assistantStore', () => {
   })
 })
 
+describe('the assets pack (CON-460)', () => {
+  it('keeps a turn’s assets results on its reply', async () => {
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'workspace' }, '', '')
+    stream.events = [
+      {
+        type: 'complete',
+        result: result({
+          assets: { savedViews: { list: 'assets', views: [] } },
+        }),
+      },
+    ]
+    await useAssistantStore.getState().send(id, 'Which smart groups?')
+    expect(lastTurn(id).assets).toEqual({
+      savedViews: { list: 'assets', views: [] },
+    })
+  })
+})
+
 describe('the thread list (CON-459)', () => {
   it('opens a listed thread without making it the current subject', () => {
     const store = useAssistantStore.getState()
