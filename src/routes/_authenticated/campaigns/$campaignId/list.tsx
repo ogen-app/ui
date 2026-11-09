@@ -16,7 +16,10 @@ import type { BulkPlan } from '@/lib/bulkPostEdits'
 import { postToPayload } from '@/services/api/posts'
 import type { Post } from '@/types/posts'
 import { awaiting } from '@/lib/fetched'
-import { useAssistantPage } from '@/hooks/useAssistantContext'
+import {
+  useAssistantPage,
+  useAssistantRequest,
+} from '@/hooks/useAssistantContext'
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/list',
@@ -69,6 +72,14 @@ function CampaignListView() {
     () => rows.filter((p) => selectedIds.has(p.id)),
     [rows, selectedIds],
   )
+
+  // The assistant can tick posts here.
+  useAssistantRequest((action) => {
+    if (action.type !== 'select' || action.selection?.kind !== 'post')
+      return false
+    setSelectedIds(new Set(action.selection.ids))
+    return true
+  })
 
   // The assistant sees the ticked posts (CON-451). The table has no filter
   // the server could resolve, so a selection is always its ids.

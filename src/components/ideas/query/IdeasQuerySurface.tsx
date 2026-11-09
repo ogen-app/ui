@@ -8,7 +8,10 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useListAssistantPage } from '@/hooks/useAssistantContext'
+import {
+  useAssistantRequest,
+  useListAssistantPage,
+} from '@/hooks/useAssistantContext'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowDown01Icon,
@@ -257,6 +260,22 @@ export function IdeasQuerySurface({
       ...(view ? { view: view.id } : {}),
       ...(search.pile ? { pile: search.pile } : {}),
     })
+  // The assistant can tick rows here, or open one of the smart groups.
+  useAssistantRequest((action) => {
+    if (action.type === 'select' && action.selection?.kind === 'idea') {
+      setTicked(new Set(action.selection.ids))
+      setAllMatching(false)
+      return true
+    }
+    if (action.type === 'open_saved_view' && action.savedViewId) {
+      const view = views.data?.find((v) => v.id === action.savedViewId)
+      if (!view) return false
+      openView(view)
+      return true
+    }
+    return false
+  }, views.data)
+
   /** The name a new group is offered: what its tokens say. */
   const suggestedName = IDEA_FILTER_MODEL.tokensOf(filter)
     .map((token) => vocabulary.tokenText(token))

@@ -37,7 +37,10 @@ import {
 import { formatNumber } from '@/lib/intl'
 import { uploadErrorMessage } from '@/lib/uploadError'
 import { queryAssetIds } from '@/services/api/content'
-import { useListAssistantPage } from '@/hooks/useAssistantContext'
+import {
+  useAssistantRequest,
+  useListAssistantPage,
+} from '@/hooks/useAssistantContext'
 import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Tag } from '@/types/content'
@@ -185,6 +188,15 @@ export function ContentList({
     allMatching,
     total,
     rowIds: visibleIds,
+  })
+
+  // The assistant can tick rows here.
+  useAssistantRequest((action) => {
+    if (action.type !== 'select' || action.selection?.kind !== 'asset')
+      return false
+    setTicked(new Set(action.selection.ids))
+    setAllMatching(false)
+    return true
   })
 
   const narrowed = isFilterActive(filter)

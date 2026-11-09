@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { ViewLocation, ViewPage } from '@/lib/viewContext'
+import type { UIAction } from '@/lib/assistantUiActions'
 
 /**
  * What the assistant sees with the next turn (CON-450/451): where the user is,
@@ -23,6 +24,14 @@ type ViewContextState = {
    * that turn being sent.
    */
   dismissed: boolean
+  /**
+   * Something the assistant asked a list to do that only the list can — tick
+   * rows, open a smart group (CON-450, D5). Its selection and its saved views
+   * are its own state, so the list picks the request up and consumes it.
+   */
+  request: { seq: number; action: UIAction } | null
+  ask: (action: UIAction) => void
+  consume: (seq: number) => void
   setLocation: (location: ViewLocation) => void
   registerPage: (page: ViewPage) => number
   updatePage: (token: number, page: ViewPage) => void
@@ -38,11 +47,26 @@ export const useViewContextStore = create<ViewContextState>()((set, get) => ({
   page: null,
   pageToken: 0,
   dismissed: false,
+  request: null,
+
+  ask: (action) => set({ request: { seq: ++nextToken, action } }),
+  consume: (seq) => {
+    if (get().request?.seq === seq) set({ request: null })
+  },
 
   // A new screen is a new thing for the chip to describe, so a dismissal
   // made on the last one lifts (`useViewLocation` sets this only when the
-  // route changes).
-  setLocation: (location) => set({ location, dismissed: false }),
+  // route changes). A request for another screen goes too: one that no list
+  // took up must not fire later, when the user opens that list themselves.
+  setLocation: (location) =>
+    set((s) => ({
+      location,
+      dismissed: false,
+      request:
+        s.request && s.request.action.screen !== location.screen
+          ? null
+          : s.request,
+    })),
 
   registerPage: (page) => {
     const token = ++nextToken

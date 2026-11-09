@@ -1,4 +1,5 @@
 import type { ViewContext } from '@/lib/viewContext'
+import type { AppliedUIAction } from '@/lib/assistantUiActions'
 
 /**
  * What an assistant thread is attached to — its scope (CON-450). One thread
@@ -212,6 +213,8 @@ export type AssistantTurn = {
   proposals?: AssistantProposal[]
   /** Undos asked for from this turn's results, by undo id. */
   undo?: Record<string, UndoState>
+  /** What this turn did to the screen, and where each can be put back to. */
+  uiActions?: AppliedUIAction[]
   /**
    * User turns: this is the server's record of an offer answered from its
    * card ("Confirmed: …"), drawn as a resolved line rather than as words the

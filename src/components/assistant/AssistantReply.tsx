@@ -7,6 +7,7 @@ import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
 import { hasResultCard, ResultCard } from './ResultCard'
 import { ProposalCard } from './ProposalCard'
+import { UiActionRows } from './UiActionRows'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib'
 import type { AssistantAction, AssistantTurn } from '@/types/assistant'
@@ -88,6 +89,15 @@ export function AssistantReply({
             states: turn.undo ?? {},
             onUndo: (undoId) => void undo(threadId, turn.id, undoId),
           }}
+        />
+      )}
+
+      {/* What the turn did to the screen behind the rail. */}
+      {settled && turn.uiActions && turn.uiActions.length > 0 && (
+        <UiActionRows
+          threadId={threadId}
+          turnId={turn.id}
+          actions={turn.uiActions}
         />
       )}
 
