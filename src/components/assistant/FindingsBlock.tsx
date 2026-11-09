@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/styles'
 import { useAssistantStore } from '@/stores/assistantStore'
 import type { CalendarFindings } from '@/types/assistant'
+import { counted } from '@/lib/intl'
 
 /**
  * A calendar check's findings (CON-454): repair, not just report. Numbers
@@ -74,10 +75,10 @@ export function FindingsBlock({
   return (
     <section className="flex flex-col gap-1">
       <h3 className="text-base/6 font-medium text-foreground">
-        {t('assistant.findings.title', { count: findings.findings.length })}
+        {t('assistant.findings.title', counted(findings.findings.length))}
         {warnings.length > 0 && (
           <span className="ml-2 text-sm font-normal text-tertiary-foreground">
-            {t('assistant.findings.warnings', { count: warnings.length })}
+            {t('assistant.findings.warnings', counted(warnings.length))}
           </span>
         )}
       </h3>
@@ -116,7 +117,7 @@ export function FindingsBlock({
       </ol>
       {findings.dismissed > 0 && (
         <p className="pt-1 text-xs text-tertiary-foreground">
-          {t('assistant.findings.dismissed', { count: findings.dismissed })}
+          {t('assistant.findings.dismissed', counted(findings.dismissed))}
         </p>
       )}
     </section>

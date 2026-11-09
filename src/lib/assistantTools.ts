@@ -9,6 +9,7 @@
 import type { TFunction } from 'i18next'
 import { i18next } from '@/i18n'
 import type { AssistantStep, AssistantThread } from '@/types/assistant'
+import { counted } from '@/lib/intl'
 
 type ToolInput = Record<string, unknown> | undefined
 
@@ -127,9 +128,25 @@ export function stepLabel(t: TFunction, step: AssistantStep): string {
 }
 
 /**
+ * The sub-flows' step keys this build words (`content_plan`, `draft_post`):
+ * each names a stage that has just finished.
+ */
+const PROGRESS_KEYS = new Set([
+  'validateInput',
+  'resolveAssets',
+  'resolvePlatforms',
+  'resolveTargets',
+  'generatePosts',
+  'generate',
+  'validateOutput',
+  'persistIdeas',
+  'buildContext',
+])
+
+/**
  * A step's live sub-flow note: a running count while posts land, else the
- * sub-flow's own step key. Step keys are the server's, so they are humanised
- * rather than translated.
+ * sub-flow's latest step. A known step key is translated; one the server
+ * added since is humanised rather than hidden.
  */
 export function stepDetail(
   t: TFunction,
@@ -137,8 +154,11 @@ export function stepDetail(
 ): string | undefined {
   if (step.failed) return t('assistant.step.failed')
   if (step.generated)
-    return t('assistant.step.generated', { count: step.generated })
-  return step.progress ? humanizeStep(step.progress) : undefined
+    return t('assistant.step.generated', counted(step.generated))
+  if (!step.progress) return undefined
+  return PROGRESS_KEYS.has(step.progress)
+    ? t(`assistant.progress.${step.progress}` as 'assistant.progress.generate')
+    : humanizeStep(step.progress)
 }
 
 function chunkTarget(t: TFunction, input: ToolInput): string {
@@ -147,7 +167,10 @@ function chunkTarget(t: TFunction, input: ToolInput): string {
   const ids = Array.isArray(input.chunkIds) ? input.chunkIds : []
   if (ids.length === 0)
     return t('assistant.toolTarget.allOf', { asset: target })
-  return t('assistant.toolTarget.chunks', { count: ids.length, asset: target })
+  return t('assistant.toolTarget.chunks', {
+    ...counted(ids.length),
+    asset: target,
+  })
 }
 
 function asset(t: TFunction, id: unknown): string {

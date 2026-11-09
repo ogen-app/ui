@@ -507,6 +507,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   hand-rolled `slice(0, -1).join(', ') + ' and '`, which is an English list
   formatter wearing no label (Spanish turns *and* into *e* before an i- sound,
   and neither the conjunction nor the serial comma is ours to hard-code).
+  A plural count is passed as `counted(n)` — `count` picks the form,
+  `formatted` is what the entry prints (`{{formatted}}`) — never as a bare
+  `{{count}}`, which prints 12000 where Spanish writes 12.000.
   The bare forms mean the *browser's*
   language, and the app's is a separate choice the user makes in Workspace
   Settings; a Spanish UI printing "Aug 20" is the same bug as an English one

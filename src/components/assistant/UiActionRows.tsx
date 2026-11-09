@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { screenName } from '@/lib/assistantView'
+import { counted } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { ResolvedLine, ResultBlock, TextAction } from './blocks'
 import type { AppliedUIAction } from '@/lib/assistantUiActions'
@@ -67,7 +68,7 @@ function actionTitle(t: TFunction, { action }: AppliedUIAction): string {
     case 'select':
       return t('assistant.uiAction.select', {
         screen,
-        count: action.selection?.ids.length ?? 0,
+        ...counted(action.selection?.ids.length ?? 0),
       })
     case 'open_saved_view':
       return t('assistant.uiAction.openSavedView', { screen })
