@@ -198,62 +198,76 @@ describe('calendar findings', () => {
 describe('listThreads', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it('reads each thread into a subject it can route to, and skips the rest', async () => {
+  const serve = (rows: object[]) => {
     const fetch = vi.fn(
       async (_url: RequestInfo | URL) =>
-        new Response(
-          JSON.stringify({
-            threads: [
-              {
-                scope: 'workspace',
-                scope_kind: 'workspace',
-                scope_id: '',
-                title: '',
-                last_message_at: '2026-11-09T10:00:00Z',
-                last_preview: 'Planned 12 ideas.',
-              },
-              {
-                scope: 'campaign:c1',
-                scope_kind: 'campaign',
-                scope_id: 'c1',
-                title: 'Spring launch',
-                last_message_at: '2026-11-08T10:00:00Z',
-                last_preview: JSON.stringify({
-                  explanation: 'Moved the end date.',
-                  action: 'answered',
-                }),
-              },
-              {
-                scope: 'post:p1',
-                scope_kind: 'post',
-                scope_id: 'p1',
-                title: 'Teaser',
-                campaign_id: 'c1',
-                campaign_title: 'Spring launch',
-                last_message_at: '2026-11-07T10:00:00Z',
-                last_preview: 'Shorter, please.',
-              },
-              // No campaign to route a post through, and a kind this build
-              // predates: both are left out rather than drawn as dead rows.
-              { scope: 'post:p2', scope_kind: 'post', scope_id: 'p2' },
-              { scope: 'series:s1', scope_kind: 'series', scope_id: 's1' },
-            ],
-            next_cursor: 'next',
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        ),
+        new Response(JSON.stringify(rows), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
     )
     vi.stubGlobal('fetch', fetch)
+    return fetch
+  }
+
+  it('reads each thread into a subject it can route to, and skips the rest', async () => {
+    const fetch = serve([
+      {
+        scope: 'workspace',
+        scope_kind: 'workspace',
+        scope_id: '',
+        title: '',
+        campaign_id: '',
+        campaign_title: '',
+        archived: false,
+        last_message_at: '2026-11-09T10:00:00Z',
+        last_role: 'model',
+        preview: 'Planned 12 ideas.',
+        message_count: 2,
+      },
+      {
+        scope: 'campaign:c1',
+        scope_kind: 'campaign',
+        scope_id: 'c1',
+        title: 'Spring launch',
+        campaign_id: 'c1',
+        campaign_title: 'Spring launch',
+        archived: true,
+        last_message_at: '2026-11-08T10:00:00Z',
+        last_role: 'user',
+        preview: 'Move the end date.',
+        message_count: 6,
+      },
+      {
+        scope: 'post:p1',
+        scope_kind: 'post',
+        scope_id: 'p1',
+        title: 'Teaser',
+        campaign_id: 'c1',
+        campaign_title: 'Spring launch',
+        archived: false,
+        last_message_at: '2026-11-07T10:00:00Z',
+        last_role: 'user',
+        preview: 'Shorter, please.',
+        message_count: 1,
+      },
+      // No campaign to route a post through, and a kind this build predates:
+      // both are left out rather than drawn as dead rows.
+      { scope: 'post:p2', scope_kind: 'post', scope_id: 'p2' },
+      { scope: 'series:s1', scope_kind: 'series', scope_id: 's1' },
+    ])
     const page = await listThreads()
     expect(String(fetch.mock.calls[0]?.[0])).toContain(
       '/api/assistant/threads?limit=50',
     )
-    expect(page.nextCursor).toBe('next')
+    // Not a full page: there is nothing older to ask for.
+    expect(page.next).toBeNull()
     expect(page.threads).toEqual([
       {
         subject: { kind: 'workspace' },
         title: '',
         campaignTitle: '',
+        archived: false,
         lastMessageAt: '2026-11-09T10:00:00Z',
         preview: 'Planned 12 ideas.',
       },
@@ -261,16 +275,34 @@ describe('listThreads', () => {
         subject: { kind: 'campaign', campaignId: 'c1' },
         title: 'Spring launch',
         campaignTitle: 'Spring launch',
+        archived: true,
         lastMessageAt: '2026-11-08T10:00:00Z',
-        preview: 'Moved the end date.',
+        preview: 'Move the end date.',
       },
       {
         subject: { kind: 'post', postId: 'p1', campaignId: 'c1' },
         title: 'Teaser',
         campaignTitle: 'Spring launch',
+        archived: false,
         lastMessageAt: '2026-11-07T10:00:00Z',
         preview: 'Shorter, please.',
       },
     ])
+  })
+
+  it('pages by the last row’s time, and only after a full page', async () => {
+    const full = Array.from({ length: 50 }, (_, i) => ({
+      scope: `campaign:c${i}`,
+      scope_kind: 'campaign',
+      scope_id: `c${i}`,
+      last_message_at: `2026-11-0${(i % 9) + 1}T10:00:00Z`,
+    }))
+    serve(full)
+    expect((await listThreads()).next).toBe(full[49].last_message_at)
+    const fetch = serve([])
+    await listThreads('2026-11-01T10:00:00Z')
+    expect(String(fetch.mock.calls[0]?.[0])).toContain(
+      'before=2026-11-01T10%3A00%3A00Z',
+    )
   })
 })

@@ -136,40 +136,50 @@ export type ThreadSummary = {
   title: string
   /** The campaign's name, for a campaign or a post thread. */
   campaignTitle: string
-  /** ISO time of the newest message. */
+  /** The thread's campaign is archived: listed, but no longer active work. */
+  archived: boolean
+  /** RFC 3339 time of the newest message. */
   lastMessageAt: string
-  /** The newest message, as plain text. */
+  /** The newest message as one line of plain text, cut short by the server. */
   preview: string
 }
 
 export type ThreadSummaryPage = {
   threads: ThreadSummary[]
-  nextCursor: string | null
+  /** `before` for the next page, or null when this one wasn't full. */
+  next: string | null
 }
 
 export const THREAD_PAGE_SIZE = 50
 
 /**
- * The workspace's threads, newest activity first, a page at a time. The
- * server leaves out a thread whose campaign or post is gone.
+ * The workspace's threads, newest message first, a page at a time: the next
+ * page is the threads whose newest message is earlier than this page's last
+ * (`before`). The server leaves out a thread whose campaign or post is gone.
  */
 export async function listThreads(
-  cursor?: string | null,
+  before?: string | null,
 ): Promise<ThreadSummaryPage> {
   const params = new URLSearchParams({ limit: String(THREAD_PAGE_SIZE) })
-  if (cursor) params.set('cursor', cursor)
+  if (before) params.set('before', before)
   const body = await apiJson<unknown>(
     `/api/assistant/threads?${params}`,
     'Unable to load the conversations',
   )
-  const page = record(body) ?? {}
-  const rows = Array.isArray(page.threads) ? page.threads : []
+  const rows = Array.isArray(body) ? body.filter(isRecord) : []
+  const threads = rows.flatMap((row) => {
+    const summary = threadSummary(row)
+    return summary ? [summary] : []
+  })
+  // Paged on the raw rows: one this build skips still counts towards a full
+  // page, and still marks where the next one starts.
+  const last = rows[rows.length - 1]
   return {
-    threads: rows.filter(isRecord).flatMap((row) => {
-      const summary = threadSummary(row)
-      return summary ? [summary] : []
-    }),
-    nextCursor: optStr(page.next_cursor) ?? null,
+    threads,
+    next:
+      rows.length >= THREAD_PAGE_SIZE && last
+        ? str(last.last_message_at) || null
+        : null,
   }
 }
 
@@ -183,8 +193,9 @@ function threadSummary(row: Record<string, unknown>): ThreadSummary | null {
     title,
     campaignTitle:
       str(row.campaign_title) || (subject.kind === 'campaign' ? title : ''),
+    archived: row.archived === true,
     lastMessageAt: str(row.last_message_at),
-    preview: previewText(str(row.last_preview), subject.kind),
+    preview: str(row.preview).trim(),
   }
 }
 
@@ -205,16 +216,6 @@ function summarySubject(row: Record<string, unknown>): ThreadSubject | null {
     default:
       return null
   }
-}
-
-/**
- * A model row is stored as its `complete` payload, so a preview the server
- * hands over raw is read for its explanation rather than shown as JSON.
- */
-function previewText(preview: string, kind: ThreadSubject['kind']): string {
-  const text = preview.trim()
-  if (!text.startsWith('{')) return text
-  return parseHistoryResult(text, kind).explanation.trim()
 }
 
 /**

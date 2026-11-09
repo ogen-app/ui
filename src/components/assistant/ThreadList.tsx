@@ -134,6 +134,11 @@ export function ThreadList() {
                     <span className="min-w-0 truncate text-xs text-secondary-foreground">
                       {threadName(row)}
                     </span>
+                    {row.summary?.archived && (
+                      <span className="shrink-0 bg-tertiary px-[3px] py-[2px] text-[10px] font-semibold tracking-[0.08em] text-tertiary-foreground">
+                        {t('assistant.list.archived')}
+                      </span>
+                    )}
                     {row.id === currentThreadId && (
                       <span className="shrink-0 bg-accent/10 px-[3px] py-[2px] text-[10px] font-semibold tracking-[0.08em] text-accent">
                         {t('assistant.list.current')}

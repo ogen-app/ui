@@ -2070,6 +2070,7 @@ export const es: Translation = {
       empty2: 'Abre una campaña o una publicación para empezar una.',
       empty3: 'El estratega trabaja sobre lo que tengas abierto.',
       current: 'ACTUAL',
+      archived: 'ARCHIVADA',
       openCampaign: 'Abrir la campaña',
       openPost: 'Abrir la publicación',
       lastMessage: '{{when}} · {{preview}}',
