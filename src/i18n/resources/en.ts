@@ -1941,11 +1941,11 @@ export const en = {
      * sends that message with the screen alone.
      */
     chip: {
-      selected_one: '{{count}} selected · {{screen}}',
-      selected_other: '{{count}} selected · {{screen}}',
+      selected_one: '{{formatted}} selected · {{screen}}',
+      selected_other: '{{formatted}} selected · {{screen}}',
       selectedCapped: 'First {{limit}} of {{total}} selected · {{screen}}',
-      matching_one: 'All {{count}} matching · {{screen}}',
-      matching_other: 'All {{count}} matching · {{screen}}',
+      matching_one: 'All {{formatted}} matching · {{screen}}',
+      matching_other: 'All {{formatted}} matching · {{screen}}',
       focusAsset: 'This asset is open',
       focusVoice: 'This voice is open',
       focusAudience: 'This audience is open',
@@ -1961,15 +1961,15 @@ export const en = {
      */
     marker: {
       on: 'On {{screen}}',
-      onSelected_one: 'On {{screen}} · {{count}} selected',
-      onSelected_other: 'On {{screen}} · {{count}} selected',
-      onMatching_one: 'On {{screen}} · all {{count}} matching',
-      onMatching_other: 'On {{screen}} · all {{count}} matching',
+      onSelected_one: 'On {{screen}} · {{formatted}} selected',
+      onSelected_other: 'On {{screen}} · {{formatted}} selected',
+      onMatching_one: 'On {{screen}} · all {{formatted}} matching',
+      onMatching_other: 'On {{screen}} · all {{formatted}} matching',
       now: 'Now on {{screen}}',
-      nowSelected_one: 'Now on {{screen}} · {{count}} selected',
-      nowSelected_other: 'Now on {{screen}} · {{count}} selected',
-      nowMatching_one: 'Now on {{screen}} · all {{count}} matching',
-      nowMatching_other: 'Now on {{screen}} · all {{count}} matching',
+      nowSelected_one: 'Now on {{screen}} · {{formatted}} selected',
+      nowSelected_other: 'Now on {{screen}} · {{formatted}} selected',
+      nowMatching_one: 'Now on {{screen}} · all {{formatted}} matching',
+      nowMatching_other: 'Now on {{screen}} · all {{formatted}} matching',
     },
 
     composer: {

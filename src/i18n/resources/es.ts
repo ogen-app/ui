@@ -1488,12 +1488,12 @@ export const es: Translation = {
     },
 
     chip: {
-      selected_one: '{{count}} seleccionada · {{screen}}',
-      selected_other: '{{count}} seleccionadas · {{screen}}',
+      selected_one: '{{formatted}} seleccionada · {{screen}}',
+      selected_other: '{{formatted}} seleccionadas · {{screen}}',
       selectedCapped:
         'Las primeras {{limit}} de {{total}} seleccionadas · {{screen}}',
-      matching_one: 'La {{count}} coincidente · {{screen}}',
-      matching_other: 'Las {{count}} coincidentes · {{screen}}',
+      matching_one: 'La {{formatted}} coincidente · {{screen}}',
+      matching_other: 'Las {{formatted}} coincidentes · {{screen}}',
       focusAsset: 'Este recurso está abierto',
       focusVoice: 'Esta voz está abierta',
       focusAudience: 'Esta audiencia está abierta',
@@ -1505,15 +1505,15 @@ export const es: Translation = {
 
     marker: {
       on: 'En {{screen}}',
-      onSelected_one: 'En {{screen}} · {{count}} seleccionada',
-      onSelected_other: 'En {{screen}} · {{count}} seleccionadas',
-      onMatching_one: 'En {{screen}} · la {{count}} coincidente',
-      onMatching_other: 'En {{screen}} · las {{count}} coincidentes',
+      onSelected_one: 'En {{screen}} · {{formatted}} seleccionada',
+      onSelected_other: 'En {{screen}} · {{formatted}} seleccionadas',
+      onMatching_one: 'En {{screen}} · la {{formatted}} coincidente',
+      onMatching_other: 'En {{screen}} · las {{formatted}} coincidentes',
       now: 'Ahora en {{screen}}',
-      nowSelected_one: 'Ahora en {{screen}} · {{count}} seleccionada',
-      nowSelected_other: 'Ahora en {{screen}} · {{count}} seleccionadas',
-      nowMatching_one: 'Ahora en {{screen}} · la {{count}} coincidente',
-      nowMatching_other: 'Ahora en {{screen}} · las {{count}} coincidentes',
+      nowSelected_one: 'Ahora en {{screen}} · {{formatted}} seleccionada',
+      nowSelected_other: 'Ahora en {{screen}} · {{formatted}} seleccionadas',
+      nowMatching_one: 'Ahora en {{screen}} · la {{formatted}} coincidente',
+      nowMatching_other: 'Ahora en {{screen}} · las {{formatted}} coincidentes',
     },
 
     composer: {
