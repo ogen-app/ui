@@ -39,6 +39,20 @@ describe('chipText', () => {
     ).toBe('All 128 matching · Ideas')
   })
 
+  it('says when only the first of a large selection goes', () => {
+    const ids = Array.from({ length: 250 }, (_, i) => `i${i}`)
+    expect(
+      chipText(
+        t,
+        workspace,
+        { screen: 'ideas' },
+        {
+          selection: { kind: 'idea', ids },
+        },
+      ),
+    ).toBe('First 200 of 250 selected · Ideas')
+  })
+
   it('names an open detail screen', () => {
     expect(
       chipText(

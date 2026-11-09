@@ -1490,6 +1490,8 @@ export const es: Translation = {
     chip: {
       selected_one: '{{count}} seleccionada · {{screen}}',
       selected_other: '{{count}} seleccionadas · {{screen}}',
+      selectedCapped:
+        'Las primeras {{limit}} de {{total}} seleccionadas · {{screen}}',
       matching_one: 'La {{count}} coincidente · {{screen}}',
       matching_other: 'Las {{count}} coincidentes · {{screen}}',
       focusAsset: 'Este recurso está abierto',
@@ -1782,6 +1784,9 @@ export const es: Translation = {
       choose: 'ELEGIR',
       dismiss: 'DESCARTAR',
       gone: 'Esta propuesta ya no existe.',
+      failed: 'No se completó. Pídelo de nuevo para reintentarlo.',
+      stopped:
+        'Se detuvo antes de terminar. Lo que hizo está en la respuesta de abajo.',
       confirmed: '{{summary}} · confirmada',
       dismissed: '{{summary}} · descartada',
       expired: '{{summary}} · caducada',
@@ -1795,6 +1800,7 @@ export const es: Translation = {
       undone: 'Deshecho',
       changed: 'No se puede deshacer: ha vuelto a cambiar desde entonces.',
       gone: 'Ya no se puede deshacer.',
+      failed: 'No se pudo deshacer. Inténtalo de nuevo.',
     },
 
     sources: {

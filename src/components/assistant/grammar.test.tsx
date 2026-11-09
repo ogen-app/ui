@@ -94,6 +94,29 @@ describe('results', () => {
     expect(screen.getByText('Not grounded')).toBeTruthy()
   })
 
+  it('name the documents a draft drew on, and say nothing when none are named', () => {
+    const { unmount } = render(
+      <ResultCard
+        details={{
+          draftedPosts: {
+            postCount: 2,
+            warnings: [],
+            grounding: {
+              mode: 'grounded',
+              sources: [{ id: 'a1', title: 'Press kit 2026' }],
+            },
+          },
+        }}
+      />,
+    )
+    expect(screen.getByText('Press kit 2026')).toBeTruthy()
+    unmount()
+    render(
+      <ResultCard details={{ draftedPosts: { postCount: 2, warnings: [] } }} />,
+    )
+    expect(screen.queryByText('Not grounded')).toBeNull()
+  })
+
   it('are never boxed', () => {
     const { container } = render(
       <ResultCard details={{ platforms: { added: 'Threads' } }} />,

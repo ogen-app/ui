@@ -223,6 +223,9 @@ export function buildViewContext(
 function capped(page: ViewPage): ViewPage {
   const out: ViewPage = { ...page }
   if (out.selection && 'ids' in out.selection) {
+    // Past the cap the first ids go and `count` keeps the whole tally, so the
+    // turn says it is partial rather than passing for the whole selection —
+    // and the chip says so before it is sent (`chipText`).
     const { ids } = out.selection
     out.selection = {
       kind: out.selection.kind,
@@ -236,7 +239,12 @@ function capped(page: ViewPage): ViewPage {
       ids: out.visible.ids.slice(0, MAX_VISIBLE_IDS),
     }
   }
-  if (out.filter && out.filter.length > MAX_FILTER_LENGTH) delete out.filter
+  if (out.filter && out.filter.length > MAX_FILTER_LENGTH) {
+    delete out.filter
+    // A whole match is defined by its filter; without one it names nothing
+    // the server could resolve, so it goes with it.
+    if (out.selection && 'allMatching' in out.selection) delete out.selection
+  }
   return out
 }
 
@@ -251,24 +259,4 @@ export function listFilter(params: Record<string, string>): string {
       !['cursor', 'limit', 'facets', 'group', 'sort', 'ids_only'].includes(key),
   )
   return new URLSearchParams(rest).toString()
-}
-
-/** A trailing window of `days` ending today, in local calendar dates. */
-export function trailingWindow(
-  days: number,
-  platforms: string[],
-  now = new Date(),
-): NonNullable<ViewContext['window']> {
-  const from = new Date(now)
-  from.setDate(from.getDate() - (days - 1))
-  return {
-    from: localDate(from),
-    to: localDate(now),
-    ...(platforms.length > 0 ? { platforms } : {}),
-  }
-}
-
-function localDate(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
