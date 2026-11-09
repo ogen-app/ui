@@ -103,10 +103,9 @@ export function AssetDocument({
    * document has none of its own, and the campaign it belongs to is the subject
    * an assistant turn about it would be about anyway.
    *
-   * Opened from the workspace bank there is no such subject, and none is
-   * invented: `ThreadSubject` is a post or a campaign, and a document belonging
-   * to no campaign is neither. The rail keeps whatever thread it had, which is
-   * what every other workspace-level screen does.
+   * Opened from the workspace bank it belongs to no campaign, so it is the
+   * workspace thread's like every other workspace-level screen — bound by
+   * `useWorkspaceThread` in the authenticated layout, not here.
    */
   const openThread = useAssistantStore((s) => s.openThread)
   const renameThread = useAssistantStore((s) => s.renameThread)

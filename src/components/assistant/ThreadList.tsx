@@ -6,6 +6,7 @@ import {
   SignInIcon,
   BriefcaseIcon,
   FileTextIcon,
+  SquaresFourIcon,
   XIcon,
 } from '@phosphor-icons/react'
 import { Logo } from '@/components/Logo'
@@ -13,7 +14,11 @@ import { useAssistantStore } from '@/stores/assistantStore'
 import { useTick } from '@/hooks/useTick'
 import { cn } from '@/lib/styles'
 import { formatDuration, stepLabel, threadName } from '@/lib/assistantTools'
-import type { AssistantAction, AssistantThread } from '@/types/assistant'
+import {
+  subjectCampaignId,
+  type AssistantAction,
+  type AssistantThread,
+} from '@/types/assistant'
 
 /**
  * Every open thread, so a run started on one campaign stays visible — and
@@ -52,8 +57,8 @@ export function ThreadList() {
   return (
     <ul className="flex flex-col">
       {list.map((thread) => {
-        const Icon =
-          thread.subject.kind === 'campaign' ? BriefcaseIcon : FileTextIcon
+        const Icon = ICONS[thread.subject.kind]
+        const link = openLink(thread)
         return (
           <li
             key={thread.id}
@@ -128,16 +133,17 @@ export function ThreadList() {
                 {/* Goes to the subject and leaves the rail exactly as it is.
                     Jumping to a post is not a request to put the assistant
                     away — you usually want it there when you arrive. */}
-                <Link
-                  {...openLink(thread)}
-                  aria-label={
-                    thread.subject.kind === 'campaign'
-                      ? t('assistant.list.openCampaign')
-                      : t('assistant.list.openPost')
-                  }
-                  className="flex size-6 shrink-0 items-center justify-center text-secondary-foreground hover:text-foreground"
-                >
-                  {/* Enter, not open-out: the arrow-out-of-a-square is the
+                {link && (
+                  <Link
+                    {...link}
+                    aria-label={
+                      thread.subject.kind === 'campaign'
+                        ? t('assistant.list.openCampaign')
+                        : t('assistant.list.openPost')
+                    }
+                    className="flex size-6 shrink-0 items-center justify-center text-secondary-foreground hover:text-foreground"
+                  >
+                    {/* Enter, not open-out: the arrow-out-of-a-square is the
                       convention for leaving the app in a new tab, and this
                       goes to a page in this window. The in-facing variant of
                       that icon is no better — at 20px the two are the same
@@ -147,8 +153,9 @@ export function ThreadList() {
                       Regular weight and 20px, which is the panel's close X —
                       these sit a few pixels from it on the same white and any
                       other stroke reads as a different set of controls. */}
-                  <SignInIcon className="size-5" />
-                </Link>
+                    <SignInIcon className="size-5" />
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => close(thread.id)}
@@ -176,15 +183,13 @@ function order(
   current: AssistantThread | undefined,
 ): AssistantThread[] {
   if (!current) return list
-  const campaignId = current.subject.campaignId
+  const campaignId = subjectCampaignId(current.subject)
+  const sameCampaign = (t: AssistantThread) =>
+    campaignId !== undefined && subjectCampaignId(t.subject) === campaignId
   return [
     current,
-    ...list.filter(
-      (t) => t.id !== current.id && t.subject.campaignId === campaignId,
-    ),
-    ...list.filter(
-      (t) => t.id !== current.id && t.subject.campaignId !== campaignId,
-    ),
+    ...list.filter((t) => t.id !== current.id && sameCampaign(t)),
+    ...list.filter((t) => t.id !== current.id && !sameCampaign(t)),
   ]
 }
 
@@ -218,26 +223,42 @@ function runningStatus(t: TFunction, thread: AssistantThread): string {
   const steps = thread.turns[thread.turns.length - 1]?.steps ?? []
   const live = [...steps].reverse().find((s) => s.endedAt === null)
   if (live) return stepLabel(t, live)
-  return thread.subject.kind === 'campaign'
-    ? t('assistant.status.workingCampaign')
-    : t('assistant.status.workingPost')
+  switch (thread.subject.kind) {
+    case 'campaign':
+      return t('assistant.status.workingCampaign')
+    case 'post':
+      return t('assistant.status.workingPost')
+    case 'workspace':
+      return t('assistant.status.workingWorkspace')
+  }
 }
 
-/** Where the jump-to arrow goes, per subject kind. */
+const ICONS = {
+  campaign: BriefcaseIcon,
+  post: FileTextIcon,
+  workspace: SquaresFourIcon,
+} as const
+
+/**
+ * Where the jump-to arrow goes, per subject kind. The workspace thread has no
+ * page of its own — every workspace screen talks to it — so it gets none.
+ */
 function openLink(thread: AssistantThread) {
-  if (thread.subject.kind === 'campaign') {
-    return {
-      to: '/campaigns/$campaignId',
-      params: { campaignId: thread.subject.campaignId },
-    } as const
+  const { subject } = thread
+  switch (subject.kind) {
+    case 'campaign':
+      return {
+        to: '/campaigns/$campaignId',
+        params: { campaignId: subject.campaignId },
+      } as const
+    case 'post':
+      return {
+        to: '/campaigns/$campaignId/posts/$postId',
+        params: { campaignId: subject.campaignId, postId: subject.postId },
+      } as const
+    case 'workspace':
+      return null
   }
-  return {
-    to: '/campaigns/$campaignId/posts/$postId',
-    params: {
-      campaignId: thread.subject.campaignId,
-      postId: thread.subject.postId,
-    },
-  } as const
 }
 
 function ThreadStatusLine({

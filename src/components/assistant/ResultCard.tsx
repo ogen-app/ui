@@ -3,6 +3,7 @@ import {
   ArrowsOutLineHorizontalIcon,
   CalendarBlankIcon,
   CheckCircleIcon,
+  LightbulbIcon,
   NotePencilIcon,
   WarningIcon,
 } from '@phosphor-icons/react'
@@ -49,7 +50,9 @@ export function ResultCard({ details }: { details: AssistantResultDetails }) {
     postsReviewCard(t, details),
     datesCard(t, details),
     redistributeCard(t, details),
-    generatedCard(t, details),
+    ideasCard(t, details),
+    draftsCard(t, details),
+    platformsCard(t, details),
     briefCard(t, details),
   ].filter(Boolean)
 
@@ -177,34 +180,70 @@ function redistributeCard(t: TFunction, details: AssistantResultDetails) {
   return null
 }
 
-function generatedCard(t: TFunction, details: AssistantResultDetails) {
-  const generated = details.contentPlan ?? details.generatedPosts
-  if (generated) {
-    return (
-      <Card>
-        <CardHeader
-          icon={NotePencilIcon}
-          title={
-            generated.postCount === 0
-              ? t('assistant.result.generatedNone')
-              : t('assistant.result.generated', counted(generated.postCount))
-          }
-        />
-        {generated.warnings.length > 0 && (
-          <ul className="flex flex-col border-t border-border">
-            {generated.warnings.map((warning, i) => (
-              <li key={i}>
-                <CardRow icon={WarningIcon} tone="warning">
-                  <p className="text-sm text-warning">{warning}</p>
-                </CardRow>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-    )
-  }
-  return null
+/** Planning writes ideas, not posts (CON-449): they wait on the Ideas tab. */
+function ideasCard(t: TFunction, details: AssistantResultDetails) {
+  const planned = details.contentPlan ?? details.generatedPosts
+  if (!planned) return null
+  return (
+    <Card>
+      <CardHeader
+        icon={LightbulbIcon}
+        title={
+          planned.ideaCount === 0
+            ? t('assistant.result.ideasNone')
+            : t('assistant.result.ideas', counted(planned.ideaCount))
+        }
+      />
+      <Warnings warnings={planned.warnings} />
+    </Card>
+  )
+}
+
+function draftsCard(t: TFunction, details: AssistantResultDetails) {
+  const drafted = details.draftedPosts
+  if (!drafted) return null
+  return (
+    <Card>
+      <CardHeader
+        icon={NotePencilIcon}
+        title={
+          drafted.postCount === 0
+            ? t('assistant.result.draftsNone')
+            : t('assistant.result.drafts', counted(drafted.postCount))
+        }
+      />
+      <Warnings warnings={drafted.warnings} />
+    </Card>
+  )
+}
+
+function platformsCard(t: TFunction, details: AssistantResultDetails) {
+  if (!details.platforms) return null
+  return (
+    <Card>
+      <CardHeader
+        icon={CheckCircleIcon}
+        tone="positive"
+        title={t('assistant.result.platformsUpdated')}
+        detail={details.platforms.added || undefined}
+      />
+    </Card>
+  )
+}
+
+function Warnings({ warnings }: { warnings: string[] }) {
+  if (warnings.length === 0) return null
+  return (
+    <ul className="flex flex-col border-t border-border">
+      {warnings.map((warning, i) => (
+        <li key={i}>
+          <CardRow icon={WarningIcon} tone="warning">
+            <p className="text-sm text-warning">{warning}</p>
+          </CardRow>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 function briefCard(t: TFunction, details: AssistantResultDetails) {

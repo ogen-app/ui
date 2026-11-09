@@ -1,21 +1,17 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { queryClient } from '@/lib/queryClient'
-import { postKey } from '@/hooks/usePost'
-import { postNotesKey, postVersionsKey } from '@/lib/queryKeys'
-import { campaignKey } from '@/hooks/useCampaigns'
 import { threadName } from '@/lib/assistantTools'
+import { refreshTouched, subjectTouches } from '@/lib/assistantTouched'
 import { flushPendingSave } from '@/lib/pendingSaves'
-import { invalidateCampaignPosts } from '@/lib/postCache'
 import { beginLocalRun } from '@/lib/localRuns'
+import { baseViewContext } from '@/lib/viewContext'
 import {
-  listCampaignMessages,
-  listPostMessages,
-  parseCampaignModelContent,
-  parseModelContent,
-  streamCampaignAssistant,
-  streamPostAssistant,
+  listThreadMessages,
+  parseHistoryResult,
+  streamAssistantTurn,
   type AssistantStreamEvent,
+  type AssistantTurnResult,
 } from '@/services/api/assistant'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { toast } from '@/stores/toastStore'
@@ -26,11 +22,12 @@ import type {
   AssistantTurn,
   StreamedPost,
   ThreadSubject,
+  Touched,
 } from '@/types/assistant'
 
 /**
- * Assistant threads, one per subject — a post (CON-42) or a campaign
- * (CON-112). A thread is *started* from its subject's page, but from then on
+ * Assistant threads, one per scope — the workspace, a campaign or a post
+ * (CON-450). A thread is *started* from its subject's page, but from then on
  * it is reachable from anywhere: the panel lists every open thread, and a turn
  * keeps running while the user navigates away.
  *
@@ -44,14 +41,29 @@ import type {
 const runners = new Map<string, AbortController>()
 
 export function threadIdFor(subject: ThreadSubject): string {
-  return subject.kind === 'post'
-    ? `post:${subject.postId}`
-    : `campaign:${subject.campaignId}`
+  switch (subject.kind) {
+    case 'workspace':
+      return 'workspace'
+    case 'campaign':
+      return `campaign:${subject.campaignId}`
+    case 'post':
+      return `post:${subject.postId}`
+  }
 }
 
-/** The id whose pending edits a turn must flush before it starts. */
-function saveKeyFor(subject: ThreadSubject): string {
-  return subject.kind === 'post' ? subject.postId : subject.campaignId
+/**
+ * The id whose pending edits a turn must flush before it starts — and whose
+ * broadcast echo it mutes. The workspace has no autosave of its own.
+ */
+function saveKeyFor(subject: ThreadSubject): string | null {
+  switch (subject.kind) {
+    case 'workspace':
+      return null
+    case 'campaign':
+      return subject.campaignId
+    case 'post':
+      return subject.postId
+  }
 }
 
 let turnCounter = 0
@@ -226,33 +238,19 @@ export const useAssistantStore = create<AssistantState>()(
           patchThread(threadId, { loaded: true })
           try {
             const { subject } = thread
-            const rows =
-              subject.kind === 'post'
-                ? await listPostMessages(subject.postId)
-                : await listCampaignMessages(subject.campaignId)
+            const rows = await listThreadMessages(subject)
 
             const turns: AssistantTurn[] = rows.map((row) => {
               if (row.role === 'user') {
                 return { id: row.id, role: 'user', content: row.content }
               }
-              if (subject.kind === 'post') {
-                const result = parseModelContent(row.content)
-                return {
-                  id: row.id,
-                  role: 'assistant',
-                  content: result.explanation,
-                  action: result.action,
-                  saveVersion: result.saveVersion,
-                  versionNote: result.versionNote,
-                }
-              }
-              const result = parseCampaignModelContent(row.content)
               return {
                 id: row.id,
                 role: 'assistant',
-                content: result.explanation,
-                action: result.action,
-                details: result.details,
+                ...turnFields(
+                  subject,
+                  parseHistoryResult(row.content, subject.kind),
+                ),
               }
             })
             // A turn may have started while history was loading; keep it last.
@@ -282,7 +280,8 @@ export const useAssistantStore = create<AssistantState>()(
           // The assistant writes the post or campaign server-side, so any
           // queued autosave must land first or it would overwrite the edit a
           // moment later.
-          await flushPendingSave(saveKeyFor(subject))
+          const saveKey = saveKeyFor(subject)
+          if (saveKey) await flushPendingSave(saveKey)
 
           const startedAt = performance.now()
           const assistantTurnId = nextTurnId('assistant')
@@ -327,7 +326,9 @@ export const useAssistantStore = create<AssistantState>()(
           // The hub reports this turn's outcome too. This tab is streaming it
           // already and refreshes the subject itself below, so the broadcast
           // copy is muted for as long as the run is ours (CON-134).
-          const endLocalRun = beginLocalRun('assistant', saveKeyFor(subject))
+          const endLocalRun = saveKey
+            ? beginLocalRun('assistant', saveKey)
+            : () => {}
 
           // A turn that lands while the user is elsewhere is "unread" — the
           // sidebar trigger carries the dot until they come back to it — and it
@@ -369,8 +370,9 @@ export const useAssistantStore = create<AssistantState>()(
           // report the turn as answered.
           let sawErrorEvent = false
 
-          // Deltas arrive as the whole document so far, so the last one wins.
-          let streamedContent = ''
+          // What the turn says it changed. Null until `complete` arrives: a
+          // turn that never got there refreshes its whole subject instead.
+          let touched: Touched[] | null = null
 
           const onEvent = (event: AssistantStreamEvent) => {
             const now = performance.now()
@@ -383,16 +385,22 @@ export const useAssistantStore = create<AssistantState>()(
                 break
 
               case 'content_delta':
-                streamedContent += event.delta
                 patchLastTurn(threadId, (t) => ({
                   ...t,
                   steps: withWritingStep(t.steps ?? [], now),
                 }))
                 break
 
+              case 'pack_loaded':
+                // The turn restarted with another pack's tools; whatever it
+                // had said so far is void.
+                patchLastTurn(threadId, (t) => ({ ...t, content: '' }))
+                break
+
               case 'post_generated':
                 // Already persisted server-side — merged into the campaign's
                 // post list so drafts appear on the calendar as they land.
+                if (subject.kind !== 'campaign') break
                 set((s) => {
                   const current = s.threads[threadId]
                   if (!current) return s
@@ -468,6 +476,7 @@ export const useAssistantStore = create<AssistantState>()(
                 // The clone shares the source's campaign; pair the event's new
                 // post id with the subject's campaign id so the reply can jump
                 // straight to the clone's editor.
+                if (subject.kind !== 'post') break
                 patchLastTurn(threadId, (t) => ({
                   ...t,
                   clone: {
@@ -478,34 +487,24 @@ export const useAssistantStore = create<AssistantState>()(
                 break
 
               case 'complete':
-                patchLastTurn(threadId, (t) => ({
-                  ...t,
-                  content:
-                    event.result.explanation ||
-                    t.content ||
-                    i18next.t('assistant.reply.done'),
-                  action: event.result.action,
-                  saveVersion: event.result.saveVersion,
-                  versionNote: event.result.versionNote,
-                  steps: closeSteps(t.steps ?? [], now),
-                  endedAt: now,
-                  streaming: false,
-                }))
-                break
-
-              case 'campaign_complete':
-                patchLastTurn(threadId, (t) => ({
-                  ...t,
-                  content:
-                    event.result.explanation ||
-                    t.content ||
-                    i18next.t('assistant.reply.done'),
-                  action: event.result.action,
-                  details: event.result.details,
-                  steps: closeSteps(t.steps ?? [], now),
-                  endedAt: now,
-                  streaming: false,
-                }))
+                touched = event.result.touched
+                patchLastTurn(threadId, (t) => {
+                  const fields = turnFields(subject, event.result)
+                  return {
+                    ...t,
+                    ...fields,
+                    content:
+                      fields.content ||
+                      t.content ||
+                      i18next.t('assistant.reply.done'),
+                    // The stream's clone event beats the result's, which only
+                    // a reloaded turn has to rely on.
+                    clone: t.clone ?? fields.clone,
+                    steps: closeSteps(t.steps ?? [], now),
+                    endedAt: now,
+                    streaming: false,
+                  }
+                })
                 break
 
               case 'error':
@@ -523,28 +522,17 @@ export const useAssistantStore = create<AssistantState>()(
           }
 
           try {
-            if (subject.kind === 'post') {
-              await streamPostAssistant(
-                subject.postId,
-                text,
-                onEvent,
-                controller.signal,
-              )
-            } else {
-              await streamCampaignAssistant(
-                subject.campaignId,
-                text,
-                onEvent,
-                controller.signal,
-              )
-            }
+            await streamAssistantTurn(
+              { instruction: text, viewContext: baseViewContext(subject) },
+              onEvent,
+              controller.signal,
+            )
 
             // The server writes the result itself — the payload describes what
             // it already saved. Never write it back; just refresh.
-            await refreshSubject(
-              subject,
-              get().threads[threadId],
-              streamedContent,
+            await refreshTouched(
+              queryClient,
+              touched ?? subjectTouches(subject),
             )
             finish('idle', sawErrorEvent ? 'failed' : 'answered')
           } catch (err) {
@@ -559,16 +547,12 @@ export const useAssistantStore = create<AssistantState>()(
               endedAt: performance.now(),
               streaming: false,
             }))
-            // A stopped or failed campaign turn may still have written posts
-            // or a brief before it ended — the flow persists as it goes — and
+            // A stopped or failed turn may still have written posts, ideas or
+            // a brief before it ended — the tools persist as they go — and
             // the finally below clears streamedPosts, so without a refresh
             // here those already-saved posts vanish from the calendar until
             // an unrelated refetch.
-            await refreshSubject(
-              subject,
-              get().threads[threadId],
-              streamedContent,
-            )
+            await refreshTouched(queryClient, subjectTouches(subject))
             finish(aborted ? 'idle' : 'error', aborted ? 'cancelled' : 'failed')
           } finally {
             runners.delete(threadId)
@@ -587,51 +571,25 @@ export const useAssistantStore = create<AssistantState>()(
   ),
 )
 
-/**
- * Pulls the subject's server state back into the cache after a turn. Resolves
- * once the refetch has settled, so the streamed placeholders can be dropped
- * without the posts blinking out of the calendar first.
- */
-async function refreshSubject(
+/** The parts of a turn its result decides, for a live or a reloaded turn. */
+function turnFields(
   subject: ThreadSubject,
-  thread: AssistantThread | undefined,
-  streamedContent: string,
-): Promise<void> {
-  if (subject.kind === 'post') {
-    const turns = thread?.turns ?? []
-    const applied = turns[turns.length - 1]
-    // Unconditional, unlike the two below: the flow's `createNote` tool writes
-    // as it runs (CON-188), so a turn can leave notes behind whatever it did
-    // to the body — including one that only wrote notes, and one that failed
-    // after writing some. `beginLocalRun` suppresses the actor's own
-    // broadcast, so nothing else refreshes this for the person who ran it.
-    await queryClient.invalidateQueries({
-      queryKey: postNotesKey(subject.postId),
-    })
-    if (applied?.action === 'edited' || streamedContent) {
-      await queryClient.invalidateQueries({ queryKey: postKey(subject.postId) })
-      // The flow snapshots the post before it rewrites, so an edited turn
-      // leaves a version the history doesn't know about. The broadcast can't
-      // cover this: `beginLocalRun` suppresses the actor's own
-      // `assistant.completed`, so for the person who ran the turn — the one
-      // most likely to have the panel open — nothing else would refresh it.
-      await queryClient.invalidateQueries({
-        queryKey: postVersionsKey(subject.postId),
-      })
-      // The turn rewrote the post server-side, so unlike every write in
-      // `usePost` there is no saved row here to land — only the two keys to
-      // mark stale. Without this the calendar and the list keep the
-      // pre-turn title for as long as they stay mounted: the suppressed
-      // broadcast means nothing else is coming.
-      invalidateCampaignPosts(queryClient, subject.campaignId)
-    }
-    return
+  result: AssistantTurnResult,
+): Pick<
+  AssistantTurn,
+  'content' | 'action' | 'details' | 'saveVersion' | 'versionNote' | 'clone'
+> {
+  return {
+    content: result.explanation,
+    action: result.action,
+    details: result.details,
+    saveVersion: result.saveVersion,
+    versionNote: result.versionNote,
+    clone:
+      result.clonePostId && subject.kind === 'post'
+        ? { postId: result.clonePostId, campaignId: subject.campaignId }
+        : undefined,
   }
-  // Campaign turns can touch the brief, the dates, or the post list, and the
-  // post list key nests under the campaign's — one invalidation covers all.
-  await queryClient.invalidateQueries({
-    queryKey: campaignKey(subject.campaignId),
-  })
 }
 
 /** True while any thread has a turn in flight — drives the sidebar trigger. */

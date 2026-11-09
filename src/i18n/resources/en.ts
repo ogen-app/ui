@@ -1872,6 +1872,8 @@ export const en = {
      */
     untitledCampaign: 'Untitled campaign',
     untitledPost: 'Untitled post',
+    /** The thread every workspace-level screen talks to (CON-450). */
+    workspaceThread: 'Workspace',
 
     /**
      * Fired when a turn ends while the user is somewhere else. The dot on the
@@ -1888,6 +1890,7 @@ export const en = {
       back: 'Back to all conversations',
       placeholderCampaign: 'Ask for a plan or a review...',
       placeholderPost: 'Ask for a change to this post...',
+      placeholderWorkspace: 'Ask for anything on this screen...',
     },
 
     composer: {
@@ -2028,6 +2031,9 @@ export const en = {
       post1: 'Rewrite the post, or just its opening.',
       post2: 'Shift the tone, the length, the ending.',
       post3: 'Work in anything from the assets.',
+      workspace1: 'Find and sort ideas. Ask your assets.',
+      workspace2: 'Explain what worked, and make more of it.',
+      workspace3: 'Say what happened while you were away.',
     },
 
     /**
@@ -2091,6 +2097,22 @@ export const en = {
         label: 'What’s missing?',
         text: 'What’s missing from this post before it goes out?',
       },
+      yesterday: {
+        label: 'What happened yesterday?',
+        text: 'What happened in the workspace yesterday?',
+      },
+      waitingIdeas: {
+        label: 'Ideas waiting on me',
+        text: 'Which ideas are still waiting for a decision?',
+      },
+      whatWorked: {
+        label: 'What worked?',
+        text: 'What worked best over the last 30 days?',
+      },
+      connections: {
+        label: 'Check connections',
+        text: 'Are all my social accounts still connected?',
+      },
     },
 
     /**
@@ -2108,6 +2130,12 @@ export const en = {
       posts_redistributed: 'Posts redistributed',
       brief_reviewed: 'Brief reviewed',
       posts_reviewed: 'Posts reviewed',
+      proposed: 'Waiting for your go-ahead',
+      post_drafted: 'Drafts written',
+      platforms_updated: 'Platforms updated',
+      cloned: 'Post cloned',
+      restored: 'Version restored',
+      scheduled: 'Post scheduled',
       versionSaved: 'Version saved',
     },
 
@@ -2151,6 +2179,12 @@ export const en = {
       posts_redistributed: 'Redistributed posts',
       brief_reviewed: 'Reviewed the brief',
       posts_reviewed: 'Checked posts against the brief',
+      proposed: 'Waiting for your go-ahead',
+      post_drafted: 'Wrote drafts',
+      platforms_updated: 'Updated the platforms',
+      cloned: 'Cloned the post',
+      restored: 'Restored a version',
+      scheduled: 'Scheduled the post',
       waiting: 'Waiting for a reply',
       notStarted: 'Not started yet',
       stopped: 'Stopped',
@@ -2158,6 +2192,7 @@ export const en = {
       answeredGeneric: 'Answered',
       workingCampaign: 'Working on the campaign',
       workingPost: 'Working on the post',
+      workingWorkspace: 'Working',
       running: '{{step}} · {{elapsed}}',
     },
 
@@ -2183,9 +2218,14 @@ export const en = {
       redistributed_other: 'Re-dated {{formatted}} posts across {{phases}}.',
       phases_one: '{{formatted}} phase',
       phases_other: '{{formatted}} phases',
-      generatedNone: 'No draft posts added',
-      generated_one: '+{{formatted}} draft post added',
-      generated_other: '+{{formatted}} draft posts added',
+      /** Planning writes ideas, not posts (CON-449). */
+      ideasNone: 'No ideas planned',
+      ideas_one: '+{{formatted}} idea on the Ideas tab',
+      ideas_other: '+{{formatted}} ideas on the Ideas tab',
+      draftsNone: 'No drafts written',
+      drafts_one: '+{{formatted}} draft, not scheduled',
+      drafts_other: '+{{formatted}} drafts, not scheduled',
+      platformsUpdated: 'Platforms updated',
       briefApplied: 'Brief updated and saved',
       briefNotApplied: 'Brief suggested but not applied',
       severity: {

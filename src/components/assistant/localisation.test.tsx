@@ -139,9 +139,9 @@ describe('assistant in Spanish', () => {
     expect(stepDetail(t, step({ progress: 'rankByReach' }))).toBe(
       'rank by reach',
     )
-    // A tool this build has never heard of keeps its raw name.
+    // A tool this build has no words for yet is spelled out from its name.
     expect(describeTool(t, 'brandNewTool', undefined, 'done')).toBe(
-      'brandNewTool',
+      'Brand new tool',
     )
   })
 })

@@ -22,6 +22,11 @@ const LINES = {
     'assistant.empty.post2',
     'assistant.empty.post3',
   ],
+  workspace: [
+    'assistant.empty.workspace1',
+    'assistant.empty.workspace2',
+    'assistant.empty.workspace3',
+  ],
 } as const satisfies Record<ThreadSubject['kind'], readonly string[]>
 
 export function ThreadEmptyState({

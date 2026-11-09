@@ -19,13 +19,12 @@ says so.
 
 ## What the UI consumes today
 
-Six streams. Four are **per-request POST flows** — the request opens a stream,
-the stream ends when the work does: 
+Five streams. Three are **per-request POST flows** — the request opens a stream,
+the stream ends when the work does:
 
 | Endpoint | Consumer | Events handled |
 | --- | --- | --- |
-| `POST /api/posts/:id/assistant` | `services/api/assistant.ts` | `content_delta`, `explanation_delta`, `tool_call`, `tool_result`, `complete`, `error` |
-| `POST /api/campaigns/:id/assistant` | `services/api/assistant.ts` | same, plus campaign actions |
+| `POST /api/assistant` | `services/api/assistant.ts` | `explanation_delta`, `tool_call`, `tool_result`, `pack_loaded`, `complete` (with `touched[]` and the packs' `results`), `error`; the packs' own events: `content_delta`, `draft_post_post`, `clone_complete`, and any `*_step` as progress |
 | `POST /api/posts/:id/assess` | `services/api/quality.ts` | `step`, `complete`, `error` |
 | `POST /api/campaigns/:id/generate-draft` | `services/api/contentPlan.ts` | `step`, `post`, `warning`, `complete`, `error` |
 
@@ -45,14 +44,18 @@ What they share is the machinery for staying open (`lib/streamConnection`:
 backoff, silence watchdog, subscriber counting), written once.
 
 `EventSource` is not used anywhere and can't be: it is GET-only, can't carry a
-JSON body, and can't set `X-Workspace-Id` — so all six read the wire format off
+JSON body, and can't set `X-Workspace-Id` — so all five read the wire format off
 a `fetch` response body.
+
+The universal assistant (CON-450) replaced the per-subject
+`/api/{posts,campaigns}/:id/assistant` streams: one endpoint, one thread per
+scope (`workspace`, `campaign:<id>`, `post:<id>`), with history at
+`GET /api/assistant/threads/:scope/messages`.
 
 ## What it does not consume
 
 - `POST /api/campaigns/:id/enrich-brief`
 - `POST /api/campaigns/:id/consistency-check`
-- `POST /api/campaigns/:id/assistant/history/:id`
 - `POST /api/campaigns/:id/undo`
 
 Four of the six campaign flows stream server-side with no caller here.

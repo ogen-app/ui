@@ -4,41 +4,56 @@ import { errorMessage } from './errors'
 import { isRecord } from './json'
 import { readSSEStream } from '@/lib/sse'
 import { humanizeStep } from '@/lib/assistantTools'
+import type { ViewContext } from '@/lib/viewContext'
 import type {
+  AssistantAction,
   AssistantResultDetails,
   CampaignAssistantAction,
+  Grounding,
   PostAssistantAction,
   ReviewFinding,
   ReviewSeverity,
   StreamedPost,
+  ThreadSubject,
+  Touched,
 } from '@/types/assistant'
 
 /**
- * A persisted conversation row. The assistant's own turns store the flow's
- * structured result as a JSON *string* in `content` — see `parseModelContent`
- * and `parseCampaignModelContent`.
+ * The universal assistant (CON-444/450): one endpoint, one thread per scope.
+ * A turn is `POST /api/assistant` with the instruction and the view context it
+ * was sent from; the thread is named by the view context's scope. The campaign
+ * and post assistants are packs behind it now, and their events stream through
+ * the same response.
  */
+
+/** A persisted turn. A model row's `content` is its `complete` event's JSON. */
 export type AssistantHistoryMessage = {
   id: string
   role: 'user' | 'model'
   content: string
+  view_context?: Record<string, unknown>
   created_at: string
 }
 
-/** The structured result the post flow returns, at `complete` and in history. */
-export type AssistantResult = {
+/**
+ * What a turn did, read out of its `complete` payload. The campaign and post
+ * packs report their own structured results; everything else is prose plus
+ * what the turn touched.
+ */
+export type AssistantTurnResult = {
   explanation: string
-  updatedContent?: string
-  action: PostAssistantAction
+  action: AssistantAction
+  /** Campaign-pack results — the plan, the dates, the reviews. */
+  details: AssistantResultDetails
+  /** Post-pack results. */
   saveVersion: boolean
   versionNote?: string
-}
-
-/** The structured result the campaign flow returns (CON-112 §6.3). */
-export type CampaignAssistantResult = {
-  explanation: string
-  action: CampaignAssistantAction
-  details: AssistantResultDetails
+  /** A clone the post pack created (CON-59). */
+  clonePostId?: string
+  /** What the turn changed, for the client to refresh. */
+  touched: Touched[]
+  /** The turn ran but could not be stored, so it won't survive a reload. */
+  unsaved: boolean
 }
 
 export type AssistantStreamEvent =
@@ -52,38 +67,39 @@ export type AssistantStreamEvent =
       ref?: string
       input?: Record<string, unknown>
     }
-  | { type: 'tool_result'; ref?: string }
-  | { type: 'complete'; result: AssistantResult }
-  | { type: 'campaign_complete'; result: CampaignAssistantResult }
-  /** A post the generation sub-flow has already persisted. */
+  /** `ok` is false when the tool refused the call or hit a conflict. */
+  | { type: 'tool_result'; ref?: string; ok: boolean }
+  /**
+   * The turn restarted with another pack's tools. The reply streamed before
+   * it is void.
+   */
+  | { type: 'pack_loaded'; pack: string }
+  | { type: 'complete'; result: AssistantTurnResult }
+  /** A draft the draftPost sub-flow has already persisted. */
   | { type: 'post_generated'; post: StreamedPost }
   /** The assistant cloned the post into a new, already-persisted one (CON-59). */
-  | {
-      type: 'clone_complete'
-      newPostId: string
-      platformId?: string
-      postType?: string
-      adapted: boolean
-    }
-  | { type: 'error'; message: string }
+  | { type: 'clone_complete'; newPostId: string }
+  | { type: 'error'; message: string; code?: string }
   /** Namespaced sub-flow progress, annotating the running tool step. */
   | { type: 'progress'; step: string }
 
-export function listPostMessages(
-  postId: string,
-): Promise<AssistantHistoryMessage[]> {
-  return apiJson<AssistantHistoryMessage[] | null>(
-    `/api/posts/${postId}/messages`,
-    'Unable to load the conversation',
-    // A post with no history answers `null`, not `[]`.
-  ).then(orderHistory)
+/** The scope segment the history route takes. */
+export function threadScope(subject: ThreadSubject): string {
+  switch (subject.kind) {
+    case 'workspace':
+      return 'workspace'
+    case 'campaign':
+      return `campaign:${subject.campaignId}`
+    case 'post':
+      return `post:${subject.postId}`
+  }
 }
 
-export function listCampaignMessages(
-  campaignId: string,
+export function listThreadMessages(
+  subject: ThreadSubject,
 ): Promise<AssistantHistoryMessage[]> {
   return apiJson<AssistantHistoryMessage[] | null>(
-    `/api/campaigns/${campaignId}/messages`,
+    `/api/assistant/threads/${encodeURIComponent(threadScope(subject))}/messages`,
     'Unable to load the conversation',
   ).then(orderHistory)
 }
@@ -106,179 +122,95 @@ function orderHistory(
 }
 
 /**
- * Coerces a stored or streamed action to the post enum. Every action the
- * backend can emit must be listed — an omission here doesn't fail loudly, it
- * relabels the turn "declined" and the reply banner lies about what happened
- * (a `noted` turn saying "No changes made" while its note sits on the page).
+ * Reads a model row back into a result. Two shapes reach here: the universal
+ * assistant's `complete` payload, with the packs' results under `results`, and
+ * the rows migrated from the per-subject tables, which are a campaign or post
+ * result at the top level. Anything unreadable shows as plain prose rather
+ * than failing the load.
  */
-function postAction(value: unknown): PostAssistantAction {
-  return value === 'edited' || value === 'noted' ? value : 'declined'
-}
-
-/**
- * Parses a post-assistant history row's `content`. Older or malformed rows
- * fall back to being shown as plain explanation text rather than failing the
- * load.
- */
-export function parseModelContent(content: string): AssistantResult {
-  const parsed = safeParse(content)
-  if (typeof parsed.explanation === 'string') {
-    return {
-      explanation: parsed.explanation,
-      action: postAction(parsed.action),
-      saveVersion: parsed.saveVersion === true,
-      versionNote:
-        typeof parsed.versionNote === 'string' ? parsed.versionNote : undefined,
-    }
-  }
-  return { explanation: content, action: 'declined', saveVersion: false }
-}
-
-/** The history counterpart for campaign turns (stored as compact JSON). */
-export function parseCampaignModelContent(
+export function parseHistoryResult(
   content: string,
-): CampaignAssistantResult {
+  kind: ThreadSubject['kind'],
+): AssistantTurnResult {
   const parsed = safeParse(content)
-  if (typeof parsed.explanation === 'string') {
-    return {
-      explanation: parsed.explanation,
-      action: campaignAction(parsed.action),
-      details: resultDetails(parsed),
-    }
+  if (typeof parsed.explanation !== 'string') {
+    return { ...emptyResult(), explanation: content }
   }
-  return { explanation: content, action: 'answered', details: {} }
+  if (record(parsed.results) || kind === 'workspace') {
+    return turnResult(parsed)
+  }
+  // A migrated row: the subject's own pack result, at the top level.
+  return turnResult({
+    explanation: parsed.explanation,
+    action: kind === 'post' ? undefined : parsed.action,
+    results: { [kind]: parsed },
+  })
+}
+
+function emptyResult(): AssistantTurnResult {
+  return {
+    explanation: '',
+    action: 'answered',
+    details: {},
+    saveVersion: false,
+    touched: [],
+    unsaved: false,
+  }
+}
+
+/** Reads a `complete` payload — streamed, or stored in history. */
+function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
+  const results = record(parsed.results) ?? {}
+  const campaign = record(results.campaign)
+  const post = record(results.post)
+  const result = emptyResult()
+
+  result.explanation =
+    str(parsed.explanation) ||
+    str(campaign?.explanation) ||
+    str(post?.explanation)
+
+  // The packs' actions say what changed; the orchestrator's says only whether
+  // the request was taken. The more specific one labels the turn.
+  result.action = parsed.action === 'declined' ? 'declined' : 'answered'
+  if (campaign) {
+    result.details = resultDetails(campaign)
+    const action = campaignAction(campaign.action)
+    if (action !== 'answered') result.action = action
+  }
+  if (post) {
+    const action = postAction(post.action)
+    if (action) result.action = action
+    result.saveVersion = post.saveVersion === true
+    result.versionNote = optStr(post.versionNote)
+    const clone = record(post.cloneResult)
+    result.clonePostId = optStr(clone?.newPostId)
+  }
+
+  result.touched = touched(parsed.touched)
+  result.unsaved = parsed.unsaved === true
+  return result
 }
 
 /**
- * Runs one post-assistant turn and dispatches its SSE events.
+ * Runs one turn and dispatches its SSE events.
  *
- * The server applies the edit to the post itself — `updatedContent` is what it
- * *saved*, not a patch for the client to persist. Never write it back; refetch
- * the post instead.
+ * Every write lands server-side as the tools run — the events describe work
+ * that has already happened, and aborting does not roll any of it back. Never
+ * write a result back; refresh what the turn touched instead.
  */
-export function streamPostAssistant(
-  postId: string,
-  instruction: string,
+export async function streamAssistantTurn(
+  body: { instruction: string; viewContext: ViewContext },
   onEvent: (event: AssistantStreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  return streamAssistant(
-    `/api/posts/${postId}/assistant`,
-    instruction,
-    signal,
-    (event, parsed) => {
-      switch (event) {
-        case 'content_delta':
-          if (typeof parsed.delta === 'string') {
-            onEvent({ type: 'content_delta', delta: parsed.delta })
-          }
-          return true
-        case 'complete':
-          onEvent({
-            type: 'complete',
-            result: {
-              explanation: str(parsed.explanation),
-              updatedContent:
-                typeof parsed.updatedContent === 'string'
-                  ? parsed.updatedContent
-                  : undefined,
-              action: postAction(parsed.action),
-              saveVersion: parsed.saveVersion === true,
-              versionNote:
-                typeof parsed.versionNote === 'string'
-                  ? parsed.versionNote
-                  : undefined,
-            },
-          })
-          return true
-        // The clone is a new, already-persisted post; the store attaches it to
-        // the turn so the reply can offer a jump to it. Emitted before `complete`.
-        case 'clone_complete':
-          if (typeof parsed.newPostId === 'string' && parsed.newPostId) {
-            onEvent({
-              type: 'clone_complete',
-              newPostId: parsed.newPostId,
-              platformId:
-                typeof parsed.platformId === 'string'
-                  ? parsed.platformId
-                  : undefined,
-              postType:
-                typeof parsed.postType === 'string'
-                  ? parsed.postType
-                  : undefined,
-              adapted: parsed.adapted === true,
-            })
-          }
-          return true
-        default:
-          return false
-      }
-    },
-    onEvent,
-  )
-}
-
-/**
- * Runs one campaign-assistant turn (CON-112).
- *
- * Every mutating tool writes as it goes — the content-plan flow persists each
- * draft inline — so the events describe work that has *already happened*.
- * Aborting mid-stream does not roll any of it back.
- */
-export function streamCampaignAssistant(
-  campaignId: string,
-  instruction: string,
-  onEvent: (event: AssistantStreamEvent) => void,
-  signal?: AbortSignal,
-): Promise<void> {
-  return streamAssistant(
-    `/api/campaigns/${campaignId}/assistant`,
-    instruction,
-    signal,
-    (event, parsed) => {
-      if (event === 'complete') {
-        onEvent({
-          type: 'campaign_complete',
-          result: {
-            explanation: str(parsed.explanation),
-            action: campaignAction(parsed.action),
-            details: resultDetails(parsed),
-          },
-        })
-        return true
-      }
-      // Both generation flows forward their per-post events under their own
-      // namespace; the payload shape is the same.
-      if (event === 'content_plan_post' || event === 'generate_posts_post') {
-        const post = streamedPost(parsed)
-        if (post) onEvent({ type: 'post_generated', post })
-        return true
-      }
-      return false
-    },
-    onEvent,
-  )
-}
-
-/**
- * The shared half of both flows: opens the stream and dispatches the events
- * they have in common. `handle` claims the subject-specific ones and returns
- * true when it has; anything left over is treated as sub-flow progress.
- */
-async function streamAssistant(
-  path: string,
-  instruction: string,
-  signal: AbortSignal | undefined,
-  handle: (event: string, parsed: Record<string, unknown>) => boolean,
-  onEvent: (event: AssistantStreamEvent) => void,
-): Promise<void> {
-  const res = await scopedFetch(path, {
+  const res = await scopedFetch('/api/assistant', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
     },
-    body: JSON.stringify({ instruction }),
+    body: JSON.stringify(body),
     signal,
   })
 
@@ -290,28 +222,51 @@ async function streamAssistant(
 
   await readSSEStream(res.body, ({ event, data }) => {
     const parsed = safeParse(data)
-    if (handle(event, parsed)) return
-
     switch (event) {
       case 'explanation_delta':
         if (typeof parsed.delta === 'string') {
           onEvent({ type: 'explanation_delta', delta: parsed.delta })
         }
-        break
+        return
+      case 'content_delta':
+        if (typeof parsed.delta === 'string') {
+          onEvent({ type: 'content_delta', delta: parsed.delta })
+        }
+        return
       case 'tool_call':
         onEvent({
           type: 'tool_call',
           name: typeof parsed.name === 'string' ? parsed.name : 'tool',
-          ref: typeof parsed.ref === 'string' ? parsed.ref : undefined,
+          ref: optStr(parsed.ref),
           input: isRecord(parsed.input) ? parsed.input : undefined,
         })
-        break
+        return
       case 'tool_result':
         onEvent({
           type: 'tool_result',
-          ref: typeof parsed.ref === 'string' ? parsed.ref : undefined,
+          ref: optStr(parsed.ref),
+          ok: parsed.ok !== false,
         })
-        break
+        return
+      case 'pack_loaded':
+        onEvent({ type: 'pack_loaded', pack: str(parsed.pack) })
+        return
+      case 'complete':
+        onEvent({ type: 'complete', result: turnResult(parsed) })
+        return
+      // The draftPost sub-flow forwards each draft it has written.
+      case 'draft_post_post': {
+        const post = streamedPost(parsed)
+        if (post) onEvent({ type: 'post_generated', post })
+        return
+      }
+      // The clone is a new, already-persisted post; the store attaches it to
+      // the turn so the reply can offer a jump to it. Emitted before `complete`.
+      case 'clone_complete':
+        if (typeof parsed.newPostId === 'string' && parsed.newPostId) {
+          onEvent({ type: 'clone_complete', newPostId: parsed.newPostId })
+        }
+        return
       case 'error':
         onEvent({
           type: 'error',
@@ -319,25 +274,46 @@ async function streamAssistant(
             typeof parsed.message === 'string'
               ? parsed.message
               : 'The assistant failed',
+          code: optStr(parsed.code),
         })
-        break
+        return
       default:
         // Sub-flow events are namespaced per flow and carry a `step` key.
         if (typeof parsed.step === 'string') {
           onEvent({ type: 'progress', step: parsed.step })
         }
-        break
     }
   })
+}
+
+/**
+ * Coerces a post-pack action. `undefined` for anything else — including the
+ * campaign actions a migrated row may carry — so it never relabels a turn.
+ */
+function postAction(value: unknown): PostAssistantAction | undefined {
+  switch (value) {
+    case 'edited':
+    case 'noted':
+    case 'cloned':
+    case 'restored':
+    case 'scheduled':
+    case 'declined':
+      return value
+    default:
+      return undefined
+  }
 }
 
 const CAMPAIGN_ACTIONS: CampaignAssistantAction[] = [
   'answered',
   'declined',
+  'proposed',
   'content_plan_generated',
   'posts_generated',
+  'post_drafted',
   'brief_enriched',
   'dates_updated',
+  'platforms_updated',
   'posts_redistributed',
   'brief_reviewed',
   'posts_reviewed',
@@ -350,8 +326,9 @@ function campaignAction(value: unknown): CampaignAssistantAction {
 }
 
 /**
- * Pulls the structured result out of a campaign `complete` payload. Every key
- * is optional and only one is ever populated, so each is read defensively.
+ * Pulls the structured result out of a campaign-pack result. Every key is
+ * optional, and the counts are read under their current and their migrated
+ * names, so a reloaded turn from before CON-449 still shows its card.
  */
 function resultDetails(
   parsed: Record<string, unknown>,
@@ -361,24 +338,37 @@ function resultDetails(
   const contentPlan = record(parsed.contentPlan)
   if (contentPlan) {
     details.contentPlan = {
-      postCount: num(contentPlan.postCount),
+      ideaCount: num(contentPlan.ideaCount ?? contentPlan.postCount),
       warnings: strings(contentPlan.warnings),
+      grounding: grounding(contentPlan.grounding),
     }
   }
 
   const generated = record(parsed.generatedPosts)
   if (generated) {
     details.generatedPosts = {
-      postCount: num(generated.postCount),
+      ideaCount: num(generated.ideaCount ?? generated.postCount),
       warnings: strings(generated.warnings),
+      grounding: grounding(generated.grounding),
     }
   }
 
-  // The stream sends `brief: {applied}`; the persisted history row flattens it
-  // to `briefApplied`. Read both so a reloaded turn still shows the write.
+  const drafted = record(parsed.draftedPosts)
+  if (drafted) {
+    details.draftedPosts = {
+      postCount: num(drafted.postCount),
+      warnings: strings(drafted.warnings),
+    }
+  }
+
+  // The stream sends `brief: {applied}`; rows migrated from the campaign
+  // table flatten it to `briefApplied`. Read both.
   const brief = record(parsed.brief)
   if (brief) {
-    details.brief = { applied: brief.applied === true }
+    details.brief = {
+      applied: brief.applied === true,
+      undoId: optStr(brief.undoId),
+    }
   } else if (typeof parsed.briefApplied === 'boolean') {
     details.brief = { applied: parsed.briefApplied }
   }
@@ -389,6 +379,15 @@ function resultDetails(
       startDate: str(dates.startDate),
       endDate: str(dates.endDate),
       postsOutsideRange: num(dates.postsOutsideRange),
+      undoId: optStr(dates.undoId),
+    }
+  }
+
+  const platforms = record(parsed.platforms)
+  if (platforms) {
+    details.platforms = {
+      added: str(platforms.added),
+      undoId: optStr(platforms.undoId),
     }
   }
 
@@ -421,6 +420,28 @@ function resultDetails(
   return details
 }
 
+function grounding(value: unknown): Grounding | undefined {
+  const g = record(value)
+  if (!g || (g.mode !== 'grounded' && g.mode !== 'exploratory'))
+    return undefined
+  return {
+    mode: g.mode,
+    sources: Array.isArray(g.sources)
+      ? g.sources
+          .filter(isRecord)
+          .map((s) => ({ id: str(s.id), title: str(s.title) }))
+      : [],
+  }
+}
+
+function touched(value: unknown): Touched[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter(isRecord)
+    .filter((t) => typeof t.kind === 'string' && t.kind)
+    .map((t) => ({ kind: str(t.kind), id: optStr(t.id) }))
+}
+
 function findings(value: unknown): ReviewFinding[] {
   if (!Array.isArray(value)) return []
   return value.filter(isRecord).map((f) => ({
@@ -434,7 +455,7 @@ function findings(value: unknown): ReviewFinding[] {
           ? f.title
           : undefined,
     issue: str(f.issue),
-    suggestion: typeof f.suggestion === 'string' ? f.suggestion : undefined,
+    suggestion: optStr(f.suggestion),
   }))
 }
 
@@ -449,23 +470,23 @@ function severity(value: unknown): ReviewSeverity | undefined {
 }
 
 /**
- * Normalises a streamed `DraftPost` (camelCase, `publishDate`) into the shape
- * the campaign's post list uses. The row is already persisted, so it carries
- * the same id the refetch will return.
+ * Normalises a streamed draft into the shape the campaign's post list uses.
+ * The row is already persisted, so it carries the same id the refetch will
+ * return. Current drafts name the body `content` and the type `postType`;
+ * older flows sent `body` and `contentType`.
  */
 function streamedPost(parsed: Record<string, unknown>): StreamedPost | null {
   const post = record(parsed.post)
   if (!post) return null
-  const id = typeof parsed.id === 'string' && parsed.id ? parsed.id : null
+  const id = str(parsed.id) || str(post.postId)
   if (!id) return null
-  const publishDate =
-    typeof post.publishDate === 'string' ? post.publishDate : ''
+  const publishDate = str(post.publishDate)
   return {
     id,
     title: str(post.title) || `Post ${num(parsed.index) + 1}`,
-    content: str(post.body),
+    content: str(post.content) || str(post.body),
     platform_id: str(post.platformId),
-    platform_post_type: str(post.contentType),
+    platform_post_type: str(post.postType) || str(post.contentType),
     // Never `""`: the server refuses an empty phase id (CON-166).
     campaign_type_phase_id: str(post.phaseId) || null,
     // Local noon keeps the post on its calendar day regardless of timezone.
@@ -488,6 +509,10 @@ function record(value: unknown): Record<string, unknown> | null {
 
 function str(value: unknown): string {
   return typeof value === 'string' ? value : ''
+}
+
+function optStr(value: unknown): string | undefined {
+  return typeof value === 'string' && value ? value : undefined
 }
 
 function num(value: unknown): number {
