@@ -79,6 +79,42 @@ describe('a voice changed', () => {
   })
 })
 
+describe('a voice with rules it doesn’t set', () => {
+  it('words only the rules it has, and still offers OPEN', async () => {
+    await show({
+      voice: {
+        change: 'added',
+        id: 'v2',
+        name: 'Concierge',
+        whenToUse: '',
+        isDefault: false,
+        rules: { emoji: '', formality: 'formal', person: '', length: 'odd' },
+        unbound: 0,
+        undoId: 'u5',
+      },
+    })
+    expect(screen.getByText('formal')).toBeTruthy()
+    expect(screen.queryByText(/brand\.voices/)).toBeNull()
+    expect(screen.getByText('OPEN')).toBeTruthy()
+  })
+
+  it('says a voice with no rules has none yet, with OPEN', async () => {
+    await show({
+      voice: {
+        change: 'added',
+        id: 'v3',
+        name: 'Plain',
+        whenToUse: '',
+        isDefault: false,
+        rules: { emoji: '', formality: '', person: '', length: '' },
+        unbound: 0,
+      },
+    })
+    expect(screen.getByText('No rules set yet')).toBeTruthy()
+    expect(screen.getByText('OPEN')).toBeTruthy()
+  })
+})
+
 describe('a bulk change', () => {
   it('undoes every change it made, and names the ones it couldn’t', async () => {
     await show({
@@ -95,6 +131,31 @@ describe('a bulk change', () => {
     fireEvent.click(screen.getByText('UNDO'))
     expect(undo).toHaveBeenCalledWith('workspace', 't1', 'b1')
     expect(undo).toHaveBeenCalledWith('workspace', 't1', 'b2')
+  })
+})
+
+describe('a bulk undo that didn’t all go through', () => {
+  it('says which couldn’t be undone, and offers UNDO again for the rest', async () => {
+    await renderWithProviders(
+      <FoundationResults
+        threadId="workspace"
+        turnId="t1"
+        subject={{ kind: 'workspace' }}
+        results={{
+          bulk: { done: 3, undoIds: ['b1', 'b2', 'b3'], failed: [] },
+        }}
+        undoStates={{ b1: 'undone', b2: 'changed' }}
+        disabled={false}
+      />,
+    )
+    expect(
+      screen.getByText(
+        '1 change couldn’t be undone: it was changed again since.',
+      ),
+    ).toBeTruthy()
+    fireEvent.click(screen.getByText('UNDO'))
+    expect(undo).toHaveBeenCalledTimes(1)
+    expect(undo).toHaveBeenCalledWith('workspace', 't1', 'b3')
   })
 })
 
@@ -226,6 +287,17 @@ describe('suggestions on the Foundation screens', () => {
     )
     expect(screen.getByText('Which facts expired?')).toBeTruthy()
     unmount()
+    // The list has no voice open, so its verbs are about all of them.
+    useViewContextStore.setState({
+      location: { screen: 'foundation.voices' },
+      page: null,
+    })
+    const voices = render(<StarterChips kind="workspace" onPick={() => {}} />, {
+      wrapper: QueryWrapper,
+    })
+    expect(screen.getByText('Which voice for what?')).toBeTruthy()
+    expect(screen.queryByText('Summarise this voice')).toBeNull()
+    voices.unmount()
     useViewContextStore.setState({
       location: { screen: 'campaign.list' },
       page: { selection: { kind: 'post', ids: ['p1'] } },

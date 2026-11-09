@@ -2497,6 +2497,10 @@ export const en = {
         label: 'Read the brand',
         text: 'Read our brand from our website: ',
       },
+      whichVoice: {
+        label: 'Which voice for what?',
+        text: 'When should we use each of our voices?',
+      },
       summariseVoice: {
         label: 'Summarise this voice',
         text: 'Summarise this voice.',
@@ -2732,6 +2736,7 @@ export const en = {
       unbound_other: 'Taken off {{formatted}} campaigns and posts that used it',
       voice: {
         default: 'The default voice',
+        noRules: 'No rules set yet',
       },
       audience: {
         readsOn: 'Reads on {{where}}',
@@ -2750,6 +2755,12 @@ export const en = {
         title_one: '{{formatted}} change',
         title_other: '{{formatted}} changes',
         failed: 'Couldn’t {{what}}: {{reason}}',
+        undoChanged_one:
+          '{{formatted}} change couldn’t be undone: it was changed again since.',
+        undoChanged_other:
+          '{{formatted}} changes couldn’t be undone: they were changed again since.',
+        undoGone_one: '{{formatted}} change can no longer be undone.',
+        undoGone_other: '{{formatted}} changes can no longer be undone.',
       },
       facts: {
         word: 'Facts',
