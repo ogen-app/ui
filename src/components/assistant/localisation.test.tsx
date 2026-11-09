@@ -70,6 +70,24 @@ describe('assistant in Spanish', () => {
     expect(screen.queryByText(/Re-dated/)).toBeNull()
   })
 
+  it('writes counts as the language writes numbers', () => {
+    render(
+      <ResultCard
+        details={{
+          postsReview: {
+            checked: 12000,
+            total: 15000,
+            capped: false,
+            findings: [],
+          },
+        }}
+      />,
+    )
+    expect(
+      screen.getByText('Comprobadas 12.000 de 15.000 publicaciones'),
+    ).toBeTruthy()
+  })
+
   it('words the footer and the timeline', () => {
     render(
       <AssistantReply
@@ -113,6 +131,14 @@ describe('assistant in Spanish', () => {
       ),
     ).toBe('Leyendo 2 fragmentos de recurso a1')
     expect(stepDetail(t, step({ generated: 3 }))).toBe('3 generadas')
+    // A known sub-flow stage is translated; one this build predates is
+    // humanised rather than hidden.
+    expect(stepDetail(t, step({ progress: 'resolveTargets' }))).toBe(
+      'destinos resueltos',
+    )
+    expect(stepDetail(t, step({ progress: 'rankByReach' }))).toBe(
+      'rank by reach',
+    )
     // A tool this build has no words for yet is spelled out from its name.
     expect(describeTool(t, 'brandNewTool', undefined, 'done')).toBe(
       'Brand new tool',
