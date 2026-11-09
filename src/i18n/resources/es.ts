@@ -883,6 +883,7 @@ export const es: Translation = {
       drafted_one: '{{count}} borrador escrito, sin programar',
       drafted_other: '{{count}} borradores escritos, sin programar',
       draftFailed: 'No se pudieron escribir todos los borradores',
+      compileFailed: 'No se pudo compilar la idea',
       draftsKept_one: 'Se ha conservado el {{count}} ya escrito.',
       draftsKept_other: 'Se han conservado los {{count}} ya escritos.',
       tooMany: 'Elige hasta 10 ideas para compilarlas o redactarlas',
@@ -892,6 +893,8 @@ export const es: Translation = {
       writePrompt: 'Escribe esta publicación completa a partir de sus tesis.',
       builtFrom_one: 'Hecha a partir de {{count}} idea',
       builtFrom_other: 'Hecha a partir de {{count}} ideas',
+      builtFromFailed:
+        'No se pudieron cargar las ideas a partir de las que se hizo esta publicación.',
     },
     bulk: {
       select: 'Seleccionar «{{title}}»',

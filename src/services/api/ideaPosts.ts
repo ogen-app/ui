@@ -124,7 +124,12 @@ export async function draftIdeas(
   if (!res.ok || !res.body) {
     throw new Error(await errorMessage(res, 'Unable to write the drafts'))
   }
+  // A stream that closes with neither `complete` nor `error` — a dropped
+  // connection, a server that went away — did not finish, and must not read
+  // as a success with however few drafts made it.
+  let ended = false
   await readSSEStream(res.body, ({ event, data }) => {
+    if (event === 'complete' || event === 'error') ended = true
     let parsed: unknown
     try {
       parsed = JSON.parse(data)
@@ -160,4 +165,10 @@ export async function draftIdeas(
       })
     }
   })
+  if (!ended) {
+    onEvent({
+      type: 'error',
+      message: 'The connection closed before the drafts were finished',
+    })
+  }
 }

@@ -122,11 +122,7 @@ function WeeklyCalendarComponent({
         : null,
     [days],
   )
-  const slotsQuery = useIdeaSlots(
-    range?.from ?? '',
-    range?.to ?? '',
-    campaignId,
-  )
+  const slotsQuery = useIdeaSlots(range, campaignId)
   const slotsByDay = useMemo(() => {
     const map = new Map<string, IdeaSlot[]>()
     for (const slot of slotsQuery.data ?? []) {

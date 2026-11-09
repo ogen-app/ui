@@ -253,7 +253,10 @@ export type ContentSnapshot<T extends PostSummary = Post> = {
    * waiting for a slot. Nothing more has to happen to them by hand.
    */
   readyToGo: number
-  /** Still being written — the work left to do. */
+  /**
+   * Still being written — the work left to do: drafts, and planned posts that
+   * have their theses but no body yet (CON-449).
+   */
   notReady: number
   /** Last published first, capped at `limit`. */
   recentlyPublished: T[]
@@ -301,7 +304,7 @@ export function contentSnapshot<T extends PostSummary>(
       byStatus.ready_for_publish +
       byStatus.scheduled +
       byStatus.scheduled_for_manual_publishing,
-    notReady: byStatus.draft,
+    notReady: byStatus.draft + byStatus.planned,
     recentlyPublished,
     upNext,
   }

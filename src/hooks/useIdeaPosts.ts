@@ -25,14 +25,16 @@ export const ideaSlotsKey = (
 export const postIdeasKey = (postId: string) =>
   ['post', postId, 'ideas'] as const
 
+/** Ideas planned onto a range of days; `null` asks for nothing. */
 export function useIdeaSlots(
-  from: string,
-  to: string,
+  range: { from: string; to: string } | null,
   campaignId: string | null,
 ) {
   return useQuery({
-    queryKey: ideaSlotsKey(from, to, campaignId),
-    queryFn: () => listIdeaSlots(from, to, campaignId),
+    queryKey: ideaSlotsKey(range?.from ?? '', range?.to ?? '', campaignId),
+    queryFn: () =>
+      range ? listIdeaSlots(range.from, range.to, campaignId) : [],
+    enabled: range !== null,
     staleTime: 30_000,
   })
 }
@@ -62,6 +64,8 @@ export function useCompileIdeas() {
         ...(campaignId ? { campaign_id: campaignId } : {}),
         ...(targetDate ? { target_date: targetDate } : {}),
       }),
+    // The global mutation toast reports a failure; this names the action.
+    meta: { errorTitle: t('ideas.lifecycle.compileFailed') },
     onSuccess: async ({ post }) => {
       await refreshTouched(qc, [
         { kind: 'post', id: post.id },

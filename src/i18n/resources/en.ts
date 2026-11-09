@@ -1061,6 +1061,7 @@ export const en = {
       drafted_one: '{{count}} draft written, not scheduled',
       drafted_other: '{{count}} drafts written, not scheduled',
       draftFailed: 'The drafts could not all be written',
+      compileFailed: 'Couldn’t compile the idea',
       draftsKept_one: 'The {{count}} already written was kept.',
       draftsKept_other: 'The {{count}} already written were kept.',
       tooMany: 'Pick up to 10 ideas to compile or draft them',
@@ -1070,6 +1071,7 @@ export const en = {
       writePrompt: 'Write this post in full from its theses.',
       builtFrom_one: 'Built from {{count}} idea',
       builtFrom_other: 'Built from {{count}} ideas',
+      builtFromFailed: 'Couldn’t load the ideas this post was built from.',
     },
     bulk: {
       select: 'Select “{{title}}”',
