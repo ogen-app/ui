@@ -147,6 +147,19 @@ describe('invalidationsFor', () => {
     }
   })
 
+  it("refreshes the assistant's thread list after someone else's run", () => {
+    // A teammate's turn moves its thread to the top of the workspace's list,
+    // or puts it there for the first time (CON-459).
+    for (const subject of ['entity:post:p1', 'entity:campaign:c1']) {
+      for (const type of ['assistant.completed', 'assistant.failed']) {
+        expect(keys(event(subject, type))).toContainEqual([
+          'assistant',
+          'threads',
+        ])
+      }
+    }
+  })
+
   it('sends an assessment result to its own namespace, not the post', () => {
     // Nesting it under the post would drag it into every autosave refetch.
     expect(keys(event('entity:post:p1', 'assessment.completed'))).toEqual([

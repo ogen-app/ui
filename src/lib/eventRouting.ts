@@ -9,6 +9,7 @@ import { ENTITLEMENTS_KEY } from '@/hooks/useEntitlements'
 import { BILLING_KEY } from '@/hooks/useBilling'
 import { DISTILL_LIST_KEY, distillRunKey } from '@/hooks/useBrandDistill'
 import { ZERNIO_ACCOUNTS_KEY, ZERNIO_HEALTH_KEY } from '@/hooks/useZernio'
+import { ASSISTANT_THREADS_KEY } from '@/hooks/useAssistantThreads'
 import { localRunKey } from '@/lib/localRuns'
 import {
   localWriteKey,
@@ -63,6 +64,13 @@ const CAMPAIGN_POST_LISTS: QueryFilters = {
  * wherever a post changed.
  */
 const WORKSPACE_POST_LIST: QueryFilters = { queryKey: WORKSPACE_POSTS_KEY }
+
+/**
+ * The assistant's thread list (CON-459). A run ending — a teammate's, since
+ * this tab's own is muted and refreshes it where the turn settles — moves its
+ * thread to the top, or puts it in the list for the first time.
+ */
+const ASSISTANT_THREADS: QueryFilters = { queryKey: ASSISTANT_THREADS_KEY }
 
 const ZERNIO_SURFACES: QueryFilters[] = [
   // Platforms first: it — not the account list — is what the composer's account
@@ -201,7 +209,7 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
           ]
         // The post flow snapshots before it rewrites. Only reaches other
         // people's tabs — the actor's own copy is suppressed as a local run,
-        // and handled where the turn settles (assistantStore.refreshSubject).
+        // and handled where the turn settles (assistantStore, from `touched`).
         // The turn may also have written notes (CON-188) — its `createNote`
         // tool persists as it runs, and a note-only turn changes neither the
         // body nor the history. Listed unconditionally because the broadcast
@@ -217,12 +225,19 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
             notes,
             CAMPAIGN_POST_LISTS,
             WORKSPACE_POST_LIST,
+            ASSISTANT_THREADS,
           ]
         case 'assistant.failed':
           // Notes are written by the tool as it goes, not at the end, so a
           // failed turn can still have left some behind — and a turn that
           // failed part-way can have written the body first.
-          return [post, notes, CAMPAIGN_POST_LISTS, WORKSPACE_POST_LIST]
+          return [
+            post,
+            notes,
+            CAMPAIGN_POST_LISTS,
+            WORKSPACE_POST_LIST,
+            ASSISTANT_THREADS,
+          ]
         case 'assessment.completed':
         case 'assessment.failed':
           // Its own namespace, deliberately not nested under the post — see
@@ -237,6 +252,11 @@ export function invalidationsFor(event: AppEvent): QueryFilters[] {
       switch (event.type) {
         case 'assistant.completed':
         case 'assistant.failed':
+          return [
+            { queryKey: campaignKey(subject.id) },
+            WORKSPACE_POST_LIST,
+            ASSISTANT_THREADS,
+          ]
         case 'content_plan.completed':
         case 'content_plan.failed':
           // The post list and the overview both nest under this key, and a

@@ -126,6 +126,98 @@ export function listThreadMessages(
 }
 
 /**
+ * A thread the workspace has talked in, as the list shows it before it is
+ * opened (CON-459). Threads are the workspace's, not one member's, so this is
+ * everyone's.
+ */
+export type ThreadSummary = {
+  subject: ThreadSubject
+  /** The post's title for a post thread, else the campaign's name. */
+  title: string
+  /** The campaign's name, for a campaign or a post thread. */
+  campaignTitle: string
+  /** ISO time of the newest message. */
+  lastMessageAt: string
+  /** The newest message, as plain text. */
+  preview: string
+}
+
+export type ThreadSummaryPage = {
+  threads: ThreadSummary[]
+  nextCursor: string | null
+}
+
+export const THREAD_PAGE_SIZE = 50
+
+/**
+ * The workspace's threads, newest activity first, a page at a time. The
+ * server leaves out a thread whose campaign or post is gone.
+ */
+export async function listThreads(
+  cursor?: string | null,
+): Promise<ThreadSummaryPage> {
+  const params = new URLSearchParams({ limit: String(THREAD_PAGE_SIZE) })
+  if (cursor) params.set('cursor', cursor)
+  const body = await apiJson<unknown>(
+    `/api/assistant/threads?${params}`,
+    'Unable to load the conversations',
+  )
+  const page = record(body) ?? {}
+  const rows = Array.isArray(page.threads) ? page.threads : []
+  return {
+    threads: rows.filter(isRecord).flatMap((row) => {
+      const summary = threadSummary(row)
+      return summary ? [summary] : []
+    }),
+    nextCursor: optStr(page.next_cursor) ?? null,
+  }
+}
+
+/** One list row, or null for a scope this build can't route to. */
+function threadSummary(row: Record<string, unknown>): ThreadSummary | null {
+  const subject = summarySubject(row)
+  if (!subject) return null
+  const title = str(row.title)
+  return {
+    subject,
+    title,
+    campaignTitle:
+      str(row.campaign_title) || (subject.kind === 'campaign' ? title : ''),
+    lastMessageAt: str(row.last_message_at),
+    preview: previewText(str(row.last_preview), subject.kind),
+  }
+}
+
+function summarySubject(row: Record<string, unknown>): ThreadSubject | null {
+  const [kindFromScope, idFromScope = ''] = str(row.scope).split(':')
+  const kind = str(row.scope_kind) || kindFromScope
+  const id = str(row.scope_id) || idFromScope
+  switch (kind) {
+    case 'workspace':
+      return { kind: 'workspace' }
+    case 'campaign':
+      return id ? { kind: 'campaign', campaignId: id } : null
+    case 'post': {
+      // A post's thread routes through its campaign.
+      const campaignId = str(row.campaign_id)
+      return id && campaignId ? { kind: 'post', postId: id, campaignId } : null
+    }
+    default:
+      return null
+  }
+}
+
+/**
+ * A model row is stored as its `complete` payload, so a preview the server
+ * hands over raw is read for its explanation rather than shown as JSON.
+ */
+function previewText(preview: string, kind: ThreadSubject['kind']): string {
+  const text = preview.trim()
+  if (!text.startsWith('{')) return text
+  return parseHistoryResult(text, kind).explanation.trim()
+}
+
+/**
  * A turn's user and model rows are persisted together and share a
  * `created_at`, and history can come back with the model row first — which
  * renders the reply above the question it answers. Sort by time, breaking ties
