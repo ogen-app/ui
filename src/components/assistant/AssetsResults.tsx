@@ -440,6 +440,13 @@ function CompareCard({
           </p>
         </ResultRow>
       )}
+      {compare.missing > 0 && (
+        <ResultRow>
+          <p className="text-[12.5px] text-warning">
+            {t('assistant.assets.compare.missing', counted(compare.missing))}
+          </p>
+        </ResultRow>
+      )}
       {compare.grounding && <SourcesLine grounding={compare.grounding} />}
     </ResultBlock>
   )

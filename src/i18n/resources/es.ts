@@ -2161,6 +2161,10 @@ export const es: Translation = {
           '{{titles}} se leyeron a partir de sus fragmentos: no hay análisis para esta lente.',
         skipped_one: '{{titles}} no tenía nada que leer.',
         skipped_other: '{{titles}} no tenían nada que leer.',
+        missing_one:
+          '{{formatted}} de los seleccionados no se encontró y se dejó fuera.',
+        missing_other:
+          '{{formatted}} de los seleccionados no se encontraron y se dejaron fuera.',
       },
       views: {
         word: 'Grupos inteligentes',

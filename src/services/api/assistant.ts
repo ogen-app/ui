@@ -335,14 +335,18 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
 /**
  * The assets pack's typed results (CON-460): each tool's last output under
  * `results.assets`, and the core `listSavedViews` under `results.savedViews`.
- * A part this build can't read is left out rather than drawn half-empty.
+ * On a campaign's asset page the campaign pack answers the question instead,
+ * and reports its search in the same shape at `results.campaign.ask`. A part
+ * this build can't read is left out rather than drawn half-empty.
  */
 function assetsResults(
   results: Record<string, unknown>,
 ): AssetsResults | undefined {
   const pack = record(results.assets) ?? {}
   const out: AssetsResults = {}
-  const ask = assetsAsk(record(pack.ask))
+  const ask =
+    assetsAsk(record(pack.ask)) ??
+    assetsAsk(record(record(results.campaign)?.ask))
   if (ask) out.ask = ask
   const analysis = analysisRead(record(pack.analysis))
   if (analysis) out.analysis = analysis
@@ -459,6 +463,7 @@ function assetComparison(
     partial: claims(raw.partial),
     conflicts: claims(raw.conflicts),
     skipped: comparedRefs(raw.skipped),
+    missing: strings(raw.missing).length,
     grounding: grounding(raw.grounding),
   }
 }

@@ -161,6 +161,7 @@ describe('a comparison', () => {
           { text: 'Spa hours: 9–21 against 10–20', letters: ['A', 'B'] },
         ],
         skipped: [],
+        missing: 0,
       },
     })
     expect(screen.getByText('2 documents')).toBeTruthy()
@@ -175,6 +176,28 @@ describe('a comparison', () => {
       'workspace',
       'Which is right: Spa hours: 9–21 against 10–20?',
     )
+  })
+})
+
+describe('a comparison with ids that named nothing', () => {
+  it('says how many of the selection were left out', async () => {
+    await show({
+      compare: {
+        mode: 'summarise',
+        assets: [
+          { id: 'a1', title: 'Brochure', letter: 'A', from: 'analysis' },
+        ],
+        summary: 'One summary.',
+        shared: [],
+        partial: [],
+        conflicts: [],
+        skipped: [],
+        missing: 2,
+      },
+    })
+    expect(
+      screen.getByText('2 of the selected weren’t found, and were left out.'),
+    ).toBeTruthy()
   })
 })
 
@@ -266,6 +289,7 @@ describe('in Spanish', () => {
         partial: [],
         conflicts: [],
         skipped: [],
+        missing: 0,
       },
     })
     expect(screen.getByText('1 documento')).toBeTruthy()

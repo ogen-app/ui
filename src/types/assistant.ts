@@ -224,6 +224,8 @@ export type AssetComparison = {
   conflicts: ComparedClaim[]
   /** Assets with nothing to read, named rather than sent to the model. */
   skipped: AssetComparedRef[]
+  /** How many of the ids asked for named no asset, and were left out. */
+  missing: number
   grounding?: Grounding
 }
 

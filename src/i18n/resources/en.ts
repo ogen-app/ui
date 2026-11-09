@@ -2656,6 +2656,10 @@ export const en = {
           '{{titles}} were read from their passages: there’s no analysis for this lens.',
         skipped_one: '{{titles}} had nothing to read.',
         skipped_other: '{{titles}} had nothing to read.',
+        missing_one:
+          '{{formatted}} of the selected wasn’t found, and was left out.',
+        missing_other:
+          '{{formatted}} of the selected weren’t found, and were left out.',
       },
       views: {
         word: 'Smart groups',
