@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useAssistantStore } from '@/stores/assistantStore'
+import { counted } from '@/lib/intl'
 
 /**
  * What the assistant has open, on a line of its own under the panel title.
@@ -29,12 +30,12 @@ export function ThreadStatusSummary() {
     // air, and the 2px on top of that read as a gap between two things rather
     // than as the second line of one heading.
     <p className="text-xs text-tertiary-foreground">
-      {t('assistant.activeThreads', { count: list.length })}
+      {t('assistant.activeThreads', counted(list.length))}
       {pending > 0 && (
         <>
           {', '}
           <span className="text-accent">
-            {t('assistant.pendingThreads', { count: pending })}
+            {t('assistant.pendingThreads', counted(pending))}
           </span>
         </>
       )}
