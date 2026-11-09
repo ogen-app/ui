@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { ArrowRightIcon, CopyIcon, WarningIcon } from '@phosphor-icons/react'
+import { ArrowRightIcon, WarningIcon } from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
@@ -120,13 +120,8 @@ function CloneCard({ clone }: { clone: NonNullable<AssistantTurn['clone']> }) {
     <Link
       to="/campaigns/$campaignId/posts/$postId"
       params={{ campaignId: clone.campaignId, postId: clone.postId }}
-      className="group flex items-center gap-2 border border-border px-3 py-2.5 hover:bg-secondary"
+      className="group flex items-center gap-2 border-y border-border py-2.5"
     >
-      <CopyIcon
-        aria-hidden
-        weight="regular"
-        className="size-4 shrink-0 text-tertiary-foreground"
-      />
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
         {t('assistant.reply.openClone')}
       </span>

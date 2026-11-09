@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next'
 const COLLAPSED_LINES = 5
 
 /**
- * A user turn: a filled bubble pushed to the right of the column, with a tail
- * hanging off its bottom-right corner. Only the user gets a bubble — assistant
- * replies are plain text, so the bubbles mark where the conversation turns.
+ * A user turn: a light fill pushed to the right of the column. Only the user
+ * gets one — assistant replies are plain text, so these mark where the
+ * conversation turns. Light, and tail-less, on purpose (CON-451): the darkest
+ * thing in the rail is the next action, never what the user just typed.
  *
  * A pasted brief can run for pages, and the reply under it is what the user
  * came back for, so anything past five lines folds under a fade. The bubble
@@ -116,13 +117,6 @@ export function UserMessage({ content }: { content: string }) {
             </button>
           )}
         </div>
-        {/* Overlaps the bubble by 1px: an exact `top-full` leaves a hairline
-            gap once the browser rounds the bubble's height. Wide and shallow
-            rather than 45° — a pointed tail reads as a speech-balloon spike. */}
-        <span
-          aria-hidden
-          className="absolute top-[calc(100%-1px)] right-0 block h-1.5 w-12 bg-assistant-bubble [clip-path:polygon(0_0,100%_0,100%_100%)]"
-        />
       </div>
     </div>
   )

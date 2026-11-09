@@ -91,7 +91,11 @@ export type AssistantResultDetails = {
     grounding?: Grounding
   }
   /** Content-first drafts the draftPost tool wrote. */
-  draftedPosts?: { postCount: number; warnings: string[] }
+  draftedPosts?: {
+    postCount: number
+    warnings: string[]
+    grounding?: Grounding
+  }
   brief?: { applied: boolean; undoId?: string }
   dates?: {
     startDate: string
