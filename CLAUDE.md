@@ -924,7 +924,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 
 ## Known stubs / gaps
 
-**The universal assistant waits on the API's merge, and on four API
+**The universal assistant waits on the API's merge, and on five API
 follow-ups** (CON-451). The UI (#227–#234) replaces endpoints the backend stack
 removes, so the two ship together, and neither has had a live pass yet. Until
 the follow-ups land: the ideas, assets, foundation, workspace and analytics
@@ -932,8 +932,10 @@ packs send no typed results or `undoId`, so their turns are prose plus
 `touched` — the merge card, cited Q&A, facts ledger, connection card and
 provenance trail are unbuilt; an offer has no `recommended` option, so its
 choices are drawn with equal weight; a reloaded thread infers an offer's
-state instead of reading it; and an idea row has no post count, so "used in N
-posts" isn't shown. Idea slots are in the week view only, and the analytics
+state instead of reading it; an idea row has no post count, so "used in N
+posts" isn't shown; and the calendar's findings are only streamed, never
+stored (the repair pack has no result), so a reloaded thread keeps their fix
+offers but not the findings list. Idea slots are in the week view only, and the analytics
 period is page state, not the address.
 
 Inviting teammates is live end to end (People, in Workspace Settings; the
