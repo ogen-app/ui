@@ -5,6 +5,7 @@ import {
   invalidationsFor,
   localRunKeyFor,
   parseTopic,
+  RECONCILE_FILTERS,
 } from './eventRouting'
 import { localWriteKey, postAttachmentsKey } from './queryKeys'
 import type { AppEvent } from '@/types/events'
@@ -145,6 +146,14 @@ describe('invalidationsFor', () => {
       expect(keys(e)).toContainEqual(['post', 'p1'])
       expect(hitsPostLists(e)).toBe(true)
     }
+  })
+
+  it("re-reads the assistant's thread list after the stream comes back", () => {
+    // No replay: a teammate's run that ended during the drop is only found by
+    // refetching (CON-459).
+    expect(RECONCILE_FILTERS).toContainEqual({
+      queryKey: ['assistant', 'threads'],
+    })
   })
 
   it("refreshes the assistant's thread list after someone else's run", () => {
