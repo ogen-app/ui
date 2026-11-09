@@ -404,6 +404,36 @@ describe('the assets pack’s results (CON-460)', () => {
     })
   })
 
+  it('reads the campaign pack’s search on a campaign’s asset page', () => {
+    const assets = read({
+      campaign: {
+        action: 'answered',
+        ask: {
+          scope: 'open_asset',
+          excerpts: [{ assetId: 'a1', title: 'Brochure', pages: 'p. 3' }],
+        },
+      },
+    })
+    expect(assets?.ask).toEqual({
+      scope: 'open_asset',
+      excerpts: [{ assetId: 'a1', title: 'Brochure', pages: 'p. 3' }],
+    })
+  })
+
+  it('counts the ids a comparison couldn’t find', () => {
+    expect(
+      read({
+        assets: {
+          compare: {
+            mode: 'compare',
+            assets: [{ id: 'a1', title: 'A', letter: 'A', from: 'analysis' }],
+            missing: ['x1', 'x2'],
+          },
+        },
+      })?.compare?.missing,
+    ).toBe(2)
+  })
+
   it('leaves out what it can’t read, and is absent when nothing ran', () => {
     expect(read({})).toBeUndefined()
     expect(
