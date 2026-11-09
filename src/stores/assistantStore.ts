@@ -283,14 +283,9 @@ export const useAssistantStore = create<AssistantState>()(
           if (!thread || !text || thread.status === 'running') return
           const { subject } = thread
 
-          // The assistant writes the post or campaign server-side, so any
-          // queued autosave must land first or it would overwrite the edit a
-          // moment later.
-          const saveKey = saveKeyFor(subject)
-          if (saveKey) await flushPendingSave(saveKey)
-
-          // What the user is looking at, as the turn leaves. A dismissed chip
-          // sends the screen alone, once.
+          // What the user is looking at when they sent it — read before the
+          // flush below, which can wait on a write while they move on. A
+          // dismissed chip sends the screen alone, once.
           const view = useViewContextStore.getState()
           const viewContext = buildViewContext(
             subject,
@@ -299,6 +294,12 @@ export const useAssistantStore = create<AssistantState>()(
             view.dismissed,
           )
           if (view.dismissed) view.restore()
+
+          // The assistant writes the post or campaign server-side, so any
+          // queued autosave must land first or it would overwrite the edit a
+          // moment later.
+          const saveKey = saveKeyFor(subject)
+          if (saveKey) await flushPendingSave(saveKey)
 
           const startedAt = performance.now()
           const assistantTurnId = nextTurnId('assistant')

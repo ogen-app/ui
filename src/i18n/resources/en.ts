@@ -1943,6 +1943,7 @@ export const en = {
     chip: {
       selected_one: '{{count}} selected · {{screen}}',
       selected_other: '{{count}} selected · {{screen}}',
+      selectedCapped: 'First {{limit}} of {{total}} selected · {{screen}}',
       matching_one: 'All {{count}} matching · {{screen}}',
       matching_other: 'All {{count}} matching · {{screen}}',
       focusAsset: 'This asset is open',

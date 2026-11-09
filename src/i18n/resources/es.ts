@@ -1490,6 +1490,8 @@ export const es: Translation = {
     chip: {
       selected_one: '{{count}} seleccionada · {{screen}}',
       selected_other: '{{count}} seleccionadas · {{screen}}',
+      selectedCapped:
+        'Las primeras {{limit}} de {{total}} seleccionadas · {{screen}}',
       matching_one: 'La {{count}} coincidente · {{screen}}',
       matching_other: 'Las {{count}} coincidentes · {{screen}}',
       focusAsset: 'Este recurso está abierto',

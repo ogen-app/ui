@@ -39,7 +39,10 @@ export const useViewContextStore = create<ViewContextState>()((set, get) => ({
   pageToken: 0,
   dismissed: false,
 
-  setLocation: (location) => set({ location }),
+  // A new screen is a new thing for the chip to describe, so a dismissal
+  // made on the last one lifts (`useViewLocation` sets this only when the
+  // route changes).
+  setLocation: (location) => set({ location, dismissed: false }),
 
   registerPage: (page) => {
     const token = ++nextToken
