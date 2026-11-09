@@ -1860,10 +1860,10 @@ export const en = {
      * around a single `count`, the pending clause is dropped entirely when it
      * is zero, and only one of the two is ever tinted.
      */
-    activeThreads_one: '{{count}} active thread',
-    activeThreads_other: '{{count}} active threads',
-    pendingThreads_one: '{{count}} pending',
-    pendingThreads_other: '{{count}} pending',
+    activeThreads_one: '{{formatted}} active thread',
+    activeThreads_other: '{{formatted}} active threads',
+    pendingThreads_one: '{{formatted}} pending',
+    pendingThreads_other: '{{formatted}} pending',
 
     /**
      * What a thread is called when its subject has no name yet — the assistant
@@ -1941,11 +1941,11 @@ export const en = {
      * sends that message with the screen alone.
      */
     chip: {
-      selected_one: '{{count}} selected · {{screen}}',
-      selected_other: '{{count}} selected · {{screen}}',
+      selected_one: '{{formatted}} selected · {{screen}}',
+      selected_other: '{{formatted}} selected · {{screen}}',
       selectedCapped: 'First {{limit}} of {{total}} selected · {{screen}}',
-      matching_one: 'All {{count}} matching · {{screen}}',
-      matching_other: 'All {{count}} matching · {{screen}}',
+      matching_one: 'All {{formatted}} matching · {{screen}}',
+      matching_other: 'All {{formatted}} matching · {{screen}}',
       focusAsset: 'This asset is open',
       focusVoice: 'This voice is open',
       focusAudience: 'This audience is open',
@@ -1961,15 +1961,15 @@ export const en = {
      */
     marker: {
       on: 'On {{screen}}',
-      onSelected_one: 'On {{screen}} · {{count}} selected',
-      onSelected_other: 'On {{screen}} · {{count}} selected',
-      onMatching_one: 'On {{screen}} · all {{count}} matching',
-      onMatching_other: 'On {{screen}} · all {{count}} matching',
+      onSelected_one: 'On {{screen}} · {{formatted}} selected',
+      onSelected_other: 'On {{screen}} · {{formatted}} selected',
+      onMatching_one: 'On {{screen}} · all {{formatted}} matching',
+      onMatching_other: 'On {{screen}} · all {{formatted}} matching',
       now: 'Now on {{screen}}',
-      nowSelected_one: 'Now on {{screen}} · {{count}} selected',
-      nowSelected_other: 'Now on {{screen}} · {{count}} selected',
-      nowMatching_one: 'Now on {{screen}} · all {{count}} matching',
-      nowMatching_other: 'Now on {{screen}} · all {{count}} matching',
+      nowSelected_one: 'Now on {{screen}} · {{formatted}} selected',
+      nowSelected_other: 'Now on {{screen}} · {{formatted}} selected',
+      nowMatching_one: 'Now on {{screen}} · all {{formatted}} matching',
+      nowMatching_other: 'Now on {{screen}} · all {{formatted}} matching',
     },
 
     composer: {
@@ -2003,8 +2003,21 @@ export const en = {
     step: {
       plan: 'Analyzing the request',
       compose: 'Writing the post',
-      generated_one: '{{count}} generated',
-      generated_other: '{{count}} generated',
+      generated_one: '{{formatted}} generated',
+      generated_other: '{{formatted}} generated',
+    },
+
+    /** A sub-flow's stage that has just finished, beside its step. */
+    progress: {
+      validateInput: 'request checked',
+      resolveAssets: 'documents gathered',
+      resolvePlatforms: 'platforms resolved',
+      resolveTargets: 'targets resolved',
+      generatePosts: 'content generated',
+      generate: 'draft written',
+      validateOutput: 'output checked',
+      persistIdeas: 'ideas saved',
+      buildContext: 'context gathered',
     },
 
     /**
@@ -2080,8 +2093,8 @@ export const en = {
       anAsset: 'an asset',
       asset: 'asset {{id}}',
       allOf: 'all of {{asset}}',
-      chunks_one: '{{count}} chunk of {{asset}}',
-      chunks_other: '{{count}} chunks of {{asset}}',
+      chunks_one: '{{formatted}} chunk of {{asset}}',
+      chunks_other: '{{formatted}} chunks of {{asset}}',
       anyContent: 'content',
       query: '“{{query}}”',
     },
@@ -2320,31 +2333,31 @@ export const en = {
     result: {
       briefConsistent: 'Brief is consistent',
       briefIssues: 'Brief has issues',
-      findings_one: '{{count}} finding',
-      findings_other: '{{count}} findings',
+      findings_one: '{{formatted}} finding',
+      findings_other: '{{formatted}} findings',
       nothingToFlag: 'Nothing to flag.',
       checkedPosts: 'Checked {{checked}} of {{total}} posts',
-      drifts_one: '{{count}} drift',
-      drifts_other: '{{count}} drifts',
+      drifts_one: '{{formatted}} drift',
+      drifts_other: '{{formatted}} drifts',
       capped: '{{drifts}} · capped',
       everyPostFollows: 'Every post follows the brief.',
       datesUpdated: 'Campaign dates updated',
       outsideRange_one:
-        '{{count}} post now falls outside the range — ask to redistribute it.',
+        '{{formatted}} post now falls outside the range — ask to redistribute it.',
       outsideRange_other:
-        '{{count}} posts now fall outside the range — ask to redistribute them.',
+        '{{formatted}} posts now fall outside the range — ask to redistribute them.',
       postsRedistributed: 'Posts redistributed',
-      redistributed_one: 'Re-dated {{count}} post across {{phases}}.',
-      redistributed_other: 'Re-dated {{count}} posts across {{phases}}.',
-      phases_one: '{{count}} phase',
-      phases_other: '{{count}} phases',
+      redistributed_one: 'Re-dated {{formatted}} post across {{phases}}.',
+      redistributed_other: 'Re-dated {{formatted}} posts across {{phases}}.',
+      phases_one: '{{formatted}} phase',
+      phases_other: '{{formatted}} phases',
       /** Planning writes ideas, not posts (CON-449). */
       ideasNone: 'No ideas planned',
-      ideas_one: '+{{count}} idea on the Ideas tab',
-      ideas_other: '+{{count}} ideas on the Ideas tab',
+      ideas_one: '+{{formatted}} idea on the Ideas tab',
+      ideas_other: '+{{formatted}} ideas on the Ideas tab',
       draftsNone: 'No drafts written',
-      drafts_one: '+{{count}} draft, not scheduled',
-      drafts_other: '+{{count}} drafts, not scheduled',
+      drafts_one: '+{{formatted}} draft, not scheduled',
+      drafts_other: '+{{formatted}} drafts, not scheduled',
       platformsUpdated: 'Platforms updated',
       briefApplied: 'Brief updated and saved',
       briefNotApplied: 'Brief suggested but not applied',
