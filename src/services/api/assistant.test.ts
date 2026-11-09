@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest'
-import { parseHistoryResult, threadScope } from './assistant'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  parseHistoryResult,
+  streamAssistantTurn,
+  threadScope,
+  type AssistantStreamEvent,
+} from './assistant'
 
 describe('threadScope', () => {
   it('names each thread the way the history route takes it', () => {
@@ -136,5 +141,55 @@ describe('parseHistoryResult', () => {
       'workspace',
     )
     expect(result.action).toBe('declined')
+  })
+})
+
+describe('calendar findings', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('keep only the fixes a row can act on', async () => {
+    const findings = {
+      campaignId: 'c1',
+      findings: [
+        {
+          key: 'k1',
+          code: 'crowded_day',
+          severity: 'warning',
+          message: 'Thursday is crowded.',
+          fixes: [
+            { kind: 'note', title: 'Have a look' },
+            { kind: 'open', title: 'Open the post', postId: 'p1' },
+            { kind: 'redistribute', title: 'Spread them', proposalId: 'pr1' },
+          ],
+        },
+      ],
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            `event: calendar_findings\ndata: ${JSON.stringify(findings)}\n\n`,
+            { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
+          ),
+      ),
+    )
+    const events: AssistantStreamEvent[] = []
+    await streamAssistantTurn(
+      {
+        instruction: 'check',
+        viewContext: {
+          version: 1,
+          screen: 'campaign.calendar',
+          scope: { kind: 'campaign', id: 'c1' },
+        },
+      },
+      (e) => events.push(e),
+    )
+    const event = events.find((e) => e.type === 'calendar_findings')
+    expect(
+      event?.type === 'calendar_findings' &&
+        event.findings.findings[0].fixes.map((f) => f.title),
+    ).toEqual(['Open the post', 'Spread them'])
   })
 })

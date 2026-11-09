@@ -8,6 +8,7 @@ import { ThinkingTimeline } from './ThinkingTimeline'
 import { hasResultCard, ResultCard } from './ResultCard'
 import { ProposalCard } from './ProposalCard'
 import { UiActionRows } from './UiActionRows'
+import { FindingsBlock } from './FindingsBlock'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib'
 import type { AssistantAction, AssistantTurn } from '@/types/assistant'
@@ -89,6 +90,15 @@ export function AssistantReply({
             states: turn.undo ?? {},
             onUndo: (undoId) => void undo(threadId, turn.id, undoId),
           }}
+        />
+      )}
+
+      {/* A calendar check's findings, each with its fixes. */}
+      {settled && turn.findings && (
+        <FindingsBlock
+          threadId={threadId}
+          findings={turn.findings}
+          disabled={running}
         />
       )}
 

@@ -4,7 +4,10 @@ import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { WorkspaceScopeBar } from '@/components/analytics/WorkspaceScopeBar'
 import { WorkspaceLearningsView } from '@/components/analytics/WorkspaceLearnings'
 import { WorkspaceOverviewView } from '@/components/analytics/WorkspaceOverview'
-import { WorkspacePerformersView } from '@/components/analytics/WorkspacePerformers'
+import {
+  PerformerSelection,
+  WorkspacePerformersView,
+} from '@/components/analytics/WorkspacePerformers'
 import {
   DEFAULT_OVERVIEW_WINDOW,
   OVERVIEW_WINDOWS,
@@ -78,18 +81,35 @@ export function AnalyticsPage() {
     connected.length > 1 ? connected.filter((p) => selected.includes(p.id)) : []
   const slugs = counted.map((p) => p.id)
 
+  // Performers the reader ticked, for "make more like these" (CON-455).
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set())
+  const performerSelection = useMemo(
+    () => ({
+      selected: picked,
+      toggle: (id: string) =>
+        setPicked((prev) => {
+          const next = new Set(prev)
+          if (!next.delete(id)) next.add(id)
+          return next
+        }),
+    }),
+    [picked],
+  )
+
   const overview = useAnalyticsOverview(window, slugs)
   const performers = useAnalyticsPerformers(window, by, slugs)
 
   // The assistant reads the period and platforms the overview on screen
   // answered for (CON-451) — the server's resolved dates, never ones worked out
-  // here, so "this month" means what the card shows even near midnight UTC.
+  // here, so "this month" means what the card shows even near midnight UTC —
+  // and the performers ticked.
   const range = overview.range
   const answeredKey = overview.platforms.join(',')
   useAssistantPage(
-    useMemo(
-      () =>
-        range
+    useMemo(() => {
+      if (!range && picked.size === 0) return null
+      return {
+        ...(range
           ? {
               window: {
                 from: range.from,
@@ -97,9 +117,18 @@ export function AnalyticsPage() {
                 ...(answeredKey ? { platforms: answeredKey.split(',') } : {}),
               },
             }
-          : null,
-      [range, answeredKey],
-    ),
+          : {}),
+        ...(picked.size > 0
+          ? {
+              selection: {
+                kind: 'post' as const,
+                ids: [...picked],
+                count: picked.size,
+              },
+            }
+          : {}),
+      }
+    }, [range, answeredKey, picked]),
   )
 
   const learnings = useAnalyticsLearnings(metric, slugs)
@@ -136,12 +165,14 @@ export function AnalyticsPage() {
             {...overview}
             narrowedTo={namesOf(overview.platforms)}
           />
-          <WorkspacePerformersView
-            result={performers}
-            by={by}
-            onChangeBasis={setBy}
-            narrowedTo={namesOf(performers.platforms)}
-          />
+          <PerformerSelection.Provider value={performerSelection}>
+            <WorkspacePerformersView
+              result={performers}
+              by={by}
+              onChangeBasis={setBy}
+              narrowedTo={namesOf(performers.platforms)}
+            />
+          </PerformerSelection.Provider>
           <WorkspaceLearningsView
             result={learnings}
             metric={metric}

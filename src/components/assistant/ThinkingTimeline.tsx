@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CaretDownIcon, CaretRightIcon, CheckIcon } from '@phosphor-icons/react'
+import {
+  CaretDownIcon,
+  CaretRightIcon,
+  CheckIcon,
+  XIcon,
+} from '@phosphor-icons/react'
 import { formatDuration, stepDetail, stepLabel } from '@/lib/assistantTools'
 import { useTick } from '@/hooks/useTick'
 import { cn } from '@/lib'
@@ -93,6 +98,8 @@ export function ThinkingTimeline({
                 >
                   {running ? (
                     <span className="size-1.5 rounded-full bg-accent animate-pulse" />
+                  ) : step.failed ? (
+                    <XIcon className="size-3 text-warning" weight="bold" />
                   ) : (
                     <CheckIcon
                       className="size-3 text-quinary-foreground"

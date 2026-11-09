@@ -26,6 +26,55 @@ const SIMPLE_TOOLS = new Set([
   'getCampaignOverview',
   'listCampaignPosts',
   'getCampaignBrief',
+  // The universal assistant's core and packs (CON-450–457).
+  'findIdeas',
+  'findDuplicateIdeas',
+  'setIdeaVerdict',
+  'setIdeaVerdicts',
+  'compileIdeas',
+  'draftIdeas',
+  'moveIdeas',
+  'deleteIdeas',
+  'mergeIdeas',
+  'findAssets',
+  'askAssets',
+  'analyseAsset',
+  'distillMoreIdeas',
+  'importPage',
+  'tagAssets',
+  'attachAssets',
+  'checkCalendar',
+  'optimiseCalendar',
+  'applyCalendarMoves',
+  'reviewCampaign',
+  'analyticsOverview',
+  'topPosts',
+  'analyticsLessons',
+  'postStats',
+  'moreLikeThese',
+  'getBrand',
+  'addFact',
+  'updateFact',
+  'removeFact',
+  'activityReport',
+  'workspaceSetup',
+  'navigate',
+  'setFilter',
+  'select',
+  'openSavedView',
+  'getSelection',
+  'getFocus',
+  'loadPack',
+  'confirmOffer',
+  'dismissOffer',
+  'updateCampaignPlatforms',
+  'draftPost',
+  'editPost',
+  'clonePost',
+  'restoreVersion',
+  'createNote',
+  'schedulePost',
+  'askCampaignAssets',
 ])
 
 export function describeTool(
@@ -72,7 +121,9 @@ export function stepLabel(t: TFunction, step: AssistantStep): string {
     t,
     step.tool ?? '',
     step.input,
-    step.endedAt === null ? 'running' : 'done',
+    // A failed step keeps the tense of what it set out to do: "Deleted ideas"
+    // with a check beside it would report a change that never happened.
+    step.endedAt === null || step.failed ? 'running' : 'done',
   )
 }
 
@@ -101,6 +152,7 @@ export function stepDetail(
   t: TFunction,
   step: AssistantStep,
 ): string | undefined {
+  if (step.failed) return t('assistant.step.failed')
   if (step.generated)
     return t('assistant.step.generated', counted(step.generated))
   if (!step.progress) return undefined

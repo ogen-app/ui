@@ -167,6 +167,30 @@ export type ProposalStatus =
   | 'closed'
   | 'superseded'
 
+/**
+ * A campaign calendar's open problems (CON-454), each with the fixes that
+ * would resolve it. A fix carries an offer to confirm, or a post to open.
+ * Message and titles are the server's words.
+ */
+export type CalendarFindings = {
+  campaignId: string
+  findings: {
+    key: string
+    code: string
+    severity: 'warning' | 'info'
+    message: string
+    postIds: string[]
+    fixes: {
+      kind: string
+      title: string
+      postId?: string
+      proposalId?: string
+    }[]
+  }[]
+  /** Findings left out because the user dismissed them. */
+  dismissed: number
+}
+
 /** Where an undo stands, by the action's undo id. */
 export type UndoState = 'pending' | 'undone' | 'changed' | 'gone'
 
@@ -192,6 +216,8 @@ export type AssistantStep = {
   progress?: string
   /** Posts a generation step has persisted so far. */
   generated?: number
+  /** The tool refused the call or hit a conflict (`tool_result.ok: false`). */
+  failed?: boolean
   startedAt: number
   endedAt: number | null
 }
@@ -213,6 +239,8 @@ export type AssistantTurn = {
   proposals?: AssistantProposal[]
   /** Undos asked for from this turn's results, by undo id. */
   undo?: Record<string, UndoState>
+  /** A calendar check this turn ran (CON-454). */
+  findings?: CalendarFindings
   /** What this turn did to the screen, and where each can be put back to. */
   uiActions?: AppliedUIAction[]
   /**

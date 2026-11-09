@@ -9,6 +9,7 @@ import type { UIAction } from '@/lib/assistantUiActions'
 import type {
   AssistantAction,
   AssistantProposal,
+  CalendarFindings,
   AssistantResultDetails,
   CampaignAssistantAction,
   Grounding,
@@ -85,6 +86,8 @@ export type AssistantStreamEvent =
   | { type: 'post_generated'; post: StreamedPost }
   /** The assistant cloned the post into a new, already-persisted one (CON-59). */
   | { type: 'clone_complete'; newPostId: string }
+  /** A calendar check's findings, each with its fixes (CON-454). */
+  | { type: 'calendar_findings'; findings: CalendarFindings }
   /** A change to the user's screen, applied when the turn completes. */
   | { type: 'ui_action'; action: UIAction }
   /** An offer made this turn, once the reply is final. */
@@ -222,6 +225,34 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
         .filter((a): a is UIAction => a !== null)
     : []
   return result
+}
+
+function calendarFindings(raw: Record<string, unknown>): CalendarFindings {
+  const findings = Array.isArray(raw.findings) ? raw.findings : []
+  const campaignId = str(raw.campaignId)
+  return {
+    campaignId,
+    dismissed: num(raw.dismissed),
+    findings: findings.filter(isRecord).map((f) => ({
+      key: str(f.key),
+      code: str(f.code),
+      severity: f.severity === 'warning' ? 'warning' : 'info',
+      message: str(f.message),
+      postIds: strings(f.postIds),
+      fixes: (Array.isArray(f.fixes) ? f.fixes : [])
+        .filter(isRecord)
+        .map((x) => ({
+          kind: str(x.kind),
+          title: str(x.title),
+          postId: optStr(x.postId),
+          proposalId: optStr(x.proposalId),
+        }))
+        // Only a fix the row can act on: an offer to confirm, or a post to
+        // open — which needs the campaign too. One with neither would take
+        // the primary slot and leave the row without an action.
+        .filter((x) => x.title && (x.proposalId || (x.postId && campaignId))),
+    })),
+  }
 }
 
 const UI_ACTION_TYPES: UIAction['type'][] = [
@@ -398,6 +429,12 @@ async function streamTurn(
         return
       case 'complete':
         onEvent({ type: 'complete', result: turnResult(parsed) })
+        return
+      case 'calendar_findings':
+        onEvent({
+          type: 'calendar_findings',
+          findings: calendarFindings(parsed),
+        })
         return
       case 'ui_action': {
         const action = uiAction(parsed)
