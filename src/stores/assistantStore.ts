@@ -962,10 +962,12 @@ function turnFields(
   | 'clone'
   | 'proposals'
   | 'assets'
+  | 'foundation'
 > {
   return {
     proposals: result.proposals.length > 0 ? result.proposals : undefined,
     assets: result.assets,
+    foundation: result.foundation,
     content: result.explanation,
     action: result.action,
     details: result.details,
@@ -1109,6 +1111,13 @@ function undoTouches(
 ): Touched[] {
   if (kind === 'idea_verdict') return [{ kind: 'idea' }]
   if (kind === 'brand_fact') return [{ kind: 'fact' }]
+  // A removed voice or audience comes back bound to what had it, so the
+  // campaigns' and posts' pickers move too (CON-461).
+  if (kind === 'brand_voice' || kind === 'brand_audience')
+    return [{ kind: 'voice' }, { kind: 'campaign' }, { kind: 'post' }]
+  if (kind === 'brand_guardrails') return [{ kind: 'guardrails' }]
+  if (kind === 'series' || kind === 'campaign_series')
+    return [{ kind: 'series' }, { kind: 'campaign' }]
   if (kind === 'campaign_assets' || kind === 'campaign_created')
     return [{ kind: 'asset' }, { kind: 'campaign' }]
   const campaignId =

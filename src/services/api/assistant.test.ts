@@ -448,3 +448,144 @@ describe('the assets pack’s results (CON-460)', () => {
     ).toBeUndefined()
   })
 })
+
+describe('the brand tools’ results (CON-461)', () => {
+  const read = (results: object) =>
+    parseHistoryResult(
+      JSON.stringify({ explanation: 'Done.', action: 'answered', results }),
+      'workspace',
+    ).foundation
+
+  it('reads each tool by name, and which of a family ran', () => {
+    const f = read({
+      foundation: {
+        updateVoice: {
+          voice: {
+            id: 'v1',
+            name: 'Warm host',
+            whenToUse: 'Most posts',
+            isDefault: true,
+            rules: {
+              emoji: 'never',
+              formality: 'casual',
+              person: 'we',
+              length: 'medium',
+            },
+          },
+          undoId: 'u1',
+        },
+        removeAudience: {
+          audience: { id: 'a1', name: 'Planners', who: 'Wedding planners' },
+          unbound: 3,
+          undoId: 'u2',
+        },
+        updateGuardrails: {
+          guardrails: {
+            mayClaim: ['x'],
+            neverClaim: ['y', 'z'],
+            bannedWords: ['luxury'],
+            disclaimer: '',
+          },
+          undoId: 'u3',
+        },
+        editBrand: {
+          done: 4,
+          undoIds: ['b1', 'b2'],
+          failed: [{ what: 'remove a fact', reason: 'gone' }],
+        },
+        startBrandDistill: { runId: 'r1', status: 'running', counts: {} },
+        listSeries: {
+          campaignId: 'c1',
+          series: [
+            {
+              id: 's1',
+              name: 'From the kitchen',
+              runs: true,
+              rhythm: { times: 1, per: 'week' },
+            },
+          ],
+        },
+        runSeries: {
+          campaignId: 'c1',
+          seriesId: 's1',
+          running: true,
+          rhythm: { times: 2, per: 'month' },
+          undoId: 'u4',
+        },
+        getBrand: {
+          voices: [],
+          expiredFacts: [
+            {
+              id: 'f1',
+              statement: 'Spring rate €690',
+              source: 'Annex',
+              expiresAt: '2026-03-31',
+            },
+          ],
+        },
+      },
+      repair: {
+        checkBrand: {
+          checked: 4,
+          findings: [
+            {
+              postId: 'p1',
+              title: 'Rooftop teaser',
+              rule: 'banned_word',
+              severity: 'high',
+              quote: 'luxury',
+              issue: 'Uses a banned word.',
+              fix: { kind: 'open_post', title: 'Open the post', postId: 'p1' },
+            },
+          ],
+        },
+      },
+    })
+    expect(f?.voice).toMatchObject({
+      change: 'updated',
+      name: 'Warm host',
+      isDefault: true,
+      undoId: 'u1',
+    })
+    expect(f?.audience).toMatchObject({
+      change: 'removed',
+      unbound: 3,
+      undoId: 'u2',
+    })
+    expect(f?.guardrails).toEqual({
+      mayClaim: 1,
+      neverClaim: 2,
+      bannedWords: ['luxury'],
+      disclaimer: '',
+      undoId: 'u3',
+    })
+    expect(f?.bulk).toMatchObject({ done: 4, undoIds: ['b1', 'b2'] })
+    expect(f?.distill).toMatchObject({ runId: 'r1', status: 'running' })
+    expect(f?.seriesList?.series[0]).toMatchObject({
+      name: 'From the kitchen',
+      runs: true,
+    })
+    expect(f?.run).toMatchObject({
+      running: true,
+      rhythm: { times: 2, per: 'month' },
+    })
+    expect(f?.expiredFacts).toEqual([
+      {
+        id: 'f1',
+        statement: 'Spring rate €690',
+        source: 'Annex',
+        expiresAt: '2026-03-31',
+      },
+    ])
+    expect(f?.brandCheck?.findings[0]).toMatchObject({
+      postId: 'p1',
+      severity: 'high',
+      fixTitle: 'Open the post',
+    })
+  })
+
+  it('is absent when no brand tool ran', () => {
+    expect(read({})).toBeUndefined()
+    expect(read({ foundation: { getBrand: { voices: [] } } })).toBeUndefined()
+  })
+})

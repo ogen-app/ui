@@ -10,6 +10,7 @@ import { ProposalCard } from './ProposalCard'
 import { UiActionRows } from './UiActionRows'
 import { FindingsBlock } from './FindingsBlock'
 import { AssetsResults } from './AssetsResults'
+import { FoundationResults } from './FoundationResults'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib'
 import type { AssistantAction, AssistantTurn } from '@/types/assistant'
@@ -111,6 +112,18 @@ export function AssistantReply({
           turnId={turn.id}
           subject={subject}
           results={turn.assets}
+          undoStates={turn.undo ?? {}}
+          disabled={running}
+        />
+      )}
+
+      {/* What the brand tools did (CON-461). */}
+      {settled && turn.foundation && subject && (
+        <FoundationResults
+          threadId={threadId}
+          turnId={turn.id}
+          subject={subject}
+          results={turn.foundation}
           undoStates={turn.undo ?? {}}
           disabled={running}
         />
