@@ -395,6 +395,8 @@ export const RECONCILE_FILTERS: QueryFilters[] = [
   // Asset analyses distil ideas in the background (CON-364).
   IDEA_LISTS,
   WORKSPACE_POST_LIST,
+  // A teammate's run that ended while the stream was down (CON-459).
+  ASSISTANT_THREADS,
   ...ZERNIO_SURFACES,
   // A checkout or a plan change that landed while the stream was down.
   { queryKey: ENTITLEMENTS_KEY },
