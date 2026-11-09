@@ -31,6 +31,10 @@ import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPane
 import { TitleHighlights } from '@/components/posts/quality/TitleHighlights'
 import { PostVersionsPanel } from '@/components/posts/versions/PostVersionsPanel'
 import { PostNotesCard } from '@/components/posts/notes/PostNotesCard'
+import {
+  BuiltFromIdeas,
+  PlannedPostPanel,
+} from '@/components/posts/PlannedPostPanel'
 import { PostFirstCommentCard } from '@/components/posts/firstComment/PostFirstCommentCard'
 import {
   POST_PREVIEW_PORTAL_ID,
@@ -917,6 +921,14 @@ function PostEditorSurface({
                   <ThreadSplitNote plan={plan} stale={media.previewStale} />
                 )}
               </div>
+            </div>
+            {/* A planned post's next step, and where any post came from
+                (CON-449). Both render nothing for a post they don't apply to. */}
+            <div className="w-content empty:hidden">
+              <PlannedPostPanel post={doc} />
+            </div>
+            <div className="w-content empty:hidden">
+              <BuiltFromIdeas postId={doc.id} />
             </div>
             <div className="w-content empty:hidden">
               <PostFirstCommentCard

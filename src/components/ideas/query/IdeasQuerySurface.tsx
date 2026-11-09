@@ -12,6 +12,7 @@ import {
   useAssistantRequest,
   useListAssistantPage,
 } from '@/hooks/useAssistantContext'
+import { useCompileIdeas, useDraftIdeas } from '@/hooks/useIdeaPosts'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowDown01Icon,
@@ -260,6 +261,10 @@ export function IdeasQuerySurface({
       ...(view ? { view: view.id } : {}),
       ...(search.pile ? { pile: search.pile } : {}),
     })
+  // Ideas into posts (CON-449): a planned post, or finished drafts.
+  const compile = useCompileIdeas()
+  const draft = useDraftIdeas()
+
   // The assistant can tick rows here, or open one of the smart groups.
   useAssistantRequest((action) => {
     if (action.type === 'select' && action.selection?.kind === 'idea') {
@@ -579,8 +584,20 @@ export function IdeasQuerySurface({
       {selecting && (
         <SelectionBar
           count={ticked.size}
-          busy={deleting || resolving}
+          busy={deleting || resolving || compile.isPending || draft.isPending}
           onClear={clearSelection}
+          onCompile={() =>
+            compile.mutate(
+              { ids: [...ticked], campaignId: campaignId ?? undefined },
+              { onSuccess: clearSelection },
+            )
+          }
+          onDraft={() =>
+            draft.mutate(
+              { ids: [...ticked], campaignId: campaignId ?? undefined },
+              { onSuccess: clearSelection },
+            )
+          }
           onDelete={() => {
             const ids = [...ticked]
             const only =
@@ -1044,6 +1061,9 @@ function Band({
   )
 }
 
+/** How many ideas one compile or draft takes (`/api/ideas/compile|draft`). */
+const MAX_IDEAS_PER_POST = 10
+
 /**
  * What is ticked, and what can be done to it — Assets' bar, with one action
  * (§6). It floats at the foot of the column on the app's bottom line, and its
@@ -1054,13 +1074,22 @@ function SelectionBar({
   busy,
   onClear,
   onDelete,
+  onCompile,
+  onDraft,
 }: {
   count: number
   busy: boolean
   onClear: () => void
   onDelete: () => void
+  /** Ideas into one planned post (CON-449) — at most ten at a time. */
+  onCompile: () => void
+  /** Ideas into finished drafts, unscheduled — at most ten at a time. */
+  onDraft: () => void
 }) {
   const { t } = useTranslation()
+  // The server takes one to ten ideas per compile or draft.
+  const tooMany = count > MAX_IDEAS_PER_POST
+  const tooManyTitle = tooMany ? t('ideas.lifecycle.tooMany') : undefined
   return (
     <div
       // Sticky at the foot of the page's scroller, as on Assets (CON-392):
@@ -1078,6 +1107,25 @@ function SelectionBar({
           {t('ideas.bulk.count', { count })}
         </span>
         <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-primary-foreground"
+          onClick={onCompile}
+          disabled={busy || tooMany}
+          title={tooManyTitle}
+        >
+          {t('ideas.lifecycle.compile')}
+        </Button>
+        <Button
+          variant="defaultInverted"
+          size="sm"
+          onClick={onDraft}
+          disabled={busy || tooMany}
+          title={tooManyTitle}
+        >
+          {t('ideas.lifecycle.draft')}
+        </Button>
         <Button
           variant="ghost"
           size="sm"

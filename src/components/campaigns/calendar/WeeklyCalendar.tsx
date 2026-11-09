@@ -16,6 +16,9 @@ import { hasVisibleProblem } from '@/lib/postValidation'
 import { coverDrawable, useFailedCovers } from '@/lib/failedCovers'
 import { isDateLocked } from './LockMark'
 import { PostCard } from './PostCard'
+import { IDEA_SLOT_HEIGHT, IdeaSlotCard } from './IdeaSlotCard'
+import { useIdeaSlots } from '@/hooks/useIdeaPosts'
+import type { IdeaSlot } from '@/services/api/ideaPosts'
 import { withCampaignRow } from './cardFields'
 import { CARD_RUNGS, pickRung, stackHeight, type CardRung } from './cardRungs'
 import { dayLabel, isSameDay, visibleWeekDays, weekdayLabel } from './date'
@@ -44,6 +47,8 @@ type Column = {
   day: Date
   isToday: boolean
   posts: Post[]
+  /** Ideas with this day as their target date (CON-449), drawn as slots. */
+  slots: IdeaSlot[]
   /** How much of itself every card in this column shows — see `cardRungs`. */
   rung: CardRung
   /**
@@ -60,6 +65,12 @@ type Column = {
  * between icon and label — nothing vertical.)
  */
 const ADD_BUTTON_SPACE = 38
+
+/** A calendar day as the slots read names it: local YYYY-MM-DD. */
+function isoDay(day: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`
+}
 
 /** Whole days strictly before today — today itself still accepts posts. */
 function isPastDay(day: Date): boolean {
@@ -101,6 +112,26 @@ function WeeklyCalendarComponent({
     () => visibleWeekDays(anchor, firstDayOfWeek, hiddenDays),
     [anchor, firstDayOfWeek, hiddenDays],
   )
+
+  // Ideas planned onto these days (CON-449). They hold the campaign's shape
+  // without being posts, so they are read beside the posts, not merged in.
+  const range = useMemo(
+    () =>
+      days.length > 0
+        ? { from: isoDay(days[0]), to: isoDay(days[days.length - 1]) }
+        : null,
+    [days],
+  )
+  const slotsQuery = useIdeaSlots(range, campaignId)
+  const slotsByDay = useMemo(() => {
+    const map = new Map<string, IdeaSlot[]>()
+    for (const slot of slotsQuery.data ?? []) {
+      const list = map.get(slot.date) ?? []
+      list.push(slot)
+      map.set(slot.date, list)
+    }
+    return map
+  }, [slotsQuery.data])
 
   const postsByDay = useMemo(() => {
     const map = new Map<string, Post[]>()
@@ -155,16 +186,20 @@ function WeeklyCalendarComponent({
     () =>
       days.map((day) => {
         const dayPosts = postsByDay.get(day.toDateString()) ?? []
+        const daySlots = slotsByDay.get(isoDay(day)) ?? []
         // Past days draw no ADD POST button, so they have that much more room
         // for cards — the rung is per column, and so is what is in the column.
         // Nor does any day on the workspace grid, which has no campaign to add
         // to: reserving the space there would cost every column a card's worth
         // of height for a button that is never drawn.
         const addable = campaignId !== null && !isPastDay(day)
+        // Slots are a fixed height, so the cards get what they leave.
         const available =
           laneHeight === null
             ? 0
-            : laneHeight - (addable ? ADD_BUTTON_SPACE : 0)
+            : laneHeight -
+              (addable ? ADD_BUTTON_SPACE : 0) -
+              daySlots.length * (IDEA_SLOT_HEIGHT + 2)
         const facts = dayPosts.map((post) => ({
           hasTime: Boolean(post.scheduled_at ?? post.published_at),
           // Resolved exactly as the card resolves it, from one platform-list
@@ -201,6 +236,7 @@ function WeeklyCalendarComponent({
           day,
           isToday: isSameDay(day, today),
           posts: dayPosts,
+          slots: daySlots,
           rung,
           // The same arithmetic the rung was picked with, asked one more
           // question. It errs high — `cardHeight` rounds a title line up —
@@ -216,6 +252,7 @@ function WeeklyCalendarComponent({
       days,
       today,
       postsByDay,
+      slotsByDay,
       laneHeight,
       platformViews,
       resolvePlatform,
@@ -311,6 +348,14 @@ function WeeklyCalendarComponent({
                   post={post}
                   rung={col.rung}
                   fields={fields}
+                />
+              ))}
+
+              {col.slots.map((slot) => (
+                <IdeaSlotCard
+                  key={slot.id}
+                  slot={slot}
+                  showCampaign={campaignId === null}
                 />
               ))}
 
