@@ -1,12 +1,12 @@
 import { HELP_FIXTURES } from '@/services/help/fixtures'
-import type { HelpArticle, HelpTopicMap } from '@/types/help'
+import type { HelpArticle, HelpIndexEntry, HelpTopicMap } from '@/types/help'
 
 /**
  * Reading help content — the seam the CMS client lands behind (CON-173).
  *
- * Both functions are async and both can miss, because that is what they will be
+ * Every function is async and can miss, because that is what they will be
  * once they cross a network: the drawer already handles loading and
- * not-found states, so swapping the body of these two functions for a GROQ
+ * not-found states, so swapping the body of these functions for a GROQ
  * request is the whole of phase 3's integration.
  *
  * **These calls must never go through `services/api/http.ts`.** Every request in
@@ -38,4 +38,23 @@ export async function fetchHelpTopicMap(): Promise<HelpTopicMap> {
     for (const topic of article.topics) map[topic] ??= article.key
   }
   return map
+}
+
+/**
+ * Every article, without its body — the help home the top bar's Support opens
+ * onto. Ordered by category, then title, so the list reads the same way twice.
+ */
+export async function fetchHelpIndex(): Promise<HelpIndexEntry[]> {
+  return Object.values(HELP_FIXTURES)
+    .map(({ key, title, summary, category }) => ({
+      key,
+      title,
+      summary,
+      category,
+    }))
+    .sort(
+      (a, b) =>
+        a.category.title.localeCompare(b.category.title) ||
+        a.title.localeCompare(b.title),
+    )
 }

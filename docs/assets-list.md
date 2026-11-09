@@ -96,7 +96,7 @@ own: paging watches the page's.
 - **The cap only while pinned:** a cap on every band would cover the last rows
   of the group above it.
 - **The selection bar** is sticky at the scroller's foot, so it floats over the
-  bottom fade in line with the assistant trigger.
+  bottom fade in line with the page action bar.
 
 ## The filter sentence
 

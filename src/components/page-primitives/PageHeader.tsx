@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ListIcon } from '@phosphor-icons/react'
-import { useSidebar } from '@/components/ui/sidebar'
 import { ZIndex } from '@/config/zIndex'
 import { cn } from '@/lib'
 import { findScrollParent } from '@/lib/scrollParent'
-import { Button } from '@/components/ui/button.tsx'
-import { useIsMobile } from '@/hooks/use-mobile.ts'
 
 type PageHeaderProps = {
   title?: string
@@ -45,8 +41,6 @@ export function PageHeader({
   actions,
   fadeOnScroll,
 }: PageHeaderProps) {
-  const { toggleSidebar } = useSidebar()
-  const isMobile = useIsMobile()
   const rootRef = useRef<HTMLDivElement>(null)
   const [scrolled, setScrolled] = useState(false)
 
@@ -87,23 +81,6 @@ export function PageHeader({
         />
       )}
       <div className="relative flex h-10 items-center gap-3">
-        <div
-          className={cn(
-            'md:hidden shrink-0',
-            fadeOnScroll && 'pointer-events-auto',
-          )}
-        >
-          <Button
-            variant={'default'}
-            size={isMobile ? 'smIcon' : 'defaultIcon'}
-            onClick={toggleSidebar}
-            className="relative"
-            style={{ zIndex: ZIndex.sidebarOverlay + 1 }}
-            aria-label="Toggle sidebar"
-          >
-            <ListIcon className="size-5" />
-          </Button>
-        </div>
         {/* `relative` on both side groups only so they paint over the
             absolutely-positioned centre when a long title runs into it. */}
         <div className="relative flex flex-1 min-w-0 items-center gap-2">

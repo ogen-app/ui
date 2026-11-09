@@ -7,9 +7,9 @@ const pageContainerVariants = cva('w-full min-w-0', {
     variant: {
       default: 'h-full space-y-4 py-6',
       fullFlex:
-        'h-[calc(100svh-var(--announcement-h))] flex flex-col justify-stretch overflow-hidden',
+        'h-[calc(100svh-var(--announcement-h)-var(--topbar-h))] flex flex-col justify-stretch overflow-hidden',
       fullscreen:
-        'min-h-[calc(100svh-var(--announcement-h))] h-0 flex flex-col',
+        'min-h-[calc(100svh-var(--announcement-h)-var(--topbar-h))] h-0 flex flex-col',
     },
   },
   defaultVariants: {

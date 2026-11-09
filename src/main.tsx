@@ -6,7 +6,6 @@ import { ErrorBoundary } from '@sentry/react'
 import { queryClient } from './lib/queryClient'
 import { routeTree } from './routeTree.gen'
 import { Toaster } from './components/ui/toaster'
-import { HelpDrawer } from './components/help/HelpDrawer'
 import { LocaleSwitchOverlay } from './components/layout/LocaleSwitchOverlay'
 import { AppErrorFallback } from './components/layout/AppErrorFallback'
 import { FLAG_IDS } from './config/featureFlags'
@@ -73,10 +72,6 @@ createRoot(document.getElementById('root')!).render(
           broke. */}
       <ErrorBoundary fallback={<AppErrorFallback />}>
         <RouterProvider router={router} />
-        {/* Mounted beside the router, not inside it: the drawer outlives any
-            route, and navigating the app must never close the help you opened
-            to read while doing it. */}
-        <HelpDrawer />
         <LocaleSwitchOverlay />
         <Suspense fallback={null}>
           <OverrideMarker />

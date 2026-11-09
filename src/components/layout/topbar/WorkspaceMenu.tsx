@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowSquareOutIcon,
   ArrowsLeftRightIcon,
+  CaretUpDownIcon,
   KeyboardIcon,
   LifebuoyIcon,
   SignOutIcon,
@@ -25,28 +26,38 @@ import { useWorkspace } from '@/hooks/useWorkspaces'
 import { useAuthStore } from '@/stores/authStore'
 import { useShortcutsStore } from '@/stores/shortcutsStore'
 import { ROLE_LABEL_KEYS, type Workspace } from '@/types/workspace'
+import { cn } from '@/lib'
 
 /** TODO: placeholder — no help site exists yet. Point at the real one when it does. */
 const HELP_URL = 'https://getogen.com/help'
 
 /**
- * The bottom of the rail: who and where you are, and — once you are inside a
- * campaign — the workspace you left to get there.
+ * The top-left corner: the workspace, with you in it — and once you are inside
+ * a campaign, the workspace you left to get there.
  *
- * **The block itself does not change with the level.** Two cuts tried to make
- * it: one shrank it to a bare avatar and spent the room on the workspace's
- * destinations as glyphs, the next kept the mark and put the glyphs beside it.
- * Both failed the same way — the glyphs cannot survive the collapsed rail,
- * where there is one 20px column and a second vertical run of marks under the
- * utilities reads as five of one kind of thing. A row that is only there at
- * one of the two widths is not a place to put a destination.
+ * **The workspace leads and you follow.** It is the fact that changes what
+ * every other screen shows, so it gets the mark and the name; who you are is
+ * the quieter second line, and the email is one click away in the menu. The
+ * block used to sit at the foot of the rail, where it was the last thing read;
+ * up here it is the first, over the column it scopes.
  *
- * So the block stays as it is at level 0, and what changes is only the menu:
- * at level 1 it grows the whole of level 0 above the account block — modules,
- * Foundation and the workspace's settings — which is the one form that is
- * identical at both widths.
+ * Collapsed (the rail at 52px) it is the mark alone, centred over the rail's
+ * glyphs — the corner is exactly as wide as the rail under it, so the two read
+ * as one column. On a phone the name goes too: the bar has a campaign and two
+ * buttons to fit.
+ *
+ * The menu is the same at both levels except for its top: at level 1 it grows
+ * the whole of level 0 above the account block — modules, Foundation and the
+ * workspace's settings — so any of them is one click from inside a campaign.
  */
-export function NavAccount({ level }: { level: 0 | 1 }) {
+export function WorkspaceMenu({
+  level,
+  compact,
+}: {
+  level: 0 | 1
+  compact: boolean
+}) {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const workspace = useWorkspace()
   const destinations = useWorkspaceMenuEntries()
@@ -55,44 +66,44 @@ export function NavAccount({ level }: { level: 0 | 1 }) {
     `${user?.firstName[0] ?? ''}${user?.lastName[0] ?? ''}`.toUpperCase() || '?'
   const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
 
-  // The workspace's mark, not the user's portrait. Every item above it belongs
-  // to that workspace — including, at level 1, the campaign — and this is the
-  // one slot that survives the collapsed rail, so it carries the fact that
-  // changes rather than the one that never does. Who you are is in the menu
-  // behind it.
   const mark = workspace ? (
     <WorkspaceMark
       id={workspace.id}
       name={workspace.name}
-      className="size-10 text-sm"
+      className="size-7 text-[11px]"
     />
   ) : (
-    <Avatar className="size-10 shrink-0">
-      <AvatarFallback>{initials}</AvatarFallback>
+    <Avatar className="size-7 shrink-0">
+      <AvatarFallback className="text-[11px]">{initials}</AvatarFallback>
     </Avatar>
   )
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div
-          role="button"
-          tabIndex={0}
-          className="flex w-full cursor-pointer select-none items-center justify-start gap-6 overflow-hidden p-0"
+        <button
+          type="button"
+          aria-label={t('nav.accountMenu')}
+          className={cn(
+            'flex h-full min-w-0 flex-1 cursor-pointer select-none items-center gap-2.5 px-3 text-left transition-colors hover:bg-sidebar-secondary',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+          )}
         >
           {mark}
-          <div className="flex w-[168px] shrink-0 flex-col items-start transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
-            <p className="w-full truncate text-left text-sm font-regular">
-              {fullName}
-            </p>
-            {/* The workspace, not the email: the email never changes and is
-                one click away in the menu, while the workspace changes what
-                every other screen is showing. */}
-            <p className="w-full truncate text-left text-xs text-tertiary-foreground">
-              {workspace?.name ?? user?.email}
-            </p>
-          </div>
-        </div>
+          {!compact && (
+            <>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-medium leading-5">
+                  {workspace?.name ?? fullName}
+                </span>
+                <span className="truncate text-xs leading-4 text-tertiary-foreground">
+                  {workspace ? fullName : user?.email}
+                </span>
+              </span>
+              <CaretUpDownIcon className="size-4 shrink-0 text-tertiary-foreground" />
+            </>
+          )}
+        </button>
       </DropdownMenuTrigger>
       <AccountMenu
         initials={initials}
@@ -139,9 +150,9 @@ function AccountMenu({
   return (
     <DropdownMenuContent
       className="w-72 p-2 shadow-md"
-      side="right"
-      align="end"
-      sideOffset={8}
+      side="bottom"
+      align="start"
+      sideOffset={4}
       onCloseAutoFocus={(event) => {
         if (!keepFocus.current) return
         keepFocus.current = false
@@ -150,7 +161,7 @@ function AccountMenu({
     >
       {destinations.length > 0 && (
         <>
-          <DropdownMenuLabel className="px-2 py-1 font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
+          <DropdownMenuLabel className="px-2 py-1 text-xs font-medium text-tertiary-foreground">
             {t('nav.workspaceScope')}
           </DropdownMenuLabel>
           {destinations.map((destination) => (
@@ -173,9 +184,9 @@ function AccountMenu({
         </>
       )}
 
-      {/* The same block the rail shows at level 0, in the same type — mark,
-          name, email — so opening the menu reads as the trigger unfolding
-          rather than as a different screen. */}
+      {/* Who you are, in full — the trigger shows the name; the email is
+          here. Which workspace you are in is its own row below, with the role
+          that comes with it. */}
       <DropdownMenuLabel
         className="flex items-center gap-3 p-2 font-normal tracking-normal"
         asChild

@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchHelpArticle, fetchHelpTopicMap } from '@/services/help'
-import type { HelpArticle, HelpTopicMap } from '@/types/help'
+import {
+  fetchHelpArticle,
+  fetchHelpIndex,
+  fetchHelpTopicMap,
+} from '@/services/help'
+import type { HelpArticle, HelpIndexEntry, HelpTopicMap } from '@/types/help'
 
 /**
  * Reading help content (CON-173).
@@ -16,6 +20,7 @@ const HELP_STALE_TIME = 60 * 60 * 1000 // an hour
 
 export const helpArticleKey = (key: string) => ['help', 'article', key] as const
 export const HELP_TOPICS_KEY = ['help', 'topics'] as const
+export const HELP_INDEX_KEY = ['help', 'index'] as const
 
 export function useHelpArticle(articleKey: string | null) {
   return useQuery<HelpArticle | null>({
@@ -46,6 +51,16 @@ export function useHelpTopicMap({
   return useQuery<HelpTopicMap>({
     queryKey: HELP_TOPICS_KEY,
     queryFn: fetchHelpTopicMap,
+    enabled,
+    staleTime: HELP_STALE_TIME,
+  })
+}
+
+/** The help home's list. Read only while the panel shows it. */
+export function useHelpIndex({ enabled }: { enabled: boolean }) {
+  return useQuery<HelpIndexEntry[]>({
+    queryKey: HELP_INDEX_KEY,
+    queryFn: fetchHelpIndex,
     enabled,
     staleTime: HELP_STALE_TIME,
   })

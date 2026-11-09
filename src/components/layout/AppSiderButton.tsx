@@ -33,12 +33,14 @@ type AppSidebarButtonMenuProps = {
    * the work.
    *
    * Collapsed, all of it becomes a single dot on the icon: there is no room
-   * for a number beside a 20px glyph, and the collapsed rail carries no text
+   * for a number beside a 16px glyph, and the collapsed rail carries no text
    * at all by design.
    */
   counts?: { value: number }[]
   /** What the figures mean, read out — they say nothing on their own. */
   countLabel?: string
+  /** A key that does the same, shown at the row's right edge. Not with `counts`. */
+  shortcut?: string
 }
 
 export function AppSidebarButtonMenu({
@@ -51,6 +53,7 @@ export function AppSidebarButtonMenu({
   className,
   counts = [],
   countLabel,
+  shortcut,
 }: AppSidebarButtonMenuProps) {
   const shown = counts.filter((count) => count.value > 0)
   const hasCounts = shown.length > 0
@@ -60,7 +63,7 @@ export function AppSidebarButtonMenu({
       <span className="relative flex shrink-0 items-center">
         {icon}
         {hasCounts && (
-          // Collapsed, the chip has nowhere to go — 20px of rail beside a
+          // Collapsed, the chip has nowhere to go — 16px of rail beside a
           // glyph is not a figure — so the count becomes the fact that there
           // is one. Orange and round, the shape a notification is, because
           // that is all it has left to say it with: grey at this size is
@@ -77,26 +80,17 @@ export function AppSidebarButtonMenu({
         )}
       </span>
       <div className="transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
-        {/* The container is wider than the button so labels never reflow while
-            the sidebar collapses; the label itself is capped at the visible
-            width so a long name ellipses on-screen instead of past the clip.
-            The 2% tracking is for the uppercase: caps set solid read as a block,
-            and these labels are scanned rather than read.
-
-            A count shortens that cap so the label ellipses before it reaches
-            the figures — the row is `overflow-hidden`, and anything that has to
-            sit after a full-width label lands in the clipped part. Two figures
-            take another 20px off it.
-
-            `type-display` is the global menu's voice (CON-390), set on the label
-            rather than the rail: on a container it reaches the count chip
-            beside it too, and `pnum` is the opposite of what a figure wants. */}
+        {/* The container is a fixed width (the `menu` variant's) so labels
+            never reflow while the sidebar collapses; the label is capped at
+            what is left beside the figures, so a long name ellipses on-screen
+            instead of under the chip. Sentence case, not caps: the rows are
+            scanned, and capitals set solid read as a block. */}
         <span
           className={cn(
-            'type-display block truncate text-left tracking-[0.02em]',
-            !hasCounts && 'w-[212px] lg:w-[180px]',
-            hasCounts && shown.length === 1 && 'w-[180px] lg:w-[148px]',
-            hasCounts && shown.length > 1 && 'w-[160px] lg:w-[128px]',
+            'block truncate text-left',
+            !hasCounts && 'w-full',
+            hasCounts && shown.length === 1 && 'w-[138px]',
+            hasCounts && shown.length > 1 && 'w-[112px]',
           )}
         >
           {text}
@@ -121,7 +115,7 @@ export function AppSidebarButtonMenu({
             // only read against a surface it differs from, and the alternative
             // is a chip that dissolves into exactly the row you are looking at.
             className={cn(
-              'absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-md px-1.5 font-mono text-xs leading-5 text-tertiary-foreground',
+              'absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-md px-1.5 font-mono text-xs leading-5 text-tertiary-foreground',
               isActive
                 ? 'bg-quaternary'
                 : 'bg-sidebar-secondary group-hover/row:bg-quaternary',
@@ -141,6 +135,14 @@ export function AppSidebarButtonMenu({
               </span>
             ))}
           </span>
+        )}
+        {shortcut && !hasCounts && (
+          <kbd
+            aria-hidden
+            className="absolute right-2 top-1/2 inline-flex h-5 min-w-5 -translate-y-1/2 items-center justify-center rounded-sm bg-secondary px-1 font-sans text-xs text-tertiary-foreground"
+          >
+            {shortcut}
+          </kbd>
         )}
       </div>
     </>

@@ -4,8 +4,8 @@ import { demoMode } from '@/services/api/analytics.demo'
 import { ZIndex } from '@/config/zIndex'
 
 /**
- * A standing marker, above the assistant trigger, whenever this browser is
- * not seeing the build's own flags.
+ * A standing marker in the bottom-right corner whenever this browser is not
+ * seeing the build's own flags.
  *
  * Without it the failure mode is obvious in hindsight: an override left on
  * weeks ago makes staging behave differently for one person, and it gets
@@ -13,13 +13,13 @@ import { ZIndex } from '@/config/zIndex'
  * self-evident and doubles as the way back to the panel — which is what lets
  * `/flags` stay unlinked from the app proper.
  *
- * It stacks directly above the assistant trigger rather than taking the
- * bottom-left corner the layout contract (CON-178) keeps empty — that corner
- * is only empty in the *content* column, and a viewport-fixed badge lands on
- * the sidebar's account row instead. Sharing the trigger's right edge is the
- * next-least-occupied place, and being visibly smaller keeps it an annotation
- * rather than a second control on that line. It displaces nothing in
- * production, where this module does not exist at all.
+ * Bottom-right rather than bottom-left: the layout contract (CON-178) keeps
+ * both bottom corners of the *content* column empty, but a viewport-fixed
+ * badge on the left lands on the rail's collapse row. The right corner has
+ * been free since the assistant's mark moved into the top bar. It sits 80px
+ * up rather than in the corner itself, which is clear of the right column's
+ * composer and its send button when the assistant is open. It displaces
+ * nothing in production, where this module does not exist at all.
  *
  * Simulated analytics is announced here too, and it is the more important of
  * the two: a forced flag shows you a screen that exists, while demo analytics

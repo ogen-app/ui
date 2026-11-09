@@ -100,13 +100,14 @@ const buttonVariants = cva(
 
         container: '',
         menu:
-          'bg-transparent h-8 px-1.5 w-full gap-3 justify-start hover:bg-sidebar-secondary text-sidebar-primary-foreground hover:text-sidebar-primary-foreground overflow-hidden ' +
-          'font-grotesk text-sm/6 font-medium uppercase whitespace-nowrap ' +
-          'data-[active=true]:bg-sidebar-secondary data-[active=true]:text-sidebar-primary-foreground ' +
+          'bg-transparent h-8 px-2.5 w-full gap-2.5 justify-start rounded-md hover:bg-sidebar-secondary text-sidebar-primary-foreground hover:text-sidebar-primary-foreground overflow-hidden ' +
+          'text-sm/6 font-normal whitespace-nowrap ' +
+          'data-[active=true]:bg-sidebar-secondary data-[active=true]:font-medium data-[active=true]:text-sidebar-primary-foreground ' +
           // The text container keeps a static width so labels never reflow while
           // the sidebar collapses — the button just clips them via overflow-hidden.
-          '[&>div]:w-[232px] [&>div]:flex-none [&>div]:flex [&>div]:items-center [&>div]:gap-2.5 ' +
-          'lg:h-10 lg:px-2.5',
+          // 178px is the expanded rail's 240px less the nav's and the row's
+          // padding, the 16px glyph and the gap: change one, change this.
+          '[&>div]:w-[178px] [&>div]:flex-none [&>div]:flex [&>div]:items-center [&>div]:gap-2.5',
       },
 
       size: {

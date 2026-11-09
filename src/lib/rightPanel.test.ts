@@ -31,7 +31,7 @@ describe('resolveActivePanel', () => {
   })
 
   it('falls back to the assistant, which every screen can show', () => {
-    const m = memory({ assistantOpen: true, scoped: { post: 'postQuality' } })
+    const m = memory({ floor: 'assistant', scoped: { post: 'postQuality' } })
     expect(resolveActivePanel(m, null)).toBe('assistant')
     expect(resolveActivePanel(m, 'calendar')).toBe('assistant')
     // Still covered on the screen that owns it.
@@ -77,14 +77,14 @@ describe('openPanel', () => {
 describe('closePanel', () => {
   it('drops a panel back to the assistant rather than collapsing the rail', () => {
     const m = closePanel(
-      memory({ assistantOpen: true, scoped: { post: 'postQuality' } }),
+      memory({ floor: 'assistant', scoped: { post: 'postQuality' } }),
       'post',
     )
     expect(resolveActivePanel(m, 'post')).toBe('assistant')
   })
 
   it('closes the rail when the assistant is what is showing', () => {
-    const m = closePanel(memory({ assistantOpen: true }), 'post')
+    const m = closePanel(memory({ floor: 'assistant' }), 'post')
     expect(resolveActivePanel(m, 'post')).toBeNull()
   })
 
@@ -97,11 +97,11 @@ describe('closePanel', () => {
     // Assistant showing on the post screen; the calendar's choice is not the
     // one under the X, and must survive.
     const m = closePanel(
-      memory({ assistantOpen: true, scoped: { calendar: 'notScheduled' } }),
+      memory({ floor: 'assistant', scoped: { calendar: 'notScheduled' } }),
       'post',
     )
     expect(m.scoped).toEqual({ calendar: 'notScheduled' })
-    expect(m.assistantOpen).toBe(false)
+    expect(m.floor).toBeNull()
   })
 })
 
@@ -126,7 +126,7 @@ describe('togglePanel', () => {
     // Toggling a panel you cannot see (the assistant is up) opens it, since
     // "the one showing" is what toggle compares against.
     const m = togglePanel(
-      memory({ assistantOpen: true, scoped: { post: 'postQuality' } }),
+      memory({ floor: 'assistant', scoped: { post: 'postQuality' } }),
       'assistant',
       'calendar',
     )
@@ -135,9 +135,39 @@ describe('togglePanel', () => {
   })
 })
 
+describe('the floor — Ask AI and Support', () => {
+  it('replaces the assistant with help rather than stacking them', () => {
+    const m = togglePanel(memory({ floor: 'assistant' }), 'help', null)
+    expect(resolveActivePanel(m, null)).toBe('help')
+    expect(m.floor).toBe('help')
+  })
+
+  it('closes help when Support is pressed while it shows', () => {
+    const m = togglePanel(memory({ floor: 'help' }), 'help', null)
+    expect(resolveActivePanel(m, null)).toBeNull()
+  })
+
+  it('drops a screen’s panel back to help when help is the floor', () => {
+    const m = closePanel(
+      memory({ floor: 'help', scoped: { post: 'postQuality' } }),
+      'post',
+    )
+    expect(resolveActivePanel(m, 'post')).toBe('help')
+  })
+
+  it('clears the covering panel when help is opened over it', () => {
+    const m = openPanel(
+      memory({ floor: 'assistant', scoped: { post: 'postQuality' } }),
+      'help',
+      'post',
+    )
+    expect(resolveActivePanel(m, 'post')).toBe('help')
+  })
+})
+
 describe('sanitizePanelMemory', () => {
   it('keeps a memory this build still understands', () => {
-    const m = memory({ assistantOpen: true, scoped: { post: 'postVersions' } })
+    const m = memory({ floor: 'assistant', scoped: { post: 'postVersions' } })
     expect(sanitizePanelMemory(m)).toEqual(m)
   })
 
@@ -145,7 +175,7 @@ describe('sanitizePanelMemory', () => {
     // A renamed or retired panel would otherwise reopen the rail onto an id
     // nothing renders — the failure the whole model exists to prevent.
     const m = sanitizePanelMemory({
-      assistantOpen: false,
+      floor: null,
       scoped: { post: 'postVibes', calendar: 'notScheduled' },
     })
     expect(m.scoped).toEqual({ calendar: 'notScheduled' })
@@ -163,11 +193,9 @@ describe('sanitizePanelMemory', () => {
 
   it('keeps the rail shut for someone who shut it', () => {
     // The first-run default must not resurrect itself on every reload.
-    expect(sanitizePanelMemory({ assistantOpen: false, scoped: {} })).toEqual(
+    expect(sanitizePanelMemory({ floor: null, scoped: {} })).toEqual(
       EMPTY_PANEL_MEMORY,
     )
-    expect(sanitizePanelMemory({ assistantOpen: 'yes' })).toEqual(
-      EMPTY_PANEL_MEMORY,
-    )
+    expect(sanitizePanelMemory({ floor: 'yes' })).toEqual(EMPTY_PANEL_MEMORY)
   })
 })

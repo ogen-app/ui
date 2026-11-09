@@ -87,6 +87,19 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   commits to nothing), and **Foundation** has no campaign twin (voices,
   audiences and guardrails are the workspace's, and what a campaign has of them
   is a *pointer*, chosen on its Strategy page through `CampaignBrandCard`).
+- **The shell is a top bar over three columns** (`layout/topbar/AppTopBar`):
+  rail, page, right column. The bar's columns line up with them. Top-left is
+  the **workspace with you in it** (`WorkspaceMenu`), exactly as wide as the
+  rail and collapsing with it. Second is the **campaign switcher**, on every
+  screen: the campaign you are in and its window, or "All campaigns" at the
+  workspace level. Switching keeps your section (`campaignSectionOf` /
+  `CAMPAIGN_SECTION_PATH` in `lib/campaignSections`). Right are **Ask AI** and
+  **Support**, which open, close or *replace* each other in the right column.
+  Who and where are the bar's, so the rail has no header. A campaign's level
+  starts with a "Back to campaigns" row, and the collapse is a full-width row
+  along the rail's bottom edge. Rail rows are sentence case at 16px glyphs.
+  Never set them in caps again. Anything sized to the viewport inside the
+  shell subtracts `--topbar-h` as well as `--announcement-h`.
 - **Posts is a list and the Calendar is a calendar — they are two
   destinations, not three views of one.** The toolbar's switch was WEEK /
   MONTH / LIST, which said the table is a way of looking at a week; it is not,
@@ -609,9 +622,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   longer close their own panels on unmount. Never add such a cleanup effect
   back; it would save the side effects of navigating instead of the user's
   choice. New panels go in `PANEL_SCOPE` (`lib/rightPanel.ts`), which won't
-  compile until they say which screen they belong to. The assistant is the
-  rail's floor — open on first run, closing another panel reveals it rather
-  than collapsing the rail, and navigating never closes it. See
+  compile until they say which screen they belong to. The rail has one
+  **floor**, the assistant or help (`PanelMemory.floor`). Ask AI and Support
+  replace each other there rather than stacking. The assistant is the floor
+  on first run, closing another panel reveals the floor rather than
+  collapsing the rail, and navigating never closes it. See
   `docs/technical-decisions.md#panel-memory`.
 - **Explanatory copy goes in `<Explainer>`**, which the user can close for
   good (`settingsStore.dismissedNotes`, device-local — display noise doesn't
@@ -806,16 +821,14 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   Top-right: **views only** — anything that opens or switches a representation,
   never anything that changes the document. Top-centre (`PageHeader`'s `center`
   slot): passive status, in practice just `SaveStatus`, non-interactive by
-  rule. Bottom-centre: the commit, on `PageActionBar`. Bottom-right: the
-  assistant trigger. Bottom-left stays empty. A bar belongs to **editor**
+  rule. Bottom-centre: the commit, on `PageActionBar`. Bottom-left and
+  bottom-right stay empty — the assistant is opened from the top bar's Ask AI
+  now, not a floating corner mark. A bar belongs to **editor**
   screens only (post, asset, brief, settings) — a list has creation, not
   commit, so `ADD CAMPAIGN` stays top-right. The bar must anchor to the
   *content column*, not the scroller (it would scroll away) and not the
   viewport (it would drift off the column when the right rail opens); pages
-  using one leave `PAGE_ACTION_BAR_INSET` at the bottom of their content. `h-12`
-  and `bottom-4` are shared with the assistant trigger so the bottom edge is one
-  line; the trigger's `right-4` against the 24px content gutter is the one
-  deliberate break-out.
+  using one leave `PAGE_ACTION_BAR_INSET` at the bottom of their content.
 - **A control that doesn't govern the whole page doesn't go in the corner.**
   The top-right rule above says what *may* sit there, not that every view
   switch must. Analytics' period sits in a scope bar above the cards
@@ -1091,12 +1104,15 @@ override table cannot be retired either, and an operator editing Instagram's
 image cap changes nothing the editor checks.
 
 **The help centre waits on content, not on an endpoint** (`help-center`,
-CON-173). The drawer, its triggers and the `#help/<key>` deep link are built;
+CON-173). The help panel (a right-column floor, opened by the top bar's
+Support or by a trigger), its triggers and the `#help/<key>` deep link are
+built;
 `services/help` serves fixtures. There is no API in the way — articles live in
 the Sanity project `getogen.com` already runs, and the app reads the **public
 `production` dataset** — so switching on is: seed `production`, register the
 app's origins for CORS (**without** credentials; it only ever reads), and
-replace the two functions in `services/help/index.ts` with the GROQ query. The
+replace the three functions in `services/help/index.ts` (an article, the
+topic map, the index Support opens onto) with GROQ queries. The
 starter articles were bootstrapped into the private `staging` dataset, which a
 browser cannot authenticate against, and that is the whole of why the flag is
 off. Three things to keep hold of when it lands. Help content must **never** go
@@ -1104,11 +1120,12 @@ through `services/api/http.ts` — every request in there carries
 `credentials: 'include'`, and Sanity is a third party. An article is identified
 by a language-independent `key` and cross-linked by reference rather than by
 title, so a translation cannot break a link; the catalogue holds only the
-drawer's own chrome (`help.*`), because prose is content and belongs in the
-CMS. And the trigger is the feature's only presence on ordinary screens, so it
+panel's own chrome (`help.*`), because prose is content and belongs in the
+CMS. And the triggers and the Support button are the feature's only presence on
+ordinary screens, so a trigger
 reads the flag and passes it to `useHelpTopicMap({ enabled })` — an
 unconditional read would open a cross-origin request from the post editor for a
-drawer that cannot be opened, which fixtures hide right up until the deploy
+panel that cannot be opened, which fixtures hide right up until the deploy
 that swaps them out.
 
 **The Profile marketing-email switch is built but flagged off**

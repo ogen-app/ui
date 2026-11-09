@@ -1,38 +1,26 @@
 import * as React from 'react'
-import { Link, useLocation } from '@tanstack/react-router'
+import { useLocation } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
-  CaretDoubleLeftIcon,
-  CaretLeftIcon,
-  XIcon,
-} from '@phosphor-icons/react'
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+} from '@hugeicons/core-free-icons'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar.tsx'
-import { Button } from '@/components/ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { CampaignLevel } from '@/components/layout/nav/CampaignLevel'
-import { NavAccount } from '@/components/layout/nav/NavAccount'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
 import { NavPane } from '@/components/layout/nav/NavPane'
 import { NavUtilityStrip } from '@/components/layout/nav/NavUtilityStrip'
 import { WorkspaceLevel } from '@/components/layout/nav/WorkspaceLevel'
-import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
 import { LiveStatus } from '@/components/layout/LiveStatus'
-import { Logo } from '@/components/Logo'
-import { useCampaign } from '@/hooks/useCampaigns'
-import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
+import { identityColorVar } from '@/lib/identity.ts'
 import { navLevelOf } from '@/lib/navLevel'
-import { cn } from '@/lib'
-import type { Campaign } from '@/types/campaigns'
 
 /**
  * The app's navigation rail — two levels, one at a time.
@@ -48,231 +36,115 @@ import type { Campaign } from '@/types/campaigns'
  *
  * Which level is on screen is read off the URL (`lib/navLevel`) and held
  * nowhere. A level in state has to be pushed by every navigation that could
- * change it — the back control, a card on `/campaigns`, a notification opening
- * a post, the browser's own back button — and the one that gets missed leaves
+ * change it — the back row, a card on `/campaigns`, a notification opening a
+ * post, the browser's own back button — and the one that gets missed leaves
  * the rail drawing a campaign the page is no longer showing.
  *
- * The bands, top to bottom: a header that changes with the level, the levels
- * themselves, then a footer of two parts — the utilities, whose destinations
- * survive the drill but whose shape does not (`NavUtilityStrip`), and an
- * identity slot that changes outright (`NavAccount`).
+ * **Who and where are the top bar's.** The workspace (with you in it) sits in
+ * the top-left corner above this rail, and the campaign in the bar's second
+ * column above the page, as a switcher (`AppTopBar`). So the rail has no
+ * header: it is the levels, then a footer of the utilities — whose
+ * destinations survive the drill but whose shape does not (`NavUtilityStrip`)
+ * — and the collapse, across the whole bottom edge.
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { state, isMobile, setOpen, toggleSidebar } = useSidebar()
-  const { t } = useTranslation()
+  const { state, isMobile } = useSidebar()
   const { pathname } = useLocation()
   const isCollapsed = isMobile ? false : state === 'collapsed'
 
   const { level, campaignId } = navLevelOf(pathname)
-  // Safe on the empty string — the hook is `enabled: !!id` — and seeded from
-  // the campaigns list cache, so arriving from `/campaigns` draws the name
-  // immediately rather than a skeleton the width of the rail.
-  const { data: campaign } = useCampaign(campaignId ?? '')
 
   return (
-    <>
-      {/* The 1px `border` rule is the right panel's divider mirrored: the two
-          rails frame the work area, so they are edged the same way and in the
-          same tone. Desktop only — `className` never reaches the mobile sheet,
-          which floats over the content and needs no seam.
+    // The 1px `border` rule is the right panel's divider mirrored: the two
+    // rails frame the work area, so they are edged the same way and in the
+    // same tone. Desktop only — `className` never reaches the mobile sheet,
+    // which floats over the content and needs no seam.
+    //
+    // It has to be written with the same `group-data-[side=left]` prefix the
+    // primitive uses to zero the border out: a plain `border-r` is a weaker
+    // selector *and* a different key to `twMerge`, so it would lose on both
+    // counts instead of replacing it.
+    <Sidebar
+      collapsible="icon"
+      className={'select-none group-data-[side=left]:border-r border-border'}
+      {...props}
+    >
+      {/* The campaign's identity colour as a rule down the whole rail, in the
+          hue its mark wears in the top bar — the level's edge. Absolute
+          against the sidebar's own fixed container, so it runs past the
+          footer too.
 
-          It has to be written with the same `group-data-[side=left]` prefix the
-          primitive uses to zero the border out: a plain `border-r` is a weaker
-          selector *and* a different key to `twMerge`, so it would lose on both
-          counts instead of replacing it.
+          Static: it belongs to the level the way the level's rows do, and a
+          bar that draws itself on arrival would turn a property of the place
+          into an event that happened.
 
-          No `type-display` here: its feature list replaces the inherited one,
-          so on the container it would turn `pnum` on under every count in the
-          rail. The rows' labels carry it themselves (`AppSiderButton`). */}
-      <Sidebar
-        collapsible="icon"
-        className={'select-none group-data-[side=left]:border-r border-border'}
-        {...props}
-      >
-        {/* The campaign's identity colour as a rule down the whole rail, in
-            the hue its mark already wears — the level's edge, so it runs the
-            full height of the level, past the header above the sections and
-            the footer below them. It is absolute against the sidebar's own
-            fixed container rather than against anything inside it, which is
-            the only way to reach both.
+          It survives the collapse, where it is worth more than at full width:
+          a 52px rail has room for glyphs and nothing else, so the rule is
+          most of what is left saying you are inside something rather than at
+          the top level. */}
+      {level === 1 && campaignId && (
+        <span
+          aria-hidden
+          style={{ background: identityColorVar(campaignId) }}
+          className="absolute left-0 top-0 h-full w-[3px]"
+        />
+      )}
 
-            Static: it belongs to the level the way the level's rows do, and a
-            bar that draws itself on arrival would turn a property of the place
-            into an event that happened — one more thing moving during the only
-            moment the user is working out where they landed.
+      {/* `overflow-hidden`, against the primitive's own `overflow-auto`: the
+          panes are absolutely placed and the outgoing one is deliberately
+          32px off the left edge, which an `auto` ancestor would offer to
+          scroll to. Each level scrolls inside itself instead. */}
+      <SidebarContent className="overflow-hidden">
+        {/* Both levels stay mounted through the push — see `NavPane`. */}
+        <div className="relative flex-1 overflow-hidden">
+          <NavPane shown={level === 0} from="left">
+            <WorkspaceLevel />
+          </NavPane>
+          <NavPane shown={level === 1} from="right">
+            {campaignId && <CampaignLevel campaignId={campaignId} />}
+          </NavPane>
+        </div>
+      </SidebarContent>
 
-            It survives the collapse, where it is worth more than at full
-            width: a 48px rail has room for the campaign's mark and six glyphs
-            and nothing else, so the rule is most of what is left saying you
-            are inside something rather than at the top level. */}
-        {level === 1 && campaignId && (
-          <span
-            aria-hidden
-            style={{ background: identityColorVar(campaignId) }}
-            className="absolute left-0 top-0 h-full w-[3px]"
-          />
-        )}
-
-        <SidebarHeader>
-          <div className="flex items-center justify-between">
-            {isMobile ? (
-              <Button
-                variant="default"
-                size="smIcon"
-                onClick={toggleSidebar}
-                aria-label={t('nav.closeSidebar')}
-              >
-                <XIcon className="size-5" />
-              </Button>
-            ) : (
-              <HeaderMark
-                level={level}
-                campaignId={campaignId}
-                campaign={campaign}
-              />
-            )}
-            {isMobile ? (
-              <Logo className={'size-8'} />
-            ) : (
-              <Button
-                variant="ghost"
-                size="xsIcon"
-                className={cn(
-                  'flex group/button h-full transition-all duration-150',
-                  'group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0',
-                )}
-                onClick={() => setOpen(false)}
-              >
-                <CaretDoubleLeftIcon className="size-3 text-quaternary-foreground group-hover/button:text-primary-foreground transition-colors" />
-              </Button>
-            )}
-          </div>
-        </SidebarHeader>
-
-        {/* `overflow-hidden`, against the primitive's own `overflow-auto`: the
-            panes are absolutely placed and the outgoing one is deliberately
-            32px off the left edge, which an `auto` ancestor would offer to
-            scroll to. Each level scrolls inside itself instead. */}
-        <SidebarContent className="overflow-hidden">
-          {/* Both levels stay mounted through the push — see `NavPane`. */}
-          <div className="relative flex-1 overflow-hidden">
-            <NavPane shown={level === 0} from="left">
-              <WorkspaceLevel />
-            </NavPane>
-            <NavPane shown={level === 1} from="right">
-              {campaignId && (
-                <CampaignLevel campaignId={campaignId} campaign={campaign} />
-              )}
-            </NavPane>
-          </div>
-        </SidebarContent>
-
-        {/* Tighter than the primitive's `lg:gap-6`: these three bands are one
-            block — status, utilities, who you are — and 24px between them read
-            as three separate footers. */}
-        <SidebarFooter className="lg:gap-4">
+      <SidebarFooter className="gap-1 p-0 lg:gap-1 lg:p-0">
+        <div className="flex flex-col gap-0.5 px-2 pb-2">
           <LiveStatus isCollapsed={isCollapsed} />
           <NavUtilityStrip level={level} campaignId={campaignId} />
-          <NavAccount level={level} />
-        </SidebarFooter>
-        <SidebarRail />
-      </Sidebar>
-    </>
+        </div>
+        <CollapseRow />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   )
 }
 
 /**
- * The rail's top-left slot: the product at level 0, the campaign at level 1,
- * with the way out beside it.
+ * The collapse, as the rail's bottom edge: a full-width row under a hairline,
+ * so it reads as part of the frame rather than as one more destination.
  *
- * **Back is chrome, not a row.** A back row inside the nav sits where a
- * section would, scrolls with them, and reads as one more destination — but
- * the way out of a level is not a place in it. Up here it is always in the
- * same spot and never in the list.
- *
- * Swapping the logo for the campaign's mark is the loudest thing the rail can
- * do to say the scope changed: the logo is the one element that never changes,
- * so changing it is unmistakable. It is also what carries the campaign through
- * a collapse — the name and window below are the first things a 48px rail
- * loses, and the mark plus its tooltip are what is left saying which campaign
- * you are in.
- *
- * The mark takes the logo's place exactly — same left edge, same size, same
- * line — and the caret is absolutely placed in the gutter beside it rather
- * than laid out before it. In the flow it would push the mark 32px right, so
- * the one element the eye uses to know which level it is looking at would also
- * be the one that moved, and the two levels would no longer line up anywhere.
- * Out of the flow, the only thing that changes between them is the mark
- * itself.
+ * It used to be a small double caret in the header's corner, which only
+ * existed at full width — collapsed, the way back out was the rail's invisible
+ * edge or `[`. Down here it is the same row at both widths, and on a phone,
+ * where the rail is a sheet, it is what closes it.
  */
-function HeaderMark({
-  level,
-  campaignId,
-  campaign,
-}: {
-  level: 0 | 1
-  campaignId: string | null
-  campaign: Campaign | undefined
-}) {
+function CollapseRow() {
   const { t } = useTranslation()
-
-  if (level === 0 || !campaignId) {
-    return (
-      <Link
-        to="/"
-        className="flex items-center gap-2 text-lg font-semibold transition-all"
-      >
-        <Logo className="size-10 shrink-0" />
-      </Link>
-    )
-  }
-
-  const name = campaign?.name.trim() || t('nav.untitledCampaign')
+  const { state, isMobile, toggleSidebar } = useSidebar()
+  const collapsed = !isMobile && state === 'collapsed'
+  const label = collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')
 
   return (
-    <div className="relative flex min-w-0 items-center">
-      {/* In the gutter, which is 24px of the header's own padding and the only
-          room there is to the left of the mark without moving it. Pushed to
-          the outer half of it — 18px out, which leaves 6px between the caret's
-          box and the rail's edge and the same 2px between it and the mark: as
-          far from the mark as the gutter allows while still reading as an edge
-          with a margin rather than one flush against it.
-
-          It stays through the collapse. The gutter does not narrow with the
-          rail: the padding is the same 24px at 88px as at 280px, so the caret
-          keeps the position it already had and the way out of the level is in
-          one place at both widths. Collapsed, it is also the only control that
-          says so — the name and window are gone by then, and a mark that
-          silently doubles as back is a thing you have to have discovered. */}
-      <Link
-        to="/campaigns"
-        aria-label={t('nav.backToWorkspace')}
-        className="absolute -left-1.5 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-sm text-tertiary-foreground transition-colors hover:text-sidebar-primary-foreground lg:-left-[18px]"
-      >
-        <CaretLeftIcon weight="bold" className="size-4" />
-      </Link>
-      <Tooltip delayDuration={400}>
-        <TooltipTrigger asChild>
-          {/* Focusable, because collapsed this mark is the only thing naming
-              the campaign and a tooltip nobody can reach by keyboard is not a
-              label. It goes back rather than nowhere — the same destination as
-              the caret beside it, so whichever of the two the pointer lands on
-              does the same thing. */}
-          <Link
-            to="/campaigns"
-            aria-label={t('nav.backToWorkspace')}
-            className="flex-none rounded-sm"
-          >
-            <CampaignIcon
-              abbr={identityAbbr(name)}
-              color={identityColorVar(campaignId)}
-              active
-              className="size-10"
-            />
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent side="right">{name}</TooltipContent>
-      </Tooltip>
+    <div className="border-t border-border p-2">
+      <AppSidebarButtonMenu
+        icon={
+          <NavIcon icon={collapsed ? PanelLeftOpenIcon : PanelLeftCloseIcon} />
+        }
+        text={label}
+        isActive={false}
+        onClick={toggleSidebar}
+        className="text-tertiary-foreground"
+        shortcut="["
+      />
     </div>
   )
 }

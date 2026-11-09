@@ -37,8 +37,9 @@ import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
  * a place two of whose rows quietly left it — you would click Activity inside
  * a campaign and land in the workspace, having lost the campaign without
  * asking to. A level that some of its own rows fall out of is not a level. The
- * workspace is still one click away, and by a control that says so: the caret,
- * the mark, or the account menu, which lists all of level 0.
+ * workspace is still one click away, and by a control that says so: the back
+ * row, the switcher's "All campaigns", or the account menu, which lists all of
+ * level 0.
  */
 export function NavUtilityStrip({
   level,
@@ -54,7 +55,7 @@ export function NavUtilityStrip({
 
   if (level === 1 && campaignId) {
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0.5">
         {/* Plain, where level 0's row carries an unread count: the count is
             the workspace's, from an endpoint that takes no campaign, and a
             number here would be answering a different question than the row
@@ -81,7 +82,7 @@ export function NavUtilityStrip({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-0.5">
       <AppSidebarButtonMenu
         icon={<NavIcon icon={PaletteIcon} />}
         text={t('nav.foundation')}

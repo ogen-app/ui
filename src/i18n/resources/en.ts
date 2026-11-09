@@ -398,12 +398,32 @@ export const en = {
     profile: 'Profile',
     help: 'Help and support',
     logOut: 'Log out',
-    closeSidebar: 'Close sidebar',
+    /** The full-width row at the foot of the rail, both ways round. */
+    collapseSidebar: 'Collapse',
+    expandSidebar: 'Expand sidebar',
+    /** The top bar's menu button, on a phone, where the rail is a sheet. */
+    openMenu: 'Open menu',
     /** Both halves of what the /workspaces page offers, in one row. */
     switchWorkspace: 'Create or switch',
     untitledCampaign: 'Untitled campaign',
-    /** The way out of a campaign, on the header caret and on the mark beside it. */
-    backToWorkspace: 'Back to workspace',
+    /** The first row of a campaign's level: the way out, to the list. */
+    backToCampaigns: 'Back to campaigns',
+    /** The top-left block — the workspace with you in it — read out. */
+    accountMenu: 'Workspace and account',
+    /**
+     * The top bar's campaign switcher. At the workspace level it names no
+     * campaign, and says so with the same words as its first option.
+     */
+    switcher: {
+      label: 'Switch campaign',
+      allCampaigns: 'All campaigns',
+      none: 'No campaigns yet',
+    },
+    /** The top bar's two rail buttons; each opens, closes or replaces the right column. */
+    askAi: 'Ask AI',
+    support: 'Support',
+    /** The dot on Ask AI while a thread has finished somewhere you are not looking. */
+    assistantFinished: 'The assistant has finished',
     /**
      * Heads the workspace's destinations where they appear inside the account
      * menu — level 1's way back to a module without leaving the campaign first.
@@ -7006,7 +7026,7 @@ export const en = {
   },
 
   /**
-   * The help drawer's own chrome (CON-173) — and only that.
+   * The help panel's own chrome (CON-173) — and only that.
    *
    * Article titles and prose are **content**, not catalogue entries: they live
    * in the CMS, are translated there, and arrive already in the reader's
@@ -7018,7 +7038,8 @@ export const en = {
     back: 'Back',
     related: 'Related',
     notFound: "We haven't written this one yet.",
-    resize: 'Resize the help panel',
+    home: 'All help articles',
+    empty: 'No help articles yet.',
     trigger: {
       label: 'What is this?',
     },

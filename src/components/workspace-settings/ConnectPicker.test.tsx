@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
-import { SidebarProvider } from '@/components/ui/sidebar'
 import { ZernioError } from '@/types/integrations'
 import { ConnectPicker } from './ConnectPicker'
 
@@ -32,16 +31,10 @@ const PENDING = {
   ],
 }
 
-// The picker is a page, so it draws `PageHeader`, which reads the sidebar's
-// context for the mobile menu button. Nothing here asserts on the sidebar; it
-// is scaffolding the page cannot render without.
 const render = () =>
-  renderWithProviders(
-    <SidebarProvider>
-      <ConnectPicker connectionId="cn_1" />
-    </SidebarProvider>,
-    { path: '/workspace-settings/connect/cn_1' },
-  )
+  renderWithProviders(<ConnectPicker connectionId="cn_1" />, {
+    path: '/workspace-settings/connect/cn_1',
+  })
 
 beforeEach(() => {
   getPendingConnection.mockReset().mockResolvedValue(PENDING)

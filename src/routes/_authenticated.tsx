@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/AppSidebar'
+import { AppTopBar } from '@/components/layout/topbar/AppTopBar'
 import { AnnouncementFrame } from '@/components/layout/AnnouncementRibbon'
 import { UploadTracker } from '@/components/uploads/UploadTracker'
 import { RightSidebar } from '@/components/layout/RightSidebar'
@@ -49,16 +50,23 @@ function AuthenticatedLayout() {
 
   return (
     <AnnouncementFrame>
+      {/* A column: the top bar over the three below it — rail, page, right
+          column. The provider is the column rather than a wrapper around it
+          because the bar reads the rail's width variables and its collapse
+          state, and both live on the provider. */}
       <SidebarProvider
         open={!sidebarCollapsed}
         onOpenChange={(open) => setSidebarCollapsed(!open)}
-        className="min-h-[calc(100svh-var(--announcement-h))]"
+        className="min-h-[calc(100svh-var(--announcement-h))] flex-col"
       >
-        <AppSidebar />
-        <SidebarInset className="min-w-0">
-          <Outlet />
-        </SidebarInset>
-        <RightSidebar />
+        <AppTopBar />
+        <div className="flex min-h-0 w-full flex-1">
+          <AppSidebar />
+          <SidebarInset className="min-w-0">
+            <Outlet />
+          </SidebarInset>
+          <RightSidebar />
+        </div>
         <UploadTracker />
         <ShortcutsSheet />
       </SidebarProvider>

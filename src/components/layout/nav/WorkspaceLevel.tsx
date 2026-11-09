@@ -28,7 +28,7 @@ export function WorkspaceLevel() {
   const destinations = useWorkspaceDestinations()
 
   return (
-    <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-0 lg:px-6 group-data-[collapsible=icon]:items-center">
+    <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2">
       {destinations.map((destination) => {
         const isActive = destination.isActive(pathname)
         if (destination.id === 'inbox') {

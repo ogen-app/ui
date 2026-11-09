@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as help from '@/services/help'
 import { useHelpStore } from '@/stores/helpStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { HelpTrigger } from './HelpTrigger'
 
 /**
@@ -31,7 +32,11 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 beforeEach(() => {
-  useHelpStore.setState({ isOpen: false, history: [] })
+  useHelpStore.setState({ history: [] })
+  useSettingsStore.setState({
+    panelMemory: { floor: null, scoped: {} },
+    rightRailHidden: false,
+  })
 })
 
 afterEach(() => {
@@ -75,8 +80,9 @@ describe('HelpTrigger', () => {
     render(<HelpTrigger topic="post.status" />, { wrapper })
     await userEvent.click(await screen.findByRole('button'))
 
+    // Help is a rail panel now: the trigger puts it on the rail's floor.
+    expect(selectActivePanel(useSettingsStore.getState())).toBe('help')
     // Opening from a trigger starts a fresh trail rather than resuming one.
-    expect(useHelpStore.getState().isOpen).toBe(true)
     expect(useHelpStore.getState().history).toEqual(['post-statuses'])
   })
 })

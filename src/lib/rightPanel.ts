@@ -15,8 +15,15 @@ export type ScopedPanel =
   | 'postQuality'
   | 'postVersions'
 
+/**
+ * A panel every screen can show: the top bar's two buttons, Ask AI and
+ * Support. They share the rail's floor — one replaces the other — and the
+ * scoped panels sit on top of whichever of them is there.
+ */
+export type GlobalPanel = 'assistant' | 'help'
+
 /** Content shown in the right sidebar. Only one panel is on screen at a time. */
-export type RightPanel = 'assistant' | ScopedPanel
+export type RightPanel = GlobalPanel | ScopedPanel
 
 /** The screen a scoped panel needs underneath it in order to render. */
 export type PanelScope = 'calendar' | 'post'
@@ -38,6 +45,10 @@ export const PANEL_SCOPE: Record<ScopedPanel, PanelScope> = {
 }
 
 const SCOPED_PANELS = Object.keys(PANEL_SCOPE) as ScopedPanel[]
+const GLOBAL_PANELS: GlobalPanel[] = ['assistant', 'help']
+
+const isGlobal = (panel: RightPanel): panel is GlobalPanel =>
+  (GLOBAL_PANELS as RightPanel[]).includes(panel)
 
 /**
  * What the sidebar remembers between visits. This is the only part of the
@@ -50,19 +61,21 @@ const SCOPED_PANELS = Object.keys(PANEL_SCOPE) as ScopedPanel[]
  */
 export type PanelMemory = {
   /**
-   * The assistant is the rail's floor rather than a seventh panel: every other
+   * The rail's floor: the assistant, the help centre, or nothing. Every scoped
    * panel is an overlay on top of it, and closing an overlay drops back here
-   * instead of collapsing the rail. It is also the only panel available on
-   * every screen, which makes it the fallback that keeps the rule total.
+   * instead of collapsing the rail. The two global panels are the only ones
+   * available on every screen, which makes the floor the fallback that keeps
+   * the rule total — and there is one floor, not two flags, because the top
+   * bar's Ask AI and Support *replace* each other rather than stack.
    */
-  assistantOpen: boolean
+  floor: GlobalPanel | null
   /** Screen -> the panel last chosen there. */
   scoped: Partial<Record<PanelScope, ScopedPanel>>
 }
 
 /** Nothing open anywhere. The floor of the model, and what closing everything reaches. */
 export const EMPTY_PANEL_MEMORY: PanelMemory = {
-  assistantOpen: false,
+  floor: null,
   scoped: {},
 }
 
@@ -75,13 +88,14 @@ export const EMPTY_PANEL_MEMORY: PanelMemory = {
  * from then on, everywhere.
  */
 export const DEFAULT_PANEL_MEMORY: PanelMemory = {
-  assistantOpen: true,
+  floor: 'assistant',
   scoped: {},
 }
 
 /**
  * The panel on screen: the most specific thing the current screen can actually
- * serve, falling back to the assistant, falling back to closed.
+ * serve, falling back to the floor (the assistant or help), falling back to
+ * closed.
  *
  * Two properties come out of this and they are the whole point:
  *
@@ -99,7 +113,7 @@ export function resolveActivePanel(
 ): RightPanel | null {
   const scoped = scope ? memory.scoped[scope] : undefined
   if (scoped) return scoped
-  return memory.assistantOpen ? 'assistant' : null
+  return memory.floor
 }
 
 function forget(
@@ -113,8 +127,8 @@ function forget(
 /**
  * Remember `panel` as the choice for its screen, and put it on screen now.
  *
- * Opening the assistant also clears the current screen's overlay. Without that,
- * "open the assistant" would record it as open *underneath* a panel still
+ * Opening a global panel also clears the current screen's overlay. Without
+ * that, "open the assistant" would record it as open *underneath* a panel still
  * covering it, and the button would look broken. Only the current screen's
  * choice is cleared — the other one belongs to a screen you are not on, and
  * forgetting it here would throw away a choice made somewhere else.
@@ -124,9 +138,9 @@ export function openPanel(
   panel: RightPanel,
   scope: PanelScope | null,
 ): PanelMemory {
-  if (panel === 'assistant') {
+  if (isGlobal(panel)) {
     return {
-      assistantOpen: true,
+      floor: panel,
       scoped: scope ? forget(memory.scoped, scope) : memory.scoped,
     }
   }
@@ -137,8 +151,8 @@ export function openPanel(
 }
 
 /**
- * Close whatever is on screen. An overlay drops back to the assistant; the
- * assistant itself closes the rail. One X, one level at a time.
+ * Close whatever is on screen. An overlay drops back to the floor; the floor
+ * itself closes the rail. One X, one level at a time.
  */
 export function closePanel(
   memory: PanelMemory,
@@ -146,7 +160,7 @@ export function closePanel(
 ): PanelMemory {
   const active = resolveActivePanel(memory, scope)
   if (active === null) return memory
-  if (active === 'assistant') return { ...memory, assistantOpen: false }
+  if (isGlobal(active)) return { ...memory, floor: null }
   return { ...memory, scoped: forget(memory.scoped, PANEL_SCOPE[active]) }
 }
 
@@ -189,5 +203,8 @@ export function sanitizePanelMemory(value: unknown): PanelMemory {
       }
     }
   }
-  return { assistantOpen: raw.assistantOpen === true, scoped }
+  const floor = GLOBAL_PANELS.includes(raw.floor as GlobalPanel)
+    ? (raw.floor as GlobalPanel)
+    : null
+  return { floor, scoped }
 }

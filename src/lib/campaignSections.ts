@@ -1,3 +1,4 @@
+import type { LinkProps } from '@tanstack/react-router'
 import {
   AiIdeaIcon,
   BellIcon,
@@ -142,4 +143,51 @@ export type CampaignSectionId = (typeof CAMPAIGN_SECTIONS)[number]['id']
 /** The table entry for a section id. Total by construction — every id is here. */
 export function campaignSection(id: CampaignSectionId) {
   return CAMPAIGN_SECTIONS.find((section) => section.id === id)!
+}
+
+/**
+ * Where each section goes, given only the campaign.
+ *
+ * The calendar is its bare route, which redirects to wherever that campaign's
+ * calendar was last left — so a link that knows nothing but the campaign still
+ * lands on the right week. `satisfies` checks every value against the router's
+ * own union, so a route that moves takes this table down with it at compile
+ * time instead of on the click.
+ */
+export const CAMPAIGN_SECTION_PATH = {
+  overview: '/campaigns/$campaignId/overview',
+  strategy: '/campaigns/$campaignId/strategy',
+  ideas: '/campaigns/$campaignId/ideas',
+  assets: '/campaigns/$campaignId/assets',
+  posts: '/campaigns/$campaignId/list',
+  calendar: '/campaigns/$campaignId/calendar',
+  analytics: '/campaigns/$campaignId/analytics',
+  activity: '/campaigns/$campaignId/activity',
+  settings: '/campaigns/$campaignId/settings',
+} as const satisfies Record<CampaignSectionId, LinkProps['to']>
+
+/**
+ * The URL segment after the campaign id, as the section it belongs to. `list`
+ * is the Posts row's route, and the post and asset editors (`/posts/:id`,
+ * `/assets/:id`) belong to the section they were opened from.
+ */
+const SEGMENT_SECTION: Record<string, CampaignSectionId> = {
+  overview: 'overview',
+  strategy: 'strategy',
+  ideas: 'ideas',
+  assets: 'assets',
+  list: 'posts',
+  posts: 'posts',
+  calendar: 'calendar',
+  analytics: 'analytics',
+  activity: 'activity',
+  settings: 'settings',
+}
+
+const CAMPAIGN_SEGMENT = /^\/campaigns\/[^/]+\/([^/]+)/
+
+/** Which section of a campaign a path is in, or null outside one. */
+export function campaignSectionOf(pathname: string): CampaignSectionId | null {
+  const segment = CAMPAIGN_SEGMENT.exec(pathname)?.[1]
+  return segment ? (SEGMENT_SECTION[segment] ?? null) : null
 }

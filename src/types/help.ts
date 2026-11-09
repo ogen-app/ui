@@ -35,6 +35,12 @@ export type HelpArticle = {
   topics: string[]
 }
 
+/** An article as the help home lists it: no body, no links. */
+export type HelpIndexEntry = Pick<
+  HelpArticle,
+  'key' | 'title' | 'summary' | 'category'
+>
+
 /**
  * Which article answers a given contextual topic.
  *

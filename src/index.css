@@ -330,6 +330,11 @@
      Everything sized to the viewport subtracts it, which is what lets the
      ribbon sit above the page without pushing its bottom edge off-screen. */
   --announcement-h: 0px;
+  /* The app's top bar (`AppTopBar`): workspace, campaign switcher, Ask AI and
+     Support. Constant, so it can live here — unlike the ribbon above it, which
+     sets its own height inline. Anything sized to the viewport inside the
+     authenticated shell subtracts both. */
+  --topbar-h: 3rem;
   --radius: 1px;
   --background: var(--gray-100); /* Rename to default? */
   --foreground: var(--black); /* Rename to default? */

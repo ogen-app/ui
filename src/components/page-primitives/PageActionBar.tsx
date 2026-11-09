@@ -83,12 +83,6 @@ export type BarStatus = {
  * - Fixed to the viewport, it would stay put when the right rail opens and
  *   drift off the column it acts on.
  *
- * `h-12` is not decoration: it is the assistant trigger's height, and the two
- * share `bottom-4`, so the whole bottom edge of the app sits on one line. The
- * trigger is inset 16px from the right against the content gutter's 24px —
- * half a step outside it, because it is the one control on screen that belongs
- * to the app rather than to the page.
- *
  * Pass actions as siblings or an array, not wrapped in a fragment: the bar
  * rules between them, and a fragment arrives as a single child.
  *
