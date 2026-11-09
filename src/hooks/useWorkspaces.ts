@@ -24,6 +24,7 @@ import {
 import { reconnectEvents } from '@/stores/eventStreamStore'
 import { reconnectNotifications } from '@/stores/notificationStreamStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useAssistantStore } from '@/stores/assistantStore'
 import { canChangePlan } from '@/types/workspace'
 import type {
   CreateWorkspacePayload,
@@ -305,6 +306,10 @@ export function useSwitchWorkspace() {
       await flushAllPendingSaves()
       setActiveWorkspaceId(id)
       queryClient.clear()
+      // The assistant's threads are workspace-scoped too, and sit in a store
+      // the cache reset can't reach — left alone, the list would offer the
+      // previous workspace's conversations (CON-459).
+      useAssistantStore.getState().reset()
       // The event stream is a long-lived connection whose workspace was fixed
       // by the header on the request that opened it, so clearing the cache
       // does not reach it — left alone it would keep pushing the previous

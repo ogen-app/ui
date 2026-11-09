@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  listThreads,
   parseHistoryResult,
   streamAssistantTurn,
   threadScope,
@@ -191,5 +192,85 @@ describe('calendar findings', () => {
       event?.type === 'calendar_findings' &&
         event.findings.findings[0].fixes.map((f) => f.title),
     ).toEqual(['Open the post', 'Spread them'])
+  })
+})
+
+describe('listThreads', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('reads each thread into a subject it can route to, and skips the rest', async () => {
+    const fetch = vi.fn(
+      async (_url: RequestInfo | URL) =>
+        new Response(
+          JSON.stringify({
+            threads: [
+              {
+                scope: 'workspace',
+                scope_kind: 'workspace',
+                scope_id: '',
+                title: '',
+                last_message_at: '2026-11-09T10:00:00Z',
+                last_preview: 'Planned 12 ideas.',
+              },
+              {
+                scope: 'campaign:c1',
+                scope_kind: 'campaign',
+                scope_id: 'c1',
+                title: 'Spring launch',
+                last_message_at: '2026-11-08T10:00:00Z',
+                last_preview: JSON.stringify({
+                  explanation: 'Moved the end date.',
+                  action: 'answered',
+                }),
+              },
+              {
+                scope: 'post:p1',
+                scope_kind: 'post',
+                scope_id: 'p1',
+                title: 'Teaser',
+                campaign_id: 'c1',
+                campaign_title: 'Spring launch',
+                last_message_at: '2026-11-07T10:00:00Z',
+                last_preview: 'Shorter, please.',
+              },
+              // No campaign to route a post through, and a kind this build
+              // predates: both are left out rather than drawn as dead rows.
+              { scope: 'post:p2', scope_kind: 'post', scope_id: 'p2' },
+              { scope: 'series:s1', scope_kind: 'series', scope_id: 's1' },
+            ],
+            next_cursor: 'next',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+    )
+    vi.stubGlobal('fetch', fetch)
+    const page = await listThreads()
+    expect(String(fetch.mock.calls[0]?.[0])).toContain(
+      '/api/assistant/threads?limit=50',
+    )
+    expect(page.nextCursor).toBe('next')
+    expect(page.threads).toEqual([
+      {
+        subject: { kind: 'workspace' },
+        title: '',
+        campaignTitle: '',
+        lastMessageAt: '2026-11-09T10:00:00Z',
+        preview: 'Planned 12 ideas.',
+      },
+      {
+        subject: { kind: 'campaign', campaignId: 'c1' },
+        title: 'Spring launch',
+        campaignTitle: 'Spring launch',
+        lastMessageAt: '2026-11-08T10:00:00Z',
+        preview: 'Moved the end date.',
+      },
+      {
+        subject: { kind: 'post', postId: 'p1', campaignId: 'c1' },
+        title: 'Teaser',
+        campaignTitle: 'Spring launch',
+        lastMessageAt: '2026-11-07T10:00:00Z',
+        preview: 'Shorter, please.',
+      },
+    ])
   })
 })

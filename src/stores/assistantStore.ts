@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { queryClient } from '@/lib/queryClient'
+import { ASSISTANT_THREADS_KEY } from '@/hooks/useAssistantThreads'
 import { threadName } from '@/lib/assistantTools'
 import { refreshTouched, subjectTouches } from '@/lib/assistantTouched'
 import { flushPendingSave } from '@/lib/pendingSaves'
@@ -122,6 +123,15 @@ type AssistantState = {
     title: string,
     campaignTitle: string,
   ) => string
+  /**
+   * Register a thread picked from the list (CON-459) and show it, without
+   * making it the current subject — the user is still wherever they are.
+   */
+  adoptThread: (
+    subject: ThreadSubject,
+    title: string,
+    campaignTitle: string,
+  ) => string
   /** Keep a thread's labels in sync with its subject, without selecting it. */
   renameThread: (
     threadId: string,
@@ -163,8 +173,12 @@ type AssistantState = {
   ) => Promise<void>
   /** Abort the running turn. Work already written server-side stands. */
   cancel: (threadId: string) => void
-  /** Forget a thread (its server history is untouched). */
-  closeThread: (threadId: string) => void
+  /**
+   * Forget every thread — for a workspace switch, which clears the Query
+   * cache but cannot reach this store. Runs in flight are stopped; what they
+   * wrote server-side stands.
+   */
+  reset: () => void
   markRead: (threadId: string) => void
 }
 
@@ -294,6 +308,7 @@ export const useAssistantStore = create<AssistantState>()(
                 ...current,
                 status: 'running',
                 runStartedAt: Date.now(),
+                lastActiveAt: Date.now(),
                 streamedPosts: [],
                 turns: [
                   // A new turn moves past any offer still standing: it may
@@ -346,6 +361,11 @@ export const useAssistantStore = create<AssistantState>()(
             status,
             runStartedAt: null,
             unread: !watching,
+          })
+          // The turn moved this thread to the top of the workspace's list, or
+          // put it there for the first time (CON-459).
+          void queryClient.invalidateQueries({
+            queryKey: ASSISTANT_THREADS_KEY,
           })
 
           if (watching || outcome === 'cancelled') return
@@ -610,6 +630,7 @@ export const useAssistantStore = create<AssistantState>()(
                   turns: [],
                   status: 'idle',
                   runStartedAt: null,
+                  lastActiveAt: null,
                   unread: false,
                   loaded: false,
                   streamedPosts: [],
@@ -620,6 +641,33 @@ export const useAssistantStore = create<AssistantState>()(
               currentThreadId: id,
             }
           })
+          return id
+        },
+
+        adoptThread: (subject, title, campaignTitle) => {
+          const id = threadIdFor(subject)
+          set((s) => ({
+            threads: s.threads[id]
+              ? s.threads
+              : {
+                  ...s.threads,
+                  [id]: {
+                    id,
+                    subject,
+                    title,
+                    campaignTitle,
+                    turns: [],
+                    status: 'idle',
+                    runStartedAt: null,
+                    lastActiveAt: null,
+                    unread: false,
+                    loaded: false,
+                    streamedPosts: [],
+                  },
+                },
+            activeThreadId: id,
+          }))
+          patchThread(id, { unread: false })
           return id
         },
 
@@ -658,18 +706,14 @@ export const useAssistantStore = create<AssistantState>()(
 
         markRead: (threadId) => patchThread(threadId, { unread: false }),
 
-        closeThread: (threadId) => {
-          get().cancel(threadId)
-          set((s) => {
-            const threads = { ...s.threads }
-            delete threads[threadId]
-            return {
-              threads,
-              activeThreadId:
-                s.activeThreadId === threadId ? null : s.activeThreadId,
-              currentThreadId:
-                s.currentThreadId === threadId ? null : s.currentThreadId,
-            }
+        reset: () => {
+          for (const controller of runners.values()) controller.abort()
+          runners.clear()
+          set({
+            threads: {},
+            activeThreadId: null,
+            currentThreadId: null,
+            prefillRequest: null,
           })
         },
 

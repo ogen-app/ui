@@ -547,6 +547,14 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   campaign, so browsing the thread list isn't interrupted. The campaign and
   post assistants are *packs* behind the one endpoint, and their events still
   stream through it.
+  **The thread list is the server's** (CON-459): `GET /api/assistant/threads`
+  through `useAssistantThreads`, every thread the *workspace* has — threads
+  are shared, not one member's — merged under the tab's live copies by
+  `lib/assistantThreads`. Never put threads in browser storage, and never in
+  the store as a copy of the list: the store holds only what this tab has open.
+  A row has no close: the history survives, so it would come back on the next
+  read. A workspace switch calls the store's `reset()`, because clearing the
+  Query cache doesn't reach it.
 - **A turn carries what the user sees, as references only** (D3). The
   location is read once off the router (`useViewLocation`, mapping the deepest
   route through `lib/viewContext`'s `SCREENS` — **a new route the assistant

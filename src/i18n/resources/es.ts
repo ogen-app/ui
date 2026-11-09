@@ -2072,7 +2072,10 @@ export const es: Translation = {
       current: 'ACTUAL',
       openCampaign: 'Abrir la campaña',
       openPost: 'Abrir la publicación',
-      close: 'Cerrar esta conversación',
+      lastMessage: '{{when}} · {{preview}}',
+      justNow: 'ahora mismo',
+      older: 'Ver conversaciones anteriores',
+      loadFailed: 'No se pudieron cargar las conversaciones.',
     },
 
     status: {

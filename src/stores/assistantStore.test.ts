@@ -371,6 +371,49 @@ describe('assistantStore', () => {
   })
 })
 
+describe('the thread list (CON-459)', () => {
+  it('opens a listed thread without making it the current subject', () => {
+    const store = useAssistantStore.getState()
+    const here = store.openThread(
+      { kind: 'campaign', campaignId: 'c1' },
+      '',
+      'Here',
+    )
+    const id = useAssistantStore
+      .getState()
+      .adoptThread({ kind: 'campaign', campaignId: 'c9' }, '', 'Elsewhere')
+    const state = useAssistantStore.getState()
+    expect(state.activeThreadId).toBe(id)
+    expect(state.currentThreadId).toBe(here)
+    expect(state.threads[id]).toMatchObject({ loaded: false, turns: [] })
+  })
+
+  it('forgets every thread on a workspace switch', () => {
+    useAssistantStore
+      .getState()
+      .openThread({ kind: 'campaign', campaignId: 'c1' }, '', 'Here')
+    useAssistantStore.getState().reset()
+    const state = useAssistantStore.getState()
+    expect(state.threads).toEqual({})
+    expect(state.activeThreadId).toBeNull()
+    expect(state.currentThreadId).toBeNull()
+  })
+
+  it('refreshes the list when a turn finishes', async () => {
+    const { queryClient } = await import('@/lib/queryClient')
+    const spy = vi.spyOn(queryClient, 'invalidateQueries')
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+    stream.events = [{ type: 'complete', result: result() }]
+    await useAssistantStore.getState().send(id, 'Hello')
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['assistant', 'threads'] })
+    expect(useAssistantStore.getState().threads[id].lastActiveAt).toEqual(
+      expect.any(Number),
+    )
+  })
+})
+
 describe('settleHistory', () => {
   it('reads answers, expiry and supersession back into a reloaded thread', async () => {
     const { settleHistory } = await import('./assistantStore')

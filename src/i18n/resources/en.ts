@@ -2565,7 +2565,11 @@ export const en = {
       current: 'CURRENT',
       openCampaign: 'Open the campaign',
       openPost: 'Open the post',
-      close: 'Close this conversation',
+      /** A thread not opened yet: `when` is "5 min ago", `preview` its last message. */
+      lastMessage: '{{when}} · {{preview}}',
+      justNow: 'just now',
+      older: 'Show older conversations',
+      loadFailed: 'Couldn’t load the conversations.',
     },
 
     /**

@@ -191,7 +191,9 @@ function query(t: TFunction, q: unknown): string {
  * itself. Shared by the list and by the toast a finished turn raises, so the
  * notification names the row the user will go looking for.
  */
-export function threadName(thread: AssistantThread): string {
+export function threadName(
+  thread: Pick<AssistantThread, 'subject' | 'title' | 'campaignTitle'>,
+): string {
   if (thread.subject.kind === 'workspace') {
     return i18next.t('assistant.workspaceThread')
   }

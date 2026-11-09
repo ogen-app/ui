@@ -289,6 +289,11 @@ export type AssistantThread = {
   status: ThreadStatus
   /** Wall-clock ms at which the running turn started, for the elapsed label. */
   runStartedAt: number | null
+  /**
+   * Wall-clock ms of the last turn started in this tab, so the thread list can
+   * sort a live thread among the server's (CON-459). Null until one starts.
+   */
+  lastActiveAt: number | null
   /** A turn finished while the user was looking somewhere else. */
   unread: boolean
   /** History has been loaded from the server at least once. */
