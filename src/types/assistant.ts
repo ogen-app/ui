@@ -168,6 +168,91 @@ export type ProposalStatus =
   | 'superseded'
 
 /**
+ * What the assets pack's tools found this turn (CON-460), as the server puts
+ * them under `results.assets` — the last call of each tool — with the core
+ * `listSavedViews` beside them. The rail draws a card from each; a turn
+ * without them is prose.
+ */
+export type AssetsResults = {
+  ask?: AssetsAsk
+  analysis?: AnalysisRead
+  compare?: AssetComparison
+  savedViews?: SavedViewList
+  campaign?: CampaignFromAssets
+}
+
+/** What a question about the assets searched, and where it found it. */
+export type AssetsAsk = {
+  scope: 'asked' | 'open_asset' | 'campaign' | 'workspace'
+  excerpts: { assetId: string; title: string; pages: string }[]
+}
+
+/** A lens: a campaign's, or the workspace's when `campaignId` is absent. */
+export type AnalysisLens = {
+  campaignId?: string
+  campaignName?: string
+  /** ready | pending | running | failed | skipped | not_read */
+  status: string
+  readAt?: string
+}
+
+/** What one lens's analysis found in an asset (`readAnalysis`). */
+export type AnalysisRead = {
+  assetId: string
+  title: string
+  lens: AnalysisLens
+  gist: string
+  summary: string
+  keyPoints: string[]
+  ideas: { undecided: number; yes: number; later: number; no: number }
+  topIdeas: { id: string; title: string; verdict?: string }[]
+  failureReason?: string
+  /** The asset's other lenses: offered, never mixed in. */
+  otherLenses: AnalysisLens[]
+}
+
+/** A claim and the lettered assets behind it. */
+export type ComparedClaim = { text: string; letters: string[] }
+
+/** A summary or comparison of assets (`compareAssets`). */
+export type AssetComparison = {
+  mode: 'summarise' | 'compare'
+  assets: AssetComparedRef[]
+  summary: string
+  shared: ComparedClaim[]
+  partial: ComparedClaim[]
+  conflicts: ComparedClaim[]
+  /** Assets with nothing to read, named rather than sent to the model. */
+  skipped: AssetComparedRef[]
+  grounding?: Grounding
+}
+
+export type AssetComparedRef = {
+  id: string
+  title: string
+  letter: string
+  /** Read from its analysis for the lens, or from its passages. */
+  from: 'analysis' | 'passages'
+}
+
+/** A list's smart groups (`listSavedViews`). */
+export type SavedViewList = {
+  list: 'ideas' | 'assets'
+  views: { id: string; name: string; shared: boolean; count?: number }[]
+}
+
+/** A campaign set up from assets (`createCampaignFromAssets`). */
+export type CampaignFromAssets = {
+  campaignId: string
+  name: string
+  type: string
+  startDate?: string
+  endDate?: string
+  assetIds: string[]
+  undoId?: string
+}
+
+/**
  * A campaign calendar's open problems (CON-454), each with the fixes that
  * would resolve it. A fix carries an offer to confirm, or a post to open.
  * Message and titles are the server's words.
@@ -241,6 +326,8 @@ export type AssistantTurn = {
   undo?: Record<string, UndoState>
   /** A calendar check this turn ran (CON-454). */
   findings?: CalendarFindings
+  /** What the assets pack's tools found this turn (CON-460). */
+  assets?: AssetsResults
   /** What this turn did to the screen, and where each can be put back to. */
   uiActions?: AppliedUIAction[]
   /**

@@ -1,6 +1,11 @@
 import {
   ArchiveIcon,
   ArrowsClockwiseIcon,
+  ArrowCounterClockwiseIcon,
+  FunnelIcon,
+  GitDiffIcon,
+  FlagIcon,
+  ScanIcon,
   IntersectIcon,
   ListBulletsIcon,
   MagnifyingGlassIcon,
@@ -24,12 +29,20 @@ import {
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
-import type { ThreadSubject } from '@/types/assistant'
+import { subjectCampaignId, type ThreadSubject } from '@/types/assistant'
 import type { ViewScreen } from '@/lib/viewContext'
+import { counted } from '@/lib/intl'
+import { useAssetsState } from '@/hooks/useContent'
+import type { AssetsState } from '@/services/api/content'
+import { useAssistantStore } from '@/stores/assistantStore'
 import { useViewContextStore } from '@/stores/viewContextStore'
 
-/** `key` names the starter's label and draft under `assistant.starter`. */
-type Starter = { icon: Icon; key: StarterKey }
+/**
+ * `key` names the starter's label and draft under `assistant.starter`.
+ * `count` is the figure a label from the bank's state carries ("Retry 3
+ * failed"), and picks its plural form.
+ */
+type Starter = { icon: Icon; key: StarterKey; count?: number }
 
 type StarterKey =
   | 'contentPlan'
@@ -60,6 +73,13 @@ type StarterKey =
   | 'findSimilar'
   | 'askAssets'
   | 'ideasFromAssets'
+  | 'analyseWaiting'
+  | 'retryFailed'
+  | 'triageIdeas'
+  | 'smartGroups'
+  | 'compareSelected'
+  | 'campaignFromSelected'
+  | 'whatAnalysisFound'
   | 'summariseSelected'
   | 'planFromSelected'
   | 'tagSelected'
@@ -140,9 +160,12 @@ const ASSETS: ScreenStarters = {
   none: [
     { icon: QuestionIcon, key: 'askAssets' },
     { icon: LightbulbIcon, key: 'ideasFromAssets' },
+    { icon: FunnelIcon, key: 'smartGroups' },
   ],
   selected: [
+    { icon: GitDiffIcon, key: 'compareSelected' },
     { icon: ListBulletsIcon, key: 'summariseSelected' },
+    { icon: FlagIcon, key: 'campaignFromSelected' },
     { icon: CalendarBlankIcon, key: 'planFromSelected' },
     { icon: TagIcon, key: 'tagSelected' },
   ],
@@ -152,8 +175,34 @@ const ASSET: ScreenStarters = {
   none: [
     { icon: ListBulletsIcon, key: 'summariseIt' },
     { icon: QuestionIcon, key: 'askTheAsset' },
+    { icon: ScanIcon, key: 'whatAnalysisFound' },
     { icon: LightbulbIcon, key: 'ideasFromThis' },
   ],
+}
+
+/**
+ * What the bank has waiting (CON-460), first on the Assets list: each only
+ * when its count is above zero, so "Retry 3 failed" never offers nothing.
+ */
+function stateStarters(state: AssetsState | undefined): Starter[] {
+  if (!state) return []
+  const undecided = state.undecided.reduce((sum, lens) => sum + lens.ideas, 0)
+  const starters: Starter[] = []
+  if (state.waiting > 0)
+    starters.push({
+      icon: SparkleIcon,
+      key: 'analyseWaiting',
+      count: state.waiting,
+    })
+  if (state.analysisFailed > 0)
+    starters.push({
+      icon: ArrowCounterClockwiseIcon,
+      key: 'retryFailed',
+      count: state.analysisFailed,
+    })
+  if (undecided > 0)
+    starters.push({ icon: LightbulbIcon, key: 'triageIdeas', count: undecided })
+  return starters
 }
 
 const ANALYTICS: ScreenStarters = {
@@ -232,12 +281,36 @@ export function StarterChips({
   const hasSelection =
     !!selection && ('allMatching' in selection || selection.ids.length > 0)
   const forScreen = screenStarters(screen)
+  // The bank's state, on the Assets list only: a campaign's sources inside
+  // one, the workspace's otherwise — the scope the assistant reads.
+  const onAssets = screen === 'assets' || screen === 'campaign.assets'
+  const subject = useAssistantStore((s) =>
+    s.activeThreadId ? s.threads[s.activeThreadId]?.subject : undefined,
+  )
+  const campaignId =
+    screen === 'campaign.assets' && subject
+      ? (subjectCampaignId(subject) ?? null)
+      : null
+  const state = useAssetsState(campaignId, onAssets && !hasSelection)
   const starters =
-    (hasSelection && forScreen?.selected) || forScreen?.none || STARTERS[kind]
+    (hasSelection && forScreen?.selected) ||
+    (forScreen?.none &&
+      (onAssets
+        ? [...stateStarters(state.data), ...forScreen.none]
+        : forScreen.none)) ||
+    STARTERS[kind]
   return (
     <div className="flex flex-wrap justify-center gap-1.5">
-      {starters.map(({ icon: Icon, key }) => {
-        const label = t(`assistant.starter.${key}.label`)
+      {starters.map(({ icon: Icon, key, count }) => {
+        const label =
+          count === undefined
+            ? t(
+                `assistant.starter.${key}.label` as 'assistant.starter.askAssets.label',
+              )
+            : t(
+                `assistant.starter.${key}.label` as 'assistant.starter.retryFailed.label',
+                counted(count),
+              )
         const text = t(`assistant.starter.${key}.text`)
         return (
           <button

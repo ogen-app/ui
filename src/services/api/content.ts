@@ -118,6 +118,59 @@ export async function findAssetsByChecksum(
   return page.assets
 }
 
+/**
+ * The bank's state (CON-460): the counts the assistant reads on the Assets
+ * screens, served so the screens' suggestions read the same thing. Scoped to
+ * a campaign's sources with `campaignId`, else the workspace's bank.
+ */
+export type AssetsState = {
+  total: number
+  /** Still being read in, and those that couldn't be. */
+  processing: number
+  processingFailed: number
+  /** The lens in scope's analyses, by status. */
+  analysed: number
+  waiting: number
+  analysing: number
+  analysisFailed: number
+  skipped: number
+  /** Undecided ideas, one entry per lens. */
+  undecided: { campaignId?: string; campaignName?: string; ideas: number }[]
+}
+
+export async function getAssetsState(
+  campaignId?: string | null,
+): Promise<AssetsState> {
+  const query = campaignId
+    ? `?campaign_id=${encodeURIComponent(campaignId)}`
+    : ''
+  const raw = await apiJson<Record<string, unknown>>(
+    `/api/content-bank/assets-state${query}`,
+    'Unable to load the state of the assets',
+  )
+  const n = (v: unknown) => (typeof v === 'number' ? v : 0)
+  const undecided = Array.isArray(raw.undecided) ? raw.undecided : []
+  return {
+    total: n(raw.total),
+    processing: n(raw.processing),
+    processingFailed: n(raw.processing_failed),
+    analysed: n(raw.analysed),
+    waiting: n(raw.waiting),
+    analysing: n(raw.analysing),
+    analysisFailed: n(raw.analysis_failed),
+    skipped: n(raw.skipped),
+    undecided: undecided
+      .filter((u): u is Record<string, unknown> => !!u && typeof u === 'object')
+      .map((u) => ({
+        campaignId:
+          typeof u.campaign_id === 'string' ? u.campaign_id : undefined,
+        campaignName:
+          typeof u.campaign_name === 'string' ? u.campaign_name : undefined,
+        ideas: n(u.ideas),
+      })),
+  }
+}
+
 export function getAsset(id: string): Promise<Asset> {
   return apiJson<Asset>(`${BASE}/${id}`, 'Unable to fetch asset')
 }

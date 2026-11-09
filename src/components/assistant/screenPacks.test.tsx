@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import { QueryWrapper } from '@/test/queryWrapper'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { useViewContextStore } from '@/stores/viewContextStore'
@@ -18,7 +19,9 @@ beforeEach(() => {
 describe('starters follow the screen', () => {
   it('offers a screen’s own verbs', () => {
     useViewContextStore.setState({ location: { screen: 'campaign.calendar' } })
-    render(<StarterChips kind="campaign" onPick={() => {}} />)
+    render(<StarterChips kind="campaign" onPick={() => {}} />, {
+      wrapper: QueryWrapper,
+    })
     expect(screen.getByText('Anything wrong this week?')).toBeTruthy()
     expect(screen.queryByText('Generate a content plan')).toBeNull()
   })
@@ -28,14 +31,18 @@ describe('starters follow the screen', () => {
       location: { screen: 'ideas' },
       page: { selection: { kind: 'idea', ids: ['i1', 'i2', 'i3'] } },
     })
-    render(<StarterChips kind="workspace" onPick={() => {}} />)
+    render(<StarterChips kind="workspace" onPick={() => {}} />, {
+      wrapper: QueryWrapper,
+    })
     expect(screen.getByText('Draft the selected')).toBeTruthy()
     expect(screen.queryByText('Find ideas about…')).toBeNull()
   })
 
   it('falls back to the thread’s own on a screen with none', () => {
     useViewContextStore.setState({ location: { screen: 'post' } })
-    render(<StarterChips kind="post" onPick={() => {}} />)
+    render(<StarterChips kind="post" onPick={() => {}} />, {
+      wrapper: QueryWrapper,
+    })
     expect(screen.getByText('Tighten the opening')).toBeTruthy()
   })
 })

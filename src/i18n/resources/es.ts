@@ -1681,6 +1681,22 @@ export const es: Translation = {
         running: 'Analizando un recurso',
         done: 'Analizado un recurso',
       },
+      readAnalysis: {
+        running: 'Leyendo el análisis',
+        done: 'Leído el análisis',
+      },
+      compareAssets: {
+        running: 'Comparando los recursos',
+        done: 'Comparados los recursos',
+      },
+      createCampaignFromAssets: {
+        running: 'Preparando la campaña',
+        done: 'Preparada la campaña',
+      },
+      listSavedViews: {
+        running: 'Buscando los grupos inteligentes',
+        done: 'Encontrados los grupos inteligentes',
+      },
       distillMoreIdeas: {
         running: 'Destilando ideas',
         done: 'Destiladas las ideas',
@@ -1962,6 +1978,37 @@ export const es: Translation = {
         label: 'Ideas del banco',
         text: '¿Qué recursos aún no nos han dado ideas?',
       },
+      analyseWaiting: {
+        label_one: 'Analizar el nuevo',
+        label_other: 'Analizar los {{formatted}} nuevos',
+        text: 'Analiza los documentos que aún no se han analizado.',
+      },
+      retryFailed: {
+        label_one: 'Reintentar el fallido',
+        label_other: 'Reintentar {{formatted}} fallidos',
+        text: 'Reintenta los análisis que fallaron.',
+      },
+      triageIdeas: {
+        label_one: 'Revisar 1 idea',
+        label_other: 'Revisar {{formatted}} ideas',
+        text: '¿Cuáles de las ideas sin decidir de estos documentos vale la pena conservar?',
+      },
+      smartGroups: {
+        label: 'Abrir un grupo inteligente',
+        text: '¿Qué grupos inteligentes tenemos?',
+      },
+      compareSelected: {
+        label: 'Comparar estos',
+        text: 'Compara los recursos seleccionados.',
+      },
+      campaignFromSelected: {
+        label: 'Campaña con estos',
+        text: 'Prepara una campaña con los recursos seleccionados.',
+      },
+      whatAnalysisFound: {
+        label: 'Lo que encontró el análisis',
+        text: '¿Qué encontró el análisis?',
+      },
       summariseSelected: {
         label: 'Resumir estos',
         text: 'Resume los recursos seleccionados.',
@@ -2063,6 +2110,75 @@ export const es: Translation = {
       cancelledCampaign:
         'Detenido. Lo que ya se había escrito en la campaña se ha conservado.',
       failed: 'El asistente ha fallado',
+    },
+
+    assets: {
+      ask: {
+        chip: '{{title}} · {{pages}}',
+        onlyThis: 'Solo este recurso.',
+        searchAll: 'BUSCAR EN TODOS LOS RECURSOS',
+        searchAllPrompt: 'Búscalo en todos los recursos, no solo en este.',
+      },
+      lens: {
+        workspace: 'Lente del espacio de trabajo',
+        campaign: 'Lente de {{name}}',
+        readOn: '{{lens}} · leído el {{date}}',
+      },
+      analysis: {
+        word: {
+          ready: 'Analizado',
+          pending: 'Pendiente de lectura',
+          running: 'En lectura',
+          failed: 'No se pudo leer',
+          skipped: 'Omitido para esta lente',
+          notRead: 'Sin leer para esta lente',
+        },
+        ideas_one: '{{formatted}} idea extraída',
+        ideas_other: '{{formatted}} ideas extraídas',
+        ideasByVerdict:
+          '{{undecided}} sin decidir · {{yes}} sí · {{later}} más tarde',
+        openIdeas: 'ABRIR IDEAS',
+        notReadFor: 'La {{lens}} no lo ha leído.',
+        analyse: 'ANALIZAR',
+        analysePrompt: 'Analízalo para la {{lens}}.',
+        show: 'MOSTRAR',
+        showPrompt: '¿Qué encontró el análisis para la {{lens}}?',
+        analysisOf: 'Análisis de {{title}}',
+      },
+      compare: {
+        wordCompared: 'Comparado',
+        wordSummarised: 'Resumido',
+        title_one: '{{formatted}} documento',
+        title_other: '{{formatted}} documentos',
+        shared: 'Todos',
+        partial: 'Solo algunos',
+        conflicts: 'No coinciden',
+        askWhich: 'PREGUNTAR CUÁL',
+        askWhichPrompt: '¿Cuál es correcto: {{claim}}?',
+        fromPassages_one:
+          '{{titles}} se leyó a partir de sus fragmentos: no hay análisis para esta lente.',
+        fromPassages_other:
+          '{{titles}} se leyeron a partir de sus fragmentos: no hay análisis para esta lente.',
+        skipped_one: '{{titles}} no tenía nada que leer.',
+        skipped_other: '{{titles}} no tenían nada que leer.',
+      },
+      views: {
+        word: 'Grupos inteligentes',
+        title_one: '{{formatted}} en {{list}}',
+        title_other: '{{formatted}} en {{list}}',
+        none: 'Aún no hay grupos inteligentes en {{list}}',
+        countAssets_one: '{{formatted}} documento',
+        countAssets_other: '{{formatted}} documentos',
+        countIdeas_one: '{{formatted}} idea',
+        countIdeas_other: '{{formatted}} ideas',
+        shared: 'Compartido',
+        open: 'ABRIR',
+      },
+      campaign: {
+        sources_one: '{{formatted}} fuente adjunta',
+        sources_other: '{{formatted}} fuentes adjuntas',
+        open: 'ABRIR',
+      },
     },
 
     list: {

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { QueryWrapper } from '@/test/queryWrapper'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { i18next, loadLocaleResources } from '@/i18n'
 import { describeTool, stepDetail, stepLabel } from '@/lib/assistantTools'
@@ -35,7 +36,9 @@ function step(changes: Partial<AssistantStep>): AssistantStep {
 
 describe('assistant in Spanish', () => {
   it('words the empty thread and its starters', () => {
-    render(<ThreadEmptyState kind="campaign" onPick={() => {}} />)
+    render(<ThreadEmptyState kind="campaign" onPick={() => {}} />, {
+      wrapper: QueryWrapper,
+    })
     expect(
       screen.getByText('Planifica la campaña y llénala de publicaciones.'),
     ).toBeTruthy()

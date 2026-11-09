@@ -2156,6 +2156,22 @@ export const en = {
         running: 'Analysing an asset',
         done: 'Analysed an asset',
       },
+      readAnalysis: {
+        running: 'Reading the analysis',
+        done: 'Read the analysis',
+      },
+      compareAssets: {
+        running: 'Comparing the assets',
+        done: 'Compared the assets',
+      },
+      createCampaignFromAssets: {
+        running: 'Setting up the campaign',
+        done: 'Set up the campaign',
+      },
+      listSavedViews: {
+        running: 'Looking up the smart groups',
+        done: 'Looked up the smart groups',
+      },
       distillMoreIdeas: {
         running: 'Distilling ideas',
         done: 'Distilled ideas',
@@ -2446,6 +2462,37 @@ export const en = {
         label: 'Ideas from the bank',
         text: 'Which assets haven’t given us ideas yet?',
       },
+      analyseWaiting: {
+        label_one: 'Analyse the new one',
+        label_other: 'Analyse the {{formatted}} new',
+        text: 'Analyse the documents that haven’t been analysed yet.',
+      },
+      retryFailed: {
+        label_one: 'Retry the failed one',
+        label_other: 'Retry {{formatted}} failed',
+        text: 'Retry the analyses that failed.',
+      },
+      triageIdeas: {
+        label_one: 'Triage 1 idea',
+        label_other: 'Triage {{formatted}} ideas',
+        text: 'Which of the undecided ideas from these documents are worth keeping?',
+      },
+      smartGroups: {
+        label: 'Open a smart group',
+        text: 'Which smart groups do we have?',
+      },
+      compareSelected: {
+        label: 'Compare these',
+        text: 'Compare the selected assets.',
+      },
+      campaignFromSelected: {
+        label: 'Campaign from these',
+        text: 'Set up a campaign from the selected assets.',
+      },
+      whatAnalysisFound: {
+        label: 'What the analysis found',
+        text: 'What did the analysis find?',
+      },
       summariseSelected: {
         label: 'Summarise these',
         text: 'Summarise the selected assets.',
@@ -2557,6 +2604,78 @@ export const en = {
     },
 
     /** Every open thread, in the rail's list. */
+    /** The assets pack's results (CON-460). */
+    assets: {
+      ask: {
+        /** A cited passage from one of several assets. */
+        chip: '{{title}} · {{pages}}',
+        onlyThis: 'Only this asset.',
+        searchAll: 'SEARCH ALL ASSETS',
+        searchAllPrompt: 'Search all the assets for that, not only this one.',
+      },
+      lens: {
+        workspace: 'Workspace lens',
+        campaign: '{{name}}’s lens',
+        /** `date` is short: "6 Nov". */
+        readOn: '{{lens}} · read {{date}}',
+      },
+      analysis: {
+        word: {
+          ready: 'Analysed',
+          pending: 'Waiting to be read',
+          running: 'Being read',
+          failed: 'Couldn’t be read',
+          skipped: 'Skipped for this lens',
+          notRead: 'Not read for this lens',
+        },
+        ideas_one: '{{formatted}} idea distilled',
+        ideas_other: '{{formatted}} ideas distilled',
+        ideasByVerdict:
+          '{{undecided}} undecided · {{yes}} yes · {{later}} later',
+        openIdeas: 'OPEN IDEAS',
+        notReadFor: '{{lens}} hasn’t read it.',
+        analyse: 'ANALYSE',
+        analysePrompt: 'Analyse it for the {{lens}}.',
+        show: 'SHOW',
+        showPrompt: 'What did the analysis find for the {{lens}}?',
+        analysisOf: 'Analysis of {{title}}',
+      },
+      compare: {
+        wordCompared: 'Compared',
+        wordSummarised: 'Summarised',
+        title_one: '{{formatted}} document',
+        title_other: '{{formatted}} documents',
+        shared: 'All of them',
+        partial: 'Only some',
+        conflicts: 'They disagree',
+        askWhich: 'ASK WHICH',
+        askWhichPrompt: 'Which is right: {{claim}}?',
+        fromPassages_one:
+          '{{titles}} was read from its passages: there’s no analysis for this lens.',
+        fromPassages_other:
+          '{{titles}} were read from their passages: there’s no analysis for this lens.',
+        skipped_one: '{{titles}} had nothing to read.',
+        skipped_other: '{{titles}} had nothing to read.',
+      },
+      views: {
+        word: 'Smart groups',
+        title_one: '{{formatted}} on {{list}}',
+        title_other: '{{formatted}} on {{list}}',
+        none: 'No smart groups on {{list}} yet',
+        countAssets_one: '{{formatted}} document',
+        countAssets_other: '{{formatted}} documents',
+        countIdeas_one: '{{formatted}} idea',
+        countIdeas_other: '{{formatted}} ideas',
+        shared: 'Shared',
+        open: 'OPEN',
+      },
+      campaign: {
+        sources_one: '{{formatted}} source attached',
+        sources_other: '{{formatted}} sources attached',
+        open: 'OPEN',
+      },
+    },
+
     list: {
       empty1: 'No conversations yet.',
       empty2: 'Open a campaign or a post to start one.',

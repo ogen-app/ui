@@ -7,9 +7,18 @@ import { humanizeStep } from '@/lib/assistantTools'
 import type { ViewContext, ViewEntityKind, ViewScreen } from '@/lib/viewContext'
 import type { UIAction } from '@/lib/assistantUiActions'
 import type {
+  AnalysisLens,
+  AnalysisRead,
+  AssetComparedRef,
+  AssetComparison,
+  AssetsAsk,
+  AssetsResults,
   AssistantAction,
   AssistantProposal,
   CalendarFindings,
+  CampaignFromAssets,
+  ComparedClaim,
+  SavedViewList,
   AssistantResultDetails,
   CampaignAssistantAction,
   Grounding,
@@ -61,6 +70,8 @@ export type AssistantTurnResult = {
   proposals: AssistantProposal[]
   /** Changes to the screen, in order (CON-450, D5). */
   uiActions: UIAction[]
+  /** The assets pack's typed results (CON-460); absent when it ran none. */
+  assets?: AssetsResults
 }
 
 export type AssistantStreamEvent =
@@ -317,7 +328,172 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
         .map(uiAction)
         .filter((a): a is UIAction => a !== null)
     : []
+  result.assets = assetsResults(results)
   return result
+}
+
+/**
+ * The assets pack's typed results (CON-460): each tool's last output under
+ * `results.assets`, and the core `listSavedViews` under `results.savedViews`.
+ * A part this build can't read is left out rather than drawn half-empty.
+ */
+function assetsResults(
+  results: Record<string, unknown>,
+): AssetsResults | undefined {
+  const pack = record(results.assets) ?? {}
+  const out: AssetsResults = {}
+  const ask = assetsAsk(record(pack.ask))
+  if (ask) out.ask = ask
+  const analysis = analysisRead(record(pack.analysis))
+  if (analysis) out.analysis = analysis
+  const compare = assetComparison(record(pack.compare))
+  if (compare) out.compare = compare
+  const views = savedViewList(record(results.savedViews))
+  if (views) out.savedViews = views
+  const campaign = campaignFromAssets(record(pack.campaign))
+  if (campaign) out.campaign = campaign
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+const ASK_SCOPES: AssetsAsk['scope'][] = [
+  'asked',
+  'open_asset',
+  'campaign',
+  'workspace',
+]
+
+function assetsAsk(raw: Record<string, unknown> | null): AssetsAsk | undefined {
+  if (!raw) return undefined
+  const scope = ASK_SCOPES.find((s) => s === raw.scope)
+  if (!scope) return undefined
+  const excerpts = Array.isArray(raw.excerpts) ? raw.excerpts : []
+  return {
+    scope,
+    excerpts: excerpts
+      .filter(isRecord)
+      .map((x) => ({
+        assetId: str(x.assetId),
+        title: str(x.title),
+        pages: str(x.pages),
+      }))
+      .filter((x) => x.assetId),
+  }
+}
+
+function lens(raw: unknown): AnalysisLens | undefined {
+  const l = record(raw)
+  if (!l || !str(l.status)) return undefined
+  return {
+    campaignId: optStr(l.campaignId),
+    campaignName: optStr(l.campaignName),
+    status: str(l.status),
+    readAt: optStr(l.readAt),
+  }
+}
+
+function analysisRead(
+  raw: Record<string, unknown> | null,
+): AnalysisRead | undefined {
+  const own = raw ? lens(raw.lens) : undefined
+  if (!raw || !own || !str(raw.assetId)) return undefined
+  const ideas = record(raw.ideas) ?? {}
+  return {
+    assetId: str(raw.assetId),
+    title: str(raw.title),
+    lens: own,
+    gist: str(raw.gist),
+    summary: str(raw.summary),
+    keyPoints: strings(raw.keyPoints),
+    ideas: {
+      undecided: num(ideas.undecided),
+      yes: num(ideas.yes),
+      later: num(ideas.later),
+      no: num(ideas.no),
+    },
+    topIdeas: (Array.isArray(raw.topIdeas) ? raw.topIdeas : [])
+      .filter(isRecord)
+      .map((i) => ({
+        id: str(i.id),
+        title: str(i.title),
+        verdict: optStr(i.verdict),
+      }))
+      .filter((i) => i.id && i.title),
+    failureReason: optStr(raw.failureReason),
+    otherLenses: (Array.isArray(raw.otherLenses) ? raw.otherLenses : [])
+      .map(lens)
+      .filter((l): l is AnalysisLens => l !== undefined),
+  }
+}
+
+function comparedRefs(value: unknown): AssetComparedRef[] {
+  return (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .map((a) => ({
+      id: str(a.id),
+      title: str(a.title),
+      letter: str(a.letter),
+      from: (a.from === 'passages' ? 'passages' : 'analysis') as
+        'analysis' | 'passages',
+    }))
+    .filter((a) => a.id)
+}
+
+function claims(value: unknown): ComparedClaim[] {
+  return (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .map((c) => ({ text: str(c.text), letters: strings(c.letters) }))
+    .filter((c) => c.text)
+}
+
+function assetComparison(
+  raw: Record<string, unknown> | null,
+): AssetComparison | undefined {
+  if (!raw) return undefined
+  const assets = comparedRefs(raw.assets)
+  if (assets.length === 0) return undefined
+  return {
+    mode: raw.mode === 'summarise' ? 'summarise' : 'compare',
+    assets,
+    summary: str(raw.summary),
+    shared: claims(raw.shared),
+    partial: claims(raw.partial),
+    conflicts: claims(raw.conflicts),
+    skipped: comparedRefs(raw.skipped),
+    grounding: grounding(raw.grounding),
+  }
+}
+
+function savedViewList(
+  raw: Record<string, unknown> | null,
+): SavedViewList | undefined {
+  if (!raw || (raw.list !== 'ideas' && raw.list !== 'assets')) return undefined
+  return {
+    list: raw.list,
+    views: (Array.isArray(raw.views) ? raw.views : [])
+      .filter(isRecord)
+      .map((v) => ({
+        id: str(v.id),
+        name: str(v.name),
+        shared: v.shared === true,
+        count: typeof v.count === 'number' ? v.count : undefined,
+      }))
+      .filter((v) => v.id && v.name),
+  }
+}
+
+function campaignFromAssets(
+  raw: Record<string, unknown> | null,
+): CampaignFromAssets | undefined {
+  if (!raw || !str(raw.campaignId)) return undefined
+  return {
+    campaignId: str(raw.campaignId),
+    name: str(raw.name),
+    type: str(raw.type),
+    startDate: optStr(raw.startDate),
+    endDate: optStr(raw.endDate),
+    assetIds: strings(raw.assetIds),
+    undoId: optStr(raw.undoId),
+  }
 }
 
 function calendarFindings(raw: Record<string, unknown>): CalendarFindings {
