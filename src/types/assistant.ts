@@ -413,27 +413,101 @@ export type BrandFinding = {
 }
 
 /**
+ * One way to repair a finding (CON-454/462). It carries an offer to confirm
+ * (`proposalId`), or is a post to open; everything else is what the offer
+ * will do, for the card to say. The title is the server's words.
+ */
+export type RepairFix = {
+  /**
+   * redistribute | plan_window | open_post | move_post | enable_post_type |
+   * convert_post_type | unschedule | delete | improve_brief | revise_post
+   */
+  kind: string
+  title: string
+  postId?: string
+  /** The posts a convert, unschedule or delete fix changes. */
+  postIds?: string[]
+  proposalId?: string
+}
+
+/** A calendar problem with the fixes that would resolve it. */
+export type CalendarFinding = {
+  /** Dismisses it while its posts stay the same. */
+  key: string
+  code: string
+  severity: 'warning' | 'info'
+  /** The server's words. */
+  message: string
+  postIds: string[]
+  fixes: RepairFix[]
+}
+
+/**
  * A campaign calendar's open problems (CON-454), each with the fixes that
- * would resolve it. A fix carries an offer to confirm, or a post to open.
- * Message and titles are the server's words.
+ * would resolve it. Message and titles are the server's words.
  */
 export type CalendarFindings = {
   campaignId: string
-  findings: {
-    key: string
-    code: string
-    severity: 'warning' | 'info'
-    message: string
-    postIds: string[]
-    fixes: {
-      kind: string
-      title: string
-      postId?: string
-      proposalId?: string
-    }[]
-  }[]
+  findings: CalendarFinding[]
   /** Findings left out because the user dismissed them. */
   dismissed: number
+}
+
+/** A brief or post finding from `reviewCampaign` (CON-462). */
+export type CampaignReviewFinding = {
+  kind: 'brief' | 'post'
+  key: string
+  severity?: ReviewSeverity
+  /** The brief's aspect, worded, or the post's title. */
+  label?: string
+  postId?: string
+  issue: string
+  suggestion?: string
+  fixes: RepairFix[]
+}
+
+/** The campaign's brief and posts reviewed against each other. */
+export type CampaignReview = {
+  campaignId: string
+  postsChecked: number
+  findings: CampaignReviewFinding[]
+  dismissed: number
+}
+
+/** The moves `optimiseCalendar` offers, and the posts it leaves in place. */
+export type CalendarPlan = {
+  campaignId: string
+  proposalId?: string
+  /** Dates are days, YYYY-MM-DD. */
+  moves: { postId: string; title: string; from: string; to: string }[]
+  /** Scheduled posts: a copy waits to publish, so they never move. */
+  locked: { postId: string; title: string; date: string }[]
+}
+
+/** What a repair fix did to posts: converted, unscheduled or deleted. */
+export type PostsChanged = {
+  changed: number
+  /** Scheduled posts being withdrawn from publishing; no undo reaches them. */
+  withdrawing: number
+  /** Posts left as they were; the reason is the server's words. */
+  skipped: { postId: string; reason: string }[]
+  undoId?: string
+}
+
+/**
+ * What the repair pack's calendar and review tools did this turn (CON-462),
+ * read from `results.repair` — each tool's last output. The calendar check
+ * itself is the turn's `findings`, as the stream already delivers it.
+ */
+export type RepairResults = {
+  review?: CampaignReview
+  plan?: CalendarPlan
+  /** `changePostType`. */
+  converted?: PostsChanged
+  /** `unschedulePosts`. */
+  unscheduled?: PostsChanged
+  /** `deletePosts`: never undone. */
+  deleted?: PostsChanged
 }
 
 /** Where an undo stands, by the action's undo id. */
@@ -486,6 +560,10 @@ export type AssistantTurn = {
   undo?: Record<string, UndoState>
   /** A calendar check this turn ran (CON-454). */
   findings?: CalendarFindings
+  /** Findings ignored from this turn's cards, by key. */
+  ignored?: string[]
+  /** What the repair tools did this turn (CON-462). */
+  repair?: RepairResults
   /** What the assets pack's tools found this turn (CON-460). */
   assets?: AssetsResults
   /** What the brand tools did this turn (CON-461). */

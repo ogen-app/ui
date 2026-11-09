@@ -1379,6 +1379,15 @@ export const es: Translation = {
     openAssets: 'ABRIR RECURSOS',
     openSettings: 'ABRIR AJUSTES',
     noDate: 'Sin fecha',
+    problems: {
+      fix: 'ARREGLAR CON EL ASISTENTE',
+      openPost: 'ABRIR PUBLICACIÓN',
+      ignore: 'IGNORAR',
+      ignoreFailed: 'No se pudo ignorar ese problema. Inténtalo de nuevo.',
+      ignored_one: '{{formatted}} ignorado',
+      ignored_other: '{{formatted}} ignorados',
+      ask: 'Arregla el problema {{key}}: {{problem}}',
+    },
   },
 
   calendar: {
@@ -2427,6 +2436,60 @@ export const es: Translation = {
       or: 'o {{fix}}',
       dismissed_one: 'Se ha omitido {{formatted}} hallazgo descartado.',
       dismissed_other: 'Se han omitido {{formatted}} hallazgos descartados.',
+      ignore: 'IGNORAR',
+      ignored: 'Ignorado: {{finding}}',
+      ignoreFailed: 'No se pudo ignorar. Inténtalo de nuevo.',
+      deleteAsk_one: '¿Eliminar esta publicación? Nada la recupera.',
+      deleteAsk_other:
+        '¿Eliminar estas {{formatted}} publicaciones? Nada las recupera.',
+      deleteConfirm_one: 'ELIMINAR PUBLICACIÓN',
+      deleteConfirm_other: 'ELIMINAR {{formatted}} PUBLICACIONES',
+      keep: 'CONSERVAR',
+    },
+
+    repair: {
+      untitled: 'Publicación sin título',
+      withdrawing_one:
+        'Se está retirando de la publicación {{formatted}} publicación programada. Conserva su fecha y ningún deshacer la devuelve.',
+      withdrawing_other:
+        'Se están retirando de la publicación {{formatted}} publicaciones programadas. Conservan sus fechas y ningún deshacer las devuelve.',
+      skipped: 'Se dejó como estaba: {{reason}}',
+      converted: {
+        word: 'Convertidas',
+        title_one: '{{formatted}} publicación cambió de tipo',
+        title_other: '{{formatted}} publicaciones cambiaron de tipo',
+      },
+      unscheduled: {
+        word: 'Fuera del calendario',
+        title_one: '{{formatted}} publicación sacada del calendario',
+        title_other: '{{formatted}} publicaciones sacadas del calendario',
+      },
+      deleted: {
+        word: 'Eliminadas',
+        title_one: '{{formatted}} publicación eliminada',
+        title_other: '{{formatted}} publicaciones eliminadas',
+      },
+      review: {
+        word: 'Revisión',
+        none: 'El brief y las publicaciones coinciden',
+        title_one: '{{formatted}} cosa se aparta del brief',
+        title_other: '{{formatted}} cosas se apartan del brief',
+        read_one: '{{formatted}} publicación leída',
+        read_other: '{{formatted}} publicaciones leídas',
+        detail: '{{label}} · {{suggestion}}',
+      },
+      plan: {
+        word: 'Propuesta',
+        even: 'El calendario ya está equilibrado',
+        title_one: 'Mover {{formatted}} publicación',
+        title_other: 'Mover {{formatted}} publicaciones',
+        locked_one: '{{formatted}} publicación programada se queda',
+        locked_other: '{{formatted}} publicaciones programadas se quedan',
+        move: '{{from}} → {{to}}',
+        stays: 'Se queda el {{date}}',
+        more_one: 'y {{formatted}} movimiento más',
+        more_other: 'y {{formatted}} movimientos más',
+      },
     },
 
     undo: {

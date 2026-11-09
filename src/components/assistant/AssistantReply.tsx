@@ -11,6 +11,7 @@ import { UiActionRows } from './UiActionRows'
 import { FindingsBlock } from './FindingsBlock'
 import { AssetsResults } from './AssetsResults'
 import { FoundationResults } from './FoundationResults'
+import { RepairResults } from './RepairResults'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib'
 import type { AssistantAction, AssistantTurn } from '@/types/assistant'
@@ -100,7 +101,21 @@ export function AssistantReply({
       {settled && turn.findings && (
         <FindingsBlock
           threadId={threadId}
+          turnId={turn.id}
           findings={turn.findings}
+          ignored={turn.ignored}
+          disabled={running}
+        />
+      )}
+
+      {/* The review, the optimise plan and the post fixes (CON-462). */}
+      {settled && turn.repair && (
+        <RepairResults
+          threadId={threadId}
+          turnId={turn.id}
+          results={turn.repair}
+          ignored={turn.ignored}
+          undoStates={turn.undo ?? {}}
           disabled={running}
         />
       )}

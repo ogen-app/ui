@@ -1715,6 +1715,21 @@ export const en = {
      * and a blank cell reads as a bug rather than as the fact it is.
      */
     noDate: 'No date',
+
+    /**
+     * The calendar's problems, read from the server (CON-462). The fix is
+     * asked of the campaign's assistant, which offers it to confirm.
+     */
+    problems: {
+      fix: 'FIX WITH ASSISTANT',
+      openPost: 'OPEN POST',
+      ignore: 'IGNORE',
+      ignoreFailed: 'Couldn’t ignore that problem. Try again.',
+      ignored_one: '{{formatted}} ignored',
+      ignored_other: '{{formatted}} ignored',
+      /** Sent to the campaign's assistant; it names the problem by its key. */
+      ask: 'Fix the problem {{key}}: {{problem}}',
+    },
   },
 
   calendar: {
@@ -2941,6 +2956,62 @@ export const en = {
       or: 'or {{fix}}',
       dismissed_one: '{{formatted}} dismissed finding left out.',
       dismissed_other: '{{formatted}} dismissed findings left out.',
+      ignore: 'IGNORE',
+      ignored: 'Ignored: {{finding}}',
+      ignoreFailed: 'Couldn’t ignore that. Try again.',
+      /** Asked before a delete fix runs: nothing brings the posts back. */
+      deleteAsk_one: 'Delete this post? Nothing brings it back.',
+      deleteAsk_other:
+        'Delete these {{formatted}} posts? Nothing brings them back.',
+      deleteConfirm_one: 'DELETE POST',
+      deleteConfirm_other: 'DELETE {{formatted}} POSTS',
+      keep: 'KEEP',
+    },
+
+    /** The repair pack's review, optimise and post fixes (CON-462). */
+    repair: {
+      untitled: 'Untitled post',
+      withdrawing_one:
+        '{{formatted}} scheduled post is being withdrawn from publishing. It keeps its date, and no undo puts it back.',
+      withdrawing_other:
+        '{{formatted}} scheduled posts are being withdrawn from publishing. They keep their dates, and no undo puts them back.',
+      skipped: 'Left as it was: {{reason}}',
+      converted: {
+        word: 'Converted',
+        title_one: '{{formatted}} post changed type',
+        title_other: '{{formatted}} posts changed type',
+      },
+      unscheduled: {
+        word: 'Off the calendar',
+        title_one: '{{formatted}} post taken off the calendar',
+        title_other: '{{formatted}} posts taken off the calendar',
+      },
+      deleted: {
+        word: 'Deleted',
+        title_one: '{{formatted}} post deleted',
+        title_other: '{{formatted}} posts deleted',
+      },
+      review: {
+        word: 'Review',
+        none: 'The brief and the posts agree',
+        title_one: '{{formatted}} thing drifts from the brief',
+        title_other: '{{formatted}} things drift from the brief',
+        read_one: '{{formatted}} post read',
+        read_other: '{{formatted}} posts read',
+        detail: '{{label}} · {{suggestion}}',
+      },
+      plan: {
+        word: 'Proposed',
+        even: 'The calendar is already even',
+        title_one: 'Move {{formatted}} post',
+        title_other: 'Move {{formatted}} posts',
+        locked_one: '{{formatted}} scheduled post stays',
+        locked_other: '{{formatted}} scheduled posts stay',
+        move: '{{from}} → {{to}}',
+        stays: 'Stays {{date}}',
+        more_one: 'and {{formatted}} more move',
+        more_other: 'and {{formatted}} more moves',
+      },
     },
 
     /** Reversing a change a turn made. */

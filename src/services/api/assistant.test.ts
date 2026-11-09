@@ -589,3 +589,145 @@ describe('the brand tools’ results (CON-461)', () => {
     expect(read({ foundation: { getBrand: { voices: [] } } })).toBeUndefined()
   })
 })
+
+describe('the repair pack’s results (CON-462)', () => {
+  const read = (results: object) =>
+    parseHistoryResult(
+      JSON.stringify({ explanation: 'Done.', action: 'answered', results }),
+      'campaign',
+    )
+
+  it('replays a recorded calendar check as the turn’s findings', () => {
+    const result = read({
+      repair: {
+        checkCalendar: {
+          campaignId: 'c1',
+          dismissed: 1,
+          findings: [
+            {
+              key: 'post_type_not_allowed:abc',
+              code: 'post_type_not_allowed',
+              severity: 'warning',
+              message: '1 story post on Instagram uses a dropped type',
+              postIds: ['p1'],
+              fixes: [
+                {
+                  kind: 'convert_post_type',
+                  title: 'Make them image-post',
+                  postIds: ['p1'],
+                  postType: 'image-post',
+                  proposalId: 'pr1',
+                },
+                {
+                  kind: 'delete',
+                  title: 'Delete them',
+                  postIds: ['p1'],
+                  proposalId: 'pr2',
+                },
+              ],
+            },
+          ],
+        },
+      },
+    })
+    expect(result.findings?.dismissed).toBe(1)
+    expect(result.findings?.findings[0].fixes[1]).toEqual({
+      kind: 'delete',
+      title: 'Delete them',
+      postId: undefined,
+      postIds: ['p1'],
+      proposalId: 'pr2',
+    })
+    expect(result.repair).toBeUndefined()
+  })
+
+  it('reads the review with each finding’s key and fixes', () => {
+    const review = read({
+      repair: {
+        reviewCampaign: {
+          campaignId: 'c1',
+          postsChecked: 4,
+          findings: [
+            {
+              kind: 'brief',
+              key: 'brief_tone:1',
+              severity: 'medium',
+              aspect: 'goal_alignment',
+              issue: 'The goal names no audience.',
+              fixes: [
+                {
+                  kind: 'improve_brief',
+                  title: 'Improve the brief’s goal',
+                  proposalId: 'pr3',
+                },
+              ],
+            },
+            {
+              kind: 'post',
+              key: 'post_drift:2',
+              severity: 'high',
+              postId: 'p2',
+              title: 'Late check-out',
+              issue: 'Promises free parking.',
+              fixes: [
+                {
+                  kind: 'revise_post',
+                  title: 'Rewrite it to follow the brief',
+                  postId: 'p2',
+                  proposalId: 'pr4',
+                },
+                { kind: 'open_post', title: 'Open the post', postId: 'p2' },
+              ],
+            },
+          ],
+        },
+      },
+    }).repair?.review
+    expect(review?.postsChecked).toBe(4)
+    expect(review?.findings.map((f) => [f.kind, f.key, f.label])).toEqual([
+      ['brief', 'brief_tone:1', 'Goal alignment'],
+      ['post', 'post_drift:2', 'Late check-out'],
+    ])
+    expect(review?.findings[1].fixes.map((f) => f.kind)).toEqual([
+      'revise_post',
+      'open_post',
+    ])
+  })
+
+  it('reads the optimise plan with the posts it keeps, and a fix’s undo', () => {
+    const repair = read({
+      repair: {
+        optimiseCalendar: {
+          campaignId: 'c1',
+          proposalId: 'pr5',
+          moves: [
+            {
+              postId: 'p1',
+              title: 'Spa',
+              from: '2026-04-17',
+              to: '2026-04-14',
+            },
+          ],
+          locked: [{ postId: 'p3', title: 'Pool', date: '2026-04-15' }],
+        },
+        changePostType: { changed: 2, undoId: 'u1' },
+        unschedulePosts: {
+          changed: 1,
+          withdrawing: 1,
+          skipped: [{ postId: 'p9', reason: 'it is published' }],
+        },
+      },
+    }).repair
+    expect(repair?.plan?.locked).toEqual([
+      { postId: 'p3', title: 'Pool', date: '2026-04-15' },
+    ])
+    expect(repair?.converted).toEqual({
+      changed: 2,
+      withdrawing: 0,
+      skipped: [],
+      undoId: 'u1',
+    })
+    expect(repair?.unscheduled?.skipped[0].reason).toBe('it is published')
+    expect(repair?.deleted).toBeUndefined()
+  })
+})
