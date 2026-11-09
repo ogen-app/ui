@@ -18,7 +18,6 @@ import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { connectedAccounts } from '@/lib/platformDictionary.ts'
 import type { LearningsMetric, PerformerSort } from '@/types/analytics'
 import { useAssistantPage } from '@/hooks/useAssistantContext'
-import { trailingWindow } from '@/lib/viewContext'
 
 /**
  * Analytics — the workspace's own numbers: what happened (CON-237), which posts
@@ -79,24 +78,30 @@ export function AnalyticsPage() {
     connected.length > 1 ? connected.filter((p) => selected.includes(p.id)) : []
   const slugs = counted.map((p) => p.id)
 
-  // The assistant reads the same period and platforms as the cards, so a
-  // question about "this month" is about what is on screen (CON-451).
-  const days = Number.parseInt(window, 10)
-  const slugKey = slugs.join(',')
+  const overview = useAnalyticsOverview(window, slugs)
+  const performers = useAnalyticsPerformers(window, by, slugs)
+
+  // The assistant reads the period and platforms the overview on screen
+  // answered for (CON-451) — the server's resolved dates, never ones worked out
+  // here, so "this month" means what the card shows even near midnight UTC.
+  const range = overview.range
+  const answeredKey = overview.platforms.join(',')
   useAssistantPage(
     useMemo(
       () =>
-        Number.isFinite(days)
+        range
           ? {
-              window: trailingWindow(days, slugKey ? slugKey.split(',') : []),
+              window: {
+                from: range.from,
+                to: range.to,
+                ...(answeredKey ? { platforms: answeredKey.split(',') } : {}),
+              },
             }
           : null,
-      [days, slugKey],
+      [range, answeredKey],
     ),
   )
 
-  const overview = useAnalyticsOverview(window, slugs)
-  const performers = useAnalyticsPerformers(window, by, slugs)
   const learnings = useAnalyticsLearnings(metric, slugs)
 
   // Each card names the platforms *its* answer counted, not the selection: a

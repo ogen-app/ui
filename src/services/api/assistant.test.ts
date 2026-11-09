@@ -52,6 +52,28 @@ describe('parseHistoryResult', () => {
     ])
   })
 
+  it('reads the documents a draft drew on as its grounding', () => {
+    const read = (draftedPosts: object) =>
+      parseHistoryResult(
+        JSON.stringify({
+          explanation: 'Drafted.',
+          results: { campaign: { draftedPosts } },
+        }),
+        'campaign',
+      ).details.draftedPosts
+    expect(
+      read({ postCount: 2, usedAssets: [{ id: 'a1', title: 'Brochure' }] }),
+    ).toEqual({
+      postCount: 2,
+      warnings: [],
+      grounding: {
+        mode: 'grounded',
+        sources: [{ id: 'a1', title: 'Brochure' }],
+      },
+    })
+    expect(read({ postCount: 2 })).toEqual({ postCount: 2, warnings: [] })
+  })
+
   it('reads a post-pack result and its clone', () => {
     const result = parseHistoryResult(
       JSON.stringify({
