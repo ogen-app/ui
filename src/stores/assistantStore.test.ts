@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AssistantStreamEvent } from '@/services/api/assistant'
 
+const api = vi.hoisted(() => ({
+  dismiss: vi.fn(async () => {}),
+  undo: vi.fn(async () => ({
+    undone: true,
+    kind: 'campaign_dates',
+    entityId: 'c1',
+  })),
+}))
+
 const stream = vi.hoisted(() => ({
   events: [] as AssistantStreamEvent[],
   body: null as unknown,
@@ -18,6 +27,18 @@ vi.mock('@/services/api/assistant', async (importOriginal) => {
         for (const event of stream.events) onEvent(event)
       },
     ),
+    confirmProposal: vi.fn(
+      async (
+        id: string,
+        optionId: string | undefined,
+        onEvent: (e: AssistantStreamEvent) => void,
+      ) => {
+        stream.body = { id, optionId }
+        for (const event of stream.events) onEvent(event)
+      },
+    ),
+    dismissProposal: api.dismiss,
+    undoAssistantAction: api.undo,
   }
 })
 
@@ -38,6 +59,7 @@ function result(changes: Record<string, unknown> = {}) {
     saveVersion: false,
     touched: [],
     unsaved: false,
+    proposals: [],
     ...changes,
   }
 }
@@ -212,5 +234,183 @@ describe('assistantStore', () => {
       scope: { kind: 'workspace' },
     })
     expect(useViewContextStore.getState().dismissed).toBe(false)
+  })
+
+  describe('offers', () => {
+    const card = {
+      id: 'pr1',
+      tool: 'draftIdeas',
+      summary: 'Draft 2 posts from 3 ideas',
+      options: [],
+      status: 'pending' as const,
+    }
+
+    async function withOffer() {
+      const id = useAssistantStore
+        .getState()
+        .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+      stream.events = [
+        { type: 'proposal_created', proposal: card },
+        { type: 'complete', result: result({ proposals: [card] }) },
+      ]
+      await useAssistantStore.getState().send(id, 'Draft these')
+      return id
+    }
+
+    const offer = (id: string) => lastTurnWithOffer(id)?.proposals?.[0]
+
+    function lastTurnWithOffer(id: string) {
+      return useAssistantStore
+        .getState()
+        .threads[id].turns.find((t) => t.proposals?.length)
+    }
+
+    it('keeps an offer on the turn that made it', async () => {
+      const id = await withOffer()
+      expect(offer(id)).toMatchObject({ id: 'pr1', status: 'pending' })
+    })
+
+    it('confirms from the card, as a turn of its own', async () => {
+      const id = await withOffer()
+      stream.events = [
+        { type: 'proposal_resolved', id: 'pr1', status: 'confirmed' },
+        {
+          type: 'complete',
+          result: result({ explanation: 'Done: Draft 2 posts' }),
+        },
+      ]
+      await useAssistantStore.getState().confirmProposal(id, 'pr1')
+      expect(stream.body).toEqual({ id: 'pr1', optionId: undefined })
+      expect(offer(id)?.status).toBe('confirmed')
+      // No user turn: the button is the answer, and the server records it.
+      const turns = useAssistantStore.getState().threads[id].turns
+      expect(turns.filter((t) => t.role === 'user')).toHaveLength(1)
+      expect(turns[turns.length - 1].content).toBe('Done: Draft 2 posts')
+    })
+
+    it('closes an offer the server says is gone', async () => {
+      const id = await withOffer()
+      stream.events = [
+        { type: 'error', message: 'This offer no longer exists.', status: 404 },
+      ]
+      await useAssistantStore.getState().confirmProposal(id, 'pr1')
+      expect(offer(id)).toMatchObject({
+        status: 'closed',
+        error: 'This offer no longer exists.',
+      })
+    })
+
+    it('does not call an offer confirmed when its stream never answered', async () => {
+      const id = await withOffer()
+      const { confirmProposal } = await import('@/services/api/assistant')
+      vi.mocked(confirmProposal).mockRejectedValueOnce(new Error('HTTP 500'))
+      await useAssistantStore.getState().confirmProposal(id, 'pr1')
+      expect(offer(id)).toMatchObject({
+        status: 'closed',
+        error: 'It didn’t go through. Ask again to retry.',
+      })
+    })
+
+    it('dismisses from the card', async () => {
+      const id = await withOffer()
+      await useAssistantStore.getState().dismissProposal(id, 'pr1')
+      expect(api.dismiss).toHaveBeenCalledWith('pr1')
+      expect(offer(id)?.status).toBe('dismissed')
+    })
+
+    it('moves past an offer when the next turn starts', async () => {
+      const id = await withOffer()
+      stream.events = [{ type: 'complete', result: result() }]
+      await useAssistantStore.getState().send(id, 'Actually, wait')
+      expect(offer(id)?.status).toBe('superseded')
+    })
+  })
+
+  describe('undo', () => {
+    it('undoes, and refreshes what it changed back', async () => {
+      const id = useAssistantStore
+        .getState()
+        .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+      stream.events = [{ type: 'complete', result: result() }]
+      await useAssistantStore.getState().send(id, 'Move the end date')
+      const turn = lastTurn(id)
+      await useAssistantStore.getState().undo(id, turn.id, 'u1')
+      expect(lastTurn(id).undo).toEqual({ u1: 'undone' })
+      expect(refreshTouched).toHaveBeenLastCalledWith(expect.anything(), [
+        { kind: 'campaign', id: 'c1' },
+      ])
+    })
+
+    it('says so when the change moved on since', async () => {
+      const id = useAssistantStore
+        .getState()
+        .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+      stream.events = [{ type: 'complete', result: result() }]
+      await useAssistantStore.getState().send(id, 'Move the end date')
+      const { ApiError } = await import('@/services/api/errors')
+      api.undo.mockRejectedValueOnce(new ApiError(409, 'changed'))
+      await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u2')
+      expect(lastTurn(id).undo).toEqual({ u2: 'changed' })
+    })
+
+    it('offers UNDO again after a failure that says nothing about the change', async () => {
+      const id = useAssistantStore
+        .getState()
+        .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+      stream.events = [{ type: 'complete', result: result() }]
+      await useAssistantStore.getState().send(id, 'Move the end date')
+      const { ApiError } = await import('@/services/api/errors')
+      api.undo.mockRejectedValueOnce(new ApiError(500, 'boom'))
+      await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u3')
+      expect(lastTurn(id).undo).toEqual({})
+      await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u3')
+      expect(lastTurn(id).undo).toEqual({ u3: 'undone' })
+    })
+  })
+})
+
+describe('settleHistory', () => {
+  it('reads answers, expiry and supersession back into a reloaded thread', async () => {
+    const { settleHistory } = await import('./assistantStore')
+    const offer = (id: string, summary: string, expiresAt?: string) => ({
+      id,
+      tool: 't',
+      summary,
+      expiresAt,
+      options: [],
+      status: 'pending' as const,
+    })
+    const turns = [
+      { id: 'u1', role: 'user' as const, content: 'Draft these' },
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        content: '',
+        proposals: [offer('p1', 'Draft 2 posts')],
+      },
+      {
+        id: 'u2',
+        role: 'user' as const,
+        content: 'Confirmed: Draft 2 posts',
+        answer: 'confirmed' as const,
+      },
+      {
+        id: 'a2',
+        role: 'assistant' as const,
+        content: '',
+        proposals: [offer('p2', 'Set aside 6 ideas', '2020-01-01T00:00:00Z')],
+      },
+      { id: 'u3', role: 'user' as const, content: 'And these?' },
+      {
+        id: 'a3',
+        role: 'assistant' as const,
+        content: '',
+        proposals: [offer('p3', 'Merge 7 ideas')],
+      },
+    ]
+    settleHistory(turns, Date.parse('2026-11-08T00:00:00Z'))
+    expect(turns[1].proposals?.[0].status).toBe('confirmed')
+    expect(turns[3].proposals?.[0].status).toBe('expired')
+    expect(turns[5].proposals?.[0].status).toBe('pending')
   })
 })

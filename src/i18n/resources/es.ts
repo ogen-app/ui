@@ -1787,6 +1787,32 @@ export const es: Translation = {
       reviewed: 'REVISADO',
       notApplied: 'SIN APLICAR',
       proposal: 'PROPUESTA',
+      choose: 'ELIGE UNA',
+    },
+
+    proposal: {
+      placeholder: 'Responde «sí» para ejecutarla, o di qué cambiar',
+      confirm: 'CONFIRMAR',
+      choose: 'ELEGIR',
+      dismiss: 'DESCARTAR',
+      gone: 'Esta propuesta ya no existe.',
+      failed: 'No se completó. Pídelo de nuevo para reintentarlo.',
+      stopped:
+        'Se detuvo antes de terminar. Lo que hizo está en la respuesta de abajo.',
+      confirmed: '{{summary}} · confirmada',
+      dismissed: '{{summary}} · descartada',
+      expired: '{{summary}} · caducada',
+      superseded: '{{summary}} · sin responder',
+      closed: '{{summary}} · no ejecutada',
+      working: '{{summary}} · en marcha…',
+    },
+
+    undo: {
+      undo: 'DESHACER',
+      undone: 'Deshecho',
+      changed: 'No se puede deshacer: ha vuelto a cambiar desde entonces.',
+      gone: 'Ya no se puede deshacer.',
+      failed: 'No se pudo deshacer. Inténtalo de nuevo.',
     },
 
     sources: {

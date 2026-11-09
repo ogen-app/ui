@@ -2,11 +2,18 @@ import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { cn } from '@/lib'
-import { ResultBlock, ResultRow, SourcesLine } from './blocks'
+import {
+  ResolvedLine,
+  ResultBlock,
+  ResultRow,
+  SourcesLine,
+  TextAction,
+} from './blocks'
 import type {
   AssistantResultDetails,
   ReviewFinding,
   ReviewSeverity,
+  UndoState,
 } from '@/types/assistant'
 import { counted, formatNumber } from '@/lib/intl'
 
@@ -36,17 +43,33 @@ export function hasResultCard(
  * the first would hide the write behind the review, which is precisely the
  * half the user needs to know about.
  */
-export function ResultCard({ details }: { details: AssistantResultDetails }) {
+/**
+ * The undos a result can offer: the ids its writes were logged under, and
+ * where each stands. A write the server could not log carries no id, and so
+ * offers no UNDO.
+ */
+export type ResultUndo = {
+  states: Record<string, UndoState>
+  onUndo: (undoId: string) => void
+}
+
+export function ResultCard({
+  details,
+  undo,
+}: {
+  details: AssistantResultDetails
+  undo?: ResultUndo
+}) {
   const { t } = useTranslation()
   const blocks = [
     briefReview(t, details),
     postsReview(t, details),
-    dates(t, details),
+    dates(t, details, undo),
     redistribute(t, details),
     ideas(t, details),
     drafts(t, details),
-    platforms(t, details),
-    brief(t, details),
+    platforms(t, details, undo),
+    brief(t, details, undo),
   ].filter(Boolean)
 
   if (blocks.length === 0) return null
@@ -103,15 +126,21 @@ function postsReview(t: TFunction, details: AssistantResultDetails) {
   )
 }
 
-function dates(t: TFunction, details: AssistantResultDetails) {
+function dates(
+  t: TFunction,
+  details: AssistantResultDetails,
+  undo?: ResultUndo,
+) {
   if (!details.dates) return null
-  const { startDate, endDate, postsOutsideRange } = details.dates
+  const { startDate, endDate, postsOutsideRange, undoId } = details.dates
   return (
     <ResultBlock
       status={t('assistant.word.done')}
       title={t('assistant.result.datesUpdated')}
       meta={`${startDate} → ${endDate}`}
+      action={<UndoAction t={t} undoId={undoId} undo={undo} />}
     >
+      <UndoNote t={t} undoId={undoId} undo={undo} />
       {postsOutsideRange > 0 && (
         <ResultRow>
           <p className="text-sm text-warning">
@@ -180,20 +209,32 @@ function drafts(t: TFunction, details: AssistantResultDetails) {
   )
 }
 
-function platforms(t: TFunction, details: AssistantResultDetails) {
+function platforms(
+  t: TFunction,
+  details: AssistantResultDetails,
+  undo?: ResultUndo,
+) {
   if (!details.platforms) return null
+  const { added, undoId } = details.platforms
   return (
     <ResultBlock
       status={t('assistant.word.done')}
       title={t('assistant.result.platformsUpdated')}
-      meta={details.platforms.added || undefined}
-    />
+      meta={added || undefined}
+      action={<UndoAction t={t} undoId={undoId} undo={undo} />}
+    >
+      <UndoNote t={t} undoId={undoId} undo={undo} />
+    </ResultBlock>
   )
 }
 
-function brief(t: TFunction, details: AssistantResultDetails) {
+function brief(
+  t: TFunction,
+  details: AssistantResultDetails,
+  undo?: ResultUndo,
+) {
   if (!details.brief) return null
-  const { applied } = details.brief
+  const { applied, undoId } = details.brief
   return (
     <ResultBlock
       status={
@@ -205,7 +246,62 @@ function brief(t: TFunction, details: AssistantResultDetails) {
           ? t('assistant.result.briefApplied')
           : t('assistant.result.briefNotApplied')
       }
-    />
+      action={
+        applied ? <UndoAction t={t} undoId={undoId} undo={undo} /> : undefined
+      }
+    >
+      <UndoNote t={t} undoId={undoId} undo={undo} />
+    </ResultBlock>
+  )
+}
+
+/** UNDO on the headline it undoes; gone once it has been asked for. */
+function UndoAction({
+  t,
+  undoId,
+  undo,
+}: {
+  t: TFunction
+  undoId?: string
+  undo?: ResultUndo
+}) {
+  if (!undoId || !undo) return null
+  const state = undo.states[undoId]
+  if (state && state !== 'pending') return null
+  return (
+    <TextAction
+      disabled={state === 'pending'}
+      onClick={() => undo.onUndo(undoId)}
+    >
+      {t('assistant.undo.undo')}
+    </TextAction>
+  )
+}
+
+/** What became of an undo: done, or why it could not be. */
+function UndoNote({
+  t,
+  undoId,
+  undo,
+}: {
+  t: TFunction
+  undoId?: string
+  undo?: ResultUndo
+}) {
+  const state = undoId ? undo?.states[undoId] : undefined
+  if (!state || state === 'pending') return null
+  return (
+    <ResultRow>
+      {state === 'undone' ? (
+        <ResolvedLine>{t('assistant.undo.undone')}</ResolvedLine>
+      ) : (
+        <p className="text-[12.5px] text-warning">
+          {state === 'changed'
+            ? t('assistant.undo.changed')
+            : t('assistant.undo.gone')}
+        </p>
+      )}
+    </ResultRow>
   )
 }
 

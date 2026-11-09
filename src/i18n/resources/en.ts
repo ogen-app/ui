@@ -2284,6 +2284,38 @@ export const en = {
       reviewed: 'REVIEWED',
       notApplied: 'NOT APPLIED',
       proposal: 'PROPOSAL',
+      choose: 'CHOOSE ONE',
+    },
+
+    /**
+     * An offer held for the user's yes (CON-446). The summary is the server's
+     * own words; the client wraps it, it never rewrites it.
+     */
+    proposal: {
+      /** The composer, while an offer is waiting. */
+      placeholder: 'Reply “yes” to run it, or say what to change',
+      confirm: 'CONFIRM',
+      choose: 'CHOOSE',
+      dismiss: 'DISMISS',
+      gone: 'This offer no longer exists.',
+      failed: 'It didn’t go through. Ask again to retry.',
+      stopped:
+        'Stopped before it finished. Anything it did is in the reply below.',
+      confirmed: '{{summary}} · confirmed',
+      dismissed: '{{summary}} · dismissed',
+      expired: '{{summary}} · expired',
+      superseded: '{{summary}} · not answered',
+      closed: '{{summary}} · not run',
+      working: '{{summary}} · working…',
+    },
+
+    /** Reversing a change a turn made. */
+    undo: {
+      undo: 'UNDO',
+      undone: 'Undone',
+      changed: 'Can’t undo: it was changed again since.',
+      gone: 'This can no longer be undone.',
+      failed: 'Couldn’t undo that. Try again.',
     },
 
     /**

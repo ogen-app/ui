@@ -91,6 +91,7 @@ describe('assistant in Spanish', () => {
   it('words the footer and the timeline', () => {
     render(
       <AssistantReply
+        threadId="campaign:c1"
         turn={{
           id: 't',
           role: 'assistant',

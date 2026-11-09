@@ -6,6 +6,8 @@ import type { TFunction } from 'i18next'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
 import { hasResultCard, ResultCard } from './ResultCard'
+import { ProposalCard } from './ProposalCard'
+import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib'
 import type { AssistantAction, AssistantTurn } from '@/types/assistant'
 
@@ -30,8 +32,18 @@ function Inline({ spans }: { spans: InlineSpan[] }) {
  * so the panel reads as a document the assistant is writing into, and the
  * user's own bubbles are the only punctuation in the column.
  */
-export function AssistantReply({ turn }: { turn: AssistantTurn }) {
+export function AssistantReply({
+  turn,
+  threadId,
+  running = false,
+}: {
+  turn: AssistantTurn
+  threadId: string
+  /** A turn is in flight in this thread: offers can't be answered meanwhile. */
+  running?: boolean
+}) {
   const { t } = useTranslation()
+  const undo = useAssistantStore((s) => s.undo)
   const blocks = parseAssistantMarkup(turn.content)
   const steps = turn.steps ?? []
   const settled = !turn.streaming && !turn.failed
@@ -69,7 +81,26 @@ export function AssistantReply({ turn }: { turn: AssistantTurn }) {
       )}
 
       {/* The structured result behind the action — campaign turns only. */}
-      {showCard && turn.details && <ResultCard details={turn.details} />}
+      {showCard && turn.details && (
+        <ResultCard
+          details={turn.details}
+          undo={{
+            states: turn.undo ?? {},
+            onUndo: (undoId) => void undo(threadId, turn.id, undoId),
+          }}
+        />
+      )}
+
+      {/* Offers this turn made, waiting for a yes — or answered since. */}
+      {settled &&
+        turn.proposals?.map((proposal) => (
+          <ProposalCard
+            key={proposal.id}
+            threadId={threadId}
+            proposal={proposal}
+            disabled={running}
+          />
+        ))}
 
       {/* A clone the turn created — an opt-in jump to the new post's editor
           (CON-59). The source thread stays put; the user chooses to switch. */}
