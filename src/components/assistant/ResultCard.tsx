@@ -15,6 +15,7 @@ import type {
   ReviewSeverity,
   UndoState,
 } from '@/types/assistant'
+import { counted, formatNumber } from '@/lib/intl'
 
 /**
  * The structured half of a campaign-pack turn. The reviews (CON-116) return
@@ -93,7 +94,7 @@ function briefReview(t: TFunction, details: AssistantResultDetails) {
           ? t('assistant.result.briefConsistent')
           : t('assistant.result.briefIssues')
       }
-      meta={t('assistant.result.findings', { count: findings.length })}
+      meta={t('assistant.result.findings', counted(findings.length))}
     >
       <Findings
         findings={findings}
@@ -106,12 +107,15 @@ function briefReview(t: TFunction, details: AssistantResultDetails) {
 function postsReview(t: TFunction, details: AssistantResultDetails) {
   if (!details.postsReview) return null
   const { checked, total, capped, findings } = details.postsReview
-  const drifts = t('assistant.result.drifts', { count: findings.length })
+  const drifts = t('assistant.result.drifts', counted(findings.length))
   return (
     <ResultBlock
       status={t('assistant.word.reviewed')}
       tone={findings.length === 0 ? 'neutral' : 'warning'}
-      title={t('assistant.result.checkedPosts', { checked, total })}
+      title={t('assistant.result.checkedPosts', {
+        checked: formatNumber(checked),
+        total: formatNumber(total),
+      })}
       meta={capped ? t('assistant.result.capped', { drifts }) : drifts}
     >
       <Findings
@@ -140,7 +144,7 @@ function dates(
       {postsOutsideRange > 0 && (
         <ResultRow>
           <p className="text-sm text-warning">
-            {t('assistant.result.outsideRange', { count: postsOutsideRange })}
+            {t('assistant.result.outsideRange', counted(postsOutsideRange))}
           </p>
         </ResultRow>
       )}
@@ -159,8 +163,8 @@ function redistribute(t: TFunction, details: AssistantResultDetails) {
       <ResultRow>
         <p className="text-sm text-secondary-foreground">
           {t('assistant.result.redistributed', {
-            count: postsUpdated,
-            phases: t('assistant.result.phases', { count: phaseCount }),
+            ...counted(postsUpdated),
+            phases: t('assistant.result.phases', counted(phaseCount)),
           })}
         </p>
       </ResultRow>
@@ -178,7 +182,7 @@ function ideas(t: TFunction, details: AssistantResultDetails) {
       title={
         planned.ideaCount === 0
           ? t('assistant.result.ideasNone')
-          : t('assistant.result.ideas', { count: planned.ideaCount })
+          : t('assistant.result.ideas', counted(planned.ideaCount))
       }
     >
       <Warnings warnings={planned.warnings} />
@@ -196,7 +200,7 @@ function drafts(t: TFunction, details: AssistantResultDetails) {
       title={
         drafted.postCount === 0
           ? t('assistant.result.draftsNone')
-          : t('assistant.result.drafts', { count: drafted.postCount })
+          : t('assistant.result.drafts', counted(drafted.postCount))
       }
     >
       <Warnings warnings={drafted.warnings} />

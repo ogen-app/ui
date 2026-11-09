@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { counted, formatNumber } from '@/lib/intl'
 import { MAX_SELECTION_IDS } from '@/lib/viewContext'
 import type {
   ViewContext,
@@ -55,16 +56,22 @@ export function chipText(
   if (selection && location.screen) {
     const screen = screenName(t, location.screen)
     if (selection.matching)
-      return t('assistant.chip.matching', { count: selection.count, screen })
+      return t('assistant.chip.matching', {
+        ...counted(selection.count),
+        screen,
+      })
     // More ticked than a turn can carry: only the first go, so say so here
     // rather than let the chip claim the whole selection travels.
     if (selection.count > MAX_SELECTION_IDS)
       return t('assistant.chip.selectedCapped', {
-        limit: MAX_SELECTION_IDS,
-        total: selection.count,
+        limit: formatNumber(MAX_SELECTION_IDS),
+        total: formatNumber(selection.count),
         screen,
       })
-    return t('assistant.chip.selected', { count: selection.count, screen })
+    return t('assistant.chip.selected', {
+      ...counted(selection.count),
+      screen,
+    })
   }
   const focus = location.focus
   if (!focus) return null
@@ -105,15 +112,15 @@ export function markerText(
   const moved = previous !== undefined
   if (!selection)
     return t(moved ? 'assistant.marker.now' : 'assistant.marker.on', { screen })
-  const count = selection.count
+  const count = counted(selection.count)
   if (selection.matching) {
     return moved
-      ? t('assistant.marker.nowMatching', { screen, count })
-      : t('assistant.marker.onMatching', { screen, count })
+      ? t('assistant.marker.nowMatching', { screen, ...count })
+      : t('assistant.marker.onMatching', { screen, ...count })
   }
   return moved
-    ? t('assistant.marker.nowSelected', { screen, count })
-    : t('assistant.marker.onSelected', { screen, count })
+    ? t('assistant.marker.nowSelected', { screen, ...count })
+    : t('assistant.marker.onSelected', { screen, ...count })
 }
 
 /** The marker before each user turn that has one, keyed by turn id. */
