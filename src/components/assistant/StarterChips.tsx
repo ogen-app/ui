@@ -80,6 +80,15 @@ type StarterKey =
   | 'compareSelected'
   | 'campaignFromSelected'
   | 'whatAnalysisFound'
+  | 'readBrand'
+  | 'summariseVoice'
+  | 'checkAgainstVoice'
+  | 'expiredFacts'
+  | 'ourSeries'
+  | 'makeSeries'
+  | 'storyTemplates'
+  | 'ourPalette'
+  | 'checkBrandSelected'
   | 'summariseSelected'
   | 'planFromSelected'
   | 'tagSelected'
@@ -229,7 +238,45 @@ const FOUNDATION: ScreenStarters = {
     { icon: QuestionIcon, key: 'stanceOn' },
     { icon: CalendarBlankIcon, key: 'factsStale' },
     { icon: SealCheckIcon, key: 'checkGuardrails' },
+    { icon: SparkleIcon, key: 'readBrand' },
   ],
+}
+
+/** Each Foundation section's own verbs (CON-461). */
+const FOUNDATION_VOICES: ScreenStarters = {
+  none: [
+    { icon: ListBulletsIcon, key: 'summariseVoice' },
+    { icon: SealCheckIcon, key: 'checkAgainstVoice' },
+    { icon: QuestionIcon, key: 'stanceOn' },
+  ],
+}
+
+const FOUNDATION_FACTS: ScreenStarters = {
+  none: [
+    { icon: ArrowCounterClockwiseIcon, key: 'expiredFacts' },
+    { icon: CalendarBlankIcon, key: 'factsStale' },
+    { icon: QuestionIcon, key: 'stanceOn' },
+  ],
+}
+
+const FOUNDATION_SERIES: ScreenStarters = {
+  none: [
+    { icon: ListBulletsIcon, key: 'ourSeries' },
+    { icon: NotePencilIcon, key: 'makeSeries' },
+  ],
+}
+
+const FOUNDATION_TEMPLATES: ScreenStarters = {
+  none: [
+    { icon: StackIcon, key: 'storyTemplates' },
+    { icon: SparkleIcon, key: 'ourPalette' },
+  ],
+}
+
+/** A campaign's posts list: its own verbs, and the brand check for a selection. */
+const CAMPAIGN_LIST: ScreenStarters = {
+  none: CAMPAIGN_STARTERS,
+  selected: [{ icon: SealCheckIcon, key: 'checkBrandSelected' }],
 }
 
 const ACTIVITY: ScreenStarters = {
@@ -254,7 +301,15 @@ function screenStarters(screen: ViewScreen | null): ScreenStarters | null {
   if (screen === 'analytics' || screen === 'campaign.analytics')
     return ANALYTICS
   if (screen === 'calendar' || screen === 'campaign.calendar') return CALENDAR
+  if (screen === 'foundation.voices' || screen === 'foundation.voice')
+    return FOUNDATION_VOICES
+  if (screen === 'foundation.facts') return FOUNDATION_FACTS
+  if (screen === 'foundation.series' || screen === 'foundation.series_item')
+    return FOUNDATION_SERIES
+  if (screen === 'foundation.templates' || screen === 'foundation.look')
+    return FOUNDATION_TEMPLATES
   if (screen.startsWith('foundation')) return FOUNDATION
+  if (screen === 'campaign.list') return CAMPAIGN_LIST
   if (screen === 'activity' || screen === 'campaign.activity') return ACTIVITY
   if (screen === 'settings' || screen === 'profile') return SETTINGS
   return null

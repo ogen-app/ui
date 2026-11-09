@@ -19,6 +19,8 @@ function setup() {
     ['assets', 'a1'],
     ['assets', 'list', {}],
     ['brand'],
+    ['series'],
+    ['brandDistills', 'list'],
   ]
   for (const key of keys) qc.setQueryData(key, {})
   const stale = () =>
@@ -72,6 +74,20 @@ describe('refreshTouched', () => {
         ['campaigns', 'c1'],
         ['campaigns', 'c1', 'posts'],
       ]
+        .map((k) => JSON.stringify(k))
+        .sort(),
+    )
+  })
+
+  it('refreshes the brand, the series and the readings the brand tools touch', async () => {
+    const { qc, stale } = setup()
+    await refreshTouched(qc, [
+      { kind: 'voice', id: 'v1' },
+      { kind: 'series' },
+      { kind: 'brand_distill', id: 'r1' },
+    ])
+    expect(stale()).toEqual(
+      [['brand'], ['series'], ['brandDistills', 'list']]
         .map((k) => JSON.stringify(k))
         .sort(),
     )

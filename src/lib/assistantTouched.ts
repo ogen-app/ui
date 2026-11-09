@@ -3,6 +3,8 @@ import { postKey } from '@/hooks/usePost'
 import { campaignKey } from '@/hooks/useCampaigns'
 import { ASSET_LIST_KEY, ASSETS_KEY, assetKey } from '@/hooks/useContent'
 import { BRAND_KEY } from '@/hooks/useBrand'
+import { DISTILLS_KEY } from '@/hooks/useBrandDistill'
+import { SERIES_KEY } from '@/hooks/useSeries'
 import {
   CAMPAIGN_SUMMARIES_KEY,
   WORKSPACE_POSTS_KEY,
@@ -65,8 +67,20 @@ export async function refreshTouched(
         if (id) invalidate(assetKey(id))
         invalidate(id ? ASSET_LIST_KEY : ASSETS_KEY)
         break
+      // The brand library is one read: voices, audiences, guardrails and
+      // facts all live under it (CON-461).
       case 'fact':
+      case 'voice':
+      case 'audience':
+      case 'guardrails':
         invalidate(BRAND_KEY)
+        break
+      case 'series':
+        // The library and every campaign's runs sit under `['series']`.
+        invalidate(SERIES_KEY)
+        break
+      case 'brand_distill':
+        invalidate(DISTILLS_KEY)
         break
       case 'note':
         invalidate(['postNotes'])

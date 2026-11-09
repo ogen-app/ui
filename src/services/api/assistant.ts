@@ -9,6 +9,11 @@ import type { UIAction } from '@/lib/assistantUiActions'
 import type {
   AnalysisLens,
   AnalysisRead,
+  BrandChangeKind,
+  BrandCheck,
+  FoundationResults,
+  SeriesBrief,
+  SeriesRhythm,
   AssetComparedRef,
   AssetComparison,
   AssetsAsk,
@@ -72,6 +77,8 @@ export type AssistantTurnResult = {
   uiActions: UIAction[]
   /** The assets pack's typed results (CON-460); absent when it ran none. */
   assets?: AssetsResults
+  /** The brand tools' typed results (CON-461); absent when none ran. */
+  foundation?: FoundationResults
 }
 
 export type AssistantStreamEvent =
@@ -329,7 +336,251 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
         .filter((a): a is UIAction => a !== null)
     : []
   result.assets = assetsResults(results)
+  result.foundation = foundationResults(results)
   return result
+}
+
+/**
+ * The brand tools' results (CON-461): `results.foundation` holds each tool's
+ * last output keyed by tool name, and the repair pack's brand check sits at
+ * `results.repair.checkBrand`. A family of tools (add, update, remove) fills
+ * one card, and which of them ran is the change it reports.
+ */
+function foundationResults(
+  results: Record<string, unknown>,
+): FoundationResults | undefined {
+  const f = record(results.foundation) ?? {}
+  const out: FoundationResults = {}
+  const pick = (
+    names: [string, BrandChangeKind][],
+  ): [Record<string, unknown>, BrandChangeKind] | null => {
+    for (const [name, change] of names) {
+      const raw = record(f[name])
+      if (raw) return [raw, change]
+    }
+    return null
+  }
+
+  const voice = pick([
+    ['removeVoice', 'removed'],
+    ['updateVoice', 'updated'],
+    ['addVoice', 'added'],
+  ])
+  const v = voice && record(voice[0].voice)
+  if (voice && v && str(v.id)) {
+    const rules = record(v.rules)
+    out.voice = {
+      change: voice[1],
+      id: str(v.id),
+      name: str(v.name),
+      whenToUse: str(v.whenToUse),
+      isDefault: v.isDefault === true,
+      rules: rules
+        ? {
+            emoji: str(rules.emoji),
+            formality: str(rules.formality),
+            person: str(rules.person),
+            length: str(rules.length),
+          }
+        : undefined,
+      unbound: num(voice[0].unbound),
+      undoId: optStr(voice[0].undoId),
+    }
+  }
+
+  const audience = pick([
+    ['removeAudience', 'removed'],
+    ['updateAudience', 'updated'],
+    ['addAudience', 'added'],
+  ])
+  const a = audience && record(audience[0].audience)
+  if (audience && a && str(a.id)) {
+    out.audience = {
+      change: audience[1],
+      id: str(a.id),
+      name: str(a.name),
+      who: str(a.who),
+      readsOn: str(a.readsOn),
+      unbound: num(audience[0].unbound),
+      undoId: optStr(audience[0].undoId),
+    }
+  }
+
+  const guard = record(f.updateGuardrails)
+  const g = guard && record(guard.guardrails)
+  if (guard && g) {
+    out.guardrails = {
+      mayClaim: strings(g.mayClaim).length,
+      neverClaim: strings(g.neverClaim).length,
+      bannedWords: strings(g.bannedWords),
+      disclaimer: str(g.disclaimer),
+      undoId: optStr(guard.undoId),
+    }
+  }
+
+  const factOut = record(f.updateFact)
+  const fact = factOut && (record(factOut.fact) ?? factOut)
+  if (factOut && fact && str(fact.id) && str(fact.statement)) {
+    out.fact = {
+      id: str(fact.id),
+      statement: str(fact.statement),
+      source: str(fact.source),
+      expiresAt: str(fact.expiresAt),
+      undoId: optStr(factOut.undoId),
+    }
+  }
+
+  const bulk = record(f.editBrand)
+  if (bulk) {
+    out.bulk = {
+      done: num(bulk.done),
+      undoIds: strings(bulk.undoIds),
+      failed: (Array.isArray(bulk.failed) ? bulk.failed : [])
+        .filter(isRecord)
+        .map((x) => ({ what: str(x.what), reason: str(x.reason) })),
+      stopped: optStr(bulk.stopped),
+    }
+  }
+
+  const distill =
+    record(f.answerDistillQuestions) ??
+    record(f.startBrandDistill) ??
+    record(f.getBrandDistill)
+  if (distill && str(distill.runId)) {
+    const counts = record(distill.counts) ?? {}
+    const failure = record(distill.failure)
+    out.distill = {
+      runId: str(distill.runId),
+      status: str(distill.status),
+      failure: failure
+        ? str(failure.message) || str(failure.code) || undefined
+        : undefined,
+      counts: {
+        voices: num(counts.voices),
+        audiences: num(counts.audiences),
+        guardrails: num(counts.guardrails),
+        facts: num(counts.facts),
+        questions: num(counts.questions),
+      },
+      questions: (Array.isArray(distill.questions) ? distill.questions : [])
+        .filter(isRecord)
+        .map((q) => ({ id: str(q.id), text: str(q.text) }))
+        .filter((q) => q.id && q.text),
+    }
+  }
+
+  const saved = record(f.commitBrandDistill)
+  if (saved && str(saved.runId)) {
+    out.distillSaved = {
+      runId: str(saved.runId),
+      voices: num(saved.voices),
+      audiences: num(saved.audiences),
+      guardrails: num(saved.guardrails),
+      facts: num(saved.facts),
+      skipped: strings(saved.skipped),
+    }
+  }
+
+  const list = record(f.listSeries)
+  if (list) {
+    out.seriesList = {
+      campaignId: optStr(list.campaignId),
+      series: (Array.isArray(list.series) ? list.series : [])
+        .filter(isRecord)
+        .map(seriesBrief)
+        .filter((s): s is SeriesBrief => s !== null),
+    }
+  }
+
+  const series = pick([
+    ['removeSeries', 'removed'],
+    ['updateSeries', 'updated'],
+    ['createSeries', 'added'],
+  ])
+  const brief = series && seriesBrief(record(series[0].series) ?? {})
+  if (series && brief) {
+    out.series = {
+      ...brief,
+      change: series[1],
+      undoId: optStr(series[0].undoId),
+    }
+  }
+
+  const run = record(f.stopSeries) ?? record(f.runSeries)
+  if (run && str(run.seriesId)) {
+    out.run = {
+      campaignId: str(run.campaignId),
+      seriesId: str(run.seriesId),
+      running: run.running === true,
+      rhythm: rhythm(run.rhythm),
+      undoId: optStr(run.undoId),
+    }
+  }
+
+  const brand = record(f.getBrand)
+  if (brand && Array.isArray(brand.expiredFacts)) {
+    out.expiredFacts = brand.expiredFacts
+      .filter(isRecord)
+      .map((x) => ({
+        id: str(x.id),
+        statement: str(x.statement),
+        source: str(x.source),
+        expiresAt: str(x.expiresAt),
+      }))
+      .filter((x) => x.id && x.statement)
+  }
+
+  const check = brandCheck(record(record(results.repair)?.checkBrand))
+  if (check) out.brandCheck = check
+
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+function rhythm(value: unknown): SeriesRhythm | undefined {
+  const r = record(value)
+  if (!r || (r.per !== 'week' && r.per !== 'month') || num(r.times) < 1)
+    return undefined
+  return { times: num(r.times), per: r.per }
+}
+
+function seriesBrief(raw: Record<string, unknown>): SeriesBrief | null {
+  if (!str(raw.id) || !str(raw.name)) return null
+  return {
+    id: str(raw.id),
+    name: str(raw.name),
+    recipe: str(raw.recipe),
+    runs: raw.runs === true,
+    rhythm: rhythm(raw.rhythm),
+    defaultRhythm: rhythm(raw.defaultRhythm),
+  }
+}
+
+function brandCheck(
+  raw: Record<string, unknown> | null,
+): BrandCheck | undefined {
+  if (!raw) return undefined
+  return {
+    checked: num(raw.checked),
+    left: num(raw.left),
+    findings: (Array.isArray(raw.findings) ? raw.findings : [])
+      .filter(isRecord)
+      .map((x) => {
+        const fix = record(x.fix) ?? {}
+        return {
+          postId: str(x.postId),
+          title: str(x.title),
+          rule: str(x.rule),
+          severity: str(x.severity),
+          quote: str(x.quote),
+          issue: str(x.issue),
+          suggestion: str(x.suggestion),
+          campaignId: optStr(x.campaignId),
+          fixTitle: str(fix.title),
+          proposalId: optStr(fix.proposalId),
+        }
+      })
+      .filter((x) => x.postId && x.issue),
+  }
 }
 
 /**

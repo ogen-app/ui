@@ -2009,6 +2009,42 @@ export const es: Translation = {
         label: 'Lo que encontró el análisis',
         text: '¿Qué encontró el análisis?',
       },
+      readBrand: {
+        label: 'Leer la marca',
+        text: 'Lee nuestra marca desde nuestro sitio web: ',
+      },
+      summariseVoice: {
+        label: 'Resumir esta voz',
+        text: 'Resume esta voz.',
+      },
+      checkAgainstVoice: {
+        label: 'Revisar publicaciones con ella',
+        text: 'Revisa las publicaciones programadas con esta voz y nuestras pautas.',
+      },
+      expiredFacts: {
+        label: '¿Qué datos caducaron?',
+        text: '¿Qué datos han caducado?',
+      },
+      ourSeries: {
+        label: 'Nuestras series',
+        text: '¿Qué series tenemos?',
+      },
+      makeSeries: {
+        label: 'Crear una serie',
+        text: 'Crea una serie nueva: ',
+      },
+      storyTemplates: {
+        label: 'Plantillas para historias',
+        text: '¿Qué plantillas sirven para historias de Instagram?',
+      },
+      ourPalette: {
+        label: 'Nuestra paleta',
+        text: '¿Cuál es nuestra paleta?',
+      },
+      checkBrandSelected: {
+        label: 'Revisar con la marca',
+        text: 'Revisa las publicaciones seleccionadas con nuestra voz y nuestras pautas.',
+      },
       summariseSelected: {
         label: 'Resumir estos',
         text: 'Resume los recursos seleccionados.',
@@ -2182,6 +2218,112 @@ export const es: Translation = {
         sources_one: '{{formatted}} fuente adjunta',
         sources_other: '{{formatted}} fuentes adjuntas',
         open: 'ABRIR',
+      },
+    },
+
+    foundation: {
+      word: {
+        added: 'Añadido',
+        removed: 'Eliminado',
+      },
+      noun: {
+        voice: 'voz',
+        audience: 'audiencia',
+        series: 'serie',
+      },
+      open: 'ABRIR',
+      unbound_one:
+        'Retirado de {{formatted}} campaña o publicación que lo usaba',
+      unbound_other:
+        'Retirado de {{formatted}} campañas y publicaciones que lo usaban',
+      voice: {
+        default: 'La voz predeterminada',
+      },
+      audience: {
+        readsOn: 'Lee en {{where}}',
+      },
+      guardrails: {
+        title: 'Pautas',
+        claims: '{{may}} se pueden afirmar · {{never}} nunca',
+        banned: 'Palabras prohibidas',
+        disclaimer: 'Aviso legal',
+      },
+      fact: {
+        expires: 'Caduca el {{date}}',
+        noExpiry: 'No caduca',
+      },
+      bulk: {
+        title_one: '{{formatted}} cambio',
+        title_other: '{{formatted}} cambios',
+        failed: 'No se pudo {{what}}: {{reason}}',
+      },
+      facts: {
+        word: 'Datos',
+        none: 'Ningún dato ha caducado',
+        expired_one: '{{formatted}} caducado',
+        expired_other: '{{formatted}} caducados',
+        expiredOn: 'Caducó el {{date}}',
+        renew: 'RENOVAR',
+        edit: 'EDITAR',
+        renewPrompt: 'Renueva el dato «{{statement}}» para otra temporada.',
+        editPrompt: 'Cambia el dato «{{statement}}» a ',
+      },
+      distill: {
+        word: {
+          reading: 'Leyendo',
+          ready: 'Lista para revisar',
+          failed: 'No se pudo leer',
+          committed: 'Guardada',
+        },
+        title: 'Tu marca',
+        running: 'Leyendo las fuentes. Puedes salir de esta pantalla.',
+        failed: 'La lectura no pudo terminar.',
+        open: 'ABRIR LA LECTURA',
+        voices_one: '{{formatted}} voz',
+        voices_other: '{{formatted}} voces',
+        audiences_one: '{{formatted}} audiencia',
+        audiences_other: '{{formatted}} audiencias',
+        guardrails_one: '{{formatted}} pauta',
+        guardrails_other: '{{formatted}} pautas',
+        facts_one: '{{formatted}} dato',
+        facts_other: '{{formatted}} datos',
+        questions_one: '{{formatted}} pregunta por responder',
+        questions_other: '{{formatted}} preguntas por responder',
+        saved: 'Guardado de la lectura',
+        savedNothing: 'Nada nuevo que guardar',
+        skipped_one: '{{formatted}} omitido',
+        skipped_other: '{{formatted}} omitidos',
+      },
+      series: {
+        word: 'Series',
+        none: 'Aún no hay series',
+        title_one: '{{formatted}} en la biblioteca',
+        title_other: '{{formatted}} en la biblioteca',
+        notRunning: 'No se publica aquí',
+      },
+      rhythm: {
+        week_one: 'Una vez por semana',
+        week_other: '{{formatted}} veces por semana',
+        month_one: 'Una vez al mes',
+        month_other: '{{formatted}} veces al mes',
+      },
+      run: {
+        running: 'En marcha en la campaña',
+        stopped: 'Detenida en la campaña',
+      },
+      check: {
+        word: 'Revisado',
+        none: 'Nada que revisar',
+        title_one: '{{formatted}} cosa que revisar',
+        title_other: '{{formatted}} cosas que revisar',
+        inPosts_one: 'en {{formatted}} publicación',
+        inPosts_other: 'en {{formatted}} publicaciones',
+        fix: 'CORREGIR',
+        openPost: 'ABRIR PUBLICACIÓN',
+        left_one:
+          'No se leyó {{formatted}} publicación más; pídelo de nuevo para revisarla.',
+        left_other:
+          'No se leyeron {{formatted}} publicaciones más; pídelo de nuevo para revisarlas.',
       },
     },
 

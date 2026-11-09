@@ -2493,6 +2493,42 @@ export const en = {
         label: 'What the analysis found',
         text: 'What did the analysis find?',
       },
+      readBrand: {
+        label: 'Read the brand',
+        text: 'Read our brand from our website: ',
+      },
+      summariseVoice: {
+        label: 'Summarise this voice',
+        text: 'Summarise this voice.',
+      },
+      checkAgainstVoice: {
+        label: 'Check posts against it',
+        text: 'Check the scheduled posts against this voice and our guardrails.',
+      },
+      expiredFacts: {
+        label: 'Which facts expired?',
+        text: 'Which facts have expired?',
+      },
+      ourSeries: {
+        label: 'Our series',
+        text: 'What series do we have?',
+      },
+      makeSeries: {
+        label: 'Make a series',
+        text: 'Make a new series: ',
+      },
+      storyTemplates: {
+        label: 'Templates for stories',
+        text: 'Which templates fit Instagram stories?',
+      },
+      ourPalette: {
+        label: 'Our palette',
+        text: 'What’s our palette?',
+      },
+      checkBrandSelected: {
+        label: 'Check against the brand',
+        text: 'Check the selected posts against our voice and guardrails.',
+      },
       summariseSelected: {
         label: 'Summarise these',
         text: 'Summarise the selected assets.',
@@ -2677,6 +2713,110 @@ export const en = {
         sources_one: '{{formatted}} source attached',
         sources_other: '{{formatted}} sources attached',
         open: 'OPEN',
+      },
+    },
+
+    /** The brand tools' results (CON-461). */
+    foundation: {
+      word: {
+        added: 'Added',
+        removed: 'Removed',
+      },
+      noun: {
+        voice: 'voice',
+        audience: 'audience',
+        series: 'series',
+      },
+      open: 'OPEN',
+      unbound_one: 'Taken off {{formatted}} campaign or post that used it',
+      unbound_other: 'Taken off {{formatted}} campaigns and posts that used it',
+      voice: {
+        default: 'The default voice',
+      },
+      audience: {
+        readsOn: 'Reads on {{where}}',
+      },
+      guardrails: {
+        title: 'Guardrails',
+        claims: '{{may}} may claim · {{never}} never claim',
+        banned: 'Banned words',
+        disclaimer: 'Disclaimer',
+      },
+      fact: {
+        expires: 'Expires {{date}}',
+        noExpiry: 'Doesn’t expire',
+      },
+      bulk: {
+        title_one: '{{formatted}} change',
+        title_other: '{{formatted}} changes',
+        failed: 'Couldn’t {{what}}: {{reason}}',
+      },
+      facts: {
+        word: 'Facts',
+        none: 'No facts have expired',
+        expired_one: '{{formatted}} expired',
+        expired_other: '{{formatted}} expired',
+        expiredOn: 'Expired {{date}}',
+        renew: 'RENEW',
+        edit: 'EDIT',
+        renewPrompt: 'Renew the fact “{{statement}}” for another season.',
+        editPrompt: 'Change the fact “{{statement}}” to ',
+      },
+      distill: {
+        word: {
+          reading: 'Reading',
+          ready: 'Ready to review',
+          failed: 'Couldn’t read',
+          committed: 'Saved',
+        },
+        title: 'Your brand',
+        running: 'Reading the sources. You can leave this screen.',
+        failed: 'The reading couldn’t finish.',
+        open: 'OPEN THE READ',
+        voices_one: '{{formatted}} voice',
+        voices_other: '{{formatted}} voices',
+        audiences_one: '{{formatted}} audience',
+        audiences_other: '{{formatted}} audiences',
+        guardrails_one: '{{formatted}} guardrail',
+        guardrails_other: '{{formatted}} guardrails',
+        facts_one: '{{formatted}} fact',
+        facts_other: '{{formatted}} facts',
+        questions_one: '{{formatted}} question to answer',
+        questions_other: '{{formatted}} questions to answer',
+        saved: 'Saved from the reading',
+        savedNothing: 'Nothing new to save',
+        skipped_one: '{{formatted}} skipped',
+        skipped_other: '{{formatted}} skipped',
+      },
+      series: {
+        word: 'Series',
+        none: 'No series yet',
+        title_one: '{{formatted}} in the library',
+        title_other: '{{formatted}} in the library',
+        notRunning: 'Not running here',
+      },
+      rhythm: {
+        week_one: 'Once a week',
+        week_other: '{{formatted}} times a week',
+        month_one: 'Once a month',
+        month_other: '{{formatted}} times a month',
+      },
+      run: {
+        running: 'Running in the campaign',
+        stopped: 'Stopped in the campaign',
+      },
+      check: {
+        word: 'Checked',
+        none: 'Nothing to look at',
+        title_one: '{{formatted}} thing to look at',
+        title_other: '{{formatted}} things to look at',
+        inPosts_one: 'in {{formatted}} post',
+        inPosts_other: 'in {{formatted}} posts',
+        fix: 'FIX',
+        openPost: 'OPEN POST',
+        left_one: '{{formatted}} more post wasn’t read; ask again to check it.',
+        left_other:
+          '{{formatted}} more posts weren’t read; ask again to check them.',
       },
     },
 

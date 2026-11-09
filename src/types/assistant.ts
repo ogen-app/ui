@@ -255,6 +255,164 @@ export type CampaignFromAssets = {
 }
 
 /**
+ * What the foundation and repair packs' brand tools did this turn (CON-461),
+ * read from `results.foundation` (each tool's last output, keyed by tool) and
+ * `results.repair.checkBrand`. A turn without them is prose.
+ */
+export type FoundationResults = {
+  voice?: VoiceChange
+  audience?: AudienceChange
+  guardrails?: GuardrailsChange
+  fact?: FactChange
+  bulk?: BulkBrandEdit
+  distill?: DistillState
+  distillSaved?: DistillSaved
+  seriesList?: SeriesList
+  series?: SeriesChange
+  run?: SeriesRunChange
+  expiredFacts?: ExpiredFact[]
+  brandCheck?: BrandCheck
+}
+
+/** Which of a tool family ran: its add, its update or its remove. */
+export type BrandChangeKind = 'added' | 'updated' | 'removed'
+
+export type VoiceChange = {
+  change: BrandChangeKind
+  id: string
+  name: string
+  whenToUse: string
+  isDefault: boolean
+  rules?: {
+    emoji: string
+    formality: string
+    person: string
+    length: string
+  }
+  /** Campaigns and posts a removed voice was taken off. */
+  unbound: number
+  undoId?: string
+}
+
+export type AudienceChange = {
+  change: BrandChangeKind
+  id: string
+  name: string
+  who: string
+  readsOn: string
+  unbound: number
+  undoId?: string
+}
+
+export type GuardrailsChange = {
+  mayClaim: number
+  neverClaim: number
+  bannedWords: string[]
+  disclaimer: string
+  undoId?: string
+}
+
+/** A fact changed or renewed (`updateFact`). */
+export type FactChange = {
+  id: string
+  statement: string
+  source: string
+  expiresAt: string
+  undoId?: string
+}
+
+/** A bulk change (`editBrand`): each change has its own undo id. */
+export type BulkBrandEdit = {
+  done: number
+  undoIds: string[]
+  failed: { what: string; reason: string }[]
+  stopped?: string
+}
+
+/** A brand reading (CON-399): started, running, ready or failed. */
+export type DistillState = {
+  runId: string
+  /** pending | running | ready | failed | committed */
+  status: string
+  failure?: string
+  counts: {
+    voices: number
+    audiences: number
+    guardrails: number
+    facts: number
+    questions: number
+  }
+  questions: { id: string; text: string }[]
+}
+
+export type DistillSaved = {
+  runId: string
+  voices: number
+  audiences: number
+  guardrails: number
+  facts: number
+  skipped: string[]
+}
+
+export type SeriesRhythm = { times: number; per: 'week' | 'month' }
+
+export type SeriesBrief = {
+  id: string
+  name: string
+  recipe: string
+  /** Whether the campaign in scope runs it, and how often. */
+  runs: boolean
+  rhythm?: SeriesRhythm
+  defaultRhythm?: SeriesRhythm
+}
+
+export type SeriesList = { campaignId?: string; series: SeriesBrief[] }
+
+export type SeriesChange = SeriesBrief & {
+  change: BrandChangeKind
+  undoId?: string
+}
+
+export type SeriesRunChange = {
+  campaignId: string
+  seriesId: string
+  running: boolean
+  rhythm?: SeriesRhythm
+  undoId?: string
+}
+
+export type ExpiredFact = {
+  id: string
+  statement: string
+  source: string
+  expiresAt: string
+}
+
+/** Posts checked against their voice and the guardrails (`checkBrand`). */
+export type BrandCheck = {
+  checked: number
+  /** Posts past the cap that weren't read. */
+  left: number
+  findings: BrandFinding[]
+}
+
+export type BrandFinding = {
+  postId: string
+  /** The post's title. */
+  title: string
+  /** voice | never_claim | banned_word | unbacked_claim | disclaimer … */
+  rule: string
+  severity: string
+  quote: string
+  issue: string
+  suggestion: string
+  /** The post's campaign, when the server says; else the thread's. */
+  campaignId?: string
+  fixTitle: string
+  proposalId?: string
+}
+
+/**
  * A campaign calendar's open problems (CON-454), each with the fixes that
  * would resolve it. A fix carries an offer to confirm, or a post to open.
  * Message and titles are the server's words.
@@ -330,6 +488,8 @@ export type AssistantTurn = {
   findings?: CalendarFindings
   /** What the assets pack's tools found this turn (CON-460). */
   assets?: AssetsResults
+  /** What the brand tools did this turn (CON-461). */
+  foundation?: FoundationResults
   /** What this turn did to the screen, and where each can be put back to. */
   uiActions?: AppliedUIAction[]
   /**
