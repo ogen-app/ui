@@ -16,6 +16,7 @@ import type {
   ReviewFinding,
   ReviewSeverity,
 } from '@/types/assistant'
+import { counted, formatNumber } from '@/lib/intl'
 
 /**
  * The structured half of a campaign turn. The reviews (CON-116) return their
@@ -78,7 +79,7 @@ function briefReviewCard(t: TFunction, details: AssistantResultDetails) {
               ? t('assistant.result.briefConsistent')
               : t('assistant.result.briefIssues')
           }
-          detail={t('assistant.result.findings', { count: findings.length })}
+          detail={t('assistant.result.findings', counted(findings.length))}
         />
         <Findings
           findings={findings}
@@ -98,15 +99,19 @@ function postsReviewCard(t: TFunction, details: AssistantResultDetails) {
         <CardHeader
           icon={findings.length === 0 ? CheckCircleIcon : WarningIcon}
           tone={findings.length === 0 ? 'positive' : 'warning'}
-          title={t('assistant.result.checkedPosts', { checked, total })}
+          title={t('assistant.result.checkedPosts', {
+            checked: formatNumber(checked),
+            total: formatNumber(total),
+          })}
           detail={
             capped
               ? t('assistant.result.capped', {
-                  drifts: t('assistant.result.drifts', {
-                    count: findings.length,
-                  }),
+                  drifts: t(
+                    'assistant.result.drifts',
+                    counted(findings.length),
+                  ),
                 })
-              : t('assistant.result.drifts', { count: findings.length })
+              : t('assistant.result.drifts', counted(findings.length))
           }
         />
         <Findings
@@ -142,7 +147,7 @@ function datesCard(t: TFunction, details: AssistantResultDetails) {
             className="border-t border-border"
           >
             <p className="text-sm text-warning">
-              {t('assistant.result.outsideRange', { count: postsOutsideRange })}
+              {t('assistant.result.outsideRange', counted(postsOutsideRange))}
             </p>
           </CardRow>
         )}
@@ -164,8 +169,8 @@ function redistributeCard(t: TFunction, details: AssistantResultDetails) {
         <CardRow className="pt-0">
           <p className="text-sm text-secondary-foreground">
             {t('assistant.result.redistributed', {
-              count: postsUpdated,
-              phases: t('assistant.result.phases', { count: phaseCount }),
+              ...counted(postsUpdated),
+              phases: t('assistant.result.phases', counted(phaseCount)),
             })}
           </p>
         </CardRow>
@@ -186,7 +191,7 @@ function ideasCard(t: TFunction, details: AssistantResultDetails) {
         title={
           planned.ideaCount === 0
             ? t('assistant.result.ideasNone')
-            : t('assistant.result.ideas', { count: planned.ideaCount })
+            : t('assistant.result.ideas', counted(planned.ideaCount))
         }
       />
       <Warnings warnings={planned.warnings} />
@@ -204,7 +209,7 @@ function draftsCard(t: TFunction, details: AssistantResultDetails) {
         title={
           drafted.postCount === 0
             ? t('assistant.result.draftsNone')
-            : t('assistant.result.drafts', { count: drafted.postCount })
+            : t('assistant.result.drafts', counted(drafted.postCount))
         }
       />
       <Warnings warnings={drafted.warnings} />
