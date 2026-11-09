@@ -44,12 +44,13 @@ export async function refreshTouched(
           invalidate(['post'])
         }
         // A post's campaign isn't on the touch, so every campaign's post list
-        // is marked stale, plus the two lists that hold the same rows under
-        // other roots.
+        // and calendar problems are marked stale, plus the two lists that
+        // hold the same rows under other roots.
         work.push(
           qc.invalidateQueries({
             predicate: (q) =>
-              q.queryKey[0] === 'campaigns' && q.queryKey[2] === 'posts',
+              q.queryKey[0] === 'campaigns' &&
+              (q.queryKey[2] === 'posts' || q.queryKey[2] === 'problems'),
           }),
         )
         invalidate(CAMPAIGN_SUMMARIES_KEY)

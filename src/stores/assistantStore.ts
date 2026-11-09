@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { queryClient } from '@/lib/queryClient'
 import { ASSISTANT_THREADS_KEY } from '@/hooks/useAssistantThreads'
+import { campaignProblemsKey } from '@/hooks/useCampaignProblems'
+import { dismissCampaignFinding } from '@/services/api/campaignProblems'
 import { threadName } from '@/lib/assistantTools'
 import { refreshTouched, subjectTouches } from '@/lib/assistantTouched'
 import { flushPendingSave } from '@/lib/pendingSaves'
@@ -173,6 +175,16 @@ type AssistantState = {
   dismissProposal: (threadId: string, proposalId: string) => Promise<void>
   /** Reverses a change a turn made, by the undo id its result carried. */
   undo: (threadId: string, turnId: string, undoId: string) => Promise<void>
+  /**
+   * Ignores one of a turn's findings, by its key, in the campaign's scope —
+   * shared with the Overview and the campaign's thread (CON-462).
+   */
+  ignoreFinding: (
+    threadId: string,
+    turnId: string,
+    campaignId: string,
+    key: string,
+  ) => Promise<void>
   /** Puts the screen back to before one of a turn's `ui_action`s. */
   undoUiAction: (
     threadId: string,
@@ -532,6 +544,9 @@ export const useAssistantStore = create<AssistantState>()(
                   // The stream's clone event beats the result's, which only
                   // a reloaded turn has to rely on.
                   clone: t.clone ?? fields.clone,
+                  // So does the streamed calendar check: the same findings,
+                  // already on screen.
+                  findings: t.findings ?? fields.findings,
                   steps: closeSteps(t.steps ?? [], now),
                   endedAt: now,
                   streaming: false,
@@ -893,6 +908,27 @@ export const useAssistantStore = create<AssistantState>()(
           }))
         },
 
+        ignoreFinding: async (threadId, turnId, campaignId, key) => {
+          const mark = (on: boolean) =>
+            patchTurn(threadId, turnId, (t) => {
+              const rest = (t.ignored ?? []).filter((k) => k !== key)
+              return { ...t, ignored: on ? [...rest, key] : rest }
+            })
+          // Drawn as ignored at once; put back if the server refused.
+          mark(true)
+          try {
+            await dismissCampaignFinding(campaignId, key)
+            void queryClient.invalidateQueries({
+              queryKey: campaignProblemsKey(campaignId),
+            })
+          } catch (error) {
+            mark(false)
+            toast.error(i18next.t('assistant.findings.ignoreFailed'), {
+              description: error instanceof Error ? error.message : undefined,
+            })
+          }
+        },
+
         undo: async (threadId, turnId, undoId) => {
           const state = (value: UndoState) =>
             patchTurn(threadId, turnId, (t) => ({
@@ -963,11 +999,15 @@ function turnFields(
   | 'proposals'
   | 'assets'
   | 'foundation'
+  | 'findings'
+  | 'repair'
 > {
   return {
     proposals: result.proposals.length > 0 ? result.proposals : undefined,
     assets: result.assets,
     foundation: result.foundation,
+    findings: result.findings,
+    repair: result.repair,
     content: result.explanation,
     action: result.action,
     details: result.details,
@@ -1118,6 +1158,9 @@ function undoTouches(
   if (kind === 'brand_guardrails') return [{ kind: 'guardrails' }]
   if (kind === 'series' || kind === 'campaign_series')
     return [{ kind: 'series' }, { kind: 'campaign' }]
+  // Posts converted, or given their dates back: the post lists and editors.
+  if (kind === 'post_schedules' || kind === 'post_types')
+    return [{ kind: 'post' }]
   if (kind === 'campaign_assets' || kind === 'campaign_created')
     return [{ kind: 'asset' }, { kind: 'campaign' }]
   const campaignId =

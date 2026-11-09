@@ -54,6 +54,7 @@ describe('calendar findings', () => {
     render(
       <FindingsBlock
         threadId="campaign:c1"
+        turnId="t1"
         disabled={false}
         findings={{
           campaignId: 'c1',

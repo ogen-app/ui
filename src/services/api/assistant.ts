@@ -21,6 +21,9 @@ import type {
   AssistantAction,
   AssistantProposal,
   CalendarFindings,
+  PostsChanged,
+  RepairFix,
+  RepairResults,
   CampaignFromAssets,
   ComparedClaim,
   SavedViewList,
@@ -79,6 +82,10 @@ export type AssistantTurnResult = {
   assets?: AssetsResults
   /** The brand tools' typed results (CON-461); absent when none ran. */
   foundation?: FoundationResults
+  /** The calendar check, as recorded (CON-462); the stream sends it too. */
+  findings?: CalendarFindings
+  /** The repair pack's other typed results (CON-462). */
+  repair?: RepairResults
 }
 
 export type AssistantStreamEvent =
@@ -337,6 +344,9 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
     : []
   result.assets = assetsResults(results)
   result.foundation = foundationResults(results)
+  const repair = repairResults(results)
+  result.findings = repair.findings
+  result.repair = repair.repair
   return result
 }
 
@@ -764,19 +774,112 @@ function calendarFindings(raw: Record<string, unknown>): CalendarFindings {
       severity: f.severity === 'warning' ? 'warning' : 'info',
       message: str(f.message),
       postIds: strings(f.postIds),
-      fixes: (Array.isArray(f.fixes) ? f.fixes : [])
-        .filter(isRecord)
-        .map((x) => ({
-          kind: str(x.kind),
-          title: str(x.title),
-          postId: optStr(x.postId),
-          proposalId: optStr(x.proposalId),
-        }))
-        // Only a fix the row can act on: an offer to confirm, or a post to
-        // open — which needs the campaign too. One with neither would take
-        // the primary slot and leave the row without an action.
-        .filter((x) => x.title && (x.proposalId || (x.postId && campaignId))),
+      fixes: repairFixes(f.fixes, campaignId),
     })),
+  }
+}
+
+/**
+ * A finding's fixes, keeping only those the row can act on: an offer to
+ * confirm, or a post to open — which needs the campaign too. One with
+ * neither would take the primary slot and leave the row without an action.
+ */
+function repairFixes(value: unknown, campaignId: string): RepairFix[] {
+  return (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .map((x) => ({
+      kind: str(x.kind),
+      title: str(x.title),
+      postId: optStr(x.postId),
+      postIds: strings(x.postIds),
+      proposalId: optStr(x.proposalId),
+    }))
+    .filter((x) => x.title && (x.proposalId || (x.postId && campaignId)))
+}
+
+/**
+ * The repair pack's typed results (CON-462): `results.repair` holds each
+ * tool's last output in the turn. The calendar check is returned apart, as
+ * the turn's findings, because the stream delivers it there too.
+ */
+function repairResults(results: Record<string, unknown>): {
+  findings?: CalendarFindings
+  repair?: RepairResults
+} {
+  const r = record(results.repair)
+  if (!r) return {}
+  const out: RepairResults = {}
+
+  const review = record(r.reviewCampaign)
+  if (review) {
+    const campaignId = str(review.campaignId)
+    out.review = {
+      campaignId,
+      postsChecked: num(review.postsChecked),
+      dismissed: num(review.dismissed),
+      findings: (Array.isArray(review.findings) ? review.findings : [])
+        .filter(isRecord)
+        .map((f) => ({
+          kind: f.kind === 'brief' ? ('brief' as const) : ('post' as const),
+          key: str(f.key),
+          severity: severity(f.severity),
+          label:
+            typeof f.aspect === 'string' && f.aspect
+              ? sentenceCase(humanizeStep(f.aspect))
+              : optStr(f.title),
+          postId: optStr(f.postId),
+          issue: str(f.issue),
+          suggestion: optStr(f.suggestion),
+          fixes: repairFixes(f.fixes, campaignId),
+        }))
+        .filter((f) => f.issue),
+    }
+  }
+
+  const plan = record(r.optimiseCalendar)
+  if (plan) {
+    out.plan = {
+      campaignId: str(plan.campaignId),
+      proposalId: optStr(plan.proposalId),
+      moves: (Array.isArray(plan.moves) ? plan.moves : [])
+        .filter(isRecord)
+        .map((m) => ({
+          postId: str(m.postId),
+          title: str(m.title),
+          from: str(m.from),
+          to: str(m.to),
+        })),
+      locked: (Array.isArray(plan.locked) ? plan.locked : [])
+        .filter(isRecord)
+        .map((l) => ({
+          postId: str(l.postId),
+          title: str(l.title),
+          date: str(l.date),
+        })),
+    }
+  }
+
+  const changed = (raw: unknown): PostsChanged | undefined => {
+    const c = record(raw)
+    if (!c) return undefined
+    return {
+      changed: num(c.changed),
+      withdrawing: num(c.withdrawing),
+      skipped: (Array.isArray(c.skipped) ? c.skipped : [])
+        .filter(isRecord)
+        .map((x) => ({ postId: str(x.postId), reason: str(x.reason) })),
+      undoId: optStr(c.undoId),
+    }
+  }
+  out.converted = changed(r.changePostType)
+  out.unscheduled = changed(r.unschedulePosts)
+  out.deleted = changed(r.deletePosts)
+
+  const check = record(r.checkCalendar)
+  const any = Object.values(out).some((v) => v !== undefined)
+  return {
+    findings: check ? calendarFindings(check) : undefined,
+    repair: any ? out : undefined,
   }
 }
 

@@ -627,6 +627,24 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `guardrails`, `series` and `brand_distill`, which `refreshTouched` maps onto
   the brand, series and readings keys — a kind it doesn't map refreshes
   nothing. A voice's rules are worded by the library's own `rulesLine`.
+- **The repair pack's results are cards, and its findings are ignored by
+  key** (CON-462). `complete.results.repair` holds each tool's last output:
+  `checkCalendar` replays as the turn's `findings` (it also streams as
+  `calendar_findings`, and the streamed copy wins), and `reviewCampaign`,
+  `optimiseCalendar` and the post fixes (`changePostType`,
+  `unschedulePosts`, `deletePosts`) are `RepairResults`. A finding offers
+  0..N fixes — the first as its button, the rest as "or …" — and a delete
+  fix asks before it confirms, naming how many, because the offer runs the
+  moment it is confirmed. IGNORE is `POST /api/campaigns/:id/findings/:key/
+  dismiss` for calendar and review findings alike: it writes the campaign's
+  dismissals, which the Overview and the campaign thread both read. **The
+  Overview's Needs attention card leads with the server's problems**
+  (`useCampaignProblems`, read off `GET /api/campaigns/:id/overview`), and
+  drops the two client rules they cover (`post-type-dropped`,
+  `scheduled-outside-window`). The Overview runs no assistant, so its fix
+  sends `Fix the problem <key>: <message>` to the campaign's thread, which
+  answers with that finding's fixes as offers; a fix that is only a post to
+  open is a link.
 - **A planned post is a post with theses and no body** (CON-449). `planned`
   can only become `draft`, and only by gaining a body — the server moves it,
   so it has no button. Ideas are never posts: on the week calendar an idea
@@ -965,12 +983,11 @@ removes, so the two ship together, and neither has had a live pass yet. Until
 the follow-ups land: the ideas, workspace and analytics packs send no typed
 results or `undoId`, so their turns are prose plus `touched` — the merge
 card, facts ledger, connection card and provenance trail are unbuilt (the
-assets pack's arrived with CON-460, the foundation pack's with CON-461); an offer has no `recommended` option, so its
+assets pack's arrived with CON-460, the foundation pack's with CON-461, the
+repair pack's with CON-462); an offer has no `recommended` option, so its
 choices are drawn with equal weight; a reloaded thread infers an offer's
-state instead of reading it; an idea row has no post count, so "used in N
-posts" isn't shown; and the calendar's findings are only streamed, never
-stored (the repair pack has no result), so a reloaded thread keeps their fix
-offers but not the findings list. Idea slots are in the week view only, and the analytics
+state instead of reading it; and an idea row has no post count, so "used in
+N posts" isn't shown. Idea slots are in the week view only, and the analytics
 period is page state, not the address.
 
 Inviting teammates is live end to end (People, in Workspace Settings; the

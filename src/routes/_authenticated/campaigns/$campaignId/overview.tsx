@@ -7,9 +7,16 @@ import { AttentionRail } from '@/components/campaigns/overview/AttentionRail.tsx
 import { ContentModule } from '@/components/campaigns/overview/ContentModule.tsx'
 import { useCampaign, useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { useCampaignPosts } from '@/hooks/usePosts.ts'
+import { useCampaignProblems } from '@/hooks/useCampaignProblems'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { attentionItems } from '@/lib/campaignReadiness.ts'
 import type { PostSummary } from '@/types/posts'
+
+/** The client's rules the server's calendar check covers, with fixes. */
+const SERVER_CHECKED = new Set([
+  'post-type-dropped',
+  'scheduled-outside-window',
+])
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/overview',
@@ -29,6 +36,7 @@ function CampaignOverviewScreen() {
   const postsQuery = useCampaignPosts(campaignId)
   const summariesQuery = useCampaignSummaries()
   const platformViews = usePlatformViews()
+  const { data: problems } = useCampaignProblems(campaignId)
 
   // The backend sends `null` for a campaign with no posts (Go nil slice), so
   // gate on the query settling, not on the data being truthy.
@@ -113,8 +121,13 @@ function CampaignOverviewScreen() {
   // Several attention rules are time-based (overdue slots, the next 24h, pace),
   // so they are recomputed on every render against the current clock rather
   // than memoized against a frozen `now`.
+  // Once the server has said what is wrong with the calendar, its findings
+  // stand for the two rules that check the same thing here: a post type the
+  // campaign dropped, and posts outside its dates (CON-462).
   const items = railPosts
-    ? attentionItems(campaign, railPosts, platformViews, new Date())
+    ? attentionItems(campaign, railPosts, platformViews, new Date()).filter(
+        (item) => !problems || !SERVER_CHECKED.has(item.id),
+      )
     : []
 
   // The cards run in the sidebar's order — posts, analytics, brief, assets,
@@ -132,7 +145,11 @@ function CampaignOverviewScreen() {
           sources has actually answered, and an answered source that lists no
           posts is a count of zero, not an absence of one. */}
       {railPosts ? (
-        <AttentionRail items={items} campaignId={campaignId} />
+        <AttentionRail
+          items={items}
+          problems={problems}
+          campaignId={campaignId}
+        />
       ) : postsFailed ? null : (
         <Skeleton
           variant="surface"
