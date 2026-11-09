@@ -27,7 +27,14 @@ export function UiActionRows({
       {actions.map((applied, index) => (
         <ResultBlock
           key={index}
-          status={t('assistant.word.onScreen')}
+          // `before` is absent when the action never ran — no route for it,
+          // no applier, or it threw — so the screen did not change.
+          status={
+            applied.before
+              ? t('assistant.word.onScreen')
+              : t('assistant.word.notApplied')
+          }
+          tone={applied.before ? 'neutral' : 'warning'}
           title={actionTitle(t, applied)}
           action={
             applied.before && !applied.undone ? (
