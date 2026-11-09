@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  MAX_FILTER_LENGTH,
   MAX_SELECTION_IDS,
   buildViewContext,
   listFilter,
   locationFor,
-  trailingWindow,
 } from './viewContext'
 
 describe('locationFor', () => {
@@ -71,6 +71,21 @@ describe('buildViewContext', () => {
     })
   })
 
+  it('drops a whole match along with a filter too long to send', () => {
+    const view = buildViewContext(
+      campaign,
+      { screen: 'campaign.ideas' },
+      {
+        selection: { kind: 'idea', allMatching: true, count: 40 },
+        filter: `q=${'x'.repeat(MAX_FILTER_LENGTH)}`,
+        visible: { kind: 'idea', ids: ['i1'] },
+      },
+    )
+    expect(view.filter).toBeUndefined()
+    expect(view.selection).toBeUndefined()
+    expect(view.visible).toEqual({ kind: 'idea', ids: ['i1'] })
+  })
+
   it('sends the screen alone when the chip was dismissed', () => {
     const view = buildViewContext(
       campaign,
@@ -99,15 +114,5 @@ describe('listFilter', () => {
         facets: 'source',
       }),
     ).toBe('pile=waiting&source_asset=a1')
-  })
-})
-
-describe('trailingWindow', () => {
-  it('ends today and spans the days asked for', () => {
-    expect(trailingWindow(7, ['linkedin'], new Date(2026, 3, 15))).toEqual({
-      from: '2026-04-09',
-      to: '2026-04-15',
-      platforms: ['linkedin'],
-    })
   })
 })

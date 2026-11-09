@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { MAX_SELECTION_IDS } from '@/lib/viewContext'
 import type {
   ViewContext,
   ViewLocation,
@@ -53,9 +54,17 @@ export function chipText(
   const selection = selectionOf(page?.selection)
   if (selection && location.screen) {
     const screen = screenName(t, location.screen)
-    return selection.matching
-      ? t('assistant.chip.matching', { count: selection.count, screen })
-      : t('assistant.chip.selected', { count: selection.count, screen })
+    if (selection.matching)
+      return t('assistant.chip.matching', { count: selection.count, screen })
+    // More ticked than a turn can carry: only the first go, so say so here
+    // rather than let the chip claim the whole selection travels.
+    if (selection.count > MAX_SELECTION_IDS)
+      return t('assistant.chip.selectedCapped', {
+        limit: MAX_SELECTION_IDS,
+        total: selection.count,
+        screen,
+      })
+    return t('assistant.chip.selected', { count: selection.count, screen })
   }
   const focus = location.focus
   if (!focus) return null
