@@ -2640,6 +2640,7 @@ export const en = {
       proposed: 'Waiting for your go-ahead',
       post_drafted: 'Drafts written',
       platforms_updated: 'Platforms updated',
+      goal_updated: 'Post goal raised',
       cloned: 'Post cloned',
       restored: 'Version restored',
       scheduled: 'Post scheduled',
@@ -2882,6 +2883,7 @@ export const en = {
       proposed: 'Waiting for your go-ahead',
       post_drafted: 'Wrote drafts',
       platforms_updated: 'Updated the platforms',
+      goal_updated: 'Raised the post goal',
       cloned: 'Cloned the post',
       restored: 'Restored a version',
       scheduled: 'Scheduled the post',
@@ -3184,6 +3186,15 @@ export const en = {
         more_other: 'and {{formatted}} more',
         retry: 'RETRY',
       },
+      replaced: {
+        word: 'DELETED',
+        title_one: '{{formatted}} weaker draft deleted for good',
+        title_other: '{{formatted}} weaker drafts deleted for good',
+        kept_one:
+          '{{formatted}} kept: it changed since the offer, or wasn’t needed.',
+        kept_other:
+          '{{formatted}} kept: they changed since the offer, or weren’t needed.',
+      },
       tagged: {
         word: 'TAGGED',
         title_one: '{{formatted}} asset tagged',
@@ -3392,6 +3403,18 @@ export const en = {
       drafts_one: '+{{formatted}} draft, not scheduled',
       drafts_other: '+{{formatted}} drafts, not scheduled',
       platformsUpdated: 'Platforms updated',
+      /** The server's words for what changed, e.g. "Threads". */
+      platformsAdded: 'added {{what}}',
+      platformsRemoved: 'removed {{what}}',
+      /** The goal is a rate; the total is the whole campaign's. */
+      goal: {
+        week_one: 'Goal raised to {{formatted}} post a week',
+        week_other: 'Goal raised to {{formatted}} posts a week',
+        month_one: 'Goal raised to {{formatted}} post a month',
+        month_other: 'Goal raised to {{formatted}} posts a month',
+        total_one: '{{formatted}} in all',
+        total_other: '{{formatted}} in all',
+      },
       briefApplied: 'Brief updated and saved',
       briefNotApplied: 'Brief suggested but not applied',
       severity: {

@@ -69,6 +69,7 @@ export function ResultCard({
     ideas(t, details),
     drafts(t, details),
     platforms(t, details, undo),
+    goal(t, details, undo),
     brief(t, details, undo),
   ].filter(Boolean)
 
@@ -215,12 +216,39 @@ function platforms(
   undo?: ResultUndo,
 ) {
   if (!details.platforms) return null
-  const { added, undoId } = details.platforms
+  const { added, removed, undoId } = details.platforms
+  // What changed, in the server's words: "Threads", "the carousel post type
+  // on LinkedIn". A removal leaves the posts on it, which the calendar check
+  // then offers to deal with (CON-468).
+  const meta = [
+    added && t('assistant.result.platformsAdded', { what: added }),
+    removed && t('assistant.result.platformsRemoved', { what: removed }),
+  ].filter(Boolean)
   return (
     <ResultBlock
       status={t('assistant.word.done')}
       title={t('assistant.result.platformsUpdated')}
-      meta={added || undefined}
+      meta={meta.length > 0 ? meta.join(' · ') : undefined}
+      action={<UndoAction t={t} undoId={undoId} undo={undo} />}
+    >
+      <UndoNote t={t} undoId={undoId} undo={undo} />
+    </ResultBlock>
+  )
+}
+
+/** The post goal raised (CON-468): a rate, so the total is said beside it. */
+function goal(
+  t: TFunction,
+  details: AssistantResultDetails,
+  undo?: ResultUndo,
+) {
+  if (!details.goal) return null
+  const { perPeriod, cadence, target, undoId } = details.goal
+  return (
+    <ResultBlock
+      status={t('assistant.word.done')}
+      title={t(`assistant.result.goal.${cadence}`, counted(perPeriod))}
+      meta={t('assistant.result.goal.total', counted(target))}
       action={<UndoAction t={t} undoId={undoId} undo={undo} />}
     >
       <UndoNote t={t} undoId={undoId} undo={undo} />

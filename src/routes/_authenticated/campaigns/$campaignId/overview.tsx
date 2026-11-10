@@ -16,6 +16,9 @@ import type { PostSummary } from '@/types/posts'
 const SERVER_CHECKED = new Set([
   'post-type-dropped',
   'scheduled-outside-window',
+  // `platform_not_targeted` (CON-468), scheduled or not.
+  'channel-dropped',
+  'channel-dropped-scheduled',
 ])
 
 export const Route = createFileRoute(

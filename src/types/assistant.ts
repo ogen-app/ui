@@ -1,3 +1,4 @@
+import type { GoalCadence } from '@/lib/postGoal'
 import type { ViewContext } from '@/lib/viewContext'
 import type { AppliedUIAction } from '@/lib/assistantUiActions'
 import type { AnalyticsOverview, PerformersBoard } from '@/types/analytics'
@@ -43,6 +44,7 @@ export type CampaignAssistantAction =
   | 'brief_enriched'
   | 'dates_updated'
   | 'platforms_updated'
+  | 'goal_updated'
   | 'posts_redistributed'
   | 'brief_reviewed'
   | 'posts_reviewed'
@@ -105,7 +107,16 @@ export type AssistantResultDetails = {
     postsOutsideRange: number
     undoId?: string
   }
-  platforms?: { added: string; undoId?: string }
+  /** What updateCampaignPlatforms added and removed, in the server's words. */
+  platforms?: { added: string; removed?: string; undoId?: string }
+  /** The post goal setCampaignGoal raised (CON-468): a rate per period. */
+  goal?: {
+    perPeriod: number
+    cadence: GoalCadence
+    /** The posts the whole campaign now aims for. */
+    target: number
+    undoId?: string
+  }
   redistribute?: { postsUpdated: number; phaseCount: number }
   briefReview?: { consistent: boolean; findings: ReviewFinding[] }
   postsReview?: {
@@ -424,7 +435,8 @@ export type BrandFinding = {
 export type RepairFix = {
   /**
    * redistribute | plan_window | open_post | move_post | enable_post_type |
-   * convert_post_type | unschedule | delete | improve_brief | revise_post
+   * enable_platform | convert_post_type | unschedule | delete |
+   * improve_brief | revise_post
    */
   kind: string
   title: string
@@ -1004,6 +1016,13 @@ export type OfferOutcome = {
    * only place it reaches the client.
    */
   tagged?: { count: number; undoId?: string }
+  /**
+   * The budget guard's "replace the weakest drafts" (CON-468): the drafts
+   * deleted for good to make room, and those kept because they changed
+   * since the offer or outnumbered the posts written. The new drafts are the
+   * campaign pack's own card.
+   */
+  replaced?: { deleted: number; kept: number }
 }
 
 /** An item a run left undone. `title` is missing where the tool names none. */

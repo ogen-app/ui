@@ -903,6 +903,15 @@ describe('an offer answered from its card (CON-467)', () => {
     expect(offerOutcome(undefined)).toBeUndefined()
   })
 
+  it('reads the drafts a replace deleted (CON-468)', () => {
+    expect(
+      offerOutcome({
+        status: 'ok',
+        result: { drafted: { postCount: 4 }, deleted: 3, kept: ['p9'] },
+      })?.replaced,
+    ).toEqual({ deleted: 3, kept: 1 })
+  })
+
   it('marks the option the server recommends', () => {
     const r = parseHistoryResult(
       JSON.stringify({
@@ -924,5 +933,36 @@ describe('an offer answered from its card (CON-467)', () => {
       'campaign',
     )
     expect(r.proposals[0].recommended).toBe('friday')
+  })
+})
+
+describe('the campaign state (CON-468)', () => {
+  it('reads a raised goal and a removal from the campaign pack', () => {
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Raised the goal.',
+        action: 'answered',
+        results: {
+          campaign: {
+            action: 'goal_updated',
+            goal: { perPeriod: 32, cadence: 'month', target: 96, undoId: 'u1' },
+            platforms: { removed: 'Threads', undoId: 'u2' },
+          },
+        },
+      }),
+      'campaign',
+    )
+    expect(r.action).toBe('goal_updated')
+    expect(r.details.goal).toEqual({
+      perPeriod: 32,
+      cadence: 'month',
+      target: 96,
+      undoId: 'u1',
+    })
+    expect(r.details.platforms).toEqual({
+      added: '',
+      removed: 'Threads',
+      undoId: 'u2',
+    })
   })
 })

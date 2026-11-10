@@ -117,6 +117,38 @@ describe('results', () => {
     expect(screen.queryByText('Not grounded')).toBeNull()
   })
 
+  it('say what a platforms change added and removed (CON-468)', () => {
+    render(
+      <ResultCard
+        details={{
+          platforms: {
+            added: 'Threads',
+            removed: 'the carousel post type on LinkedIn',
+          },
+        }}
+      />,
+    )
+    expect(
+      screen.getByText(
+        'added Threads · removed the carousel post type on LinkedIn',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('say a raised goal as its rate, with the campaign’s total', () => {
+    render(
+      <ResultCard
+        details={{
+          goal: { perPeriod: 32, cadence: 'month', target: 96, undoId: 'u1' },
+        }}
+        undo={{ states: {}, onUndo: () => {} }}
+      />,
+    )
+    expect(screen.getByText('Goal raised to 32 posts a month')).toBeTruthy()
+    expect(screen.getByText('96 in all')).toBeTruthy()
+    expect(screen.getByText('UNDO')).toBeTruthy()
+  })
+
   it('are never boxed', () => {
     const { container } = render(
       <ResultCard details={{ platforms: { added: 'Threads' } }} />,

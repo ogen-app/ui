@@ -392,13 +392,20 @@ export function offerOutcome(raw: unknown): OfferOutcome | undefined {
     r.status === 'ok' && typeof out?.tagged === 'number'
       ? { count: out.tagged, undoId: optStr(out.undoId) }
       : undefined
+  // replaceWeakestDrafts: what it drafted, and the drafts it deleted.
+  const replaced =
+    r.status === 'ok' && typeof out?.deleted === 'number' && record(out.drafted)
+      ? { deleted: out.deleted, kept: strings(out.kept).length }
+      : undefined
   const reoffered = r.status === 'proposed'
-  if (!reoffered && notMade.length === 0 && !tagged) return undefined
+  if (!reoffered && notMade.length === 0 && !tagged && !replaced)
+    return undefined
   return {
     reoffered,
     notMade,
     retryProposalId: optStr(r.retryProposalId),
     tagged,
+    replaced,
   }
 }
 
@@ -1243,6 +1250,7 @@ const CAMPAIGN_ACTIONS: CampaignAssistantAction[] = [
   'brief_enriched',
   'dates_updated',
   'platforms_updated',
+  'goal_updated',
   'posts_redistributed',
   'brief_reviewed',
   'posts_reviewed',
@@ -1327,7 +1335,18 @@ function resultDetails(
   if (platforms) {
     details.platforms = {
       added: str(platforms.added),
+      removed: optStr(platforms.removed),
       undoId: optStr(platforms.undoId),
+    }
+  }
+
+  const goal = record(parsed.goal)
+  if (goal && num(goal.perPeriod) > 0) {
+    details.goal = {
+      perPeriod: num(goal.perPeriod),
+      cadence: goal.cadence === 'week' ? 'week' : 'month',
+      target: num(goal.target),
+      undoId: optStr(goal.undoId),
     }
   }
 
