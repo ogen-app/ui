@@ -48,30 +48,34 @@ export function AttentionRail({
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
 
-  // The server's problems lead — warnings first, as they arrive — and the
-  // client's own rules follow. One list, so the cap below holds across both.
+  // What is already wrong comes first — the client's `alert` rows (failed
+  // posts, a manual publish due) — then the server's problems, warnings
+  // first as they arrive, then the client's other rules. One list, so the cap
+  // below keeps the most urgent rows across both.
+  const clientRow = (item: AttentionItem) => ({
+    id: item.id,
+    node: (
+      <LineItem
+        asChild
+        indicator={{ kind: 'notification', tone: TONE[item.severity] }}
+        label={item.label}
+        trailing={
+          <span className="group-hover:text-primary-foreground">
+            {item.actionLabel}
+          </span>
+        }
+      >
+        <SectionLink target={item.fix} campaignId={campaignId} />
+      </LineItem>
+    ),
+  })
   const rows: { id: string; node: ReactNode }[] = [
+    ...items.filter((item) => item.severity === 'alert').map(clientRow),
     ...(problems?.problems ?? []).map((problem) => ({
       id: problem.key,
       node: <ProblemRow problem={problem} campaignId={campaignId} />,
     })),
-    ...items.map((item) => ({
-      id: item.id,
-      node: (
-        <LineItem
-          asChild
-          indicator={{ kind: 'notification', tone: TONE[item.severity] }}
-          label={item.label}
-          trailing={
-            <span className="group-hover:text-primary-foreground">
-              {item.actionLabel}
-            </span>
-          }
-        >
-          <SectionLink target={item.fix} campaignId={campaignId} />
-        </LineItem>
-      ),
-    })),
+    ...items.filter((item) => item.severity !== 'alert').map(clientRow),
   ]
 
   // The empty state is the good news, so it reads as good news — the card is
@@ -206,14 +210,16 @@ function ProblemRow({
               {t('campaignOverview.problems.fix')}
             </button>
           )}
-          <button
-            type="button"
-            className={action}
-            disabled={ignore.isPending}
-            onClick={() => ignore.mutate()}
-          >
-            {t('campaignOverview.problems.ignore')}
-          </button>
+          {problem.key && (
+            <button
+              type="button"
+              className={action}
+              disabled={ignore.isPending}
+              onClick={() => ignore.mutate()}
+            >
+              {t('campaignOverview.problems.ignore')}
+            </button>
+          )}
         </>
       }
     />

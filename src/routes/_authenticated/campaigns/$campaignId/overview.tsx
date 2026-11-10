@@ -147,7 +147,7 @@ function CampaignOverviewScreen() {
       {railPosts ? (
         <AttentionRail
           items={items}
-          problems={problems}
+          problems={problems ?? undefined}
           campaignId={campaignId}
         />
       ) : postsFailed ? null : (

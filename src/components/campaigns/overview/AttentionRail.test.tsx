@@ -10,7 +10,8 @@ import { AttentionRail } from './AttentionRail'
 const openRightPanel = vi.hoisted(() => vi.fn())
 vi.mock('@/stores/settingsStore', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/stores/settingsStore')>()
-  const state = { openRightPanel }
+  // The real defaults, so the client rows' links can read where to go.
+  const state = { ...actual.useSettingsStore.getState(), openRightPanel }
   return {
     ...actual,
     useSettingsStore: Object.assign(
@@ -101,5 +102,28 @@ describe('the calendar’s problems on the Overview', () => {
       />,
     )
     expect(screen.getByText('You’re all set'.replace('’', "'"))).toBeTruthy()
+  })
+
+  it('keeps what is already wrong ahead of the server’s problems', async () => {
+    await renderWithProviders(
+      <AttentionRail
+        items={[
+          {
+            id: 'failed-posts',
+            severity: 'alert',
+            label: '1 post failed to publish',
+            actionLabel: 'Review posts',
+            fix: 'posts',
+          },
+        ]}
+        problems={problems}
+        campaignId="c1"
+      />,
+    )
+    const labels = screen
+      .getAllByRole('listitem')
+      .map((li) => li.textContent ?? '')
+    expect(labels[0]).toContain('1 post failed to publish')
+    expect(labels[1]).toContain(problems.problems[0].message)
   })
 })
