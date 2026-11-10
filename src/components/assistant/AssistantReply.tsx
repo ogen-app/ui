@@ -60,6 +60,11 @@ export function AssistantReply({
   const blocks = parseAssistantMarkup(turn.content)
   const steps = turn.steps ?? []
   const settled = !turn.streaming && !turn.failed
+  // The retry offer is drawn as OfferOutcome's RETRY, which shows only under
+  // what was left undone; without that list it keeps its own card.
+  const retryId = turn.answered?.notMade.length
+    ? turn.answered.retryProposalId
+    : undefined
   const subject = useAssistantStore((s) => s.threads[threadId]?.subject)
   const showCard = settled && hasResultCard(turn.details)
   const footer = !showCard && turn.action ? actionLabel(t, turn.action) : null
@@ -194,9 +199,7 @@ export function AssistantReply({
           threadId={threadId}
           turnId={turn.id}
           outcome={turn.answered}
-          retry={turn.proposals?.find(
-            (p) => p.id === turn.answered?.retryProposalId,
-          )}
+          retry={turn.proposals?.find((p) => p.id === retryId)}
           undoStates={turn.undo ?? {}}
           disabled={running}
         />
@@ -206,10 +209,7 @@ export function AssistantReply({
           waiting retry is the RETRY above rather than a card of its own. */}
       {settled &&
         turn.proposals
-          ?.filter(
-            (p) =>
-              p.status !== 'pending' || p.id !== turn.answered?.retryProposalId,
-          )
+          ?.filter((p) => p.status !== 'pending' || p.id !== retryId)
           .map((proposal) => (
             <ProposalCard
               key={proposal.id}

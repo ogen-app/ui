@@ -869,20 +869,28 @@ export const useAssistantStore = create<AssistantState>()(
           // carries the reason. (An `error` event has closed it already.)
           const settled = get().threads[threadId]
           const after = findProposal(settled, proposalId)
-          if (after?.status !== 'confirming') return
           // A confirm that ran nothing because the offer's ground moved
-          // answers with a fresh offer of what still holds (CON-467).
+          // answers with a fresh offer of what still holds (CON-467). The
+          // stream's `proposal_resolved` has called it confirmed by then, as
+          // the offer is answered either way, so this reads past that.
           const reply = settled?.turns[settled.turns.length - 1]
+          const reoffered =
+            outcome === 'answered' &&
+            reply?.role === 'assistant' &&
+            reply.answered?.reoffered === true
+          if (
+            reoffered &&
+            (after?.status === 'confirming' || after?.status === 'confirmed')
+          ) {
+            setProposal(threadId, proposalId, { status: 'stale' })
+            return
+          }
+          if (after?.status !== 'confirming') return
           setProposal(
             threadId,
             proposalId,
             outcome === 'answered'
-              ? {
-                  status:
-                    reply?.role === 'assistant' && reply.answered?.reoffered
-                      ? 'stale'
-                      : 'confirmed',
-                }
+              ? { status: 'confirmed' }
               : {
                   status: 'closed',
                   error: i18next.t(
