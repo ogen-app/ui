@@ -6,6 +6,7 @@ import type { TFunction } from 'i18next'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
 import { hasResultCard, ResultCard } from './ResultCard'
+import { OfferOutcome } from './OfferOutcome'
 import { ProposalCard } from './ProposalCard'
 import { UiActionRows } from './UiActionRows'
 import { FindingsBlock } from './FindingsBlock'
@@ -186,16 +187,37 @@ export function AssistantReply({
         />
       )}
 
-      {/* Offers this turn made, waiting for a yes — or answered since. */}
+      {/* How an offer answered from its card went: what it left undone,
+          with RETRY, and a tagging's UNDO (CON-467). */}
+      {settled && turn.answered && (
+        <OfferOutcome
+          threadId={threadId}
+          turnId={turn.id}
+          outcome={turn.answered}
+          retry={turn.proposals?.find(
+            (p) => p.id === turn.answered?.retryProposalId,
+          )}
+          undoStates={turn.undo ?? {}}
+          disabled={running}
+        />
+      )}
+
+      {/* Offers this turn made, waiting for a yes — or answered since. A
+          waiting retry is the RETRY above rather than a card of its own. */}
       {settled &&
-        turn.proposals?.map((proposal) => (
-          <ProposalCard
-            key={proposal.id}
-            threadId={threadId}
-            proposal={proposal}
-            disabled={running}
-          />
-        ))}
+        turn.proposals
+          ?.filter(
+            (p) =>
+              p.status !== 'pending' || p.id !== turn.answered?.retryProposalId,
+          )
+          .map((proposal) => (
+            <ProposalCard
+              key={proposal.id}
+              threadId={threadId}
+              proposal={proposal}
+              disabled={running}
+            />
+          ))}
 
       {/* A clone the turn created — an opt-in jump to the new post's editor
           (CON-59). The source thread stays put; the user chooses to switch. */}

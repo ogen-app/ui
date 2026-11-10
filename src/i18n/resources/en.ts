@@ -2943,7 +2943,10 @@ export const en = {
       expired: '{{summary}} · expired',
       superseded: '{{summary}} · not answered',
       closed: '{{summary}} · not run',
+      stale: '{{summary}} · changed since, nothing ran',
       working: '{{summary}} · working…',
+      /** Over the one option the server marks (CON-467). */
+      recommended: 'RECOMMENDED',
     },
 
     /**
@@ -3162,6 +3165,29 @@ export const en = {
         title: 'Publishing on their own: {{platforms}}',
         none: 'Nothing publishes on its own now',
         note: 'Posts already scheduled keep how they were scheduled; this applies from now on.',
+      },
+    },
+
+    /**
+     * How an offer answered from its card went (CON-467): what a run left
+     * undone, each with the server's reason, and a tagging with its undo.
+     */
+    answered: {
+      notMade: {
+        word: 'NOT DONE',
+        title_one: '{{formatted}} not done',
+        title_other: '{{formatted}} not done',
+        /** Items the server names no title for, under one reason. */
+        unnamed_one: '{{formatted}} item',
+        unnamed_other: '{{formatted}} items',
+        more_one: 'and {{formatted}} more',
+        more_other: 'and {{formatted}} more',
+        retry: 'RETRY',
+      },
+      tagged: {
+        word: 'TAGGED',
+        title_one: '{{formatted}} asset tagged',
+        title_other: '{{formatted}} assets tagged',
       },
     },
 

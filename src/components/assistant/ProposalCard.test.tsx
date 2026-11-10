@@ -44,6 +44,68 @@ describe('ProposalCard', () => {
     expect(confirm).toHaveBeenCalledWith('t', 'pr1', 'ideas')
   })
 
+  it('leads with the option the server recommends (CON-467)', () => {
+    render(
+      <ProposalCard
+        threadId="t"
+        disabled={false}
+        proposal={{
+          ...base,
+          summary: 'Thursday already has 3 posts',
+          options: [
+            { id: 'friday', title: 'Move it to Friday' },
+            { id: 'anyway', title: 'Add it anyway' },
+          ],
+          recommended: 'friday',
+        }}
+      />,
+    )
+    expect(screen.getAllByText('RECOMMENDED')).toHaveLength(1)
+    const [lead, other] = screen.getAllByText('CHOOSE')
+    expect(lead.closest('li')?.textContent).toContain('Move it to Friday')
+    // The lead is the dark button; the rest are text actions.
+    expect(lead.className).not.toBe(other.className)
+  })
+
+  it('weighs every option alike without a recommendation', () => {
+    render(
+      <ProposalCard
+        threadId="t"
+        disabled={false}
+        proposal={{
+          ...base,
+          options: [
+            { id: 'a', title: 'Rewrite the tone line' },
+            { id: 'b', title: 'Pick the Host voice' },
+          ],
+        }}
+      />,
+    )
+    expect(screen.queryByText('RECOMMENDED')).toBeNull()
+    const [a, b] = screen.getAllByText('CHOOSE')
+    expect(a.className).toBe(b.className)
+  })
+
+  it('says a confirm ran nothing because the offer went stale', () => {
+    render(
+      <ProposalCard
+        threadId="t"
+        disabled={false}
+        proposal={{
+          ...base,
+          status: 'stale',
+          error: 'the ideas were deleted',
+        }}
+      />,
+    )
+    expect(
+      screen.getByText(
+        'Draft 2 posts from 3 ideas · changed since, nothing ran',
+      ),
+    ).toBeTruthy()
+    expect(screen.getByText('the ideas were deleted')).toBeTruthy()
+  })
+
   it('collapses to one line once answered', () => {
     render(
       <ProposalCard

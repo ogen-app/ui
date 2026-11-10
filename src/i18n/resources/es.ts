@@ -2427,7 +2427,9 @@ export const es: Translation = {
       expired: '{{summary}} · caducada',
       superseded: '{{summary}} · sin responder',
       closed: '{{summary}} · no ejecutada',
+      stale: '{{summary}} · cambió desde entonces, no se ejecutó nada',
       working: '{{summary}} · en marcha…',
+      recommended: 'RECOMENDADA',
     },
 
     findings: {
@@ -2637,6 +2639,24 @@ export const es: Translation = {
         title: 'Publican solas: {{platforms}}',
         none: 'Ahora no publica sola ninguna',
         note: 'Las publicaciones ya programadas siguen como se programaron; esto vale de aquí en adelante.',
+      },
+    },
+
+    answered: {
+      notMade: {
+        word: 'SIN HACER',
+        title_one: '{{formatted}} sin hacer',
+        title_other: '{{formatted}} sin hacer',
+        unnamed_one: '{{formatted}} elemento',
+        unnamed_other: '{{formatted}} elementos',
+        more_one: 'y {{formatted}} más',
+        more_other: 'y {{formatted}} más',
+        retry: 'REINTENTAR',
+      },
+      tagged: {
+        word: 'ETIQUETADOS',
+        title_one: '{{formatted}} recurso etiquetado',
+        title_other: '{{formatted}} recursos etiquetados',
       },
     },
 

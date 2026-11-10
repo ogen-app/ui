@@ -594,6 +594,16 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   "yes" runs the same stored offer, and the composer says so while one waits.
   UNDO calls `…/actions/:id/undo` with the result's `undoId`; a 409 means the
   entity changed again since and is said as such.
+  **A confirm re-checks first** (CON-467/471): an offer whose ground moved
+  runs nothing, and the card goes `stale` — a confirm whose `complete.result`
+  is `proposed` again, with what still holds as a fresh card below, or a 409
+  whose message opens with the server's fixed `Things changed since the
+  offer: `, which history reads off the reply too. A run that did part of the
+  job carries `notMade` and a `retryProposalId` on that same `result`;
+  `OfferOutcome` lists what wasn't done with the server's reasons, and its
+  RETRY confirms the retry offer, which is never drawn as a card of its own
+  while it waits. An option marked `recommended` (at most one) is the card's
+  dark button with the tag; without the mark every option weighs the same.
 - **The assistant can change the screen** (D5). A turn's `ui_action`s are
   applied in order when it completes (`useAssistantUiActions` registers the
   applier with the router; `lib/assistantUiActions.destinationFor` maps screen,
@@ -1032,9 +1042,9 @@ removes, so the two ship together, and neither has had a live pass yet. Until
 the follow-ups land: every pack sends typed results now (assets CON-460,
 foundation CON-461, repair CON-462, analytics CON-463, workspace CON-464,
 ideas CON-465), though the facts ledger is still unbuilt; the posts list doesn't say what it was
-sorted on, so its card shows reach and rate on every row; an offer has no
-`recommended` option, so its choices are drawn with equal weight; a reloaded thread infers an offer's
-state instead of reading it; and an idea row has no post count, so "used in
+sorted on, so its card shows reach and rate on every row; a reloaded thread infers an offer's
+state instead of reading it; a tagging below the offer threshold isn't
+among the assets pack's results, so only one run from an offer shows UNDO; and an idea row has no post count, so "used in
 N posts" isn't shown. Idea slots are in the week view only.
 
 Inviting teammates is live end to end (People, in Workspace Settings; the

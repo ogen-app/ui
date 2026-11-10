@@ -24,6 +24,7 @@ import type {
   AnalyticsResults,
   WorkspaceResults,
   IdeasResults,
+  OfferOutcome,
   AssistantAction,
   AssistantProposal,
   CalendarFindings,
@@ -98,6 +99,8 @@ export type AssistantTurnResult = {
   workspace?: WorkspaceResults
   /** The ideas pack's typed results (CON-465). */
   ideas?: IdeasResults
+  /** How an offer answered from its card went (CON-467). */
+  answered?: OfferOutcome
 }
 
 export type AssistantStreamEvent =
@@ -287,7 +290,7 @@ export function parseHistoryResult(
   if (typeof parsed.explanation !== 'string') {
     return { ...emptyResult(), explanation: content }
   }
-  if (record(parsed.results) || kind === 'workspace') {
+  if (record(parsed.results) || record(parsed.result) || kind === 'workspace') {
     return turnResult(parsed)
   }
   // A migrated row: the subject's own pack result, at the top level.
@@ -362,7 +365,41 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
   result.analytics = analyticsResults(results)
   result.workspace = workspaceResults(results)
   result.ideas = ideasResults(results)
+  result.answered = offerOutcome(parsed.result)
   return result
+}
+
+/**
+ * Reads a confirm's `result` — the confirmed tool's outcome (CON-467). Absent
+ * when it says nothing beyond the packs' results: no re-offer, nothing left
+ * undone, no tagging.
+ */
+export function offerOutcome(raw: unknown): OfferOutcome | undefined {
+  const r = record(raw)
+  if (!r) return undefined
+  const notMade = Array.isArray(r.notMade)
+    ? r.notMade
+        .filter(isRecord)
+        .map((n) => ({
+          id: str(n.id),
+          title: optStr(n.title),
+          reason: str(n.reason),
+        }))
+        .filter((n) => n.id || n.title)
+    : []
+  const out = record(r.result)
+  const tagged =
+    r.status === 'ok' && typeof out?.tagged === 'number'
+      ? { count: out.tagged, undoId: optStr(out.undoId) }
+      : undefined
+  const reoffered = r.status === 'proposed'
+  if (!reoffered && notMade.length === 0 && !tagged) return undefined
+  return {
+    reoffered,
+    notMade,
+    retryProposalId: optStr(r.retryProposalId),
+    tagged,
+  }
 }
 
 /**
@@ -971,9 +1008,12 @@ function proposal(card: Record<string, unknown>): AssistantProposal | null {
           }))
           .filter((o) => o.id && o.title)
       : [],
-    // Not sent yet: the option the assistant would pick (API ask). When it
-    // arrives, that option gets the one dark button.
-    recommended: optStr(card.recommended),
+    // At most one option is marked (CON-467): the card leads with it.
+    recommended: Array.isArray(card.options)
+      ? optStr(
+          card.options.filter(isRecord).find((o) => o.recommended === true)?.id,
+        )
+      : undefined,
     status: 'pending',
   }
 }

@@ -145,7 +145,7 @@ export type AssistantProposal = {
   expiresAt?: string
   /** A choice of ways forward (a budget conflict); empty for a plain offer. */
   options: { id: string; title: string; description?: string }[]
-  /** The option the assistant would pick, when it says. */
+  /** The option the card leads with, when the server marks one (CON-467). */
   recommended?: string
   status: ProposalStatus
   /** The option it was answered with. */
@@ -155,14 +155,17 @@ export type AssistantProposal = {
 }
 
 /**
- * `pending` waits on the user; `superseded` is an offer a later turn moved
- * past without answering — it may still be live server-side, but the card no
+ * `pending` waits on the user; `stale` was confirmed but ran nothing, because
+ * what it was offered on changed while it waited (CON-467) — what still holds
+ * comes back as a fresh offer, or the refusal says why; `superseded` is an
+ * offer a later turn moved past without answering — it may still be live server-side, but the card no
  * longer stands in the thread as the thing to answer.
  */
 export type ProposalStatus =
   | 'pending'
   | 'confirming'
   | 'confirmed'
+  | 'stale'
   | 'dismissed'
   | 'expired'
   | 'closed'
@@ -917,6 +920,8 @@ export type AssistantTurn = {
   workspace?: WorkspaceResults
   /** What the ideas pack read or changed this turn (CON-465). */
   ideas?: IdeasResults
+  /** How an offer answered from its card went, on the reply it ran in. */
+  answered?: OfferOutcome
   /** What this turn did to the screen, and where each can be put back to. */
   uiActions?: AppliedUIAction[]
   /**
@@ -980,3 +985,26 @@ export type AssistantThread = {
    */
   streamedPosts: StreamedPost[]
 }
+
+/**
+ * How a confirmed offer went (CON-467), read off the confirm's
+ * `complete.result`: re-offered because what it was made on changed, or run
+ * with some of it left undone — each with why, and the items worth trying
+ * again offered on a card of their own.
+ */
+export type OfferOutcome = {
+  /** Nothing ran; what still holds waits on a fresh card. */
+  reoffered: boolean
+  notMade: OfferNotMade[]
+  /** The fresh offer of just what is worth retrying. */
+  retryProposalId?: string
+  /**
+   * Assets tagged from an offer, with the undo that takes the tags back. The
+   * assets pack doesn't record a tagging among its results, so this is the
+   * only place it reaches the client.
+   */
+  tagged?: { count: number; undoId?: string }
+}
+
+/** An item a run left undone. `title` is missing where the tool names none. */
+export type OfferNotMade = { id: string; title?: string; reason: string }

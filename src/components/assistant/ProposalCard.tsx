@@ -11,12 +11,18 @@ import type { AssistantProposal } from '@/types/assistant'
  * runs the same stored offer, which is why the composer says so meanwhile.
  *
  * An offer with options is a choice: each option a row with its consequence
- * underneath. The option the assistant would pick gets the dark button when
- * the server says which; until then they are equal.
+ * underneath. The option the server marks recommended gets the dark button
+ * and the tag; without the mark they are equal, and the card never picks one
+ * itself (CON-467).
+ *
+ * A confirm re-checks the offer first, and one whose ground moved runs
+ * nothing: the card says so, with the refusal's reason when there is one,
+ * and what still holds arrives below as a fresh offer.
  */
 const RESOLVED = {
   confirming: 'working',
   confirmed: 'confirmed',
+  stale: 'stale',
   dismissed: 'dismissed',
   expired: 'expired',
   superseded: 'superseded',
@@ -71,6 +77,11 @@ export function ProposalCard({
                 className="flex items-start gap-3 border-t border-border py-3"
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  {recommended && (
+                    <StatusWord tone="accent">
+                      {t('assistant.proposal.recommended')}
+                    </StatusWord>
+                  )}
                   <span className="text-sm font-medium text-foreground">
                     {option.title}
                   </span>

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   listThreads,
+  offerOutcome,
   parseHistoryResult,
   streamAssistantTurn,
   threadScope,
@@ -854,5 +855,74 @@ describe('a draft written from ideas (CON-466)', () => {
         }),
       },
     ])
+  })
+})
+
+describe('an offer answered from its card (CON-467)', () => {
+  it('reads what a run left undone, and its retry', () => {
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Done in part: Draft 12 posts. 3 not done.',
+        action: 'answered',
+        result: {
+          status: 'ok',
+          result: { posts: [] },
+          notMade: [
+            { id: 'i1', title: 'Six rooms · instagram', reason: 'timed out' },
+            { id: 'i2', reason: 'it no longer exists' },
+            { id: '', reason: 'nothing to name' },
+          ],
+          retryProposalId: 'pr9',
+        },
+      }),
+      'campaign',
+    )
+    expect(r.answered).toEqual({
+      reoffered: false,
+      notMade: [
+        { id: 'i1', title: 'Six rooms · instagram', reason: 'timed out' },
+        { id: 'i2', title: undefined, reason: 'it no longer exists' },
+      ],
+      retryProposalId: 'pr9',
+      tagged: undefined,
+    })
+  })
+
+  it('reads a re-offer and a tagging, and nothing from a plain run', () => {
+    expect(offerOutcome({ status: 'proposed', proposalId: 'pr2' })).toEqual({
+      reoffered: true,
+      notMade: [],
+      retryProposalId: undefined,
+      tagged: undefined,
+    })
+    expect(
+      offerOutcome({ status: 'ok', result: { tagged: 14, undoId: 'u1' } })
+        ?.tagged,
+    ).toEqual({ count: 14, undoId: 'u1' })
+    expect(offerOutcome({ status: 'ok', result: { done: 3 } })).toBeUndefined()
+    expect(offerOutcome(undefined)).toBeUndefined()
+  })
+
+  it('marks the option the server recommends', () => {
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Thursday is full.',
+        action: 'answered',
+        results: {},
+        proposals: [
+          {
+            id: 'pr1',
+            tool: 'applyCalendarMoves',
+            summary: 'Thursday already has 3 posts',
+            options: [
+              { id: 'anyway', title: 'Add it anyway' },
+              { id: 'friday', title: 'Move it to Friday', recommended: true },
+            ],
+          },
+        ],
+      }),
+      'campaign',
+    )
+    expect(r.proposals[0].recommended).toBe('friday')
   })
 })
