@@ -2146,6 +2146,7 @@ export const es: Translation = {
       proposed: 'Esperando tu visto bueno',
       post_drafted: 'Borradores escritos',
       platforms_updated: 'Plataformas actualizadas',
+      goal_updated: 'Objetivo de publicaciones ampliado',
       cloned: 'Publicación clonada',
       restored: 'Versión restaurada',
       scheduled: 'Publicación programada',
@@ -2376,6 +2377,7 @@ export const es: Translation = {
       proposed: 'Esperando tu visto bueno',
       post_drafted: 'Escribió borradores',
       platforms_updated: 'Actualizó las plataformas',
+      goal_updated: 'Amplió el objetivo de publicaciones',
       cloned: 'Clonó la publicación',
       restored: 'Restauró una versión',
       scheduled: 'Programó la publicación',
@@ -2653,6 +2655,16 @@ export const es: Translation = {
         more_other: 'y {{formatted}} más',
         retry: 'REINTENTAR',
       },
+      replaced: {
+        word: 'ELIMINADOS',
+        title_one: '{{formatted}} borrador más débil eliminado definitivamente',
+        title_other:
+          '{{formatted}} borradores más débiles eliminados definitivamente',
+        kept_one:
+          '{{formatted}} conservado: cambió desde la propuesta o no hacía falta.',
+        kept_other:
+          '{{formatted}} conservados: cambiaron desde la propuesta o no hacían falta.',
+      },
       tagged: {
         word: 'ETIQUETADOS',
         title_one: '{{formatted}} recurso etiquetado',
@@ -2855,6 +2867,17 @@ export const es: Translation = {
       drafts_one: '+{{formatted}} borrador, sin programar',
       drafts_other: '+{{formatted}} borradores, sin programar',
       platformsUpdated: 'Plataformas actualizadas',
+      platformsAdded: 'añadido: {{what}}',
+      platformsRemoved: 'quitado: {{what}}',
+      goal: {
+        week_one: 'Objetivo ampliado a {{formatted}} publicación por semana',
+        week_other:
+          'Objetivo ampliado a {{formatted}} publicaciones por semana',
+        month_one: 'Objetivo ampliado a {{formatted}} publicación al mes',
+        month_other: 'Objetivo ampliado a {{formatted}} publicaciones al mes',
+        total_one: '{{formatted}} en total',
+        total_other: '{{formatted}} en total',
+      },
       briefApplied: 'Briefing actualizado y guardado',
       briefNotApplied: 'Briefing sugerido pero no aplicado',
       severity: {

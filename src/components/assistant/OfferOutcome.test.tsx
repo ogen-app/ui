@@ -84,6 +84,22 @@ describe('OfferOutcome', () => {
   })
 })
 
+describe('the budget guard’s replace (CON-468)', () => {
+  it('says how many drafts were deleted, and how many kept', async () => {
+    await show({
+      reoffered: false,
+      notMade: [],
+      replaced: { deleted: 4, kept: 1 },
+    })
+    expect(screen.getByText('4 weaker drafts deleted for good')).toBeTruthy()
+    expect(
+      screen.getByText('1 kept: it changed since the offer, or wasn’t needed.'),
+    ).toBeTruthy()
+    // Deleted for good: nothing to undo.
+    expect(screen.queryByText('UNDO')).toBeNull()
+  })
+})
+
 describe('in Spanish', () => {
   afterAll(async () => {
     await i18next.changeLanguage('en')

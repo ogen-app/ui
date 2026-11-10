@@ -650,8 +650,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   dismissals, which the Overview and the campaign thread both read. **The
   Overview's Needs attention card leads with the server's problems**
   (`useCampaignProblems`, read off `GET /api/campaigns/:id/overview`), and
-  drops the two client rules they cover (`post-type-dropped`,
-  `scheduled-outside-window`). The Overview runs no assistant, so its fix
+  drops the client rules they cover (`post-type-dropped`,
+  `scheduled-outside-window`, and since CON-468's `platform_not_targeted`
+  both `channel-dropped` rules) once they have arrived. A removed platform
+  leaves its posts where they were, and that finding is how they surface,
+  with `enable_platform` among its fixes. The campaign pack's result says
+  what a platforms change `added` and `removed`, and a raised `goal` as its
+  rate with the campaign's total, with UNDO (`campaign_goal`). The budget
+  guard's options are ordinary choices; its "replace the weakest drafts"
+  deletes for good, and `OfferOutcome` says how many. The Overview runs no assistant, so its fix
   sends `Fix the problem <key>: <message>` to the campaign's thread, which
   answers with that finding's fixes as offers; a fix that is only a post to
   open is a link.

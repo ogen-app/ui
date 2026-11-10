@@ -21,7 +21,8 @@ const LIST_ROWS = 8
  * reason in amber, and RETRY — which confirms the fresh offer of just the
  * items worth trying again, so the original offer can never run twice. A
  * tagging run from an offer gets its card here, with UNDO, because the
- * assets pack doesn't record one among its results.
+ * assets pack doesn't record one among its results; so do the drafts the
+ * budget guard's "replace" deleted, which have no undo (CON-468).
  */
 export function OfferOutcome({
   threadId,
@@ -46,9 +47,26 @@ export function OfferOutcome({
     states: undoStates,
     onUndo: (undoId) => void undo(threadId, turnId, undoId),
   }
-  const { notMade, tagged } = outcome
+  const { notMade, tagged, replaced } = outcome
   return (
     <>
+      {replaced && replaced.deleted + replaced.kept > 0 && (
+        <ResultBlock
+          status={t('assistant.answered.replaced.word')}
+          title={t(
+            'assistant.answered.replaced.title',
+            counted(replaced.deleted),
+          )}
+        >
+          {replaced.kept > 0 && (
+            <ResultRow>
+              <p className="text-[12.5px] text-secondary-foreground">
+                {t('assistant.answered.replaced.kept', counted(replaced.kept))}
+              </p>
+            </ResultRow>
+          )}
+        </ResultBlock>
+      )}
       {tagged && (
         <ResultBlock
           status={t('assistant.answered.tagged.word')}
