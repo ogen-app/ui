@@ -808,3 +808,51 @@ describe('the analytics pack’s results (CON-463)', () => {
     })
   })
 })
+
+describe('a draft written from ideas (CON-466)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('streams as a generated post', async () => {
+    const drafted = {
+      postId: 'p1',
+      title: 'A pool in the rock',
+      platformId: 'instagram',
+      ideaIds: ['i1'],
+      usedAssetIds: [],
+      grounding: { mode: 'exploratory' },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            `event: idea_draft_post\ndata: ${JSON.stringify(drafted)}\n\n`,
+            { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
+          ),
+      ),
+    )
+    const events: AssistantStreamEvent[] = []
+    await streamAssistantTurn(
+      {
+        instruction: 'draft them',
+        viewContext: {
+          version: 1,
+          screen: 'campaign.ideas',
+          scope: { kind: 'campaign', id: 'c1' },
+        },
+      },
+      (e) => events.push(e),
+    )
+    expect(events).toEqual([
+      {
+        type: 'post_generated',
+        post: expect.objectContaining({
+          id: 'p1',
+          title: 'A pool in the rock',
+          platform_id: 'instagram',
+          scheduled_at: null,
+        }),
+      },
+    ])
+  })
+})

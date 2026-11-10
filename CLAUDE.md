@@ -680,6 +680,20 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   never presses it: the connect flow leaves the app, and that is the user's
   to start. The same address is what the expiry emails' `reconnect` link now
   lands on.
+- **The ideas pack's results are cards** (CON-465/466). `complete.results.
+  ideas` holds each tool's last output — found, a verdict and many, moved,
+  deleted, compiled, drafted, `getIdea`, `editIdea`, `similarIdeas`,
+  `ideasInCommon`, duplicates and a merge — and `IdeasResults` draws one card
+  each, with UNDO on every change the server can put back: a verdict,
+  verdicts in bulk, an edit, and a compile (`post_created`, which deletes the
+  planned post while it is as the assistant made it, and is "changed since"
+  after). A delete and a merge have none. Piles are named as the Ideas list
+  names them. Compile and draft carry `grounding`, drawn in the one
+  sources slot; a draft that isn't grounded says so on its own row. **Drafts
+  made from ideas stream**: `idea_draft_post` is read as the same
+  `post_generated` the draftPost sub-flow gives, so they land on the
+  campaign's lists as they are written. `getIdea`'s fit is drawn by the Ideas
+  list's own `FitSection`.
 - **A planned post is a post with theses and no body** (CON-449). `planned`
   can only become `draft`, and only by gaining a body — the server moves it,
   so it has no button. Ideas are never posts: on the week calendar an idea
@@ -1015,11 +1029,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 **The universal assistant waits on the API's merge, and on five API
 follow-ups** (CON-451). The UI (#227–#234) replaces endpoints the backend stack
 removes, so the two ship together, and neither has had a live pass yet. Until
-the follow-ups land: the ideas pack sends no typed results or `undoId`, so
-its turns are prose plus `touched` — the merge card and facts ledger are
-unbuilt (the assets pack's arrived with CON-460, the foundation pack's with
-CON-461, the repair pack's with CON-462, the analytics pack's with CON-463,
-the workspace pack's with CON-464); the posts list doesn't say what it was
+the follow-ups land: every pack sends typed results now (assets CON-460,
+foundation CON-461, repair CON-462, analytics CON-463, workspace CON-464,
+ideas CON-465), though the facts ledger is still unbuilt; the posts list doesn't say what it was
 sorted on, so its card shows reach and rate on every row; an offer has no
 `recommended` option, so its choices are drawn with equal weight; a reloaded thread infers an offer's
 state instead of reading it; and an idea row has no post count, so "used in
