@@ -2717,7 +2717,7 @@ export const es: Translation = {
         title_other: 'Lo que comparten {{formatted}} ideas',
         nothing_one: '{{formatted}} idea, nada que comparar',
         nothing_other: '{{formatted}} ideas, nada en común',
-        value: '{{value}} ({{count}} de {{of}})',
+        value: '{{value}} ({{formatted}} de {{of}})',
         assets: 'Fuentes',
         lenses: 'Enfoques de análisis',
         campaigns: 'Campañas',

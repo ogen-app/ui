@@ -3243,7 +3243,7 @@ export const en = {
         title_other: 'What {{formatted}} ideas share',
         nothing_one: '{{formatted}} idea, nothing to compare',
         nothing_other: '{{formatted}} ideas, nothing in common',
-        value: '{{value}} ({{count}} of {{of}})',
+        value: '{{value}} ({{formatted}} of {{of}})',
         assets: 'Sources',
         lenses: 'Lenses',
         campaigns: 'Campaigns',
