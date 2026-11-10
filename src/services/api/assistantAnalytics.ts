@@ -10,7 +10,11 @@ import type {
   PeriodComparison,
   PostsList,
 } from '@/types/assistant'
-import type { AnalyticsOverview, PerformersBoard } from '@/types/analytics'
+import type {
+  AnalyticsOverview,
+  PerformerRow,
+  PerformersBoard,
+} from '@/types/analytics'
 import { isRecord } from './json'
 
 /**
@@ -26,14 +30,8 @@ export function analyticsResults(
   const a = record(results.analytics)
   if (!a) return undefined
   const out: AnalyticsResults = {
-    overview: read(a.analyticsOverview, (d) =>
-      isRecord(d) && Array.isArray(d.cards)
-        ? (d as unknown as AnalyticsOverview)
-        : undefined,
-    ),
-    topPosts: read(a.topPosts, (d) =>
-      isRecord(d) ? (d as unknown as PerformersBoard) : undefined,
-    ),
+    overview: read(a.analyticsOverview, overview),
+    topPosts: read(a.topPosts, performers),
     lessons: read(a.analyticsLessons, (d) => d),
     postStats: read(a.postStats, (d) => d),
     bestTimes: read(a.bestTimes, bestTimes),
@@ -86,6 +84,44 @@ function read<T>(
   if (parsed === undefined) out.unavailable = 'unknown'
   else out.data = parsed
   return out
+}
+
+/**
+ * The overview as the dashboard's endpoint answers it, keeping only the
+ * cards whose fields the card reads.
+ */
+function overview(raw: unknown): AnalyticsOverview | undefined {
+  const d = record(raw)
+  if (!d || !Array.isArray(d.cards)) return undefined
+  return {
+    ...(d as unknown as AnalyticsOverview),
+    cards: d.cards.filter(
+      (c): c is AnalyticsOverview['cards'][number] =>
+        isRecord(c) &&
+        typeof c.metric === 'string' &&
+        typeof c.value === 'number' &&
+        typeof c.delta_pct === 'number',
+    ),
+  }
+}
+
+/** The board as `/performers` answers it, with its lists as lists. */
+function performers(raw: unknown): PerformersBoard | undefined {
+  const d = record(raw)
+  if (!d) return undefined
+  const rows = (v: unknown) =>
+    (Array.isArray(v) ? v : []).filter(
+      (p): p is PerformerRow =>
+        isRecord(p) &&
+        typeof p.post_id === 'string' &&
+        typeof p.reach === 'number',
+    )
+  return {
+    ...(d as unknown as PerformersBoard),
+    total_posts: num(d.total_posts),
+    best: rows(d.best),
+    worst: rows(d.worst),
+  }
 }
 
 function bestTimes(raw: unknown): BestTimeSlot[] | undefined {

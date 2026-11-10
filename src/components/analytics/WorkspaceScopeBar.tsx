@@ -165,7 +165,10 @@ export function WorkspaceScopeBar({
       <div className="ml-auto flex flex-wrap items-center gap-2">
         {/* What the numbers are about, then over when: the campaign narrows
             the posts counted, the period the days. */}
-        {onCampaignChange && campaigns.length > 0 && (
+        {/* Also shown with no list to pick from — still loading, or a
+            workspace without campaigns — while a link has narrowed it, so
+            the filter can be seen and cleared. */}
+        {onCampaignChange && (campaigns.length > 0 || campaignId) && (
           <Picker
             label={t('analytics.scopeBar.campaign')}
             value={campaignLabel}

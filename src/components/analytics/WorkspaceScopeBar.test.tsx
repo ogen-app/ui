@@ -181,4 +181,12 @@ describe('WorkspaceScopeBar', () => {
     await userEvent.selectOptions(campaign, 'all')
     expect(onCampaignChange).toHaveBeenCalledWith(undefined)
   })
+
+  it('keeps a campaign filter visible while there is no list to pick from', () => {
+    setup({ campaigns: [], campaignId: 'c1', onCampaignChange: vi.fn() })
+    const campaign = screen.getByLabelText(/Campaign/) as HTMLSelectElement
+    expect(campaign.selectedOptions[0].textContent).toBe(
+      'A campaign no longer listed',
+    )
+  })
 })

@@ -34,6 +34,15 @@ describe('validateAnalyticsSearch', () => {
     ).toEqual({ platform: 'linkedin' })
   })
 
+  it('keeps only the spans the dashboard offers, when told them', () => {
+    expect(validateAnalyticsSearch({ window: '90d' }, ['7d', '28d'])).toEqual(
+      {},
+    )
+    expect(validateAnalyticsSearch({ window: '7d' }, ['7d', '28d'])).toEqual({
+      window: '7d',
+    })
+  })
+
   it('reads the platforms as a list', () => {
     expect(searchPlatforms({ platform: 'linkedin,instagram' })).toEqual([
       'linkedin',

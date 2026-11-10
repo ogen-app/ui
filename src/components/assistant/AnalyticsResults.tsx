@@ -376,7 +376,7 @@ function TopPostsRows({ board }: { board: PerformersBoard }) {
         {p.title || t('assistant.analytics.untitled')}
       </span>
       <span className="shrink-0 tabular-nums text-tertiary-foreground">
-        {p.against_typical !== null
+        {typeof p.against_typical === 'number'
           ? t('assistant.analytics.topPosts.typical', {
               value: formatNumber(p.against_typical, {
                 maximumFractionDigits: 1,
