@@ -313,6 +313,44 @@ describe('assistantStore', () => {
       })
     })
 
+    it('calls a confirm that ran nothing stale, under its fresh offer (CON-467)', async () => {
+      const id = await withOffer()
+      const fresh = { ...card, id: 'pr2', summary: 'Draft 1 post from 2 ideas' }
+      stream.events = [
+        { type: 'proposal_created', proposal: fresh },
+        {
+          type: 'complete',
+          result: result({
+            explanation: 'Things changed since the offer: nothing ran.',
+            proposals: [fresh],
+            answered: { reoffered: true, notMade: [] },
+          }),
+        },
+      ]
+      await useAssistantStore.getState().confirmProposal(id, 'pr1')
+      expect(offer(id)?.status).toBe('stale')
+      expect(lastTurn(id).proposals?.[0]).toMatchObject({
+        id: 'pr2',
+        status: 'pending',
+      })
+    })
+
+    it('says what changed when a confirm is refused for it', async () => {
+      const id = await withOffer()
+      stream.events = [
+        {
+          type: 'error',
+          message: 'Things changed since the offer: the ideas were deleted',
+          status: 409,
+        },
+      ]
+      await useAssistantStore.getState().confirmProposal(id, 'pr1')
+      expect(offer(id)).toMatchObject({
+        status: 'stale',
+        error: 'the ideas were deleted',
+      })
+    })
+
     it('dismisses from the card', async () => {
       const id = await withOffer()
       await useAssistantStore.getState().dismissProposal(id, 'pr1')
@@ -477,6 +515,54 @@ describe('settleHistory', () => {
     expect(turns[1].proposals?.[0].status).toBe('confirmed')
     expect(turns[3].proposals?.[0].status).toBe('expired')
     expect(turns[5].proposals?.[0].status).toBe('pending')
+  })
+
+  it('reads a confirm that ran nothing as stale (CON-467)', async () => {
+    const { settleHistory } = await import('./assistantStore')
+    const offer = (id: string, summary: string) => ({
+      id,
+      tool: 't',
+      summary,
+      options: [],
+      status: 'pending' as const,
+    })
+    const turns = [
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        content: '',
+        proposals: [offer('p1', 'Move 5 posts'), offer('p2', 'Tag 9 assets')],
+      },
+      {
+        id: 'u1',
+        role: 'user' as const,
+        content: 'Confirmed: Move 5 posts',
+        answer: 'confirmed' as const,
+      },
+      {
+        id: 'a2',
+        role: 'assistant' as const,
+        content: 'Things changed since the offer: nothing ran.',
+        answered: { reoffered: true, notMade: [] },
+      },
+      {
+        id: 'u2',
+        role: 'user' as const,
+        content: 'Confirmed: Tag 9 assets',
+        answer: 'confirmed' as const,
+      },
+      {
+        id: 'a3',
+        role: 'assistant' as const,
+        content: 'Things changed since the offer: 3 assets were deleted',
+      },
+    ]
+    settleHistory(turns, Date.parse('2026-11-08T00:00:00Z'))
+    expect(turns[0].proposals?.[0].status).toBe('stale')
+    expect(turns[0].proposals?.[1]).toMatchObject({
+      status: 'stale',
+      error: '3 assets were deleted',
+    })
   })
 })
 

@@ -19,6 +19,7 @@ const STATUS_TONE = {
   neutral: 'text-tertiary-foreground',
   warning: 'text-warning',
   destructive: 'text-destructive',
+  accent: 'text-accent',
 } as const
 
 export type StatusTone = keyof typeof STATUS_TONE

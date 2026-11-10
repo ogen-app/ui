@@ -844,26 +844,45 @@ export const useAssistantStore = create<AssistantState>()(
             (onEvent, signal) =>
               confirmProposalRequest(proposalId, optionId, onEvent, signal),
             (status, message) =>
-              // Gone, already answered or expired: the card stops offering.
-              setProposal(threadId, proposalId, {
-                status: 'closed',
-                error:
-                  status === 404
-                    ? i18next.t('assistant.proposal.gone')
-                    : message,
-              }),
+              // Gone, already answered, expired, or refused because what it
+              // was offered on changed: the card stops offering.
+              setProposal(
+                threadId,
+                proposalId,
+                message.startsWith(CHANGED_SINCE)
+                  ? {
+                      status: 'stale',
+                      error: message.slice(CHANGED_SINCE.length),
+                    }
+                  : {
+                      status: 'closed',
+                      error:
+                        status === 404
+                          ? i18next.t('assistant.proposal.gone')
+                          : message,
+                    },
+              ),
           )
           // Only a turn that answered ran the offer. One that failed before or
           // during the stream, or was stopped, did not finish it — the card
           // says so rather than claim it was confirmed, and the reply below it
           // carries the reason. (An `error` event has closed it already.)
-          const after = findProposal(get().threads[threadId], proposalId)
+          const settled = get().threads[threadId]
+          const after = findProposal(settled, proposalId)
           if (after?.status !== 'confirming') return
+          // A confirm that ran nothing because the offer's ground moved
+          // answers with a fresh offer of what still holds (CON-467).
+          const reply = settled?.turns[settled.turns.length - 1]
           setProposal(
             threadId,
             proposalId,
             outcome === 'answered'
-              ? { status: 'confirmed' }
+              ? {
+                  status:
+                    reply?.role === 'assistant' && reply.answered?.reoffered
+                      ? 'stale'
+                      : 'confirmed',
+                }
               : {
                   status: 'closed',
                   error: i18next.t(
@@ -1004,6 +1023,7 @@ function turnFields(
   | 'analytics'
   | 'workspace'
   | 'ideas'
+  | 'answered'
 > {
   return {
     proposals: result.proposals.length > 0 ? result.proposals : undefined,
@@ -1014,6 +1034,7 @@ function turnFields(
     analytics: result.analytics,
     workspace: result.workspace,
     ideas: result.ideas,
+    answered: result.answered,
     content: result.explanation,
     action: result.action,
     details: result.details,
@@ -1177,6 +1198,7 @@ function undoTouches(
   if (kind === 'campaign_assets' || kind === 'campaign_created')
     return [{ kind: 'asset' }, { kind: 'campaign' }]
   if (kind === 'auto_publish') return [{ kind: 'auto_publish' }]
+  if (kind === 'asset_tags') return [{ kind: 'asset' }]
   const campaignId =
     thread && thread.subject.kind !== 'workspace'
       ? thread.subject.campaignId
@@ -1190,6 +1212,13 @@ function undoTouches(
  */
 const ANSWER_PREFIX = { confirmed: 'Confirmed: ', dismissed: 'Dismissed: ' }
 
+/**
+ * How the server opens why a confirmed offer ran nothing: what it was made on
+ * changed while it waited (CON-467). Its fixed wording, like the answer
+ * prefixes — the refusal carries no code of its own.
+ */
+const CHANGED_SINCE = 'Things changed since the offer: '
+
 function answerOf(content: string): AssistantTurn['answer'] {
   if (content.startsWith(ANSWER_PREFIX.confirmed)) return 'confirmed'
   if (content.startsWith(ANSWER_PREFIX.dismissed)) return 'dismissed'
@@ -1198,25 +1227,42 @@ function answerOf(content: string): AssistantTurn['answer'] {
 
 /**
  * Gives a reloaded thread's offers the state the server doesn't store on the
- * card: answered from its card (a later answer turn names it), expired, or
- * moved past by a later turn. Only the last turn's open offer stays pending.
+ * card: answered from its card (a later answer turn names it) — and, from the
+ * reply under it, whether that confirm ran or found the offer stale —
+ * expired, or moved past by a later turn. Only the last turn's open offer stays pending.
  */
 export function settleHistory(turns: AssistantTurn[], now: number): void {
-  const answered = new Map<string, 'confirmed' | 'dismissed'>()
-  for (const turn of turns) {
-    if (turn.role === 'user' && turn.answer) {
-      answered.set(
-        turn.content.slice(ANSWER_PREFIX[turn.answer].length),
-        turn.answer,
-      )
+  const answered = new Map<
+    string,
+    Pick<AssistantProposal, 'status' | 'error'>
+  >()
+  turns.forEach((turn, i) => {
+    if (turn.role !== 'user' || !turn.answer) return
+    const summary = turn.content.slice(ANSWER_PREFIX[turn.answer].length)
+    // The reply under a confirm says whether it ran: a fresh offer, or a
+    // refusal opening with what changed, means nothing did.
+    const reply = turns[i + 1]
+    if (turn.answer === 'confirmed' && reply?.role === 'assistant') {
+      if (reply.content.startsWith(CHANGED_SINCE)) {
+        answered.set(summary, {
+          status: 'stale',
+          error: reply.content.slice(CHANGED_SINCE.length),
+        })
+        return
+      }
+      if (reply.answered?.reoffered) {
+        answered.set(summary, { status: 'stale' })
+        return
+      }
     }
-  }
+    answered.set(summary, { status: turn.answer })
+  })
   const lastAssistant = [...turns].reverse().find((t) => t.role === 'assistant')
   for (const turn of turns) {
     if (!turn.proposals) continue
     turn.proposals = turn.proposals.map((p) => {
       const answer = answered.get(p.summary)
-      if (answer) return { ...p, status: answer }
+      if (answer) return { ...p, ...answer }
       if (p.expiresAt && Date.parse(p.expiresAt) <= now)
         return { ...p, status: 'expired' }
       return turn === lastAssistant ? p : { ...p, status: 'superseded' }
