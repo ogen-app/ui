@@ -198,4 +198,25 @@ describe('analyticsResults', () => {
       },
     ])
   })
+
+  it('reads the top posts’ lists as lists, whatever arrives', () => {
+    const r = analyticsResults({
+      analytics: {
+        topPosts: {
+          applied: {},
+          data: { best: 'nope', worst: null, insights: null },
+        },
+        analyticsOverview: {
+          applied: {},
+          data: { cards: [{ metric: 'reach' }, null], series: {} },
+        },
+      },
+    })
+    expect(r?.topPosts?.data).toMatchObject({
+      total_posts: 0,
+      best: [],
+      worst: [],
+    })
+    expect(r?.overview?.data?.cards).toEqual([])
+  })
 })

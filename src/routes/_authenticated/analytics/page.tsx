@@ -128,6 +128,7 @@ export function AnalyticsPage() {
   // and the performers ticked.
   const answered = overview.range
   const answeredKey = overview.platforms.join(',')
+  const answeredCampaign = overview.campaignId
   useAssistantPage(
     useMemo(() => {
       if (!answered && picked.size === 0) return null
@@ -138,7 +139,7 @@ export function AnalyticsPage() {
                 from: answered.from,
                 to: answered.to,
                 ...(answeredKey ? { platforms: answeredKey.split(',') } : {}),
-                ...(campaignId ? { campaignId } : {}),
+                ...(answeredCampaign ? { campaignId: answeredCampaign } : {}),
               },
             }
           : {}),
@@ -152,7 +153,7 @@ export function AnalyticsPage() {
             }
           : {}),
       }
-    }, [answered, answeredKey, campaignId, picked]),
+    }, [answered, answeredKey, answeredCampaign, picked]),
   )
 
   const learnings = useAnalyticsLearnings(metric, slugs)

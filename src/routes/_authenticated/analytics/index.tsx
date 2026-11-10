@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AnalyticsPage } from './page'
 import { validateAnalyticsSearch } from '@/lib/analyticsSearch'
+import { OVERVIEW_WINDOWS } from '@/hooks/useAnalyticsOverview'
 
 /**
  * The route resolves whether or not the feature is switched on:
@@ -12,6 +13,10 @@ import { validateAnalyticsSearch } from '@/lib/analyticsSearch'
  * the assistant can set them and a link carries them.
  */
 export const Route = createFileRoute('/_authenticated/analytics/')({
-  validateSearch: validateAnalyticsSearch,
+  validateSearch: (raw: Record<string, unknown>) =>
+    validateAnalyticsSearch(
+      raw,
+      OVERVIEW_WINDOWS.map((w) => w.window),
+    ),
   component: AnalyticsPage,
 })

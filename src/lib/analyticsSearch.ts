@@ -28,6 +28,11 @@ const SLUG = /^[a-z0-9_-]{1,40}$/
  */
 export function validateAnalyticsSearch(
   raw: Record<string, unknown>,
+  /**
+   * The spans the dashboard offers. Any other is dropped, so the picker never
+   * labels one span while the numbers cover another.
+   */
+  spans?: readonly string[],
 ): AnalyticsSearch {
   const out: AnalyticsSearch = {}
   const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
@@ -36,7 +41,10 @@ export function validateAnalyticsSearch(
   if (DAY.test(from) && DAY.test(to) && from <= to) {
     out.from = from
     out.to = to
-  } else if (SPAN.test(text(raw.window))) {
+  } else if (
+    SPAN.test(text(raw.window)) &&
+    (!spans || spans.includes(text(raw.window)))
+  ) {
     out.window = text(raw.window)
   }
   const platforms = text(raw.platform)

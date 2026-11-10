@@ -91,6 +91,11 @@ export type AnalyticsOverviewResult = {
    * from the shorthand.
    */
   range?: AnalyticsWindow
+  /**
+   * The campaign the answer on screen was fetched for, like `platforms`: not
+   * the picker's, which runs ahead of it while the next answer is in flight.
+   */
+  campaignId?: string
 }
 
 export function useAnalyticsOverview(
@@ -107,6 +112,7 @@ export function useAnalyticsOverview(
     // The set travels with the answer, so the card can name what it counted.
     queryFn: async () => ({
       platforms: scope,
+      campaignId,
       envelope: await fetchAnalyticsOverview({
         ...period,
         platforms: scope,
@@ -145,6 +151,7 @@ export function useAnalyticsOverview(
     isUnavailable: withheld && envelope?.reason !== 'no_data',
     isEmpty: withheld && envelope?.reason === 'no_data',
     platforms: query.data?.platforms ?? scope,
+    campaignId: query.data ? query.data.campaignId : campaignId,
     range: overview?.window,
   }
 }
