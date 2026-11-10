@@ -263,12 +263,14 @@ function AccountRow({
   useEffect(() => {
     if (!focused) return
     rowRef.current?.scrollIntoView({ block: 'center' })
-    reconnectRef.current?.focus({ preventScroll: true })
+    // A healthy account has no Reconnect button; the row takes the focus.
+    ;(reconnectRef.current ?? rowRef.current)?.focus({ preventScroll: true })
   }, [focused])
 
   return (
     <li
       ref={rowRef}
+      tabIndex={focused ? -1 : undefined}
       className={cn(
         'flex items-center gap-3 min-w-0',
         focused && 'outline-2 outline-offset-4 outline-accent',

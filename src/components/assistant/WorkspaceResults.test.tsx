@@ -15,10 +15,13 @@ vi.mock('@/hooks/usePlatforms', () => ({
   }),
 }))
 
+const members = vi.hoisted(() => ({
+  data: [{ id: 'u1', name: 'Marta Ruiz', email: 'marta@example.com' }] as
+    { id: string; name: string; email: string }[] | undefined,
+}))
+
 vi.mock('@/hooks/useWorkspaces', () => ({
-  useWorkspaceMembers: () => ({
-    data: [{ id: 'u1', name: 'Marta Ruiz', email: 'marta@example.com' }],
-  }),
+  useWorkspaceMembers: () => ({ data: members.data }),
 }))
 
 const undo = vi.fn(async () => {})
@@ -125,6 +128,37 @@ describe('a post’s history', () => {
     // A sentence this build predates is shown as the server wrote it.
     expect(screen.getByText('something new')).toBeTruthy()
     expect(screen.getByText('Ogen')).toBeTruthy()
+  })
+})
+
+describe('a history read before the members load', () => {
+  afterAll(() => {
+    members.data = [
+      { id: 'u1', name: 'Marta Ruiz', email: 'marta@example.com' },
+    ]
+  })
+
+  it('names people as the server did, not as former members', async () => {
+    members.data = undefined
+    await show({
+      history: {
+        postId: 'p1',
+        title: 'Easter brunch',
+        more: false,
+        unrecorded: false,
+        entries: [
+          {
+            at: '2026-04-15T15:42:00Z',
+            kind: 'event',
+            what: 'scheduled',
+            by: 'Marta Ruiz',
+            byId: 'u1',
+          },
+        ],
+      },
+    })
+    expect(screen.getByText('Marta Ruiz')).toBeTruthy()
+    expect(screen.queryByText('A former member')).toBeNull()
   })
 })
 
