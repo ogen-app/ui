@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import {
+  connectSearch,
   destinationFor,
   searchFromFilter,
   windowCampaign,
@@ -67,6 +68,14 @@ export function useAssistantUiActions() {
             )
             return before
           }
+          case 'open_connect':
+            if (!destination || !action.connect) return undefined
+            await go(
+              destination.to,
+              destination.params,
+              connectSearch(action.connect),
+            )
+            return before
           case 'select':
           case 'open_saved_view': {
             // The list has to be on screen to pick the request up.

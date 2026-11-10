@@ -653,6 +653,117 @@ export type AnalyticsResults = {
   more?: MoreLikeThese
 }
 
+/**
+ * A run of days of the activity log (CON-464): the daily report's totals over
+ * the range, and the days that had something, oldest first.
+ */
+export type ActivityRange = {
+  from: string
+  to: string
+  tz: string
+  published: number
+  failed: number
+  failedPosts: { postId: string; status: string; reason: string }[]
+  created: number
+  scheduled: number
+  campaignsCreated: number
+  days: {
+    date: string
+    published: number
+    failed: number
+    created: number
+    campaignsCreated: number
+  }[]
+}
+
+/** The workspace's setup: its zone, auto-publishing and accounts' health. */
+export type WorkspaceSetup = {
+  timezone: string
+  /** Platform slugs that publish on their own; absent when unread. */
+  autoPublish?: string[]
+  accounts: {
+    id: string
+    platform: string
+    username: string
+    needsReconnect: boolean
+    /** `valid`, `expiring`, … as the publisher reports it. */
+    health?: string
+    tokenExpiresAt?: string
+    autoPublish: boolean
+  }[]
+}
+
+/** A weekly report figure: the email's own value and change. */
+export type DigestFigure = { value: string; delta?: string; good: boolean }
+
+/**
+ * The weekly report for one finished week, as the Monday email renders it
+ * (CON-401). The values are the email's own strings, already formatted by
+ * the server; the labels around them are ours.
+ */
+export type WeeklyDigest = {
+  from: string
+  to: string
+  empty: boolean
+  headline: string
+  lede: string
+  attention: { text: string; detail?: string }[]
+  publishing?: {
+    published: DigestFigure
+    failed?: string
+    failures: { title: string; meta: string; reason: string }[]
+    nextWeek?: string
+  }
+  performance?: {
+    reach: DigestFigure
+    interactions: DigestFigure
+    engagement: DigestFigure
+    followers: DigestFigure
+    top: { title: string; meta: string; reach: string; multiple: string }[]
+  }
+  campaigns?: {
+    rows: { name: string; goal: string; status: string; met: boolean }[]
+    summary?: string
+  }
+  ideas?: { waiting?: string; summary?: string }
+  team?: string
+}
+
+/** One entry in a post's history, newest first. */
+export type PostHistoryEntry = {
+  at: string
+  kind: 'version' | 'event'
+  /** The server's words for what happened. */
+  what: string
+  version?: number
+  /** Who, in the server's words — a member's name, or "the system". */
+  by: string
+  byId?: string
+  /** A version's creator: `user`, `assistant` or `system`. */
+  source?: string
+}
+
+export type PostHistory = {
+  postId: string
+  title: string
+  entries: PostHistoryEntry[]
+  more: boolean
+  /** Some versions predate people being recorded on them. */
+  unrecorded: boolean
+}
+
+/** The workspace pack's typed results (CON-464), from `results.workspace`. */
+export type WorkspaceResults = {
+  activity?: ActivityRange
+  setup?: WorkspaceSetup
+  digest?: WeeklyDigest
+  /** `emailWeeklyDigest`: the week now on its way to the asker. */
+  emailed?: { from: string; to: string }
+  history?: PostHistory
+  /** `setAutoPublish`: the list as it now stands. */
+  autoPublish?: { platforms: string[]; undoId?: string }
+}
+
 /** Where an undo stands, by the action's undo id. */
 export type UndoState = 'pending' | 'undone' | 'changed' | 'gone'
 
@@ -713,6 +824,8 @@ export type AssistantTurn = {
   foundation?: FoundationResults
   /** What the analytics tools read or wrote this turn (CON-463). */
   analytics?: AnalyticsResults
+  /** What the workspace pack read or changed this turn (CON-464). */
+  workspace?: WorkspaceResults
   /** What this turn did to the screen, and where each can be put back to. */
   uiActions?: AppliedUIAction[]
   /**

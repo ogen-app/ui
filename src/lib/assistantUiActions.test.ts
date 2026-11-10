@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  connectSearch,
   destinationFor,
   searchFromFilter,
   windowCampaign,
@@ -102,5 +103,33 @@ describe('a set_window', () => {
     expect(
       windowCampaign({ type: 'set_window', screen: 'analytics', window }),
     ).toBeUndefined()
+  })
+})
+
+describe('an open_connect', () => {
+  it('names the account to reconnect, with its platform', () => {
+    expect(
+      connectSearch({
+        platform: 'instagram',
+        accountId: 'a1',
+        reconnect: true,
+      }),
+    ).toEqual({ reconnect: 'a1', platform: 'instagram' })
+  })
+
+  it('names the platform to connect a new account on', () => {
+    expect(connectSearch({ platform: 'tiktok', reconnect: false })).toEqual({
+      connect: 'tiktok',
+    })
+  })
+
+  it('lands on Settings', () => {
+    expect(
+      destinationFor({
+        type: 'open_connect',
+        screen: 'settings',
+        connect: { platform: 'tiktok', reconnect: false },
+      }),
+    ).toEqual({ to: '/workspace-settings', params: {} })
   })
 })

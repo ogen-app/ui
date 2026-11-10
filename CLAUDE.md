@@ -664,6 +664,22 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   dashboard narrowed to the campaign. The window the page sends carries the
   campaign (`window.campaignId`). A set_window whose dates are only the
   period on screen resolved keeps the period a preset.
+- **The workspace pack's results are cards** (CON-464).
+  `complete.results.workspace` holds each tool's last output:
+  `activityReport` (a day or up to 31 days, totals plus the days that had
+  something, each opening `/activity/:date`), `workspaceSetup`,
+  `weeklyDigest`, `emailWeeklyDigest`, `postHistory` and `setAutoPublish`
+  (with its `undoId`; it touches `auto_publish`, which refreshes the
+  allowlist). The weekly report's figures and sentences are the email's own,
+  rendered by the server for both, and only the labels around them are
+  ours. A post's history names people from the workspace's members, and words
+  each event from the server's sentence where it knows it, showing the
+  sentence as written where it doesn't. **`open_connect` opens Settings at
+  the account or platform** — `?reconnect=<account>&platform=` or
+  `?connect=<platform>` — which outlines that row and focuses its button but
+  never presses it: the connect flow leaves the app, and that is the user's
+  to start. The same address is what the expiry emails' `reconnect` link now
+  lands on.
 - **A planned post is a post with theses and no body** (CON-449). `planned`
   can only become `draft`, and only by gaining a body — the server moves it,
   so it has no button. Ideas are never posts: on the week calendar an idea
@@ -999,11 +1015,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 **The universal assistant waits on the API's merge, and on five API
 follow-ups** (CON-451). The UI (#227–#234) replaces endpoints the backend stack
 removes, so the two ship together, and neither has had a live pass yet. Until
-the follow-ups land: the ideas and workspace packs send no typed results or
-`undoId`, so their turns are prose plus `touched` — the merge card, facts
-ledger and connection card are unbuilt (the assets pack's arrived with
-CON-460, the foundation pack's with CON-461, the repair pack's with CON-462,
-the analytics pack's with CON-463); the posts list doesn't say what it was
+the follow-ups land: the ideas pack sends no typed results or `undoId`, so
+its turns are prose plus `touched` — the merge card and facts ledger are
+unbuilt (the assets pack's arrived with CON-460, the foundation pack's with
+CON-461, the repair pack's with CON-462, the analytics pack's with CON-463,
+the workspace pack's with CON-464); the posts list doesn't say what it was
 sorted on, so its card shows reach and rate on every row; an offer has no
 `recommended` option, so its choices are drawn with equal weight; a reloaded thread infers an offer's
 state instead of reading it; and an idea row has no post count, so "used in

@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { ArrowsClockwiseIcon, PlugsIcon } from '@phosphor-icons/react'
@@ -19,8 +19,10 @@ import {
 } from '@/lib/platformDictionary'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { SettingsCard } from '@/components/settings/SettingsCard'
+import { cn } from '@/lib'
 import { AutoPublishControl } from './AutoPublishControl'
 import { useConnectPlatform } from './connectPlatform'
+import { focusedAccount } from '@/lib/platformFocus'
 import { DisconnectAccountDialog } from './DisconnectAccountDialog'
 import { SettingsRow } from './SettingsRow'
 
@@ -29,11 +31,21 @@ import { SettingsRow } from './SettingsRow'
  * connected. Platforms without a connected account live in the
  * "Connect Platforms" grid instead (ConnectPlatformsSection).
  */
-function PlatformsSectionComponent() {
+function PlatformsSectionComponent({
+  focus,
+}: {
+  /**
+   * The account to single out, from the address — a reconnect link or the
+   * assistant's `open_connect` (CON-464). Its platform stands in when the
+   * account isn't one of the rows.
+   */
+  focus?: { accountId?: string; platform?: string }
+}) {
   const { t } = useTranslation()
   const views = usePlatformViews()
   const connected = views.filter((v) => v.connectedPublishers.length > 0)
   const { start, modal } = useConnectPlatform()
+  const focused = focusedAccount(connected, focus)
 
   return (
     <SettingsCard title={t('workspaceSettings.platforms.title')}>
@@ -50,6 +62,9 @@ function PlatformsSectionComponent() {
             <PlatformRow
               key={v.platform.id}
               view={v}
+              focusedAccountId={
+                focused?.view === v ? focused.accountId : undefined
+              }
               onReconnect={() => start(v)}
             />
           ))}
@@ -95,9 +110,11 @@ function platformNotice(view: PlatformView, t: TFunction): string {
  */
 function PlatformRow({
   view,
+  focusedAccountId,
   onReconnect,
 }: {
   view: PlatformView
+  focusedAccountId?: string
   onReconnect: () => void
 }) {
   const { t } = useTranslation()
@@ -110,6 +127,7 @@ function PlatformRow({
         <ConnectedAccounts
           view={view}
           accounts={accounts}
+          focusedAccountId={focusedAccountId}
           onReconnect={onReconnect}
         />
       )}
@@ -180,10 +198,12 @@ function ChipGroup({
 function ConnectedAccounts({
   view,
   accounts,
+  focusedAccountId,
   onReconnect,
 }: {
   view: PlatformView
   accounts: PublisherAccount[]
+  focusedAccountId?: string
   onReconnect: () => void
 }) {
   return (
@@ -193,6 +213,7 @@ function ConnectedAccounts({
           key={a.id}
           view={view}
           account={a}
+          focused={a.id === focusedAccountId}
           onReconnect={onReconnect}
         />
       ))}
@@ -220,19 +241,39 @@ function ConnectedAccounts({
 function AccountRow({
   view,
   account,
+  focused = false,
   onReconnect,
 }: {
   view: PlatformView
   account: PublisherAccount
+  /**
+   * Singled out by the address: outlined, scrolled to, and its Reconnect
+   * button focused. Never pressed for the user — the flow leaves the app.
+   */
+  focused?: boolean
   onReconnect: () => void
 }) {
   const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
   const name = account.display_name || account.username
   const broken = !account.is_active
+  const rowRef = useRef<HTMLLIElement>(null)
+  const reconnectRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!focused) return
+    rowRef.current?.scrollIntoView({ block: 'center' })
+    reconnectRef.current?.focus({ preventScroll: true })
+  }, [focused])
 
   return (
-    <li className="flex items-center gap-3 min-w-0">
+    <li
+      ref={rowRef}
+      className={cn(
+        'flex items-center gap-3 min-w-0',
+        focused && 'outline-2 outline-offset-4 outline-accent',
+      )}
+    >
       <AccountAvatar
         src={account.avatar_url}
         name={name}
@@ -255,6 +296,7 @@ function AccountRow({
 
       {broken ? (
         <Button
+          ref={reconnectRef}
           type="button"
           variant="outline"
           size="sm"

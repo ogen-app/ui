@@ -5,6 +5,7 @@ import { ASSET_LIST_KEY, ASSETS_KEY, assetKey } from '@/hooks/useContent'
 import { BRAND_KEY } from '@/hooks/useBrand'
 import { DISTILLS_KEY } from '@/hooks/useBrandDistill'
 import { SERIES_KEY } from '@/hooks/useSeries'
+import { AUTO_PUBLISH_ALLOWLIST_KEY } from '@/hooks/useAutoPublishAllowlist'
 import {
   CAMPAIGN_SUMMARIES_KEY,
   WORKSPACE_POSTS_KEY,
@@ -85,6 +86,11 @@ export async function refreshTouched(
         break
       case 'note':
         invalidate(['postNotes'])
+        break
+      // Which platforms publish on their own (CON-464): Settings' switches
+      // and the post editor's publish method both read the one list.
+      case 'auto_publish':
+        invalidate(AUTO_PUBLISH_ALLOWLIST_KEY)
         break
       // A kind this build predates changes nothing it can show.
     }

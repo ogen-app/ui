@@ -38,11 +38,15 @@ const workspaceSettingsSearchSchema = z.object({
   /** A `connect_error` code; see `ConnectLanding` for the ones we word. */
   connect_error: z.string().optional(),
   /**
-   * An account id from a "your connection is expiring" email (CON-219).
-   * Accepted so the link resolves rather than 404s; singling the account out
-   * on the page is not part of CON-217 and wants its own issue.
+   * An account to reconnect: from a "your connection is expiring" email
+   * (CON-219), or the assistant's `open_connect` (CON-464). Its row is singled
+   * out and its Reconnect button takes the focus; the user presses it.
    */
   reconnect: z.string().optional(),
+  /** The reconnect's platform slug, for when the account isn't found. */
+  platform: z.string().optional(),
+  /** A platform slug to connect a new account on (CON-464): its tile. */
+  connect: z.string().optional(),
 })
 
 export const Route = createFileRoute('/_authenticated/workspace-settings/')({
@@ -53,7 +57,13 @@ export const Route = createFileRoute('/_authenticated/workspace-settings/')({
 /** Workspace Settings page: workspace identity, connected platforms, connect grid. */
 function WorkspaceSettings() {
   const { t } = useTranslation()
-  const { connected, connect_error: connectError } = Route.useSearch()
+  const {
+    connected,
+    connect_error: connectError,
+    reconnect,
+    platform,
+    connect,
+  } = Route.useSearch()
   const platforms = usePlatforms()
   const { isError } = platforms
 
@@ -105,8 +115,14 @@ function WorkspaceSettings() {
               <WorkspaceSection />
               <PlanSection />
               <PeopleSection />
-              <PlatformsSection />
-              <ConnectPlatformsSection />
+              <PlatformsSection
+                focus={
+                  reconnect || platform
+                    ? { accountId: reconnect, platform }
+                    : undefined
+                }
+              />
+              <ConnectPlatformsSection focus={connect} />
               <IntegrationsSection />
               <DeleteWorkspaceCard />
             </div>

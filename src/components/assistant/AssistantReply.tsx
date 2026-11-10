@@ -11,6 +11,7 @@ import { UiActionRows } from './UiActionRows'
 import { FindingsBlock } from './FindingsBlock'
 import { AnalyticsResults } from './AnalyticsResults'
 import { AssetsResults } from './AssetsResults'
+import { WorkspaceResults } from './WorkspaceResults'
 import { FoundationResults } from './FoundationResults'
 import { RepairResults } from './RepairResults'
 import { useAssistantStore } from '@/stores/assistantStore'
@@ -148,6 +149,16 @@ export function AssistantReply({
       {/* What the analytics tools read, each citing its filters (CON-463). */}
       {settled && turn.analytics && (
         <AnalyticsResults results={turn.analytics} />
+      )}
+
+      {/* What the workspace pack read or changed (CON-464). */}
+      {settled && turn.workspace && (
+        <WorkspaceResults
+          threadId={threadId}
+          turnId={turn.id}
+          results={turn.workspace}
+          undoStates={turn.undo ?? {}}
+        />
       )}
 
       {/* What the turn did to the screen behind the rail. */}
