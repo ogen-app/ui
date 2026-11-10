@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { WorkspaceScopeBar } from '@/components/analytics/WorkspaceScopeBar'
@@ -21,6 +22,8 @@ import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { connectedAccounts } from '@/lib/platformDictionary.ts'
 import type { LearningsMetric, PerformerSort } from '@/types/analytics'
 import { useAssistantPage } from '@/hooks/useAssistantContext'
+import { useCampaigns } from '@/hooks/useCampaigns'
+import { searchPlatforms, type AnalyticsSearch } from '@/lib/analyticsSearch'
 
 /**
  * Analytics — the workspace's own numbers: what happened (CON-237), which posts
@@ -49,12 +52,32 @@ import { useAssistantPage } from '@/hooks/useAssistantContext'
  * marks are a filter on the page, and no card has to disclaim them.
  */
 export function AnalyticsPage() {
-  const [window, setWindow] = useState<string>(DEFAULT_OVERVIEW_WINDOW)
+  // The period, platforms and campaign are the address (CON-463): the
+  // assistant's `set_window` lands there, and BACK puts the old one back.
+  const search = useSearch({ from: '/_authenticated/analytics/' })
+  const navigate = useNavigate({ from: '/analytics/' })
+  const setSearch = (next: AnalyticsSearch) =>
+    void navigate({ search: next, replace: true })
+  const range =
+    search.from && search.to ? { from: search.from, to: search.to } : undefined
+  const window = search.window ?? DEFAULT_OVERVIEW_WINDOW
+  const period = range ?? { window }
+  const campaignId = search.campaign_id
   // Zernio's wire slugs, which since CON-292 are the one identifier both ends
   // understand: the dictionary that draws the marks is filed under them, and
   // all three reads narrow by them (CON-289). Empty is every platform, and is
   // sent as no parameter at all.
-  const [selected, setSelected] = useState<string[]>([])
+  const selected = searchPlatforms(search)
+  const setSelected = (next: string[]) =>
+    setSearch({
+      ...search,
+      platform: next.length > 0 ? next.join(',') : undefined,
+    })
+  const setWindow = (next: string) =>
+    setSearch({ ...search, window: next, from: undefined, to: undefined })
+  const setCampaign = (next: string | undefined) =>
+    setSearch({ ...search, campaign_id: next })
+  const campaigns = useCampaigns().data ?? []
   // The board's own control, held here because it is a query parameter rather
   // than a view of what is already loaded — the server ranks and sends two
   // clamped ends, so re-ranking is a refetch.
@@ -96,25 +119,26 @@ export function AnalyticsPage() {
     [picked],
   )
 
-  const overview = useAnalyticsOverview(window, slugs)
-  const performers = useAnalyticsPerformers(window, by, slugs)
+  const overview = useAnalyticsOverview(period, slugs, campaignId)
+  const performers = useAnalyticsPerformers(period, by, slugs, campaignId)
 
   // The assistant reads the period and platforms the overview on screen
   // answered for (CON-451) — the server's resolved dates, never ones worked out
   // here, so "this month" means what the card shows even near midnight UTC —
   // and the performers ticked.
-  const range = overview.range
+  const answered = overview.range
   const answeredKey = overview.platforms.join(',')
   useAssistantPage(
     useMemo(() => {
-      if (!range && picked.size === 0) return null
+      if (!answered && picked.size === 0) return null
       return {
-        ...(range
+        ...(answered
           ? {
               window: {
-                from: range.from,
-                to: range.to,
+                from: answered.from,
+                to: answered.to,
                 ...(answeredKey ? { platforms: answeredKey.split(',') } : {}),
+                ...(campaignId ? { campaignId } : {}),
               },
             }
           : {}),
@@ -128,7 +152,7 @@ export function AnalyticsPage() {
             }
           : {}),
       }
-    }, [range, answeredKey, picked]),
+    }, [answered, answeredKey, campaignId, picked]),
   )
 
   const learnings = useAnalyticsLearnings(metric, slugs)
@@ -160,6 +184,10 @@ export function AnalyticsPage() {
             window={window}
             windows={OVERVIEW_WINDOWS}
             onWindowChange={setWindow}
+            range={range}
+            campaigns={campaigns.map((c) => ({ id: c.id, name: c.name }))}
+            campaignId={campaignId}
+            onCampaignChange={setCampaign}
           />
           <WorkspaceOverviewView
             {...overview}
@@ -178,6 +206,7 @@ export function AnalyticsPage() {
             metric={metric}
             onChangeMetric={setMetric}
             narrowedTo={namesOf(learnings.platforms)}
+            campaignNarrowed={Boolean(campaignId)}
           />
         </div>
       </div>

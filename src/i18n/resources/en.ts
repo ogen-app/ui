@@ -2917,6 +2917,7 @@ export const en = {
       select_one: 'Selected {{formatted}} on {{screen}}',
       select_other: 'Selected {{formatted}} on {{screen}}',
       openSavedView: 'Opened a smart group on {{screen}}',
+      setWindow: 'Showed {{window}} on {{screen}}',
       back: 'BACK',
       putBack: 'Put back',
     },
@@ -2969,6 +2970,107 @@ export const en = {
     },
 
     /** The repair pack's review, optimise and post fixes (CON-462). */
+    /**
+     * The analytics pack's cards (CON-463). Every figure card ends on what
+     * the read was narrowed to: period · platforms · campaign.
+     */
+    analytics: {
+      untitled: 'Untitled post',
+      percent: '{{value}}%',
+      change: '{{value}}%',
+      lessons: 'Lessons:',
+      postStats: 'Post figures:',
+      cite: {
+        range: '{{from}} – {{to}}',
+        since: 'Since {{day}}',
+        allPlatforms: 'Every platform',
+        workspace: 'The whole workspace',
+      },
+      note: {
+        publisher: 'every connected account, all time',
+        followers: 'workspace-wide: followers belong to accounts',
+        posts: 'every post published through Ogen, all time',
+        lessons: 'all time, workspace-wide',
+        postStats: 'that post alone, since it was published',
+      },
+      unavailable: {
+        noData: 'Nothing to report yet',
+        addon: 'Needs the publisher’s Analytics add-on',
+        notConfigured: 'Analytics isn’t set up for this workspace',
+        other: 'Those figures aren’t available right now',
+      },
+      overview: {
+        word: 'Overview',
+        workspace: 'The whole workspace',
+        empty: 'No figures in this window',
+      },
+      topPosts: {
+        word: 'Top posts',
+        title_one: 'Best of {{formatted}} post',
+        title_other: 'Best of {{formatted}} posts',
+        typical: '{{value}}× typical',
+        reach: '{{value}} reach',
+        weakest: 'Weakest',
+      },
+      bestTimes: {
+        word: 'Best times',
+        slot: '{{day}} {{hour}}:00 UTC',
+        none: 'Too few posts to say yet',
+        aria: 'Engagement by weekday and hour, in UTC',
+      },
+      decay: {
+        word: 'Decay',
+        half: 'Half the engagement by {{age}}',
+        title: 'How engagement builds',
+      },
+      frequency: {
+        word: 'Frequency',
+        title_one: '{{formatted}} post a week does best',
+        title_other: '{{formatted}} posts a week do best',
+        none: 'Too few weeks to say yet',
+        row_one: '{{platform}} · {{formatted}} a week',
+        row_other: '{{platform}} · {{formatted}} a week',
+        weeks_one: '{{formatted}} week',
+        weeks_other: '{{formatted}} weeks',
+      },
+      followers: {
+        word: 'Followers',
+        growth: '{{value}} in this window',
+        account: '@{{username}} · {{platform}}',
+      },
+      posts: {
+        word: 'Posts',
+        title_one: '{{formatted}} post',
+        title_other: '{{formatted}} posts',
+        count_one: '{{formatted}} post',
+        count_other: '{{formatted}} posts',
+        figures: '{{reach}} reach · {{rate}}',
+      },
+      compare: {
+        word: 'Compare',
+        title: '{{first}} against {{second}}',
+        change: 'Change',
+        new: 'new',
+      },
+      more: {
+        trailWord: 'Trail',
+        trail_one: 'Where {{formatted}} post came from',
+        trail_other: 'Where {{formatted}} posts came from',
+        noTrail: 'No trail recorded',
+        ownWords:
+          'Nothing was recorded behind it, so the ideas are read from the post’s own words.',
+        idea: 'Idea: {{idea}}',
+        ideaFrom: 'Idea: {{idea}}, from {{asset}}',
+        used: 'Used {{asset}}',
+        grounding: 'Also drew on {{assets}}',
+        doneWord: 'Done',
+        planned_one: 'Planned {{formatted}} idea',
+        planned_other: 'Planned {{formatted}} ideas',
+        onIdeas: 'on Ideas · nothing on the calendar',
+        open: 'OPEN',
+      },
+    },
+
     repair: {
       untitled: 'Untitled post',
       withdrawing_one:
@@ -3656,6 +3758,8 @@ export const en = {
     // heading than the heading.
     scopeNote: {
       allTime: 'All time — not affected by the period above',
+      allTimeWorkspace:
+        'All time and the whole workspace — not affected by the period or the campaign above',
       ahead: 'Looking ahead — not affected by the period above',
     },
 
@@ -4065,6 +4169,10 @@ export const en = {
       platformNoAccount: '{{platform}} — no account connected',
       platformAccountsLabel: '{{platform}}, {{accounts}}',
       platformNoAccountLabel: '{{platform}}, no account connected',
+      campaign: 'Campaign',
+      allCampaigns: 'All campaigns',
+      otherCampaign: 'A campaign no longer listed',
+      range: '{{from}} – {{to}}',
       axisTime: 'Now vs. before',
       axisSleeve: 'Side by side',
     },

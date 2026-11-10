@@ -1001,6 +1001,7 @@ function turnFields(
   | 'foundation'
   | 'findings'
   | 'repair'
+  | 'analytics'
 > {
   return {
     proposals: result.proposals.length > 0 ? result.proposals : undefined,
@@ -1008,6 +1009,7 @@ function turnFields(
     foundation: result.foundation,
     findings: result.findings,
     repair: result.repair,
+    analytics: result.analytics,
     content: result.explanation,
     action: result.action,
     details: result.details,

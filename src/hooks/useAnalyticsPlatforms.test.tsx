@@ -39,13 +39,14 @@ const CASES = [
   {
     name: 'overview',
     fetcher: 'fetchAnalyticsOverview',
-    use: (platforms: string[]) => useAnalyticsOverview('28d', platforms),
+    use: (platforms: string[]) =>
+      useAnalyticsOverview({ window: '28d' }, platforms),
   },
   {
     name: 'performers',
     fetcher: 'fetchPerformers',
     use: (platforms: string[]) =>
-      useAnalyticsPerformers('28d', 'reach', platforms),
+      useAnalyticsPerformers({ window: '28d' }, 'reach', platforms),
   },
   {
     name: 'learnings',

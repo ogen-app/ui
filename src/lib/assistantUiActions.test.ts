@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { destinationFor, searchFromFilter } from './assistantUiActions'
+import {
+  destinationFor,
+  searchFromFilter,
+  windowCampaign,
+} from './assistantUiActions'
 
 describe('destinationFor', () => {
   it('finds a workspace screen', () => {
@@ -64,5 +68,39 @@ describe('searchFromFilter', () => {
 
   it('reads an empty filter as no filter', () => {
     expect(searchFromFilter('')).toEqual({})
+  })
+})
+
+describe('a set_window', () => {
+  const window = { from: '2026-03-01', to: '2026-03-31', platforms: [] }
+
+  it('lands on the dashboard', () => {
+    expect(
+      destinationFor({ type: 'set_window', screen: 'analytics', window }),
+    ).toEqual({ to: '/analytics', params: {} })
+  })
+
+  it('goes from a campaign’s Analytics tab to the dashboard, narrowed to it', () => {
+    const action = {
+      type: 'set_window' as const,
+      screen: 'campaign.analytics' as const,
+      campaignId: 'c1',
+      window,
+    }
+    expect(destinationFor(action)).toEqual({ to: '/analytics', params: {} })
+    expect(windowCampaign(action)).toBe('c1')
+  })
+
+  it('narrows to the window’s own campaign first', () => {
+    expect(
+      windowCampaign({
+        type: 'set_window',
+        screen: 'analytics',
+        window: { ...window, campaignId: 'c2' },
+      }),
+    ).toBe('c2')
+    expect(
+      windowCampaign({ type: 'set_window', screen: 'analytics', window }),
+    ).toBeUndefined()
   })
 })

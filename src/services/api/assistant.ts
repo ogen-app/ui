@@ -2,6 +2,7 @@ import { scopedFetch } from './base'
 import { apiJson } from './http'
 import { errorMessage } from './errors'
 import { isRecord } from './json'
+import { analyticsResults } from './assistantAnalytics'
 import { readSSEStream } from '@/lib/sse'
 import { humanizeStep } from '@/lib/assistantTools'
 import type { ViewContext, ViewEntityKind, ViewScreen } from '@/lib/viewContext'
@@ -18,6 +19,7 @@ import type {
   AssetComparison,
   AssetsAsk,
   AssetsResults,
+  AnalyticsResults,
   AssistantAction,
   AssistantProposal,
   CalendarFindings,
@@ -86,6 +88,8 @@ export type AssistantTurnResult = {
   findings?: CalendarFindings
   /** The repair pack's other typed results (CON-462). */
   repair?: RepairResults
+  /** The analytics pack's typed results (CON-463). */
+  analytics?: AnalyticsResults
 }
 
 export type AssistantStreamEvent =
@@ -347,6 +351,7 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
   const repair = repairResults(results)
   result.findings = repair.findings
   result.repair = repair.repair
+  result.analytics = analyticsResults(results)
   return result
 }
 
@@ -888,6 +893,7 @@ const UI_ACTION_TYPES: UIAction['type'][] = [
   'set_filter',
   'select',
   'open_saved_view',
+  'set_window',
 ]
 
 /** Reads a `ui_action`; null for a type or screen this build can't apply. */
@@ -897,6 +903,7 @@ function uiAction(raw: Record<string, unknown>): UIAction | null {
   if (!type || !screen) return null
   const focus = record(raw.focus)
   const selection = record(raw.selection)
+  const window = record(raw.window)
   return {
     type,
     screen: screen as ViewScreen,
@@ -913,6 +920,14 @@ function uiAction(raw: Record<string, unknown>): UIAction | null {
         }
       : undefined,
     savedViewId: optStr(raw.savedViewId),
+    window: window
+      ? {
+          from: optStr(window.from),
+          to: optStr(window.to),
+          platforms: strings(window.platforms),
+          campaignId: optStr(window.campaignId),
+        }
+      : undefined,
   }
 }
 

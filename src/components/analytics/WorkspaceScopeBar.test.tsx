@@ -159,4 +159,26 @@ describe('WorkspaceScopeBar', () => {
       screen.queryByRole('button', { name: 'ALL PLATFORMS' }),
     ).not.toBeInTheDocument()
   })
+
+  it('shows a range the address names as the period, until a span is picked', async () => {
+    const onWindowChange = vi.fn()
+    setup({ range: { from: '2026-03-01', to: '2026-03-31' }, onWindowChange })
+    const period = screen.getByLabelText(/Period/) as HTMLSelectElement
+    expect(period.selectedOptions[0].textContent).toBe('Mar 1 – Mar 31')
+    await userEvent.selectOptions(period, '7d')
+    expect(onWindowChange).toHaveBeenCalledWith('7d')
+  })
+
+  it('narrows to a campaign, and back to the whole workspace', async () => {
+    const onCampaignChange = vi.fn()
+    setup({
+      campaigns: [{ id: 'c1', name: 'Spring reopening' }],
+      campaignId: 'c1',
+      onCampaignChange,
+    })
+    const campaign = screen.getByLabelText(/Campaign/) as HTMLSelectElement
+    expect(campaign.selectedOptions[0].textContent).toBe('Spring reopening')
+    await userEvent.selectOptions(campaign, 'all')
+    expect(onCampaignChange).toHaveBeenCalledWith(undefined)
+  })
 })

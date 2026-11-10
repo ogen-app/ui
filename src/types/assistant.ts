@@ -1,5 +1,6 @@
 import type { ViewContext } from '@/lib/viewContext'
 import type { AppliedUIAction } from '@/lib/assistantUiActions'
+import type { AnalyticsOverview, PerformersBoard } from '@/types/analytics'
 
 /**
  * What an assistant thread is attached to — its scope (CON-450). One thread
@@ -510,6 +511,148 @@ export type RepairResults = {
   deleted?: PostsChanged
 }
 
+/**
+ * What an analytics read was narrowed to (CON-463), which its card cites:
+ * the days (inclusive), the platforms (empty for every one), the campaign
+ * (absent for the whole workspace), or the one post it is about — and what it
+ * can't be narrowed by, in the server's words.
+ */
+export type AnalyticsApplied = {
+  from?: string
+  to?: string
+  platforms: string[]
+  campaign?: { id: string; name: string }
+  postId?: string
+  note?: string
+}
+
+/** A read's data, or why it has none (`not_configured`, `no_data`, …). */
+export type AnalyticsRead<T> = {
+  applied: AnalyticsApplied
+  data?: T
+  unavailable?: string
+}
+
+/** The publisher's engagement in one weekday-and-hour slot; Monday is 0. */
+export type BestTimeSlot = {
+  day: number
+  hour: number
+  engagement: number
+  posts: number
+}
+
+/** How much of its final engagement a post has by one age. */
+export type DecayBucket = {
+  label: string
+  /** 0–100. */
+  pct: number
+  posts: number
+}
+
+/** The engagement at one posting cadence, on one platform. */
+export type FrequencyRow = {
+  platform: string
+  perWeek: number
+  /** Percent. */
+  rate: number
+  weeks: number
+}
+
+export type FollowerAccount = {
+  id: string
+  platform: string
+  username: string
+  followers: number
+  growth: number
+  growthPct: number
+  /** Followers by day, oldest first. */
+  series: number[]
+}
+
+/**
+ * One published post's figures. The result doesn't say which metric the list
+ * was sorted on, so every row shows the same two.
+ */
+export type PostFigures = {
+  postId: string
+  title: string
+  /** The platform's display name, as the analytics store keeps it. */
+  platform: string
+  publishedAt?: string
+  reach: number
+  /** A fraction: 0.031 is 3.1%. */
+  rate: number
+}
+
+export type PostsList = {
+  items: PostFigures[]
+  /** Every post the list matched, not just this page. */
+  total: number
+}
+
+/** One overview metric over both periods; the change is the server's. */
+export type PeriodMetric = {
+  metric: string
+  label: string
+  first: number
+  second: number
+  change: number
+  /** Null when the first period's figure is zero. */
+  changePct: number | null
+}
+
+export type PeriodComparison = {
+  first: AnalyticsApplied
+  second: AnalyticsApplied
+  metrics: PeriodMetric[]
+  unavailable?: string
+}
+
+/** An example post, and what it was made from. */
+export type TrailStep = {
+  postId: string
+  title: string
+  ideas: { id: string; title: string; asset?: { id: string; title: string } }[]
+  assets: { id: string; title: string }[]
+  /** Nothing recorded: the post's own words are the only source. */
+  noTrail: boolean
+}
+
+/** "More like these" (CON-463): the trail, then the ideas it saved. */
+export type MoreLikeThese = {
+  trail: TrailStep[]
+  /** The campaign's other sources the writer could draw on. */
+  grounding: { id: string; title: string }[]
+  campaignId?: string
+  ideas: {
+    id: string
+    title: string
+    angle?: string
+    sources: string[]
+    grounded: boolean
+  }[]
+}
+
+/**
+ * The analytics pack's typed results (CON-463), each tool's last output in
+ * the turn, from `complete.results.analytics`.
+ */
+export type AnalyticsResults = {
+  overview?: AnalyticsRead<AnalyticsOverview>
+  topPosts?: AnalyticsRead<PerformersBoard>
+  /** Cited only: the lessons stay with the model. */
+  lessons?: AnalyticsRead<unknown>
+  /** Cited only. */
+  postStats?: AnalyticsRead<unknown>
+  bestTimes?: AnalyticsRead<BestTimeSlot[]>
+  decay?: AnalyticsRead<DecayBucket[]>
+  frequency?: AnalyticsRead<FrequencyRow[]>
+  followers?: AnalyticsRead<FollowerAccount[]>
+  posts?: AnalyticsRead<PostsList>
+  compare?: PeriodComparison
+  more?: MoreLikeThese
+}
+
 /** Where an undo stands, by the action's undo id. */
 export type UndoState = 'pending' | 'undone' | 'changed' | 'gone'
 
@@ -568,6 +711,8 @@ export type AssistantTurn = {
   assets?: AssetsResults
   /** What the brand tools did this turn (CON-461). */
   foundation?: FoundationResults
+  /** What the analytics tools read or wrote this turn (CON-463). */
+  analytics?: AnalyticsResults
   /** What this turn did to the screen, and where each can be put back to. */
   uiActions?: AppliedUIAction[]
   /**

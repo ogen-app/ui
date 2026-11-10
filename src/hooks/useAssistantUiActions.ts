@@ -3,8 +3,10 @@ import { useRouter } from '@tanstack/react-router'
 import {
   destinationFor,
   searchFromFilter,
+  windowCampaign,
   type UIAction,
 } from '@/lib/assistantUiActions'
+import { searchFromWindow, type AnalyticsSearch } from '@/lib/analyticsSearch'
 import { setUiActionApplier } from '@/stores/assistantStore'
 import { useViewContextStore } from '@/stores/viewContextStore'
 
@@ -41,6 +43,30 @@ export function useAssistantUiActions() {
               searchFromFilter(action.filter ?? ''),
             )
             return before
+          case 'set_window': {
+            if (!destination || !action.window) return undefined
+            // The window's dates are what the dashboard resolved its period
+            // to; when they haven't moved, the period stays the preset.
+            const shown = useViewContextStore.getState().page?.window
+            const here = router.state.location.search as AnalyticsSearch
+            const same =
+              shown &&
+              shown.from === action.window.from &&
+              shown.to === action.window.to
+            await go(
+              destination.to,
+              destination.params,
+              searchFromWindow(
+                { ...action.window, campaignId: windowCampaign(action) },
+                same &&
+                  router.state.location.pathname.replace(/\/$/, '') ===
+                    destination.to
+                  ? { window: here.window, from: here.from, to: here.to }
+                  : undefined,
+              ),
+            )
+            return before
+          }
           case 'select':
           case 'open_saved_view': {
             // The list has to be on screen to pick the request up.

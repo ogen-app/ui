@@ -19,7 +19,16 @@ export type ViewContext = {
   filter?: string
   savedViewId?: string
   sort?: string
-  window?: { from: string; to: string; platforms?: string[] }
+  /**
+   * An analytics window: its days, platforms and — on the dashboard — the
+   * campaign it is narrowed to (CON-463).
+   */
+  window?: {
+    from: string
+    to: string
+    platforms?: string[]
+    campaignId?: string
+  }
   visible?: { kind: ViewEntityKind; ids: string[] }
 }
 
