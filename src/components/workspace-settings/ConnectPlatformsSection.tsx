@@ -113,11 +113,15 @@ function PlatformTile({
 }) {
   const { t } = useTranslation()
   const ref = useRef<HTMLButtonElement>(null)
+  // A disabled button takes no focus, and the health check that disables
+  // every tile is still pending on arrival — so focus lands once it clears.
+  const blocked = disabled || locked
   useEffect(() => {
-    if (!focused) return
-    ref.current?.scrollIntoView({ block: 'center' })
-    ref.current?.focus({ preventScroll: true })
+    if (focused) ref.current?.scrollIntoView({ block: 'center' })
   }, [focused])
+  useEffect(() => {
+    if (focused && !blocked) ref.current?.focus({ preventScroll: true })
+  }, [focused, blocked])
   const { info } = view
   const Icon = info.icon
   const count = connectedAccounts(view).length

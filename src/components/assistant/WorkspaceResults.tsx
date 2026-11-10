@@ -402,12 +402,15 @@ function entryWhat(t: TFunction, e: PostHistoryEntry): string {
  */
 function useEntryBy(): (e: PostHistoryEntry) => string {
   const { t } = useTranslation()
-  const members = useWorkspaceMembers().data ?? []
+  const members = useWorkspaceMembers().data
   const nameOf = (id: string) => {
-    const m = members.find((x) => x.id === id)
+    const m = members?.find((x) => x.id === id)
     return m ? m.name || m.email : t('assistant.workspace.history.former')
   }
   return (e) => {
+    // Members still loading, or unreadable: the server's own words beat
+    // calling a current member a former one.
+    if (!members && e.byId && e.by) return e.by
     if (e.kind === 'event') {
       return e.byId ? nameOf(e.byId) : t('assistant.workspace.history.system')
     }
