@@ -318,6 +318,8 @@ describe('assistantStore', () => {
       const fresh = { ...card, id: 'pr2', summary: 'Draft 1 post from 2 ideas' }
       stream.events = [
         { type: 'proposal_created', proposal: fresh },
+        // The old offer is answered either way, and the server says so.
+        { type: 'proposal_resolved', id: 'pr1', status: 'confirmed' },
         {
           type: 'complete',
           result: result({
