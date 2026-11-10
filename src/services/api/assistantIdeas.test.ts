@@ -1,0 +1,179 @@
+import { describe, expect, it } from 'vitest'
+import { draftedPost, ideasResults } from './assistantIdeas'
+
+describe('ideasResults', () => {
+  it('is absent when the pack recorded nothing', () => {
+    expect(ideasResults({})).toBeUndefined()
+    expect(ideasResults({ ideas: {} })).toBeUndefined()
+  })
+
+  it('reads ideas found and a verdict with its undo', () => {
+    const r = ideasResults({
+      ideas: {
+        findIdeas: {
+          total: 14,
+          ideas: [
+            {
+              id: 'i1',
+              title: 'The pool',
+              verdict: 'yes',
+              fitScore: 82,
+              plan: {},
+            },
+            { id: '', title: 'dropped' },
+          ],
+        },
+        setIdeaVerdict: {
+          idea: { id: 'i1', title: 'The pool', verdict: 'later' },
+          undoId: 'u1',
+        },
+        setIdeaVerdicts: { done: 5, failed: ['i9'], undoId: 'u2' },
+        deleteIdeas: { done: 2 },
+      },
+    })
+    expect(r?.found).toEqual({
+      total: 14,
+      ideas: [
+        {
+          id: 'i1',
+          title: 'The pool',
+          verdict: 'yes',
+          campaignId: undefined,
+          fitScore: 82,
+        },
+      ],
+    })
+    expect(r?.decided).toMatchObject({
+      idea: { verdict: 'later' },
+      undoId: 'u1',
+    })
+    expect(r?.decidedMany).toEqual({
+      done: 5,
+      failed: 1,
+      stopped: undefined,
+      undoId: 'u2',
+    })
+    expect(r?.deleted?.undoId).toBeUndefined()
+  })
+
+  it('reads a compiled post’s grounding, exploratory without sources', () => {
+    const read = (grounding: unknown) =>
+      ideasResults({
+        ideas: {
+          compileIdeas: {
+            postId: 'p1',
+            title: 'Water, not rooms',
+            campaignId: 'c1',
+            ideas: 3,
+            grounding,
+            undoId: 'u3',
+          },
+        },
+      })?.compiled
+    expect(
+      read({ mode: 'grounded', sources: [{ id: 'a1', title: 'Brochure' }] })
+        ?.grounding,
+    ).toEqual({ mode: 'grounded', sources: [{ id: 'a1', title: 'Brochure' }] })
+    expect(read({ mode: 'grounded', sources: [] })?.grounding.mode).toBe(
+      'exploratory',
+    )
+    expect(read(undefined)?.grounding.mode).toBe('exploratory')
+  })
+
+  it('reads why an idea fits', () => {
+    const r = ideasResults({
+      ideas: {
+        getIdea: {
+          idea: { id: 'i1', title: 'The pool' },
+          angle: 'The spa is in the hillside',
+          fit: {
+            score: 82,
+            lens: 'campaign',
+            criteria: [
+              {
+                key: 'message_fit',
+                question: '…',
+                weight: 3,
+                level: 5,
+                means: '…',
+                why: 'On brief',
+              },
+            ],
+            caps: [{ cap: 'off_brief', meaning: '…' }],
+          },
+          sourceAsset: { id: 'a1', title: 'Brochure' },
+          analysis: { id: 'an1', gist: 'The spa carries the house' },
+          posts: [
+            {
+              id: 'p1',
+              title: 'Pool post',
+              status: 'draft',
+              campaign_id: 'c1',
+            },
+          ],
+        },
+      },
+    })
+    expect(r?.idea).toMatchObject({
+      angle: 'The spa is in the hillside',
+      fit: {
+        score: 82,
+        lens: 'campaign',
+        criteria: [{ key: 'message_fit', level: 5, why: 'On brief' }],
+        caps: ['off_brief'],
+      },
+      sourceAsset: { id: 'a1' },
+      analysisGist: 'The spa carries the house',
+      posts: [{ id: 'p1', status: 'draft', campaignId: 'c1' }],
+    })
+  })
+
+  it('reads what a selection shares, in the card’s order, empty kinds left out', () => {
+    const r = ideasResults({
+      ideas: {
+        ideasInCommon: {
+          ideas: [
+            { id: 'i1', title: 'A' },
+            { id: 'i2', title: 'B' },
+          ],
+          terms: [{ value: 'pool', ideaIds: ['i1', 'i2'] }],
+          assets: [{ value: 'a1', label: 'Brochure', ideaIds: ['i1'] }],
+          campaigns: [],
+        },
+      },
+    })
+    expect(r?.common?.shared.map((s) => s.kind)).toEqual(['assets', 'terms'])
+    expect(r?.common?.shared[1].values[0]).toEqual({
+      value: 'pool',
+      label: 'pool',
+      ideaIds: ['i1', 'i2'],
+    })
+  })
+})
+
+describe('draftedPost', () => {
+  it('reads an idea_draft_post event', () => {
+    expect(
+      draftedPost({
+        postId: 'p1',
+        title: 'A pool in the rock',
+        platformId: 'instagram',
+        ideaIds: ['i1'],
+        usedAssetIds: ['a1'],
+        grounding: {
+          mode: 'grounded',
+          sources: [{ id: 'a1', title: 'Brochure' }],
+        },
+      }),
+    ).toEqual({
+      postId: 'p1',
+      title: 'A pool in the rock',
+      platformId: 'instagram',
+      grounding: {
+        mode: 'grounded',
+        sources: [{ id: 'a1', title: 'Brochure' }],
+      },
+    })
+    expect(draftedPost({ title: 'no id' })).toBeNull()
+  })
+})

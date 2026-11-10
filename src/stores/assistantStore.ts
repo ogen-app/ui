@@ -1003,6 +1003,7 @@ function turnFields(
   | 'repair'
   | 'analytics'
   | 'workspace'
+  | 'ideas'
 > {
   return {
     proposals: result.proposals.length > 0 ? result.proposals : undefined,
@@ -1012,6 +1013,7 @@ function turnFields(
     repair: result.repair,
     analytics: result.analytics,
     workspace: result.workspace,
+    ideas: result.ideas,
     content: result.explanation,
     action: result.action,
     details: result.details,
@@ -1153,7 +1155,14 @@ function undoTouches(
   kind: string,
   thread: AssistantThread | undefined,
 ): Touched[] {
-  if (kind === 'idea_verdict') return [{ kind: 'idea' }]
+  if (
+    kind === 'idea_verdict' ||
+    kind === 'idea_verdicts' ||
+    kind === 'idea_edit'
+  )
+    return [{ kind: 'idea' }]
+  // A compiled post deleted again: the post lists, and its ideas' links.
+  if (kind === 'post_created') return [{ kind: 'post' }, { kind: 'idea' }]
   if (kind === 'brand_fact') return [{ kind: 'fact' }]
   // A removed voice or audience comes back bound to what had it, so the
   // campaigns' and posts' pickers move too (CON-461).

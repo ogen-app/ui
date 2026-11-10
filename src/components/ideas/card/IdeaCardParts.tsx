@@ -115,7 +115,9 @@ export function FitSection({
   idea,
   scoredFor,
 }: {
-  idea: Idea
+  /** Only the score and its breakdown are read — the assistant's idea card
+   *  (CON-465) has those and nothing else of an idea. */
+  idea: Pick<Idea, 'fitScore' | 'fitBreakdown'>
   /** Which reading the score is for, beside the heading. */
   scoredFor: string | null
 }) {

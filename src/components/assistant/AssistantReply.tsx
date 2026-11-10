@@ -12,11 +12,16 @@ import { FindingsBlock } from './FindingsBlock'
 import { AnalyticsResults } from './AnalyticsResults'
 import { AssetsResults } from './AssetsResults'
 import { WorkspaceResults } from './WorkspaceResults'
+import { IdeasResults } from './IdeasResults'
 import { FoundationResults } from './FoundationResults'
 import { RepairResults } from './RepairResults'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib'
-import type { AssistantAction, AssistantTurn } from '@/types/assistant'
+import {
+  subjectCampaignId,
+  type AssistantAction,
+  type AssistantTurn,
+} from '@/types/assistant'
 
 function Inline({ spans }: { spans: InlineSpan[] }) {
   return (
@@ -157,6 +162,17 @@ export function AssistantReply({
           threadId={threadId}
           turnId={turn.id}
           results={turn.workspace}
+          undoStates={turn.undo ?? {}}
+        />
+      )}
+
+      {/* What the ideas pack read or changed (CON-465/466). */}
+      {settled && turn.ideas && (
+        <IdeasResults
+          threadId={threadId}
+          turnId={turn.id}
+          campaignId={subject ? subjectCampaignId(subject) : undefined}
+          results={turn.ideas}
           undoStates={turn.undo ?? {}}
         />
       )}

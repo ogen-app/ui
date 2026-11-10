@@ -764,6 +764,95 @@ export type WorkspaceResults = {
   autoPublish?: { platforms: string[]; undoId?: string }
 }
 
+/** An idea as the ideas pack names it (CON-465). */
+export type IdeaBrief = {
+  id: string
+  title: string
+  /** `yes`, `later`, `no`; absent while it is on the desk. */
+  verdict?: 'yes' | 'later' | 'no'
+  campaignId?: string
+  fitScore?: number
+}
+
+/** A bulk change over ideas: how many, which failed, its undo. */
+export type IdeasChanged = {
+  done: number
+  failed: number
+  /** Why the run stopped early, in the server's words. */
+  stopped?: string
+  undoId?: string
+}
+
+/** A shared value across a selection, and which ideas share it. */
+export type IdeasShared = { value: string; label: string; ideaIds: string[] }
+
+/** The ideas pack's typed results (CON-465), from `results.ideas`. */
+export type IdeasResults = {
+  found?: { ideas: IdeaBrief[]; total: number }
+  /** `setIdeaVerdict`. */
+  decided?: { idea: IdeaBrief; undoId?: string }
+  /** `setIdeaVerdicts`. */
+  decidedMany?: IdeasChanged
+  moved?: IdeasChanged
+  /** Never undone. */
+  deleted?: IdeasChanged
+  compiled?: {
+    postId: string
+    title: string
+    campaignId: string
+    platformId?: string
+    ideas: number
+    grounding: Grounding
+    undoId?: string
+  }
+  drafted?: {
+    posts: {
+      postId: string
+      title: string
+      platformId: string
+      grounding: Grounding
+    }[]
+    warnings: string[]
+  }
+  /** `getIdea`: why it fits, where it came from, what it became. */
+  idea?: {
+    idea: IdeaBrief
+    angle?: string
+    rationale?: string
+    fit?: {
+      score?: number
+      lens: 'campaign' | 'workspace'
+      campaignId?: string
+      criteria: {
+        key: string
+        level: number
+        why: string
+        phase?: string
+        campaign?: string
+      }[]
+      caps: string[]
+    }
+    sourceAsset?: { id: string; title: string }
+    analysisGist?: string
+    posts: { id: string; title: string; status: string; campaignId: string }[]
+  }
+  edited?: { idea: IdeaBrief; changed: string[]; undoId?: string }
+  similar?: {
+    ideaId: string
+    title: string
+    items: { idea: IdeaBrief; why: string[] }[]
+  }
+  common?: {
+    ideas: { id: string; title: string }[]
+    shared: { kind: string; values: IdeasShared[] }[]
+  }
+  duplicates?: {
+    groups: { keepId: string; similarity: number; ideas: IdeaBrief[] }[]
+    total: number
+  }
+  merged?: { idea: IdeaBrief; deleted: number }
+}
+
 /** Where an undo stands, by the action's undo id. */
 export type UndoState = 'pending' | 'undone' | 'changed' | 'gone'
 
@@ -826,6 +915,8 @@ export type AssistantTurn = {
   analytics?: AnalyticsResults
   /** What the workspace pack read or changed this turn (CON-464). */
   workspace?: WorkspaceResults
+  /** What the ideas pack read or changed this turn (CON-465). */
+  ideas?: IdeasResults
   /** What this turn did to the screen, and where each can be put back to. */
   uiActions?: AppliedUIAction[]
   /**

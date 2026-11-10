@@ -4,6 +4,7 @@ import { errorMessage } from './errors'
 import { isRecord } from './json'
 import { analyticsResults } from './assistantAnalytics'
 import { workspaceResults } from './assistantWorkspace'
+import { draftedPost, ideasResults } from './assistantIdeas'
 import { readSSEStream } from '@/lib/sse'
 import { humanizeStep } from '@/lib/assistantTools'
 import type { ViewContext, ViewEntityKind, ViewScreen } from '@/lib/viewContext'
@@ -22,6 +23,7 @@ import type {
   AssetsResults,
   AnalyticsResults,
   WorkspaceResults,
+  IdeasResults,
   AssistantAction,
   AssistantProposal,
   CalendarFindings,
@@ -94,6 +96,8 @@ export type AssistantTurnResult = {
   analytics?: AnalyticsResults
   /** The workspace pack's typed results (CON-464). */
   workspace?: WorkspaceResults
+  /** The ideas pack's typed results (CON-465). */
+  ideas?: IdeasResults
 }
 
 export type AssistantStreamEvent =
@@ -357,6 +361,7 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
   result.repair = repair.repair
   result.analytics = analyticsResults(results)
   result.workspace = workspaceResults(results)
+  result.ideas = ideasResults(results)
   return result
 }
 
@@ -1121,6 +1126,27 @@ async function streamTurn(
       case 'draft_post_post': {
         const post = streamedPost(parsed)
         if (post) onEvent({ type: 'post_generated', post })
+        return
+      }
+      // The ideas pack's draftIdeas sends each draft as it is saved
+      // (CON-466): the same post_generated the draftPost sub-flow gives, so
+      // drafts land on the campaign's lists as they are written.
+      case 'idea_draft_post': {
+        const drafted = draftedPost(parsed)
+        if (drafted) {
+          onEvent({
+            type: 'post_generated',
+            post: {
+              id: drafted.postId,
+              title: drafted.title,
+              content: '',
+              platform_id: drafted.platformId,
+              platform_post_type: '',
+              campaign_type_phase_id: null,
+              scheduled_at: null,
+            },
+          })
+        }
         return
       }
       // The clone is a new, already-persisted post; the store attaches it to
