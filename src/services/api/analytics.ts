@@ -154,6 +154,23 @@ function appendPlatforms(
   return params
 }
 
+/**
+ * The campaign a windowed read is narrowed to (CON-288): its posts and their
+ * figures only. Absent is the whole workspace. `/learnings` takes none — its
+ * lessons are workspace-wide.
+ */
+export type AnalyticsCampaignQuery = {
+  campaignId?: string
+}
+
+function appendCampaign(
+  params: URLSearchParams,
+  query: AnalyticsCampaignQuery,
+): URLSearchParams {
+  if (query.campaignId) params.set('campaign_id', query.campaignId)
+  return params
+}
+
 function search(params: URLSearchParams): string {
   const qs = params.toString()
   return qs ? `?${qs}` : ''
@@ -199,20 +216,23 @@ export function hasHistory<T>(section: LearningsSection<T>): section is T {
  * buckets weekly past 90 days on its own, and forcing `week` on a short window
  * produces four points where the reader expects twenty-eight.
  */
-export type OverviewQuery = AnalyticsWindowQuery & AnalyticsPlatformQuery
+export type OverviewQuery = AnalyticsWindowQuery &
+  AnalyticsPlatformQuery &
+  AnalyticsCampaignQuery
 
 export async function fetchAnalyticsOverview(
   query: OverviewQuery = {},
 ): Promise<InsightEnvelope<AnalyticsOverview>> {
   if (demo()) return demoOverview(query)
   return apiJson<InsightEnvelope<AnalyticsOverview>>(
-    `${BASE}/overview${search(appendPlatforms(windowParams(query), query))}`,
+    `${BASE}/overview${search(appendCampaign(appendPlatforms(windowParams(query), query), query))}`,
     'Unable to fetch analytics',
   )
 }
 
 export type PerformersQuery = AnalyticsWindowQuery &
-  AnalyticsPlatformQuery & {
+  AnalyticsPlatformQuery &
+  AnalyticsCampaignQuery & {
     /** Default `against_typical`. Anything outside the union is a 400. */
     by?: PerformerSort
     /** Rows *per list*, not in total. Clamped to 20. */
@@ -235,6 +255,7 @@ export async function fetchPerformers(
   if (query.by) params.set('by', query.by)
   if (query.limit !== undefined) params.set('limit', String(query.limit))
   appendPlatforms(params, query)
+  appendCampaign(params, query)
   return apiJson<InsightEnvelope<PerformersBoard>>(
     `${BASE}/performers${search(params)}`,
     'Unable to fetch analytics',

@@ -645,6 +645,25 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   sends `Fix the problem <key>: <message>` to the campaign's thread, which
   answers with that finding's fixes as offers; a fix that is only a post to
   open is a link.
+- **The analytics pack's results are cards, and every card cites its
+  filters** (CON-463). `complete.results.analytics` holds each tool's last
+  output, and every read is `{applied, data}`: `applied` is what the read was
+  actually narrowed to, and the card's last line prints it — period ·
+  platforms · campaign, with "every platform" and "the whole workspace"
+  spelled out — or, for a read the window can't reach (the publisher's best
+  times, decay and cadence; followers; the posts list; lessons), what it
+  covers instead, worded here rather than taken from the server's `note`.
+  `services/api/assistantAnalytics` parses them; `AnalyticsResults` draws
+  them. `comparePeriods` is two columns and the server's change, a fall in
+  amber. `moreLikeThese` makes **ideas, not posts**: the trail each example
+  came from, then the undated ideas it saved, with OPEN to Ideas.
+  **The dashboard's period, platforms and campaign are its address**
+  (`lib/analyticsSearch`: `window` or `from`+`to`, `platform`,
+  `campaign_id`), which is what `set_window` lands on — from a campaign's
+  Analytics tab too, which has no window of its own, so that one opens the
+  dashboard narrowed to the campaign. The window the page sends carries the
+  campaign (`window.campaignId`). A set_window whose dates are only the
+  period on screen resolved keeps the period a preset.
 - **A planned post is a post with theses and no body** (CON-449). `planned`
   can only become `draft`, and only by gaining a body — the server moves it,
   so it has no button. Ideas are never posts: on the week calendar an idea
@@ -980,15 +999,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 **The universal assistant waits on the API's merge, and on five API
 follow-ups** (CON-451). The UI (#227–#234) replaces endpoints the backend stack
 removes, so the two ship together, and neither has had a live pass yet. Until
-the follow-ups land: the ideas, workspace and analytics packs send no typed
-results or `undoId`, so their turns are prose plus `touched` — the merge
-card, facts ledger, connection card and provenance trail are unbuilt (the
-assets pack's arrived with CON-460, the foundation pack's with CON-461, the
-repair pack's with CON-462); an offer has no `recommended` option, so its
-choices are drawn with equal weight; a reloaded thread infers an offer's
+the follow-ups land: the ideas and workspace packs send no typed results or
+`undoId`, so their turns are prose plus `touched` — the merge card, facts
+ledger and connection card are unbuilt (the assets pack's arrived with
+CON-460, the foundation pack's with CON-461, the repair pack's with CON-462,
+the analytics pack's with CON-463); the posts list doesn't say what it was
+sorted on, so its card shows reach and rate on every row; an offer has no
+`recommended` option, so its choices are drawn with equal weight; a reloaded thread infers an offer's
 state instead of reading it; and an idea row has no post count, so "used in
-N posts" isn't shown. Idea slots are in the week view only, and the analytics
-period is page state, not the address.
+N posts" isn't shown. Idea slots are in the week view only.
 
 Inviting teammates is live end to end (People, in Workspace Settings; the
 emailed link lands on `/invite?token=…`, which is public, and accepting either

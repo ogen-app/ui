@@ -2406,6 +2406,7 @@ export const es: Translation = {
       select_one: 'Seleccionó {{formatted}} en {{screen}}',
       select_other: 'Seleccionó {{formatted}} en {{screen}}',
       openSavedView: 'Abrió un grupo inteligente en {{screen}}',
+      setWindow: 'Mostró {{window}} en {{screen}}',
       back: 'VOLVER',
       putBack: 'Restablecido',
     },
@@ -2445,6 +2446,105 @@ export const es: Translation = {
       deleteConfirm_one: 'ELIMINAR PUBLICACIÓN',
       deleteConfirm_other: 'ELIMINAR {{formatted}} PUBLICACIONES',
       keep: 'CONSERVAR',
+    },
+
+    analytics: {
+      untitled: 'Publicación sin título',
+      percent: '{{value}} %',
+      change: '{{value}} %',
+      lessons: 'Aprendizajes:',
+      postStats: 'Cifras de la publicación:',
+      cite: {
+        range: '{{from}} – {{to}}',
+        since: 'Desde el {{day}}',
+        allPlatforms: 'Todas las plataformas',
+        workspace: 'Todo el espacio de trabajo',
+      },
+      note: {
+        publisher: 'todas las cuentas conectadas, desde siempre',
+        followers:
+          'todo el espacio de trabajo: los seguidores son de las cuentas',
+        posts: 'todas las publicaciones hechas con Ogen, desde siempre',
+        lessons: 'desde siempre, todo el espacio de trabajo',
+        postStats: 'solo esa publicación, desde que salió',
+      },
+      unavailable: {
+        noData: 'Todavía no hay nada que contar',
+        addon: 'Requiere el complemento de analítica del publicador',
+        notConfigured:
+          'La analítica no está configurada en este espacio de trabajo',
+        other: 'Esas cifras no están disponibles ahora',
+      },
+      overview: {
+        word: 'Resumen',
+        workspace: 'Todo el espacio de trabajo',
+        empty: 'No hay cifras en este periodo',
+      },
+      topPosts: {
+        word: 'Mejores publicaciones',
+        title_one: 'Lo mejor de {{formatted}} publicación',
+        title_other: 'Lo mejor de {{formatted}} publicaciones',
+        typical: '{{value}}× lo habitual',
+        reach: '{{value}} de alcance',
+        weakest: 'Las más flojas',
+      },
+      bestTimes: {
+        word: 'Mejores horas',
+        slot: '{{day}} {{hour}}:00 UTC',
+        none: 'Aún hay pocas publicaciones para saberlo',
+        aria: 'Interacción por día de la semana y hora, en UTC',
+      },
+      decay: {
+        word: 'Desgaste',
+        half: 'La mitad de la interacción en {{age}}',
+        title: 'Cómo crece la interacción',
+      },
+      frequency: {
+        word: 'Frecuencia',
+        title_one: '{{formatted}} publicación a la semana funciona mejor',
+        title_other: '{{formatted}} publicaciones a la semana funcionan mejor',
+        none: 'Aún hay pocas semanas para saberlo',
+        row_one: '{{platform}} · {{formatted}} a la semana',
+        row_other: '{{platform}} · {{formatted}} a la semana',
+        weeks_one: '{{formatted}} semana',
+        weeks_other: '{{formatted}} semanas',
+      },
+      followers: {
+        word: 'Seguidores',
+        growth: '{{value}} en este periodo',
+        account: '@{{username}} · {{platform}}',
+      },
+      posts: {
+        word: 'Publicaciones',
+        title_one: '{{formatted}} publicación',
+        title_other: '{{formatted}} publicaciones',
+        count_one: '{{formatted}} publicación',
+        count_other: '{{formatted}} publicaciones',
+        figures: '{{reach}} de alcance · {{rate}}',
+      },
+      compare: {
+        word: 'Comparar',
+        title: '{{first}} frente a {{second}}',
+        change: 'Cambio',
+        new: 'nuevo',
+      },
+      more: {
+        trailWord: 'Rastro',
+        trail_one: 'De dónde salió {{formatted}} publicación',
+        trail_other: 'De dónde salieron {{formatted}} publicaciones',
+        noTrail: 'Sin rastro registrado',
+        ownWords:
+          'No quedó nada registrado detrás, así que las ideas salen del propio texto de la publicación.',
+        idea: 'Idea: {{idea}}',
+        ideaFrom: 'Idea: {{idea}}, de {{asset}}',
+        used: 'Usó {{asset}}',
+        grounding: 'También se basó en {{assets}}',
+        doneWord: 'Hecho',
+        planned_one: 'Planificada {{formatted}} idea',
+        planned_other: 'Planificadas {{formatted}} ideas',
+        onIdeas: 'en Ideas · nada en el calendario',
+        open: 'ABRIR',
+      },
     },
 
     repair: {
@@ -3047,6 +3147,8 @@ export const es: Translation = {
 
     scopeNote: {
       allTime: 'Desde siempre — no le afecta el periodo de arriba',
+      allTimeWorkspace:
+        'Desde siempre y todo el espacio de trabajo — no le afectan el periodo ni la campaña de arriba',
       ahead: 'Mirando hacia delante — no le afecta el periodo de arriba',
     },
 
@@ -3443,6 +3545,10 @@ export const es: Translation = {
       platformNoAccount: '{{platform}} — ninguna cuenta conectada',
       platformAccountsLabel: '{{platform}}, {{accounts}}',
       platformNoAccountLabel: '{{platform}}, ninguna cuenta conectada',
+      campaign: 'Campaña',
+      allCampaigns: 'Todas las campañas',
+      otherCampaign: 'Una campaña que ya no aparece',
+      range: '{{from}} – {{to}}',
       axisTime: 'Ahora frente a antes',
       axisSleeve: 'En paralelo',
     },

@@ -3,6 +3,11 @@ import type { TFunction } from 'i18next'
 import { screenName } from '@/lib/assistantView'
 import { counted } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
+import { useCampaigns } from '@/hooks/useCampaigns'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
+import { formatList } from '@/lib/intl'
+import { windowCampaign, type UIAction } from '@/lib/assistantUiActions'
+import { periodLabel } from '@/lib/analyticsCitation'
 import { ResolvedLine, ResultBlock, TextAction } from './blocks'
 import type { AppliedUIAction } from '@/lib/assistantUiActions'
 
@@ -23,6 +28,7 @@ export function UiActionRows({
 }) {
   const { t } = useTranslation()
   const undo = useAssistantStore((s) => s.undoUiAction)
+  const describe = useWindowWords()
   return (
     <div className="flex flex-col gap-4">
       {actions.map((applied, index) => (
@@ -36,7 +42,7 @@ export function UiActionRows({
               : t('assistant.word.notApplied')
           }
           tone={applied.before ? 'neutral' : 'warning'}
-          title={actionTitle(t, applied)}
+          title={actionTitle(t, applied, describe)}
           action={
             applied.before && !applied.undone ? (
               <TextAction onClick={() => void undo(threadId, turnId, index)}>
@@ -56,9 +62,46 @@ export function UiActionRows({
   )
 }
 
-function actionTitle(t: TFunction, { action }: AppliedUIAction): string {
+/**
+ * A window in the words its cards cite it in: period · platforms · campaign,
+ * with the campaign named from the list the dashboard picks from.
+ */
+function useWindowWords(): (action: UIAction) => string {
+  const { t } = useTranslation()
+  const { resolve } = usePlatformCatalog()
+  const campaigns = useCampaigns().data ?? []
+  return (action) => {
+    const w = action.window
+    const parts: string[] = []
+    if (w?.from && w.to) parts.push(periodLabel(t, w.from, w.to))
+    parts.push(
+      w && w.platforms.length > 0
+        ? formatList(w.platforms.map((s) => resolve(s)?.name ?? s))
+        : t('assistant.analytics.cite.allPlatforms'),
+    )
+    const id = windowCampaign(action)
+    parts.push(
+      id
+        ? (campaigns.find((c) => c.id === id)?.name ??
+            t('analytics.scopeBar.otherCampaign'))
+        : t('assistant.analytics.cite.workspace'),
+    )
+    return parts.join(' · ')
+  }
+}
+
+function actionTitle(
+  t: TFunction,
+  { action }: AppliedUIAction,
+  describe: (action: UIAction) => string,
+): string {
   const screen = screenName(t, action.screen)
   switch (action.type) {
+    case 'set_window':
+      return t('assistant.uiAction.setWindow', {
+        screen: screenName(t, 'analytics'),
+        window: describe(action),
+      })
     case 'navigate':
       return t('assistant.uiAction.navigate', { screen })
     case 'set_filter':

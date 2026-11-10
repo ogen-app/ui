@@ -4,6 +4,12 @@ import { cn } from '@/lib'
 import { Picker } from './ComparisonBar'
 import type { PlatformOption } from './types'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
+import { formatDate } from '@/lib/intl'
+
+/** The picker's value for a range the address names. */
+const CUSTOM = 'custom'
+/** The picker's value for the whole workspace. */
+const ALL = 'all'
 
 /**
  * What the dashboard is counting, and over what window.
@@ -38,6 +44,10 @@ export function WorkspaceScopeBar({
   window,
   windows,
   onWindowChange,
+  range,
+  campaigns = [],
+  campaignId,
+  onCampaignChange,
   className,
 }: {
   platforms: PlatformOption[]
@@ -50,9 +60,19 @@ export function WorkspaceScopeBar({
   window: string
   windows: readonly { readonly window: string; readonly label: string }[]
   onWindowChange: (window: string) => void
+  /**
+   * Days the address names instead of a span — set by the assistant
+   * (CON-463) or a link. Shown as the period until a span is picked.
+   */
+  range?: { from: string; to: string }
+  /** The campaigns the dashboard can be narrowed to; none hides the picker. */
+  campaigns?: { id: string; name: string }[]
+  /** The campaign it is narrowed to; absent for the whole workspace. */
+  campaignId?: string
+  onCampaignChange?: (campaignId: string | undefined) => void
   className?: string
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const connected = platforms.filter((p) => p.accounts > 0)
 
   // Nothing to filter. One connected platform means every state of this control
@@ -61,6 +81,36 @@ export function WorkspaceScopeBar({
   // its place and its height however much of the workspace is connected.
   const filterable = connected.length > 1
   const current = windows.find((w) => w.window === window) ?? windows[0]
+  const periods = windows.map((w) => ({ value: w.window, label: w.label }))
+  const day = (iso: string) =>
+    formatDate(
+      iso,
+      { day: 'numeric', month: 'short', timeZone: 'UTC' },
+      i18n.language,
+    ) ?? iso
+  const custom = range
+    ? t('analytics.scopeBar.range', {
+        from: day(range.from),
+        to: day(range.to),
+      })
+    : undefined
+  if (custom) periods.unshift({ value: CUSTOM, label: custom })
+
+  // A campaign the list no longer has (archived since the link was made)
+  // still narrows the numbers, so it stays named in the picker.
+  const campaignOptions = [
+    { value: ALL, label: t('analytics.scopeBar.allCampaigns') },
+    ...campaigns.map((c) => ({ value: c.id, label: c.name })),
+  ]
+  if (campaignId && !campaigns.some((c) => c.id === campaignId)) {
+    campaignOptions.push({
+      value: campaignId,
+      label: t('analytics.scopeBar.otherCampaign'),
+    })
+  }
+  const campaignLabel =
+    campaignOptions.find((o) => o.value === (campaignId ?? ALL))?.label ??
+    campaignOptions[0].label
 
   // Only what can be pressed counts as chosen. A platform that lost its last
   // account while chosen has no mark left to switch it off with.
@@ -112,12 +162,26 @@ export function WorkspaceScopeBar({
 
       {/* Far right, on its own, because it is the one control here that changes
           the window rather than the sources. */}
-      <div className="ml-auto">
+      <div className="ml-auto flex flex-wrap items-center gap-2">
+        {/* What the numbers are about, then over when: the campaign narrows
+            the posts counted, the period the days. */}
+        {onCampaignChange && campaigns.length > 0 && (
+          <Picker
+            label={t('analytics.scopeBar.campaign')}
+            value={campaignLabel}
+            options={campaignOptions}
+            onChange={(value) =>
+              onCampaignChange(value === ALL ? undefined : value)
+            }
+          />
+        )}
         <Picker
           label={t('analytics.scopeBar.period')}
-          value={current.label}
-          options={windows.map((w) => ({ value: w.window, label: w.label }))}
-          onChange={onWindowChange}
+          value={custom ?? current.label}
+          options={periods}
+          onChange={(value) => {
+            if (value !== CUSTOM) onWindowChange(value)
+          }}
         />
       </div>
     </section>

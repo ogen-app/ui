@@ -8,7 +8,7 @@ import type { ViewEntityKind, ViewScreen } from '@/lib/viewContext'
  * and each can be put back, because the screen it replaced is remembered.
  */
 export type UIAction = {
-  type: 'navigate' | 'set_filter' | 'select' | 'open_saved_view'
+  type: 'navigate' | 'set_filter' | 'select' | 'open_saved_view' | 'set_window'
   screen: ViewScreen
   campaignId?: string
   focus?: { kind: ViewEntityKind; id: string }
@@ -16,6 +16,16 @@ export type UIAction = {
   filter?: string
   selection?: { kind: ViewEntityKind; ids: string[] }
   savedViewId?: string
+  /**
+   * An analytics screen's new window (CON-463): dates, platforms, campaign.
+   * The server built it on the window on screen, so it is the whole state.
+   */
+  window?: {
+    from?: string
+    to?: string
+    platforms: string[]
+    campaignId?: string
+  }
 }
 
 /** An action as the thread keeps it: what it did, and where it was before. */
@@ -84,6 +94,11 @@ const DETAIL_PATHS: Partial<Record<ViewScreen, [string, string]>> = {
 /** Where a screen is, from what the action says about it. */
 export function destinationFor(action: UIAction): Destination | null {
   const { screen, campaignId, focus } = action
+  // A campaign's Analytics tab has no window of its own: the window lives on
+  // the dashboard, narrowed to that campaign.
+  if (action.type === 'set_window' && screen === 'campaign.analytics') {
+    return { to: '/analytics', params: {} }
+  }
   const workspace = WORKSPACE_PATHS[screen]
   if (workspace) return { to: workspace, params: {} }
 
@@ -132,4 +147,15 @@ export function searchFromFilter(filter: string): Record<string, string> {
     out[key] = out[key] ? `${out[key]},${value}` : value
   }
   return out
+}
+
+/**
+ * The campaign a `set_window` narrows to: the window's, else — from a
+ * campaign's own Analytics tab — that campaign.
+ */
+export function windowCampaign(action: UIAction): string | undefined {
+  return (
+    action.window?.campaignId ||
+    (action.screen === 'campaign.analytics' ? action.campaignId : undefined)
+  )
 }

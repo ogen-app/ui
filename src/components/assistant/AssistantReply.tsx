@@ -9,6 +9,7 @@ import { hasResultCard, ResultCard } from './ResultCard'
 import { ProposalCard } from './ProposalCard'
 import { UiActionRows } from './UiActionRows'
 import { FindingsBlock } from './FindingsBlock'
+import { AnalyticsResults } from './AnalyticsResults'
 import { AssetsResults } from './AssetsResults'
 import { FoundationResults } from './FoundationResults'
 import { RepairResults } from './RepairResults'
@@ -142,6 +143,11 @@ export function AssistantReply({
           undoStates={turn.undo ?? {}}
           disabled={running}
         />
+      )}
+
+      {/* What the analytics tools read, each citing its filters (CON-463). */}
+      {settled && turn.analytics && (
+        <AnalyticsResults results={turn.analytics} />
       )}
 
       {/* What the turn did to the screen behind the rail. */}

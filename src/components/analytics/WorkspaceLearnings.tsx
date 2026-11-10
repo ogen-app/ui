@@ -54,12 +54,18 @@ export function WorkspaceLearningsView({
   metric,
   onChangeMetric,
   narrowedTo = [],
+  campaignNarrowed = false,
 }: {
   result: AnalyticsLearningsResult
   metric: LearningsMetric
   onChangeMetric: (metric: LearningsMetric) => void
   /** The names of the platforms the scope bar narrowed to, or empty for all. */
   narrowedTo?: readonly string[]
+  /**
+   * The scope bar narrows the other cards to a campaign, which the lessons
+   * don't take — so the card says that too (CON-463).
+   */
+  campaignNarrowed?: boolean
 }) {
   const { t } = useTranslation()
   const { view, isPending, isError, isUnavailable, isEmpty } = result
@@ -70,7 +76,12 @@ export function WorkspaceLearningsView({
 
   if (isUnavailable) {
     return (
-      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
+      <Shell
+        metric={metric}
+        onChangeMetric={onChangeMetric}
+        withPicker={false}
+        campaignNarrowed={campaignNarrowed}
+      >
         <NotYet title={t('analytics.learned.unavailableTitle')}>
           {t('analytics.learned.unavailableBody')}
         </NotYet>
@@ -83,7 +94,12 @@ export function WorkspaceLearningsView({
   // that has simply never published that something is broken.
   if (isEmpty) {
     return (
-      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
+      <Shell
+        metric={metric}
+        onChangeMetric={onChangeMetric}
+        withPicker={false}
+        campaignNarrowed={campaignNarrowed}
+      >
         {narrowedTo.length > 0 ? (
           // Narrowed, `no_data` means nothing on *these* platforms — telling
           // the reader the workspace has never published would be false.
@@ -105,7 +121,12 @@ export function WorkspaceLearningsView({
 
   if (isError || !view) {
     return (
-      <Shell metric={metric} onChangeMetric={onChangeMetric} withPicker={false}>
+      <Shell
+        metric={metric}
+        onChangeMetric={onChangeMetric}
+        withPicker={false}
+        campaignNarrowed={campaignNarrowed}
+      >
         <NotYet title={t('analytics.learned.errorTitle')}>
           {t('analytics.learned.errorBody')}
         </NotYet>
@@ -118,6 +139,7 @@ export function WorkspaceLearningsView({
       metric={metric}
       onChangeMetric={onChangeMetric}
       withPicker
+      campaignNarrowed={campaignNarrowed}
       qualifier={view.historySince ?? undefined}
     >
       <Section
@@ -209,19 +231,21 @@ function Shell({
   onChangeMetric,
   withPicker,
   qualifier,
+  campaignNarrowed,
   children,
 }: {
   metric: LearningsMetric
   onChangeMetric: (metric: LearningsMetric) => void
   withPicker: boolean
   qualifier?: string
+  campaignNarrowed: boolean
   children: React.ReactNode
 }) {
   const { t } = useTranslation()
   return (
     <SectionCard
       title={t('analytics.learned.title')}
-      scope="all-time"
+      scope={campaignNarrowed ? 'all-time-workspace' : 'all-time'}
       qualifier={qualifier}
       status={
         withPicker ? (

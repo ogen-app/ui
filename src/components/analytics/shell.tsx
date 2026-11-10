@@ -37,7 +37,7 @@ import { cn } from '@/lib'
  * last 28 days, and a section that silently sits under a window control claims
  * it is.
  */
-export type SectionScope = 'lens' | 'all-time' | 'ahead'
+export type SectionScope = 'lens' | 'all-time' | 'all-time-workspace' | 'ahead'
 
 /**
  * Whether the period above reaches this card, said when it does not.
@@ -48,6 +48,9 @@ export type SectionScope = 'lens' | 'all-time' | 'ahead'
  */
 function scopeNote(t: TFunction, scope: SectionScope): string | null {
   if (scope === 'all-time') return t('analytics.scopeNote.allTime')
+  // The campaign above narrows the other cards, not the workspace's lessons.
+  if (scope === 'all-time-workspace')
+    return t('analytics.scopeNote.allTimeWorkspace')
   if (scope === 'ahead') return t('analytics.scopeNote.ahead')
   return null
 }

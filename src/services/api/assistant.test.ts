@@ -731,3 +731,64 @@ describe('the repair pack’s results (CON-462)', () => {
     expect(repair?.deleted).toBeUndefined()
   })
 })
+
+describe('the analytics pack’s results (CON-463)', () => {
+  const read = (body: object) =>
+    parseHistoryResult(
+      JSON.stringify({ explanation: 'Done.', action: 'answered', ...body }),
+      'workspace',
+    )
+
+  it('keeps the reads as the turn’s analytics', () => {
+    const result = read({
+      results: {
+        analytics: {
+          postingFrequency: {
+            applied: { platforms: ['instagram'] },
+            data: [
+              {
+                platform: 'instagram',
+                posts_per_week: 3,
+                avg_engagement_rate: 4.1,
+                avg_engagement: 812,
+                weeks_count: 12,
+              },
+            ],
+          },
+        },
+      },
+    })
+    expect(result.analytics?.frequency?.data).toEqual([
+      { platform: 'instagram', perWeek: 3, rate: 4.1, weeks: 12 },
+    ])
+  })
+
+  it('reads a set_window with its window', () => {
+    const result = read({
+      uiActions: [
+        {
+          type: 'set_window',
+          screen: 'analytics',
+          window: {
+            from: '2026-03-01',
+            to: '2026-03-31',
+            platforms: ['instagram'],
+            campaignId: 'c1',
+          },
+        },
+      ],
+    })
+    expect(result.uiActions).toEqual([
+      expect.objectContaining({
+        type: 'set_window',
+        screen: 'analytics',
+        window: {
+          from: '2026-03-01',
+          to: '2026-03-31',
+          platforms: ['instagram'],
+          campaignId: 'c1',
+        },
+      }),
+    ])
+  })
+})

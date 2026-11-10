@@ -1,7 +1,12 @@
 import { useMemo } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { envelopeUnavailable, fetchPerformers } from '@/services/api/analytics'
+import {
+  envelopeUnavailable,
+  fetchPerformers,
+  type AnalyticsWindowQuery,
+} from '@/services/api/analytics'
+import { periodKey } from './useAnalyticsOverview'
 import {
   buildPerformersView,
   DEFAULT_PERFORMER_BASIS,
@@ -26,15 +31,17 @@ import type { PerformerSort } from '@/types/analytics'
 export const ANALYTICS_PERFORMERS_KEY = ['analytics', 'performers'] as const
 
 export function analyticsPerformersKey(
-  window: string,
+  period: AnalyticsWindowQuery,
   by: PerformerSort,
   platforms: readonly string[] = [],
+  campaignId = '',
 ) {
   return [
     ...ANALYTICS_PERFORMERS_KEY,
-    window,
+    periodKey(period),
     by,
     platformsKey(platforms),
+    campaignId,
   ] as const
 }
 
@@ -57,19 +64,26 @@ export type AnalyticsPerformersResult = {
 }
 
 export function useAnalyticsPerformers(
-  window: string,
+  period: AnalyticsWindowQuery,
   by: PerformerSort = DEFAULT_PERFORMER_BASIS,
   /** Zernio slugs to narrow to; empty for every platform. */
   platforms: readonly string[] = [],
+  /** The campaign to narrow to; absent for the whole workspace. */
+  campaignId?: string,
 ): AnalyticsPerformersResult {
   const { t } = useTranslation()
   const scope = canonicalPlatforms(platforms)
   const query = useQuery({
-    queryKey: analyticsPerformersKey(window, by, scope),
+    queryKey: analyticsPerformersKey(period, by, scope, campaignId),
     // The set travels with the answer, so the card can name what it counted.
     queryFn: async () => ({
       platforms: scope,
-      envelope: await fetchPerformers({ window, by, platforms: scope }),
+      envelope: await fetchPerformers({
+        ...period,
+        by,
+        platforms: scope,
+        campaignId,
+      }),
     }),
     staleTime: 5 * 60_000,
     retry: 2,

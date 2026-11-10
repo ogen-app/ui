@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import {
   envelopeUnavailable,
   fetchAnalyticsOverview,
+  type AnalyticsWindowQuery,
 } from '@/services/api/analytics'
 import { buildNowView } from '@/lib/analyticsOverviewView'
 import { canonicalPlatforms, platformsKey } from '@/lib/analyticsPlatformScope'
@@ -20,10 +21,23 @@ import type { AnalyticsWindow } from '@/types/analytics'
 export const ANALYTICS_OVERVIEW_KEY = ['analytics', 'overview'] as const
 
 export function analyticsOverviewKey(
-  window: string,
+  period: AnalyticsWindowQuery,
   platforms: readonly string[] = [],
+  campaignId = '',
 ) {
-  return [...ANALYTICS_OVERVIEW_KEY, window, platformsKey(platforms)] as const
+  return [
+    ...ANALYTICS_OVERVIEW_KEY,
+    periodKey(period),
+    platformsKey(platforms),
+    campaignId,
+  ] as const
+}
+
+/** A period as one key segment: its span, or its two days. */
+export function periodKey(period: AnalyticsWindowQuery): string {
+  return period.from && period.to
+    ? `${period.from}..${period.to}`
+    : (period.window ?? DEFAULT_OVERVIEW_WINDOW)
 }
 
 /**
@@ -80,18 +94,24 @@ export type AnalyticsOverviewResult = {
 }
 
 export function useAnalyticsOverview(
-  window: string = DEFAULT_OVERVIEW_WINDOW,
+  period: AnalyticsWindowQuery = { window: DEFAULT_OVERVIEW_WINDOW },
   /** Zernio slugs to narrow to; empty for every platform. */
   platforms: readonly string[] = [],
+  /** The campaign to narrow to; absent for the whole workspace. */
+  campaignId?: string,
 ): AnalyticsOverviewResult {
   const { t } = useTranslation()
   const scope = canonicalPlatforms(platforms)
   const query = useQuery({
-    queryKey: analyticsOverviewKey(window, scope),
+    queryKey: analyticsOverviewKey(period, scope, campaignId),
     // The set travels with the answer, so the card can name what it counted.
     queryFn: async () => ({
       platforms: scope,
-      envelope: await fetchAnalyticsOverview({ window, platforms: scope }),
+      envelope: await fetchAnalyticsOverview({
+        ...period,
+        platforms: scope,
+        campaignId,
+      }),
     }),
     // The figures move when the refresh sweep writes, not when the user does
     // anything here, so re-reading on every mount buys nothing.
