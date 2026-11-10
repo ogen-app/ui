@@ -1002,6 +1002,7 @@ function turnFields(
   | 'findings'
   | 'repair'
   | 'analytics'
+  | 'workspace'
 > {
   return {
     proposals: result.proposals.length > 0 ? result.proposals : undefined,
@@ -1010,6 +1011,7 @@ function turnFields(
     findings: result.findings,
     repair: result.repair,
     analytics: result.analytics,
+    workspace: result.workspace,
     content: result.explanation,
     action: result.action,
     details: result.details,
@@ -1165,6 +1167,7 @@ function undoTouches(
     return [{ kind: 'post' }]
   if (kind === 'campaign_assets' || kind === 'campaign_created')
     return [{ kind: 'asset' }, { kind: 'campaign' }]
+  if (kind === 'auto_publish') return [{ kind: 'auto_publish' }]
   const campaignId =
     thread && thread.subject.kind !== 'workspace'
       ? thread.subject.campaignId

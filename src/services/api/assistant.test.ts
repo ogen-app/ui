@@ -791,4 +791,20 @@ describe('the analytics pack’s results (CON-463)', () => {
       }),
     ])
   })
+
+  it('reads an open_connect with what it opens', () => {
+    const result = read({
+      uiActions: [
+        {
+          type: 'open_connect',
+          screen: 'settings',
+          connect: { platform: 'instagram', accountId: 'a1', reconnect: true },
+        },
+      ],
+    })
+    expect(result.uiActions[0]).toMatchObject({
+      type: 'open_connect',
+      connect: { platform: 'instagram', accountId: 'a1', reconnect: true },
+    })
+  })
 })

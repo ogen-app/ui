@@ -8,7 +8,13 @@ import type { ViewEntityKind, ViewScreen } from '@/lib/viewContext'
  * and each can be put back, because the screen it replaced is remembered.
  */
 export type UIAction = {
-  type: 'navigate' | 'set_filter' | 'select' | 'open_saved_view' | 'set_window'
+  type:
+    | 'navigate'
+    | 'set_filter'
+    | 'select'
+    | 'open_saved_view'
+    | 'set_window'
+    | 'open_connect'
   screen: ViewScreen
   campaignId?: string
   focus?: { kind: ViewEntityKind; id: string }
@@ -26,6 +32,12 @@ export type UIAction = {
     platforms: string[]
     campaignId?: string
   }
+  /**
+   * Settings' connect flow to open (CON-464): a new account on `platform`,
+   * or — `reconnect` — the account named. The user runs it; nothing is
+   * connected here.
+   */
+  connect?: { platform: string; accountId?: string; reconnect: boolean }
 }
 
 /** An action as the thread keeps it: what it did, and where it was before. */
@@ -147,6 +159,20 @@ export function searchFromFilter(filter: string): Record<string, string> {
     out[key] = out[key] ? `${out[key]},${value}` : value
   }
   return out
+}
+
+/**
+ * Settings' address for an `open_connect` (CON-464): the account to
+ * reconnect, with its platform for when the account can't be found, or the
+ * platform to connect a new account on. The page singles that one out and
+ * puts the focus on its button; the user presses it.
+ */
+export function connectSearch(
+  connect: NonNullable<UIAction['connect']>,
+): Record<string, string> {
+  return connect.reconnect && connect.accountId
+    ? { reconnect: connect.accountId, platform: connect.platform }
+    : { connect: connect.platform }
 }
 
 /**

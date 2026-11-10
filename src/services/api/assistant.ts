@@ -3,6 +3,7 @@ import { apiJson } from './http'
 import { errorMessage } from './errors'
 import { isRecord } from './json'
 import { analyticsResults } from './assistantAnalytics'
+import { workspaceResults } from './assistantWorkspace'
 import { readSSEStream } from '@/lib/sse'
 import { humanizeStep } from '@/lib/assistantTools'
 import type { ViewContext, ViewEntityKind, ViewScreen } from '@/lib/viewContext'
@@ -20,6 +21,7 @@ import type {
   AssetsAsk,
   AssetsResults,
   AnalyticsResults,
+  WorkspaceResults,
   AssistantAction,
   AssistantProposal,
   CalendarFindings,
@@ -90,6 +92,8 @@ export type AssistantTurnResult = {
   repair?: RepairResults
   /** The analytics pack's typed results (CON-463). */
   analytics?: AnalyticsResults
+  /** The workspace pack's typed results (CON-464). */
+  workspace?: WorkspaceResults
 }
 
 export type AssistantStreamEvent =
@@ -352,6 +356,7 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
   result.findings = repair.findings
   result.repair = repair.repair
   result.analytics = analyticsResults(results)
+  result.workspace = workspaceResults(results)
   return result
 }
 
@@ -894,6 +899,7 @@ const UI_ACTION_TYPES: UIAction['type'][] = [
   'select',
   'open_saved_view',
   'set_window',
+  'open_connect',
 ]
 
 /** Reads a `ui_action`; null for a type or screen this build can't apply. */
@@ -904,6 +910,7 @@ function uiAction(raw: Record<string, unknown>): UIAction | null {
   const focus = record(raw.focus)
   const selection = record(raw.selection)
   const window = record(raw.window)
+  const connect = record(raw.connect)
   return {
     type,
     screen: screen as ViewScreen,
@@ -928,6 +935,14 @@ function uiAction(raw: Record<string, unknown>): UIAction | null {
           campaignId: optStr(window.campaignId),
         }
       : undefined,
+    connect:
+      connect && str(connect.platform)
+        ? {
+            platform: str(connect.platform),
+            accountId: optStr(connect.accountId),
+            reconnect: connect.reconnect === true,
+          }
+        : undefined,
   }
 }
 

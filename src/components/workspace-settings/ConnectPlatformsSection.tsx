@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePlatformViews } from '@/hooks/usePlatforms'
 import { useZernioHealth } from '@/hooks/useZernio'
@@ -27,7 +27,15 @@ import { useConnectPlatform } from './connectPlatform'
  * use would teach a user that the app is broken rather than that the
  * capability exists.
  */
-function ConnectPlatformsSectionComponent() {
+function ConnectPlatformsSectionComponent({
+  focus,
+}: {
+  /**
+   * A platform slug the address singles out — the assistant's
+   * `open_connect` (CON-464): its tile is outlined and focused, not pressed.
+   */
+  focus?: string
+}) {
   const { t } = useTranslation()
   const views = usePlatformViews()
   const { data: health, isPending: healthPending } = useZernioHealth()
@@ -62,6 +70,7 @@ function ConnectPlatformsSectionComponent() {
             <PlatformTile
               key={v.platform.id}
               view={v}
+              focused={v.info.zernioId === focus}
               // An unread health check reads as a healthy one, so a tile would
               // take a click that opens a popup and then fails. They stay
               // visible and inert until the answer is in.
@@ -90,23 +99,32 @@ function ConnectPlatformsSectionComponent() {
  */
 function PlatformTile({
   view,
+  focused = false,
   disabled,
   locked,
   onConnect,
 }: {
   view: PlatformView
+  focused?: boolean
   disabled: boolean
   /** The tier allows one account per platform, and this one is spoken for. */
   locked: boolean
   onConnect: () => void
 }) {
   const { t } = useTranslation()
+  const ref = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!focused) return
+    ref.current?.scrollIntoView({ block: 'center' })
+    ref.current?.focus({ preventScroll: true })
+  }, [focused])
   const { info } = view
   const Icon = info.icon
   const count = connectedAccounts(view).length
   return (
     <li className="min-w-0">
       <button
+        ref={ref}
         type="button"
         onClick={onConnect}
         disabled={disabled || locked}
@@ -119,6 +137,7 @@ function PlatformTile({
           // explaining, so it keeps its contrast: a badge at 50% is a sentence
           // the people most likely to need it cannot read.
           disabled && 'opacity-50',
+          focused && 'outline-2 outline-offset-2 outline-accent',
         )}
       >
         <Icon className="size-8" weight="fill" style={{ color: info.color }} />
