@@ -636,8 +636,8 @@ function CommonCard({ common }: { common: NonNullable<Results['common']> }) {
               >
                 {t('assistant.ideas.common.value', {
                   value: name(s.kind, v.value, v.label),
-                  count: v.ideaIds.length,
-                  of: n,
+                  ...counted(v.ideaIds.length),
+                  of: formatNumber(n),
                 })}
               </span>
             ))}
