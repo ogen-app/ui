@@ -141,6 +141,17 @@ function FormBody({
           <p className="text-[13px]/5 text-secondary-foreground">
             {t('ideas.lifecycle.form.noCampaign')}
           </p>
+        ) : campaign.isError ? (
+          <p className="text-[13px]/5 text-secondary-foreground">
+            {t('ideas.lifecycle.form.platformsFailed')}{' '}
+            <button
+              type="button"
+              onClick={() => void campaign.refetch()}
+              className="cursor-pointer font-medium text-foreground hover:underline"
+            >
+              {t('ideas.lifecycle.form.retry')}
+            </button>
+          </p>
         ) : campaign.isPending ? null : platforms.length === 0 ? (
           <p className="text-[13px]/5 text-secondary-foreground">
             {t('ideas.lifecycle.form.noPlatforms')}

@@ -154,6 +154,8 @@ function useCreatePost(campaignId: string) {
     mutationFn: (payload: PostPayload) => createPost(payload),
     onSuccess: () => {
       invalidateCampaignPosts(qc, campaignId)
+      // An idea's post count and its MADE INTO list count this post (CON-470).
+      void qc.invalidateQueries({ queryKey: ['ideas'] })
     },
   })
 }

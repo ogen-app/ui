@@ -23,6 +23,16 @@ describe('the toast deck', () => {
     expect(titles()).toEqual(['Unable to update post'])
   })
 
+  it('never collapses a toast with an action, which may go somewhere else', () => {
+    const first = toast.success('2 drafts written', {
+      action: { label: 'SHOW', onClick: () => {} },
+    })
+    const second = toast.success('2 drafts written', {
+      action: { label: 'SHOW', onClick: () => {} },
+    })
+    expect(second).not.toBe(first)
+  })
+
   it('treats a different description as a different toast', () => {
     toast.error('Unable to schedule', {
       description: 'Instagram needs an image',

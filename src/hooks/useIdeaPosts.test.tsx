@@ -8,6 +8,8 @@ import { useDraftIdeas } from './useIdeaPosts'
 
 const api = vi.hoisted(() => ({
   events: [] as DraftIdeasEvent[],
+  /** Thrown after the events, as a broken read would. */
+  breaks: null as Error | null,
   navigate: vi.fn(),
   openPanel: vi.fn(),
 }))
@@ -17,7 +19,10 @@ vi.mock('@/services/api/ideaPosts', () => ({
       _ids: string[],
       _options: unknown,
       onEvent: (e: DraftIdeasEvent) => void,
-    ) => api.events.forEach(onEvent),
+    ) => {
+      api.events.forEach(onEvent)
+      if (api.breaks) throw api.breaks
+    },
   ),
 }))
 // The real store persists to localStorage; only the call matters here.
@@ -50,6 +55,7 @@ beforeEach(() => {
   useToastStore.setState({ toasts: [] })
   useJustWrittenStore.setState({ ids: new Set() })
   api.navigate.mockReset()
+  api.breaks = null
 })
 
 describe('useDraftIdeas (CON-470)', () => {
@@ -86,6 +92,17 @@ describe('useDraftIdeas (CON-470)', () => {
     const toast = await draft('c1')
     expect(toast.title).toBe('1 draft written')
     expect(toast.action).toBeUndefined()
+  })
+
+  it('keeps what a broken stream already saved, and offers SHOW to it', async () => {
+    api.events = [post('p1')]
+    api.breaks = new Error('network')
+    const toast = await draft('c1')
+    expect(toast.variant).toBe('error')
+    expect(toast.description).toBe('The 1 already written was kept.')
+    expect([...useJustWrittenStore.getState().ids]).toEqual(['p1'])
+    toast.action!.onClick()
+    expect(api.navigate).toHaveBeenCalled()
   })
 
   it('has nowhere to SHOW without the drafts’ campaign', async () => {
