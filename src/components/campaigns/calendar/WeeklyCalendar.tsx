@@ -15,6 +15,7 @@ import { resolveForPlatform } from '@/lib/publishingAccount'
 import { hasVisibleProblem } from '@/lib/postValidation'
 import { coverDrawable, useFailedCovers } from '@/lib/failedCovers'
 import { isDateLocked } from './LockMark'
+import { isNotGrounded } from '@/lib/grounding'
 import { PostCard } from './PostCard'
 import { IDEA_SLOT_HEIGHT, IdeaSlotCard } from './IdeaSlotCard'
 import { useIdeaSlots } from '@/hooks/useIdeaPosts'
@@ -207,6 +208,7 @@ function WeeklyCalendarComponent({
           // keeping its indicator row is a card the ladder has to budget for.
           hasFlag:
             isDateLocked(post.status) ||
+            isNotGrounded(post.grounding_mode) ||
             hasVisibleProblem(
               post,
               resolveForPlatform(

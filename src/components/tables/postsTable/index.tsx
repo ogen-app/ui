@@ -180,13 +180,18 @@ function PostsTableComponent({
         id: 'status',
         accessorKey: 'status',
         header: t('postsTable.columnStatus'),
-        size: 180,
+        // Room for the longest status beside the not-grounded mark; narrower,
+        // the status truncates and the mark stays whole.
+        size: 230,
         minSize: 140,
         cell: (_value, row) => (
           // A post written from general knowledge says so beside its status
           // — the one place a row states what the post is.
           <div className="flex h-[34px] items-center gap-3 border-b-2 border-background px-3 leading-8">
-            <TextCell value={postStatusLabel(t, row.status)} />
+            <TextCell
+              value={postStatusLabel(t, row.status)}
+              className="min-w-0 truncate"
+            />
             <NotGroundedMark mode={row.grounding_mode} />
           </div>
         ),

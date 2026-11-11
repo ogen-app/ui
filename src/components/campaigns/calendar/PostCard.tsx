@@ -30,6 +30,7 @@ import {
 } from './cardRungs'
 import { LockMark, isDateLocked } from './LockMark'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
+import { isNotGrounded } from '@/lib/grounding'
 import { STATUS_ACCENT_COLOR, STATUS_ICON, STATUS_TEXT_COLOR } from './status'
 
 type PostCardProps = {
@@ -287,10 +288,11 @@ function PostCardComponent({
   // more — it is its own attribute, at the other end of the row.
   const Indicator = problem ? WarningIcon : STATUS_ICON[post.status]
   const locked = isDateLocked(post.status)
-  // Either mark earns the row its place at a rung that would otherwise drop
-  // it — see `cardRungs`. What it must not do is survive on the status glyph
-  // alone, which every card has.
-  const flag = problem || locked
+  // Any of these marks earns the row its place at a rung that would otherwise
+  // drop it — see `cardRungs`. What it must not do is survive on the status
+  // glyph alone, which every card has. Not grounded is among them: it rides on
+  // this row, so a ladder that dropped the row would drop the mark with it.
+  const flag = problem || locked || isNotGrounded(post.grounding_mode)
   // What the user allows, narrowed by what this post has and what the rung
   // can afford. The rung only ever subtracts.
   const showTime = fields.time && Boolean(time) && rung.time
@@ -491,9 +493,8 @@ function PostCardComponent({
                 doesn't spend a line on the word, this is the only place it is. */}
             {!showStatus && <span className="sr-only">{statusLabel}</span>}
             {/* Written from general knowledge: the glyph only, after what the
-                post is and before what you can't do to it. It rides on this row
-                rather than earning one, so the rung ladder needs no say — a
-                card too tight for its first row is too tight for this too. */}
+                post is and before what you can't do to it. A flag like the
+                warning and the lock, so this row survives every rung. */}
             <NotGroundedMark mode={post.grounding_mode} compact />
             {/* `ml-auto` rather than `justify-between`: the row has a variable
                 number of things on the left and exactly one on the right, and

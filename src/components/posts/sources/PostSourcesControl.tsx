@@ -25,6 +25,7 @@ import { AddWebPageModal } from '@/components/content/AddWebPageModal'
 import { UploadModal } from '@/components/uploads/UploadModal'
 import { AddSourcesModal } from '@/components/posts/sources/AddSourcesModal'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
+import { isNotGrounded } from '@/lib/grounding'
 import {
   attachToPost,
   detachFromPost,
@@ -229,13 +230,12 @@ export function PostSourcesControl({
   // is, because that is where the remedy is: the ADD SOURCE beside it. It is
   // a fact about how the words were made, so attaching a document afterwards
   // does not take it away — the next generation is what reads the new list.
-  const grounding =
-    post.grounding_mode === 'exploratory' ? (
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-secondary-foreground">
-        <NotGroundedMark mode={post.grounding_mode} />
-        <span>{t('grounding.postNotGrounded')}</span>
-      </p>
-    ) : null
+  const grounding = isNotGrounded(post.grounding_mode) ? (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-secondary-foreground">
+      <NotGroundedMark mode={post.grounding_mode} />
+      <span>{t('grounding.postNotGrounded')}</span>
+    </p>
+  ) : null
 
   // Nothing can open them, so a locked post does not mount them — the upload
   // and web-page modals are always-mounted-and-closed rather than conditional.

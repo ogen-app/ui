@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { CircleDashedIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
+import { isNotGrounded } from '@/lib/grounding'
 import type { GroundingMode } from '@/types/posts'
 
 /**
@@ -26,7 +27,7 @@ export function NotGroundedMark({
   className?: string
 }) {
   const { t } = useTranslation()
-  if (mode !== 'exploratory') return null
+  if (!isNotGrounded(mode)) return null
   const label = t('grounding.notGrounded')
   return (
     <span
