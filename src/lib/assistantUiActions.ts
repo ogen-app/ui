@@ -179,10 +179,22 @@ export function connectSearch(
 /**
  * The Assets page's address for an `open_add_source` (CON-474): the
  * campaign's Assets tab with its ADD CONTENT menu open, so the upload and the
- * web page are one click away. The page drops it once the menu is open — it
- * is a moment, not a place, and a reload should not open the menu again.
+ * web page are one click away. The page drops `add` once the menu is open —
+ * it is a moment, not a place, and a reload should not open the menu again.
+ *
+ * Already on that page, its filter stays: the request is added to the address
+ * rather than replacing it. Arriving from anywhere else, the search is only
+ * the request, because another page's params mean nothing here.
  */
-export const ADD_SOURCE_SEARCH = { add: 'source' } as const
+export function addSourceSearch(
+  target: string,
+  here: { pathname: string; search: Record<string, unknown> },
+): Record<string, unknown> {
+  const trim = (path: string) => path.replace(/\/$/, '')
+  return trim(here.pathname) === trim(target)
+    ? { ...here.search, add: 'source' }
+    : { add: 'source' }
+}
 
 /**
  * The campaign a `set_window` narrows to: the window's, else — from a
