@@ -41,6 +41,7 @@ import { pileOf } from './card/ideaRow'
 import { sourceFacts } from './card/sourceFacts'
 import { VerdictControls, type Decide } from './VerdictControls'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
+import { isNotGrounded } from '@/lib/grounding'
 
 /**
  * One idea on the Ideas page, as the CON-387 card (CON-388): the same row the
@@ -170,6 +171,14 @@ export function IdeaRow({
           <p className="mt-1 line-clamp-2 text-sm text-secondary-foreground">
             {summary}
           </p>
+        )}
+        {/* Open, the source line goes and the bodies take over; the mark
+            stays, under the title, while the idea is being decided. */}
+        {expanded && (
+          <NotGroundedMark
+            mode={idea.groundingMode}
+            className="mt-1 self-start"
+          />
         )}
         {!expanded && (
           <SourceLine
@@ -385,7 +394,7 @@ function SourceLine({
         {campaign}
       </span>,
     )
-  if (idea.groundingMode === 'exploratory')
+  if (isNotGrounded(idea.groundingMode))
     bits.push(<NotGroundedMark key="grounding" mode={idea.groundingMode} />)
   if (hasWokenUp(idea, now))
     // Why this one is back. Without it a postponed idea reappearing with the

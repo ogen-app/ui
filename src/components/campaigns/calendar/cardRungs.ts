@@ -64,9 +64,10 @@ export const CARD_RUNGS: CardRung[] = [
 export type CardFacts = {
   hasTime: boolean
   /**
-   * The post is carrying a warning or a locked date. Its indicator row is then
-   * drawn at every rung, because those are the two things a card exists to
-   * surface — a ladder that hides them has optimised away its own point.
+   * The post is carrying a warning, a locked date or the not-grounded mark.
+   * Its indicator row is then drawn at every rung, because those are the
+   * things a card exists to surface — a ladder that hides them has optimised
+   * away its own point.
    */
   hasFlag?: boolean
   /** The post has a picture to be backed by — its `cover_url`. */

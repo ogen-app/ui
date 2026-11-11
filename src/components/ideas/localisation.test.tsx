@@ -191,6 +191,34 @@ describe('an analysed idea in Spanish', () => {
   })
 })
 
+describe("an assistant's uncited idea in Spanish (CON-469)", () => {
+  it('says it is not grounded, closed and open', () => {
+    const subject = idea({ groundingMode: 'exploratory' })
+    const { rerender } = renderRow(subject)
+    expect(screen.getAllByText('Sin fuentes')).toHaveLength(1)
+    expect(screen.queryByText('Not grounded')).not.toBeInTheDocument()
+
+    rerender(
+      <IdeaRow
+        idea={subject}
+        now={NOW}
+        expanded
+        onToggle={() => {}}
+        onDecide={() => {}}
+        onUndecide={() => {}}
+        onEdit={() => {}}
+        onDelete={() => {}}
+      />,
+    )
+    expect(screen.getAllByText('Sin fuentes')).toHaveLength(1)
+  })
+
+  it('says nothing about an idea nobody generated', () => {
+    renderRow(idea())
+    expect(screen.queryByText('Sin fuentes')).not.toBeInTheDocument()
+  })
+})
+
 describe('deleting an idea in Spanish', () => {
   it('names the one idea and keeps the capitals', () => {
     render(

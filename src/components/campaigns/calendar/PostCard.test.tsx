@@ -9,6 +9,7 @@ import {
   useFailedCovers,
 } from '@/lib/failedCovers'
 import { DEFAULT_WEEK_FIELDS } from './cardFields'
+import { CARD_RUNGS } from './cardRungs'
 import type { Post } from '@/types/posts'
 
 /**
@@ -28,11 +29,14 @@ vi.mock('@tanstack/react-router', () => ({
     className?: string
   }) => <a className={className}>{children}</a>,
 }))
+// Unresolved by default, which `hasVisibleProblem` reads as a post with a
+// problem — so a test of what a problem-free card drops resolves one.
+const platform = vi.hoisted(() => ({ resolved: undefined as unknown }))
 vi.mock('@/hooks/usePlatforms', () => ({
-  usePlatformCatalog: () => ({ resolve: () => undefined }),
+  usePlatformCatalog: () => ({ resolve: () => platform.resolved }),
 }))
 vi.mock('@/hooks/usePublishingAccount', () => ({
-  usePublishingAccount: () => null,
+  usePublishingAccount: () => ({ ambiguous: false, mismatched: false }),
 }))
 
 const COVER = 'https://bucket.example/posts/p1/cover.png?X-Amz-Expires=900'
@@ -112,5 +116,32 @@ describe('PostCard cover', () => {
     expect(coverDrawable(COVER, grid.result.current)).toBe(false)
     const fresh = COVER.replace('900', '901')
     expect(coverDrawable(fresh, grid.result.current)).toBe(true)
+  })
+})
+
+describe('PostCard not-grounded mark (CON-469)', () => {
+  const minimal = CARD_RUNGS.find((r) => r.id === 'minimal')!
+
+  afterEach(() => {
+    platform.resolved = undefined
+  })
+
+  it('keeps its row on the tightest rung, which drops the time', () => {
+    // A post with nothing else to flag, so the mark is all that keeps the row.
+    platform.resolved = { icon: () => null, color: 'currentColor' }
+    const { getByText } = render(
+      <PostCard
+        post={post({ grounding_mode: 'exploratory' })}
+        rung={minimal}
+      />,
+    )
+    expect(getByText('Not grounded')).toHaveClass('sr-only')
+  })
+
+  it('draws nothing for a post nobody generated', () => {
+    const { queryByText } = render(
+      <PostCard post={post({ grounding_mode: null })} />,
+    )
+    expect(queryByText('Not grounded')).not.toBeInTheDocument()
   })
 })

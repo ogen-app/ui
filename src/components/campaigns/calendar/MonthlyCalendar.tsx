@@ -13,6 +13,7 @@ import { MonthDensity } from './MonthDensity'
 import { PostCard } from './PostCard'
 import { withCampaignRow } from './cardFields'
 import { isDateLocked } from './LockMark'
+import { isNotGrounded } from '@/lib/grounding'
 import { fitMonthCell } from './cardRungs'
 import { comparePostOrder } from '@/lib/postOrder'
 import { formatDate } from '@/lib/intl'
@@ -194,6 +195,7 @@ function MonthlyCalendarComponent({
                 hasTime: Boolean(post.scheduled_at ?? post.published_at),
                 hasFlag:
                   isDateLocked(post.status) ||
+                  isNotGrounded(post.grounding_mode) ||
                   hasVisibleProblem(
                     post,
                     resolveForPlatform(
