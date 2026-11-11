@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  addSourceSearch,
   connectSearch,
   destinationFor,
   searchFromFilter,
@@ -146,6 +147,30 @@ describe('an open_add_source (CON-474)', () => {
       to: '/campaigns/$campaignId/assets',
       params: { campaignId: 'c1' },
     })
+  })
+
+  it('keeps the Assets tab’s filter when it is already open there', () => {
+    expect(
+      addSourceSearch('/campaigns/c1/assets', {
+        pathname: '/campaigns/c1/assets/',
+        search: { kind: 'PDF', sort: 'title' },
+      }),
+    ).toEqual({ kind: 'PDF', sort: 'title', add: 'source' })
+  })
+
+  it('brings no other page’s params along', () => {
+    expect(
+      addSourceSearch('/campaigns/c1/assets', {
+        pathname: '/campaigns/c1/list',
+        search: { status: 'draft' },
+      }),
+    ).toEqual({ add: 'source' })
+    expect(
+      addSourceSearch('/campaigns/c1/assets', {
+        pathname: '/campaigns/c2/assets',
+        search: { kind: 'PDF' },
+      }),
+    ).toEqual({ add: 'source' })
   })
 
   it('goes nowhere without its campaign', () => {
