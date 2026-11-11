@@ -545,8 +545,9 @@ function LibraryTick({
       aria-label={t('brand.selection.select', { name })}
       className={cn(
         'absolute top-8 left-4',
+        // Without hover to reveal it, a touch screen shows it from the start.
         !shown &&
-          'opacity-0 group-hover/entry:opacity-100 focus-visible:opacity-100',
+          'opacity-0 group-hover/entry:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
       )}
     />
   )

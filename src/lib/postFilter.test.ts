@@ -33,6 +33,15 @@ describe('parsePostListSearch (CON-472)', () => {
     })
   })
 
+  it('refuses a day that doesn’t exist rather than reading it as another', () => {
+    expect(
+      parsePostListSearch({
+        scheduled_after: '2026-02-31',
+        scheduled_before: '2026-03-01',
+      }),
+    ).toEqual({ scheduled_before: '2026-03-01' })
+  })
+
   it('drops "without a date" beside a date range, which the endpoint refuses', () => {
     expect(
       parsePostListSearch({ scheduled: 'no', scheduled_after: '2026-04-21' }),

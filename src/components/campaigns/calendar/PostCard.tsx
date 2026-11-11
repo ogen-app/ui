@@ -612,8 +612,9 @@ function PostCardComponent({
         aria-label={t('postsTable.selectPost', { title })}
         className={cn(
           'absolute top-2 right-2 bg-primary',
+          // Without hover to reveal it, a touch screen shows it from the start.
           selection.ticked.size === 0 &&
-            'opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100',
+            'opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
         )}
         // Above the card's own hover lift (`hover:z-10`): sibling order
         // inside one card, not a layer of the app.

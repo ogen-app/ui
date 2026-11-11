@@ -316,9 +316,15 @@ function FactsTableComponent({
     [today, onEdit, onRemove, selection, shownTicked, facts.length, t],
   )
 
+  // The table draws only the columns named here, so the tick column has to
+  // be named as well as configured.
+  const ticking = !!selection
   const activeColumns = useMemo(
-    () => (showSubject ? COLUMNS : COLUMNS.filter((id) => id !== 'subject')),
-    [showSubject],
+    () => [
+      ...(ticking ? ['select'] : []),
+      ...(showSubject ? COLUMNS : COLUMNS.filter((id) => id !== 'subject')),
+    ],
+    [showSubject, ticking],
   )
 
   // No box of its own: the ledger is the page now, so it takes the height the

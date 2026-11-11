@@ -107,7 +107,11 @@ function CalendarView() {
   const postsFailed = postsError && posts === undefined
   // The grid reads the settings itself; the route only needs to know whether
   // they have arrived.
-  const { isPending: settingsPending, firstDayOfWeek } = useCalendarSettings()
+  const {
+    isPending: settingsPending,
+    firstDayOfWeek,
+    hiddenDays,
+  } = useCalendarSettings()
   const addPost = useAddPost(campaignId)
   // `beforeLoad` has already rejected anything else; this narrows the param
   // for the branches below rather than re-deciding it.
@@ -166,11 +170,39 @@ function CalendarView() {
     campaignId,
     setSelectedIds,
   )
-  // Resolved against the rows, so a post that has gone — or that the filter
-  // now hides — is never counted or handed to a bulk action.
+  // The cards on screen: posts dated inside the days shown, less the
+  // weekdays this user hides — what the grid draws, and all a tick can reach.
+  const range = useMemo(
+    () => calendarRange(anchorDate, granularity, firstDayOfWeek),
+    [anchorDate, granularity, firstDayOfWeek],
+  )
+  // Moving to other days or another filter starts a new selection, so ticks
+  // left behind never come back unasked.
+  const selectionScope = `${range.from}|${range.to}|${listFilter(params)}`
+  const [scopeOfTicks, setScopeOfTicks] = useState(selectionScope)
+  if (scopeOfTicks !== selectionScope) {
+    setScopeOfTicks(selectionScope)
+    setSelectedIds(new Set())
+  }
+  const onScreen = useMemo(() => {
+    // Both are days `calendarRange` made, so they parse.
+    const from = parseAnchor(range.from)!.getTime()
+    const end = addDays(parseAnchor(range.to)!, 1).getTime()
+    return rows.filter((p) => {
+      if (!p.scheduled_at) return false
+      const at = new Date(p.scheduled_at)
+      return (
+        at.getTime() >= from &&
+        at.getTime() < end &&
+        !(hiddenDays ?? []).includes(at.getDay())
+      )
+    })
+  }, [rows, range, hiddenDays])
+  // Resolved against the cards on screen, so a post that has gone, that the
+  // filter hides or that is in another week is never counted or acted on.
   const selectedPosts = useMemo(
-    () => rows.filter((p) => selectedIds.has(p.id)),
-    [rows, selectedIds],
+    () => onScreen.filter((p) => selectedIds.has(p.id)),
+    [onScreen, selectedIds],
   )
   const selection = useMemo(
     () => ({
@@ -194,20 +226,8 @@ function CalendarView() {
   // What the assistant sees (CON-472): the days on screen as the window, the
   // filter in the endpoint's words — with the zone the window's days are read
   // in — the posts drawn in those days, and what is ticked.
-  const range = useMemo(
-    () => calendarRange(anchorDate, granularity, firstDayOfWeek),
-    [anchorDate, granularity, firstDayOfWeek],
-  )
   const page = useMemo<ViewPage>(() => {
-    // Both are days `calendarRange` made, so they parse.
-    const from = parseAnchor(range.from)!.getTime()
-    const end = addDays(parseAnchor(range.to)!, 1).getTime()
-    const visible = rows
-      .filter((p) => {
-        const at = p.scheduled_at ? Date.parse(p.scheduled_at) : NaN
-        return at >= from && at < end
-      })
-      .map((p) => p.id)
+    const visible = onScreen.map((p) => p.id)
     const out: ViewPage = {
       filter: listFilter({ ...params, tz: timeZone }),
       window: { from: range.from, to: range.to, campaignId },
@@ -220,7 +240,7 @@ function CalendarView() {
         count: selectedPosts.length,
       }
     return out
-  }, [rows, range, params, timeZone, campaignId, selectedPosts])
+  }, [onScreen, range, params, timeZone, campaignId, selectedPosts])
   useAssistantPage(page)
 
   // `awaiting`, not `isLoading` — see `lib/fetched`: the empty state is a
