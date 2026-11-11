@@ -208,6 +208,47 @@ describe('a post fix', () => {
   })
 })
 
+describe('a rewritten post (CON-474)', () => {
+  it('says it was kept as a version, and cites the post’s own sources', async () => {
+    await show({
+      revised: {
+        postId: 'p1',
+        revised: true,
+        versioned: true,
+        grounding: {
+          mode: 'grounded',
+          sources: [{ id: 'a1', title: 'Brochure', ideaId: 'i1' }],
+        },
+      },
+    })
+    expect(screen.getByText('Post rewritten')).toBeTruthy()
+    expect(
+      screen.getByText('The previous copy is in the post’s history'),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('link', { name: 'Brochure' }).getAttribute('href'),
+    ).toBe('/assets/a1')
+  })
+
+  it('warns when no version was kept, and says nothing of sources it never knew', async () => {
+    await show({ revised: { postId: 'p1', revised: true, versioned: false } })
+    expect(screen.getByText(/history has no copy of it/)).toBeTruthy()
+    expect(screen.queryByText('Sources')).toBeNull()
+  })
+
+  it('marks a post that was never grounded', async () => {
+    await show({
+      revised: {
+        postId: 'p1',
+        revised: true,
+        versioned: true,
+        grounding: { mode: 'exploratory', sources: [] },
+      },
+    })
+    expect(screen.getByText('Not grounded')).toBeTruthy()
+  })
+})
+
 describe('in Spanish', () => {
   afterAll(async () => {
     await i18next.changeLanguage('en')
@@ -223,6 +264,14 @@ describe('in Spanish', () => {
       screen.getByText('El brief y las publicaciones coinciden'),
     ).toBeTruthy()
     expect(screen.queryByText('The brief and the posts agree')).toBeNull()
+  })
+
+  it('words a rewritten post', async () => {
+    await loadLocaleResources('es')
+    await i18next.changeLanguage('es')
+    await show({ revised: { postId: 'p1', revised: true, versioned: true } })
+    expect(screen.getByText('Publicación reescrita')).toBeTruthy()
+    expect(screen.queryByText('Post rewritten')).toBeNull()
   })
 
   it('asks before a delete in Spanish', async () => {

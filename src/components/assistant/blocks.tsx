@@ -1,6 +1,9 @@
+import { Fragment } from 'react'
 import { CheckIcon } from '@phosphor-icons/react'
+import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/styles'
+import { groundingAssets } from '@/lib/grounding'
 import type { Grounding } from '@/types/assistant'
 
 /**
@@ -104,7 +107,7 @@ export function ResultRow({
  */
 export function SourcesLine({ grounding }: { grounding: Grounding }) {
   const { t } = useTranslation()
-  const names = grounding.sources.map((s) => s.title).filter(Boolean)
+  const names = groundingAssets(grounding.sources)
   return (
     <p className="border-t border-border pt-2.5 text-[12.5px]">
       <span className="text-tertiary-foreground">
@@ -113,7 +116,22 @@ export function SourcesLine({ grounding }: { grounding: Grounding }) {
       {grounding.mode === 'grounded' ? (
         <span className="font-medium text-accent">
           {names.length > 0
-            ? names.join(', ')
+            ? names.map((s, i) => (
+                <Fragment key={s.id || s.title}>
+                  {i > 0 && ', '}
+                  {s.id ? (
+                    <Link
+                      to="/assets/$assetId"
+                      params={{ assetId: s.id }}
+                      className="hover:underline"
+                    >
+                      {s.title}
+                    </Link>
+                  ) : (
+                    s.title
+                  )}
+                </Fragment>
+              ))
             : t('assistant.sources.yourMaterial')}
         </span>
       ) : (

@@ -2543,6 +2543,7 @@ export const es: Translation = {
       setWindow: 'Mostró {{window}} en {{screen}}',
       openReconnect: 'Abrió Ajustes para reconectar {{platform}}',
       openConnect: 'Abrió Ajustes para conectar {{platform}}',
+      openAddSource: 'Abrió {{screen}} para añadir una fuente',
       back: 'VOLVER',
       putBack: 'Restablecido',
     },
@@ -2677,6 +2678,8 @@ export const es: Translation = {
         ideaFrom: 'Idea: {{idea}}, de {{asset}}',
         used: 'Usó {{asset}}',
         grounding: 'También se basó en {{assets}}',
+        from: 'De {{assets}}',
+        fromMaterial: 'De tu material',
         doneWord: 'Hecho',
         planned_one: 'Planificada {{formatted}} idea',
         planned_other: 'Planificadas {{formatted}} ideas',
@@ -2922,6 +2925,14 @@ export const es: Translation = {
       withdrawing_other:
         'Se están retirando de la publicación {{formatted}} publicaciones programadas. Conservan sus fechas y ningún deshacer las devuelve.',
       skipped: 'Se dejó como estaba: {{reason}}',
+      revised: {
+        word: 'Reescrito',
+        title: 'Publicación reescrita',
+        notRevised: 'La publicación se quedó como estaba',
+        versioned: 'La copia anterior está en el historial de la publicación',
+        unversioned:
+          'No se pudo guardar la reescritura como versión, así que el historial de la publicación no tiene copia de ella',
+      },
       converted: {
         word: 'Convertidas',
         title_one: '{{formatted}} publicación cambió de tipo',

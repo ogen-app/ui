@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { renderWithProviders } from '@/test/renderWithProviders'
 import { ResultCard } from './ResultCard'
 import { ThinkingTimeline } from './ThinkingTimeline'
 import type { AssistantStep } from '@/types/assistant'
@@ -54,8 +55,8 @@ describe('timing', () => {
 })
 
 describe('results', () => {
-  it('end on the sources slot, named when grounded', () => {
-    render(
+  it('end on the sources slot, named when grounded, each linking its asset', async () => {
+    await renderWithProviders(
       <ResultCard
         details={{
           contentPlan: {
@@ -75,8 +76,34 @@ describe('results', () => {
     expect(screen.getByText('DONE')).toBeTruthy()
     expect(screen.getByText('+12 ideas on the Ideas tab')).toBeTruthy()
     expect(
-      screen.getByText('Hotel de Russie brochure, Press kit 2026'),
-    ).toBeTruthy()
+      screen
+        .getByRole('link', { name: 'Hotel de Russie brochure' })
+        .getAttribute('href'),
+    ).toBe('/assets/a1')
+    expect(
+      screen.getByRole('link', { name: 'Press kit 2026' }).getAttribute('href'),
+    ).toBe('/assets/a2')
+  })
+
+  it('name an asset once, however many ideas it came through', async () => {
+    await renderWithProviders(
+      <ResultCard
+        details={{
+          contentPlan: {
+            ideaCount: 2,
+            warnings: [],
+            grounding: {
+              mode: 'grounded',
+              sources: [
+                { id: 'a1', title: 'Brochure', ideaId: 'i1' },
+                { id: 'a1', title: 'Brochure', ideaId: 'i2' },
+              ],
+            },
+          },
+        }}
+      />,
+    )
+    expect(screen.getAllByRole('link', { name: 'Brochure' })).toHaveLength(1)
   })
 
   it('say "Not grounded" in the same slot when they are not', () => {
@@ -94,8 +121,8 @@ describe('results', () => {
     expect(screen.getByText('Not grounded')).toBeTruthy()
   })
 
-  it('name the documents a draft drew on, and say nothing when none are named', () => {
-    const { unmount } = render(
+  it('name the documents a draft drew on, and say nothing when none are named', async () => {
+    const { unmount } = await renderWithProviders(
       <ResultCard
         details={{
           draftedPosts: {

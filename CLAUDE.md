@@ -592,7 +592,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   an offer or a choice is bordered (`PendingBox`); results, answers and history
   are a small-caps status word, a headline and hairline rows (`ResultBlock`).
   Every generating result ends on one sources slot (`SourcesLine`): teal names,
-  or amber "Not grounded" in the same place. The user's message is a light
+  or amber "Not grounded" in the same place. Each name links its asset
+  (CON-474), and a source also names the analysis and idea it came by, which
+  nothing links yet. A tool that sends no `grounding` (a draft from pasted
+  text) gets no sources slot at all, never "Not grounded". The user's message is a light
   fill, so the one dark thing in the rail is the next action. A finished turn
   under ten seconds leaves no timing behind. Labels — tool steps included — are
   worded at render time from the stored tool and input (`stepLabel`), never
@@ -632,7 +635,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   params as the endpoint does. Ticking rows and opening a smart group are the
   list's own state, so the list picks the request up with
   `useAssistantRequest`. Each applied action keeps the address it replaced, for
-  UNDO / BACK.
+  UNDO / BACK. `open_add_source` (CON-474) lands on the campaign's Assets
+  tab with `add=source`, which opens ADD CONTENT once and leaves the address;
+  like `open_connect`, it offers the ways in and never takes one.
 - **The assets pack's results are cards** (CON-460). `complete.results.assets`
   holds each tool's last output in the turn — `ask` (what was searched, with
   page citations), `analysis`, `compare`, `campaign` (with its `undoId`) —

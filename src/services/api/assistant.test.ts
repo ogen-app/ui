@@ -59,7 +59,7 @@ describe('parseHistoryResult', () => {
     ])
   })
 
-  it('reads the documents a draft drew on as its grounding', () => {
+  it('reads a draft’s grounding, and nothing when its sources are unknown', () => {
     const read = (draftedPosts: object) =>
       parseHistoryResult(
         JSON.stringify({
@@ -69,16 +69,34 @@ describe('parseHistoryResult', () => {
         'campaign',
       ).details.draftedPosts
     expect(
-      read({ postCount: 2, usedAssets: [{ id: 'a1', title: 'Brochure' }] }),
+      read({
+        postCount: 2,
+        grounding: {
+          mode: 'grounded',
+          sources: [
+            { id: 'a1', title: 'Brochure', analysisId: 'an1', ideaId: 'i1' },
+          ],
+        },
+      }),
     ).toEqual({
       postCount: 2,
       warnings: [],
       grounding: {
         mode: 'grounded',
-        sources: [{ id: 'a1', title: 'Brochure' }],
+        sources: [
+          { id: 'a1', title: 'Brochure', analysisId: 'an1', ideaId: 'i1' },
+        ],
       },
     })
-    expect(read({ postCount: 2 })).toEqual({ postCount: 2, warnings: [] })
+    expect(
+      read({ postCount: 1, grounding: { mode: 'exploratory' } })?.grounding,
+    ).toEqual({ mode: 'exploratory', sources: [] })
+    // Pasted material: the server leaves grounding out, and so does this —
+    // never "not grounded". The documents it used to name no longer count.
+    expect(
+      read({ postCount: 2, usedAssets: [{ id: 'a1', title: 'Brochure' }] })
+        ?.grounding,
+    ).toBeUndefined()
   })
 
   it('reads a post-pack result and its clone', () => {
@@ -114,6 +132,35 @@ describe('parseHistoryResult', () => {
     // The old count was posts; it is read as the plan's size.
     expect(result.details.contentPlan?.ideaCount).toBe(8)
     expect(result.details.brief).toEqual({ applied: true })
+  })
+
+  it('reads what an enriched brief drew on (CON-474)', () => {
+    const result = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Filled in the brief.',
+        results: {
+          campaign: {
+            brief: {
+              applied: true,
+              undoId: 'u1',
+              grounding: {
+                mode: 'grounded',
+                sources: [{ id: 'a1', title: 'Brochure', analysisId: 'an1' }],
+              },
+            },
+          },
+        },
+      }),
+      'campaign',
+    )
+    expect(result.details.brief).toEqual({
+      applied: true,
+      undoId: 'u1',
+      grounding: {
+        mode: 'grounded',
+        sources: [{ id: 'a1', title: 'Brochure', analysisId: 'an1' }],
+      },
+    })
   })
 
   it('reads a post row migrated from the old table', () => {
@@ -598,6 +645,36 @@ describe('the repair pack’s results (CON-462)', () => {
       'campaign',
     )
 
+  it('reads a rewritten post with its own grounding (CON-474)', () => {
+    const { repair } = read({
+      repair: {
+        revisePost: {
+          postId: 'p1',
+          revised: true,
+          versioned: true,
+          note: 'saved as a new version',
+          grounding: {
+            mode: 'grounded',
+            sources: [{ id: 'a1', title: 'Brochure', analysisId: 'an1' }],
+          },
+        },
+      },
+    })
+    expect(repair?.revised).toEqual({
+      postId: 'p1',
+      revised: true,
+      versioned: true,
+      grounding: {
+        mode: 'grounded',
+        sources: [{ id: 'a1', title: 'Brochure', analysisId: 'an1' }],
+      },
+    })
+    expect(
+      read({ repair: { revisePost: { postId: 'p1', revised: true } } }).repair
+        ?.revised?.grounding,
+    ).toBeUndefined()
+  })
+
   it('replays a recorded calendar check as the turn’s findings', () => {
     const result = read({
       repair: {
@@ -789,6 +866,25 @@ describe('the analytics pack’s results (CON-463)', () => {
           platforms: ['instagram'],
           campaignId: 'c1',
         },
+      }),
+    ])
+  })
+
+  it('reads an open_add_source, which used to be dropped (CON-474)', () => {
+    const result = read({
+      uiActions: [
+        {
+          type: 'open_add_source',
+          screen: 'campaign.assets',
+          campaignId: 'c1',
+        },
+      ],
+    })
+    expect(result.uiActions).toEqual([
+      expect.objectContaining({
+        type: 'open_add_source',
+        screen: 'campaign.assets',
+        campaignId: 'c1',
       }),
     ])
   })

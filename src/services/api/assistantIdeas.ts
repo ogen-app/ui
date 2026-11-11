@@ -6,6 +6,7 @@ import type {
   IdeasResults,
   IdeasShared,
 } from '@/types/assistant'
+import { parseGrounding } from './grounding'
 import { isRecord } from './json'
 
 /**
@@ -164,17 +165,16 @@ function changed(raw: unknown): IdeasChanged | undefined {
   }
 }
 
-/** Exploratory unless the result names what grounds it (CON-448). */
+/**
+ * Compile and draft always say how they were grounded (CON-448). Grounded
+ * means a named source: a turn stored before they said, or one claiming
+ * grounding with nothing to show for it, reads as exploratory.
+ */
 function grounding(raw: unknown): Grounding {
-  const g = record(raw)
-  const sources = list(g?.sources)
-    .map((s) => ({ id: str(s.id), title: str(s.title) }))
-    .filter((s) => s.id || s.title)
-  return {
-    mode:
-      g?.mode === 'grounded' && sources.length > 0 ? 'grounded' : 'exploratory',
-    sources,
-  }
+  const g = parseGrounding(raw)
+  return g && (g.mode === 'exploratory' || g.sources.length > 0)
+    ? g
+    : { mode: 'exploratory', sources: g?.sources ?? [] }
 }
 
 function idea(raw: unknown): IdeasResults['idea'] {

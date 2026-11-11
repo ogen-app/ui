@@ -15,6 +15,7 @@ export type UIAction = {
     | 'open_saved_view'
     | 'set_window'
     | 'open_connect'
+    | 'open_add_source'
   screen: ViewScreen
   campaignId?: string
   focus?: { kind: ViewEntityKind; id: string }
@@ -174,6 +175,14 @@ export function connectSearch(
     ? { reconnect: connect.accountId, platform: connect.platform }
     : { connect: connect.platform }
 }
+
+/**
+ * The Assets page's address for an `open_add_source` (CON-474): the
+ * campaign's Assets tab with its ADD CONTENT menu open, so the upload and the
+ * web page are one click away. The page drops it once the menu is open — it
+ * is a moment, not a place, and a reload should not open the menu again.
+ */
+export const ADD_SOURCE_SEARCH = { add: 'source' } as const
 
 /**
  * The campaign a `set_window` narrows to: the window's, else — from a

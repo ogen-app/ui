@@ -7,11 +7,12 @@ import { useAssistantStore } from '@/stores/assistantStore'
 import type {
   CalendarPlan,
   CampaignReview,
+  PostRevised,
   PostsChanged,
   RepairResults as Results,
   UndoState,
 } from '@/types/assistant'
-import { ResolvedLine, ResultBlock, ResultRow } from './blocks'
+import { ResolvedLine, ResultBlock, ResultRow, SourcesLine } from './blocks'
 import { FindingRow, FixActions } from './FindingsBlock'
 import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
 
@@ -56,6 +57,7 @@ export function RepairResults({
       ),
     ],
     ['plan', r.plan && <PlanCard t={t} plan={r.plan} />],
+    ['revised', r.revised && <RevisedCard t={t} revised={r.revised} />],
     [
       'converted',
       r.converted && (
@@ -300,6 +302,35 @@ function ChangedCard({
         </ResultRow>
       ))}
       <UndoNote t={t} undoId={change.undoId} undo={undo} />
+    </ResultBlock>
+  )
+}
+
+/**
+ * One post rewritten (`revisePost`), and where its words came from: a
+ * rewrite keeps the post's sources, so the line is the post's own (CON-474).
+ */
+function RevisedCard({ t, revised }: { t: TFunction; revised: PostRevised }) {
+  return (
+    <ResultBlock
+      status={t('assistant.repair.revised.word')}
+      title={
+        revised.revised
+          ? t('assistant.repair.revised.title')
+          : t('assistant.repair.revised.notRevised')
+      }
+      meta={
+        revised.revised && revised.versioned
+          ? t('assistant.repair.revised.versioned')
+          : undefined
+      }
+    >
+      {revised.revised && !revised.versioned && (
+        <ResultRow className="text-[12.5px] text-warning">
+          {t('assistant.repair.revised.unversioned')}
+        </ResultRow>
+      )}
+      {revised.grounding && <SourcesLine grounding={revised.grounding} />}
     </ResultBlock>
   )
 }

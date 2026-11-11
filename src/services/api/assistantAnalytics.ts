@@ -15,6 +15,7 @@ import type {
   PerformerRow,
   PerformersBoard,
 } from '@/types/analytics'
+import { parseGrounding } from './grounding'
 import { isRecord } from './json'
 
 /**
@@ -257,8 +258,7 @@ function moreLikeThese(raw: unknown): MoreLikeThese | undefined {
         id: str(i.id),
         title: str(i.title),
         angle: optStr(i.angle),
-        sources: strings(i.sources),
-        grounded: i.groundingMode === 'grounded',
+        grounding: parseGrounding(i.grounding),
       }))
       .filter((i) => i.id && i.title),
   }

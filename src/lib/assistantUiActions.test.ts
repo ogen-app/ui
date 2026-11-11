@@ -133,3 +133,24 @@ describe('an open_connect', () => {
     ).toEqual({ to: '/workspace-settings', params: {} })
   })
 })
+
+describe('an open_add_source (CON-474)', () => {
+  it('lands on the campaign’s Assets tab', () => {
+    expect(
+      destinationFor({
+        type: 'open_add_source',
+        screen: 'campaign.assets',
+        campaignId: 'c1',
+      }),
+    ).toEqual({
+      to: '/campaigns/$campaignId/assets',
+      params: { campaignId: 'c1' },
+    })
+  })
+
+  it('goes nowhere without its campaign', () => {
+    expect(
+      destinationFor({ type: 'open_add_source', screen: 'campaign.assets' }),
+    ).toBeNull()
+  })
+})

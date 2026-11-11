@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import {
+  ADD_SOURCE_SEARCH,
   connectSearch,
   destinationFor,
   searchFromFilter,
@@ -75,6 +76,11 @@ export function useAssistantUiActions() {
               destination.params,
               connectSearch(action.connect),
             )
+            return before
+          case 'open_add_source':
+            // The menu offers the ways in; choosing one is the user's.
+            if (!destination) return undefined
+            await go(destination.to, destination.params, ADD_SOURCE_SEARCH)
             return before
           case 'select':
           case 'open_saved_view': {

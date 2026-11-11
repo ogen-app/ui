@@ -283,6 +283,9 @@ function brief(
       }
     >
       <UndoNote t={t} undoId={undoId} undo={undo} />
+      {details.brief.grounding && (
+        <SourcesLine grounding={details.brief.grounding} />
+      )}
     </ResultBlock>
   )
 }

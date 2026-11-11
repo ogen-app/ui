@@ -60,7 +60,19 @@ export type ReviewSeverity = 'high' | 'medium' | 'low'
  */
 export type Grounding = {
   mode: 'grounded' | 'exploratory'
-  sources: { id: string; title: string }[]
+  sources: GroundingSource[]
+}
+
+/**
+ * One piece of the workspace's material an output drew on (CON-469): the
+ * asset (`id`), and — when known — the analysis it was read through and the
+ * idea it reached the output by.
+ */
+export type GroundingSource = {
+  id: string
+  title: string
+  analysisId?: string
+  ideaId?: string
 }
 
 /** An entity kind a turn changed, for the client to refresh. */
@@ -100,7 +112,7 @@ export type AssistantResultDetails = {
     warnings: string[]
     grounding?: Grounding
   }
-  brief?: { applied: boolean; undoId?: string }
+  brief?: { applied: boolean; undoId?: string; grounding?: Grounding }
   dates?: {
     startDate: string
     endDate: string
@@ -524,6 +536,16 @@ export type RepairResults = {
   unscheduled?: PostsChanged
   /** `deletePosts`: never undone. */
   deleted?: PostsChanged
+  /** `revisePost`: one post rewritten, kept as a version. */
+  revised?: PostRevised
+}
+
+export type PostRevised = {
+  postId: string
+  revised: boolean
+  versioned: boolean
+  /** The post's own; absent when it never was known. */
+  grounding?: Grounding
 }
 
 /**
@@ -643,8 +665,8 @@ export type MoreLikeThese = {
     id: string
     title: string
     angle?: string
-    sources: string[]
-    grounded: boolean
+    /** What this idea cites, each asset through its trail idea. */
+    grounding?: Grounding
   }[]
 }
 

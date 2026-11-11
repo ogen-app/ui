@@ -118,11 +118,21 @@ export function ContentPage({
   campaign,
   search,
   onSearchChange,
+  addSource = false,
+  onAddSourceOpened,
 }: {
   campaign: Campaign | null
   /** The route's search params — the list's filter and sort. */
   search: AssetListSearch
   onSearchChange: (next: AssetListSearch) => void
+  /**
+   * The assistant asked for a source (`open_add_source`, CON-474): open
+   * ADD CONTENT so the upload and the web page are in front of the user,
+   * then say so, so the route can drop the request from its address. It
+   * opens the menu and never an item: which way in is the user's choice.
+   */
+  addSource?: boolean
+  onAddSourceOpened?: () => void
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -257,6 +267,17 @@ export function ContentPage({
   const uploadItems = useUploadStore((s) => s.items)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [webPageModalOpen, setWebPageModalOpen] = useState(false)
+  const [addMenuOpen, setAddMenuOpen] = useState(addSource)
+  // Opened as the request arrives, during render: the page may already be
+  // on screen when the assistant asks.
+  const [askedForSource, setAskedForSource] = useState(addSource)
+  if (addSource !== askedForSource) {
+    setAskedForSource(addSource)
+    if (addSource) setAddMenuOpen(true)
+  }
+  useEffect(() => {
+    if (addSource) onAddSourceOpened?.()
+  }, [addSource, onAddSourceOpened])
   /*
    * Radix hands focus back to the menu trigger as the menu closes, and it does
    * so after the modal beneath has mounted — so the modal's field is focused and
@@ -497,7 +518,7 @@ export function ContentPage({
                 : t('content.page.title')
             }
             actions={
-              <DropdownMenu>
+              <DropdownMenu open={addMenuOpen} onOpenChange={setAddMenuOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     size="lg"

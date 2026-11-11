@@ -4,6 +4,11 @@ import { ContentPage } from '@/components/content/ContentPage'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { parseAssetListSearch, type AssetListSearch } from '@/lib/assetFilter'
 
+type CampaignAssetsSearch = AssetListSearch & {
+  /** The assistant asking for a source (`open_add_source`, CON-474). */
+  add?: 'source'
+}
+
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/assets',
 )({
@@ -11,7 +16,11 @@ export const Route = createFileRoute(
   // The list's filter, as on `/assets` — see `lib/assetFilter`. The sort and
   // the grouping are per-device preferences, not part of the address.
   // `campaign` never reaches the request here: the campaign is the scope.
-  validateSearch: parseAssetListSearch,
+  // `add=source` is the assistant's: it opens ADD CONTENT once and goes.
+  validateSearch: (raw: Record<string, unknown>): CampaignAssetsSearch => ({
+    ...parseAssetListSearch(raw),
+    ...(raw.add === 'source' ? { add: 'source' as const } : {}),
+  }),
 })
 
 /**
@@ -29,10 +38,18 @@ export const Route = createFileRoute(
 function CampaignAssets() {
   const { campaignId } = Route.useParams()
   const { data: campaign } = useCampaign(campaignId)
-  const search = Route.useSearch()
+  const { add, ...search } = Route.useSearch()
   const navigate = Route.useNavigate()
   const onSearchChange = useCallback(
     (next: AssetListSearch) => void navigate({ search: next, replace: true }),
+    [navigate],
+  )
+  const onAddSourceOpened = useCallback(
+    () =>
+      void navigate({
+        search: ({ add: _add, ...rest }: CampaignAssetsSearch) => rest,
+        replace: true,
+      }),
     [navigate],
   )
   // The layout above has already handled loading and failure for this
@@ -44,6 +61,8 @@ function CampaignAssets() {
       campaign={campaign}
       search={search}
       onSearchChange={onSearchChange}
+      addSource={add === 'source'}
+      onAddSourceOpened={onAddSourceOpened}
     />
   )
 }
