@@ -49,7 +49,8 @@ export function UiActionRows({
             applied.before && !applied.undone ? (
               <TextAction onClick={() => void undo(threadId, turnId, index)}>
                 {applied.action.type === 'navigate' ||
-                applied.action.type === 'open_connect'
+                applied.action.type === 'open_connect' ||
+                applied.action.type === 'open_add_source'
                   ? t('assistant.uiAction.back')
                   : t('assistant.undo.undo')}
               </TextAction>
@@ -107,6 +108,8 @@ function actionTitle(
         ? t('assistant.uiAction.openReconnect', { platform })
         : t('assistant.uiAction.openConnect', { platform })
     }
+    case 'open_add_source':
+      return t('assistant.uiAction.openAddSource', { screen })
     case 'set_window':
       return t('assistant.uiAction.setWindow', {
         screen: screenName(t, 'analytics'),

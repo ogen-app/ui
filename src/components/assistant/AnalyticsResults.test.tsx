@@ -168,8 +168,17 @@ describe('more like these', () => {
           {
             id: 'n1',
             title: 'Six rooms, one pool',
-            sources: ['Asset: Villa Aurora brochure'],
-            grounded: true,
+            grounding: {
+              mode: 'grounded',
+              sources: [
+                {
+                  id: 'a1',
+                  title: 'Villa Aurora brochure',
+                  analysisId: 'an1',
+                  ideaId: 'i1',
+                },
+              ],
+            },
           },
         ],
       },
@@ -181,13 +190,19 @@ describe('more like these', () => {
       ),
     ).toBeTruthy()
     expect(screen.getByText('Planned 1 idea')).toBeTruthy()
-    expect(screen.getByText('Villa Aurora brochure')).toBeTruthy()
+    // The idea says what it cites, and the line links the asset.
+    expect(screen.getByText('From Villa Aurora brochure')).toBeTruthy()
+    expect(
+      screen
+        .getByRole('link', { name: 'Villa Aurora brochure' })
+        .getAttribute('href'),
+    ).toBe('/assets/a1')
     expect(screen.getByText('OPEN').getAttribute('href')).toBe(
       '/campaigns/c1/ideas',
     )
   })
 
-  it('says when no trail was recorded, and cites the post', async () => {
+  it('says when no trail was recorded, and that its ideas are not grounded', async () => {
     await show({
       more: {
         grounding: [],
@@ -204,14 +219,27 @@ describe('more like these', () => {
           {
             id: 'n2',
             title: 'The rooftop at the hour it opens',
-            sources: ['Post: Opening day on the rooftop'],
-            grounded: false,
+            grounding: { mode: 'exploratory', sources: [] },
           },
         ],
       },
     })
     expect(screen.getByText('No trail recorded')).toBeTruthy()
-    expect(screen.getAllByText('Opening day on the rooftop')).toHaveLength(2)
+    // On the idea's row, and on the sources line under the card.
+    expect(screen.getAllByText('Not grounded')).toHaveLength(2)
+  })
+
+  it('says nothing of sources when no idea says how it was grounded', async () => {
+    await show({
+      more: {
+        grounding: [],
+        trail: [],
+        ideas: [{ id: 'n3', title: 'Pasted, not cited' }],
+      },
+    })
+    expect(screen.getByText('Pasted, not cited')).toBeTruthy()
+    expect(screen.queryByText('Sources')).toBeNull()
+    expect(screen.queryByText('Not grounded')).toBeNull()
   })
 })
 

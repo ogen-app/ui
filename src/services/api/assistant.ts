@@ -1,6 +1,7 @@
 import { scopedFetch } from './base'
 import { apiJson } from './http'
 import { errorMessage } from './errors'
+import { parseGrounding } from './grounding'
 import { isRecord } from './json'
 import { analyticsResults } from './assistantAnalytics'
 import { workspaceResults } from './assistantWorkspace'
@@ -36,7 +37,6 @@ import type {
   SavedViewList,
   AssistantResultDetails,
   CampaignAssistantAction,
-  Grounding,
   PostAssistantAction,
   ReviewFinding,
   ReviewSeverity,
@@ -784,7 +784,7 @@ function assetComparison(
     conflicts: claims(raw.conflicts),
     skipped: comparedRefs(raw.skipped),
     missing: strings(raw.missing).length,
-    grounding: grounding(raw.grounding),
+    grounding: parseGrounding(raw.grounding),
   }
 }
 
@@ -933,6 +933,15 @@ function repairResults(results: Record<string, unknown>): {
   out.converted = changed(r.changePostType)
   out.unscheduled = changed(r.unschedulePosts)
   out.deleted = changed(r.deletePosts)
+  const revised = record(r.revisePost)
+  if (revised && str(revised.postId)) {
+    out.revised = {
+      postId: str(revised.postId),
+      revised: revised.revised === true,
+      versioned: revised.versioned === true,
+      grounding: parseGrounding(revised.grounding),
+    }
+  }
 
   const check = record(r.checkCalendar)
   const any = Object.values(out).some((v) => v !== undefined)
@@ -949,6 +958,7 @@ const UI_ACTION_TYPES: UIAction['type'][] = [
   'open_saved_view',
   'set_window',
   'open_connect',
+  'open_add_source',
 ]
 
 /** Reads a `ui_action`; null for a type or screen this build can't apply. */
@@ -1277,7 +1287,7 @@ function resultDetails(
     details.contentPlan = {
       ideaCount: num(contentPlan.ideaCount ?? contentPlan.postCount),
       warnings: strings(contentPlan.warnings),
-      grounding: grounding(contentPlan.grounding),
+      grounding: parseGrounding(contentPlan.grounding),
     }
   }
 
@@ -1286,26 +1296,18 @@ function resultDetails(
     details.generatedPosts = {
       ideaCount: num(generated.ideaCount ?? generated.postCount),
       warnings: strings(generated.warnings),
-      grounding: grounding(generated.grounding),
+      grounding: parseGrounding(generated.grounding),
     }
   }
 
   const drafted = record(parsed.draftedPosts)
   if (drafted) {
-    // A draft names the documents it drew on (`usedAssets`) rather than a
-    // grounding mode, so a non-empty list reads as grounded and an empty one
-    // as nothing said — never as "not grounded".
-    const used = Array.isArray(drafted.usedAssets)
-      ? drafted.usedAssets
-          .filter(isRecord)
-          .map((s) => ({ id: str(s.id), title: str(s.title) }))
-      : []
+    // Absent when the research's sources aren't known (pasted material):
+    // then nothing is said, never "not grounded".
     details.draftedPosts = {
       postCount: num(drafted.postCount),
       warnings: strings(drafted.warnings),
-      ...(used.length > 0
-        ? { grounding: { mode: 'grounded' as const, sources: used } }
-        : {}),
+      grounding: parseGrounding(drafted.grounding),
     }
   }
 
@@ -1316,6 +1318,7 @@ function resultDetails(
     details.brief = {
       applied: brief.applied === true,
       undoId: optStr(brief.undoId),
+      grounding: parseGrounding(brief.grounding),
     }
   } else if (typeof parsed.briefApplied === 'boolean') {
     details.brief = { applied: parsed.briefApplied }
@@ -1377,20 +1380,6 @@ function resultDetails(
   }
 
   return details
-}
-
-function grounding(value: unknown): Grounding | undefined {
-  const g = record(value)
-  if (!g || (g.mode !== 'grounded' && g.mode !== 'exploratory'))
-    return undefined
-  return {
-    mode: g.mode,
-    sources: Array.isArray(g.sources)
-      ? g.sources
-          .filter(isRecord)
-          .map((s) => ({ id: str(s.id), title: str(s.title) }))
-      : [],
-  }
 }
 
 function touched(value: unknown): Touched[] {

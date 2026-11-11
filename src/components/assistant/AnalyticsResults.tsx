@@ -22,6 +22,7 @@ import type {
   DecayBucket,
   FollowerAccount,
   FrequencyRow,
+  Grounding,
   MoreLikeThese,
   PeriodComparison,
   PostsList,
@@ -31,6 +32,7 @@ import type {
   PerformerRow,
   PerformersBoard,
 } from '@/types/analytics'
+import { groundingAssets } from '@/lib/grounding'
 import { ResultBlock, ResultRow, SourcesLine } from './blocks'
 
 /**
@@ -672,15 +674,18 @@ function CompareCard({
  */
 function MoreLikeTheseCard({ more }: { more: MoreLikeThese }) {
   const { t } = useTranslation()
-  // The server labels each source by its kind ("Asset: …"); the line names
-  // them, as every other sources line does.
-  const sources = [
-    ...new Set(
-      more.ideas.flatMap((i) =>
-        i.sources.map((s) => s.replace(/^(Post|Asset|Idea): /, '')),
-      ),
-    ),
-  ]
+  // Each idea says what it cites (CON-474); the line under them is the
+  // union, grounded if any of them is — the rows say which are not.
+  const said = more.ideas.flatMap((i) => (i.grounding ? [i.grounding] : []))
+  const grounding: Grounding | undefined =
+    said.length === 0
+      ? undefined
+      : {
+          mode: said.some((g) => g.mode === 'grounded')
+            ? 'grounded'
+            : 'exploratory',
+          sources: said.flatMap((g) => g.sources),
+        }
   const open = more.campaignId ? (
     <Link
       to="/campaigns/$campaignId/ideas"
@@ -771,17 +776,37 @@ function MoreLikeTheseCard({ more }: { more: MoreLikeThese }) {
                 {idea.angle}
               </span>
             )}
+            {idea.grounding && (
+              <IdeaGrounding t={t} grounding={idea.grounding} />
+            )}
           </ResultRow>
         ))}
       </ResultBlock>
-      {more.ideas.length > 0 && (
-        <SourcesLine
-          grounding={{
-            mode: sources.length > 0 ? 'grounded' : 'exploratory',
-            sources: sources.map((title) => ({ id: title, title })),
-          }}
-        />
+      {more.ideas.length > 0 && grounding && (
+        <SourcesLine grounding={grounding} />
       )}
     </div>
+  )
+}
+
+/** One idea's own grounding, under it: what it cites, or that it cites nothing. */
+function IdeaGrounding({
+  t,
+  grounding,
+}: {
+  t: TFunction
+  grounding: Grounding
+}) {
+  const names = groundingAssets(grounding.sources).map((s) => s.title)
+  return grounding.mode === 'grounded' ? (
+    <span className="text-[12.5px] text-tertiary-foreground">
+      {names.length > 0
+        ? t('assistant.analytics.more.from', { assets: formatList(names) })
+        : t('assistant.analytics.more.fromMaterial')}
+    </span>
+  ) : (
+    <span className="text-[12.5px] text-warning">
+      {t('assistant.sources.notGrounded')}
+    </span>
   )
 }

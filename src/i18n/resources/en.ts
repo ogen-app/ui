@@ -3076,6 +3076,7 @@ export const en = {
       setWindow: 'Showed {{window}} on {{screen}}',
       openReconnect: 'Opened Settings to reconnect {{platform}}',
       openConnect: 'Opened Settings to connect {{platform}}',
+      openAddSource: 'Opened {{screen}} to add a source',
       back: 'BACK',
       putBack: 'Put back',
     },
@@ -3224,6 +3225,8 @@ export const en = {
         ideaFrom: 'Idea: {{idea}}, from {{asset}}',
         used: 'Used {{asset}}',
         grounding: 'Also drew on {{assets}}',
+        from: 'From {{assets}}',
+        fromMaterial: 'From your material',
         doneWord: 'Done',
         planned_one: 'Planned {{formatted}} idea',
         planned_other: 'Planned {{formatted}} ideas',
@@ -3478,6 +3481,14 @@ export const en = {
       withdrawing_other:
         '{{formatted}} scheduled posts are being withdrawn from publishing. They keep their dates, and no undo puts them back.',
       skipped: 'Left as it was: {{reason}}',
+      revised: {
+        word: 'Rewritten',
+        title: 'Post rewritten',
+        notRevised: 'Post left as it was',
+        versioned: 'The previous copy is in the post’s history',
+        unversioned:
+          'Saving the rewrite as a version failed, so the post’s history has no copy of it',
+      },
       converted: {
         word: 'Converted',
         title_one: '{{formatted}} post changed type',

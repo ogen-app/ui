@@ -178,9 +178,12 @@ describe('analyticsResults', () => {
             {
               id: 'n1',
               title: 'Six rooms, one pool',
-              sources: ['Asset: Brochure'],
-              groundingMode: 'grounded',
+              grounding: {
+                mode: 'grounded',
+                sources: [{ id: 'a1', title: 'Brochure', ideaId: 'i1' }],
+              },
             },
+            { id: 'n2', title: 'Said nothing' },
             { id: '', title: 'dropped' },
           ],
         },
@@ -193,8 +196,16 @@ describe('analyticsResults', () => {
         id: 'n1',
         title: 'Six rooms, one pool',
         angle: undefined,
-        sources: ['Asset: Brochure'],
-        grounded: true,
+        grounding: {
+          mode: 'grounded',
+          sources: [{ id: 'a1', title: 'Brochure', ideaId: 'i1' }],
+        },
+      },
+      {
+        id: 'n2',
+        title: 'Said nothing',
+        angle: undefined,
+        grounding: undefined,
       },
     ])
   })

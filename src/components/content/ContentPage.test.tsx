@@ -108,4 +108,39 @@ describe('ContentPage', () => {
     )
     expect(screen.getByText(EMPTY_STATE)).toBeInTheDocument()
   })
+
+  it('opens ADD CONTENT once when the assistant asks for a source (CON-474)', async () => {
+    given({ status: 'success', fetchStatus: 'idle', data: { pages: [] } })
+    const opened = vi.fn()
+    await renderWithProviders(
+      <SidebarProvider>
+        <ContentPage
+          campaign={null}
+          search={{}}
+          onSearchChange={() => {}}
+          addSource
+          onAddSourceOpened={opened}
+        />
+      </SidebarProvider>,
+    )
+    // The ways in are offered; none of them is taken for the user.
+    expect(
+      screen.getByRole('menuitem', { name: 'Upload file' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('menuitem', { name: 'Add a web page' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(opened).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps ADD CONTENT closed otherwise', async () => {
+    given({ status: 'success', fetchStatus: 'idle', data: { pages: [] } })
+    await renderWithProviders(
+      <SidebarProvider>
+        <ContentPage campaign={null} search={{}} onSearchChange={() => {}} />
+      </SidebarProvider>,
+    )
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
+  })
 })
