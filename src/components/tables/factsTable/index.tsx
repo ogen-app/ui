@@ -11,7 +11,9 @@ import {
 import { VirtualTable } from '../VirtualTable'
 import type { ColumnConfig } from '../types'
 import { tableDate } from '../utils'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Tooltip,
   TooltipContent,
@@ -75,8 +77,15 @@ function FactsTableComponent({
   onRemove,
   className,
   onEmptyStateAction,
+  selection,
 }: {
   facts: BrandFact[]
+  /** Ticks for the assistant to read (CON-472); no column without it. */
+  selection?: {
+    ticked: ReadonlySet<string>
+    toggle: (id: string) => void
+    toggleAll: () => void
+  }
   /** `YYYY-MM-DD`, passed in so every row ages against one clock. */
   today: string
   /**
@@ -100,9 +109,56 @@ function FactsTableComponent({
   onEmptyStateAction?: () => void
 }) {
   const data = facts as FactRow[]
+  const { t } = useTranslation()
+  // Against the rows on screen: the header answers "is everything here
+  // ticked?", whatever a tab or a search has hidden.
+  const shownTicked = selection
+    ? facts.filter((f) => selection.ticked.has(f.id)).length
+    : 0
 
   const columnConfigs = useMemo<ColumnConfig<FactRow>[]>(
     () => [
+      ...(selection
+        ? [
+            {
+              id: 'select',
+              header: () => (
+                <div className="flex h-full items-center justify-center">
+                  <Checkbox
+                    checked={
+                      shownTicked === 0
+                        ? false
+                        : shownTicked === facts.length
+                          ? true
+                          : 'indeterminate'
+                    }
+                    onCheckedChange={selection.toggleAll}
+                    aria-label={
+                      shownTicked === facts.length
+                        ? t('brand.selection.clearAll')
+                        : t('brand.selection.selectAll')
+                    }
+                  />
+                </div>
+              ),
+              size: 44,
+              minSize: 44,
+              sortable: false,
+              isControl: true,
+              cell: (_value: unknown, row: FactRow) => (
+                <div className={cn(CELL, 'justify-center')}>
+                  <Checkbox
+                    checked={selection.ticked.has(row.id)}
+                    onCheckedChange={() => selection.toggle(row.id)}
+                    aria-label={t('brand.selection.select', {
+                      name: row.statement,
+                    })}
+                  />
+                </div>
+              ),
+            } satisfies ColumnConfig<FactRow>,
+          ]
+        : []),
       {
         id: 'statement',
         accessorKey: 'statement',
@@ -257,7 +313,7 @@ function FactsTableComponent({
         ),
       },
     ],
-    [today, onEdit, onRemove],
+    [today, onEdit, onRemove, selection, shownTicked, facts.length, t],
   )
 
   const activeColumns = useMemo(

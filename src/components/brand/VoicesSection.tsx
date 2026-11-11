@@ -1,4 +1,10 @@
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LibrarySelectionBar } from '@/components/brand/librarySelection'
+import {
+  useLibrarySelection,
+  type LibrarySelection,
+} from '@/components/brand/useLibrarySelection'
 import { brandSection } from '@/lib/brandSections'
 import { defaultVoiceLabel, rulesLine, sampleCount, usageLine } from './format'
 import {
@@ -54,35 +60,48 @@ export function VoicesSection({
 }) {
   const { t } = useTranslation()
   const empty = voices.length === 0
+  // Ticks for the assistant to read (CON-472); none while the list is empty.
+  const selection = useLibrarySelection(
+    'voice',
+    useMemo(() => voices.map((e) => e.id), [voices]),
+  )
 
   return (
-    <BrandLibrary
-      add={
-        empty ? (
-          // The blank form, and it keeps the same slot the add card has when
-          // there are voices: whatever else the screen is offering, the way to
-          // write one yourself is the last card on the page.
-          <PlainActionCard
-            label={t('brand.voices.writeFromScratch')}
-            onClick={onAdd}
-          />
+    <>
+      <BrandLibrary
+        add={
+          empty ? (
+            // The blank form, and it keeps the same slot the add card has when
+            // there are voices: whatever else the screen is offering, the way to
+            // write one yourself is the last card on the page.
+            <PlainActionCard
+              label={t('brand.voices.writeFromScratch')}
+              onClick={onAdd}
+            />
+          ) : (
+            <AddEntryCard
+              label={t('brand.voices.add')}
+              hint={t('brand.voices.addHint')}
+              onClick={onAdd}
+            />
+          )
+        }
+      >
+        {empty ? (
+          <VoicesEmpty onStart={onStart} />
         ) : (
-          <AddEntryCard
-            label={t('brand.voices.add')}
-            hint={t('brand.voices.addHint')}
-            onClick={onAdd}
-          />
-        )
-      }
-    >
-      {empty ? (
-        <VoicesEmpty onStart={onStart} />
-      ) : (
-        voices.map((voice) => (
-          <VoiceCard key={voice.id} voice={voice} onOpen={onOpen} />
-        ))
-      )}
-    </BrandLibrary>
+          voices.map((voice) => (
+            <VoiceCard
+              key={voice.id}
+              voice={voice}
+              onOpen={onOpen}
+              selection={selection}
+            />
+          ))
+        )}
+      </BrandLibrary>
+      <LibrarySelectionBar kind="voice" selection={selection} />
+    </>
   )
 }
 
@@ -160,7 +179,9 @@ function VoicesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
 function VoiceCard({
   voice,
   onOpen,
+  selection,
 }: {
+  selection?: LibrarySelection
   voice: BrandVoice
   onOpen?: (id: string) => void
 }) {
@@ -180,6 +201,13 @@ function VoiceCard({
 
   return (
     <LibraryEntry
+      tick={
+        selection && {
+          checked: selection.ticked.has(voice.id),
+          shown: selection.ticked.size > 0,
+          onToggle: () => selection.toggle(voice.id),
+        }
+      }
       onOpen={onOpen ? () => onOpen(voice.id) : undefined}
       name={voice.name}
       mark={

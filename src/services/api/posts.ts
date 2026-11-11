@@ -12,9 +12,17 @@ const BASE = '/api/posts'
 // endpoint (mirrors CancelTarget in src/jobs/queues/cancel_zernio_job.go).
 export type CancelTarget = 'ready_for_publish' | 'draft'
 
-export function listCampaignPosts(campaignId: string): Promise<Post[]> {
+/**
+ * A campaign's posts, narrowed by the posts filter (CON-472, `lib/postFilter`)
+ * when one is given: the whole match, unpaged.
+ */
+export function listCampaignPosts(
+  campaignId: string,
+  params: Record<string, string> = {},
+): Promise<Post[]> {
+  const query = new URLSearchParams(params).toString()
   return apiJson<Post[]>(
-    `/api/campaigns/${campaignId}/posts`,
+    `/api/campaigns/${campaignId}/posts${query ? `?${query}` : ''}`,
     'Unable to fetch posts',
   )
 }

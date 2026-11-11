@@ -17,6 +17,28 @@ export function startOfWeek(date: Date, firstDay = 1): Date {
   return d
 }
 
+/**
+ * The days a calendar shows around its anchor, first and last inclusive, as
+ * `YYYY-MM-DD` — the assistant's window on a calendar (CON-472). Whole weeks
+ * for a month, as its grid draws them; hidden weekdays are still inside it.
+ */
+export function calendarRange(
+  anchor: Date,
+  granularity: 'week' | 'month',
+  firstDay: number,
+): { from: string; to: string } {
+  if (granularity === 'week') {
+    const start = startOfWeek(anchor, firstDay)
+    return { from: formatAnchor(start), to: formatAnchor(addDays(start, 6)) }
+  }
+  const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1)
+  const monthEnd = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0)
+  return {
+    from: formatAnchor(startOfWeek(monthStart, firstDay)),
+    to: formatAnchor(addDays(startOfWeek(monthEnd, firstDay), 6)),
+  }
+}
+
 export function addDays(date: Date, days: number): Date {
   const d = new Date(date)
   d.setDate(d.getDate() + days)

@@ -722,6 +722,75 @@ export const es: Translation = {
       confirm: 'ELIMINAR GRUPO',
     },
   },
+  postsFilter: {
+    unknownPlatform: 'Una plataforma retirada',
+    nothingMatches: 'Ninguna publicación coincide con estos filtros',
+    scheduled: {
+      yes: 'Con fecha',
+      no: 'Sin fecha',
+    },
+    sentence: {
+      showing: 'Mostrando publicaciones <clauses></clauses>',
+      showingAll: 'Mostrando <v>todas las publicaciones</v>',
+      clause: {
+        status: 'que son <v>{{values}}</v>',
+        status_not: 'que no son <v>{{values}}</v>',
+        platform: 'en <v>{{values}}</v>',
+        platform_not: 'fuera de <v>{{values}}</v>',
+        post_type: 'en formato <v>{{values}}</v>',
+        post_type_not: 'que no están en formato <v>{{values}}</v>',
+        scheduled: '<v>{{values}}</v>',
+        date: 'con fecha <v>desde el {{values}}</v>',
+        date_range: 'con fecha <v>entre el {{from}} y el {{to}}</v>',
+        date_not: 'con fecha <v>antes del {{values}}</v>',
+      },
+      status: {
+        planned: 'planificadas',
+        draft: 'borradores',
+        ready_for_publish: 'listas para publicar',
+        scheduled: 'programadas',
+        scheduled_for_manual_publishing: 'programadas para publicar a mano',
+        failed: 'fallidas',
+        published: 'publicadas',
+        not_published: 'no publicadas',
+      },
+      scheduled: {
+        yes: 'con fecha',
+        no: 'sin fecha',
+      },
+      question: {
+        status: 'Publicaciones que son…',
+        platform: 'Publicaciones en…',
+        post_type: 'Publicaciones en formato…',
+        scheduled: 'Publicaciones…',
+        date: 'Publicaciones con fecha…',
+      },
+      include: {
+        status: 'son',
+        platform: 'en',
+        post_type: 'en',
+        date: 'entre',
+      },
+      exclude: {
+        status: 'no son',
+        platform: 'fuera de',
+        post_type: 'no en',
+        date: 'antes',
+      },
+      starter: {
+        status: 'que son…',
+        platform: 'en una plataforma…',
+        post_type: 'en un formato…',
+        scheduled: 'con fecha, o sin ella…',
+        date: 'con fecha…',
+      },
+      starterHint: {
+        status: 'borradores, fallidas',
+      },
+      posts_one: '{{formatted}} publicación',
+      posts_other: '{{formatted}} publicaciones',
+    },
+  },
   grounding: {
     notGrounded: 'Sin fuentes',
     postNotGrounded:
@@ -4812,6 +4881,20 @@ export const es: Translation = {
   },
 
   brand: {
+    selection: {
+      select: 'Seleccionar «{{name}}»',
+      voice_one: '{{formatted}} voz seleccionada',
+      voice_other: '{{formatted}} voces seleccionadas',
+      audience_one: '{{formatted}} audiencia seleccionada',
+      audience_other: '{{formatted}} audiencias seleccionadas',
+      fact_one: '{{formatted}} dato seleccionado',
+      fact_other: '{{formatted}} datos seleccionados',
+      series_one: '{{formatted}} serie seleccionada',
+      series_other: '{{formatted}} series seleccionadas',
+      selectAll: 'Seleccionar todos los datos mostrados',
+      clearAll: 'Quitar la selección',
+      clear: 'QUITAR',
+    },
     binding: {
       voice: 'Voz',
       audience: 'Audiencia',

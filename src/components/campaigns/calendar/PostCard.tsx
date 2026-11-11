@@ -32,6 +32,8 @@ import { LockMark, isDateLocked } from './LockMark'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import { isNotGrounded } from '@/lib/grounding'
 import { STATUS_ACCENT_COLOR, STATUS_ICON, STATUS_TEXT_COLOR } from './status'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useCalendarSelection } from './calendarSelection'
 
 type PostCardProps = {
   post: Post
@@ -306,8 +308,10 @@ function PostCardComponent({
   // says about itself is the user's decision and the post's, never the
   // column's.
   const showStatus = fields.status || cardIsBare(fields, Boolean(time))
+  const selection = useCalendarSelection()
+  const ticked = selection?.ticked.has(post.id) ?? false
 
-  return (
+  const card = (
     <Link
       to="/campaigns/$campaignId/posts/$postId"
       params={{ campaignId: post.campaign_id, postId: post.id }}
@@ -355,6 +359,9 @@ function PostCardComponent({
         // layer of the app, which is why it isn't from `config/zIndex.ts` —
         // and it can't be, since only CSS knows what the pointer is on.
         draggable && 'hover:shadow-md hover:z-10',
+        // Ticked (CON-472): an outline inside the card's own edge, so the
+        // lane's layout never moves when the selection changes.
+        ticked && 'outline-2 -outline-offset-2 outline-foreground',
       )}
     >
       {/* The picture, where there is one — behind the card rather than above
@@ -591,6 +598,28 @@ function PostCardComponent({
         )}
       </div>
     </Link>
+  )
+  if (!selection) return card
+  // The tick sits beside the link rather than in it — a control inside a link
+  // is two targets in one. It shows under the pointer, and on every card once
+  // anything is ticked, so a selection is never invisible.
+  return (
+    <div className="group/card relative w-full shrink-0">
+      {card}
+      <Checkbox
+        checked={ticked}
+        onCheckedChange={() => selection.toggle(post.id)}
+        aria-label={t('postsTable.selectPost', { title })}
+        className={cn(
+          'absolute top-2 right-2 bg-primary',
+          selection.ticked.size === 0 &&
+            'opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100',
+        )}
+        // Above the card's own hover lift (`hover:z-10`): sibling order
+        // inside one card, not a layer of the app.
+        style={{ zIndex: 11 }}
+      />
+    </div>
   )
 }
 

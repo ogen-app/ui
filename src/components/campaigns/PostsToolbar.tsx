@@ -116,6 +116,8 @@ export function PostsToolbar({
       navigate({
         to: '/campaigns/$campaignId/calendar/$anchor/$view',
         params: { campaignId, anchor: nextAnchor, view: next },
+        // The filter is the same posts at either granularity (CON-472).
+        search: true,
       })
     }
   }

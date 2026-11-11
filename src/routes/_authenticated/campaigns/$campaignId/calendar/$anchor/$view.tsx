@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
@@ -8,10 +8,29 @@ import { WeeklyCalendar } from '@/components/campaigns/calendar/WeeklyCalendar'
 import {
   addDays,
   addMonths,
+  calendarRange,
   formatAnchor,
   parseAnchor,
 } from '@/components/campaigns/calendar/date'
+import { CalendarSelectionContext } from '@/components/campaigns/calendar/calendarSelection'
+import { BulkActionsBar } from '@/components/campaigns/BulkActionsBar'
+import { PostsFilterBar } from '@/components/campaigns/postsFilter/PostsFilterBar'
 import { useAddPost, useCampaignPosts } from '@/hooks/usePosts.ts'
+import { useBulkPostActions } from '@/hooks/useBulkPostActions'
+import {
+  useAssistantPage,
+  useAssistantRequest,
+} from '@/hooks/useAssistantContext'
+import { viewerTimeZone } from '@/lib/assetFilter'
+import {
+  isPostFilterActive,
+  parsePostListSearch,
+  postFilterFromSearch,
+  postRequestParams,
+  searchFromPostFilter,
+  type PostFilter,
+} from '@/lib/postFilter'
+import { listFilter, type ViewPage } from '@/lib/viewContext'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
@@ -32,7 +51,9 @@ function isGranularity(value: string): value is CalendarGranularity {
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view',
 )({
-  beforeLoad: ({ params }) => {
+  // The posts list's filter, in the same words (CON-472).
+  validateSearch: parsePostListSearch,
+  beforeLoad: ({ params, search }) => {
     // Normalize malformed anchors / unsupported views to the current week.
     const parsed = parseAnchor(params.anchor)
     if (!parsed || !isGranularity(params.view)) {
@@ -43,6 +64,7 @@ export const Route = createFileRoute(
           anchor: formatAnchor(parsed ?? new Date()),
           view: 'week',
         },
+        search,
       })
     }
   },
@@ -53,11 +75,29 @@ function CalendarView() {
   const { campaignId, anchor, view } = Route.useParams()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const postsQuery = useCampaignPosts(campaignId)
+  const search = Route.useSearch()
+  const filter = useMemo(() => postFilterFromSearch(search), [search])
+  const filtered = isPostFilterActive(filter)
+  const [timeZone] = useState(viewerTimeZone)
+  const params = useMemo(
+    () => postRequestParams(filter, timeZone),
+    [filter, timeZone],
+  )
+  const onFilterChange = useCallback(
+    (next: PostFilter) =>
+      void navigate({
+        to: '/campaigns/$campaignId/calendar/$anchor/$view',
+        params: { campaignId, anchor, view },
+        search: searchFromPostFilter(next),
+        replace: true,
+      }),
+    [navigate, campaignId, anchor, view],
+  )
+  const postsQuery = useCampaignPosts(campaignId, params)
+  // Whether the campaign has any posts at all is the unfiltered read's to
+  // say: a filter that matches nothing is not an empty campaign.
+  const allPosts = useCampaignPosts(campaignId)
   const { data: posts, isError: postsError } = postsQuery
-  // `awaiting`, not `isLoading` — see `lib/fetched`. Same reasoning as the
-  // failed-fetch guard below, for the state that reports neither.
-  const postsPending = awaiting(postsQuery)
   const rows = posts ?? NO_POSTS
   // A failed fetch is not an empty campaign: without this, an error left
   // `rows` empty with `postsPending` false, and the screen invited the user to
@@ -67,7 +107,7 @@ function CalendarView() {
   const postsFailed = postsError && posts === undefined
   // The grid reads the settings itself; the route only needs to know whether
   // they have arrived.
-  const { isPending: settingsPending } = useCalendarSettings()
+  const { isPending: settingsPending, firstDayOfWeek } = useCalendarSettings()
   const addPost = useAddPost(campaignId)
   // `beforeLoad` has already rejected anything else; this narrows the param
   // for the branches below rather than re-deciding it.
@@ -96,6 +136,7 @@ function CalendarView() {
     navigate({
       to: '/campaigns/$campaignId/calendar/$anchor/$view',
       params: { campaignId, anchor: formatAnchor(d), view: granularity },
+      search: true,
     })
 
   const Calendar = granularity === 'month' ? MonthlyCalendar : WeeklyCalendar
@@ -119,19 +160,108 @@ function CalendarView() {
     ArrowRight: () => step(1),
   })
 
+  // Ticked posts (CON-472): by a card's corner box, or the assistant's select.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const { applyPlan, deletePosts, busy } = useBulkPostActions(
+    campaignId,
+    setSelectedIds,
+  )
+  // Resolved against the rows, so a post that has gone — or that the filter
+  // now hides — is never counted or handed to a bulk action.
+  const selectedPosts = useMemo(
+    () => rows.filter((p) => selectedIds.has(p.id)),
+    [rows, selectedIds],
+  )
+  const selection = useMemo(
+    () => ({
+      ticked: new Set(selectedPosts.map((p) => p.id)) as ReadonlySet<string>,
+      toggle: (id: string) =>
+        setSelectedIds((prev) => {
+          const next = new Set(prev)
+          if (!next.delete(id)) next.add(id)
+          return next
+        }),
+    }),
+    [selectedPosts],
+  )
+  useAssistantRequest((action) => {
+    if (action.type !== 'select' || action.selection?.kind !== 'post')
+      return false
+    setSelectedIds(new Set(action.selection.ids))
+    return true
+  })
+
+  // What the assistant sees (CON-472): the days on screen as the window, the
+  // filter in the endpoint's words — with the zone the window's days are read
+  // in — the posts drawn in those days, and what is ticked.
+  const range = useMemo(
+    () => calendarRange(anchorDate, granularity, firstDayOfWeek),
+    [anchorDate, granularity, firstDayOfWeek],
+  )
+  const page = useMemo<ViewPage>(() => {
+    // Both are days `calendarRange` made, so they parse.
+    const from = parseAnchor(range.from)!.getTime()
+    const end = addDays(parseAnchor(range.to)!, 1).getTime()
+    const visible = rows
+      .filter((p) => {
+        const at = p.scheduled_at ? Date.parse(p.scheduled_at) : NaN
+        return at >= from && at < end
+      })
+      .map((p) => p.id)
+    const out: ViewPage = {
+      filter: listFilter({ ...params, tz: timeZone }),
+      window: { from: range.from, to: range.to, campaignId },
+    }
+    if (visible.length > 0) out.visible = { kind: 'post', ids: visible }
+    if (selectedPosts.length > 0)
+      out.selection = {
+        kind: 'post',
+        ids: selectedPosts.map((p) => p.id),
+        count: selectedPosts.length,
+      }
+    return out
+  }, [rows, range, params, timeZone, campaignId, selectedPosts])
+  useAssistantPage(page)
+
+  // `awaiting`, not `isLoading` — see `lib/fetched`: the empty state is a
+  // claim about the campaign, and a paused read is not an answer.
+  const campaignEmpty =
+    !awaiting(allPosts) && (allPosts.data?.length ?? 0) === 0 && !filtered
+
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0">
-      <PostsToolbar
-        campaignId={campaignId}
-        view={granularity}
-        anchor={anchorDate}
-        onAnchorChange={handleAnchorChange}
-      />
+      {selectedPosts.length > 0 ? (
+        <BulkActionsBar
+          posts={selectedPosts}
+          onClear={() => setSelectedIds(new Set())}
+          onApply={applyPlan}
+          onDelete={deletePosts}
+          busy={busy}
+        />
+      ) : (
+        <PostsToolbar
+          campaignId={campaignId}
+          view={granularity}
+          anchor={anchorDate}
+          onAnchorChange={handleAnchorChange}
+        />
+      )}
+      {!campaignEmpty && (
+        <div className="px-6 pb-3">
+          <PostsFilterBar
+            campaignId={campaignId}
+            filter={filter}
+            onChange={onFilterChange}
+            total={rows.length}
+            totalUnfiltered={allPosts.data?.length ?? rows.length}
+          />
+        </div>
+      )}
       {settingsPending ? null : postsFailed ? (
         <p className="px-6 py-8 text-sm text-tertiary-foreground">
           {t('calendar.loadFailedCampaign')}
         </p>
-      ) : !postsPending && rows.length === 0 ? (
+      ) : campaignEmpty ? (
         // Only once the query has answered: the invitation to add the first
         // post is a claim about the campaign, and an empty grid is the honest
         // way to wait for it.
@@ -141,7 +271,9 @@ function CalendarView() {
           onAddPost={addPost}
         />
       ) : (
-        <Calendar campaignId={campaignId} posts={rows} anchor={anchorDate} />
+        <CalendarSelectionContext.Provider value={selection}>
+          <Calendar campaignId={campaignId} posts={rows} anchor={anchorDate} />
+        </CalendarSelectionContext.Provider>
       )}
     </div>
   )

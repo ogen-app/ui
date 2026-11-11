@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addMonths,
+  calendarRange,
   formatAnchor,
   isSameMonth,
   monthColumnDays,
@@ -95,5 +96,22 @@ describe('monthColumnDays', () => {
       d.getDay(),
     )
     expect(columns).toEqual(firstRow)
+  })
+})
+
+describe('calendarRange (CON-472)', () => {
+  it('is the week around the anchor from the first day the user chose', () => {
+    // Thu 23 Apr 2026, weeks starting Monday.
+    expect(calendarRange(new Date(2026, 3, 23), 'week', 1)).toEqual({
+      from: '2026-04-20',
+      to: '2026-04-26',
+    })
+  })
+
+  it('is a month’s whole weeks, as its grid draws them', () => {
+    expect(calendarRange(new Date(2026, 3, 23), 'month', 1)).toEqual({
+      from: '2026-03-30',
+      to: '2026-05-03',
+    })
   })
 })

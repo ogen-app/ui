@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { LibrarySelectionBar } from '@/components/brand/librarySelection'
+import { useLibrarySelection } from '@/components/brand/useLibrarySelection'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import {
@@ -162,6 +164,21 @@ export function FactsLedger({
     (fact) =>
       (view === 'all' || fact.subject === view) && factMatches(fact, query),
   )
+  // Ticks for the assistant to read (CON-472).
+  const selection = useLibrarySelection(
+    'fact',
+    useMemo(() => ledger.map((f) => f.id), [ledger]),
+  )
+  const shownIds = shown.map((f) => f.id)
+  const tableSelection = {
+    ...selection,
+    // Ticks every row shown, or clears them when none are missing.
+    toggleAll: () => {
+      const missing = shownIds.filter((id) => !selection.ticked.has(id))
+      if (missing.length === 0) shownIds.forEach(selection.toggle)
+      else missing.forEach(selection.toggle)
+    },
+  }
 
   const open = (id: string) => {
     const fact = ledger.find((row) => row.id === id)
@@ -240,6 +257,7 @@ export function FactsLedger({
                   today={today}
                   // Under a tab, every row would say the same word — see the prop.
                   showSubject={view === 'all'}
+                  selection={tableSelection}
                   onEdit={open}
                   // A failure toasts from the mutation; nothing to add here.
                   onRemove={(id) => void remove(id).catch(() => {})}
@@ -261,6 +279,8 @@ export function FactsLedger({
           </>
         )}
       </div>
+
+      <LibrarySelectionBar kind="fact" selection={selection} />
 
       {editing && (
         <FactModal
