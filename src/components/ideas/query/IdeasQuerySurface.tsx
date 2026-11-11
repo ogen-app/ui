@@ -1085,6 +1085,8 @@ function Band({
  * differ, have none, or aren't all loaded.
  */
 function sharedCampaign(rows: Idea[], ticked: Set<string>): string | null {
+  // Past what one compile or draft takes there is no form to fill.
+  if (ticked.size > MAX_IDEAS_PER_POST) return null
   let shared: string | null = null
   for (const id of ticked) {
     const campaign = rows.find((r) => r.id === id)?.campaignId

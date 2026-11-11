@@ -154,6 +154,12 @@ describe('used (CON-470)', () => {
     ).toMatchObject({ used: 'unused', group: 'used' })
     expect(ideaFacetsFor(null)).toContain('used')
   })
+
+  it('asks an exclusion as the other value, which the clause can edit', () => {
+    expect(parseIdeaListSearch({ used_not: 'used' })).toEqual({
+      used: 'unused',
+    })
+  })
 })
 
 describe('smart group queries', () => {

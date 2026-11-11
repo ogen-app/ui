@@ -1114,6 +1114,8 @@ export const en = {
         fromPlan: 'from the idea’s plan',
         pickOne: 'Pick at least one platform.',
         noPlatforms: 'This campaign has no platforms yet.',
+        platformsFailed: 'Couldn’t load the campaign’s platforms.',
+        retry: 'TRY AGAIN',
         noCampaign:
           'These ideas aren’t filed under one campaign, so each goes to the platform its plan names.',
         howMany: 'How many',

@@ -199,6 +199,18 @@ export function parseIdeaListSearch(
       if (values.length) out[key] = values.join(',')
     }
   }
+  // `used` has two values, each the other's complement, and its clause has
+  // no "not" switch to edit an exclusion with: one is asked as the other.
+  if (out.used_not) {
+    const excluded = out.used_not.split(',')
+    const asked = out.used?.split(',')
+    const kept = IDEA_USES.filter(
+      (u) => !excluded.includes(u) && (!asked || asked.includes(u)),
+    )
+    delete out.used_not
+    if (kept.length) out.used = kept.join(',')
+    else delete out.used
+  }
   const created = raw.created === undefined ? '' : String(raw.created)
   if (isPreset(created)) out.created = created
   else

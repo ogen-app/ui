@@ -918,6 +918,8 @@ export const es: Translation = {
         fromPlan: 'según el plan de la idea',
         pickOne: 'Elige al menos una plataforma.',
         noPlatforms: 'Esta campaña aún no tiene plataformas.',
+        platformsFailed: 'No se pudieron cargar las plataformas de la campaña.',
+        retry: 'REINTENTAR',
         noCampaign:
           'Estas ideas no están en una misma campaña, así que cada una va a la plataforma que indica su plan.',
         howMany: 'Cuántas',

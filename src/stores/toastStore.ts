@@ -75,8 +75,12 @@ const useToastStore = create<ToastState>((set, get) => ({
     // over with the same message — without this the deck would spend the next
     // few seconds dissolving identical cards, and the count would read as
     // thirty separate problems rather than one refusal.
+    // A toast with an action is never a repeat: two SHOWs with the same words
+    // can lead to different places, and the closure can't be compared.
     const duplicate = get().toasts.find(
       (t) =>
+        !opts?.action &&
+        !t.action &&
         t.open &&
         t.variant === variant &&
         t.title === title &&

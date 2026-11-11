@@ -3,18 +3,23 @@ import { describe, expect, it, vi } from 'vitest'
 import { QueryWrapper } from '@/test/queryWrapper'
 import { IdeaPostForm } from './IdeaPostForm'
 
+const query = vi.hoisted(() => ({ failed: false, refetch: vi.fn() }))
+
 vi.mock('@/hooks/useCampaigns', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/useCampaigns')>()),
   useCampaign: (id: string) => ({
     isPending: false,
-    data: id
-      ? {
-          target_platforms: [
-            { id: 'sq-ig', post_types: [] },
-            { id: 'sq-th', post_types: [] },
-          ],
-        }
-      : undefined,
+    isError: query.failed,
+    refetch: query.refetch,
+    data:
+      id && !query.failed
+        ? {
+            target_platforms: [
+              { id: 'sq-ig', post_types: [] },
+              { id: 'sq-th', post_types: [] },
+            ],
+          }
+        : undefined,
   }),
 }))
 vi.mock('@/hooks/usePlatforms', () => ({
@@ -67,5 +72,16 @@ describe('IdeaPostForm (CON-470)', () => {
     expect(screen.getByText(/aren’t filed under one campaign/)).toBeTruthy()
     fireEvent.click(screen.getAllByRole('button', { name: 'DRAFT' }).pop()!)
     expect(onSubmit).toHaveBeenCalledWith({ platformIds: [], together: false })
+  })
+
+  it('says the platforms didn’t load, and tries again', () => {
+    query.failed = true
+    open('c1')
+    expect(
+      screen.getByText(/Couldn’t load the campaign’s platforms/),
+    ).toBeTruthy()
+    fireEvent.click(screen.getByText('TRY AGAIN'))
+    expect(query.refetch).toHaveBeenCalled()
+    query.failed = false
   })
 })

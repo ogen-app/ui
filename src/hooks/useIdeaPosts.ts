@@ -128,33 +128,30 @@ export function useDraftIdeas() {
     mutationFn: async (request: IdeaPostRequest & { together?: boolean }) => {
       const written: { id: string; dated: boolean }[] = []
       let failure: string | null = null
-      await draftIdeas(
-        request.ids,
-        {
-          ...requestOptions(request),
-          ...(request.together ? { together: true } : {}),
-        },
-        (event) => {
-          if (event.type === 'post')
-            written.push({ id: event.postId, dated: !!event.publishDate })
-          if (event.type === 'error') failure = event.message
-        },
-      )
+      try {
+        await draftIdeas(
+          request.ids,
+          {
+            ...requestOptions(request),
+            ...(request.together ? { together: true } : {}),
+          },
+          (event) => {
+            if (event.type === 'post')
+              written.push({ id: event.postId, dated: !!event.publishDate })
+            if (event.type === 'error') failure = event.message
+          },
+        )
+      } catch (err) {
+        // A refusal, or a read that broke part-way: either way the drafts
+        // already saved are real, and are refreshed and reported below.
+        failure = err instanceof Error ? err.message : String(err)
+      }
       return { written, failure: failure as string | null }
     },
     onSuccess: async ({ written, failure }, { campaignId }) => {
       const unscheduled = written.filter((p) => !p.dated).map((p) => p.id)
       remember(unscheduled)
       await refreshTouched(qc, [{ kind: 'post' }, { kind: 'idea' }])
-      if (failure) {
-        toast.error(t('ideas.lifecycle.draftFailed'), {
-          description:
-            written.length > 0
-              ? t('ideas.lifecycle.draftsKept', { count: written.length })
-              : failure,
-        })
-        return
-      }
       const show =
         campaignId && unscheduled.length > 0
           ? {
@@ -170,6 +167,17 @@ export function useDraftIdeas() {
               },
             }
           : undefined
+      if (failure) {
+        // The kept drafts are as reachable as a full run's.
+        toast.error(t('ideas.lifecycle.draftFailed'), {
+          description:
+            written.length > 0
+              ? t('ideas.lifecycle.draftsKept', { count: written.length })
+              : failure,
+          action: show,
+        })
+        return
+      }
       toast.success(draftedTitle(t, written.length, unscheduled.length), {
         ...(show ? { description: t('ideas.lifecycle.inNotScheduled') } : {}),
         action: show,
