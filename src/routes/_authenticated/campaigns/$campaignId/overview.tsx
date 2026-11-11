@@ -10,16 +10,8 @@ import { useCampaignPosts } from '@/hooks/usePosts.ts'
 import { useCampaignProblems } from '@/hooks/useCampaignProblems'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { attentionItems } from '@/lib/campaignReadiness.ts'
+import { withoutServerChecked } from '@/lib/serverCheckedRules'
 import type { PostSummary } from '@/types/posts'
-
-/** The client's rules the server's calendar check covers, with fixes. */
-const SERVER_CHECKED = new Set([
-  'post-type-dropped',
-  'scheduled-outside-window',
-  // `platform_not_targeted` (CON-468), scheduled or not.
-  'channel-dropped',
-  'channel-dropped-scheduled',
-])
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/overview',
@@ -39,7 +31,10 @@ function CampaignOverviewScreen() {
   const postsQuery = useCampaignPosts(campaignId)
   const summariesQuery = useCampaignSummaries()
   const platformViews = usePlatformViews()
-  const { data: problems } = useCampaignProblems(campaignId)
+  // A failed re-read keeps the last answer, which may predate a change made
+  // since; the client's rules stand in until the server answers again.
+  const problemsQuery = useCampaignProblems(campaignId)
+  const problems = problemsQuery.isError ? undefined : problemsQuery.data
 
   // The backend sends `null` for a campaign with no posts (Go nil slice), so
   // gate on the query settling, not on the data being truthy.
@@ -125,11 +120,11 @@ function CampaignOverviewScreen() {
   // so they are recomputed on every render against the current clock rather
   // than memoized against a frozen `now`.
   // Once the server has said what is wrong with the calendar, its findings
-  // stand for the two rules that check the same thing here: a post type the
-  // campaign dropped, and posts outside its dates (CON-462).
+  // stand for the rules that check the same thing here (CON-462/468).
   const items = railPosts
-    ? attentionItems(campaign, railPosts, platformViews, new Date()).filter(
-        (item) => !problems || !SERVER_CHECKED.has(item.id),
+    ? withoutServerChecked(
+        attentionItems(campaign, railPosts, platformViews, new Date()),
+        problems != null,
       )
     : []
 

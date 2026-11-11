@@ -2657,6 +2657,8 @@ export const es: Translation = {
       },
       replaced: {
         word: 'ELIMINADOS',
+        noneWord: 'NADA ELIMINADO',
+        none: 'No se eliminó ningún borrador',
         title_one: '{{formatted}} borrador más débil eliminado definitivamente',
         title_other:
           '{{formatted}} borradores más débiles eliminados definitivamente',
@@ -2869,6 +2871,7 @@ export const es: Translation = {
       platformsUpdated: 'Plataformas actualizadas',
       platformsAdded: 'añadido: {{what}}',
       platformsRemoved: 'quitado: {{what}}',
+      platformsChanged: 'añadido: {{added}} · quitado: {{removed}}',
       goal: {
         week_one: 'Objetivo ampliado a {{formatted}} publicación por semana',
         week_other:

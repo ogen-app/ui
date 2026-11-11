@@ -652,7 +652,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (`useCampaignProblems`, read off `GET /api/campaigns/:id/overview`), and
   drops the client rules they cover (`post-type-dropped`,
   `scheduled-outside-window`, and since CON-468's `platform_not_targeted`
-  both `channel-dropped` rules) once they have arrived. A removed platform
+  `channel-dropped` — not its scheduled twin, whose alert says the posts
+  still publish; `lib/serverCheckedRules`) once they have arrived, and only
+  while the last read of them succeeded. A removed platform
   leaves its posts where they were, and that finding is how they surface,
   with `enable_platform` among its fixes. The campaign pack's result says
   what a platforms change `added` and `removed`, and a raised `goal` as its

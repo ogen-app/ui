@@ -3188,6 +3188,9 @@ export const en = {
       },
       replaced: {
         word: 'DELETED',
+        /** Every draft it named was kept, so none went. */
+        noneWord: 'NOTHING DELETED',
+        none: 'No drafts deleted',
         title_one: '{{formatted}} weaker draft deleted for good',
         title_other: '{{formatted}} weaker drafts deleted for good',
         kept_one:
@@ -3406,6 +3409,7 @@ export const en = {
       /** The server's words for what changed, e.g. "Threads". */
       platformsAdded: 'added {{what}}',
       platformsRemoved: 'removed {{what}}',
+      platformsChanged: 'added {{added}} · removed {{removed}}',
       /** The goal is a rate; the total is the whole campaign's. */
       goal: {
         week_one: 'Goal raised to {{formatted}} post a week',
