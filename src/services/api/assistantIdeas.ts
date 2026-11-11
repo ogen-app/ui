@@ -1,4 +1,5 @@
 import type {
+  CompiledPost,
   Grounding,
   IdeaBrief,
   IdeasChanged,
@@ -37,18 +38,7 @@ export function ideasResults(
     decidedMany: changed(r.setIdeaVerdicts),
     moved: changed(r.moveIdeas),
     deleted: changed(r.deleteIdeas),
-    compiled:
-      compiled && str(compiled.postId)
-        ? {
-            postId: str(compiled.postId),
-            title: str(compiled.title),
-            campaignId: str(compiled.campaignId),
-            platformId: optStr(compiled.platformId),
-            ideas: num(compiled.ideas),
-            grounding: grounding(compiled.grounding),
-            undoId: optStr(compiled.undoId),
-          }
-        : undefined,
+    compiled: compiled ? compiledResult(compiled) : undefined,
     drafted: drafted
       ? {
           posts: list(drafted.posts)
@@ -115,7 +105,30 @@ export function draftedPost(
     postId: id,
     title: str(raw.title),
     platformId: str(raw.platformId),
+    publishDate: optStr(raw.publishDate),
     grounding: grounding(raw.grounding),
+  }
+}
+
+/** `compileIdeas` (CON-470): a planned post per platform, under `posts`. */
+function compiledResult(
+  raw: Record<string, unknown>,
+): IdeasResults['compiled'] | undefined {
+  const posts = list(raw.posts)
+    .filter((p) => str(p.postId))
+    .map((p): CompiledPost => ({
+      postId: str(p.postId),
+      title: str(p.title),
+      platformId: optStr(p.platformId),
+      date: optStr(p.date),
+    }))
+  if (posts.length === 0) return undefined
+  return {
+    posts,
+    campaignId: str(raw.campaignId),
+    ideas: num(raw.ideas),
+    grounding: grounding(raw.grounding),
+    undoId: optStr(raw.undoId),
   }
 }
 
@@ -130,6 +143,7 @@ function brief(raw: unknown): IdeaBrief | undefined {
     verdict: VERDICTS.find((v) => v === i.verdict),
     campaignId: optStr(i.campaignId),
     fitScore: typeof i.fitScore === 'number' ? i.fitScore : undefined,
+    posts: typeof i.posts === 'number' ? i.posts : undefined,
   }
 }
 

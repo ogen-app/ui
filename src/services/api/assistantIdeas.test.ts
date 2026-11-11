@@ -63,6 +63,7 @@ describe('ideasResults', () => {
           compileIdeas: {
             postId: 'p1',
             title: 'Water, not rooms',
+            posts: [{ postId: 'p1', title: 'Water, not rooms' }],
             campaignId: 'c1',
             ideas: 3,
             grounding,
@@ -78,6 +79,65 @@ describe('ideasResults', () => {
       'exploratory',
     )
     expect(read(undefined)?.grounding.mode).toBe('exploratory')
+  })
+
+  it('reads a planned post per platform, each with its date or none', () => {
+    const r = ideasResults({
+      ideas: {
+        compileIdeas: {
+          postId: 'p1',
+          title: 'Water, not rooms',
+          platformId: 'instagram',
+          posts: [
+            {
+              postId: 'p1',
+              title: 'Water, not rooms',
+              status: 'planned',
+              platformId: 'instagram',
+            },
+            {
+              postId: 'p2',
+              title: 'Water, not rooms',
+              status: 'planned',
+              platformId: 'linkedin',
+              date: '2026-11-26',
+            },
+          ],
+          campaignId: 'c1',
+          ideas: 2,
+          undoId: 'u3',
+        },
+        draftIdeas: {
+          posts: [
+            { postId: 'p3', title: 'A', platformId: 'x', publishDate: '' },
+            {
+              postId: 'p4',
+              title: 'B',
+              platformId: 'x',
+              publishDate: '2026-11-27',
+            },
+          ],
+        },
+      },
+    })
+    expect(r?.compiled?.posts).toEqual([
+      {
+        postId: 'p1',
+        title: 'Water, not rooms',
+        platformId: 'instagram',
+        date: undefined,
+      },
+      {
+        postId: 'p2',
+        title: 'Water, not rooms',
+        platformId: 'linkedin',
+        date: '2026-11-26',
+      },
+    ])
+    expect(r?.drafted?.posts.map((p) => p.publishDate)).toEqual([
+      undefined,
+      '2026-11-27',
+    ])
   })
 
   it('reads why an idea fits', () => {

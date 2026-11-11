@@ -166,6 +166,23 @@ function ToastDescription({
   )
 }
 
+/** The toast's one action, in the app's literal-capitals button voice. */
+function ToastAction({
+  className,
+  ...props
+}: ComponentProps<typeof ToastPrimitives.Action>) {
+  return (
+    <ToastPrimitives.Action
+      data-slot="toast-action"
+      className={cn(
+        'shrink-0 cursor-pointer self-center text-xs font-medium tracking-[0.03em] text-foreground hover:underline',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
 function ToastClose({
   className,
   ...props
@@ -192,5 +209,6 @@ export {
   ToastIcon,
   ToastTitle,
   ToastDescription,
+  ToastAction,
   ToastClose,
 }

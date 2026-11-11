@@ -114,6 +114,11 @@ export type Idea = {
    * nobody generated, or one from before the column existed.
    */
   groundingMode?: GroundingMode | null
+  /**
+   * How many posts were made from it, of any status (CON-470). A fact, not a
+   * verdict: making a post from an idea never moves it between piles.
+   */
+  postCount?: number
 }
 
 export type IdeaOrigin = 'manual' | 'asset_analysis'

@@ -13,6 +13,14 @@ import { IdeasSidebarItem } from './IdeasSidebarItem'
 /** The rail's row reads the server's undecided count; here, a fixed answer. */
 const undecided = vi.hoisted(() => ({ count: 0 }))
 
+/** The posts an opened idea was made into (CON-470). */
+const madeInto = vi.hoisted(() => ({ list: vi.fn() }))
+
+vi.mock('@/services/api/ideaPosts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/api/ideaPosts')>()),
+  listIdeaPosts: madeInto.list,
+}))
+
 vi.mock('@/hooks/useIdeaList', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/useIdeaList')>()),
   useUndecidedIdeaCount: () => undecided.count,
@@ -216,6 +224,55 @@ describe("an assistant's uncited idea in Spanish (CON-469)", () => {
   it('says nothing about an idea nobody generated', () => {
     renderRow(idea())
     expect(screen.queryByText('Sin fuentes')).not.toBeInTheDocument()
+  })
+})
+
+describe('an idea made into posts in Spanish (CON-470)', () => {
+  it('says how many on its line, and lists them opened', async () => {
+    madeInto.list.mockResolvedValue([
+      {
+        id: 'p1',
+        title: 'Una piscina en la roca',
+        status: 'draft',
+        campaign_id: 'c1',
+        platform_id: 'sq-unknown',
+        scheduled_at: null,
+      },
+    ])
+    const subject = idea({ postCount: 2 })
+    renderRow(subject)
+    expect(screen.getByText('Usada en 2 publicaciones')).toBeInTheDocument()
+    expect(screen.queryByText(/Used in/)).not.toBeInTheDocument()
+    expect(madeInto.list).not.toHaveBeenCalled()
+
+    await renderWithProviders(
+      <ul>
+        <IdeaRow
+          idea={subject}
+          now={NOW}
+          expanded
+          onToggle={() => {}}
+          onDecide={() => {}}
+          onUndecide={() => {}}
+          onEdit={() => {}}
+          onDelete={() => {}}
+        />
+      </ul>,
+      { path: '/ideas' },
+    )
+    expect(screen.getByText('Convertida en')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('link', { name: 'Una piscina en la roca' }),
+    ).toHaveAttribute('href', '/campaigns/c1/posts/p1')
+    expect(screen.getByText(/Sin programar/)).toBeInTheDocument()
+    expect(screen.queryByText('Made into')).not.toBeInTheDocument()
+  })
+
+  it('asks for nothing when no post was made from it', () => {
+    madeInto.list.mockClear()
+    renderRow(idea({ postCount: 0 }), { expanded: true })
+    expect(screen.queryByText('Convertida en')).not.toBeInTheDocument()
+    expect(madeInto.list).not.toHaveBeenCalled()
   })
 })
 

@@ -1,6 +1,7 @@
 import { useToastStore } from '@/stores/toastStore'
 import {
   Toast,
+  ToastAction,
   ToastClose,
   ToastDescription,
   ToastIcon,
@@ -43,7 +44,16 @@ export function Toaster() {
               <ToastDescription>{t.description}</ToastDescription>
             )}
           </div>
-          <ToastClose />
+          {t.action && (
+            <ToastAction
+              altText={t.action.label}
+              onClick={t.action.onClick}
+              className="ml-auto"
+            >
+              {t.action.label}
+            </ToastAction>
+          )}
+          <ToastClose className={t.action ? 'ml-0' : undefined} />
         </Toast>
       ))}
       <ToastViewport />

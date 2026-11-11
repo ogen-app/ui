@@ -70,22 +70,27 @@ export function listIdeaPosts(ideaId: string): Promise<IdeaPostRef[]> {
 
 /**
  * Overrides for a compile or a draft. Each defaults server-side: the campaign
- * to the one the ideas share, the platform, type, phase and date to the first
- * idea plan that sets them.
+ * to the one the ideas share, the platforms, type, phase and date to the
+ * first idea plan that sets them. Without a date of either kind the posts are
+ * unscheduled (CON-470) — there is no way to ask for that over a planned one.
  */
 export type IdeaPostOptions = {
   campaign_id?: string
-  platform_id?: string
+  /** One post per platform; a post type needs exactly one. */
+  platform_ids?: string[]
   platform_post_type?: string
   phase_id?: string
   target_date?: string
 }
 
-/** 1–10 ideas → one planned post, its theses synthesised from them. */
+/**
+ * 1–10 ideas → a planned post per platform (CON-470), its theses
+ * synthesised from them, all or none.
+ */
 export function compileIdeas(
   ideaIds: string[],
   options: IdeaPostOptions & { title?: string } = {},
-): Promise<{ post: Post; ideas: PostSourceIdea[] }> {
+): Promise<{ posts: Post[]; ideas: PostSourceIdea[] }> {
   return apiJson(`/api/ideas/compile`, 'Unable to compile the ideas', {
     method: 'POST',
     body: { idea_ids: ideaIds, ...options },
@@ -93,19 +98,25 @@ export function compileIdeas(
 }
 
 export type DraftIdeasEvent =
-  | { type: 'post'; postId: string; title: string }
+  | {
+      type: 'post'
+      postId: string
+      title: string
+      /** YYYY-MM-DD; absent when the draft is unscheduled (CON-470). */
+      publishDate?: string
+    }
   | { type: 'complete'; postIds: string[]; warnings: string[] }
   | { type: 'error'; message: string }
 
 /**
- * 1–10 ideas → finished drafts, unscheduled: one per idea per platform, or
- * with `together` one per platform from all of them. Streams each post as it
- * is saved; a failure part-way keeps the posts already written.
+ * 1–10 ideas → finished drafts: one per idea per platform, or with
+ * `together` one per platform from all of them. Unscheduled unless a date was
+ * given or planned on the ideas. Streams each post as it is saved; a failure
+ * part-way keeps the posts already written.
  */
 export async function draftIdeas(
   ideaIds: string[],
-  options: Omit<IdeaPostOptions, 'platform_id'> & {
-    platform_ids?: string[]
+  options: IdeaPostOptions & {
     together?: boolean
     instruction?: string
   },
@@ -142,6 +153,9 @@ export async function draftIdeas(
         type: 'post',
         postId: parsed.postId,
         title: typeof parsed.title === 'string' ? parsed.title : '',
+        ...(typeof parsed.publishDate === 'string' && parsed.publishDate
+          ? { publishDate: parsed.publishDate }
+          : {}),
       })
     } else if (event === 'complete') {
       const posts = Array.isArray(parsed.posts) ? parsed.posts : []

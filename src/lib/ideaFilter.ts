@@ -36,6 +36,7 @@ export const IDEA_FILTER_FIELDS = [
   'fit',
   'phase',
   'author',
+  'used',
   'created',
 ] as const
 
@@ -50,12 +51,18 @@ export const IDEA_CHOICE_FIELDS = [
   'fit',
   'phase',
   'author',
+  'used',
 ] as const satisfies readonly IdeaFilterField[]
 
 export type IdeaChoiceField = (typeof IDEA_CHOICE_FIELDS)[number]
 
 export const IDEA_ORIGINS = ['asset_analysis', 'manual'] as const
 export const FIT_BANDS = ['high', 'medium', 'low', 'unscored'] as const
+/**
+ * Whether a post was made from the idea, of any status (CON-470), not yet
+ * used first as the server orders them. A fact, not a verdict.
+ */
+export const IDEA_USES = ['unused', 'used'] as const
 
 /** The value `source_asset` and `campaign_id` take for "none". */
 export const NONE = 'none'
@@ -81,6 +88,7 @@ export const IDEA_GROUPS = [
   'origin',
   'author',
   'created',
+  'used',
 ] as const
 export type IdeaGroup = (typeof IDEA_GROUPS)[number]
 export type IdeaGrouping = IdeaGroup | 'none'
@@ -113,6 +121,7 @@ export const EMPTY_IDEA_FILTER: IdeaFilter = {
   fit: { any: [], not: [] },
   phase: { any: [], not: [] },
   author: { any: [], not: [] },
+  used: { any: [], not: [] },
   createdAfter: null,
   createdBefore: null,
   text: '',
@@ -146,6 +155,8 @@ function allowedValues(field: IdeaChoiceField): readonly string[] | null {
       return ASSET_KINDS
     case 'fit':
       return FIT_BANDS
+    case 'used':
+      return IDEA_USES
     default:
       return null
   }
@@ -227,6 +238,7 @@ export function ideaFilterFromSearch(search: IdeaListSearch): IdeaFilter {
     fit: pair('fit'),
     phase: pair('phase'),
     author: pair('author'),
+    used: pair('used'),
     createdAfter: search.created ?? search.created_after ?? null,
     createdBefore: search.created_before ?? null,
     text: search.text ?? '',
@@ -442,6 +454,7 @@ export function ideaFacetsFor(scopeCampaign: string | null): string[] {
     'fit',
     'phase',
     'author',
+    'used',
     'created',
   ]
 }

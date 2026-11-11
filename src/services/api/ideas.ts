@@ -151,6 +151,8 @@ export type IdeaBody = {
   fit_breakdown?: FitBreakdown | null
   /** CON-448; `null` for an idea nobody generated. */
   grounding_mode?: GroundingMode | null
+  /** The posts made from it, any status (CON-470). */
+  post_count?: number
 }
 
 export type IdeaSourceAssetBody = {
@@ -199,6 +201,7 @@ export function ideaFromWire(body: IdeaBody): Idea {
     fitScore: body.fit_score ?? undefined,
     fitBreakdown: body.fit_breakdown ?? undefined,
     groundingMode: body.grounding_mode ?? null,
+    postCount: body.post_count ?? 0,
   }
 }
 

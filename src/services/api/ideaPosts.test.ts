@@ -39,4 +39,23 @@ describe('draftIdeas', () => {
     await draftIdeas(['i1'], {}, (e) => events.push(e))
     expect(events.map((e) => e.type)).toEqual(['complete'])
   })
+
+  it('carries each draft’s date, and none for an unscheduled one', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        streamOf(
+          'event: post\ndata: {"postId":"p1","title":"One","publishDate":"2026-11-26"}\n\n' +
+            'event: post\ndata: {"postId":"p2","title":"Two","publishDate":""}\n\n' +
+            'event: complete\ndata: {"posts":[]}\n\n',
+        ),
+      ),
+    )
+    const events: DraftIdeasEvent[] = []
+    await draftIdeas(['i1'], {}, (e) => events.push(e))
+    expect(events.slice(0, 2)).toEqual([
+      { type: 'post', postId: 'p1', title: 'One', publishDate: '2026-11-26' },
+      { type: 'post', postId: 'p2', title: 'Two' },
+    ])
+  })
 })

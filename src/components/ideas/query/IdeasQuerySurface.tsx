@@ -13,6 +13,10 @@ import {
   useListAssistantPage,
 } from '@/hooks/useAssistantContext'
 import { useCompileIdeas, useDraftIdeas } from '@/hooks/useIdeaPosts'
+import {
+  IdeaPostForm,
+  type IdeaPostAnswer,
+} from '@/components/ideas/IdeaPostForm'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowDown01Icon,
@@ -264,6 +268,9 @@ export function IdeasQuerySurface({
   // Ideas into posts (CON-449): a planned post, or finished drafts.
   const compile = useCompileIdeas()
   const draft = useDraftIdeas()
+  // The campaign whose platforms the form offers: the page's, or the one
+  // every ticked idea is filed under (CON-470).
+  const tickedCampaign = campaignId ?? sharedCampaign(rows, ticked)
 
   // The assistant can tick rows here, or open one of the smart groups.
   useAssistantRequest((action) => {
@@ -586,15 +593,25 @@ export function IdeasQuerySurface({
           count={ticked.size}
           busy={deleting || resolving || compile.isPending || draft.isPending}
           onClear={clearSelection}
-          onCompile={() =>
+          campaignId={tickedCampaign}
+          onCompile={({ platformIds }) =>
             compile.mutate(
-              { ids: [...ticked], campaignId: campaignId ?? undefined },
+              {
+                ids: [...ticked],
+                campaignId: tickedCampaign ?? undefined,
+                platformIds,
+              },
               { onSuccess: clearSelection },
             )
           }
-          onDraft={() =>
+          onDraft={({ platformIds, together }) =>
             draft.mutate(
-              { ids: [...ticked], campaignId: campaignId ?? undefined },
+              {
+                ids: [...ticked],
+                campaignId: tickedCampaign ?? undefined,
+                platformIds,
+                together,
+              },
               { onSuccess: clearSelection },
             )
           }
@@ -986,6 +1003,8 @@ function Band({
         )
       case 'fit':
         return vocabulary.valueLabel('fit', groupKey)
+      case 'used':
+        return vocabulary.valueLabel('used', groupKey)
       case 'origin':
         return vocabulary.valueLabel(
           'origin',
@@ -1061,6 +1080,20 @@ function Band({
   )
 }
 
+/**
+ * The campaign every ticked idea on screen is filed under, or null when they
+ * differ, have none, or aren't all loaded.
+ */
+function sharedCampaign(rows: Idea[], ticked: Set<string>): string | null {
+  let shared: string | null = null
+  for (const id of ticked) {
+    const campaign = rows.find((r) => r.id === id)?.campaignId
+    if (!campaign || (shared && campaign !== shared)) return null
+    shared = campaign
+  }
+  return shared
+}
+
 /** How many ideas one compile or draft takes (`/api/ideas/compile|draft`). */
 const MAX_IDEAS_PER_POST = 10
 
@@ -1072,6 +1105,7 @@ const MAX_IDEAS_PER_POST = 10
 function SelectionBar({
   count,
   busy,
+  campaignId,
   onClear,
   onDelete,
   onCompile,
@@ -1079,12 +1113,14 @@ function SelectionBar({
 }: {
   count: number
   busy: boolean
+  /** The ideas' one campaign, whose platforms COMPILE and DRAFT offer. */
+  campaignId: string | null
   onClear: () => void
   onDelete: () => void
-  /** Ideas into one planned post (CON-449) — at most ten at a time. */
-  onCompile: () => void
-  /** Ideas into finished drafts, unscheduled — at most ten at a time. */
-  onDraft: () => void
+  /** Ideas into a planned post per platform (CON-449/470) — at most ten at a time. */
+  onCompile: (answer: IdeaPostAnswer) => void
+  /** Ideas into finished drafts — at most ten at a time. */
+  onDraft: (answer: IdeaPostAnswer) => void
 }) {
   const { t } = useTranslation()
   // The server takes one to ten ideas per compile or draft.
@@ -1107,25 +1143,39 @@ function SelectionBar({
           {t('ideas.bulk.count', { count })}
         </span>
         <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-primary-foreground"
-          onClick={onCompile}
+        <IdeaPostForm
+          verb="compile"
+          ideaCount={count}
+          campaignId={campaignId}
           disabled={busy || tooMany}
-          title={tooManyTitle}
+          onSubmit={onCompile}
         >
-          {t('ideas.lifecycle.compile')}
-        </Button>
-        <Button
-          variant="defaultInverted"
-          size="sm"
-          onClick={onDraft}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-primary-foreground"
+            disabled={busy || tooMany}
+            title={tooManyTitle}
+          >
+            {t('ideas.lifecycle.compile')}
+          </Button>
+        </IdeaPostForm>
+        <IdeaPostForm
+          verb="draft"
+          ideaCount={count}
+          campaignId={campaignId}
           disabled={busy || tooMany}
-          title={tooManyTitle}
+          onSubmit={onDraft}
         >
-          {t('ideas.lifecycle.draft')}
-        </Button>
+          <Button
+            variant="defaultInverted"
+            size="sm"
+            disabled={busy || tooMany}
+            title={tooManyTitle}
+          >
+            {t('ideas.lifecycle.draft')}
+          </Button>
+        </IdeaPostForm>
         <Button
           variant="ghost"
           size="sm"

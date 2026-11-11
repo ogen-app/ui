@@ -1,12 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import {
   compileIdeas,
   draftIdeas,
+  listIdeaPosts,
   listIdeaSlots,
   listPostIdeas,
 } from '@/services/api/ideaPosts'
 import { refreshTouched } from '@/lib/assistantTouched'
+import { counted, formatNumber } from '@/lib/intl'
+import { useJustWrittenStore } from '@/stores/justWrittenStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { toast } from '@/stores/toastStore'
 
 /**
@@ -24,6 +30,10 @@ export const ideaSlotsKey = (
 
 export const postIdeasKey = (postId: string) =>
   ['post', postId, 'ideas'] as const
+
+/** Under `['ideas']`, so a compile, a draft or a turn touching ideas refreshes it. */
+export const ideaPostsKey = (ideaId: string) =>
+  ['ideas', ideaId, 'posts'] as const
 
 /** Ideas planned onto a range of days; `null` asks for nothing. */
 export function useIdeaSlots(
@@ -46,32 +56,54 @@ export function usePostIdeas(postId: string) {
   })
 }
 
-/** Compiles ideas into one planned post, and says so. */
+/** What a compile or a draft from ideas is asked for (CON-470). */
+export type IdeaPostRequest = {
+  ids: string[]
+  campaignId?: string
+  /** One post per platform; none leaves it to the ideas' plans. */
+  platformIds?: string[]
+  /** A day the user chose; without one only a date planned on the ideas dates the posts. */
+  targetDate?: string
+}
+
+function requestOptions({
+  campaignId,
+  platformIds,
+  targetDate,
+}: IdeaPostRequest) {
+  return {
+    ...(campaignId ? { campaign_id: campaignId } : {}),
+    ...(platformIds?.length ? { platform_ids: platformIds } : {}),
+    ...(targetDate ? { target_date: targetDate } : {}),
+  }
+}
+
+/** The posts made from one idea (CON-470), for the opened idea's MADE INTO. */
+export function useIdeaPostRefs(ideaId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ideaPostsKey(ideaId),
+    queryFn: () => listIdeaPosts(ideaId),
+    enabled,
+  })
+}
+
+/** Compiles ideas into a planned post per platform, and says so. */
 export function useCompileIdeas() {
   const qc = useQueryClient()
   const { t } = useTranslation()
   return useMutation({
-    mutationFn: ({
-      ids,
-      campaignId,
-      targetDate,
-    }: {
-      ids: string[]
-      campaignId?: string
-      targetDate?: string
-    }) =>
-      compileIdeas(ids, {
-        ...(campaignId ? { campaign_id: campaignId } : {}),
-        ...(targetDate ? { target_date: targetDate } : {}),
-      }),
+    mutationFn: (request: IdeaPostRequest) =>
+      compileIdeas(request.ids, requestOptions(request)),
     // The global mutation toast reports a failure; this names the action.
     meta: { errorTitle: t('ideas.lifecycle.compileFailed') },
-    onSuccess: async ({ post }) => {
+    onSuccess: async ({ posts }) => {
       await refreshTouched(qc, [
-        { kind: 'post', id: post.id },
+        ...posts.map((p) => ({ kind: 'post' as const, id: p.id })),
         { kind: 'idea' },
       ])
-      toast.success(t('ideas.lifecycle.compiled'), { description: post.title })
+      toast.success(t('ideas.lifecycle.compiled', { count: posts.length }), {
+        description: posts[0]?.title,
+      })
     },
   })
 }
@@ -80,36 +112,39 @@ export function useCompileIdeas() {
  * Writes drafts from ideas in the background: the stream keeps going while
  * the user moves on, and a toast reports how many landed. A failure part-way
  * keeps — and reports — the drafts already written.
+ *
+ * Unscheduled is the default (CON-470), so the toast says how many went
+ * without a date and, when it knows their campaign, offers SHOW: the
+ * campaign's calendar with the Not scheduled panel open and the new drafts
+ * on top of it (`justWrittenStore`).
  */
 export function useDraftIdeas() {
   const qc = useQueryClient()
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const openPanel = useSettingsStore((s) => s.openRightPanel)
+  const remember = useJustWrittenStore((s) => s.add)
   return useMutation({
-    mutationFn: async ({
-      ids,
-      campaignId,
-      targetDate,
-    }: {
-      ids: string[]
-      campaignId?: string
-      targetDate?: string
-    }) => {
-      const written: string[] = []
+    mutationFn: async (request: IdeaPostRequest & { together?: boolean }) => {
+      const written: { id: string; dated: boolean }[] = []
       let failure: string | null = null
       await draftIdeas(
-        ids,
+        request.ids,
         {
-          ...(campaignId ? { campaign_id: campaignId } : {}),
-          ...(targetDate ? { target_date: targetDate } : {}),
+          ...requestOptions(request),
+          ...(request.together ? { together: true } : {}),
         },
         (event) => {
-          if (event.type === 'post') written.push(event.postId)
+          if (event.type === 'post')
+            written.push({ id: event.postId, dated: !!event.publishDate })
           if (event.type === 'error') failure = event.message
         },
       )
       return { written, failure: failure as string | null }
     },
-    onSuccess: async ({ written, failure }) => {
+    onSuccess: async ({ written, failure }, { campaignId }) => {
+      const unscheduled = written.filter((p) => !p.dated).map((p) => p.id)
+      remember(unscheduled)
       await refreshTouched(qc, [{ kind: 'post' }, { kind: 'idea' }])
       if (failure) {
         toast.error(t('ideas.lifecycle.draftFailed'), {
@@ -120,7 +155,37 @@ export function useDraftIdeas() {
         })
         return
       }
-      toast.success(t('ideas.lifecycle.drafted', { count: written.length }))
+      const show =
+        campaignId && unscheduled.length > 0
+          ? {
+              label: t('ideas.lifecycle.show'),
+              onClick: () => {
+                // The calendar's own choice, recorded before it mounts, so
+                // the panel is what the calendar opens with.
+                openPanel('notScheduled')
+                void navigate({
+                  to: '/campaigns/$campaignId/calendar',
+                  params: { campaignId },
+                })
+              },
+            }
+          : undefined
+      toast.success(draftedTitle(t, written.length, unscheduled.length), {
+        ...(show ? { description: t('ideas.lifecycle.inNotScheduled') } : {}),
+        action: show,
+      })
     },
+  })
+}
+
+/** How many drafts were written, and how many of them have no date. */
+function draftedTitle(t: TFunction, written: number, unscheduled: number) {
+  if (unscheduled === written)
+    return t('ideas.lifecycle.drafted', counted(written))
+  if (unscheduled === 0)
+    return t('ideas.lifecycle.draftedDated', counted(written))
+  return t('ideas.lifecycle.draftedSome', {
+    ...counted(written),
+    unscheduled: formatNumber(unscheduled),
   })
 }

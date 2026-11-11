@@ -13,14 +13,23 @@ export type ToastRecord = {
   variant: ToastVariant
   title: string
   description?: string
+  action?: ToastAction
   duration: number
   // Radix controls the open state so the exit animation can play; a
   // dismissed toast stays mounted (open=false) until `remove` drops it.
   open: boolean
 }
 
+/**
+ * One thing the toast's news invites — "SHOW", taking the user to what was
+ * just made. Choosing it closes the toast. A toast is gone in seconds, so an
+ * action must never be the only way to reach anything.
+ */
+export type ToastAction = { label: string; onClick: () => void }
+
 export type ToastOptions = {
   description?: string
+  action?: ToastAction
   // Auto-dismiss delay in ms. Defaults per variant; errors linger longer
   // so the user can read which validation failed.
   duration?: number
@@ -81,6 +90,7 @@ const useToastStore = create<ToastState>((set, get) => ({
       variant,
       title,
       description: opts?.description,
+      action: opts?.action,
       duration: opts?.duration ?? DEFAULT_DURATION[variant],
       open: true,
     }
