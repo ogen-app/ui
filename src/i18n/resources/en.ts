@@ -870,6 +870,17 @@ export const en = {
       confirm: 'DELETE GROUP',
     },
   },
+  /**
+   * Whether generated work drew on the campaign's own documents (CON-448/469).
+   * Only the absence is marked: a post or idea the server stored as
+   * `exploratory`. One nobody generated carries no mode and says nothing.
+   */
+  grounding: {
+    notGrounded: 'Not grounded',
+    /** The post page's Sources card, under its heading. */
+    postNotGrounded:
+      'This post was written from general knowledge, not from the campaign’s documents.',
+  },
   ideas: {
     capture: {
       /** The field carries no visible label — the placeholder is the prompt. */

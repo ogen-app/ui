@@ -29,6 +29,7 @@ import {
   type CardRung,
 } from './cardRungs'
 import { LockMark, isDateLocked } from './LockMark'
+import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import { STATUS_ACCENT_COLOR, STATUS_ICON, STATUS_TEXT_COLOR } from './status'
 
 type PostCardProps = {
@@ -489,6 +490,11 @@ function PostCardComponent({
             {/* The status reaches assistive tech either way — on a card that
                 doesn't spend a line on the word, this is the only place it is. */}
             {!showStatus && <span className="sr-only">{statusLabel}</span>}
+            {/* Written from general knowledge: the glyph only, after what the
+                post is and before what you can't do to it. It rides on this row
+                rather than earning one, so the rung ladder needs no say — a
+                card too tight for its first row is too tight for this too. */}
+            <NotGroundedMark mode={post.grounding_mode} compact />
             {/* `ml-auto` rather than `justify-between`: the row has a variable
                 number of things on the left and exactly one on the right, and
                 a card with no lock must not have its status mark pushed

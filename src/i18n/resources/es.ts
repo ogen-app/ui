@@ -722,6 +722,11 @@ export const es: Translation = {
       confirm: 'ELIMINAR GRUPO',
     },
   },
+  grounding: {
+    notGrounded: 'Sin fuentes',
+    postNotGrounded:
+      'Esta publicación se escribió con conocimiento general, no con los documentos de la campaña.',
+  },
   ideas: {
     capture: {
       label: 'Anota una idea',

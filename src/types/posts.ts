@@ -82,6 +82,9 @@ export type ThreadPreview = {
   errors: PlatformValidationError[]
 }
 
+/** Whether generated work drew on the user's own material (CON-448). */
+export type GroundingMode = 'grounded' | 'exploratory'
+
 export type Post = {
   id: string
   campaign_id: string
@@ -214,6 +217,15 @@ export type Post = {
    * through `normalizeContentFormat` wherever it is drawn, and restated as-is.
    */
   content_format: ContentFormatId | null
+  /**
+   * Whether generation drew on the campaign's own documents (CON-448):
+   * `exploratory` is written from general knowledge, and `null` is a post
+   * nobody generated — unknown, never "not grounded". Written by the server
+   * when the post is generated and carried through compile and clone; the PUT
+   * starts from the stored row, so it is read-only here and absent from
+   * `PostPayload`.
+   */
+  grounding_mode: GroundingMode | null
   created_by: string
   created_at: string
   updated_at: string
