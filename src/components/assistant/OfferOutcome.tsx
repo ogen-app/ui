@@ -52,11 +52,19 @@ export function OfferOutcome({
     <>
       {replaced && replaced.deleted + replaced.kept > 0 && (
         <ResultBlock
-          status={t('assistant.answered.replaced.word')}
-          title={t(
-            'assistant.answered.replaced.title',
-            counted(replaced.deleted),
-          )}
+          status={
+            replaced.deleted > 0
+              ? t('assistant.answered.replaced.word')
+              : t('assistant.answered.replaced.noneWord')
+          }
+          title={
+            replaced.deleted > 0
+              ? t(
+                  'assistant.answered.replaced.title',
+                  counted(replaced.deleted),
+                )
+              : t('assistant.answered.replaced.none')
+          }
         >
           {replaced.kept > 0 && (
             <ResultRow>

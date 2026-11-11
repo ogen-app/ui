@@ -220,15 +220,19 @@ function platforms(
   // What changed, in the server's words: "Threads", "the carousel post type
   // on LinkedIn". A removal leaves the posts on it, which the calendar check
   // then offers to deal with (CON-468).
-  const meta = [
-    added && t('assistant.result.platformsAdded', { what: added }),
-    removed && t('assistant.result.platformsRemoved', { what: removed }),
-  ].filter(Boolean)
+  const meta =
+    added && removed
+      ? t('assistant.result.platformsChanged', { added, removed })
+      : added
+        ? t('assistant.result.platformsAdded', { what: added })
+        : removed
+          ? t('assistant.result.platformsRemoved', { what: removed })
+          : undefined
   return (
     <ResultBlock
       status={t('assistant.word.done')}
       title={t('assistant.result.platformsUpdated')}
-      meta={meta.length > 0 ? meta.join(' · ') : undefined}
+      meta={meta}
       action={<UndoAction t={t} undoId={undoId} undo={undo} />}
     >
       <UndoNote t={t} undoId={undoId} undo={undo} />

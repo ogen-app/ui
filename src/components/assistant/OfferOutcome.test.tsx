@@ -100,6 +100,24 @@ describe('the budget guard’s replace (CON-468)', () => {
   })
 })
 
+describe('a replace that deleted nothing', () => {
+  it('doesn’t call it deleted', async () => {
+    await show({
+      reoffered: false,
+      notMade: [],
+      replaced: { deleted: 0, kept: 2 },
+    })
+    expect(screen.queryByText('DELETED')).toBeNull()
+    expect(screen.getByText('NOTHING DELETED')).toBeTruthy()
+    expect(screen.getByText('No drafts deleted')).toBeTruthy()
+    expect(
+      screen.getByText(
+        '2 kept: they changed since the offer, or weren’t needed.',
+      ),
+    ).toBeTruthy()
+  })
+})
+
 describe('in Spanish', () => {
   afterAll(async () => {
     await i18next.changeLanguage('en')

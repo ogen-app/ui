@@ -78,7 +78,7 @@ describe('assistant in Spanish', () => {
       <ResultCard
         details={{
           goal: { perPeriod: 12, cadence: 'week', target: 12000 },
-          platforms: { added: '', removed: 'Threads' },
+          platforms: { added: 'LinkedIn', removed: 'Threads' },
         }}
       />,
     )
@@ -86,7 +86,9 @@ describe('assistant in Spanish', () => {
       screen.getByText('Objetivo ampliado a 12 publicaciones por semana'),
     ).toBeTruthy()
     expect(screen.getByText('12.000 en total')).toBeTruthy()
-    expect(screen.getByText('quitado: Threads')).toBeTruthy()
+    expect(
+      screen.getByText('añadido: LinkedIn · quitado: Threads'),
+    ).toBeTruthy()
     expect(screen.queryByText(/Goal raised/)).toBeNull()
   })
 
