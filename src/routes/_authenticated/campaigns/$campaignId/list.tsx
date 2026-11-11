@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { BulkActionsBar } from '@/components/campaigns/BulkActionsBar'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { PostsTable } from '@/components/tables/postsTable'
@@ -45,6 +46,7 @@ function CampaignListView() {
   // No anchor: the table has no date range of its own, so it keeps whichever
   // week the calendar last left — see `lib/postsPlace`.
   useRememberPostsPlace(campaignId, 'list')
+  const { t } = useTranslation()
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const filter = useMemo(() => postFilterFromSearch(search), [search])
@@ -54,9 +56,14 @@ function CampaignListView() {
     () => postRequestParams(filter, timeZone),
     [filter, timeZone],
   )
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // A new filter starts a new selection: ticks the filter hides would come
+  // back unasked when it is relaxed.
   const onFilterChange = useCallback(
-    (next: PostFilter) =>
-      void navigate({ search: searchFromPostFilter(next), replace: true }),
+    (next: PostFilter) => {
+      setSelectedIds(new Set())
+      void navigate({ search: searchFromPostFilter(next), replace: true })
+    },
     [navigate],
   )
   const postsQuery = useCampaignPosts(campaignId, params)
@@ -67,7 +74,6 @@ function CampaignListView() {
   // `awaiting`, not `isLoading` — see `lib/fetched`. Both readers below are
   // claims about how many posts there are, and a paused read is not an answer.
   const isLoading = awaiting(postsQuery)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   // `mutateAsync` is stable, so the columns aren't rebuilt on every render.
   const { applyPlan, deletePosts, busy, deletePost } = useBulkPostActions(
     campaignId,
@@ -181,7 +187,12 @@ function CampaignListView() {
           claim we don't get to make until we've asked. The table renders on
           one path either way; `loading` draws its own rows. A filter nothing
           matches is not an empty campaign. */}
-      {!isLoading && rows.length === 0 && filtered ? (
+      {postsQuery.isError && posts === undefined ? (
+        // A read that never answered is not "nothing matches".
+        <p className="px-6 py-8 text-sm text-tertiary-foreground">
+          {t('calendar.loadFailedCampaign')}
+        </p>
+      ) : !isLoading && rows.length === 0 && filtered ? (
         <PostsNoMatches
           campaignId={campaignId}
           filter={filter}

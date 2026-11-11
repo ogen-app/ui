@@ -93,9 +93,17 @@ function splitValues(raw: unknown): string[] {
   return out
 }
 
+/** A real `YYYY-MM-DD` day: `2026-02-31` is refused, not rolled into March. */
 function day(raw: unknown): string | undefined {
   const value = raw === undefined ? '' : String(raw).trim()
-  return DAY.test(value) ? value : undefined
+  if (!DAY.test(value)) return undefined
+  const [y, m, d] = value.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  return date.getFullYear() === y &&
+    date.getMonth() === m - 1 &&
+    date.getDate() === d
+    ? value
+    : undefined
 }
 
 /**

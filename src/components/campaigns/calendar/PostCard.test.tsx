@@ -164,6 +164,8 @@ describe('PostCard on a calendar that ticks (CON-472)', () => {
     // Not inside the link: a control in a link is two targets in one.
     expect(container.querySelector('a')?.contains(tick)).toBe(false)
     expect(tick).toHaveClass('opacity-0')
+    // A touch screen has no hover to reveal it with.
+    expect(tick).toHaveClass('[@media(hover:none)]:opacity-100')
     fireEvent.click(tick)
     expect(toggle).toHaveBeenCalledWith('p1')
   })

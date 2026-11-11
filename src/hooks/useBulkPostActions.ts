@@ -1,4 +1,9 @@
-import { useCallback, type Dispatch, type SetStateAction } from 'react'
+import {
+  useCallback,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react'
 import { useDeletePost, useUpdatePost } from '@/hooks/usePosts'
 import type { BulkPlan } from '@/lib/bulkPostEdits'
 import { postToPayload } from '@/services/api/posts'
@@ -22,41 +27,60 @@ export function useBulkPostActions(
     useDeletePost(campaignId)
   const { mutateAsync: updatePost, isPending: applying } =
     useUpdatePost(campaignId)
+  // The mutations' own pending flags follow the latest call only, so one that
+  // finishes before an earlier one would free the bar mid-sweep. Each sweep
+  // counts itself in and out instead.
+  const [sweeps, setSweeps] = useState(0)
+  const sweep = useCallback(async <T>(run: () => Promise<T>) => {
+    setSweeps((n) => n + 1)
+    try {
+      return await run()
+    } finally {
+      setSweeps((n) => n - 1)
+    }
+  }, [])
 
   const applyPlan = useCallback(
-    async (plan: BulkPlan) => {
-      const results = await Promise.allSettled(
-        plan.changes.map(({ post, scheduled_at }) =>
-          updatePost({
-            id: post.id,
-            payload: { ...postToPayload(post), scheduled_at },
-          }),
-        ),
-      )
-      return results.filter((r) => r.status === 'rejected').length
-    },
-    [updatePost],
+    (plan: BulkPlan) =>
+      sweep(async () => {
+        const results = await Promise.allSettled(
+          plan.changes.map(({ post, scheduled_at }) =>
+            updatePost({
+              id: post.id,
+              payload: { ...postToPayload(post), scheduled_at },
+            }),
+          ),
+        )
+        return results.filter((r) => r.status === 'rejected').length
+      }),
+    [updatePost, sweep],
   )
 
   const deletePosts = useCallback(
-    async (targets: Post[]) => {
-      const results = await Promise.allSettled(
-        targets.map((post) => deletePost(post.id)),
-      )
-      const deleted = targets.filter(
-        (_, i) => results[i].status === 'fulfilled',
-      )
-      setSelectedIds((prev) => {
-        const next = new Set(prev)
-        for (const post of deleted) next.delete(post.id)
-        return next
-      })
-      return targets.length - deleted.length
-    },
-    [deletePost, setSelectedIds],
+    (targets: Post[]) =>
+      sweep(async () => {
+        const results = await Promise.allSettled(
+          targets.map((post) => deletePost(post.id)),
+        )
+        const deleted = targets.filter(
+          (_, i) => results[i].status === 'fulfilled',
+        )
+        setSelectedIds((prev) => {
+          const next = new Set(prev)
+          for (const post of deleted) next.delete(post.id)
+          return next
+        })
+        return targets.length - deleted.length
+      }),
+    [deletePost, setSelectedIds, sweep],
   )
 
   // A delete sweep in flight must hold the bar just like an update sweep, or
   // a second action can race the first.
-  return { applyPlan, deletePosts, busy: applying || deleting, deletePost }
+  return {
+    applyPlan,
+    deletePosts,
+    busy: sweeps > 0 || applying || deleting,
+    deletePost,
+  }
 }
