@@ -10,6 +10,7 @@ import {
 } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib'
 import { formatList } from '@/lib/intl'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -456,8 +457,15 @@ export function LibraryEntry({
   empty,
   facts,
   onOpen,
+  tick,
 }: {
   name: string
+  /**
+   * The entry's tick (CON-472): beside the card rather than in it — the card
+   * is a button, and a control inside a button is two targets in one. Shown
+   * under the pointer, and on every entry once any is ticked.
+   */
+  tick?: { checked: boolean; shown: boolean; onToggle: () => void }
   /** Beside the name — in practice `DefaultStar`. */
   mark?: ReactNode
   line?: string
@@ -468,8 +476,14 @@ export function LibraryEntry({
   facts: ReactNode[]
   onOpen?: () => void
 }) {
-  return (
-    <LibraryCard onClick={onOpen}>
+  const card = (
+    <LibraryCard
+      onClick={onOpen}
+      className={cn(
+        tick && 'pl-10',
+        tick?.checked && 'outline-2 -outline-offset-2 outline-foreground',
+      )}
+    >
       <header className="flex min-w-0 flex-col gap-1">
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
           <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
@@ -502,6 +516,39 @@ export function LibraryEntry({
         </ul>
       </footer>
     </LibraryCard>
+  )
+  if (!tick) return card
+  return (
+    <div className={cn(COLUMN, 'group/entry relative')}>
+      {card}
+      <LibraryTick name={name} {...tick} />
+    </div>
+  )
+}
+
+function LibraryTick({
+  name,
+  checked,
+  shown,
+  onToggle,
+}: {
+  name: string
+  checked: boolean
+  shown: boolean
+  onToggle: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <Checkbox
+      checked={checked}
+      onCheckedChange={onToggle}
+      aria-label={t('brand.selection.select', { name })}
+      className={cn(
+        'absolute top-8 left-4',
+        !shown &&
+          'opacity-0 group-hover/entry:opacity-100 focus-visible:opacity-100',
+      )}
+    />
   )
 }
 

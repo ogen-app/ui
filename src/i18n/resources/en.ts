@@ -875,6 +875,80 @@ export const en = {
    * Only the absence is marked: a post or idea the server stored as
    * `exploratory`. One nobody generated carries no mode and says nothing.
    */
+  /**
+   * The posts filter as a sentence (CON-472), over a campaign's posts list and
+   * its calendar — the Ideas sentence's grammar: one catalogue sentence per
+   * field and operator, its chosen words marked `<v>`.
+   */
+  postsFilter: {
+    unknownPlatform: 'A removed platform',
+    nothingMatches: 'No posts match these filters',
+    scheduled: {
+      yes: 'With a date',
+      no: 'Without a date',
+    },
+    sentence: {
+      showing: 'Showing posts <clauses></clauses>',
+      showingAll: 'Showing <v>all posts</v>',
+      clause: {
+        status: 'that are <v>{{values}}</v>',
+        status_not: 'that aren’t <v>{{values}}</v>',
+        platform: 'on <v>{{values}}</v>',
+        platform_not: 'not on <v>{{values}}</v>',
+        post_type: 'in the <v>{{values}}</v> format',
+        post_type_not: 'not in the <v>{{values}}</v> format',
+        scheduled: '<v>{{values}}</v>',
+        date: 'dated <v>from {{values}}</v>',
+        date_range: 'dated <v>between {{from}} and {{to}}</v>',
+        date_not: 'dated <v>before {{values}}</v>',
+      },
+      status: {
+        planned: 'planned',
+        draft: 'drafts',
+        ready_for_publish: 'ready to publish',
+        scheduled: 'scheduled',
+        scheduled_for_manual_publishing: 'scheduled to publish by hand',
+        failed: 'failed',
+        published: 'published',
+        not_published: 'not published',
+      },
+      scheduled: {
+        yes: 'with a date',
+        no: 'without a date',
+      },
+      question: {
+        status: 'Posts that are…',
+        platform: 'Posts on…',
+        post_type: 'Posts in the format…',
+        scheduled: 'Posts…',
+        date: 'Posts dated…',
+      },
+      include: {
+        status: 'are',
+        platform: 'on',
+        post_type: 'in',
+        date: 'between',
+      },
+      exclude: {
+        status: 'aren’t',
+        platform: 'not on',
+        post_type: 'not in',
+        date: 'before',
+      },
+      starter: {
+        status: 'that are…',
+        platform: 'on a platform…',
+        post_type: 'in a format…',
+        scheduled: 'with a date, or without…',
+        date: 'dated…',
+      },
+      starterHint: {
+        status: 'drafts, failed',
+      },
+      posts_one: '{{formatted}} post',
+      posts_other: '{{formatted}} posts',
+    },
+  },
   grounding: {
     notGrounded: 'Not grounded',
     /** The post page's Sources card, under its heading. */
@@ -5950,6 +6024,24 @@ export const en = {
    * that silently means "the workspace default" has to say so somewhere.
    */
   brand: {
+    /**
+     * Ticking entries in a library (CON-472): a selection to ask the
+     * assistant about, so its bar only says how many and clears.
+     */
+    selection: {
+      select: 'Select “{{name}}”',
+      voice_one: '{{formatted}} voice selected',
+      voice_other: '{{formatted}} voices selected',
+      audience_one: '{{formatted}} audience selected',
+      audience_other: '{{formatted}} audiences selected',
+      fact_one: '{{formatted}} fact selected',
+      fact_other: '{{formatted}} facts selected',
+      series_one: '{{formatted}} series selected',
+      series_other: '{{formatted}} series selected',
+      selectAll: 'Select every fact shown',
+      clearAll: 'Clear the selection',
+      clear: 'CLEAR',
+    },
     binding: {
       voice: 'Voice',
       audience: 'Audience',

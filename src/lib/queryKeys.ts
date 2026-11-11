@@ -44,6 +44,16 @@ export const campaignPostsKey = (campaignId: string) =>
   ['campaigns', campaignId, 'posts'] as const
 
 /**
+ * A campaign's posts under a filter (CON-472). Under `campaignPostsKey`, so
+ * every post write that invalidates the list refreshes the filtered reads too;
+ * the patches `lib/postCache` makes reach the unfiltered list only.
+ */
+export const filteredCampaignPostsKey = (
+  campaignId: string,
+  params: Record<string, string>,
+) => [...campaignPostsKey(campaignId), 'filtered', params] as const
+
+/**
  * The batched Campaigns-list payload (CON-152). Nests under `['campaigns']`,
  * so anything invalidating the campaigns list refreshes it too; post writes
  * invalidate it explicitly because they touch a sibling key.

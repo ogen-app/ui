@@ -12,7 +12,11 @@ import {
 import { invalidateCampaignPosts } from '@/lib/postCache'
 import { atDefaultTime } from '@/lib/postSchedule'
 import { PRESIGN_REFRESH_MS } from '@/lib/presignedUrls'
-import { campaignPostsKey, WORKSPACE_POSTS_KEY } from '@/lib/queryKeys'
+import {
+  campaignPostsKey,
+  filteredCampaignPostsKey,
+  WORKSPACE_POSTS_KEY,
+} from '@/lib/queryKeys'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
 import { toast } from '@/stores/toastStore'
 import type { StreamedPost } from '@/types/assistant'
@@ -37,6 +41,9 @@ const COVER_REFRESH = {
   staleTime: 30_000,
 } as const
 
+/** Stable identity: the default is part of the Query key. */
+const NO_PARAMS: Record<string, string> = {}
+
 /**
  * The campaign's posts, with any the assistant is generating right now folded
  * in. The content-plan flow persists each draft as it writes it and streams it
@@ -44,24 +51,33 @@ const COVER_REFRESH = {
  * the end of a multi-minute turn. Streamed rows carry the id they were saved
  * under, so the refetched copy replaces them without a flicker.
  */
-export function useCampaignPosts(campaignId: string) {
+export function useCampaignPosts(
+  campaignId: string,
+  /** The posts filter's query (`lib/postFilter`); none asks for every post. */
+  params: Record<string, string> = NO_PARAMS,
+) {
+  const filtered = Object.keys(params).length > 0
   const query = useQuery({
-    queryKey: campaignPostsKey(campaignId),
-    queryFn: () => listCampaignPosts(campaignId),
+    queryKey: filtered
+      ? filteredCampaignPostsKey(campaignId, params)
+      : campaignPostsKey(campaignId),
+    queryFn: () => listCampaignPosts(campaignId, params),
     enabled: !!campaignId,
     ...COVER_REFRESH,
   })
 
   const streamed = useAssistantStore(selectStreamedPosts(campaignId))
   const data = useMemo(() => {
-    if (streamed.length === 0) return query.data
+    // A filtered read is the server's answer to the filter; a draft still
+    // streaming may not match it, so it waits for the refetch.
+    if (filtered || streamed.length === 0) return query.data
     const saved = query.data ?? []
     const known = new Set(saved.map((p) => p.id))
     const pending = streamed
       .filter((p) => !known.has(p.id))
       .map((p) => draftPost(p, campaignId))
     return pending.length === 0 ? saved : [...saved, ...pending]
-  }, [query.data, streamed, campaignId])
+  }, [query.data, streamed, campaignId, filtered])
 
   return { ...query, data }
 }

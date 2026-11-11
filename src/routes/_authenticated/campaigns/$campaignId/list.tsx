@@ -1,29 +1,39 @@
 import { useCallback, useMemo, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { BulkActionsBar } from '@/components/campaigns/BulkActionsBar'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { PostsTable } from '@/components/tables/postsTable'
 import { PostsToolbar } from '@/components/campaigns/PostsToolbar'
-import {
-  useAddPost,
-  useCampaignPosts,
-  useDeletePost,
-  useUpdatePost,
-} from '@/hooks/usePosts.ts'
+import { useAddPost, useCampaignPosts } from '@/hooks/usePosts.ts'
+import { useBulkPostActions } from '@/hooks/useBulkPostActions'
 import { usePostsTableSort } from '@/hooks/usePostsTableSort'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
-import type { BulkPlan } from '@/lib/bulkPostEdits'
-import { postToPayload } from '@/services/api/posts'
 import type { Post } from '@/types/posts'
 import { awaiting } from '@/lib/fetched'
 import {
-  useAssistantPage,
   useAssistantRequest,
+  useListAssistantPage,
 } from '@/hooks/useAssistantContext'
+import {
+  PostsFilterBar,
+  PostsNoMatches,
+} from '@/components/campaigns/postsFilter/PostsFilterBar'
+import { viewerTimeZone } from '@/lib/assetFilter'
+import {
+  isPostFilterActive,
+  parsePostListSearch,
+  postFilterFromSearch,
+  postRequestParams,
+  searchFromPostFilter,
+  type PostFilter,
+} from '@/lib/postFilter'
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/list',
 )({
+  // The filter is the address, in the endpoint's own words (CON-472), so the
+  // assistant's set_filter lands here as search params.
+  validateSearch: parsePostListSearch,
   component: CampaignListView,
 })
 
@@ -35,16 +45,34 @@ function CampaignListView() {
   // No anchor: the table has no date range of its own, so it keeps whichever
   // week the calendar last left — see `lib/postsPlace`.
   useRememberPostsPlace(campaignId, 'list')
-  const postsQuery = useCampaignPosts(campaignId)
+  const search = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const filter = useMemo(() => postFilterFromSearch(search), [search])
+  const filtered = isPostFilterActive(filter)
+  const [timeZone] = useState(viewerTimeZone)
+  const params = useMemo(
+    () => postRequestParams(filter, timeZone),
+    [filter, timeZone],
+  )
+  const onFilterChange = useCallback(
+    (next: PostFilter) =>
+      void navigate({ search: searchFromPostFilter(next), replace: true }),
+    [navigate],
+  )
+  const postsQuery = useCampaignPosts(campaignId, params)
+  // The sentence says how many there are in all; a filtered read is a second
+  // query, and the unfiltered one is usually in the cache already.
+  const allPosts = useCampaignPosts(campaignId)
   const posts = postsQuery.data
   // `awaiting`, not `isLoading` — see `lib/fetched`. Both readers below are
   // claims about how many posts there are, and a paused read is not an answer.
   const isLoading = awaiting(postsQuery)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   // `mutateAsync` is stable, so the columns aren't rebuilt on every render.
-  const { mutateAsync: deletePost, isPending: deleting } =
-    useDeletePost(campaignId)
-  const { mutateAsync: updatePost, isPending: applying } =
-    useUpdatePost(campaignId)
+  const { applyPlan, deletePosts, busy, deletePost } = useBulkPostActions(
+    campaignId,
+    setSelectedIds,
+  )
   // The single-row delete: fire-and-forget on purpose, and caught because the
   // mutation rethrows after its own error toast.
   const handleDelete = useCallback(
@@ -57,8 +85,6 @@ function CampaignListView() {
   // list (CON-170). Until it arrives the table draws skeleton rows rather than
   // the default order, so it never sorts itself again under the reader.
   const { sorting, setSorting, isPending: sortPending } = usePostsTableSort()
-
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const rows = posts ?? NO_POSTS
 
@@ -81,23 +107,22 @@ function CampaignListView() {
     return true
   })
 
-  // The assistant sees the ticked posts (CON-451). The table has no filter
-  // the server could resolve, so a selection is always its ids.
-  useAssistantPage(
-    useMemo(
-      () =>
-        selectedPosts.length > 0
-          ? {
-              selection: {
-                kind: 'post' as const,
-                ids: selectedPosts.map((p) => p.id),
-                count: selectedPosts.length,
-              },
-            }
-          : null,
-      [selectedPosts],
-    ),
+  // The assistant sees the filter and the ticked posts (CON-451/472). Every
+  // row ticked is the whole match, which goes as the filter rather than ids —
+  // the endpoint answers unpaged, so the rows on screen are all of it.
+  const ticked = useMemo(
+    () => new Set(selectedPosts.map((p) => p.id)),
+    [selectedPosts],
   )
+  const rowIds = useMemo(() => rows.map((p) => p.id), [rows])
+  useListAssistantPage({
+    kind: 'post',
+    params,
+    ticked,
+    allMatching: rows.length > 0 && ticked.size === rows.length,
+    total: rows.length,
+    rowIds,
+  })
 
   const toggleRow = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -116,45 +141,6 @@ function CampaignListView() {
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
 
-  // Both bulk actions resolve with the number of requests that failed, so the
-  // bar can report what actually happened instead of announcing success the
-  // moment the requests leave. Each failure also raises its own error toast
-  // through the mutation's `meta`.
-  const applyPlan = useCallback(
-    async (plan: BulkPlan) => {
-      const results = await Promise.allSettled(
-        plan.changes.map(({ post, scheduled_at }) =>
-          updatePost({
-            id: post.id,
-            payload: { ...postToPayload(post), scheduled_at },
-          }),
-        ),
-      )
-      return results.filter((r) => r.status === 'rejected').length
-    },
-    [updatePost],
-  )
-
-  const deletePosts = useCallback(
-    async (targets: Post[]) => {
-      const results = await Promise.allSettled(
-        targets.map((post) => deletePost(post.id)),
-      )
-      const deleted = targets.filter(
-        (_, i) => results[i].status === 'fulfilled',
-      )
-      // Only the posts that actually went leave the selection; anything the
-      // action refused — or that failed — stays ticked, still there to act on.
-      setSelectedIds((prev) => {
-        const next = new Set(prev)
-        for (const post of deleted) next.delete(post.id)
-        return next
-      })
-      return targets.length - deleted.length
-    },
-    [deletePost],
-  )
-
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0">
       {selectedPosts.length > 0 ? (
@@ -163,9 +149,7 @@ function CampaignListView() {
           onClear={clearSelection}
           onApply={applyPlan}
           onDelete={deletePosts}
-          // Both bulk actions: a delete sweep in flight must hold the bar just
-          // like an update sweep, or a second action can race the first.
-          busy={applying || deleting}
+          busy={busy}
         />
       ) : (
         <PostsToolbar
@@ -180,12 +164,30 @@ function CampaignListView() {
           }
         />
       )}
+      {(filtered || (allPosts.data?.length ?? 0) > 0) && (
+        <div className="px-6 pb-3">
+          <PostsFilterBar
+            campaignId={campaignId}
+            filter={filter}
+            onChange={onFilterChange}
+            total={rows.length}
+            totalUnfiltered={allPosts.data?.length ?? rows.length}
+          />
+        </div>
+      )}
       {/* Gate on the query, not on `!posts`: the backend answers a campaign
           with no posts with null, so truthiness can't tell "none" from "not
           yet" — and the empty state's invitation to add the first post is a
           claim we don't get to make until we've asked. The table renders on
-          one path either way; `loading` draws its own rows. */}
-      {!isLoading && rows.length === 0 ? (
+          one path either way; `loading` draws its own rows. A filter nothing
+          matches is not an empty campaign. */}
+      {!isLoading && rows.length === 0 && filtered ? (
+        <PostsNoMatches
+          campaignId={campaignId}
+          filter={filter}
+          onChange={onFilterChange}
+        />
+      ) : !isLoading && rows.length === 0 ? (
         <PostsEmptyState variant="list" onAddPost={addPost} />
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto">

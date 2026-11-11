@@ -170,6 +170,22 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `POST /api/ideas/bulk-delete` in batches of 500, and select-all is
   `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
   `idea_read_only`); only its campaign may change.
+- **A campaign's posts list and calendar read one filter** (CON-472):
+  `lib/postFilter`, the endpoint's own params (`status`, `platform` — the
+  post's platform sqid —, `post_type`, `scheduled=yes|no`,
+  `scheduled_after`/`scheduled_before` as days, `tz` only beside a date), in
+  the address of both pages and carried across WEEK/MONTH and the bare
+  calendar redirect. The sentence is the Ideas one on a third model; the
+  endpoint answers the whole match, unpaged and without facets, so the
+  values carry no counts and the table still sorts on the client. A filtered
+  read nests under `campaignPostsKey`, so post writes refresh it, but only
+  the unfiltered list is patched and folds in streamed drafts. Every row
+  ticked on the list goes to the assistant as `allMatching` plus the filter;
+  the calendar sends the days on screen as its `window` (`calendarRange`),
+  the cards in them as `visible`, and its ticks — a card's corner box, read
+  through `CalendarSelectionContext` — as the selection. Foundation's voices,
+  audiences, facts and series tick the same way (`useLibrarySelection`), as
+  something to ask about: their bar only clears.
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,
   600ms debounce, generation-counter guarded, flush-on-unmount). Campaign forms
   autosave similarly. Prefer these patterns over new local edit stores.

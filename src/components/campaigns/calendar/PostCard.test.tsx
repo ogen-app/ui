@@ -10,6 +10,7 @@ import {
 } from '@/lib/failedCovers'
 import { DEFAULT_WEEK_FIELDS } from './cardFields'
 import { CARD_RUNGS } from './cardRungs'
+import { CalendarSelectionContext } from './calendarSelection'
 import type { Post } from '@/types/posts'
 
 /**
@@ -143,5 +144,39 @@ describe('PostCard not-grounded mark (CON-469)', () => {
       <PostCard post={post({ grounding_mode: null })} />,
     )
     expect(queryByText('Not grounded')).not.toBeInTheDocument()
+  })
+})
+
+describe('PostCard on a calendar that ticks (CON-472)', () => {
+  const ticking = (ticked: string[], toggle = vi.fn()) =>
+    render(
+      <CalendarSelectionContext.Provider
+        value={{ ticked: new Set(ticked), toggle }}
+      >
+        <PostCard post={post()} />
+      </CalendarSelectionContext.Provider>,
+    )
+
+  it('offers a tick beside the link, which toggles the post', () => {
+    const toggle = vi.fn()
+    const { getByRole, container } = ticking([], toggle)
+    const tick = getByRole('checkbox')
+    // Not inside the link: a control in a link is two targets in one.
+    expect(container.querySelector('a')?.contains(tick)).toBe(false)
+    expect(tick).toHaveClass('opacity-0')
+    fireEvent.click(tick)
+    expect(toggle).toHaveBeenCalledWith('p1')
+  })
+
+  it('outlines a ticked card, and shows every tick once any is ticked', () => {
+    const { getByRole, container } = ticking(['p1'])
+    expect(getByRole('checkbox')).toHaveAttribute('data-state', 'checked')
+    expect(getByRole('checkbox')).not.toHaveClass('opacity-0')
+    expect(container.querySelector('a')).toHaveClass('outline-2')
+  })
+
+  it('is only a link outside a calendar that ticks', () => {
+    const { queryByRole } = render(<PostCard post={post()} />)
+    expect(queryByRole('checkbox')).toBeNull()
   })
 })
