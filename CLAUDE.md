@@ -722,7 +722,16 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   so it has no button. Ideas are never posts: on the week calendar an idea
   with a target date is a dashed IDEA slot (`/api/ideas/slots`) that isn't
   counted, and COMPILE / DRAFT (`/api/ideas/compile`, `/api/ideas/draft`) turn
-  ideas into a planned post or finished drafts, neither scheduled.
+  ideas into planned posts or finished drafts, one per platform, through one
+  form (`ideas/IdeaPostForm`) on the selection bar and the slot (CON-470).
+  **Unscheduled is the default**: a post is dated only by a day the user
+  chose or one planned on its idea, and the server has no way to leave a
+  planned one undated, so the form says which rather than asking. Unscheduled
+  drafts land in the calendar's Not scheduled panel, marked on top for the
+  tab (`justWrittenStore`), and the toast's SHOW opens it. "Used" is a fact,
+  not a verdict: an idea carries `post_count`, the row says "Used in N
+  posts", the opened idea lists them (MADE INTO), and `used=used|unused` is a
+  clause, facet and grouping like any other.
 - **The right sidebar never stores which panel is open.** It persists one
   remembered choice per screen (`panelMemory` in `settingsStore`) and derives
   the rest: ask `selectActivePanel`, never `panelMemory` directly. A route makes
@@ -1056,9 +1065,8 @@ the follow-ups land: every pack sends typed results now (assets CON-460,
 foundation CON-461, repair CON-462, analytics CON-463, workspace CON-464,
 ideas CON-465), though the facts ledger is still unbuilt; the posts list doesn't say what it was
 sorted on, so its card shows reach and rate on every row; a reloaded thread infers an offer's
-state instead of reading it; a tagging below the offer threshold isn't
-among the assets pack's results, so only one run from an offer shows UNDO; and an idea row has no post count, so "used in
-N posts" isn't shown. Idea slots are in the week view only.
+state instead of reading it; and a tagging below the offer threshold isn't
+among the assets pack's results, so only one run from an offer shows UNDO. Idea slots are in the week view only.
 
 Inviting teammates is live end to end (People, in Workspace Settings; the
 emailed link lands on `/invite?token=…`, which is public, and accepting either

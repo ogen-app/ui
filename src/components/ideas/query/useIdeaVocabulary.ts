@@ -16,6 +16,7 @@ import {
   FIT_BANDS,
   IDEA_FILTER_FIELDS,
   IDEA_ORIGINS,
+  IDEA_USES,
   NONE,
   type IdeaFilterField,
   type IdeaToken,
@@ -97,6 +98,10 @@ export function useIdeaVocabulary({
           return t(`ideas.filter.fit.${value as 'high'}`, {
             defaultValue: value,
           })
+        case 'used':
+          return t(`ideas.filter.used.${value as 'used'}`, {
+            defaultValue: value,
+          })
         case 'kind':
           return t(`content.list.kind.${value as 'pdf'}`, {
             defaultValue: value,
@@ -136,6 +141,10 @@ export function useIdeaVocabulary({
           })
         case 'fit':
           return t(`ideas.sentence.fit.${value as 'high'}`, {
+            defaultValue: value,
+          })
+        case 'used':
+          return t(`ideas.sentence.used.${value as 'used'}`, {
             defaultValue: value,
           })
         case 'campaign_id':
@@ -190,6 +199,20 @@ export function useIdeaVocabulary({
         return key('created', { values: sentenceValue(field, values[0]) })
       }
       if (field === 'text') return key('text', { values: values[0] ?? '' })
+      if (field === 'used') {
+        // Two values, each the other's complement: "not used" is "unused",
+        // so a negated clause reads as the value it leaves.
+        const kept = negated
+          ? IDEA_USES.filter((u) => !values.includes(u))
+          : values
+        return key('used', {
+          values: formatList(
+            kept.map((v) => sentenceValue(field, v)),
+            'disjunction',
+            locale,
+          ),
+        })
+      }
       if (!negated && values.length === 1) {
         if (field === 'source_asset' && values[0] === NONE)
           return key('source_asset_none')
@@ -267,6 +290,12 @@ export function useIdeaVocabulary({
             icon: KIND_ICON[value],
             tone: KIND_TONE[value] ?? 'text-kind-neutral',
           })).sort(byCount)
+        case 'used':
+          return IDEA_USES.map((value) => ({
+            value,
+            label: valueLabel(field, value),
+            count: count(value),
+          }))
         case 'created':
           return CREATED_PRESETS.map((value) => ({
             value,
@@ -343,8 +372,9 @@ export function useIdeaVocabulary({
   )
   const switchLabels = useCallback(
     (field: IdeaFilterField): [string, string] | null =>
-      // Origin's two values are each other's complement; text has no "not".
-      field === 'origin' || field === 'text'
+      // Origin's two values are each other's complement, and so are used's;
+      // text has no "not".
+      field === 'origin' || field === 'used' || field === 'text'
         ? null
         : [
             t(`ideas.sentence.include.${field}`),
@@ -433,6 +463,7 @@ const SENTENCE_ORDER: readonly IdeaFilterField[] = [
   'origin',
   'source_asset',
   'campaign_id',
+  'used',
   'kind',
   'fit',
   'phase',

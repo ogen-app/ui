@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   EMPTY_IDEA_FILTER,
+  ideaFacetsFor,
   ideaFilterFromSearch,
   ideaTokensOf,
   ideaViewFromSearch,
@@ -131,6 +132,27 @@ describe('toIdeaRequestParams', () => {
       values: ['7d'],
     })
     expect(toIdeaRequestParams(filter, ctx).created_before).toBe('2026-10-11')
+  })
+})
+
+describe('used (CON-470)', () => {
+  it('takes used and unused, asks for them, and groups and counts by them', () => {
+    const search = parseIdeaListSearch({
+      used: 'unused,maybe',
+      group: 'used',
+    })
+    expect(search).toEqual({ used: 'unused', group: 'used' })
+    const filter = ideaFilterFromSearch(search)
+    expect(ideaTokensOf(filter)).toEqual([
+      { field: 'used', negated: false, values: ['unused'] },
+    ])
+    expect(
+      toIdeaRequestParams(filter, {
+        ...ctx,
+        group: ideaViewFromSearch(search).group,
+      }),
+    ).toMatchObject({ used: 'unused', group: 'used' })
+    expect(ideaFacetsFor(null)).toContain('used')
   })
 })
 

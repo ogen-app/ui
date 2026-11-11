@@ -780,6 +780,15 @@ export type WorkspaceResults = {
 }
 
 /** An idea as the ideas pack names it (CON-465). */
+/** A planned post compiled from ideas, on one platform. */
+export type CompiledPost = {
+  postId: string
+  title: string
+  platformId?: string
+  /** YYYY-MM-DD; absent when the post is undated. */
+  date?: string
+}
+
 export type IdeaBrief = {
   id: string
   title: string
@@ -787,6 +796,8 @@ export type IdeaBrief = {
   verdict?: 'yes' | 'later' | 'no'
   campaignId?: string
   fitScore?: number
+  /** How many posts were made from it (CON-470); absent when not said. */
+  posts?: number
 }
 
 /** A bulk change over ideas: how many, which failed, its undo. */
@@ -811,11 +822,13 @@ export type IdeasResults = {
   moved?: IdeasChanged
   /** Never undone. */
   deleted?: IdeasChanged
+  /**
+   * One planned post per platform (CON-470), in the order asked for; one
+   * UNDO deletes them all or none.
+   */
   compiled?: {
-    postId: string
-    title: string
+    posts: CompiledPost[]
     campaignId: string
-    platformId?: string
     ideas: number
     grounding: Grounding
     undoId?: string
@@ -825,6 +838,8 @@ export type IdeasResults = {
       postId: string
       title: string
       platformId: string
+      /** YYYY-MM-DD; absent when the draft is unscheduled (CON-470). */
+      publishDate?: string
       grounding: Grounding
     }[]
     warnings: string[]

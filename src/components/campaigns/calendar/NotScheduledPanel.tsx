@@ -18,6 +18,7 @@ import { PostCard } from './PostCard'
 import { withCampaignRow } from './cardFields'
 import { cn } from '@/lib'
 import { awaiting } from '@/lib/fetched'
+import { useJustWrittenStore } from '@/stores/justWrittenStore'
 
 /** One campaign's strays, for the panel beside that campaign's calendar. */
 export function NotScheduledPanel({
@@ -103,10 +104,16 @@ function NotScheduled({
     [viewFields, campaignId],
   )
 
-  const unscheduled = useMemo(
-    () => (posts ?? []).filter((p) => !p.scheduled_at),
-    [posts],
-  )
+  // The drafts just written from ideas lead, marked (CON-470): the toast
+  // that sent the user here is gone, and nothing else says which are new.
+  const justWritten = useJustWrittenStore((s) => s.ids)
+  const unscheduled = useMemo(() => {
+    const strays = (posts ?? []).filter((p) => !p.scheduled_at)
+    return [
+      ...strays.filter((p) => justWritten.has(p.id)),
+      ...strays.filter((p) => !justWritten.has(p.id)),
+    ]
+  }, [posts, justWritten])
 
   const dropHandlers = {
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
@@ -160,6 +167,11 @@ function NotScheduled({
         ) : (
           unscheduled.map((post) => (
             <div key={post.id} className="border border-border shrink-0">
+              {justWritten.has(post.id) && (
+                <p className="border-b border-border px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-accent uppercase">
+                  {t('calendar.justWritten')}
+                </p>
+              )}
               {/* No rung: the panel is a column with room, so the card draws
                   itself at its roomiest. The rung is what a *cell* imposes,
                   and there is no cell here — what carries over from the view

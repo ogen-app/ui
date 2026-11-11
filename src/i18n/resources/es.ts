@@ -852,6 +852,10 @@ export const es: Translation = {
         low: '10–39',
       },
       fitRange: '{{band}} · {{range}}',
+      used: {
+        unused: 'Sin usar todavía',
+        used: 'Usada en una publicación',
+      },
       noDocument: 'Sin documento',
       unknownDocument: 'Un documento eliminado',
       formerMember: 'Un antiguo miembro',
@@ -866,6 +870,7 @@ export const es: Translation = {
         origin: 'Origen',
         author: 'Autoría',
         created: 'Fecha de alta',
+        used: 'Uso',
       },
       sort: {
         waiting: 'Más tiempo esperando',
@@ -884,9 +889,52 @@ export const es: Translation = {
       slot: 'IDEA',
       compile: 'COMPILAR',
       draft: 'REDACTAR',
-      compiled: 'Compilada en una publicación planificada',
-      drafted_one: '{{count}} borrador escrito, sin programar',
-      drafted_other: '{{count}} borradores escritos, sin programar',
+      compiled_one: 'Compilada en una publicación planificada',
+      compiled_other: 'Compilada en {{formatted}} publicaciones planificadas',
+      drafted_one: '{{formatted}} borrador escrito, sin programar',
+      drafted_other: '{{formatted}} borradores escritos, sin programar',
+      draftedDated_one: '{{formatted}} borrador escrito',
+      draftedDated_other: '{{formatted}} borradores escritos',
+      draftedSome_one:
+        '{{formatted}} borrador escrito, {{unscheduled}} sin programar',
+      draftedSome_other:
+        '{{formatted}} borradores escritos, {{unscheduled}} sin programar',
+      show: 'VER',
+      inNotScheduled: 'En Sin programar, hasta que les pongas un día.',
+      used_one: 'Usada en {{formatted}} publicación',
+      used_other: 'Usada en {{formatted}} publicaciones',
+      madeInto: {
+        heading: 'Convertida en',
+        untitled: 'Publicación sin título',
+        notScheduled: 'Sin programar',
+        failed: 'No se pudieron cargar las publicaciones hechas con esta idea.',
+      },
+      form: {
+        compileTitle_one: 'Compilar {{formatted}} idea',
+        compileTitle_other: 'Compilar {{formatted}} ideas',
+        draftTitle_one: 'Redactar {{formatted}} idea',
+        draftTitle_other: 'Redactar {{formatted}} ideas',
+        platforms: 'Plataformas',
+        fromPlan: 'según el plan de la idea',
+        pickOne: 'Elige al menos una plataforma.',
+        noPlatforms: 'Esta campaña aún no tiene plataformas.',
+        noCampaign:
+          'Estas ideas no están en una misma campaña, así que cada una va a la plataforma que indica su plan.',
+        howMany: 'Cuántas',
+        perIdea: 'Una publicación por idea, en cada plataforma',
+        together: 'Una publicación con todas, en cada plataforma',
+        compileNote:
+          'Una publicación planificada guarda las tesis, aún sin texto.',
+        onDay: 'Con fecha {{date}}, el día de la idea.',
+        unscheduled:
+          'Sin programar, salvo que una idea tenga un día planificado.',
+        compile: 'COMPILAR',
+        compileCount_one: 'COMPILAR {{formatted}} PUBLICACIÓN PLANIFICADA',
+        compileCount_other: 'COMPILAR {{formatted}} PUBLICACIONES PLANIFICADAS',
+        draft: 'REDACTAR',
+        draftCount_one: 'REDACTAR {{formatted}} PUBLICACIÓN',
+        draftCount_other: 'REDACTAR {{formatted}} PUBLICACIONES',
+      },
       draftFailed: 'No se pudieron escribir todos los borradores',
       compileFailed: 'No se pudo compilar la idea',
       draftsKept_one: 'Se ha conservado el {{count}} ya escrito.',
@@ -944,6 +992,7 @@ export const es: Translation = {
         created_not: 'añadidas <v>antes del {{values}}</v>',
         created_not_preset: 'añadidas <v>{{values}}</v>',
         text: 'que mencionan <v>«{{values}}»</v>',
+        used: '<v>{{values}}</v>',
       },
       origin: {
         asset_analysis: 'de documentos',
@@ -965,6 +1014,10 @@ export const es: Translation = {
         medium: 'medio',
         low: 'bajo',
         unscored: 'sin puntuar',
+      },
+      used: {
+        unused: 'sin usar todavía',
+        used: 'usadas en una publicación',
       },
       created: {
         today: 'hoy',
@@ -990,6 +1043,7 @@ export const es: Translation = {
         author: 'Ideas escritas por…',
         created: 'Ideas añadidas…',
         text: 'Ideas que mencionan…',
+        used: 'Ideas que están…',
       },
       include: {
         source_asset: 'de',
@@ -1026,6 +1080,7 @@ export const es: Translation = {
         phase: 'para una fase…',
         author: 'escritas por…',
         created: 'añadidas…',
+        used: 'usadas en una publicación, o aún no…',
       },
       starterHint: {
         kind: 'PDF, páginas web',
@@ -1442,6 +1497,7 @@ export const es: Translation = {
     density_other: '{{count}} publicaciones el {{date}} — abrir esta semana',
 
     notScheduled: 'Publicaciones sin programar',
+    justWritten: 'Recién escrita',
     addPost: 'AÑADIR PUBLICACIÓN',
     dateLocked: 'La fecha de esta publicación está bloqueada',
 
@@ -2681,6 +2737,7 @@ export const es: Translation = {
 
     ideas: {
       untitled: 'Idea sin título',
+      notScheduled: 'sin programar',
       open: 'ABRIR',
       more_one: 'y {{formatted}} más',
       more_other: 'y {{formatted}} más',
@@ -2710,16 +2767,19 @@ export const es: Translation = {
         title_other: '{{formatted}} ideas eliminadas',
       },
       compiled: {
-        word: 'Publicación planificada',
+        word_one: 'Publicación planificada',
+        word_other: 'Publicaciones planificadas',
         from_one: 'hecha con {{formatted}} idea',
         from_other: 'hecha con {{formatted}} ideas',
-        planned: 'Tesis, aún sin texto ni fecha: nada va al calendario.',
+        planned: 'Tesis, aún sin texto.',
       },
       drafted: {
         word: 'Borradores',
         title_one: '{{formatted}} borrador',
         title_other: '{{formatted}} borradores',
         unscheduled: 'ninguno programado',
+        someUnscheduled_one: '{{formatted}} sin programar',
+        someUnscheduled_other: '{{formatted}} sin programar',
         grounded: 'con fuentes',
         notGrounded: 'sin fuentes',
         dropped_one: '{{formatted}} borrador no se pudo escribir',

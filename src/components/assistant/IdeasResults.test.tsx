@@ -71,13 +71,19 @@ describe('triage', () => {
 })
 
 describe('compile and draft', () => {
-  it('draws the planned post with its sources and UNDO', async () => {
+  it('draws a planned post per platform, each dated or not, with one UNDO', async () => {
     await show({
       compiled: {
-        postId: 'p1',
-        title: 'Water, not rooms',
+        posts: [
+          { postId: 'p1', title: 'Water, not rooms', platformId: 'instagram' },
+          {
+            postId: 'p9',
+            title: 'Water, not rooms',
+            platformId: 'linkedin',
+            date: '2026-11-26',
+          },
+        ],
         campaignId: 'c1',
-        platformId: 'instagram',
         ideas: 3,
         grounding: {
           mode: 'grounded',
@@ -86,12 +92,15 @@ describe('compile and draft', () => {
         undoId: 'u3',
       },
     })
+    expect(screen.getByText('Planned posts')).toBeTruthy()
     expect(screen.getByText('Water, not rooms')).toBeTruthy()
-    expect(screen.getByText('Instagram · built from 3 ideas')).toBeTruthy()
+    expect(screen.getByText('built from 3 ideas')).toBeTruthy()
+    expect(screen.getByText('Instagram · not scheduled')).toBeTruthy()
+    expect(screen.getByText('LinkedIn · Thu, Nov 26')).toBeTruthy()
     expect(screen.getByText('Brochure')).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
-      '/campaigns/c1/posts/p1',
-    )
+    expect(
+      screen.getAllByText('OPEN').map((a) => a.getAttribute('href')),
+    ).toEqual(['/campaigns/c1/posts/p1', '/campaigns/c1/posts/p9'])
     fireEvent.click(screen.getByText('UNDO'))
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u3')
   })
@@ -111,10 +120,39 @@ describe('compile and draft', () => {
       },
     })
     expect(screen.getByText('1 draft')).toBeTruthy()
-    expect(screen.getByText('Instagram · not grounded').className).toContain(
-      'text-warning',
-    )
+    expect(screen.getByText('none scheduled')).toBeTruthy()
+    expect(
+      screen.getByText('Instagram · not scheduled · not grounded').className,
+    ).toContain('text-warning')
     expect(screen.getByText('Not grounded')).toBeTruthy()
+  })
+
+  it('says which drafts got a date and which are unscheduled', async () => {
+    await show({
+      drafted: {
+        warnings: [],
+        posts: [
+          {
+            postId: 'p2',
+            title: 'The rooftop',
+            platformId: 'instagram',
+            grounding: { mode: 'grounded', sources: [] },
+          },
+          {
+            postId: 'p3',
+            title: 'The kitchen garden',
+            platformId: 'instagram',
+            publishDate: '2026-11-26',
+            grounding: { mode: 'grounded', sources: [] },
+          },
+        ],
+      },
+    })
+    expect(screen.getByText('1 not scheduled')).toBeTruthy()
+    expect(
+      screen.getByText('Instagram · not scheduled · grounded'),
+    ).toBeTruthy()
+    expect(screen.getByText('Instagram · Thu, Nov 26 · grounded')).toBeTruthy()
   })
 })
 

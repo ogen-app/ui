@@ -26,7 +26,10 @@ import { cn } from '@/lib'
 import { identityAbbr, identityColorVar } from '@/lib/identity'
 import { hasWokenUp, type Idea } from '@/lib/ideas'
 import { citedPlace, ideaParts, isAnalysed } from '@/lib/ideaSource'
-import { formatDate } from '@/lib/intl'
+import { counted, formatDate } from '@/lib/intl'
+import { postStatusLabel } from '@/lib/postStatusLabel'
+import { useIdeaPostRefs } from '@/hooks/useIdeaPosts'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import type { IdeaEdit } from '@/services/api/ideas'
 import type { AssetListKind } from '@/types/assetList'
 import {
@@ -394,6 +397,13 @@ function SourceLine({
         {campaign}
       </span>,
     )
+  if (idea.postCount)
+    // What it fed (CON-470) — a fact beside the verdict, never a verdict.
+    bits.push(
+      <span key="used" className="shrink-0">
+        {t('ideas.lifecycle.used', counted(idea.postCount))}
+      </span>,
+    )
   if (isNotGrounded(idea.groundingMode))
     bits.push(<NotGroundedMark key="grounding" mode={idea.groundingMode} />)
   if (hasWokenUp(idea, now))
@@ -486,6 +496,7 @@ function AnalysedBody({
       )}
       <FitSection idea={idea} scoredFor={scoredFor(t, idea, nameOf)} />
       <SourceSection idea={idea} sources={parts?.sources ?? []} />
+      <MadeInto idea={idea} />
       {showCampaign && <FiledUnder idea={idea} onEdit={onEdit} />}
       <AnswerGroup
         idea={idea}
@@ -552,6 +563,57 @@ function SourceSection({ idea, sources }: { idea: Idea; sources: string[] }) {
   )
 }
 
+/**
+ * The posts made from the idea (CON-470): each with its platform, status and
+ * date, opening the post. Read only when the row says there are some, so an
+ * idea nobody used asks for nothing.
+ */
+function MadeInto({ idea }: { idea: Idea }) {
+  const { t, i18n } = useTranslation()
+  const { resolve } = usePlatformCatalog()
+  const used = (idea.postCount ?? 0) > 0
+  const posts = useIdeaPostRefs(idea.id, used)
+  if (!used) return null
+  return (
+    <Part heading={t('ideas.lifecycle.madeInto.heading')}>
+      {posts.isError ? (
+        <p className="text-sm text-secondary-foreground">
+          {t('ideas.lifecycle.madeInto.failed')}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {(posts.data ?? []).map((post) => (
+            <li key={post.id} className="flex min-w-0 items-baseline gap-3">
+              <Link
+                to="/campaigns/$campaignId/posts/$postId"
+                params={{ campaignId: post.campaign_id, postId: post.id }}
+                className="min-w-0 flex-1 truncate text-sm text-foreground hover:underline"
+              >
+                {post.title || t('ideas.lifecycle.madeInto.untitled')}
+              </Link>
+              <span className="shrink-0 text-xs text-secondary-foreground">
+                {[
+                  resolve(post.platform_id)?.name,
+                  postStatusLabel(t, post.status),
+                  post.scheduled_at
+                    ? formatDate(
+                        post.scheduled_at,
+                        { weekday: 'short', day: 'numeric', month: 'short' },
+                        i18n.language,
+                      )
+                    : t('ideas.lifecycle.madeInto.notScheduled'),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Part>
+  )
+}
+
 /** The opened written idea: its note, who wrote it, where it is filed, the answer. */
 function WrittenBody({
   idea,
@@ -584,6 +646,7 @@ function WrittenBody({
         </p>
         <p>{t('ideas.card.unscored')}</p>
       </div>
+      <MadeInto idea={idea} />
       {showCampaign && <FiledUnder idea={idea} onEdit={onEdit} />}
       <AnswerGroup
         idea={idea}

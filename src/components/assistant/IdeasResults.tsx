@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { FitSection } from '@/components/ideas/card/IdeaCardParts'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
-import { counted, formatList, formatNumber } from '@/lib/intl'
+import { startOfDay } from '@/lib/assetFilter'
+import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import { cn } from '@/lib/styles'
 import { useAssistantStore } from '@/stores/assistantStore'
@@ -277,9 +278,11 @@ function ChangedCard({
 }
 
 /**
- * A planned post compiled from ideas (CON-449): theses, no body. UNDO deletes
- * it while it is as the assistant made it; once someone has changed it the
- * server answers 409, which the undo note words as "changed since".
+ * Planned posts compiled from ideas (CON-449): theses, no body, one per
+ * platform asked for (CON-470), each saying whether it got a date. UNDO
+ * deletes them all while they are as the assistant made them; once someone
+ * has changed one the server answers 409, which the undo note words as
+ * "changed since".
  */
 function CompiledCard({
   compiled: c,
@@ -290,36 +293,55 @@ function CompiledCard({
 }) {
   const { t } = useTranslation()
   const { resolve } = usePlatformCatalog()
-  const platform = c.platformId ? resolve(c.platformId)?.name : undefined
   return (
     <div className="flex flex-col gap-2">
       <ResultBlock
-        status={t('assistant.ideas.compiled.word')}
-        title={c.title || t('assistant.ideas.untitled')}
-        meta={[platform, t('assistant.ideas.compiled.from', counted(c.ideas))]
-          .filter(Boolean)
-          .join(' · ')}
+        status={t('assistant.ideas.compiled.word', counted(c.posts.length))}
+        title={c.posts[0].title || t('assistant.ideas.untitled')}
+        meta={t('assistant.ideas.compiled.from', counted(c.ideas))}
         action={<UndoAction t={t} undoId={c.undoId} undo={undo} />}
       >
-        <ResultRow className="flex items-baseline gap-3 text-[12.5px]">
-          <span className="min-w-0 flex-1 text-tertiary-foreground">
-            {t('assistant.ideas.compiled.planned')}
-          </span>
-          {c.campaignId && (
-            <Link
-              to="/campaigns/$campaignId/posts/$postId"
-              params={{ campaignId: c.campaignId, postId: c.postId }}
-              className={LINK}
-            >
-              {t('assistant.ideas.open')}
-            </Link>
-          )}
+        <ResultRow className="text-[12.5px] text-tertiary-foreground">
+          {t('assistant.ideas.compiled.planned')}
         </ResultRow>
+        {c.posts.map((p) => (
+          <ResultRow
+            key={p.postId}
+            className="flex items-baseline gap-3 text-[12.5px]"
+          >
+            <span className="min-w-0 flex-1 truncate text-secondary-foreground">
+              {[
+                p.platformId && resolve(p.platformId)?.name,
+                p.date ? dayLabel(p.date) : t('assistant.ideas.notScheduled'),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </span>
+            {c.campaignId && (
+              <Link
+                to="/campaigns/$campaignId/posts/$postId"
+                params={{ campaignId: c.campaignId, postId: p.postId }}
+                className={LINK}
+              >
+                {t('assistant.ideas.open')}
+              </Link>
+            )}
+          </ResultRow>
+        ))}
         <UndoNote t={t} undoId={c.undoId} undo={undo} />
       </ResultBlock>
       <SourcesLine grounding={c.grounding} />
     </div>
   )
+}
+
+/** A `YYYY-MM-DD` day as the card prints it, read as the local day. */
+function dayLabel(day: string): string {
+  return formatDate(startOfDay(day), {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
 }
 
 /**
@@ -340,12 +362,24 @@ function DraftedCard({
       d.posts.flatMap((p) => p.grounding.sources).map((s) => [s.id, s]),
     ).values(),
   ]
+  // Unscheduled is the default (CON-470): a draft is dated only by a day
+  // the user named or one planned on its idea, and each row says which.
+  const unscheduled = d.posts.filter((p) => !p.publishDate).length
   return (
     <div className="flex flex-col gap-2">
       <ResultBlock
         status={t('assistant.ideas.drafted.word')}
         title={t('assistant.ideas.drafted.title', counted(d.posts.length))}
-        meta={t('assistant.ideas.drafted.unscheduled')}
+        meta={
+          unscheduled === d.posts.length
+            ? t('assistant.ideas.drafted.unscheduled')
+            : unscheduled > 0
+              ? t(
+                  'assistant.ideas.drafted.someUnscheduled',
+                  counted(unscheduled),
+                )
+              : undefined
+        }
       >
         {d.posts.map((p) => (
           <ResultRow key={p.postId} className="flex items-baseline gap-3">
@@ -363,6 +397,9 @@ function DraftedCard({
               >
                 {[
                   resolve(p.platformId)?.name,
+                  p.publishDate
+                    ? dayLabel(p.publishDate)
+                    : t('assistant.ideas.notScheduled'),
                   p.grounding.mode === 'grounded'
                     ? t('assistant.ideas.drafted.grounded')
                     : t('assistant.ideas.drafted.notGrounded'),
