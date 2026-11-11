@@ -231,6 +231,13 @@ describe('ideaFromWire (CON-389)', () => {
     ).toBe('Alex Lane')
     expect(ideaFromWire(IDEA).authorName).toBe('Serhii Herasymov')
   })
+
+  it('reads the grounding mode, and an idea without one as unknown (CON-448)', () => {
+    expect(
+      ideaFromWire({ ...IDEA, grounding_mode: 'exploratory' }).groundingMode,
+    ).toBe('exploratory')
+    expect(ideaFromWire(IDEA).groundingMode).toBeNull()
+  })
 })
 
 describe('queryIdeas', () => {

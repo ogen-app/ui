@@ -106,6 +106,7 @@ function makePost(overrides: Partial<Post> = {}): Post {
     first_comment_delay_minutes: 0,
     first_comment_status: null,
     content_format: null,
+    grounding_mode: null,
     status: 'draft',
     cta_type: 'none',
     cta_url: '',

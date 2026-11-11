@@ -17,6 +17,7 @@ import { formatDate as formatLocaleDate } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import { contentFormat, contentFormatLabel } from '@/lib/contentFormats'
 import { useFeatureFlag } from '@/config/featureFlags'
+import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 
 type PostRow = Post & Record<string, unknown>
 
@@ -182,8 +183,11 @@ function PostsTableComponent({
         size: 180,
         minSize: 140,
         cell: (_value, row) => (
-          <div className="h-[34px] border-b-2 border-background px-3 leading-8">
+          // A post written from general knowledge says so beside its status
+          // — the one place a row states what the post is.
+          <div className="flex h-[34px] items-center gap-3 border-b-2 border-background px-3 leading-8">
             <TextCell value={postStatusLabel(t, row.status)} />
+            <NotGroundedMark mode={row.grounding_mode} />
           </div>
         ),
       },

@@ -3,6 +3,7 @@ import { ApiError } from './errors'
 import type { FitBreakdown } from '@/lib/ideaFit'
 import type { Idea, IdeaSourceAsset, IdeaVerdict } from '@/lib/ideas'
 import type { AssetListKind } from '@/types/assetList'
+import type { GroundingMode } from '@/types/posts'
 
 /**
  * Ideas — the backlog of what a workspace could make, and the verdicts on it.
@@ -148,6 +149,8 @@ export type IdeaBody = {
   fit_score?: number | null
   /** Why it scored that, criterion by criterion (CON-385); `null` when unscored. */
   fit_breakdown?: FitBreakdown | null
+  /** CON-448; `null` for an idea nobody generated. */
+  grounding_mode?: GroundingMode | null
 }
 
 export type IdeaSourceAssetBody = {
@@ -195,6 +198,7 @@ export function ideaFromWire(body: IdeaBody): Idea {
     groupKey: body.group_key,
     fitScore: body.fit_score ?? undefined,
     fitBreakdown: body.fit_breakdown ?? undefined,
+    groundingMode: body.grounding_mode ?? null,
   }
 }
 

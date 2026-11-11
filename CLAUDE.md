@@ -582,7 +582,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   worded at render time from the stored tool and input (`stepLabel`), never
   stored as sentences. The empty thread's centred starters are deliberately
   unchanged; starters themselves follow the screen and the selection
-  (`StarterChips`).
+  (`StarterChips`). Outside the rail the same fact is the record's: a post's
+  or idea's `grounding_mode` is drawn by `NotGroundedMark` on the posts list,
+  the calendar card, the idea row and the post's Sources card (CON-469) —
+  only `exploratory` is marked, and `null` (nobody generated it) is unknown,
+  never "not grounded".
 - **Offers run exactly as proposed** (CON-446). Bulk work, generating more
   than three items, the calendar and anything external arrive as offers
   (`proposal_created`). Confirming from the card is `POST

@@ -40,6 +40,7 @@ import {
 import { pileOf } from './card/ideaRow'
 import { sourceFacts } from './card/sourceFacts'
 import { VerdictControls, type Decide } from './VerdictControls'
+import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 
 /**
  * One idea on the Ideas page, as the CON-387 card (CON-388): the same row the
@@ -384,6 +385,8 @@ function SourceLine({
         {campaign}
       </span>,
     )
+  if (idea.groundingMode === 'exploratory')
+    bits.push(<NotGroundedMark key="grounding" mode={idea.groundingMode} />)
   if (hasWokenUp(idea, now))
     // Why this one is back. Without it a postponed idea reappearing with the
     // undecided reads as the list having lost track of a decision.

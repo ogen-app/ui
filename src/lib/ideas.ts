@@ -28,6 +28,7 @@
  */
 
 import type { FitBreakdown } from '@/lib/ideaFit'
+import type { GroundingMode } from '@/types/posts'
 import type { AssetListKind } from '@/types/assetList'
 
 /**
@@ -107,6 +108,12 @@ export type Idea = {
   fitScore?: number
   /** Why it scored that; absent on an unscored idea. */
   fitBreakdown?: FitBreakdown
+  /**
+   * Whether a generated idea drew on the campaign's documents (CON-448):
+   * `exploratory` is the assistant's uncited suggestion; `null` is an idea
+   * nobody generated, or one from before the column existed.
+   */
+  groundingMode?: GroundingMode | null
 }
 
 export type IdeaOrigin = 'manual' | 'asset_analysis'
