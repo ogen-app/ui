@@ -219,6 +219,55 @@ describe('a comparison', () => {
   })
 })
 
+describe('a comparison the server sent no grounding for', () => {
+  it('still names what each letter stands for', async () => {
+    await show({
+      compare: {
+        mode: 'compare',
+        assets: [
+          { id: 'a1', title: 'Brochure', letter: 'A', from: 'analysis' },
+          { id: 'a2', title: 'Press kit', letter: 'B', from: 'analysis' },
+        ],
+        summary: '',
+        shared: [{ text: 'Opens 14 March', letters: ['A', 'B'] }],
+        partial: [],
+        conflicts: [],
+        skipped: [],
+        missing: 0,
+      },
+    })
+    expect(screen.getByText('Brochure')).toBeTruthy()
+    expect(screen.getByText('Press kit')).toBeTruthy()
+  })
+})
+
+describe('a lens whose idea count was never sent', () => {
+  it('says nothing about its ideas rather than "0 ideas"', async () => {
+    await show({
+      analysis: {
+        assetId: 'a1',
+        title: 'Brochure',
+        lens: { status: 'ready' },
+        gist: 'Gist.',
+        summary: '',
+        keyPoints: [],
+        ideas: { undecided: 2, yes: 0, later: 0, no: 0 },
+        topIdeas: [],
+        otherLenses: [
+          {
+            campaignId: 'c1',
+            campaignName: 'Spring reopening',
+            status: 'ready',
+            readAt: '2026-11-07T10:00:00Z',
+          },
+        ],
+      },
+    })
+    expect(screen.getByText('read Nov 7')).toBeTruthy()
+    expect(screen.queryByText(/^0 ideas/)).toBeNull()
+  })
+})
+
 describe('a summary of one document', () => {
   it('carries no letters, and names its source plainly', async () => {
     await show({
@@ -302,6 +351,25 @@ describe('smart groups', () => {
       savedViewId: 'v1',
       savedViewName: 'Needs analysis',
     })
+  })
+
+  it('counts an ideas group narrowed to documents it has no titles for', async () => {
+    await show({
+      savedViews: {
+        list: 'ideas',
+        views: [
+          {
+            id: 'v1',
+            name: 'From the brochure',
+            shared: false,
+            count: 7,
+            filter: 'source_asset=a1',
+          },
+        ],
+      },
+    })
+    expect(screen.getByText('7 ideas')).toBeTruthy()
+    expect(screen.queryByText(/unknown/i)).toBeNull()
   })
 
   it('opens on the workspace’s list from inside a campaign, and says so', async () => {

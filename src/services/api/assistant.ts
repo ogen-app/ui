@@ -719,7 +719,7 @@ function lens(raw: unknown): AnalysisLens | undefined {
     campaignName: optStr(l.campaignName),
     status: str(l.status),
     readAt: optStr(l.readAt),
-    ideaCount: num(l.ideaCount),
+    ideaCount: typeof l.ideaCount === 'number' ? l.ideaCount : undefined,
   }
 }
 

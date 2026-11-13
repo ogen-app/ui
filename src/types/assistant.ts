@@ -264,8 +264,11 @@ export type AnalysisLens = {
   /** ready | pending | running | failed | skipped | not_read */
   status: string
   readAt?: string
-  /** How many ideas this lens distilled from the asset. */
-  ideaCount: number
+  /**
+   * How many ideas this lens distilled from the asset; absent from a turn
+   * recorded before the server sent it, when it is unknown rather than zero.
+   */
+  ideaCount?: number
 }
 
 /** What one lens's analysis found in an asset (`readAnalysis`). */

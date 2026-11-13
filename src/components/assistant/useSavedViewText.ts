@@ -6,8 +6,11 @@ import { useIdeaVocabulary } from '@/components/ideas/query/useIdeaVocabulary'
 import { filterFromSearch, searchFromAssetViewQuery } from '@/lib/assetFilter'
 import {
   IDEA_FILTER_MODEL,
+  NONE,
   ideaFilterFromSearch,
   searchFromViewQuery,
+  type IdeaFilter,
+  type IdeaFilterField,
 } from '@/lib/ideaFilter'
 import { formatList } from '@/lib/intl'
 import {
@@ -55,8 +58,7 @@ export function useSavedViewText(): (
               assets,
               locale,
             )
-          : clauses(
-              IDEA_FILTER_MODEL,
+          : ideaClauses(
               ideaFilterFromSearch(searchFromViewQuery(query)),
               ideas,
               locale,
@@ -72,6 +74,21 @@ export function useSavedViewText(): (
     },
     [t, locale, assets, ideas],
   )
+}
+
+/**
+ * An ideas group narrowed to particular documents. The card has no titles for
+ * them — the Ideas list reads its own from the page it loaded — so it would
+ * say "unknown document"; the group is described by its count instead.
+ */
+function ideaClauses(
+  filter: IdeaFilter,
+  vocab: SentenceVocabulary<IdeaFilterField>,
+  locale: string,
+) {
+  const { any, not } = filter.source_asset
+  if ([...any, ...not].some((id) => id !== NONE)) return null
+  return clauses(IDEA_FILTER_MODEL, filter, vocab, locale)
 }
 
 function clauses<F, Field extends string>(

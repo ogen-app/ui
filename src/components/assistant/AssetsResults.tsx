@@ -447,10 +447,11 @@ function AnalysisCard({
               </span>
               <span className="text-[12.5px] text-secondary-foreground">
                 {[
-                  t(
-                    'assistant.assets.analysis.lensIdeas',
-                    counted(other.ideaCount),
-                  ),
+                  other.ideaCount !== undefined &&
+                    t(
+                      'assistant.assets.analysis.lensIdeas',
+                      counted(other.ideaCount),
+                    ),
                   other.readAt &&
                     t('assistant.assets.analysis.readOn', {
                       date: shortDate(other.readAt),
@@ -692,11 +693,26 @@ function CompareCard({
           </p>
         </ResultRow>
       )}
-      {compare.grounding && (
+      {compare.grounding ? (
         <SourcesLine
           grounding={compare.grounding}
           letters={lettered ? letters : undefined}
         />
+      ) : (
+        // No grounding sent: the documents compared still have to be named,
+        // or the letters on the claims point at nothing.
+        lettered && (
+          <SourcesLine
+            grounding={{
+              mode: 'grounded',
+              sources: compare.assets.map((a) => ({
+                id: a.id,
+                title: a.title,
+              })),
+            }}
+            letters={letters}
+          />
+        )
       )}
     </ResultBlock>
   )
