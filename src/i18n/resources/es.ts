@@ -2382,7 +2382,7 @@ export const es: Translation = {
         text: '¿Cómo se compara este periodo con el anterior?',
       },
       moreLikeThese: {
-        label: 'Hacer más como estas',
+        label: 'Más como estas',
         text: 'Haz más como estas.',
       },
       whySelected: {

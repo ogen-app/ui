@@ -2903,7 +2903,7 @@ export const en = {
         text: 'How does this period compare with the one before?',
       },
       moreLikeThese: {
-        label: 'Make more like these',
+        label: 'More like these',
         text: 'Make more like these.',
       },
       whySelected: {
