@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Logo } from '@/components/Logo'
+import { useViewContextStore } from '@/stores/viewContextStore'
 import { StarterChips } from './StarterChips'
 import type { ThreadSubject } from '@/types/assistant'
 
@@ -42,11 +43,18 @@ export function ThreadEmptyState({
   disabled?: boolean
 }) {
   const { t } = useTranslation()
+  const screen = useViewContextStore((s) => s.location.screen)
+  // On the Assets list the chips lead with what the bank has waiting, so the
+  // line says that rather than listing the thread's capabilities (CON-476).
+  const lines =
+    screen === 'assets' || screen === 'campaign.assets'
+      ? (['assistant.empty.assets'] as const)
+      : LINES[kind]
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
       <Logo variant="mark" className="size-8 text-quinary-foreground" />
       <div className="flex max-w-72 flex-col gap-1 text-sm text-tertiary-foreground">
-        {LINES[kind].map((key) => (
+        {lines.map((key) => (
           <p key={key}>{t(key)}</p>
         ))}
       </div>
