@@ -1038,10 +1038,141 @@ describe('the repair pack’s results (CON-462)', () => {
       changed: 2,
       withdrawing: 0,
       skipped: [],
+      posts: [],
       undoId: 'u1',
     })
     expect(repair?.unscheduled?.skipped[0].reason).toBe('it is published')
     expect(repair?.deleted).toBeUndefined()
+  })
+
+  it('reads what CON-478’s cards draw', () => {
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Done.',
+        action: 'answered',
+        results: {
+          repair: {
+            checkCalendar: {
+              campaignId: 'c1',
+              checkedAt: '2026-11-12T16:40:00Z',
+              findings: [
+                {
+                  key: 'k1',
+                  code: 'post_type_not_allowed',
+                  severity: 'warning',
+                  message: 'Spa reopening is a Story',
+                  detail: 'It will be refused.',
+                  blocksPublishing: true,
+                  posts: [{ id: 'p1', title: 'Spa', date: '2026-04-17' }, {}],
+                  fixes: [
+                    {
+                      kind: 'move_post',
+                      title: 'Move it',
+                      postId: 'p1',
+                      proposalId: 'pr1',
+                      card: { verb: 'Move it' },
+                      options: [
+                        { id: 's1', title: 'Mon 14', recommended: true },
+                        { id: '', title: 'nameless' },
+                      ],
+                    },
+                  ],
+                },
+              ],
+              dismissedFindings: [
+                { key: 'k2', code: 'gap', message: 'Quiet', fixes: [] },
+              ],
+            },
+            optimiseCalendar: {
+              campaignId: 'c1',
+              proposalId: 'pr5',
+              window: { from: '2026-04-13', to: '2026-04-19' },
+              moves: [
+                {
+                  postId: 'p1',
+                  from: '2026-04-17',
+                  to: '2026-04-14',
+                  toAt: '2026-04-14T10:00:00Z',
+                },
+              ],
+              locked: [],
+            },
+            applyCalendarMoves: {
+              moved: 2,
+              moves: [{ postId: 'p1', from: 'a', to: 'b' }],
+              byStatus: { draft: 2, scheduled: 0 },
+              locked: 3,
+              undoId: 'u7',
+            },
+            unschedulePosts: {
+              changed: 1,
+              posts: [
+                {
+                  postId: 'p1',
+                  title: 'Spa',
+                  fromStatus: 'scheduled',
+                  toStatus: 'ready_for_publish',
+                  wasAt: '2026-04-17T10:00:00Z',
+                },
+              ],
+            },
+          },
+          campaign: {
+            briefReview: {
+              campaignId: 'c1',
+              readFrom: ['brief'],
+              findings: [
+                {
+                  kind: 'brief',
+                  key: 'b1',
+                  aspect: 'audience',
+                  issue: 'Names no audience',
+                  fixes: [],
+                },
+              ],
+              dismissedFindings: [],
+            },
+          },
+        },
+      }),
+      'campaign',
+    )
+    expect(r.findings?.checkedAt).toBe('2026-11-12T16:40:00Z')
+    expect(r.findings?.findings[0]).toMatchObject({
+      detail: 'It will be refused.',
+      blocksPublishing: true,
+      posts: [{ id: 'p1', title: 'Spa', date: '2026-04-17' }],
+      fixes: [
+        {
+          proposalId: 'pr1',
+          card: { verb: 'Move it' },
+          options: [{ id: 's1', title: 'Mon 14', recommended: true }],
+        },
+      ],
+    })
+    expect(r.findings?.dismissedFindings.map((f) => f.key)).toEqual(['k2'])
+    expect(r.repair?.plan).toMatchObject({
+      window: { from: '2026-04-13', to: '2026-04-19' },
+      moves: [{ toAt: '2026-04-14T10:00:00Z' }],
+    })
+    // A status with nothing moved is left out of the counts.
+    expect(r.repair?.moved).toMatchObject({
+      moved: 2,
+      byStatus: { draft: 2 },
+      locked: 3,
+      undoId: 'u7',
+    })
+    expect(r.repair?.unscheduled?.posts[0]).toMatchObject({
+      title: 'Spa',
+      toStatus: 'ready_for_publish',
+      wasAt: '2026-04-17T10:00:00Z',
+    })
+    // The campaign pack's brief check is a review now.
+    expect(r.repair?.briefReview).toMatchObject({
+      readFrom: ['brief'],
+      findings: [{ kind: 'brief', key: 'b1', label: 'Audience' }],
+    })
+    expect(r.details).toEqual({})
   })
 })
 

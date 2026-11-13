@@ -2,8 +2,14 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { queryClient } from '@/lib/queryClient'
 import { ASSISTANT_THREADS_KEY } from '@/hooks/useAssistantThreads'
-import { campaignProblemsKey } from '@/hooks/useCampaignProblems'
-import { dismissCampaignFinding } from '@/services/api/campaignProblems'
+import {
+  campaignProblemsKey,
+  dismissedFindingsKey,
+} from '@/hooks/useCampaignProblems'
+import {
+  dismissCampaignFinding,
+  restoreCampaignFinding,
+} from '@/services/api/campaignProblems'
 import { threadName } from '@/lib/assistantTools'
 import { refreshTouched, subjectTouches } from '@/lib/assistantTouched'
 import { flushPendingSave } from '@/lib/pendingSaves'
@@ -185,6 +191,8 @@ type AssistantState = {
     campaignId: string,
     key: string,
   ) => Promise<void>
+  /** Takes a dismissal back, in every turn showing the finding (CON-478). */
+  restoreFinding: (campaignId: string, key: string) => Promise<void>
   /** Puts the screen back to before one of a turn's `ui_action`s. */
   undoUiAction: (
     threadId: string,
@@ -949,8 +957,11 @@ export const useAssistantStore = create<AssistantState>()(
               const rest = (t.ignored ?? []).filter((k) => k !== key)
               return { ...t, ignored: on ? [...rest, key] : rest }
             })
-          // Drawn as ignored at once; put back if the server refused.
+          // Drawn as ignored at once — in this turn, and through the
+          // campaign's list in every other — and put back if the server
+          // refused.
           mark(true)
+          const listed = setDismissed(campaignId, key, true)
           try {
             await dismissCampaignFinding(campaignId, key)
             void queryClient.invalidateQueries({
@@ -958,7 +969,41 @@ export const useAssistantStore = create<AssistantState>()(
             })
           } catch (error) {
             mark(false)
+            if (listed) setDismissed(campaignId, key, false)
             toast.error(i18next.t('assistant.findings.ignoreFailed'), {
+              description: error instanceof Error ? error.message : undefined,
+            })
+          }
+        },
+
+        restoreFinding: async (campaignId, key) => {
+          // Back in every turn at once: the turns' own marks and the list.
+          const unmark = (on: boolean) =>
+            set((s) => ({
+              threads: Object.fromEntries(
+                Object.entries(s.threads).map(([id, thread]) => [
+                  id,
+                  {
+                    ...thread,
+                    turns: thread.turns.map((t) =>
+                      on && t.ignored?.includes(key)
+                        ? { ...t, ignored: t.ignored.filter((k) => k !== key) }
+                        : t,
+                    ),
+                  },
+                ]),
+              ),
+            }))
+          unmark(true)
+          setDismissed(campaignId, key, false)
+          try {
+            await restoreCampaignFinding(campaignId, key)
+            void queryClient.invalidateQueries({
+              queryKey: campaignProblemsKey(campaignId),
+            })
+          } catch (error) {
+            setDismissed(campaignId, key, true)
+            toast.error(i18next.t('assistant.findings.restoreFailed'), {
               description: error instanceof Error ? error.message : undefined,
             })
           }
@@ -1289,4 +1334,17 @@ export function settleHistory(turns: AssistantTurn[], now: number): void {
       return turn === lastAssistant ? p : { ...p, status: 'superseded' }
     })
   }
+}
+
+/**
+ * Adds or takes a key out of the campaign's dismissed list, when that list is
+ * read; true when it changed it. The list is what every turn reads.
+ */
+function setDismissed(campaignId: string, key: string, on: boolean): boolean {
+  const queryKey = dismissedFindingsKey(campaignId)
+  const keys = queryClient.getQueryData<string[]>(queryKey)
+  if (!keys) return false
+  const rest = keys.filter((k) => k !== key)
+  queryClient.setQueryData(queryKey, on ? [...rest, key] : rest)
+  return true
 }

@@ -702,13 +702,26 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   key** (CON-462). `complete.results.repair` holds each tool's last output:
   `checkCalendar` replays as the turn's `findings` (it also streams as
   `calendar_findings`, and the streamed copy wins), and `reviewCampaign`,
-  `optimiseCalendar` and the post fixes (`changePostType`,
-  `unschedulePosts`, `deletePosts`) are `RepairResults`. A finding offers
-  0..N fixes — the first as its button, the rest as "or …" — and a delete
-  fix asks before it confirms, naming how many, because the offer runs the
-  moment it is confirmed. IGNORE is `POST /api/campaigns/:id/findings/:key/
-  dismiss` for calendar and review findings alike: it writes the campaign's
-  dismissals, which the Overview and the campaign thread both read. **The
+  `optimiseCalendar`, `applyCalendarMoves` and the post fixes
+  (`changePostType`, `unschedulePosts`, `deletePosts`, each naming its posts
+  since CON-478) are `RepairResults` — and so are the campaign pack's
+  `briefReview` / `postsReview`, which answer in the review's shape. A
+  finding offers 0..N fixes — the first as its button, the rest as "or …",
+  all in one bordered-capitals style — and says what it costs (`detail`); its
+  number is amber when it `blocksPublishing`. **A fix whose offer carries its
+  own `card` or `options`** (a delete naming its posts, a type put back, a
+  move's free slots) opens that offer under the row through `ProposalCard`
+  instead of running on the click. Fix offers also arrive as the turn's
+  `proposals`; `AssistantReply` hides those (and the optimise plan's, drawn
+  inside the plan) from its list, and the row reads its fix's status from
+  them: a confirmed one says "Fixed" with no buttons, which a reloaded thread
+  settles from its "Confirmed: …" turn by summary. **What is ignored is the
+  campaign's list**, `GET …/findings/dismissed` (`useDismissedFindings`,
+  through `useIsIgnored`), so an IGNORE reaches every turn and survives a
+  reload; IGNORE (`POST …/findings/:key/dismiss`) and RESTORE (`DELETE`, the
+  store's `restoreFinding`) write it at once. The ignored ones sit behind
+  "N ignored on this campaign · SHOW", each with RESTORE, and a review never
+  says the brief and posts agree when its findings were only ignored. **The
   Overview's Needs attention card leads with the server's problems**
   (`useCampaignProblems`, read off `GET /api/campaigns/:id/overview`), and
   drops the client rules they cover (`post-type-dropped`,
@@ -721,10 +734,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   what a platforms change `added` and `removed`, and a raised `goal` as its
   rate with the campaign's total, with UNDO (`campaign_goal`). The budget
   guard's options are ordinary choices; its "replace the weakest drafts"
-  deletes for good, and `OfferOutcome` says how many. The Overview runs no assistant, so its fix
-  sends `Fix the problem <key>: <message>` to the campaign's thread, which
-  answers with that finding's fixes as offers; a fix that is only a post to
-  open is a link.
+  deletes for good, and `OfferOutcome` says how many. The Overview runs no
+  assistant, so each of a problem's fixes — the first a bordered button, the
+  rest "or …" — sends `<fix>: <problem>` to the campaign's thread, never a raw
+  key, which answers with that finding's fixes as offers; a fix that is only a
+  post to open is a link, a problem with no fix offers IGNORE alone, and FIX
+  WITH ASSISTANT in the header asks for all of them. The server's problems are
+  never folded behind SHOW MORE; only the client's rules are capped.
 - **The analytics pack's results are cards, and every card cites its
   filters** (CON-463). `complete.results.analytics` holds each tool's last
   output, and every read is `{applied, data}`: `applied` is what the read was

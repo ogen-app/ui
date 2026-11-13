@@ -1,7 +1,6 @@
 import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { cn } from '@/lib'
 import {
   ResolvedLine,
   ResultBlock,
@@ -9,18 +8,13 @@ import {
   SourcesLine,
   TextAction,
 } from './blocks'
-import type {
-  AssistantResultDetails,
-  ReviewFinding,
-  ReviewSeverity,
-  UndoState,
-} from '@/types/assistant'
-import { counted, formatNumber } from '@/lib/intl'
+import type { AssistantResultDetails, UndoState } from '@/types/assistant'
+import { counted } from '@/lib/intl'
 
 /**
- * The structured half of a campaign-pack turn. The reviews (CON-116) return
- * their findings *only* in this payload — nothing else in the app surfaces
- * them — so the reply renders them in full rather than leaning on the prose.
+ * The structured half of a campaign-pack turn. Its two reviews (CON-116) are
+ * drawn as reviews since CON-478, by `RepairResults`, in the same grammar as
+ * `reviewCampaign`'s.
  *
  * Every block describes work the server has already done, so none is boxed:
  * a box is for what waits on the user (`blocks.tsx`).
@@ -62,8 +56,6 @@ export function ResultCard({
 }) {
   const { t } = useTranslation()
   const blocks = [
-    briefReview(t, details),
-    postsReview(t, details),
     dates(t, details, undo),
     redistribute(t, details),
     ideas(t, details),
@@ -80,50 +72,6 @@ export function ResultCard({
         <Fragment key={i}>{block}</Fragment>
       ))}
     </div>
-  )
-}
-
-function briefReview(t: TFunction, details: AssistantResultDetails) {
-  if (!details.briefReview) return null
-  const { consistent, findings } = details.briefReview
-  return (
-    <ResultBlock
-      status={t('assistant.word.reviewed')}
-      tone={consistent ? 'neutral' : 'warning'}
-      title={
-        consistent
-          ? t('assistant.result.briefConsistent')
-          : t('assistant.result.briefIssues')
-      }
-      meta={t('assistant.result.findings', counted(findings.length))}
-    >
-      <Findings
-        findings={findings}
-        emptyLabel={t('assistant.result.nothingToFlag')}
-      />
-    </ResultBlock>
-  )
-}
-
-function postsReview(t: TFunction, details: AssistantResultDetails) {
-  if (!details.postsReview) return null
-  const { checked, total, capped, findings } = details.postsReview
-  const drifts = t('assistant.result.drifts', counted(findings.length))
-  return (
-    <ResultBlock
-      status={t('assistant.word.reviewed')}
-      tone={findings.length === 0 ? 'neutral' : 'warning'}
-      title={t('assistant.result.checkedPosts', {
-        checked: formatNumber(checked),
-        total: formatNumber(total),
-      })}
-      meta={capped ? t('assistant.result.capped', { drifts }) : drifts}
-    >
-      <Findings
-        findings={findings}
-        emptyLabel={t('assistant.result.everyPostFollows')}
-      />
-    </ResultBlock>
   )
 }
 
@@ -357,60 +305,3 @@ function Warnings({ warnings }: { warnings: string[] }) {
  * Severity is a word in small capitals, coloured by consequence. Medium uses
  * foreground ink: `--warning` is too light to carry text at this size at AA.
  */
-const SEVERITY_CLASS: Record<ReviewSeverity, string> = {
-  high: 'text-destructive',
-  medium: 'text-foreground',
-  low: 'text-tertiary-foreground',
-}
-
-function Findings({
-  findings,
-  emptyLabel,
-}: {
-  findings: ReviewFinding[]
-  emptyLabel: string
-}) {
-  const { t } = useTranslation()
-  if (findings.length === 0) {
-    return (
-      <ResultRow>
-        <p className="text-sm text-tertiary-foreground">{emptyLabel}</p>
-      </ResultRow>
-    )
-  }
-  return (
-    <ul className="flex flex-col">
-      {findings.map((finding, i) => (
-        <li key={i}>
-          <ResultRow>
-            <div className="flex flex-col gap-0.5">
-              {(finding.label || finding.severity) && (
-                <div className="flex items-baseline gap-2">
-                  <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
-                    {finding.label}
-                  </span>
-                  {finding.severity && (
-                    <span
-                      className={cn(
-                        'shrink-0 text-[10px] font-semibold uppercase tracking-[0.08em]',
-                        SEVERITY_CLASS[finding.severity],
-                      )}
-                    >
-                      {t(`assistant.result.severity.${finding.severity}`)}
-                    </span>
-                  )}
-                </div>
-              )}
-              <p className="text-sm/[1.5] text-foreground">{finding.issue}</p>
-              {finding.suggestion && (
-                <p className="text-sm/[1.5] text-tertiary-foreground">
-                  → {finding.suggestion}
-                </p>
-              )}
-            </div>
-          </ResultRow>
-        </li>
-      ))}
-    </ul>
-  )
-}
