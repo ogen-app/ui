@@ -66,6 +66,15 @@ export function AssistantReply({
     ? turn.answered.retryProposalId
     : undefined
   const subject = useAssistantStore((s) => s.threads[threadId]?.subject)
+  // The screen the question came from: the nearest user turn before this one.
+  const askedFrom = useAssistantStore((s) => {
+    const turns = s.threads[threadId]?.turns ?? []
+    const at = turns.findIndex((x) => x.id === turn.id)
+    for (let i = at - 1; i >= 0; i--) {
+      if (turns[i].role === 'user' && turns[i].view) return turns[i].view
+    }
+    return undefined
+  })
   const showCard = settled && hasResultCard(turn.details)
   const footer = !showCard && turn.action ? actionLabel(t, turn.action) : null
 
@@ -146,13 +155,14 @@ export function AssistantReply({
       )}
 
       {/* What the brand tools did (CON-461). */}
-      {settled && turn.foundation && subject && (
+      {settled && turn.foundation && (
         <FoundationResults
           threadId={threadId}
           turnId={turn.id}
-          subject={subject}
           results={turn.foundation}
           undoStates={turn.undo ?? {}}
+          ignored={turn.ignored}
+          view={askedFrom}
           disabled={running}
         />
       )}

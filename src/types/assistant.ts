@@ -358,8 +358,51 @@ export type FoundationResults = {
   seriesList?: SeriesList
   series?: SeriesChange
   run?: SeriesRunChange
+  /** What `getBrand` read (CON-477): drawn only when the turn just read. */
+  brand?: BrandRead
   expiredFacts?: ExpiredFact[]
   brandCheck?: BrandCheck
+}
+
+/**
+ * One field an edit changed (CON-477): its value before and after, or for a
+ * list, the lines added and removed. `field` is the server's slug — a voice
+ * rule's name, `channelNotes.<channel>` — worded here, never by the model.
+ */
+export type FieldChange = {
+  field: string
+  before?: string
+  after?: string
+  added?: string[]
+  removed?: string[]
+}
+
+/** The whole brand as `getBrand` read it, for the cards a plain read draws. */
+export type BrandRead = {
+  voices: {
+    id: string
+    name: string
+    isDefault: boolean
+    rules: number
+    samples: number
+    channelNotes: number
+  }[]
+  /** Every fact, current and expired. */
+  factsTotal: number
+  look?: {
+    /** Each colour with its role: "primary", "accent". */
+    palette: { hex: string; role: string }[]
+    typefaces: string[]
+    logos: number
+  }
+  templates: {
+    id: string
+    name: string
+    role: string
+    ratios: string[]
+    platforms: string[]
+    isDefault: boolean
+  }[]
 }
 
 /** Which of a tool family ran: its add, its update or its remove. */
@@ -379,6 +422,8 @@ export type VoiceChange = {
   }
   /** Campaigns and posts a removed voice was taken off. */
   unbound: number
+  /** What an update changed; empty for an add or a remove. */
+  changes: FieldChange[]
   undoId?: string
 }
 
@@ -389,19 +434,18 @@ export type AudienceChange = {
   who: string
   readsOn: string
   unbound: number
+  changes: FieldChange[]
   undoId?: string
 }
 
 export type GuardrailsChange = {
-  mayClaim: number
-  neverClaim: number
-  bannedWords: string[]
-  disclaimer: string
+  changes: FieldChange[]
   undoId?: string
 }
 
-/** A fact changed or renewed (`updateFact`). */
+/** A fact added, changed, renewed or removed. */
 export type FactChange = {
+  change: BrandChangeKind | 'renewed'
   id: string
   statement: string
   source: string
@@ -409,10 +453,17 @@ export type FactChange = {
   undoId?: string
 }
 
+/** What a bulk edit did to one kind of item. */
+export type EditCounts = { added: number; updated: number; removed: number }
+
 /** A bulk change (`editBrand`): each change has its own undo id. */
 export type BulkBrandEdit = {
   done: number
+  /** What it made, by kind — what the headline says. */
+  made: { facts: EditCounts; voices: EditCounts; audiences: EditCounts }
   undoIds: string[]
+  /** Facts it left alone on purpose, and why. */
+  kept: { factId: string; statement: string; reason: string }[]
   failed: { what: string; reason: string }[]
   stopped?: string
 }
@@ -422,7 +473,10 @@ export type DistillState = {
   runId: string
   /** pending | running | ready | failed | committed */
   status: string
+  /** The server's sentence, when it sent one. */
   failure?: string
+  /** `no_usable_sources` and the rest, worded here when there is no sentence. */
+  failureCode?: string
   counts: {
     voices: number
     audiences: number
@@ -431,6 +485,16 @@ export type DistillState = {
     questions: number
   }
   questions: { id: string; text: string }[]
+  /** What the read reads: a website, its pages, and documents. */
+  sources?: { website?: string; pages: number; assets: number }
+  /** The questions an answering round answered, and where from. */
+  answered: {
+    questionId: string
+    question: string
+    answer: string
+    from?: string
+  }[]
+  grounding?: Grounding
 }
 
 export type DistillSaved = {
@@ -452,6 +516,8 @@ export type SeriesBrief = {
   runs: boolean
   rhythm?: SeriesRhythm
   defaultRhythm?: SeriesRhythm
+  /** Every campaign running it; a run with no rhythm is occasional. */
+  runsIn: { campaignId: string; campaignName: string; rhythm?: SeriesRhythm }[]
 }
 
 export type SeriesList = { campaignId?: string; series: SeriesBrief[] }
@@ -459,11 +525,17 @@ export type SeriesList = { campaignId?: string; series: SeriesBrief[] }
 export type SeriesChange = SeriesBrief & {
   change: BrandChangeKind
   undoId?: string
+  /** A series made and run in one step: the run, under the series' undo. */
+  run?: SeriesRunChange
+  /** Why it was made but not run, in the server's words. */
+  notRun?: string
 }
 
 export type SeriesRunChange = {
   campaignId: string
+  campaignName: string
   seriesId: string
+  seriesName: string
   running: boolean
   rhythm?: SeriesRhythm
   undoId?: string
@@ -479,25 +551,33 @@ export type ExpiredFact = {
 /** Posts checked against their voice and the guardrails (`checkBrand`). */
 export type BrandCheck = {
   checked: number
+  /** Posts read that broke nothing. */
+  clean: number
   /** Posts past the cap that weren't read. */
   left: number
+  /** Findings left out because the user dismissed them. */
+  dismissed: number
+  /** The voices and guardrails the posts were read against. */
+  checkedAgainst: {
+    voices: { id: string; name: string }[]
+    guardrails: boolean
+  }
   findings: BrandFinding[]
 }
 
 export type BrandFinding = {
+  /** Dismisses it while the post stays the same. */
+  key: string
   postId: string
   /** The post's title. */
   title: string
   /** voice | never_claim | banned_word | unbacked_claim | disclaimer … */
   rule: string
   severity: string
-  quote: string
   issue: string
-  suggestion: string
-  /** The post's campaign, when the server says; else the thread's. */
-  campaignId?: string
-  fixTitle: string
-  proposalId?: string
+  /** The post's campaign: where IGNORE dismisses it, and where it opens. */
+  campaignId: string
+  fixes: RepairFix[]
 }
 
 /**
@@ -603,6 +683,12 @@ export type RepairResults = {
 
 export type PostRevised = {
   postId: string
+  /** Where it opens, and what it is called. */
+  campaignId?: string
+  title?: string
+  /** The voice it was rewritten in. */
+  voiceName?: string
+  undoId?: string
   revised: boolean
   versioned: boolean
   /** The post's own; absent when it never was known. */

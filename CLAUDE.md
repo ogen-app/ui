@@ -675,9 +675,26 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   them as `foundation` and `FoundationResults` draws them. A family of tools
   fills one card (`addVoice` / `updateVoice` / `removeVoice` → the voice
   card), and the key that is present is the change it reports — there is no
-  separate field. A bulk `editBrand` logs one undo id per change, so its
-  UNDO asks for each. `getBrand` reports only `{expiredFacts}`; the rest of
-  the brand stays with the model. The brand tools touch `voice`, `audience`,
+  separate field. **An update says what it changed** (CON-477): `changes`
+  is one row per field — the old value struck through, then the new one, or a
+  list's lines added and removed — and the field is the server's slug, worded
+  from the catalogue, never by the model; the card no longer restates the
+  whole record and has no OPEN. Each fact tool (`addFact`, `updateFact`,
+  `renewFact`, `removeFact`) is its own result. A bulk `editBrand` logs one
+  undo id per change, so its UNDO asks for each and says "N of M undone" when
+  only some came back; its headline is what it `made` ("Removed 6 facts"),
+  and `kept` says what it left alone and why. `getBrand` runs before every
+  edit, so what it read (`brand`: voices with their counts, the facts total,
+  the look, the templates) is drawn only when the turn did nothing else —
+  the expired facts, the templates on the Templates screen, the palette on
+  the Look screen, a voice summary's "Read from" — by the screen the question
+  came from (the asking user turn's `view`). The brand check is drawn with
+  `FindingRow`/`FixActions`, the calendar's grammar, and IGNORE dismisses
+  against each finding's own campaign, since one check can span several. A
+  distill card reads its run live (`useDistillRun`), because the turn's copy
+  is a snapshot; a failure with no sentence is worded as the read's own screen
+  words its code. Series cards link to the campaign that runs them, never to
+  the series screen behind its flag. The brand tools touch `voice`, `audience`,
   `guardrails`, `series` and `brand_distill`, which `refreshTouched` maps onto
   the brand, series and readings keys — a kind it doesn't map refreshes
   nothing. A voice's rules are worded by the library's own `rulesLine`.

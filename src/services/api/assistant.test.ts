@@ -587,6 +587,11 @@ describe('the brand tools’ results (CON-461)', () => {
               length: 'medium',
             },
           },
+          changes: [
+            { field: 'formality', before: 'neutral', after: 'casual' },
+            { field: 'samples', added: ['A new one'] },
+            { field: '' },
+          ],
           undoId: 'u1',
         },
         removeAudience: {
@@ -601,14 +606,46 @@ describe('the brand tools’ results (CON-461)', () => {
             bannedWords: ['luxury'],
             disclaimer: '',
           },
+          changes: [{ field: 'bannedWords', added: ['luxury'] }],
           undoId: 'u3',
+        },
+        renewFact: {
+          fact: {
+            id: 'f9',
+            statement: 'Spa open daily',
+            expiresAt: '2027-03-31',
+          },
+          undoId: 'u5',
         },
         editBrand: {
           done: 4,
+          made: { facts: { removed: 6 }, voices: { updated: 1 } },
           undoIds: ['b1', 'b2'],
+          kept: [
+            {
+              factId: 'f2',
+              statement: 'Spa',
+              reason: 'a 2026 document states it',
+            },
+            { reason: 'no id' },
+          ],
           failed: [{ what: 'remove a fact', reason: 'gone' }],
         },
-        startBrandDistill: { runId: 'r1', status: 'running', counts: {} },
+        answerDistillQuestions: {
+          runId: 'r1',
+          status: 'running',
+          counts: {},
+          sources: { website: 'villa.example', pages: 4, assets: 3 },
+          answered: [
+            {
+              questionId: 'q1',
+              question: 'Who is it not for?',
+              answer: 'Families',
+              from: 'the brochure, p. 2',
+            },
+          ],
+          failure: { code: 'no_usable_sources' },
+        },
         listSeries: {
           campaignId: 'c1',
           series: [
@@ -620,15 +657,61 @@ describe('the brand tools’ results (CON-461)', () => {
             },
           ],
         },
+        createSeries: {
+          series: {
+            id: 's2',
+            name: 'People of the house',
+            recipe: 'One person, one corner',
+            runsIn: [{ campaignId: 'c1', campaignName: 'Spring' }],
+          },
+          run: {
+            campaignId: 'c1',
+            campaignName: 'Spring',
+            seriesId: 's2',
+            seriesName: 'People of the house',
+            running: true,
+            rhythm: { times: 1, per: 'week' },
+          },
+          undoId: 'u6',
+        },
         runSeries: {
           campaignId: 'c1',
+          campaignName: 'Spring',
           seriesId: 's1',
+          seriesName: 'From the kitchen',
           running: true,
           rhythm: { times: 2, per: 'month' },
           undoId: 'u4',
         },
         getBrand: {
-          voices: [],
+          voices: [
+            {
+              id: 'v1',
+              name: 'Warm host',
+              rules: 4,
+              samples: 3,
+              channelNotes: 2,
+            },
+          ],
+          factsTotal: 29,
+          look: {
+            palette: [
+              { id: 'c1', role: 'primary', hex: '#2F3B33' },
+              { role: 'nonsense', hex: 'red' },
+            ],
+            typefaces: ['Söhne'],
+            logos: ['l1'],
+          },
+          templates: [
+            {
+              id: 't1',
+              name: 'Quiet frame',
+              role: 'foreground',
+              ratios: ['9:16'],
+              platforms: ['instagram'],
+              isDefault: true,
+            },
+          ],
           expiredFacts: [
             {
               id: 'f1',
@@ -642,15 +725,30 @@ describe('the brand tools’ results (CON-461)', () => {
       repair: {
         checkBrand: {
           checked: 4,
+          clean: 2,
+          dismissed: 1,
+          checkedAgainst: {
+            voices: [{ id: 'v1', name: 'Warm host' }],
+            guardrails: true,
+          },
           findings: [
             {
+              key: 'brand_banned_word:abc',
               postId: 'p1',
               title: 'Rooftop teaser',
               rule: 'banned_word',
               severity: 'high',
-              quote: 'luxury',
               issue: 'Uses a banned word.',
-              fix: { kind: 'open_post', title: 'Open the post', postId: 'p1' },
+              campaignId: 'c1',
+              fixes: [
+                {
+                  kind: 'revise_post',
+                  title: 'Rewrite it to follow the brand',
+                  postId: 'p1',
+                  proposalId: 'pr1',
+                },
+                { kind: 'open_post', title: 'Open the post', postId: 'p1' },
+              ],
             },
           ],
         },
@@ -662,27 +760,85 @@ describe('the brand tools’ results (CON-461)', () => {
       isDefault: true,
       undoId: 'u1',
     })
+    // A change with no field is dropped rather than drawn as an empty row.
+    expect(f?.voice?.changes).toEqual([
+      {
+        field: 'formality',
+        before: 'neutral',
+        after: 'casual',
+        added: [],
+        removed: [],
+      },
+      {
+        field: 'samples',
+        before: undefined,
+        after: undefined,
+        added: ['A new one'],
+        removed: [],
+      },
+    ])
     expect(f?.audience).toMatchObject({
       change: 'removed',
       unbound: 3,
       undoId: 'u2',
     })
-    expect(f?.guardrails).toEqual({
-      mayClaim: 1,
-      neverClaim: 2,
-      bannedWords: ['luxury'],
-      disclaimer: '',
-      undoId: 'u3',
+    expect(f?.guardrails?.changes[0]).toMatchObject({
+      field: 'bannedWords',
+      added: ['luxury'],
     })
-    expect(f?.bulk).toMatchObject({ done: 4, undoIds: ['b1', 'b2'] })
-    expect(f?.distill).toMatchObject({ runId: 'r1', status: 'running' })
+    expect(f?.guardrails?.undoId).toBe('u3')
+    // renewFact is a fact tool of its own, and says it renewed.
+    expect(f?.fact).toMatchObject({ change: 'renewed', id: 'f9', undoId: 'u5' })
+    expect(f?.bulk).toMatchObject({
+      done: 4,
+      made: {
+        facts: { added: 0, updated: 0, removed: 6 },
+        voices: { added: 0, updated: 1, removed: 0 },
+        audiences: { added: 0, updated: 0, removed: 0 },
+      },
+      kept: [
+        { factId: 'f2', statement: 'Spa', reason: 'a 2026 document states it' },
+      ],
+      undoIds: ['b1', 'b2'],
+    })
+    expect(f?.distill).toMatchObject({
+      runId: 'r1',
+      status: 'running',
+      sources: { website: 'villa.example', pages: 4, assets: 3 },
+      answered: [
+        { question: 'Who is it not for?', from: 'the brochure, p. 2' },
+      ],
+      // The code is kept for the card to word; it is never the message.
+      failure: undefined,
+      failureCode: 'no_usable_sources',
+    })
+    expect(f?.series).toMatchObject({
+      change: 'added',
+      name: 'People of the house',
+      runsIn: [{ campaignId: 'c1', campaignName: 'Spring' }],
+      run: { campaignName: 'Spring', running: true },
+      undoId: 'u6',
+    })
     expect(f?.seriesList?.series[0]).toMatchObject({
       name: 'From the kitchen',
       runs: true,
     })
     expect(f?.run).toMatchObject({
       running: true,
+      seriesName: 'From the kitchen',
+      campaignName: 'Spring',
       rhythm: { times: 2, per: 'month' },
+    })
+    expect(f?.brand).toMatchObject({
+      voices: [{ id: 'v1', rules: 4, samples: 3, channelNotes: 2 }],
+      factsTotal: 29,
+      // A colour that isn't one is left out rather than painted.
+      look: {
+        palette: [{ hex: '#2F3B33', role: 'primary' }],
+        typefaces: ['Söhne'],
+        logos: 1,
+      },
+      templates: [{ id: 't1', name: 'Quiet frame', ratios: ['9:16'] }],
     })
     expect(f?.expiredFacts).toEqual([
       {
@@ -692,16 +848,28 @@ describe('the brand tools’ results (CON-461)', () => {
         expiresAt: '2026-03-31',
       },
     ])
+    expect(f?.brandCheck).toMatchObject({
+      clean: 2,
+      dismissed: 1,
+      checkedAgainst: { voices: [{ name: 'Warm host' }], guardrails: true },
+    })
     expect(f?.brandCheck?.findings[0]).toMatchObject({
+      key: 'brand_banned_word:abc',
       postId: 'p1',
       severity: 'high',
-      fixTitle: 'Open the post',
+      campaignId: 'c1',
+      fixes: [
+        { kind: 'revise_post', proposalId: 'pr1' },
+        { kind: 'open_post', postId: 'p1' },
+      ],
     })
   })
 
-  it('is absent when no brand tool ran', () => {
+  it('is absent when no brand tool ran, and a bare read is the read alone', () => {
     expect(read({})).toBeUndefined()
-    expect(read({ foundation: { getBrand: { voices: [] } } })).toBeUndefined()
+    expect(read({ foundation: { getBrand: { voices: [] } } })).toEqual({
+      brand: { voices: [], factsTotal: 0, look: undefined, templates: [] },
+    })
   })
 })
 

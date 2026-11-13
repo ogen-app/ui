@@ -2368,6 +2368,90 @@ export const en = {
         analyses_one: '{{formatted}} analysis',
         analyses_other: '{{formatted}} analyses',
       },
+      addVoice: {
+        running: 'Adding a voice',
+        done: 'Added a voice',
+      },
+      updateVoice: {
+        running: 'Updating the voice',
+        done: 'Updated the voice',
+      },
+      removeVoice: {
+        running: 'Removing the voice',
+        done: 'Removed the voice',
+      },
+      addAudience: {
+        running: 'Adding an audience',
+        done: 'Added an audience',
+      },
+      updateAudience: {
+        running: 'Updating the audience',
+        done: 'Updated the audience',
+      },
+      removeAudience: {
+        running: 'Removing the audience',
+        done: 'Removed the audience',
+      },
+      updateGuardrails: {
+        running: 'Updating the guardrails',
+        done: 'Updated the guardrails',
+      },
+      renewFact: {
+        running: 'Renewing the fact',
+        done: 'Renewed the fact',
+      },
+      editBrand: {
+        running: 'Changing the brand',
+        done: 'Changed the brand',
+      },
+      startBrandDistill: {
+        running: 'Starting a brand read',
+        done: 'Started a brand read',
+      },
+      getBrandDistill: {
+        running: 'Checking the brand read',
+        done: 'Checked the brand read',
+      },
+      answerDistillQuestions: {
+        running: 'Answering the read’s questions',
+        done: 'Answered the read’s questions',
+      },
+      commitBrandDistill: {
+        running: 'Saving the brand read',
+        done: 'Saved the brand read',
+      },
+      listSeries: {
+        running: 'Looking up the series',
+        done: 'Looked up the series',
+      },
+      createSeries: {
+        running: 'Making a series',
+        done: 'Made a series',
+      },
+      updateSeries: {
+        running: 'Updating the series',
+        done: 'Updated the series',
+      },
+      removeSeries: {
+        running: 'Removing the series',
+        done: 'Removed the series',
+      },
+      runSeries: {
+        running: 'Running the series in the campaign',
+        done: 'Ran the series in the campaign',
+      },
+      stopSeries: {
+        running: 'Stopping the series in the campaign',
+        done: 'Stopped the series in the campaign',
+      },
+      checkBrand: {
+        running: 'Checking the posts against the brand',
+        done: 'Checked the posts against the brand',
+      },
+      revisePost: {
+        running: 'Rewriting the post',
+        done: 'Rewrote the post',
+      },
       listSavedViews: {
         running: 'Looking up the smart groups',
         done: 'Looked up the smart groups',
@@ -2760,6 +2844,42 @@ export const en = {
         label: 'Tag it',
         text: 'Tag this asset as ',
       },
+      readBrandFromThese: {
+        label: 'Read our brand from these',
+        text: 'Read our brand from the selected documents.',
+      },
+      lessFormal: {
+        label: 'Make it less formal',
+        text: 'Make this voice less formal.',
+      },
+      readBrandAgain: {
+        label: 'Read the brand again',
+        text: 'Read our brand again from ',
+      },
+      checkAgainstThese: {
+        label: 'Check posts against these',
+        text: 'Check the scheduled posts against our guardrails.',
+      },
+      addBannedWord: {
+        label: 'Add a banned word',
+        text: 'We never say ',
+      },
+      renewFact: {
+        label: 'Renew a fact',
+        text: 'Renew the fact ',
+      },
+      addFact: {
+        label: 'Add a fact',
+        text: 'Add a fact: ',
+      },
+      runInCampaign: {
+        label: 'Run one in a campaign',
+        text: 'Run the series ',
+      },
+      whichTemplate: {
+        label: 'Which template fits…',
+        text: 'Which template fits ',
+      },
       whyTopPost: {
         label: 'Why did the top post work?',
         text: 'Why did the top post do so well?',
@@ -2983,6 +3103,38 @@ export const en = {
       word: {
         added: 'Added',
         removed: 'Removed',
+        renewed: 'Renewed',
+      },
+      /** An update's rows (CON-477): one per field, worded here. */
+      change: {
+        /** A list's lines added and taken out: "+ luxury". */
+        added: '+ {{lines}}',
+        removed: '− {{lines}}',
+        cleared: 'cleared',
+        none: 'Nothing changed',
+      },
+      field: {
+        name: 'Name',
+        whenToUse: 'When to use',
+        isDefault: 'Default',
+        formality: 'Formality',
+        person: 'Person',
+        length: 'Length',
+        emoji: 'Emoji',
+        hashtags: 'Hashtags',
+        opening: 'Opening',
+        closing: 'Closing',
+        samples: 'Samples',
+        who: 'Who they are',
+        readsOn: 'Reads on',
+        scrollsPastWhen: 'Scrolls past when',
+        believesWhen: 'Believes when',
+        mayClaim: 'May claim',
+        neverClaim: 'Never claim',
+        bannedWords: 'Banned words',
+        disclaimer: 'Disclaimer',
+        /** A voice's note for one network: "Instagram note". */
+        channelNote: '{{channel}} note',
       },
       noun: {
         voice: 'voice',
@@ -2994,6 +3146,7 @@ export const en = {
       unbound_other: 'Taken off {{formatted}} campaigns and posts that used it',
       voice: {
         default: 'The default voice',
+        notDefault: 'Not the default',
         noRules: 'No rules set yet',
       },
       audience: {
@@ -3001,9 +3154,6 @@ export const en = {
       },
       guardrails: {
         title: 'Guardrails',
-        claims: '{{may}} may claim · {{never}} never claim',
-        banned: 'Banned words',
-        disclaimer: 'Disclaimer',
       },
       fact: {
         expires: 'Expires {{date}}',
@@ -3019,12 +3169,47 @@ export const en = {
           '{{formatted}} changes couldn’t be undone: they were changed again since.',
         undoGone_one: '{{formatted}} change can no longer be undone.',
         undoGone_other: '{{formatted}} changes can no longer be undone.',
+        /** Some of a bulk change put back, and not all of it. */
+        undonePart: '{{undone}} of {{total}} undone',
+        /** Facts left alone on purpose; the reasons go under it. */
+        kept_one: 'Kept {{formatted}}',
+        kept_other: 'Kept {{formatted}}',
+        /** What a bulk change made, biggest first: "Removed 6 facts". */
+        made: {
+          removed: {
+            facts_one: 'Removed {{formatted}} fact',
+            facts_other: 'Removed {{formatted}} facts',
+            voices_one: 'Removed {{formatted}} voice',
+            voices_other: 'Removed {{formatted}} voices',
+            audiences_one: 'Removed {{formatted}} audience',
+            audiences_other: 'Removed {{formatted}} audiences',
+          },
+          updated: {
+            facts_one: 'Updated {{formatted}} fact',
+            facts_other: 'Updated {{formatted}} facts',
+            voices_one: 'Updated {{formatted}} voice',
+            voices_other: 'Updated {{formatted}} voices',
+            audiences_one: 'Updated {{formatted}} audience',
+            audiences_other: 'Updated {{formatted}} audiences',
+          },
+          added: {
+            facts_one: 'Added {{formatted}} fact',
+            facts_other: 'Added {{formatted}} facts',
+            voices_one: 'Added {{formatted}} voice',
+            voices_other: 'Added {{formatted}} voices',
+            audiences_one: 'Added {{formatted}} audience',
+            audiences_other: 'Added {{formatted}} audiences',
+          },
+        },
       },
       facts: {
         word: 'Facts',
         none: 'No facts have expired',
         expired_one: '{{formatted}} expired',
         expired_other: '{{formatted}} expired',
+        /** After the headline: "3 expired of 29". */
+        ofTotal_one: 'of {{formatted}}',
+        ofTotal_other: 'of {{formatted}}',
         expiredOn: 'Expired {{date}}',
         renew: 'RENEW',
         edit: 'EDIT',
@@ -3039,8 +3224,16 @@ export const en = {
           committed: 'Saved',
         },
         title: 'Your brand',
-        running: 'Reading the sources. You can leave this screen.',
+        running: 'About two minutes. You can leave this screen.',
+        ready: 'Ready for you to review',
         failed: 'The reading couldn’t finish.',
+        /** What a read reads, after its title: "3 documents". */
+        documents_one: '{{formatted}} document',
+        documents_other: '{{formatted}} documents',
+        /** An answering round, confirmed from the rail. */
+        answered_one: 'Answered {{formatted}} question',
+        answered_other: 'Answered {{formatted}} questions',
+        answerFrom: '{{answer}}, from {{from}}',
         open: 'OPEN THE READ',
         voices_one: '{{formatted}} voice',
         voices_other: '{{formatted}} voices',
@@ -3062,17 +3255,46 @@ export const en = {
         none: 'No series yet',
         title_one: '{{formatted}} in the library',
         title_other: '{{formatted}} in the library',
-        notRunning: 'Not running here',
+        notRunning: 'Not running',
+        /** Where a series runs: "In Spring reopening · Once a week". */
+        runsIn: 'In {{campaign}} · {{rhythm}}',
+        recipe: 'Recipe',
+        runsInCampaign: 'Runs in {{campaign}}',
+        notRun: 'Made, but not run in the campaign: {{reason}}',
+      },
+      /** The templates and the look, read on their own screens (CON-477). */
+      templates: {
+        word: 'Templates',
+        none: 'No templates yet',
+        title_one: '{{formatted}} template',
+        title_other: '{{formatted}} templates',
+        default: 'default',
+      },
+      look: {
+        word: 'Look',
+        palette: 'Palette',
+        noPalette: 'No palette yet',
+        typefaces: 'Typefaces',
+      },
+      /** What a voice summary was read from: "Warm host: rules, 3 samples". */
+      voiceRead: {
+        line: '{{name}}: {{parts}}',
+        rules: 'rules',
+        samples_one: '{{formatted}} sample',
+        samples_other: '{{formatted}} samples',
+        notes_one: '{{formatted}} channel note',
+        notes_other: '{{formatted}} channel notes',
       },
       rhythm: {
+        occasional: 'Now and then',
         week_one: 'Once a week',
         week_other: '{{formatted}} times a week',
         month_one: 'Once a month',
         month_other: '{{formatted}} times a month',
       },
       run: {
-        running: 'Running in the campaign',
-        stopped: 'Stopped in the campaign',
+        running: '{{series}} runs in {{campaign}}',
+        stopped: '{{series}} stopped in {{campaign}}',
       },
       check: {
         word: 'Checked',
@@ -3081,8 +3303,17 @@ export const en = {
         title_other: '{{formatted}} things to look at',
         inPosts_one: 'in {{formatted}} post',
         inPosts_other: 'in {{formatted}} posts',
-        fix: 'FIX',
-        openPost: 'OPEN POST',
+        othersClean_one:
+          'The other {{formatted}} follows the voice and the guardrails.',
+        othersClean_other:
+          'The other {{formatted}} follow the voice and the guardrails.',
+        allClean_one: 'It follows the voice and the guardrails.',
+        allClean_other:
+          'All {{formatted}} follow the voice and the guardrails.',
+        /** The sources slot: what the posts were read against. */
+        against: 'Checked against',
+        againstVoice: '{{name}} voice',
+        againstGuardrails: 'Guardrails',
         left_one: '{{formatted}} more post wasn’t read; ask again to check it.',
         left_other:
           '{{formatted}} more posts weren’t read; ask again to check them.',
@@ -3583,8 +3814,13 @@ export const en = {
       revised: {
         word: 'Rewritten',
         title: 'Post rewritten',
+        /** After the post's title: "Chef’s table rewritten". */
+        meta: 'rewritten',
+        inVoice: 'A new version, in {{voice}}',
+        newVersion: 'A new version',
+        open: 'OPEN',
         notRevised: 'Post left as it was',
-        versioned: 'The previous copy is in the post’s history',
+        versioned: 'The old one stays in the post’s versions',
         unversioned:
           'Saving the rewrite as a version failed, so the post’s history has no copy of it',
       },
@@ -6486,6 +6722,10 @@ export const en = {
         },
         /** Between the section a question would fill and why it is asked. */
         whyJoin: ' — ',
+        /** Over the questions; answers confirmed in the rail fill them in. */
+        label_one: '{{count}} question · answers fill in as you confirm',
+        label_other: '{{count}} questions · answers fill in as you confirm',
+        placeholder: 'Your answer…',
         note: {
           website:
             'Answering drafts the proposal again with your answers in it, without reading the site again. What you have kept, dropped or edited so far stays as you left it.',

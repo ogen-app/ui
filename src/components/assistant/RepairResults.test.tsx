@@ -223,11 +223,32 @@ describe('a rewritten post (CON-474)', () => {
     })
     expect(screen.getByText('Post rewritten')).toBeTruthy()
     expect(
-      screen.getByText('The previous copy is in the post’s history'),
+      screen.getByText('The old one stays in the post’s versions'),
     ).toBeTruthy()
     expect(
       screen.getByRole('link', { name: 'Brochure' }).getAttribute('href'),
     ).toBe('/assets/a1')
+  })
+
+  it('names the post and its voice, with OPEN and UNDO (CON-477)', async () => {
+    await show({
+      revised: {
+        postId: 'p1',
+        campaignId: 'c1',
+        title: 'Chef’s table',
+        voiceName: 'Warm host',
+        undoId: 'u9',
+        revised: true,
+        versioned: true,
+      },
+    })
+    expect(screen.getByText('Chef’s table')).toBeTruthy()
+    expect(screen.getByText('rewritten')).toBeTruthy()
+    expect(screen.getByText('A new version, in Warm host')).toBeTruthy()
+    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+      '/campaigns/c1/posts/p1',
+    )
+    expect(screen.getByText('UNDO')).toBeTruthy()
   })
 
   it('warns when no version was kept, and says nothing of sources it never knew', async () => {
