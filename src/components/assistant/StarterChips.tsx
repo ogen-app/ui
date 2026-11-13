@@ -97,6 +97,15 @@ type StarterKey =
   | 'askTheAsset'
   | 'ideasFromThis'
   | 'tagIt'
+  | 'lessFormal'
+  | 'readBrandAgain'
+  | 'checkAgainstThese'
+  | 'addBannedWord'
+  | 'renewFact'
+  | 'addFact'
+  | 'runInCampaign'
+  | 'whichTemplate'
+  | 'readBrandFromThese'
   | 'whyTopPost'
   | 'compareMonth'
   | 'moreLikeThese'
@@ -177,6 +186,7 @@ const ASSETS: ScreenStarters = {
     { icon: GitDiffIcon, key: 'compareSelected' },
     { icon: ListBulletsIcon, key: 'summariseSelected' },
     { icon: MegaphoneIcon, key: 'campaignFromSelected' },
+    { icon: SparkleIcon, key: 'readBrandFromThese' },
     { icon: CalendarBlankIcon, key: 'planFromSelected' },
     { icon: TagIcon, key: 'tagSelected' },
   ],
@@ -250,8 +260,18 @@ const FOUNDATION: ScreenStarters = {
 const FOUNDATION_VOICE: ScreenStarters = {
   none: [
     { icon: ListBulletsIcon, key: 'summariseVoice' },
+    { icon: NotePencilIcon, key: 'lessFormal' },
     { icon: SealCheckIcon, key: 'checkAgainstVoice' },
-    { icon: QuestionIcon, key: 'stanceOn' },
+    { icon: SparkleIcon, key: 'readBrandAgain' },
+  ],
+}
+
+/** The guardrails: hold posts to them, add to them, and the facts beside them. */
+const FOUNDATION_GUARDRAILS: ScreenStarters = {
+  none: [
+    { icon: SealCheckIcon, key: 'checkAgainstThese' },
+    { icon: NotePencilIcon, key: 'addBannedWord' },
+    { icon: ListBulletsIcon, key: 'expiredFacts' },
   ],
 }
 
@@ -266,9 +286,9 @@ const FOUNDATION_VOICES: ScreenStarters = {
 
 const FOUNDATION_FACTS: ScreenStarters = {
   none: [
-    { icon: ArrowCounterClockwiseIcon, key: 'expiredFacts' },
-    { icon: CalendarBlankIcon, key: 'factsStale' },
-    { icon: QuestionIcon, key: 'stanceOn' },
+    { icon: ListBulletsIcon, key: 'expiredFacts' },
+    { icon: ArrowClockwiseIcon, key: 'renewFact' },
+    { icon: NotePencilIcon, key: 'addFact' },
   ],
 }
 
@@ -276,6 +296,7 @@ const FOUNDATION_SERIES: ScreenStarters = {
   none: [
     { icon: ListBulletsIcon, key: 'ourSeries' },
     { icon: NotePencilIcon, key: 'makeSeries' },
+    { icon: MegaphoneIcon, key: 'runInCampaign' },
   ],
 }
 
@@ -283,6 +304,15 @@ const FOUNDATION_TEMPLATES: ScreenStarters = {
   none: [
     { icon: StackIcon, key: 'storyTemplates' },
     { icon: SparkleIcon, key: 'ourPalette' },
+    { icon: MagnifyingGlassIcon, key: 'whichTemplate' },
+  ],
+}
+
+/** The look: its own verbs, not the templates' ("Templates for stories"). */
+const FOUNDATION_LOOK: ScreenStarters = {
+  none: [
+    { icon: SparkleIcon, key: 'ourPalette' },
+    { icon: MagnifyingGlassIcon, key: 'whichTemplate' },
   ],
 }
 
@@ -317,10 +347,11 @@ function screenStarters(screen: ViewScreen | null): ScreenStarters | null {
   if (screen === 'foundation.voice') return FOUNDATION_VOICE
   if (screen === 'foundation.voices') return FOUNDATION_VOICES
   if (screen === 'foundation.facts') return FOUNDATION_FACTS
+  if (screen === 'foundation.guardrails') return FOUNDATION_GUARDRAILS
   if (screen === 'foundation.series' || screen === 'foundation.series_item')
     return FOUNDATION_SERIES
-  if (screen === 'foundation.templates' || screen === 'foundation.look')
-    return FOUNDATION_TEMPLATES
+  if (screen === 'foundation.templates') return FOUNDATION_TEMPLATES
+  if (screen === 'foundation.look') return FOUNDATION_LOOK
   if (screen.startsWith('foundation')) return FOUNDATION
   if (screen === 'campaign.list') return CAMPAIGN_LIST
   if (screen === 'activity' || screen === 'campaign.activity') return ACTIVITY

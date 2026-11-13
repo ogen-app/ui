@@ -80,7 +80,9 @@ export function ReviewScreen({
     <>
       {proposal.questions.length > 0 && !closed && (
         <GapQuestions
+          key={run.id}
           questions={proposal.questions}
+          answered={run.answers}
           route={route}
           busy={answer.isPending}
           onAsk={(answers) => answer.mutate(answers)}

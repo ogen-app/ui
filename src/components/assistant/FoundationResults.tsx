@@ -2,74 +2,116 @@ import { Fragment } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { useAssistantStore } from '@/stores/assistantStore'
-import { cn } from '@/lib/styles'
+import { useDistillRun } from '@/hooks/useBrandDistill'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
+import { humanizeStep } from '@/lib/assistantTools'
 import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
-import { subjectCampaignId } from '@/types/assistant'
+import type { ViewContext } from '@/lib/viewContext'
+import { useAssistantStore } from '@/stores/assistantStore'
 import type {
   AudienceChange,
   BrandChangeKind,
   BrandCheck,
+  BrandRead,
   BulkBrandEdit,
   DistillSaved,
   DistillState,
   ExpiredFact,
   FactChange,
+  FieldChange,
   FoundationResults as Results,
   GuardrailsChange,
+  SeriesBrief,
+  SeriesChange,
   SeriesList,
   SeriesRhythm,
   SeriesRunChange,
-  SeriesChange,
-  ThreadSubject,
   UndoState,
   VoiceChange,
 } from '@/types/assistant'
-import { ResolvedLine, ResultBlock, ResultRow, TextAction } from './blocks'
+import {
+  ResolvedLine,
+  ResultBlock,
+  ResultRow,
+  SourcesLine,
+  TEXT_ACTION_CLASS,
+  TextAction,
+} from './blocks'
+import { FindingRow, FixActions } from './FindingsBlock'
 import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
 
 /**
- * The brand tools' results (CON-461), each in the reply grammar: a voice,
- * audience, guardrail, fact or series changed (each with UNDO), a bulk change,
- * a brand reading, the series library, expired facts, and a brand check's
- * findings. Read-only follow-ups (renew a fact) are sent on the click; ones
- * the user should word (edit a fact) fill the composer.
+ * The brand tools' results (CON-461, drawn as CON-477 has them), each in the
+ * reply grammar: a voice, audience, guardrail, fact or series changed — an
+ * update saying what it changed — with UNDO; a bulk change; a brand reading;
+ * the series library; a brand check's findings, in the calendar's grammar.
+ *
+ * `getBrand` is read before every edit, so what it read is drawn only when the
+ * turn did nothing else: then the expired facts, the templates, the palette
+ * and a voice summary's sources follow the screen the question came from.
+ * Read-only follow-ups (renew a fact) are sent on the click; ones the user
+ * should word (edit a fact) fill the composer.
  */
 export function FoundationResults({
   threadId,
   turnId,
-  subject,
   results,
   undoStates,
+  ignored = [],
+  view,
   disabled,
 }: {
   threadId: string
   turnId: string
-  subject: ThreadSubject
   results: Results
   undoStates: Record<string, UndoState>
+  /** Brand-check findings ignored from this card since. */
+  ignored?: string[]
+  /** The screen the question was asked from. */
+  view?: ViewContext
   disabled: boolean
 }) {
   const { t } = useTranslation()
   const send = useAssistantStore((s) => s.send)
   const askFor = useAssistantStore((s) => s.askFor)
   const undo = useAssistantStore((s) => s.undo)
-  const confirm = useAssistantStore((s) => s.confirmProposal)
   const undoFor: ResultUndo = {
     states: undoStates,
     onUndo: (undoId) => void undo(threadId, turnId, undoId),
   }
   const r = results
+  const { brand } = r
+  // A turn that only read the brand: what it read is the answer.
+  const justRead =
+    !!brand &&
+    !r.voice &&
+    !r.audience &&
+    !r.guardrails &&
+    !r.fact &&
+    !r.bulk &&
+    !r.distill &&
+    !r.distillSaved &&
+    !r.seriesList &&
+    !r.series &&
+    !r.run &&
+    !r.brandCheck
+  const screen = view?.screen
+  const expired = r.expiredFacts ?? []
+  const summarised =
+    justRead && view?.focus?.kind === 'voice'
+      ? brand.voices.find((v) => v.id === view.focus?.id)
+      : undefined
 
   const entries: [string, React.ReactNode][] = [
     [
       'brandCheck',
       r.brandCheck && (
-        <BrandCheckCard
+        <BrandCheckBlock
           t={t}
+          threadId={threadId}
+          turnId={turnId}
           check={r.brandCheck}
-          campaignId={subjectCampaignId(subject)}
-          onConfirm={(id) => void confirm(threadId, id)}
+          ignored={ignored}
           disabled={disabled}
         />
       ),
@@ -89,13 +131,38 @@ export function FoundationResults({
     ['bulk', r.bulk && <BulkCard t={t} bulk={r.bulk} undo={undoFor} />],
     [
       'expiredFacts',
-      r.expiredFacts && (
+      justRead && (expired.length > 0 || screen === 'foundation.facts') && (
         <ExpiredFactsCard
           t={t}
-          facts={r.expiredFacts}
+          facts={expired}
+          total={brand.factsTotal}
           onRenew={(text) => void send(threadId, text)}
           onEdit={(text) => askFor(threadId, text)}
           disabled={disabled}
+        />
+      ),
+    ],
+    [
+      'templates',
+      justRead && screen === 'foundation.templates' && (
+        <TemplatesCard t={t} templates={brand.templates} />
+      ),
+    ],
+    [
+      'look',
+      justRead && screen === 'foundation.look' && brand.look && (
+        <LookCard t={t} look={brand.look} />
+      ),
+    ],
+    [
+      'voiceRead',
+      summarised && (
+        <SourcesLine
+          label={t('assistant.assets.analysis.readFrom')}
+          grounding={{
+            mode: 'grounded',
+            sources: [{ id: '', title: voiceSourceText(t, summarised) }],
+          }}
         />
       ),
     ],
@@ -168,15 +235,9 @@ function changeWord(t: TFunction, change: BrandChangeKind): string {
       : t('assistant.word.done')
 }
 
-function rhythmText(t: TFunction, rhythm: SeriesRhythm): string {
-  return rhythm.per === 'week'
-    ? t('assistant.foundation.rhythm.week', counted(rhythm.times))
-    : t('assistant.foundation.rhythm.month', counted(rhythm.times))
-}
-
 function Muted({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[12.5px] text-tertiary-foreground">{children}</span>
+    <span className="text-[12.5px] text-secondary-foreground">{children}</span>
   )
 }
 
@@ -200,10 +261,117 @@ function Row({
   )
 }
 
-const OPEN_CLASS =
-  'shrink-0 text-xs font-medium tracking-[0.03em] text-secondary-foreground hover:text-foreground'
+const OPEN_CLASS = `shrink-0 ${TEXT_ACTION_CLASS}`
 
-/** A voice added, changed or removed. */
+/**
+ * What an update changed, one row per field (CON-477): the field in the
+ * catalogue's words, then the old value struck through and the new one, or
+ * for a list the lines added and taken out. A voice rule's values are the
+ * library's own words; anything else is the record's text.
+ */
+function ChangeRows({ t, changes }: { t: TFunction; changes: FieldChange[] }) {
+  const { resolve } = usePlatformCatalog()
+  return (
+    <>
+      {changes.map((c) => (
+        <Row
+          key={c.field}
+          title={fieldLabel(t, c.field, resolve)}
+          sub={
+            c.added?.length || c.removed?.length ? (
+              <>
+                {c.added && c.added.length > 0 && (
+                  <span className="block">
+                    {t('assistant.foundation.change.added', {
+                      lines: formatList(c.added),
+                    })}
+                  </span>
+                )}
+                {c.removed && c.removed.length > 0 && (
+                  <span className="block">
+                    {t('assistant.foundation.change.removed', {
+                      lines: formatList(c.removed),
+                    })}
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                {c.before && (
+                  <>
+                    <s>{fieldValue(t, c.field, c.before)}</s>
+                    {' → '}
+                  </>
+                )}
+                {c.after
+                  ? fieldValue(t, c.field, c.after)
+                  : t('assistant.foundation.change.cleared')}
+              </>
+            )
+          }
+        />
+      ))}
+    </>
+  )
+}
+
+const FIELD_LABEL = {
+  name: 'assistant.foundation.field.name',
+  whenToUse: 'assistant.foundation.field.whenToUse',
+  isDefault: 'assistant.foundation.field.isDefault',
+  formality: 'assistant.foundation.field.formality',
+  person: 'assistant.foundation.field.person',
+  length: 'assistant.foundation.field.length',
+  emoji: 'assistant.foundation.field.emoji',
+  hashtags: 'assistant.foundation.field.hashtags',
+  opening: 'assistant.foundation.field.opening',
+  closing: 'assistant.foundation.field.closing',
+  samples: 'assistant.foundation.field.samples',
+  who: 'assistant.foundation.field.who',
+  readsOn: 'assistant.foundation.field.readsOn',
+  scrollsPastWhen: 'assistant.foundation.field.scrollsPastWhen',
+  believesWhen: 'assistant.foundation.field.believesWhen',
+  mayClaim: 'assistant.foundation.field.mayClaim',
+  neverClaim: 'assistant.foundation.field.neverClaim',
+  bannedWords: 'assistant.foundation.field.bannedWords',
+  disclaimer: 'assistant.foundation.field.disclaimer',
+} as const
+
+/** A field's name; a channel note names its network, a slug this build predates its own words. */
+function fieldLabel(
+  t: TFunction,
+  field: string,
+  resolve: (id: string) => { name: string } | undefined,
+): string {
+  if (field.startsWith('channelNotes.')) {
+    const channel = field.slice('channelNotes.'.length)
+    return t('assistant.foundation.field.channelNote', {
+      channel: resolve(channel)?.name ?? channel,
+    })
+  }
+  return field in FIELD_LABEL
+    ? t(FIELD_LABEL[field as keyof typeof FIELD_LABEL])
+    : humanizeStep(field)
+}
+
+function fieldValue(t: TFunction, field: string, value: string): string {
+  if (field === 'isDefault')
+    return value === 'true'
+      ? t('assistant.foundation.voice.default')
+      : t('assistant.foundation.voice.notDefault')
+  if (
+    field in RULE_VALUES &&
+    (
+      RULE_VALUES[field as keyof typeof RULE_VALUES] as readonly string[]
+    ).includes(value)
+  )
+    return t(
+      `brand.voices.rules.${field}.${value}` as 'brand.voices.rules.person.we',
+    )
+  return value
+}
+
+/** A voice added, changed or removed: an update says what it changed. */
 function VoiceCard({
   t,
   voice,
@@ -214,16 +382,6 @@ function VoiceCard({
   undo: ResultUndo
 }) {
   const rules = voice.rules ? voiceRulesText(t, voice.rules) : ''
-  const open =
-    voice.change !== 'removed' ? (
-      <Link
-        to="/foundation/voices/$voiceId"
-        params={{ voiceId: voice.id }}
-        className={OPEN_CLASS}
-      >
-        {t('assistant.foundation.open')}
-      </Link>
-    ) : undefined
   return (
     <ResultBlock
       status={changeWord(t, voice.change)}
@@ -231,8 +389,17 @@ function VoiceCard({
       meta={t('assistant.foundation.noun.voice')}
       action={<UndoAction t={t} undoId={voice.undoId} undo={undo} />}
     >
-      {voice.whenToUse && <Row title={voice.whenToUse} />}
-      {voice.change !== 'removed' && (
+      {voice.change === 'updated' ? (
+        voice.changes.length > 0 ? (
+          <ChangeRows t={t} changes={voice.changes} />
+        ) : (
+          <Row title={<Muted>{t('assistant.foundation.change.none')}</Muted>} />
+        )
+      ) : null}
+      {voice.change === 'added' && voice.whenToUse && (
+        <Row title={voice.whenToUse} />
+      )}
+      {voice.change === 'added' && (
         <Row
           title={
             rules ||
@@ -245,7 +412,6 @@ function VoiceCard({
               ? t('assistant.foundation.voice.default')
               : undefined
           }
-          action={open}
         />
       )}
       {voice.change === 'removed' && voice.unbound > 0 && (
@@ -258,7 +424,7 @@ function VoiceCard({
   )
 }
 
-/** An audience added, changed or removed. */
+/** An audience added, changed or removed: an update says what it changed. */
 function AudienceCard({
   t,
   audience,
@@ -275,7 +441,14 @@ function AudienceCard({
       meta={t('assistant.foundation.noun.audience')}
       action={<UndoAction t={t} undoId={audience.undoId} undo={undo} />}
     >
-      {(audience.who || audience.readsOn) && (
+      {audience.change === 'updated' ? (
+        audience.changes.length > 0 ? (
+          <ChangeRows t={t} changes={audience.changes} />
+        ) : (
+          <Row title={<Muted>{t('assistant.foundation.change.none')}</Muted>} />
+        )
+      ) : null}
+      {audience.change === 'added' && (audience.who || audience.readsOn) && (
         <Row
           title={audience.who || audience.readsOn}
           sub={
@@ -284,17 +457,6 @@ function AudienceCard({
                   where: audience.readsOn,
                 })
               : undefined
-          }
-          action={
-            audience.change !== 'removed' ? (
-              <Link
-                to="/foundation/audiences/$audienceId"
-                params={{ audienceId: audience.id }}
-                className={OPEN_CLASS}
-              >
-                {t('assistant.foundation.open')}
-              </Link>
-            ) : undefined
           }
         />
       )}
@@ -308,7 +470,7 @@ function AudienceCard({
   )
 }
 
-/** The guardrails after a change: what may and may not be said. */
+/** The guardrails' change: the lines added and taken out, the disclaimer reworded. */
 function GuardrailsCard({
   t,
   guardrails,
@@ -324,28 +486,10 @@ function GuardrailsCard({
       title={t('assistant.foundation.guardrails.title')}
       action={<UndoAction t={t} undoId={guardrails.undoId} undo={undo} />}
     >
-      <Row
-        title={t('assistant.foundation.guardrails.claims', {
-          may: formatNumber(guardrails.mayClaim),
-          never: formatNumber(guardrails.neverClaim),
-        })}
-        action={
-          <Link to="/foundation/guardrails" className={OPEN_CLASS}>
-            {t('assistant.foundation.open')}
-          </Link>
-        }
-      />
-      {guardrails.bannedWords.length > 0 && (
-        <Row
-          title={t('assistant.foundation.guardrails.banned')}
-          sub={formatList(guardrails.bannedWords)}
-        />
-      )}
-      {guardrails.disclaimer && (
-        <Row
-          title={t('assistant.foundation.guardrails.disclaimer')}
-          sub={guardrails.disclaimer}
-        />
+      {guardrails.changes.length > 0 ? (
+        <ChangeRows t={t} changes={guardrails.changes} />
+      ) : (
+        <Row title={<Muted>{t('assistant.foundation.change.none')}</Muted>} />
       )}
       <UndoNote t={t} undoId={guardrails.undoId} undo={undo} />
     </ResultBlock>
@@ -359,7 +503,13 @@ function expiryText(t: TFunction, expiresAt: string): string {
     : t('assistant.foundation.fact.noExpiry')
 }
 
-/** A fact changed, or renewed for another season. */
+function factWord(t: TFunction, change: FactChange['change']): string {
+  return change === 'renewed'
+    ? t('assistant.foundation.word.renewed')
+    : changeWord(t, change)
+}
+
+/** A fact added, changed, renewed for another season, or removed. */
 function FactCard({
   t,
   fact,
@@ -371,27 +521,46 @@ function FactCard({
 }) {
   return (
     <ResultBlock
-      status={t('assistant.word.done')}
+      status={factWord(t, fact.change)}
       title={fact.statement}
       action={<UndoAction t={t} undoId={fact.undoId} undo={undo} />}
     >
-      <Row
-        title={expiryText(t, fact.expiresAt)}
-        sub={fact.source || undefined}
-        action={
-          <Link to="/foundation/facts" className={OPEN_CLASS}>
-            {t('assistant.foundation.open')}
-          </Link>
-        }
-      />
+      {fact.change !== 'removed' && (
+        <Row
+          title={expiryText(t, fact.expiresAt)}
+          sub={fact.source || undefined}
+        />
+      )}
       <UndoNote t={t} undoId={fact.undoId} undo={undo} />
     </ResultBlock>
   )
 }
 
+const MADE_KINDS = ['facts', 'voices', 'audiences'] as const
+const MADE_VERBS = ['removed', 'updated', 'added'] as const
+
 /**
- * A bulk change: how many it made, the ones it couldn't, and one UNDO that
- * reverses each of them by its own id.
+ * What a bulk change made, as sentences — "Removed 6 facts", "Added 1 voice"
+ * — biggest first, so the headline is the change the user asked for.
+ */
+function madeLines(t: TFunction, made: BulkBrandEdit['made']): string[] {
+  return MADE_VERBS.flatMap((verb) =>
+    MADE_KINDS.map((kind) => [verb, kind, made[kind][verb]] as const),
+  )
+    .filter(([, , n]) => n > 0)
+    .sort((a, b) => b[2] - a[2])
+    .map(([verb, kind, n]) =>
+      t(
+        `assistant.foundation.bulk.made.${verb}.${kind}` as 'assistant.foundation.bulk.made.removed.facts',
+        counted(n),
+      ),
+    )
+}
+
+/**
+ * A bulk change: what it made, the facts it kept on purpose and why, the ones
+ * it couldn't, and one UNDO that reverses each change by its own id — saying
+ * how many of them came back when only some could.
  */
 function BulkCard({
   t,
@@ -408,14 +577,18 @@ function BulkCard({
   const states = bulk.undoIds.map((id) => undo.states[id])
   const open = bulk.undoIds.filter((id) => !undo.states[id])
   const pending = states.includes('pending')
-  const allUndone =
-    bulk.undoIds.length > 0 && states.every((s) => s === 'undone')
+  const undone = states.filter((s) => s === 'undone').length
+  const allUndone = bulk.undoIds.length > 0 && undone === bulk.undoIds.length
   const changed = states.filter((s) => s === 'changed').length
   const gone = states.filter((s) => s === 'gone').length
+  const [headline, ...more] = madeLines(t, bulk.made)
+  const reasons = [...new Set(bulk.kept.map((k) => k.reason).filter(Boolean))]
   return (
     <ResultBlock
       status={t('assistant.word.done')}
-      title={t('assistant.foundation.bulk.title', counted(bulk.done))}
+      title={
+        headline ?? t('assistant.foundation.bulk.title', counted(bulk.done))
+      }
       action={
         open.length > 0 && !pending ? (
           <TextAction onClick={() => open.forEach(undo.onUndo)}>
@@ -424,9 +597,18 @@ function BulkCard({
         ) : undefined
       }
     >
+      {more.map((line) => (
+        <Row key={line} title={line} />
+      ))}
+      {bulk.kept.length > 0 && (
+        <Row
+          title={t('assistant.foundation.bulk.kept', counted(bulk.kept.length))}
+          sub={reasons.length > 0 ? reasons.join(' · ') : undefined}
+        />
+      )}
       {bulk.failed.map((f, i) => (
         <ResultRow key={i}>
-          <p className="text-sm text-warning">
+          <p className="text-sm text-warning-ink">
             {t('assistant.foundation.bulk.failed', {
               what: f.what,
               reason: f.reason,
@@ -436,13 +618,21 @@ function BulkCard({
       ))}
       {bulk.stopped && <Row title={<Muted>{bulk.stopped}</Muted>} />}
       {allUndone && <ResolvedLine>{t('assistant.undo.undone')}</ResolvedLine>}
+      {undone > 0 && !allUndone && (
+        <p className="text-[12.5px] text-secondary-foreground">
+          {t('assistant.foundation.bulk.undonePart', {
+            undone: formatNumber(undone),
+            total: formatNumber(bulk.undoIds.length),
+          })}
+        </p>
+      )}
       {changed > 0 && (
-        <p className="text-[12.5px] text-tertiary-foreground">
+        <p className="text-[12.5px] text-secondary-foreground">
           {t('assistant.foundation.bulk.undoChanged', counted(changed))}
         </p>
       )}
       {gone > 0 && (
-        <p className="text-[12.5px] text-tertiary-foreground">
+        <p className="text-[12.5px] text-secondary-foreground">
           {t('assistant.foundation.bulk.undoGone', counted(gone))}
         </p>
       )}
@@ -450,16 +640,19 @@ function BulkCard({
   )
 }
 
-/** Expired facts, each with RENEW and EDIT. */
+/** Expired facts out of all of them, each with RENEW and EDIT. */
 function ExpiredFactsCard({
   t,
   facts,
+  total,
   onRenew,
   onEdit,
   disabled,
 }: {
   t: TFunction
   facts: ExpiredFact[]
+  /** Every fact, current and expired; 0 when the read didn't say. */
+  total: number
   onRenew: (text: string) => void
   onEdit: (text: string) => void
   disabled: boolean
@@ -473,51 +666,159 @@ function ExpiredFactsCard({
           ? t('assistant.foundation.facts.none')
           : t('assistant.foundation.facts.expired', counted(facts.length))
       }
+      meta={
+        facts.length > 0 && total > 0
+          ? t('assistant.foundation.facts.ofTotal', counted(total))
+          : undefined
+      }
     >
-      {facts.map((fact) => (
+      {facts.map((fact) => {
+        const date = shortDate(fact.expiresAt)
+        return (
+          <Row
+            key={fact.id}
+            title={fact.statement}
+            sub={
+              [
+                date && t('assistant.foundation.facts.expiredOn', { date }),
+                fact.source,
+              ]
+                .filter(Boolean)
+                .join(' · ') || undefined
+            }
+            action={
+              <span className="flex shrink-0 gap-3">
+                <TextAction
+                  disabled={disabled}
+                  onClick={() =>
+                    onRenew(
+                      t('assistant.foundation.facts.renewPrompt', {
+                        statement: fact.statement,
+                      }),
+                    )
+                  }
+                >
+                  {t('assistant.foundation.facts.renew')}
+                </TextAction>
+                <TextAction
+                  disabled={disabled}
+                  onClick={() =>
+                    onEdit(
+                      t('assistant.foundation.facts.editPrompt', {
+                        statement: fact.statement,
+                      }),
+                    )
+                  }
+                >
+                  {t('assistant.foundation.facts.edit')}
+                </TextAction>
+              </span>
+            }
+          />
+        )
+      })}
+    </ResultBlock>
+  )
+}
+
+/** The templates, each with its ratios, its role and whether it is the default. */
+function TemplatesCard({
+  t,
+  templates,
+}: {
+  t: TFunction
+  templates: BrandRead['templates']
+}) {
+  return (
+    <ResultBlock
+      status={t('assistant.foundation.templates.word')}
+      title={
+        templates.length === 0
+          ? t('assistant.foundation.templates.none')
+          : t('assistant.foundation.templates.title', counted(templates.length))
+      }
+    >
+      {templates.map((tpl) => (
         <Row
-          key={fact.id}
-          title={fact.statement}
-          sub={[
-            t('assistant.foundation.facts.expiredOn', {
-              date: shortDate(fact.expiresAt) ?? '',
-            }),
-            fact.source,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-          action={
-            <span className="flex shrink-0 gap-3">
-              <TextAction
-                disabled={disabled}
-                onClick={() =>
-                  onRenew(
-                    t('assistant.foundation.facts.renewPrompt', {
-                      statement: fact.statement,
-                    }),
-                  )
-                }
-              >
-                {t('assistant.foundation.facts.renew')}
-              </TextAction>
-              <TextAction
-                disabled={disabled}
-                onClick={() =>
-                  onEdit(
-                    t('assistant.foundation.facts.editPrompt', {
-                      statement: fact.statement,
-                    }),
-                  )
-                }
-              >
-                {t('assistant.foundation.facts.edit')}
-              </TextAction>
-            </span>
+          key={tpl.id}
+          title={tpl.name}
+          sub={
+            [
+              formatList(tpl.ratios, 'unit'),
+              tpl.role,
+              tpl.isDefault && t('assistant.foundation.templates.default'),
+            ]
+              .filter(Boolean)
+              .join(' · ') || undefined
           }
         />
       ))}
     </ResultBlock>
   )
+}
+
+/** The palette, each colour as a swatch with its role and value. */
+function LookCard({
+  t,
+  look,
+}: {
+  t: TFunction
+  look: NonNullable<BrandRead['look']>
+}) {
+  return (
+    <ResultBlock
+      status={t('assistant.foundation.look.word')}
+      title={
+        look.palette.length === 0
+          ? t('assistant.foundation.look.noPalette')
+          : t('assistant.foundation.look.palette')
+      }
+    >
+      {look.palette.map((c, i) => (
+        <Row
+          key={`${c.hex}-${i}`}
+          title={
+            <span className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className="size-3.5 shrink-0 border border-border"
+                // The swatch is the brand's own colour, which no token holds.
+                style={{ backgroundColor: c.hex }}
+              />
+              {c.role || c.hex}
+            </span>
+          }
+          sub={<span className="font-mono">{c.hex.toUpperCase()}</span>}
+        />
+      ))}
+      {look.typefaces.length > 0 && (
+        <Row
+          title={t('assistant.foundation.look.typefaces')}
+          sub={formatList(look.typefaces)}
+        />
+      )}
+    </ResultBlock>
+  )
+}
+
+/** "Warm host: rules, 3 samples, 2 channel notes" — what a voice summary was read from. */
+function voiceSourceText(
+  t: TFunction,
+  voice: BrandRead['voices'][number],
+): string {
+  const parts = [
+    voice.rules > 0 && t('assistant.foundation.voiceRead.rules'),
+    voice.samples > 0 &&
+      t('assistant.foundation.voiceRead.samples', counted(voice.samples)),
+    voice.channelNotes > 0 &&
+      t('assistant.foundation.voiceRead.notes', counted(voice.channelNotes)),
+  ].filter((p): p is string => !!p)
+  return parts.length > 0
+    ? t('assistant.foundation.voiceRead.line', {
+        name: voice.name,
+        parts: formatList(parts),
+      })
+    : voice.name
 }
 
 function distillWord(t: TFunction, status: string): string {
@@ -550,43 +851,124 @@ function countsLine(
   )
 }
 
-/** A brand reading: running, ready to review, or failed — with the way to it. */
+/** "3 documents", "villa-aurora.example" — what a read reads. */
+function sourcesText(
+  t: TFunction,
+  sources: DistillState['sources'],
+): string | undefined {
+  if (!sources) return undefined
+  const parts = [
+    sources.website,
+    sources.assets > 0 &&
+      t('assistant.foundation.distill.documents', counted(sources.assets)),
+  ].filter((p): p is string => !!p)
+  return parts.length > 0 ? formatList(parts) : undefined
+}
+
+/**
+ * Why a read failed: the server's sentence, else its code in the words the
+ * read's own screen uses (`RunOutcome`), never the code itself.
+ */
+function failureText(t: TFunction, distill: DistillState): string {
+  if (distill.failure) return distill.failure
+  if (distill.failureCode === 'no_usable_sources') {
+    const route = distill.sources?.website
+      ? 'website'
+      : (distill.sources?.assets ?? 0) > 0
+        ? 'document'
+        : 'questions'
+    return t(`brand.distill.failed.nothingTitle.${route}` as const)
+  }
+  return t('assistant.foundation.distill.failed')
+}
+
+/**
+ * A brand reading: running, ready to review, or failed — with the way to it.
+ * The status is the run's own, read live: the turn's copy is a snapshot, and
+ * a reloaded thread would otherwise say Reading about a read long finished.
+ */
 function DistillCard({ t, distill }: { t: TFunction; distill: DistillState }) {
+  const live = useDistillRun(distill.runId)
+  const status = live.data?.status ?? distill.status
+  const failed = status === 'failed'
+  const reading = status === 'pending' || status === 'running'
+  const shown: DistillState = live.data?.failure
+    ? {
+        ...distill,
+        failure: live.data.failure.reason || distill.failure,
+        failureCode: live.data.failure.code,
+      }
+    : distill
   const line = countsLine(t, distill.counts)
   return (
-    <ResultBlock
-      status={distillWord(t, distill.status)}
-      tone={distill.status === 'failed' ? 'warning' : 'neutral'}
-      title={t('assistant.foundation.distill.title')}
-    >
-      <Row
-        title={
-          distill.status === 'failed'
-            ? distill.failure || t('assistant.foundation.distill.failed')
-            : line || t('assistant.foundation.distill.running')
-        }
-        action={
-          <Link
-            to="/foundation/read/$runId"
-            params={{ runId: distill.runId }}
-            className={OPEN_CLASS}
-          >
-            {t('assistant.foundation.distill.open')}
-          </Link>
-        }
-      />
-      {distill.questions.length > 0 && (
+    <>
+      {distill.answered.length > 0 && <AnsweredCard t={t} distill={distill} />}
+      <ResultBlock
+        status={distillWord(t, status)}
+        tone={failed ? 'warning' : reading ? 'accent' : 'neutral'}
+        title={t('assistant.foundation.distill.title')}
+        meta={sourcesText(t, distill.sources)}
+      >
         <Row
-          title={t(
-            'assistant.foundation.distill.questions',
-            counted(distill.questions.length),
-          )}
-          sub={distill.questions
-            .slice(0, 3)
-            .map((q) => q.text)
-            .join(' · ')}
+          title={
+            failed
+              ? failureText(t, shown)
+              : reading
+                ? t('assistant.foundation.distill.running')
+                : line || t('assistant.foundation.distill.ready')
+          }
+          action={
+            <Link
+              to="/foundation/read/$runId"
+              params={{ runId: distill.runId }}
+              className={OPEN_CLASS}
+            >
+              {t('assistant.foundation.distill.open')}
+            </Link>
+          }
         />
+        {!reading && !failed && distill.questions.length > 0 && (
+          <Row
+            title={t(
+              'assistant.foundation.distill.questions',
+              counted(distill.questions.length),
+            )}
+            sub={distill.questions
+              .slice(0, 3)
+              .map((q) => q.text)
+              .join(' · ')}
+          />
+        )}
+      </ResultBlock>
+    </>
+  )
+}
+
+/** The questions an answering round answered, each with where its answer came from. */
+function AnsweredCard({ t, distill }: { t: TFunction; distill: DistillState }) {
+  return (
+    <ResultBlock
+      status={t('assistant.word.done')}
+      title={t(
+        'assistant.foundation.distill.answered',
+        counted(distill.answered.length),
       )}
+    >
+      {distill.answered.map((a) => (
+        <Row
+          key={a.questionId || a.question}
+          title={a.question}
+          sub={
+            a.from
+              ? t('assistant.foundation.distill.answerFrom', {
+                  answer: a.answer,
+                  from: a.from,
+                })
+              : a.answer
+          }
+        />
+      ))}
+      {distill.grounding && <SourcesLine grounding={distill.grounding} />}
     </ResultBlock>
   )
 }
@@ -616,7 +998,28 @@ function DistillSavedCard({ t, saved }: { t: TFunction; saved: DistillSaved }) {
   )
 }
 
-/** The series library, and what the campaign in scope runs. */
+function rhythmText(t: TFunction, rhythm: SeriesRhythm | undefined): string {
+  if (!rhythm) return t('assistant.foundation.rhythm.occasional')
+  return rhythm.per === 'week'
+    ? t('assistant.foundation.rhythm.week', counted(rhythm.times))
+    : t('assistant.foundation.rhythm.month', counted(rhythm.times))
+}
+
+/** "In Spring reopening · once a week", for each campaign that runs it. */
+function whereItRuns(t: TFunction, series: SeriesBrief): string {
+  if (series.runsIn.length === 0)
+    return t('assistant.foundation.series.notRunning')
+  return series.runsIn
+    .map((r) =>
+      t('assistant.foundation.series.runsIn', {
+        campaign: r.campaignName || t('assistant.untitledCampaign'),
+        rhythm: rhythmText(t, r.rhythm),
+      }),
+    )
+    .join('; ')
+}
+
+/** The series library, each with where it runs. */
 function SeriesListCard({ t, list }: { t: TFunction; list: SeriesList }) {
   return (
     <ResultBlock
@@ -628,34 +1031,17 @@ function SeriesListCard({ t, list }: { t: TFunction; list: SeriesList }) {
       }
     >
       {list.series.map((s) => (
-        <Row
-          key={s.id}
-          title={s.name}
-          sub={
-            s.runs && s.rhythm
-              ? rhythmText(t, s.rhythm)
-              : list.campaignId
-                ? t('assistant.foundation.series.notRunning')
-                : s.defaultRhythm
-                  ? rhythmText(t, s.defaultRhythm)
-                  : undefined
-          }
-          action={
-            <Link
-              to="/foundation/series/$seriesId"
-              params={{ seriesId: s.id }}
-              className={OPEN_CLASS}
-            >
-              {t('assistant.foundation.open')}
-            </Link>
-          }
-        />
+        <Row key={s.id} title={s.name} sub={whereItRuns(t, s)} />
       ))}
     </ResultBlock>
   )
 }
 
-/** A series made, changed or removed. */
+/**
+ * A series made, changed or removed — and, when it was made to run in a
+ * campaign in the same step, that run, under the series' one UNDO. OPEN goes
+ * to the campaign it runs in: the series' own screen is behind its flag.
+ */
 function SeriesCard({
   t,
   series,
@@ -665,7 +1051,7 @@ function SeriesCard({
   series: SeriesChange
   undo: ResultUndo
 }) {
-  const rhythm = series.rhythm ?? series.defaultRhythm
+  const { run } = series
   return (
     <ResultBlock
       status={changeWord(t, series.change)}
@@ -673,29 +1059,47 @@ function SeriesCard({
       meta={t('assistant.foundation.noun.series')}
       action={<UndoAction t={t} undoId={series.undoId} undo={undo} />}
     >
-      {(series.recipe || rhythm) && (
+      {series.recipe && series.change !== 'removed' && (
         <Row
-          title={series.recipe || (rhythm ? rhythmText(t, rhythm) : '')}
-          sub={series.recipe && rhythm ? rhythmText(t, rhythm) : undefined}
-          action={
-            series.change !== 'removed' ? (
-              <Link
-                to="/foundation/series/$seriesId"
-                params={{ seriesId: series.id }}
-                className={OPEN_CLASS}
-              >
-                {t('assistant.foundation.open')}
-              </Link>
-            ) : undefined
-          }
+          title={t('assistant.foundation.series.recipe')}
+          sub={series.recipe}
         />
+      )}
+      {run?.running && (
+        <Row
+          title={t('assistant.foundation.series.runsInCampaign', {
+            campaign: run.campaignName || t('assistant.untitledCampaign'),
+          })}
+          sub={rhythmText(t, run.rhythm)}
+          action={<CampaignLink t={t} campaignId={run.campaignId} />}
+        />
+      )}
+      {series.notRun && (
+        <ResultRow>
+          <p className="text-[12.5px] text-warning-ink">
+            {t('assistant.foundation.series.notRun', { reason: series.notRun })}
+          </p>
+        </ResultRow>
       )}
       <UndoNote t={t} undoId={series.undoId} undo={undo} />
     </ResultBlock>
   )
 }
 
-/** A series started or stopped in a campaign, with its rhythm. */
+function CampaignLink({ t, campaignId }: { t: TFunction; campaignId: string }) {
+  if (!campaignId) return null
+  return (
+    <Link
+      to="/campaigns/$campaignId/strategy"
+      params={{ campaignId }}
+      className={OPEN_CLASS}
+    >
+      {t('assistant.foundation.open')}
+    </Link>
+  )
+}
+
+/** A series started or stopped in a campaign, named, with its rhythm. */
 function RunCard({
   t,
   run,
@@ -705,93 +1109,127 @@ function RunCard({
   run: SeriesRunChange
   undo: ResultUndo
 }) {
+  const names = {
+    series: run.seriesName || t('assistant.foundation.noun.series'),
+    campaign: run.campaignName || t('assistant.untitledCampaign'),
+  }
   return (
     <ResultBlock
       status={t('assistant.word.done')}
       title={
         run.running
-          ? t('assistant.foundation.run.running')
-          : t('assistant.foundation.run.stopped')
+          ? t('assistant.foundation.run.running', names)
+          : t('assistant.foundation.run.stopped', names)
       }
-      meta={run.running && run.rhythm ? rhythmText(t, run.rhythm) : undefined}
       action={<UndoAction t={t} undoId={run.undoId} undo={undo} />}
     >
+      {run.running && (
+        <Row
+          title={rhythmText(t, run.rhythm)}
+          action={<CampaignLink t={t} campaignId={run.campaignId} />}
+        />
+      )}
       <UndoNote t={t} undoId={run.undoId} undo={undo} />
     </ResultBlock>
   )
 }
 
 /**
- * A brand check's findings, numbered and most serious first, like the
- * calendar's. A fix that is an offer runs from here; one that opens the post
- * goes to it, through the post's campaign or else the thread's.
+ * A brand check's findings in the calendar's grammar (CON-477): numbered,
+ * amber for the serious ones, the post's title with the issue under it, the
+ * first fix as the row's button and the rest as "or …", IGNORE on the title
+ * line — each against the finding's own campaign, since one check can span
+ * several. Then how many follow the brand, and what they were read against.
  */
-function BrandCheckCard({
+function BrandCheckBlock({
   t,
+  threadId,
+  turnId,
   check,
-  campaignId,
-  onConfirm,
+  ignored,
   disabled,
 }: {
   t: TFunction
+  threadId: string
+  turnId: string
   check: BrandCheck
-  campaignId: string | undefined
-  onConfirm: (proposalId: string) => void
+  ignored: string[]
   disabled: boolean
 }) {
-  const n = check.findings.length
+  const ignore = useAssistantStore((s) => s.ignoreFinding)
+  const open = check.findings.filter((f) => !ignored.includes(f.key))
+  const gone = check.findings.filter((f) => ignored.includes(f.key))
+  const against = [
+    ...check.checkedAgainst.voices.map((v) => ({
+      id: '',
+      title: t('assistant.foundation.check.againstVoice', { name: v.name }),
+    })),
+    ...(check.checkedAgainst.guardrails
+      ? [{ id: '', title: t('assistant.foundation.check.againstGuardrails') }]
+      : []),
+  ]
   return (
     <ResultBlock
       status={t('assistant.foundation.check.word')}
-      tone={n > 0 ? 'warning' : 'neutral'}
+      tone={open.length > 0 ? 'warning' : 'neutral'}
       title={
-        n === 0
+        open.length === 0
           ? t('assistant.foundation.check.none')
-          : t('assistant.foundation.check.title', counted(n))
+          : t('assistant.foundation.check.title', counted(open.length))
       }
       meta={t('assistant.foundation.check.inPosts', counted(check.checked))}
     >
-      {check.findings.map((f, i) => {
-        const campaign = f.campaignId ?? campaignId
-        const serious = f.severity === 'high'
-        const proposalId = f.proposalId
-        return (
-          <ResultRow key={i} className="flex items-baseline gap-3">
-            <span
-              className={cn(
-                'w-5 shrink-0 font-mono text-xs',
-                serious ? 'text-warning' : 'text-tertiary-foreground',
-              )}
+      {open.length > 0 && (
+        <ol className="flex flex-col">
+          {open.map((f, i) => (
+            <FindingRow
+              key={f.key || i}
+              n={i + 1}
+              warn={f.severity === 'high'}
+              title={f.title || t('assistant.untitledPost')}
+              detail={f.issue}
+              onIgnore={
+                f.key && f.campaignId
+                  ? () => void ignore(threadId, turnId, f.campaignId, f.key)
+                  : undefined
+              }
+              disabled={disabled}
             >
-              {String(i + 1).padStart(2, '0')}
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="text-sm text-foreground">
-                {f.title || t('assistant.untitledPost')}
-              </span>
-              <Muted>{f.issue}</Muted>
-              {f.quote && <Muted>“{f.quote}”</Muted>}
-              {f.suggestion && <Muted>{f.suggestion}</Muted>}
-            </span>
-            {proposalId ? (
-              <TextAction
+              <FixActions
+                threadId={threadId}
+                campaignId={f.campaignId}
+                fixes={f.fixes}
+                posts={1}
                 disabled={disabled}
-                onClick={() => onConfirm(proposalId)}
-              >
-                {f.fixTitle || t('assistant.foundation.check.fix')}
-              </TextAction>
-            ) : campaign ? (
-              <Link
-                to="/campaigns/$campaignId/posts/$postId"
-                params={{ campaignId: campaign, postId: f.postId }}
-                className={OPEN_CLASS}
-              >
-                {t('assistant.foundation.check.openPost')}
-              </Link>
-            ) : null}
-          </ResultRow>
-        )
-      })}
+              />
+            </FindingRow>
+          ))}
+        </ol>
+      )}
+      {gone.map((f) => (
+        <ResolvedLine key={f.key}>
+          {t('assistant.findings.ignored', {
+            finding: f.title || t('assistant.untitledPost'),
+          })}
+        </ResolvedLine>
+      ))}
+      {check.clean > 0 && (
+        <Row
+          title={
+            <Muted>
+              {open.length > 0
+                ? t(
+                    'assistant.foundation.check.othersClean',
+                    counted(check.clean),
+                  )
+                : t(
+                    'assistant.foundation.check.allClean',
+                    counted(check.clean),
+                  )}
+            </Muted>
+          }
+        />
+      )}
       {check.left > 0 && (
         <Row
           title={
@@ -799,6 +1237,21 @@ function BrandCheckCard({
               {t('assistant.foundation.check.left', counted(check.left))}
             </Muted>
           }
+        />
+      )}
+      {check.dismissed > 0 && (
+        <Row
+          title={
+            <Muted>
+              {t('assistant.findings.dismissed', counted(check.dismissed))}
+            </Muted>
+          }
+        />
+      )}
+      {against.length > 0 && (
+        <SourcesLine
+          label={t('assistant.foundation.check.against')}
+          grounding={{ mode: 'grounded', sources: against }}
         />
       )}
     </ResultBlock>

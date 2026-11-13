@@ -1859,6 +1859,90 @@ export const es: Translation = {
         analyses_one: '{{formatted}} análisis',
         analyses_other: '{{formatted}} análisis',
       },
+      addVoice: {
+        running: 'Añadiendo una voz',
+        done: 'Añadida una voz',
+      },
+      updateVoice: {
+        running: 'Actualizando la voz',
+        done: 'Actualizada la voz',
+      },
+      removeVoice: {
+        running: 'Eliminando la voz',
+        done: 'Eliminada la voz',
+      },
+      addAudience: {
+        running: 'Añadiendo una audiencia',
+        done: 'Añadida una audiencia',
+      },
+      updateAudience: {
+        running: 'Actualizando la audiencia',
+        done: 'Actualizada la audiencia',
+      },
+      removeAudience: {
+        running: 'Eliminando la audiencia',
+        done: 'Eliminada la audiencia',
+      },
+      updateGuardrails: {
+        running: 'Actualizando las pautas',
+        done: 'Actualizadas las pautas',
+      },
+      renewFact: {
+        running: 'Renovando el dato',
+        done: 'Renovado el dato',
+      },
+      editBrand: {
+        running: 'Cambiando la marca',
+        done: 'Cambiada la marca',
+      },
+      startBrandDistill: {
+        running: 'Empezando una lectura de la marca',
+        done: 'Empezada una lectura de la marca',
+      },
+      getBrandDistill: {
+        running: 'Revisando la lectura de la marca',
+        done: 'Revisada la lectura de la marca',
+      },
+      answerDistillQuestions: {
+        running: 'Respondiendo a las preguntas de la lectura',
+        done: 'Respondidas las preguntas de la lectura',
+      },
+      commitBrandDistill: {
+        running: 'Guardando la lectura de la marca',
+        done: 'Guardada la lectura de la marca',
+      },
+      listSeries: {
+        running: 'Buscando las series',
+        done: 'Encontradas las series',
+      },
+      createSeries: {
+        running: 'Creando una serie',
+        done: 'Creada una serie',
+      },
+      updateSeries: {
+        running: 'Actualizando la serie',
+        done: 'Actualizada la serie',
+      },
+      removeSeries: {
+        running: 'Eliminando la serie',
+        done: 'Eliminada la serie',
+      },
+      runSeries: {
+        running: 'Activando la serie en la campaña',
+        done: 'Activada la serie en la campaña',
+      },
+      stopSeries: {
+        running: 'Parando la serie en la campaña',
+        done: 'Parada la serie en la campaña',
+      },
+      checkBrand: {
+        running: 'Revisando las publicaciones con la marca',
+        done: 'Revisadas las publicaciones con la marca',
+      },
+      revisePost: {
+        running: 'Reescribiendo la publicación',
+        done: 'Reescrita la publicación',
+      },
       listSavedViews: {
         running: 'Buscando los grupos inteligentes',
         done: 'Encontrados los grupos inteligentes',
@@ -2241,6 +2325,42 @@ export const es: Translation = {
         label: 'Etiquetarlo',
         text: 'Etiqueta este recurso como ',
       },
+      readBrandFromThese: {
+        label: 'Leer nuestra marca de estos',
+        text: 'Lee nuestra marca de los documentos seleccionados.',
+      },
+      lessFormal: {
+        label: 'Hacerla menos formal',
+        text: 'Haz esta voz menos formal.',
+      },
+      readBrandAgain: {
+        label: 'Leer la marca otra vez',
+        text: 'Vuelve a leer nuestra marca de ',
+      },
+      checkAgainstThese: {
+        label: 'Revisar publicaciones con estas',
+        text: 'Revisa las publicaciones programadas con nuestras pautas.',
+      },
+      addBannedWord: {
+        label: 'Añadir una palabra prohibida',
+        text: 'Nunca decimos ',
+      },
+      renewFact: {
+        label: 'Renovar un dato',
+        text: 'Renueva el dato ',
+      },
+      addFact: {
+        label: 'Añadir un dato',
+        text: 'Añade un dato: ',
+      },
+      runInCampaign: {
+        label: 'Publicar una en una campaña',
+        text: 'Publica la serie ',
+      },
+      whichTemplate: {
+        label: 'Qué plantilla sirve para…',
+        text: '¿Qué plantilla sirve para ',
+      },
       whyTopPost: {
         label: '¿Por qué funcionó la mejor?',
         text: '¿Por qué le fue tan bien a la mejor publicación?',
@@ -2441,6 +2561,35 @@ export const es: Translation = {
       word: {
         added: 'Añadido',
         removed: 'Eliminado',
+        renewed: 'Renovado',
+      },
+      change: {
+        added: '+ {{lines}}',
+        removed: '− {{lines}}',
+        cleared: 'vacío',
+        none: 'No cambió nada',
+      },
+      field: {
+        name: 'Nombre',
+        whenToUse: 'Cuándo usarla',
+        isDefault: 'Predeterminada',
+        formality: 'Formalidad',
+        person: 'Persona',
+        length: 'Extensión',
+        emoji: 'Emojis',
+        hashtags: 'Hashtags',
+        opening: 'Arranque',
+        closing: 'Cierre',
+        samples: 'Ejemplos',
+        who: 'Quiénes son',
+        readsOn: 'Lee en',
+        scrollsPastWhen: 'Pasa de largo cuando',
+        believesWhen: 'Se lo cree cuando',
+        mayClaim: 'Se puede afirmar',
+        neverClaim: 'Nunca se afirma',
+        bannedWords: 'Palabras prohibidas',
+        disclaimer: 'Aviso legal',
+        channelNote: 'Nota para {{channel}}',
       },
       noun: {
         voice: 'voz',
@@ -2454,6 +2603,7 @@ export const es: Translation = {
         'Retirado de {{formatted}} campañas y publicaciones que lo usaban',
       voice: {
         default: 'La voz predeterminada',
+        notDefault: 'No es la predeterminada',
         noRules: 'Aún sin reglas',
       },
       audience: {
@@ -2461,9 +2611,6 @@ export const es: Translation = {
       },
       guardrails: {
         title: 'Pautas',
-        claims: '{{may}} se pueden afirmar · {{never}} nunca',
-        banned: 'Palabras prohibidas',
-        disclaimer: 'Aviso legal',
       },
       fact: {
         expires: 'Caduca el {{date}}',
@@ -2479,12 +2626,43 @@ export const es: Translation = {
           'No se pudieron deshacer {{formatted}} cambios: han vuelto a cambiar desde entonces.',
         undoGone_one: '{{formatted}} cambio ya no se puede deshacer.',
         undoGone_other: '{{formatted}} cambios ya no se pueden deshacer.',
+        undonePart: '{{undone}} de {{total}} deshechos',
+        kept_one: 'Se conservó {{formatted}}',
+        kept_other: 'Se conservaron {{formatted}}',
+        made: {
+          removed: {
+            facts_one: 'Eliminado {{formatted}} dato',
+            facts_other: 'Eliminados {{formatted}} datos',
+            voices_one: 'Eliminada {{formatted}} voz',
+            voices_other: 'Eliminadas {{formatted}} voces',
+            audiences_one: 'Eliminada {{formatted}} audiencia',
+            audiences_other: 'Eliminadas {{formatted}} audiencias',
+          },
+          updated: {
+            facts_one: 'Actualizado {{formatted}} dato',
+            facts_other: 'Actualizados {{formatted}} datos',
+            voices_one: 'Actualizada {{formatted}} voz',
+            voices_other: 'Actualizadas {{formatted}} voces',
+            audiences_one: 'Actualizada {{formatted}} audiencia',
+            audiences_other: 'Actualizadas {{formatted}} audiencias',
+          },
+          added: {
+            facts_one: 'Añadido {{formatted}} dato',
+            facts_other: 'Añadidos {{formatted}} datos',
+            voices_one: 'Añadida {{formatted}} voz',
+            voices_other: 'Añadidas {{formatted}} voces',
+            audiences_one: 'Añadida {{formatted}} audiencia',
+            audiences_other: 'Añadidas {{formatted}} audiencias',
+          },
+        },
       },
       facts: {
         word: 'Datos',
         none: 'Ningún dato ha caducado',
         expired_one: '{{formatted}} caducado',
         expired_other: '{{formatted}} caducados',
+        ofTotal_one: 'de {{formatted}}',
+        ofTotal_other: 'de {{formatted}}',
         expiredOn: 'Caducó el {{date}}',
         renew: 'RENOVAR',
         edit: 'EDITAR',
@@ -2499,8 +2677,14 @@ export const es: Translation = {
           committed: 'Guardada',
         },
         title: 'Tu marca',
-        running: 'Leyendo las fuentes. Puedes salir de esta pantalla.',
+        running: 'Unos dos minutos. Puedes salir de esta pantalla.',
+        ready: 'Lista para que la revises',
         failed: 'La lectura no pudo terminar.',
+        documents_one: '{{formatted}} documento',
+        documents_other: '{{formatted}} documentos',
+        answered_one: 'Respondida {{formatted}} pregunta',
+        answered_other: 'Respondidas {{formatted}} preguntas',
+        answerFrom: '{{answer}}, de {{from}}',
         open: 'ABRIR LA LECTURA',
         voices_one: '{{formatted}} voz',
         voices_other: '{{formatted}} voces',
@@ -2522,17 +2706,43 @@ export const es: Translation = {
         none: 'Aún no hay series',
         title_one: '{{formatted}} en la biblioteca',
         title_other: '{{formatted}} en la biblioteca',
-        notRunning: 'No se publica aquí',
+        notRunning: 'No se publica',
+        runsIn: 'En {{campaign}} · {{rhythm}}',
+        recipe: 'Receta',
+        runsInCampaign: 'Se publica en {{campaign}}',
+        notRun: 'Creada, pero no se publica en la campaña: {{reason}}',
+      },
+      templates: {
+        word: 'Plantillas',
+        none: 'Aún no hay plantillas',
+        title_one: '{{formatted}} plantilla',
+        title_other: '{{formatted}} plantillas',
+        default: 'predeterminada',
+      },
+      look: {
+        word: 'Estilo',
+        palette: 'Paleta',
+        noPalette: 'Aún no hay paleta',
+        typefaces: 'Tipografías',
+      },
+      voiceRead: {
+        line: '{{name}}: {{parts}}',
+        rules: 'reglas',
+        samples_one: '{{formatted}} ejemplo',
+        samples_other: '{{formatted}} ejemplos',
+        notes_one: '{{formatted}} nota por red',
+        notes_other: '{{formatted}} notas por red',
       },
       rhythm: {
+        occasional: 'De vez en cuando',
         week_one: 'Una vez por semana',
         week_other: '{{formatted}} veces por semana',
         month_one: 'Una vez al mes',
         month_other: '{{formatted}} veces al mes',
       },
       run: {
-        running: 'En marcha en la campaña',
-        stopped: 'Detenida en la campaña',
+        running: '{{series}} se publica en {{campaign}}',
+        stopped: '{{series}} se detuvo en {{campaign}}',
       },
       check: {
         word: 'Revisado',
@@ -2541,8 +2751,14 @@ export const es: Translation = {
         title_other: '{{formatted}} cosas que revisar',
         inPosts_one: 'en {{formatted}} publicación',
         inPosts_other: 'en {{formatted}} publicaciones',
-        fix: 'CORREGIR',
-        openPost: 'ABRIR PUBLICACIÓN',
+        othersClean_one: 'La otra sigue la voz y las pautas.',
+        othersClean_other:
+          'Las otras {{formatted}} siguen la voz y las pautas.',
+        allClean_one: 'Sigue la voz y las pautas.',
+        allClean_other: 'Las {{formatted}} siguen la voz y las pautas.',
+        against: 'Revisado con',
+        againstVoice: 'la voz {{name}}',
+        againstGuardrails: 'Pautas',
         left_one:
           'No se leyó {{formatted}} publicación más; pídelo de nuevo para revisarla.',
         left_other:
@@ -3006,8 +3222,12 @@ export const es: Translation = {
       revised: {
         word: 'Reescrito',
         title: 'Publicación reescrita',
+        meta: 'reescrita',
+        inVoice: 'Una versión nueva, con la voz {{voice}}',
+        newVersion: 'Una versión nueva',
+        open: 'ABRIR',
         notRevised: 'La publicación se quedó como estaba',
-        versioned: 'La copia anterior está en el historial de la publicación',
+        versioned: 'La anterior sigue en las versiones de la publicación',
         unversioned:
           'No se pudo guardar la reescritura como versión, así que el historial de la publicación no tiene copia de ella',
       },
@@ -5277,6 +5497,11 @@ export const es: Translation = {
             '{{count}} cosas que tus respuestas dejaron abiertas',
         },
         whyJoin: ': ',
+        label_one:
+          '{{formatted}} pregunta · las respuestas se rellenan al confirmarlas',
+        label_other:
+          '{{formatted}} preguntas · las respuestas se rellenan al confirmarlas',
+        placeholder: 'Tu respuesta…',
         note: {
           website:
             'Responder vuelve a redactar la propuesta con tus respuestas, sin volver a leer el sitio. Lo que has conservado, descartado o editado hasta ahora se queda como lo dejaste.',
