@@ -23,3 +23,57 @@ describe('a failed tool step', () => {
     expect(stepDetail(t, failed)).toBe('didn’t go through')
   })
 })
+
+describe('a step that said what it read (CON-476)', () => {
+  it('words the detail once the step is done', () => {
+    expect(
+      stepLabel(
+        t,
+        step({
+          tool: 'askAssets',
+          detail: { subject: 'Villa Aurora brochure', passages: 3 },
+        }),
+      ),
+    ).toBe('Searched Villa Aurora brochure · 3 passages')
+    expect(
+      stepLabel(t, step({ tool: 'readAnalysis', detail: { workspace: true } })),
+    ).toBe('Read the analysis · workspace lens')
+    expect(
+      stepLabel(
+        t,
+        step({ tool: 'readAnalysis', detail: { subject: 'Spring reopening' } }),
+      ),
+    ).toBe('Read the analysis · Spring reopening’s lens')
+    expect(
+      stepLabel(
+        t,
+        step({ tool: 'compareAssets', detail: { analyses: 2, passages: 14 } }),
+      ),
+    ).toBe('Read 2 analyses and 14 passages')
+    expect(
+      stepLabel(
+        t,
+        step({
+          tool: 'createCampaignFromAssets',
+          detail: { subject: 'Spring reopening', sources: 4 },
+        }),
+      ),
+    ).toBe('Created Spring reopening · attached 4 sources')
+  })
+
+  it('keeps the tool’s own label while running, failed, or without words for it', () => {
+    const detail = { subject: 'Brochure', passages: 3 }
+    expect(
+      stepLabel(t, step({ tool: 'askAssets', detail, endedAt: null })),
+    ).toBe('Reading the assets')
+    expect(
+      stepLabel(t, step({ tool: 'askAssets', detail, failed: true })),
+    ).toBe('Reading the assets')
+    expect(stepLabel(t, step({ tool: 'findIdeas', detail }))).toBe(
+      stepLabel(t, step({ tool: 'findIdeas' })),
+    )
+    expect(stepLabel(t, step({ tool: 'readAssetsState' }))).toBe(
+      'Read the bank’s state',
+    )
+  })
+})

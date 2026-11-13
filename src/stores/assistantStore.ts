@@ -494,6 +494,7 @@ export const useAssistantStore = create<AssistantState>()(
                         ...s,
                         endedAt: now,
                         ...(event.ok ? {} : { failed: true }),
+                        ...(event.detail ? { detail: event.detail } : {}),
                       }
                     : s,
                 ),
@@ -576,6 +577,9 @@ export const useAssistantStore = create<AssistantState>()(
               setProposal(threadId, event.id, {
                 status: event.status,
                 chosen: event.chosen,
+                ...(event.status === 'confirmed'
+                  ? { answeredAt: new Date().toISOString() }
+                  : {}),
               })
               break
 
@@ -757,6 +761,7 @@ export const useAssistantStore = create<AssistantState>()(
                   content: row.content,
                   view: storedView(row.view_context),
                   answer: answerOf(row.content),
+                  at: row.created_at,
                 }
               }
               return {
@@ -890,7 +895,10 @@ export const useAssistantStore = create<AssistantState>()(
             threadId,
             proposalId,
             outcome === 'answered'
-              ? { status: 'confirmed' }
+              ? {
+                  status: 'confirmed',
+                  answeredAt: after.answeredAt ?? new Date().toISOString(),
+                }
               : {
                   status: 'closed',
                   error: i18next.t(
@@ -1242,7 +1250,7 @@ function answerOf(content: string): AssistantTurn['answer'] {
 export function settleHistory(turns: AssistantTurn[], now: number): void {
   const answered = new Map<
     string,
-    Pick<AssistantProposal, 'status' | 'error'>
+    Pick<AssistantProposal, 'status' | 'error' | 'answeredAt'>
   >()
   turns.forEach((turn, i) => {
     if (turn.role !== 'user' || !turn.answer) return
@@ -1263,7 +1271,12 @@ export function settleHistory(turns: AssistantTurn[], now: number): void {
         return
       }
     }
-    answered.set(summary, { status: turn.answer })
+    answered.set(summary, {
+      status: turn.answer,
+      ...(turn.answer === 'confirmed' && turn.at
+        ? { answeredAt: turn.at }
+        : {}),
+    })
   })
   const lastAssistant = [...turns].reverse().find((t) => t.role === 'assistant')
   for (const turn of turns) {

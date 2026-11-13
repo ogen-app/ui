@@ -2,6 +2,7 @@ import type { GoalCadence } from '@/lib/postGoal'
 import type { ViewContext } from '@/lib/viewContext'
 import type { AppliedUIAction } from '@/lib/assistantUiActions'
 import type { AnalyticsOverview, PerformersBoard } from '@/types/analytics'
+import type { AssetsState } from '@/services/api/content'
 
 /**
  * What an assistant thread is attached to — its scope (CON-450). One thread
@@ -173,8 +174,41 @@ export type AssistantProposal = {
   status: ProposalStatus
   /** The option it was answered with. */
   chosen?: string
+  /** When it was confirmed, for the line it collapses into ("confirmed 15:12"). */
+  answeredAt?: string
   /** Why it could not be answered — gone, expired, refused. */
   error?: string
+  /**
+   * What the card shows beyond the summary (CON-476): the confirm button's
+   * verb, what the work draws on and makes. The words are the server's, like
+   * the summary (CON-490 asks for the facts behind them); absent, the card is
+   * the summary and CONFIRM.
+   */
+  card?: ProposalDetails
+}
+
+export type ProposalDetails = {
+  verb?: string
+  /** Follows the headline: "from this brochure", "from 4 assets". */
+  meta?: string
+  rows: ProposalRow[]
+  sources: { id: string; title: string; type?: string }[]
+  footnote?: string
+  /** The same work over more sources than the narrow default offered. */
+  widen?: { note: string; label: string; instruction: string }
+}
+
+/**
+ * One detail of an offer. `kind` lays it out: a `dates` row formats its own
+ * `start`/`end` and keeps `value` for an open window the server words, a
+ * `grounding` row sits in the amber slot.
+ */
+export type ProposalRow = {
+  kind: 'destination' | 'type' | 'dates' | 'grounding' | 'tags' | string
+  value: string
+  note?: string
+  start?: string
+  end?: string
 }
 
 /**
@@ -201,6 +235,8 @@ export type ProposalStatus =
  * without them is prose.
  */
 export type AssetsResults = {
+  /** The bank's state, when the turn read it for its card (`readAssetsState`). */
+  state?: AssetsBankState
   ask?: AssetsAsk
   analysis?: AnalysisRead
   compare?: AssetComparison
@@ -211,7 +247,14 @@ export type AssetsResults = {
 /** What a question about the assets searched, and where it found it. */
 export type AssetsAsk = {
   scope: 'asked' | 'open_asset' | 'campaign' | 'workspace'
-  excerpts: { assetId: string; title: string; pages: string }[]
+  /** `type` is the asset's kind — PDF, DOC, IMG… — for its badge. */
+  excerpts: { assetId: string; title: string; type?: string; pages: string }[]
+}
+
+/** The bank's state as a turn read it: the counts and the first of each list. */
+export type AssetsBankState = AssetsState & {
+  waitingAssets: { id: string; title: string }[]
+  failedAssets: { id: string; title: string }[]
 }
 
 /** A lens: a campaign's, or the workspace's when `campaignId` is absent. */
@@ -221,12 +264,18 @@ export type AnalysisLens = {
   /** ready | pending | running | failed | skipped | not_read */
   status: string
   readAt?: string
+  /** How many ideas this lens distilled from the asset. */
+  ideaCount: number
 }
 
 /** What one lens's analysis found in an asset (`readAnalysis`). */
 export type AnalysisRead = {
   assetId: string
   title: string
+  /** The asset's kind and length, when known. */
+  type?: string
+  pageCount?: number
+  durationMs?: number
   lens: AnalysisLens
   gist: string
   summary: string
@@ -267,7 +316,14 @@ export type AssetComparedRef = {
 /** A list's smart groups (`listSavedViews`). */
 export type SavedViewList = {
   list: 'ideas' | 'assets'
-  views: { id: string; name: string; shared: boolean; count?: number }[]
+  views: {
+    id: string
+    name: string
+    shared: boolean
+    count?: number
+    /** The list endpoint's own query string the group stands for. */
+    filter: string
+  }[]
 }
 
 /** A campaign set up from assets (`createCampaignFromAssets`). */
@@ -279,6 +335,8 @@ export type CampaignFromAssets = {
   endDate?: string
   assetIds: string[]
   undoId?: string
+  /** When the yes made it. */
+  createdAt?: string
 }
 
 /**
@@ -932,8 +990,24 @@ export type AssistantStep = {
   generated?: number
   /** The tool refused the call or hit a conflict (`tool_result.ok: false`). */
   failed?: boolean
+  /**
+   * What the step read or made, from `tool_result.step` (CON-476): worded at
+   * render time like the label. Streamed only, so a reloaded thread's steps
+   * have none.
+   */
+  detail?: StepDetail
   startedAt: number
   endedAt: number | null
+}
+
+export type StepDetail = {
+  /** An asset, a campaign, or a campaign's lens, by name. */
+  subject?: string
+  /** The step read the workspace's lens. */
+  workspace?: boolean
+  passages?: number
+  analyses?: number
+  sources?: number
 }
 
 export type AssistantTurn = {
@@ -979,6 +1053,8 @@ export type AssistantTurn = {
    * user typed.
    */
   answer?: 'confirmed' | 'dismissed'
+  /** When a stored turn was recorded — history only. */
+  at?: string
   /** Post turns only. */
   saveVersion?: boolean
   versionNote?: string

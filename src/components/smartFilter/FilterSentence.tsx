@@ -16,6 +16,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { cn } from '@/lib'
 import { nextDay, previousDay } from '@/lib/assetFilter'
 import { formatListParts, formatNumber } from '@/lib/intl'
+import { ledBySubject, orderedTokens } from '@/lib/smartFilter'
 import type {
   Clause,
   CountQuery,
@@ -127,22 +128,12 @@ export function FilterSentence<F, Field extends string>({
   const [opened, setOpened] = useState<Opened<Field> | null>(null)
   const [adding, setAdding] = useState(false)
 
-  const tokens = useMemo(() => {
-    const { order, subject } = vocab
-    const rank = (token: SmartToken<Field>) =>
-      token.field === subject && !token.negated
-        ? -1
-        : order.indexOf(token.field)
-    return model
-      .tokensOf(filter)
-      .filter((token) => vocab.fields.includes(token.field))
-      .sort(
-        (a, b) => rank(a) - rank(b) || Number(a.negated) - Number(b.negated),
-      )
-  }, [model, filter, vocab])
+  const tokens = useMemo(
+    () => orderedTokens(model, filter, vocab),
+    [model, filter, vocab],
+  )
   const narrowed = tokens.length > 0
-  const led =
-    !!vocab.subject && tokens[0]?.field === vocab.subject && !tokens[0].negated
+  const led = ledBySubject(tokens, vocab.subject)
 
   const startAdding = () => {
     setOpened(null)

@@ -51,6 +51,8 @@ export function chipText(
   subject: ThreadSubject,
   location: ViewLocation,
   page: ViewPage | null,
+  /** The open asset's title, when the screen has loaded it (CON-476). */
+  focusTitle?: string,
 ): string | null {
   const selection = selectionOf(page?.selection)
   if (selection && location.screen) {
@@ -81,9 +83,21 @@ export function chipText(
     focus.id === subject.postId
   )
     return null
+  if (focus.kind === 'asset' && focusTitle)
+    return t('assistant.chip.focusNamed', { title: focusTitle })
   const key = FOCUS_CHIP[focus.kind as keyof typeof FOCUS_CHIP]
   return key ? t(key) : null
 }
+
+/**
+ * What a marker can say beyond the screen (CON-476): the open asset by its
+ * title — on the list it belongs to, "On Assets · Villa Aurora brochure" —
+ * or the size of the list. Read from what the app has loaded, so it is null
+ * for anything it hasn't, and the marker says the screen alone.
+ */
+export type MarkerDetail = (
+  view: ViewContext,
+) => { screen?: ViewScreen; item: string } | null
 
 /** What makes two turns' screens the same place, for the marker. */
 function signature(view: ViewContext): string {
@@ -104,14 +118,22 @@ export function markerText(
   t: TFunction,
   view: ViewContext | undefined,
   previous: ViewContext | undefined,
+  detail?: MarkerDetail,
 ): string | null {
   if (!view) return null
   if (previous && signature(previous) === signature(view)) return null
   const screen = screenName(t, view.screen)
   const selection = selectionOf(view.selection)
   const moved = previous !== undefined
-  if (!selection)
+  if (!selection) {
+    const named = detail?.(view)
+    if (named)
+      return t(moved ? 'assistant.marker.nowItem' : 'assistant.marker.onItem', {
+        screen: screenName(t, named.screen ?? view.screen),
+        item: named.item,
+      })
     return t(moved ? 'assistant.marker.now' : 'assistant.marker.on', { screen })
+  }
   const count = counted(selection.count)
   if (selection.matching) {
     return moved
@@ -127,12 +149,13 @@ export function markerText(
 export function turnMarkers(
   t: TFunction,
   turns: AssistantTurn[],
+  detail?: MarkerDetail,
 ): Map<string, string> {
   const markers = new Map<string, string>()
   let previous: ViewContext | undefined
   for (const turn of turns) {
     if (turn.role !== 'user') continue
-    const text = markerText(t, turn.view, previous)
+    const text = markerText(t, turn.view, previous, detail)
     if (text) markers.set(turn.id, text)
     if (turn.view) previous = turn.view
   }

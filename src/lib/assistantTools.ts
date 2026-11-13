@@ -8,8 +8,12 @@
  */
 import type { TFunction } from 'i18next'
 import { i18next } from '@/i18n'
-import type { AssistantStep, AssistantThread } from '@/types/assistant'
-import { counted } from '@/lib/intl'
+import type {
+  AssistantStep,
+  AssistantThread,
+  StepDetail,
+} from '@/types/assistant'
+import { counted, formatList } from '@/lib/intl'
 
 type ToolInput = Record<string, unknown> | undefined
 
@@ -42,6 +46,7 @@ const SIMPLE_TOOLS = new Set([
   'readAnalysis',
   'compareAssets',
   'createCampaignFromAssets',
+  'readAssetsState',
   'listSavedViews',
   'distillMoreIdeas',
   'importPage',
@@ -121,6 +126,11 @@ export function describeTool(
 export function stepLabel(t: TFunction, step: AssistantStep): string {
   if (step.kind === 'plan') return t('assistant.step.plan')
   if (step.kind === 'compose') return t('assistant.step.compose')
+  const detailed =
+    step.endedAt !== null && !step.failed && step.detail
+      ? describeDetail(t, step.tool ?? '', step.detail)
+      : null
+  if (detailed) return detailed
   return describeTool(
     t,
     step.tool ?? '',
@@ -129,6 +139,64 @@ export function stepLabel(t: TFunction, step: AssistantStep): string {
     // with a check beside it would report a change that never happened.
     step.endedAt === null || step.failed ? 'running' : 'done',
   )
+}
+
+/**
+ * A finished step that said what it read or made (`tool_result.step`,
+ * CON-476): "Searched the brochure · 3 passages", "Read 2 analyses and 14
+ * passages". Null for a tool or a detail this build has no words for, which
+ * then falls back to the tool's own label.
+ */
+function describeDetail(
+  t: TFunction,
+  tool: string,
+  detail: StepDetail,
+): string | null {
+  const passages =
+    detail.passages !== undefined
+      ? t('assistant.tool.count.passages', counted(detail.passages))
+      : null
+  switch (tool) {
+    case 'askAssets':
+    case 'askCampaignAssets':
+      if (!passages) return null
+      return detail.subject
+        ? t('assistant.tool.askAssets.doneIn', {
+            subject: detail.subject,
+            passages,
+          })
+        : t('assistant.tool.askAssets.doneCount', { passages })
+    case 'readAnalysis':
+      if (detail.workspace)
+        return t('assistant.tool.readAnalysis.doneWorkspace')
+      return detail.subject
+        ? t('assistant.tool.readAnalysis.doneCampaign', {
+            campaign: detail.subject,
+          })
+        : null
+    case 'compareAssets': {
+      const read = [
+        detail.analyses !== undefined &&
+          t('assistant.tool.count.analyses', counted(detail.analyses)),
+        passages,
+      ].filter((part): part is string => !!part)
+      return read.length > 0
+        ? t('assistant.tool.compareAssets.doneRead', { what: formatList(read) })
+        : null
+    }
+    case 'createCampaignFromAssets':
+      if (!detail.subject) return null
+      return detail.sources !== undefined
+        ? t('assistant.tool.createCampaignFromAssets.doneSources', {
+            campaign: detail.subject,
+            ...counted(detail.sources),
+          })
+        : t('assistant.tool.createCampaignFromAssets.doneNamed', {
+            campaign: detail.subject,
+          })
+    default:
+      return null
+  }
 }
 
 /**

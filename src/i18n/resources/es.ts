@@ -1605,6 +1605,7 @@ export const es: Translation = {
 
     panel: {
       title: 'Estratega de contenido',
+      onThisScreen: 'En esta pantalla',
       back: 'Volver a todas las conversaciones',
       placeholderCampaign: 'Pide un plan o una revisión...',
       placeholderPost: 'Pide un cambio en esta publicación...',
@@ -1657,6 +1658,7 @@ export const es: Translation = {
       matching_one: 'La {{formatted}} coincidente · {{screen}}',
       matching_other: 'Las {{formatted}} coincidentes · {{screen}}',
       focusAsset: 'Este recurso está abierto',
+      focusNamed: '{{title}} · abierto',
       focusVoice: 'Esta voz está abierta',
       focusAudience: 'Esta audiencia está abierta',
       focusSeries: 'Esta serie está abierta',
@@ -1676,6 +1678,10 @@ export const es: Translation = {
       nowSelected_other: 'Ahora en {{screen}} · {{formatted}} seleccionadas',
       nowMatching_one: 'Ahora en {{screen}} · la {{formatted}} coincidente',
       nowMatching_other: 'Ahora en {{screen}} · las {{formatted}} coincidentes',
+      onItem: 'En {{screen}} · {{item}}',
+      nowItem: 'Ahora en {{screen}} · {{item}}',
+      documents_one: '{{formatted}} documento',
+      documents_other: '{{formatted}} documentos',
     },
 
     composer: {
@@ -1817,6 +1823,8 @@ export const es: Translation = {
       askAssets: {
         running: 'Leyendo los recursos',
         done: 'Leídos los recursos',
+        doneIn: 'Buscado en {{subject}} · {{passages}}',
+        doneCount: 'Buscado en los recursos · {{passages}}',
       },
       analyseAsset: {
         running: 'Analizando un recurso',
@@ -1825,14 +1833,31 @@ export const es: Translation = {
       readAnalysis: {
         running: 'Leyendo el análisis',
         done: 'Leído el análisis',
+        doneWorkspace: 'Leído el análisis · lente del espacio de trabajo',
+        doneCampaign: 'Leído el análisis · lente de {{campaign}}',
       },
       compareAssets: {
         running: 'Comparando los recursos',
         done: 'Comparados los recursos',
+        doneRead: 'Leídos {{what}}',
       },
       createCampaignFromAssets: {
         running: 'Preparando la campaña',
         done: 'Preparada la campaña',
+        doneNamed: 'Creada {{campaign}}',
+        doneSources_one: 'Creada {{campaign}} · {{formatted}} fuente adjunta',
+        doneSources_other:
+          'Creada {{campaign}} · {{formatted}} fuentes adjuntas',
+      },
+      readAssetsState: {
+        running: 'Leyendo el estado del banco',
+        done: 'Leído el estado del banco',
+      },
+      count: {
+        passages_one: '{{formatted}} fragmento',
+        passages_other: '{{formatted}} fragmentos',
+        analyses_one: '{{formatted}} análisis',
+        analyses_other: '{{formatted}} análisis',
       },
       listSavedViews: {
         running: 'Buscando los grupos inteligentes',
@@ -2008,6 +2033,8 @@ export const es: Translation = {
       workspace1: 'Encuentra y ordena ideas. Pregunta a tus recursos.',
       workspace2: 'Explica qué funcionó y haz más de eso.',
       workspace3: 'Cuenta qué pasó mientras no estabas.',
+      assets:
+        'Pregunta por los documentos de esta pantalla, o empieza por lo que el banco necesita.',
     },
 
     starter: {
@@ -2111,13 +2138,9 @@ export const es: Translation = {
         label: 'Buscar ideas parecidas',
         text: 'Busca ideas parecidas a estas.',
       },
-      askAssets: {
-        label: 'Preguntar a los recursos',
-        text: '¿Qué dicen los recursos sobre ',
-      },
-      ideasFromAssets: {
-        label: 'Ideas del banco',
-        text: '¿Qué recursos aún no nos han dado ideas?',
+      findDocuments: {
+        label: 'Buscar documentos sobre…',
+        text: 'Busca documentos sobre ',
       },
       analyseWaiting: {
         label_one: 'Analizar el nuevo',
@@ -2191,7 +2214,7 @@ export const es: Translation = {
         text: 'Revisa las publicaciones seleccionadas con nuestra voz y nuestras pautas.',
       },
       summariseSelected: {
-        label: 'Resumir estos',
+        label: 'Resumirlos',
         text: 'Resume los recursos seleccionados.',
       },
       planFromSelected: {
@@ -2213,6 +2236,10 @@ export const es: Translation = {
       ideasFromThis: {
         label: 'Ideas de este',
         text: 'Destila ideas de este recurso.',
+      },
+      tagIt: {
+        label: 'Etiquetarlo',
+        text: 'Etiqueta este recurso como ',
       },
       whyTopPost: {
         label: '¿Por qué funcionó la mejor?',
@@ -2295,6 +2322,25 @@ export const es: Translation = {
     },
 
     assets: {
+      state: {
+        word: 'Recursos · ahora',
+        title_one: '{{formatted}} documento',
+        title_other: '{{formatted}} documentos',
+        analysed_one: '{{formatted}} analizado',
+        analysed_other: '{{formatted}} analizados',
+        waiting_one: '{{formatted}} sin analizar aún',
+        waiting_other: '{{formatted}} sin analizar aún',
+        failed_one: '{{formatted}} análisis fallido',
+        failed_other: '{{formatted}} análisis fallidos',
+        undecided_one: '{{formatted}} idea sin decidir',
+        undecided_other: '{{formatted}} ideas sin decidir',
+        lensIdeas: '{{lens}} {{ideas}}',
+        namesAndMore_one: '{{names}} y {{formatted}} más',
+        namesAndMore_other: '{{names}} y {{formatted}} más',
+        analyse: 'ANALIZAR',
+        retry: 'REINTENTAR',
+        triage: 'DECIDIR',
+      },
       ask: {
         chip: '{{title}} · {{pages}}',
         onlyThis: 'Solo este recurso.',
@@ -2304,7 +2350,7 @@ export const es: Translation = {
       lens: {
         workspace: 'Lente del espacio de trabajo',
         campaign: 'Lente de {{name}}',
-        readOn: '{{lens}} · leído el {{date}}',
+        theWorkspace: 'el espacio de trabajo',
       },
       analysis: {
         word: {
@@ -2315,16 +2361,32 @@ export const es: Translation = {
           skipped: 'Omitido para esta lente',
           notRead: 'Sin leer para esta lente',
         },
+        wordLens: '{{word}} · {{lens}}',
         ideas_one: '{{formatted}} idea extraída',
         ideas_other: '{{formatted}} ideas extraídas',
-        ideasByVerdict:
-          '{{undecided}} sin decidir · {{yes}} sí · {{later}} más tarde',
+        pile: {
+          waiting_one: '{{formatted}} en la mesa',
+          waiting_other: '{{formatted}} en la mesa',
+          yes_one: '{{formatted}} en marcha',
+          yes_other: '{{formatted}} en marcha',
+          later_one: '{{formatted}} en el cajón',
+          later_other: '{{formatted}} en el cajón',
+          no_one: '{{formatted}} descartada',
+          no_other: '{{formatted}} descartadas',
+        },
+        lensIdeas_one: '{{formatted}} idea',
+        lensIdeas_other: '{{formatted}} ideas',
+        readOn: 'leído el {{date}}',
         openIdeas: 'ABRIR IDEAS',
-        notReadFor: 'La {{lens}} no lo ha leído.',
-        analyse: 'ANALIZAR',
+        notReadFor: 'La {{lens}} no lo ha leído',
+        readFor: 'Leído para {{owner}}',
+        readForOn: 'Leído para {{owner}} el {{date}}',
+        showThat: 'MOSTRAR ESE',
+        analyseFor: 'Analizar para {{owner}}',
         analysePrompt: 'Analízalo para la {{lens}}.',
         show: 'MOSTRAR',
         showPrompt: '¿Qué encontró el análisis para la {{lens}}?',
+        readFrom: 'Leído de',
         analysisOf: 'Análisis de {{title}}',
       },
       compare: {
@@ -2332,15 +2394,17 @@ export const es: Translation = {
         wordSummarised: 'Resumido',
         title_one: '{{formatted}} documento',
         title_other: '{{formatted}} documentos',
-        shared: 'Todos',
-        partial: 'Solo algunos',
+        shared_one: 'Los {{formatted}}',
+        shared_other: 'Los {{formatted}}',
+        partial_one: 'Solo {{formatted}}',
+        partial_other: 'Solo {{formatted}}',
         conflicts: 'No coinciden',
         askWhich: 'PREGUNTAR CUÁL',
         askWhichPrompt: '¿Cuál es correcto: {{claim}}?',
         fromPassages_one:
-          '{{titles}} se leyó a partir de sus fragmentos: no hay análisis para esta lente.',
+          '{{titles}} no está analizado para esta lente, así que se leyó a partir de sus fragmentos.',
         fromPassages_other:
-          '{{titles}} se leyeron a partir de sus fragmentos: no hay análisis para esta lente.',
+          '{{titles}} no están analizados para esta lente, así que se leyeron a partir de sus fragmentos.',
         skipped_one: '{{titles}} no tenía nada que leer.',
         skipped_other: '{{titles}} no tenían nada que leer.',
         missing_one:
@@ -2353,16 +2417,22 @@ export const es: Translation = {
         title_one: '{{formatted}} en {{list}}',
         title_other: '{{formatted}} en {{list}}',
         none: 'Aún no hay grupos inteligentes en {{list}}',
+        sentenceAssets: 'Documentos {{clauses}}',
+        sentenceIdeas: 'Ideas {{clauses}}',
+        sentenceSubject: '{{clauses}}',
         countAssets_one: '{{formatted}} documento',
         countAssets_other: '{{formatted}} documentos',
         countIdeas_one: '{{formatted}} idea',
         countIdeas_other: '{{formatted}} ideas',
-        shared: 'Compartido',
+        workspaceOnly:
+          'Los grupos inteligentes se abren en {{list}} del espacio de trabajo, fuera de esta campaña.',
         open: 'ABRIR',
       },
       campaign: {
         sources_one: '{{formatted}} fuente adjunta',
         sources_other: '{{formatted}} fuentes adjuntas',
+        sourcesNote:
+          'Los documentos siguen en el banco; la campaña apunta a ellos.',
         open: 'ABRIR',
       },
     },
@@ -2540,6 +2610,7 @@ export const es: Translation = {
       select_one: 'Seleccionó {{formatted}} en {{screen}}',
       select_other: 'Seleccionó {{formatted}} en {{screen}}',
       openSavedView: 'Abrió un grupo inteligente en {{screen}}',
+      openSavedViewNamed: 'Abrió «{{name}}» <where>en {{screen}}</where>',
       setWindow: 'Mostró {{window}} en {{screen}}',
       openReconnect: 'Abrió Ajustes para reconectar {{platform}}',
       openConnect: 'Abrió Ajustes para conectar {{platform}}',
@@ -2558,6 +2629,7 @@ export const es: Translation = {
       stopped:
         'Se detuvo antes de terminar. Lo que hizo está en la respuesta de abajo.',
       confirmed: '{{summary}} · confirmada',
+      confirmedAt: '{{summary}} · confirmada a las {{time}}',
       dismissed: '{{summary}} · descartada',
       expired: '{{summary}} · caducada',
       superseded: '{{summary}} · sin responder',
@@ -2565,6 +2637,12 @@ export const es: Translation = {
       stale: '{{summary}} · cambió desde entonces, no se ejecutó nada',
       working: '{{summary}} · en marcha…',
       recommended: 'RECOMENDADA',
+      row: {
+        destination: 'Dónde',
+        type: 'Tipo',
+        dates: 'Cuándo',
+        tags: 'Etiquetas',
+      },
     },
 
     findings: {

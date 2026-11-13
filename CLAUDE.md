@@ -599,9 +599,22 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   fill, so the one dark thing in the rail is the next action. A finished turn
   under ten seconds leaves no timing behind. Labels — tool steps included — are
   worded at render time from the stored tool and input (`stepLabel`), never
-  stored as sentences. The empty thread's centred starters are deliberately
-  unchanged; starters themselves follow the screen and the selection
-  (`StarterChips`). Outside the rail the same fact is the record's: a post's
+  stored as sentences — and a finished step that sends `tool_result.step`
+  (what it read or made, as counts and a name, CON-476) is worded from that
+  instead, which lives only on the stream, so a reloaded thread's steps fall
+  back to the tool's own label. The empty thread's centred starters are
+  deliberately unchanged, except that on the Assets list its line says the
+  chips lead with what the bank has waiting; starters themselves follow the
+  screen and the selection (`StarterChips`), and in a thread already going
+  they sit over the composer under ON THIS SCREEN. **An offer's card can say
+  what it draws on and makes** (`proposal.card`, CON-476): a verb for the
+  confirm, meta after the headline, detail rows by `kind`, sources with their
+  kind's mark (`AssetTypeBadge`), a footnote, and a widen line that asks
+  again with the server's instruction. Those words are the server's, like the
+  summary, so they stay English in another language until CON-490 sends the
+  facts behind them; only the row labels, the dates (from `start`/`end`) and
+  the marks are ours. A confirmed offer says when (`answeredAt`, or the
+  stored answer's own time). Outside the rail the same fact is the record's: a post's
   or idea's `grounding_mode` is drawn by `NotGroundedMark` on the posts list,
   the calendar card, the idea row and the post's Sources card (CON-469) —
   only `exploratory` is marked, and `null` (nobody generated it) is unknown,
@@ -646,7 +659,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   follow-up that only reads (search wider, another lens, settle a
   disagreement) is sent on the click; one that writes (analyse) fills the
   composer. A smart group's OPEN goes through `applyScreenAction`, the same
-  applier a turn's `ui_action`s use. The Assets list's suggestions lead with
+  applier a turn's `ui_action`s use — always to the **workspace's** list,
+  since smart groups load nowhere else, and the card says so inside a
+  campaign. Each group is named by its stored filter in the list's own
+  sentence (`useSavedViewText`, through `lib/smartFilter`'s
+  `orderedTokens`, which `FilterSentence` reads too). `readAssetsState`
+  answers "how does the bank stand" as `results.assets.state`, in the REST
+  endpoint's own shape (`parseAssetsState`). The Assets list's suggestions lead with
   what is waiting, read from `GET /api/content-bank/assets-state`
   (`useAssetsState`) — the same counts the assistant reads — and each shows
   only when its count is above zero.

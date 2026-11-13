@@ -19,8 +19,8 @@ import type { Grounding } from '@/types/assistant'
  */
 
 const STATUS_TONE = {
-  neutral: 'text-tertiary-foreground',
-  warning: 'text-warning',
+  neutral: 'text-secondary-foreground',
+  warning: 'text-warning-ink',
   destructive: 'text-destructive',
   accent: 'text-accent',
 } as const
@@ -38,7 +38,7 @@ export function StatusWord({
   return (
     <p
       className={cn(
-        'text-[10.5px] font-semibold uppercase tracking-[0.1em]',
+        'text-[10.5px] font-semibold uppercase tracking-[0.12em]',
         STATUS_TONE[tone],
       )}
     >
@@ -73,7 +73,7 @@ export function ResultBlock({
         <h3 className="min-w-0 text-base/6 font-medium text-foreground">
           {title}
           {meta && (
-            <span className="ml-2 text-sm font-normal text-tertiary-foreground">
+            <span className="ml-2 text-sm font-normal text-secondary-foreground">
               {meta}
             </span>
           )}
@@ -103,22 +103,32 @@ export function ResultRow({
 /**
  * Where generated output came from. Always the same slot, so its absence is
  * visible: the source names in the accent, or "Not grounded" in amber with the
- * reason beside it.
+ * reason beside it. `label` replaces "Sources" where the card read rather than
+ * made ("Read from"); `letters` puts a comparison's letter before each name.
  */
-export function SourcesLine({ grounding }: { grounding: Grounding }) {
+export function SourcesLine({
+  grounding,
+  label,
+  letters,
+}: {
+  grounding: Grounding
+  label?: string
+  letters?: Record<string, string>
+}) {
   const { t } = useTranslation()
   const names = groundingAssets(grounding.sources)
   return (
     <p className="border-t border-border pt-2.5 text-[12.5px]">
-      <span className="text-tertiary-foreground">
-        {t('assistant.sources.label')}
+      <span className="text-secondary-foreground">
+        {label ?? t('assistant.sources.label')}
       </span>{' '}
       {grounding.mode === 'grounded' ? (
-        <span className="font-medium text-accent">
+        <span className="font-semibold text-accent-ink">
           {names.length > 0
             ? names.map((s, i) => (
                 <Fragment key={s.id || s.title}>
                   {i > 0 && ', '}
+                  {s.id && letters?.[s.id] && `${letters[s.id]} `}
                   {s.id ? (
                     <Link
                       to="/assets/$assetId"
@@ -136,7 +146,7 @@ export function SourcesLine({ grounding }: { grounding: Grounding }) {
         </span>
       ) : (
         <>
-          <span className="font-medium text-warning">
+          <span className="font-semibold text-warning-ink">
             {t('assistant.sources.notGrounded')}
           </span>{' '}
           <span className="text-secondary-foreground">
@@ -171,6 +181,9 @@ export function PendingBox({ children }: { children: React.ReactNode }) {
 }
 
 /** A text action on a headline — UNDO, OPEN. */
+export const TEXT_ACTION_CLASS =
+  'cursor-pointer text-xs font-semibold tracking-[0.06em] text-foreground hover:text-secondary-foreground disabled:cursor-default disabled:text-quinary-foreground'
+
 export function TextAction({
   children,
   onClick,
@@ -185,7 +198,7 @@ export function TextAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="cursor-pointer text-xs font-medium tracking-[0.03em] text-secondary-foreground hover:text-foreground disabled:cursor-default disabled:text-quinary-foreground"
+      className={TEXT_ACTION_CLASS}
     >
       {children}
     </button>
