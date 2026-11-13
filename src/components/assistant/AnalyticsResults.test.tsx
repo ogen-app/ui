@@ -159,10 +159,10 @@ describe('an analytics read', () => {
   it('heads a sorted list by its end and platform, and names its platform', async () => {
     await show({
       posts: {
-        applied: { platforms: ['linkedin'], preset: '28d' },
+        applied: { platforms: ['linkedin'] },
         data: {
           total: 14,
-          sortBy: 'engagement_rate',
+          sortBy: 'engagement',
           order: 'asc',
           items: [
             {
@@ -180,11 +180,11 @@ describe('an analytics read', () => {
     expect(screen.getByText('1 lowest on LinkedIn')).toBeTruthy()
     expect(
       screen.getByText(
-        'Last 28 days · LinkedIn · All campaigns · sorted by engagement rate',
+        'All time · LinkedIn · All campaigns · sorted by engagement rate',
       ),
     ).toBeTruthy()
     expect(screen.getByText('OPEN').getAttribute('href')).toBe(
-      '/analytics?window=28d&platform=linkedin',
+      '/analytics?platform=linkedin',
     )
   })
 
@@ -237,6 +237,31 @@ describe('an analytics read', () => {
       ),
     ).toBeTruthy()
     expect(screen.getByText(/31 days against 30/)).toBeTruthy()
+  })
+
+  it('calls a comparison level when rises and falls balance, unchanged ones counting for neither', async () => {
+    const metric = (name: string, change: number) => ({
+      metric: name,
+      label: name,
+      unit: 'count' as const,
+      first: 10,
+      second: 10 + change,
+      change,
+      changePct: change * 10,
+    })
+    await show({
+      compare: {
+        first: march,
+        second: { ...march, from: '2026-04-01', to: '2026-04-30' },
+        metrics: [
+          metric('reach', 1),
+          metric('interactions', -1),
+          metric('followers', 0),
+        ],
+      },
+    })
+    expect(screen.getByText('April level with March')).toBeTruthy()
+    expect(screen.getByText('up on 1, down on 1')).toBeTruthy()
   })
 })
 
@@ -326,29 +351,25 @@ describe('more like these', () => {
     expect(screen.queryByRole('link', { name: 'Opening day' })).toBeNull()
   })
 
-  it('draws no DONE card when it saved no ideas, and no trail after an offer', async () => {
-    await renderWithProviders(
-      <AnalyticsResults
-        fromOffer
-        results={{
-          more: {
-            grounding: [],
-            trail: [
-              {
-                postId: 'p2',
-                title: 'Opening day on the rooftop',
-                ideas: [],
-                assets: [],
-                noTrail: true,
-              },
-            ],
+  it('draws no DONE card when it saved no ideas, and keeps the trail', async () => {
+    await show({
+      more: {
+        grounding: [],
+        trail: [
+          {
+            postId: 'p2',
+            title: 'Opening day on the rooftop',
             ideas: [],
+            assets: [],
+            noTrail: true,
           },
-        }}
-      />,
-    )
+        ],
+        ideas: [],
+      },
+    })
     expect(screen.queryByText(/Planned/)).toBeNull()
-    expect(screen.queryByText('No trail recorded')).toBeNull()
+    // A confirmed offer collapses to a line, so the result keeps the trail.
+    expect(screen.getByText('No trail recorded')).toBeTruthy()
   })
 })
 

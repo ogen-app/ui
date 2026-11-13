@@ -10,7 +10,10 @@ const view = (zernioId: string, name: string, accounts: number) => ({
 })
 
 vi.mock('@/hooks/usePlatforms', () => ({
-  usePlatformCatalog: () => ({ resolve: () => undefined }),
+  usePlatformCatalog: () => ({
+    resolve: (slug: string) =>
+      ({ instagram: { name: 'Instagram' } })[slug as 'instagram'],
+  }),
   usePlatformViews: () => [
     view('instagram', 'Instagram', 1),
     view('linkedin', 'LinkedIn', 1),
@@ -80,5 +83,31 @@ describe('a set_window row (CON-479)', () => {
     ).toBeTruthy()
     expect(screen.getAllByText('BACK')).toHaveLength(1)
     expect(screen.queryByText('Last 28 days')).toBeNull()
+  })
+
+  it('keeps a navigate elsewhere and the window as two rows', async () => {
+    await show([
+      { before: '/ideas', action: { type: 'navigate', screen: 'assets' } },
+      setWindow(),
+    ])
+    expect(screen.getByText('Opened Assets')).toBeTruthy()
+    expect(
+      screen.getByText('Analytics set to Mar 1 – Mar 31 · Instagram'),
+    ).toBeTruthy()
+  })
+
+  it('names the dates a preset the picker lacks lands as', async () => {
+    await show([
+      setWindow({
+        window: {
+          from: '2026-03-01',
+          to: '2026-03-31',
+          preset: '31d',
+          platforms: [],
+        },
+        changed: ['period'],
+      }),
+    ])
+    expect(screen.getByText('Analytics set to Mar 1 – Mar 31')).toBeTruthy()
   })
 })

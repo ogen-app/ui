@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useCampaigns } from '@/hooks/useCampaigns'
-import { usePlatformViews } from '@/hooks/usePlatforms'
+import { usePlatformCatalog, usePlatformViews } from '@/hooks/usePlatforms'
 import { periodLabel } from '@/lib/analyticsCitation'
 import { presetName } from '@/lib/analyticsWindow'
 import { formatList } from '@/lib/intl'
@@ -26,21 +26,29 @@ export type WindowParts = Record<WindowControl, string | null>
  * campaigns" when nothing narrows them. One place, so the chip, the marker
  * and the set_window row can't word one window three ways.
  *
- * Platforms go through the page's own rule: only a connected one counts, and
- * only while more than one is connected. Naming a platform the numbers don't
- * narrow by is the rail contradicting the screen.
+ * A window the page sent is named as it was sent — it already holds only the
+ * platforms the page counted, and a marker is history, so a platform
+ * disconnected since must not drop out of it. With `counted`, for a window
+ * the assistant set, the platforms go through the page's own rule instead:
+ * only a connected one counts, and only while more than one is connected.
+ * Naming a platform the numbers don't narrow by is the rail contradicting
+ * the screen.
  */
-export function useWindowWords(): {
+export function useWindowWords({
+  counted = false,
+}: { counted?: boolean } = {}): {
   parts: (w: WindowLike) => WindowParts
   line: (w: WindowLike, only?: readonly WindowControl[]) => string
 } {
   const { t } = useTranslation()
   const views = usePlatformViews()
+  const { resolve } = usePlatformCatalog()
   const campaigns = useCampaigns().data ?? []
   const connected = views.filter((v) => connectedAccounts(v).length > 0)
   const parts = (w: WindowLike): WindowParts => {
-    const counted =
-      connected.length > 1
+    const named = !counted
+      ? (w.platforms ?? []).map((slug) => resolve(slug)?.name ?? slug)
+      : connected.length > 1
         ? (w.platforms ?? []).flatMap((slug) => {
             const view = connected.find((v) => v.info.zernioId === slug)
             return view ? [view.info.name] : []
@@ -53,8 +61,8 @@ export function useWindowWords(): {
           ? periodLabel(t, w.from, w.to)
           : null,
       platforms:
-        counted.length > 0
-          ? formatList(counted)
+        named.length > 0
+          ? formatList(named)
           : t('assistant.analytics.cite.allPlatforms'),
       campaign: w.campaignId
         ? (campaigns.find((c) => c.id === w.campaignId)?.name ??

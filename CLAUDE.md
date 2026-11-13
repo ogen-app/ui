@@ -759,8 +759,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   posts, a percent otherwise, a fall in amber. `services/api/assistantAnalytics`
   parses them; `AnalyticsResults` draws them. `moreLikeThese` makes **ideas,
   not posts**: the trail (post → idea → analysis → asset and its passages,
-  `TrailRows`) is drawn on the **offer** (`card.trail`) and on a result that
-  had none, OPEN lands on the server's `filter` on Ideas, and a run that saved
+  `TrailRows`) is drawn on the **offer** (`card.trail`) and again on the
+  result, since a confirmed offer collapses to one line; OPEN lands on the server's `filter` on Ideas, and a run that saved
   none draws no DONE card. A post cited as a source (`kind: 'post'`) is named,
   never linked.
   **The dashboard's period, platforms and campaign are its address**
@@ -770,10 +770,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   dashboard narrowed to the campaign. The window the page sends carries the
   campaign and the picker's `preset`, and is what the composer's chip and the
   thread's markers say on the dashboard, through one wording
-  (`assistant/useWindowWords`), which names only the platforms the page
-  actually counts. A set_window row names only what `changed`, offers BACK,
-  and shows before → after unless a navigate in the same turn led there
-  (CON-497) — that pair is one row; the scope bar tints what the assistant
+  (`assistant/useWindowWords`): a window the page sent is named as sent (it
+  already holds only what the page counted, and a marker is history), and one
+  the assistant set (`counted`) only by the platforms the page counts, its
+  period as it lands (`offeredPeriod`). A set_window row names only what
+  `changed`, offers BACK, and shows before → after unless a navigate in the
+  same turn led there (CON-497) — a navigate to the same route and its window
+  are one row; the scope bar tints what the assistant
   changed (`stores/analyticsHighlightStore`) until the user's next touch. A
   set_window whose dates are only the period on screen resolved keeps the
   period a preset, and a preset the picker doesn't offer lands as its dates.

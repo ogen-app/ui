@@ -55,17 +55,8 @@ import {
  * bar's own words — so a default the server picked is never mistaken for what
  * is on screen. Figures are in Plex Mono. The lessons and one post's figures
  * stay with the model's words, and are cited alone.
- *
- * `fromOffer` is a turn that answered an offer: "more like these" showed its
- * trail on the offer already, so the result doesn't draw it a second time.
  */
-export function AnalyticsResults({
-  results: r,
-  fromOffer = false,
-}: {
-  results: Results
-  fromOffer?: boolean
-}) {
+export function AnalyticsResults({ results: r }: { results: Results }) {
   const { t } = useTranslation()
   const cite = useCitation()
   const names = usePlatformNames()
@@ -175,6 +166,7 @@ export function AnalyticsResults({
           read={r.posts}
           status={t('assistant.analytics.posts.word')}
           cite={cite}
+          span="allTime"
           extra={r.posts.data ? sortedBy(t, r.posts.data) : undefined}
           title={(d, a) => postsTitle(t, names, d, a)}
           action={<PostsOpen applied={r.posts.applied} />}
@@ -182,10 +174,7 @@ export function AnalyticsResults({
         />
       ),
     ],
-    [
-      'more',
-      r.more && <MoreLikeTheseCard more={r.more} showTrail={!fromOffer} />,
-    ],
+    ['more', r.more && <MoreLikeTheseCard more={r.more} />],
     [
       'lessons',
       r.lessons && (
@@ -817,10 +806,14 @@ function FollowerRows({
   )
 }
 
+/**
+ * The list's sort keys (the server's `sort_by`) that are a figure a row
+ * carries. Any other key — likes, saves, published_at — words the list by
+ * its size and shows reach and rate, rather than naming a figure it hasn't.
+ */
 const SORT_MEASURE: Record<string, MeasureId> = {
-  engagement_rate: 'engagement_rate',
+  engagement: 'engagement_rate',
   reach: 'reach',
-  interactions: 'interactions',
 }
 
 /**
@@ -987,9 +980,10 @@ function CompareCard({
       </ResultBlock>
     )
   }
-  const won = compare.metrics.filter((m) => m.change > 0).length
+  // Rises against falls; an unchanged metric counts for neither period.
+  const up = compare.metrics.filter((m) => m.change > 0).length
+  const down = compare.metrics.filter((m) => m.change < 0).length
   const total = compare.metrics.length
-  const leads = won * 2 >= total
   const lengths =
     compare.first.from &&
     compare.first.to &&
@@ -1004,14 +998,23 @@ function CompareCard({
     <ResultBlock
       status={t('assistant.analytics.compare.word')}
       title={
-        leads
+        up > down
           ? t('assistant.analytics.compare.beat', { first, second })
-          : t('assistant.analytics.compare.trailed', { first, second })
+          : down > up
+            ? t('assistant.analytics.compare.trailed', { first, second })
+            : t('assistant.analytics.compare.level', { first, second })
       }
-      meta={t('assistant.analytics.compare.on', {
-        won: formatNumber(leads ? won : total - won),
-        total: formatNumber(total),
-      })}
+      meta={
+        up === down
+          ? t('assistant.analytics.compare.split', {
+              up: formatNumber(up),
+              down: formatNumber(down),
+            })
+          : t('assistant.analytics.compare.on', {
+              won: formatNumber(Math.max(up, down)),
+              total: formatNumber(total),
+            })
+      }
     >
       <div className="flex gap-3 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-secondary-foreground">
         <span className="min-w-0 flex-1" />
@@ -1196,18 +1199,13 @@ function TrailLine({
 }
 
 /**
- * "More like these": the trail (unless the offer showed it), then the ideas
+ * "More like these": the trail — the offer showed it before the yes, and a
+ * confirmed offer collapses to one line, so the result keeps it — then the ideas
  * it saved and one sources line for all of them. They are ideas, not posts —
  * nothing reached the calendar — and OPEN lands on just these on Ideas. A run
  * that saved none draws no DONE card.
  */
-function MoreLikeTheseCard({
-  more,
-  showTrail,
-}: {
-  more: MoreLikeThese
-  showTrail: boolean
-}) {
+function MoreLikeTheseCard({ more }: { more: MoreLikeThese }) {
   const { t } = useTranslation()
   const said = more.ideas.flatMap((i) => (i.grounding ? [i.grounding] : []))
   const grounding: Grounding | undefined =
@@ -1237,7 +1235,7 @@ function MoreLikeTheseCard({
   const lonely = more.trail.length > 0 && more.trail.every((s) => s.noTrail)
   return (
     <div className="flex flex-col gap-5">
-      {showTrail && more.trail.length > 0 && (
+      {more.trail.length > 0 && (
         <ResultBlock
           status={t('assistant.analytics.more.trailWord')}
           title={

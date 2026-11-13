@@ -4,7 +4,12 @@ import { screenName } from '@/lib/assistantView'
 import { counted } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
-import { windowCampaign, type UIAction } from '@/lib/assistantUiActions'
+import {
+  destinationFor,
+  windowCampaign,
+  type UIAction,
+} from '@/lib/assistantUiActions'
+import { offeredPeriod } from '@/lib/analyticsWindow'
 import {
   windowControls,
   type WindowControl,
@@ -30,7 +35,7 @@ export function UiActionRows({
 }) {
   const { t } = useTranslation()
   const undo = useAssistantStore((s) => s.undoUiAction)
-  const words = useWindowWords()
+  const words = useWindowWords({ counted: true })
   const { resolve } = usePlatformCatalog()
   const platformName = (slug: string) => resolve(slug)?.name ?? slug
   return (
@@ -111,13 +116,19 @@ function folds(
     first?.action.type === 'navigate' &&
     second?.action.type === 'set_window' &&
     Boolean(first.before) &&
-    Boolean(second.before)
+    Boolean(second.before) &&
+    // Only a navigate to where the window lands: one into Assets followed by
+    // a window on the dashboard is two moves.
+    destinationFor(first.action)?.to === destinationFor(second.action)?.to
   )
 }
 
 /** The window an action left on screen, with the campaign it narrows to. */
 function windowOf(action: UIAction): WindowLike {
-  return { ...action.window, campaignId: windowCampaign(action) }
+  return offeredPeriod({
+    ...action.window,
+    campaignId: windowCampaign(action),
+  })
 }
 
 /** What `changed` names, in the bar's order; nothing named is everything. */
@@ -132,7 +143,7 @@ function changedControls(action: UIAction): WindowControl[] {
  */
 function WindowChange({ action }: { action: UIAction }) {
   const { t } = useTranslation()
-  const words = useWindowWords()
+  const words = useWindowWords({ counted: true })
   if (!action.before || !action.window) return null
   const before = words.parts(action.before)
   const after = words.parts(windowOf(action))

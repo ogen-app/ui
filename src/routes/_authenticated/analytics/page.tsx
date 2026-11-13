@@ -131,7 +131,7 @@ export function AnalyticsPage() {
   const answered = overview.range
   const answeredKey = overview.platforms.join(',')
   const answeredCampaign = overview.campaignId
-  const answeredPreset = range ? undefined : window
+  const answeredPreset = overview.preset
   useAssistantPage(
     useMemo(() => {
       if (!answered && picked.size === 0) return null

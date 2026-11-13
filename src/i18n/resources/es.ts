@@ -3016,6 +3016,8 @@ export const es: Translation = {
       compare: {
         word: 'Comparado',
         beat: '{{second}} superó a {{first}}',
+        level: '{{second}} igualó a {{first}}',
+        split: 'sube en {{up}}, baja en {{down}}',
         trailed: '{{second}} quedó por detrás de {{first}}',
         on: 'en {{won}} de {{total}}',
         vs: '{{first}} frente a {{second}}',
