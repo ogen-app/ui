@@ -4,8 +4,10 @@ import { Link } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button.tsx'
+import { IgnoredList } from '@/components/assistant/FindingsBlock'
 import { campaignProblemsKey } from '@/hooks/useCampaignProblems'
-import { counted } from '@/lib/intl'
+import { counted, formatNumber } from '@/lib/intl'
+import { cn } from '@/lib/styles'
 import {
   dismissCampaignFinding,
   type CampaignProblems,
@@ -69,21 +71,34 @@ export function AttentionRail({
       </LineItem>
     ),
   })
-  const rows: { id: string; node: ReactNode }[] = [
+  // The server's problems are never folded away: each carries its fix, and
+  // a fix behind SHOW MORE is a fix nobody runs. Only the client's hygiene
+  // rules below them are capped.
+  const fixed: { id: string; node: ReactNode }[] = [
     ...items.filter((item) => item.severity === 'alert').map(clientRow),
     ...(problems?.problems ?? []).map((problem) => ({
       id: problem.key,
-      node: <ProblemRow problem={problem} campaignId={campaignId} />,
+      node: (
+        <ProblemRow problem={problem} campaignId={campaignId} onFix={ask} />
+      ),
     })),
-    ...items.filter((item) => item.severity !== 'alert').map(clientRow),
   ]
+  const rest = items.filter((item) => item.severity !== 'alert').map(clientRow)
+  const send = useAssistantStore((s) => s.send)
+  const openRightPanel = useSettingsStore((s) => s.openRightPanel)
+  function ask(text: string) {
+    openRightPanel('assistant')
+    void send(threadIdFor({ kind: 'campaign', campaignId }), text)
+  }
+  const ignored = problems?.dismissedProblems ?? []
+  const total = fixed.length + rest.length
 
   // The empty state is the good news, so it reads as good news — the card is
   // titled for the verdict, not for the section.
-  if (rows.length === 0) {
+  if (total === 0) {
     return (
       <OverviewCard
-        title="You're all set"
+        title={t('campaignOverview.attention.allSet')}
         // The card is the only one on the screen that isn't a section, so it
         // is the only one whose mark says a verdict rather than a place — and
         // the verdict has two faces. Both are drawn as lines, like the section
@@ -94,9 +109,12 @@ export function AttentionRail({
         className="gap-2"
       >
         <p className="text-sm text-secondary-foreground">
-          Nothing is failing, overdue, or waiting on you right now. If something
-          comes up, it'll show up here.
+          {t('campaignOverview.attention.allSetBody')}
         </p>
+        <IgnoredList
+          campaignId={campaignId}
+          items={ignored.map((p) => ({ key: p.key, title: p.message }))}
+        />
       </OverviewCard>
     )
   }
@@ -105,15 +123,39 @@ export function AttentionRail({
   // drops hygiene nudges first. Collapsing has to pay for itself: the button
   // costs a row, so hiding one item saves nothing and one over the cap just
   // renders. Past that the cap holds and the button is worth its place.
-  const collapsible = rows.length > MAX_ATTENTION_ITEMS + 1
-  const shown =
-    expanded || !collapsible ? rows : rows.slice(0, MAX_ATTENTION_ITEMS)
-  const hidden = rows.length - shown.length
+  const room = Math.max(0, MAX_ATTENTION_ITEMS - fixed.length)
+  const collapsible = rest.length > room + 1
+  const shown = [
+    ...fixed,
+    ...(expanded || !collapsible ? rest : rest.slice(0, room)),
+  ]
+  const hidden = total - shown.length
 
   return (
     <OverviewCard
-      title="Needs attention"
+      title={t('campaignOverview.attention.title')}
       icon={<WarningIcon className="size-5 text-warning" aria-hidden />}
+      status={
+        <>
+          <span className="text-sm text-secondary-foreground">
+            {ignored.length > 0
+              ? t('campaignOverview.attention.countIgnored', {
+                  total: formatNumber(total),
+                  ...counted(ignored.length),
+                })
+              : formatNumber(total)}
+          </span>
+          {(problems?.problems.length ?? 0) > 0 && (
+            <button
+              type="button"
+              className={cn('ml-auto shrink-0', ACTION_CLASS)}
+              onClick={() => ask(t('campaignOverview.problems.askAll'))}
+            >
+              {t('campaignOverview.problems.fixAll')}
+            </button>
+          )}
+        </>
+      }
     >
       <ul className="flex flex-col">
         {shown.map((row) => (
@@ -131,37 +173,43 @@ export function AttentionRail({
               onClick={() => setExpanded(true)}
             >
               <span className="w-4 shrink-0" aria-hidden />
-              <span>SHOW {hidden} MORE</span>
+              <span>
+                {t('campaignOverview.attention.showMore', counted(hidden))}
+              </span>
             </Button>
           </li>
         )}
       </ul>
-      {problems && problems.dismissed > 0 && (
-        <p className="text-xs text-tertiary-foreground">
-          {t('campaignOverview.problems.ignored', counted(problems.dismissed))}
-        </p>
-      )}
+      <IgnoredList
+        campaignId={campaignId}
+        items={ignored.map((p) => ({ key: p.key, title: p.message }))}
+      />
     </OverviewCard>
   )
 }
 
+const ACTION_CLASS =
+  'cursor-pointer text-xs font-semibold tracking-[0.06em] text-foreground hover:text-secondary-foreground disabled:cursor-default disabled:text-quinary-foreground'
+
 /**
- * One of the calendar's problems. The Overview runs no assistant, so its fix
- * is asked of the campaign's — which answers with that problem's fixes as
- * offers to confirm — unless the fix is only a post to open. IGNORE dismisses
- * it for the Overview and the campaign's thread alike.
+ * One of the calendar's problems (CON-478): its words, then its fix as a
+ * bordered capitals button with any other as "or …", and IGNORE at the end.
+ * The Overview runs no assistant, so a fix is asked of the campaign's — which
+ * answers with that problem's fixes as offers to confirm — unless the fix is
+ * only a post to open. A problem with no fix offers IGNORE alone. IGNORE
+ * dismisses it for the Overview and the campaign's thread alike.
  */
 function ProblemRow({
   problem,
   campaignId,
+  onFix,
 }: {
   problem: CalendarFinding
   campaignId: string
+  onFix: (text: string) => void
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const send = useAssistantStore((s) => s.send)
-  const openRightPanel = useSettingsStore((s) => s.openRightPanel)
   const ignore = useMutation({
     mutationFn: () => dismissCampaignFinding(campaignId, problem.key),
     onSuccess: () =>
@@ -172,56 +220,79 @@ function ProblemRow({
     meta: { errorTitle: t('campaignOverview.problems.ignoreFailed') },
   })
 
-  const [first] = problem.fixes
-  const onlyOpen = first?.kind === 'open_post' && first.postId
-  const fix = () => {
-    openRightPanel('assistant')
-    void send(
-      threadIdFor({ kind: 'campaign', campaignId }),
-      t('campaignOverview.problems.ask', {
-        problem: problem.message,
-        key: problem.key,
-      }),
+  const [first, ...others] = problem.fixes
+  const fix = (f: CalendarFinding['fixes'][number], primary: boolean) => {
+    const label = primary
+      ? f.title
+      : t('campaignOverview.problems.or', { fix: f.title })
+    const className = primary ? FIX_CLASS : OR_CLASS
+    if (f.kind === 'open_post' && f.postId) {
+      return (
+        <Link
+          to="/campaigns/$campaignId/posts/$postId"
+          params={{ campaignId, postId: f.postId }}
+          className={className}
+        >
+          {label}
+        </Link>
+      )
+    }
+    return (
+      <button
+        type="button"
+        className={className}
+        onClick={() =>
+          onFix(
+            t('campaignOverview.problems.askFix', {
+              fix: f.title,
+              problem: problem.message,
+            }),
+          )
+        }
+      >
+        {label}
+      </button>
     )
   }
 
-  const action =
-    'cursor-pointer font-medium tracking-[0.03em] text-secondary-foreground hover:text-foreground disabled:cursor-default disabled:text-quinary-foreground'
   return (
     <LineItem
       indicator={{
         kind: 'notification',
-        tone: problem.severity === 'warning' ? 'warning' : 'neutral',
+        tone: problem.blocksPublishing ? 'warning' : 'neutral',
       }}
-      label={<span title={problem.message}>{problem.message}</span>}
+      label={
+        <span className="flex min-w-0 flex-col gap-2 py-1">
+          <span title={problem.message}>{problem.message}</span>
+          {first && (
+            <span className="flex flex-wrap items-center gap-3">
+              {fix(first, true)}
+              {others.map((f, i) => (
+                <span key={i}>{fix(f, false)}</span>
+              ))}
+            </span>
+          )}
+        </span>
+      }
       chevron={false}
       trailing={
-        <>
-          {onlyOpen ? (
-            <Link
-              to="/campaigns/$campaignId/posts/$postId"
-              params={{ campaignId, postId: first.postId! }}
-              className={action}
-            >
-              {t('campaignOverview.problems.openPost')}
-            </Link>
-          ) : (
-            <button type="button" className={action} onClick={fix}>
-              {t('campaignOverview.problems.fix')}
-            </button>
-          )}
-          {problem.key && (
-            <button
-              type="button"
-              className={action}
-              disabled={ignore.isPending}
-              onClick={() => ignore.mutate()}
-            >
-              {t('campaignOverview.problems.ignore')}
-            </button>
-          )}
-        </>
+        problem.key ? (
+          <button
+            type="button"
+            className={ACTION_CLASS}
+            disabled={ignore.isPending}
+            onClick={() => ignore.mutate()}
+          >
+            {t('campaignOverview.problems.ignore')}
+          </button>
+        ) : undefined
       }
     />
   )
 }
+
+const FIX_CLASS =
+  'cursor-pointer border border-border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-foreground hover:border-foreground'
+
+const OR_CLASS =
+  'cursor-pointer text-[12.5px] text-secondary-foreground hover:text-foreground hover:underline'

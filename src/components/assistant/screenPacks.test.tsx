@@ -48,7 +48,7 @@ describe('starters follow the screen', () => {
 })
 
 describe('calendar findings', () => {
-  it('number the findings, colour only warnings, and run a fix’s offer', () => {
+  it('number the findings, colour only what blocks publishing, and run a fix’s offer', () => {
     const confirm = vi.fn(async () => {})
     useAssistantStore.setState({ confirmProposal: confirm })
     render(
@@ -59,13 +59,27 @@ describe('calendar findings', () => {
         findings={{
           campaignId: 'c1',
           dismissed: 1,
+          dismissedFindings: [
+            {
+              key: 'k3',
+              code: 'gap',
+              severity: 'info',
+              message: 'Friday is quiet',
+              blocksPublishing: false,
+              postIds: [],
+              posts: [],
+              fixes: [],
+            },
+          ],
           findings: [
             {
               key: 'k1',
               code: 'crowded_day',
               severity: 'warning',
               message: 'Thursday has 4 posts, Monday has 1.',
+              blocksPublishing: true,
               postIds: [],
+              posts: [],
               fixes: [
                 {
                   kind: 'redistribute',
@@ -79,18 +93,21 @@ describe('calendar findings', () => {
               code: 'gap',
               severity: 'info',
               message: 'Nothing goes out 20–27 April.',
+              blocksPublishing: false,
               postIds: [],
+              posts: [],
               fixes: [],
             },
           ],
         }}
       />,
+      { wrapper: QueryWrapper },
     )
     expect(screen.getByText('2 things to look at')).toBeTruthy()
     expect(screen.getByText('01').className).toContain('text-warning')
     expect(screen.getByText('02').className).not.toContain('text-warning')
     fireEvent.click(screen.getByText('Spread them'))
     expect(confirm).toHaveBeenCalledWith('campaign:c1', 'pr7')
-    expect(screen.getByText('1 dismissed finding left out.')).toBeTruthy()
+    expect(screen.getByText('1 ignored on this campaign')).toBeTruthy()
   })
 })

@@ -24,84 +24,156 @@ vi.mock('@/stores/settingsStore', async (importOriginal) => {
 const dismiss = vi.fn(async () => {})
 vi.mock('@/services/api/campaignProblems', () => ({
   dismissCampaignFinding: (...args: unknown[]) => dismiss(...(args as [])),
+  restoreCampaignFinding: async () => {},
+  listDismissedFindings: async () => [],
 }))
 
 const send = vi.fn(async () => {})
+const restoreFinding = vi.fn(async () => {})
 
 beforeEach(() => {
   dismiss.mockClear()
   send.mockClear()
+  restoreFinding.mockClear()
   openRightPanel.mockClear()
-  useAssistantStore.setState({ send })
+  useAssistantStore.setState({ send, restoreFinding })
+})
+
+const finding = (changes: Partial<CampaignProblems['problems'][number]>) => ({
+  key: '',
+  code: '',
+  severity: 'warning' as const,
+  message: '',
+  blocksPublishing: false,
+  postIds: [],
+  posts: [],
+  fixes: [],
+  ...changes,
 })
 
 const problems: CampaignProblems = {
-  dismissed: 2,
+  dismissed: 1,
+  dismissedProblems: [
+    finding({ key: 'quiet:c', code: 'gap', message: 'Friday is quiet' }),
+  ],
   problems: [
-    {
+    finding({
       key: 'post_type_not_allowed:a',
       code: 'post_type_not_allowed',
-      severity: 'warning',
-      message:
-        '1 story post on Instagram uses a post type the campaign no longer includes there',
+      message: 'Spa reopening is a Story; Stories were removed',
+      blocksPublishing: true,
       postIds: ['p1'],
       fixes: [
-        { kind: 'enable_post_type', title: 'Allow story on Instagram again' },
+        { kind: 'convert_post_type', title: 'Convert to image post' },
+        { kind: 'enable_post_type', title: 'Re-add Stories' },
       ],
-    },
-    {
+    }),
+    finding({
       key: 'unwritten_soon:b',
       code: 'unwritten_soon',
-      severity: 'warning',
       message: '“Chef’s table” publishes in 2 days and isn’t written',
       postIds: ['p2'],
       fixes: [{ kind: 'open_post', title: 'Open the post', postId: 'p2' }],
-    },
+    }),
+    finding({
+      key: 'ahead:d',
+      code: 'ahead_of_goal',
+      severity: 'info',
+      message: 'LinkedIn is ahead: 4 a week against 2',
+    }),
   ],
 }
 
 describe('the calendar’s problems on the Overview', () => {
-  it('asks the campaign’s assistant to fix one, by its key', async () => {
+  it('offers the fix itself, and asks the campaign’s assistant for it', async () => {
+    await renderWithProviders(
+      <AttentionRail items={[]} problems={problems} campaignId="c1" />,
+    )
+    fireEvent.click(screen.getByText('Convert to image post'))
+    expect(openRightPanel).toHaveBeenCalledWith('assistant')
+    // No raw key in what the user's bubble says.
+    expect(send).toHaveBeenCalledWith(
+      'campaign:c1',
+      'Convert to image post: Spa reopening is a Story; Stories were removed',
+    )
+    fireEvent.click(screen.getByText('or Re-add Stories'))
+    expect(send).toHaveBeenLastCalledWith(
+      'campaign:c1',
+      'Re-add Stories: Spa reopening is a Story; Stories were removed',
+    )
+  })
+
+  it('asks for every fix at once from the header', async () => {
     await renderWithProviders(
       <AttentionRail items={[]} problems={problems} campaignId="c1" />,
     )
     fireEvent.click(screen.getByText('FIX WITH ASSISTANT'))
-    expect(openRightPanel).toHaveBeenCalledWith('assistant')
-    expect(send).toHaveBeenCalledWith(
-      'campaign:c1',
-      `Fix the problem post_type_not_allowed:a: ${problems.problems[0].message}`,
-    )
+    expect(send).toHaveBeenCalledWith('campaign:c1', 'Fix these with me.')
   })
 
   it('opens the post when that is the fix', async () => {
     await renderWithProviders(
       <AttentionRail items={[]} problems={problems} campaignId="c1" />,
     )
-    expect(screen.getByText('OPEN POST').getAttribute('href')).toBe(
+    expect(screen.getByText('Open the post').getAttribute('href')).toBe(
       '/campaigns/c1/posts/p2',
     )
   })
 
-  it('ignores one, and says how many are ignored', async () => {
+  it('offers only IGNORE on a problem with no fix', async () => {
     await renderWithProviders(
       <AttentionRail items={[]} problems={problems} campaignId="c1" />,
     )
-    expect(screen.getByText('2 ignored')).toBeTruthy()
+    const row = screen
+      .getByText('LinkedIn is ahead: 4 a week against 2')
+      .closest('li')
+    expect(row?.textContent).toContain('IGNORE')
+    expect(row?.querySelectorAll('button')).toHaveLength(1)
+  })
+
+  it('counts beside the title, ignores one, and restores from the list', async () => {
+    await renderWithProviders(
+      <AttentionRail items={[]} problems={problems} campaignId="c1" />,
+    )
+    expect(screen.getByText('3 · 1 ignored')).toBeTruthy()
     fireEvent.click(screen.getAllByText('IGNORE')[1])
     await waitFor(() =>
       expect(dismiss).toHaveBeenCalledWith('c1', 'unwritten_soon:b'),
     )
+    fireEvent.click(screen.getByText('SHOW'))
+    fireEvent.click(screen.getByText('RESTORE'))
+    expect(restoreFinding).toHaveBeenCalledWith('c1', 'quiet:c')
+  })
+
+  it('never folds the server’s problems behind SHOW MORE', async () => {
+    await renderWithProviders(
+      <AttentionRail
+        items={Array.from({ length: 6 }, (_, i) => ({
+          id: `rule-${i}`,
+          severity: 'todo' as const,
+          label: `Rule ${i}`,
+          actionLabel: 'Open',
+          fix: 'posts' as const,
+        }))}
+        problems={problems}
+        campaignId="c1"
+      />,
+    )
+    expect(
+      screen.getByText('LinkedIn is ahead: 4 a week against 2'),
+    ).toBeTruthy()
+    expect(screen.getByText(/^SHOW \d+ MORE$/)).toBeTruthy()
   })
 
   it('is all clear only when neither the server nor the rules found anything', async () => {
     await renderWithProviders(
       <AttentionRail
         items={[]}
-        problems={{ problems: [], dismissed: 1 }}
+        problems={{ problems: [], dismissed: 0, dismissedProblems: [] }}
         campaignId="c1"
       />,
     )
-    expect(screen.getByText('You’re all set'.replace('’', "'"))).toBeTruthy()
+    expect(screen.getByText('You’re all set')).toBeTruthy()
   })
 
   it('keeps what is already wrong ahead of the server’s problems', async () => {

@@ -35,6 +35,9 @@ import type {
   AssistantAction,
   AssistantProposal,
   CalendarFindings,
+  CalendarFinding,
+  CalendarMove,
+  CampaignReview,
   PostsChanged,
   RepairFix,
   RepairResults,
@@ -44,7 +47,6 @@ import type {
   AssistantResultDetails,
   CampaignAssistantAction,
   PostAssistantAction,
-  ReviewFinding,
   ReviewSeverity,
   StreamedPost,
   ThreadSubject,
@@ -1042,20 +1044,42 @@ function proposalDetails(raw: Record<string, unknown> | null) {
 }
 
 function calendarFindings(raw: Record<string, unknown>): CalendarFindings {
-  const findings = Array.isArray(raw.findings) ? raw.findings : []
   const campaignId = str(raw.campaignId)
   return {
     campaignId,
     dismissed: num(raw.dismissed),
-    findings: findings.filter(isRecord).map((f) => ({
-      key: str(f.key),
-      code: str(f.code),
-      severity: f.severity === 'warning' ? 'warning' : 'info',
-      message: str(f.message),
-      postIds: strings(f.postIds),
-      fixes: repairFixes(f.fixes, campaignId),
-    })),
+    findings: calendarFindingList(raw.findings, campaignId),
+    dismissedFindings: calendarFindingList(raw.dismissedFindings, campaignId),
+    checkedAt: optStr(raw.checkedAt),
   }
+}
+
+/**
+ * A calendar's findings, as the check and the Overview both send them. The
+ * fixes are kept as `repairFixes` keeps them: an offer, or a post to open.
+ */
+export function calendarFindingList(
+  value: unknown,
+  campaignId: string,
+): CalendarFinding[] {
+  return (Array.isArray(value) ? value : []).filter(isRecord).map((f) => ({
+    key: str(f.key),
+    code: str(f.code),
+    severity: f.severity === 'warning' ? 'warning' : 'info',
+    message: str(f.message),
+    detail: optStr(f.detail),
+    blocksPublishing: f.blocksPublishing === true,
+    postIds: strings(f.postIds),
+    posts: (Array.isArray(f.posts) ? f.posts : [])
+      .filter(isRecord)
+      .map((p) => ({
+        id: str(p.id),
+        title: str(p.title),
+        date: optStr(p.date),
+      }))
+      .filter((p) => p.id),
+    fixes: repairFixes(f.fixes, campaignId),
+  }))
 }
 
 /**
@@ -1072,8 +1096,73 @@ function repairFixes(value: unknown, campaignId: string): RepairFix[] {
       postId: optStr(x.postId),
       postIds: strings(x.postIds),
       proposalId: optStr(x.proposalId),
+      card: proposalDetails(record(x.card)),
+      options: fixOptions(x.options),
     }))
     .filter((x) => x.title && (x.proposalId || (x.postId && campaignId)))
+}
+
+/** A fix offer's choices — a move's free slots — or none. */
+function fixOptions(value: unknown): RepairFix['options'] {
+  const options = (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .map((o) => ({
+      id: str(o.id),
+      title: str(o.title),
+      description: optStr(o.description),
+      recommended: o.recommended === true || undefined,
+    }))
+    .filter((o) => o.id && o.title)
+  return options.length > 0 ? options : undefined
+}
+
+/**
+ * A review's findings — `reviewCampaign`'s, and since CON-478 `checkBrief`'s
+ * and `checkPostsConsistency`'s, which answer in the same shape.
+ */
+function campaignReview(
+  review: Record<string, unknown> | null,
+): CampaignReview | undefined {
+  if (!review) return undefined
+  const campaignId = str(review.campaignId)
+  const list = (value: unknown) =>
+    (Array.isArray(value) ? value : [])
+      .filter(isRecord)
+      .map((f) => ({
+        kind: f.kind === 'brief' ? ('brief' as const) : ('post' as const),
+        key: str(f.key),
+        severity: severity(f.severity),
+        label:
+          typeof f.aspect === 'string' && f.aspect
+            ? sentenceCase(humanizeStep(f.aspect))
+            : optStr(f.title),
+        postId: optStr(f.postId),
+        issue: str(f.issue),
+        suggestion: optStr(f.suggestion),
+        fixes: repairFixes(f.fixes, campaignId),
+      }))
+      .filter((f) => f.issue)
+  return {
+    campaignId,
+    postsChecked: num(review.postsChecked),
+    dismissed: num(review.dismissed),
+    findings: list(review.findings),
+    dismissedFindings: list(review.dismissedFindings),
+    readFrom: strings(review.readFrom),
+    checkedAt: optStr(review.checkedAt),
+  }
+}
+
+function calendarMove(m: Record<string, unknown>): CalendarMove {
+  return {
+    postId: str(m.postId),
+    title: str(m.title),
+    from: str(m.from),
+    to: str(m.to),
+    fromAt: optStr(m.fromAt),
+    toAt: optStr(m.toAt),
+    status: optStr(m.status),
+  }
 }
 
 /**
@@ -1085,56 +1174,57 @@ function repairResults(results: Record<string, unknown>): {
   findings?: CalendarFindings
   repair?: RepairResults
 } {
-  const r = record(results.repair)
-  if (!r) return {}
+  const r = record(results.repair) ?? {}
+  const campaign = record(results.campaign)
   const out: RepairResults = {}
+  // The campaign pack's two checks answer in the review's shape (CON-478),
+  // so they are drawn as reviews too.
+  out.briefReview = campaignReview(record(campaign?.briefReview))
+  out.postsReview = campaignReview(record(campaign?.postsReview))
 
-  const review = record(r.reviewCampaign)
-  if (review) {
-    const campaignId = str(review.campaignId)
-    out.review = {
-      campaignId,
-      postsChecked: num(review.postsChecked),
-      dismissed: num(review.dismissed),
-      findings: (Array.isArray(review.findings) ? review.findings : [])
-        .filter(isRecord)
-        .map((f) => ({
-          kind: f.kind === 'brief' ? ('brief' as const) : ('post' as const),
-          key: str(f.key),
-          severity: severity(f.severity),
-          label:
-            typeof f.aspect === 'string' && f.aspect
-              ? sentenceCase(humanizeStep(f.aspect))
-              : optStr(f.title),
-          postId: optStr(f.postId),
-          issue: str(f.issue),
-          suggestion: optStr(f.suggestion),
-          fixes: repairFixes(f.fixes, campaignId),
-        }))
-        .filter((f) => f.issue),
-    }
-  }
+  out.review = campaignReview(record(r.reviewCampaign))
 
   const plan = record(r.optimiseCalendar)
   if (plan) {
+    const window = record(plan.window)
     out.plan = {
       campaignId: str(plan.campaignId),
       proposalId: optStr(plan.proposalId),
+      window:
+        window && str(window.from) && str(window.to)
+          ? { from: str(window.from), to: str(window.to) }
+          : undefined,
       moves: (Array.isArray(plan.moves) ? plan.moves : [])
         .filter(isRecord)
-        .map((m) => ({
-          postId: str(m.postId),
-          title: str(m.title),
-          from: str(m.from),
-          to: str(m.to),
-        })),
+        .map(calendarMove),
       locked: (Array.isArray(plan.locked) ? plan.locked : [])
         .filter(isRecord)
         .map((l) => ({
           postId: str(l.postId),
           title: str(l.title),
           date: str(l.date),
+          at: optStr(l.at),
         })),
+      checkedAt: optStr(plan.checkedAt),
+    }
+  }
+
+  const moved = record(r.applyCalendarMoves)
+  if (moved) {
+    const byStatus = record(moved.byStatus) ?? {}
+    out.moved = {
+      moved: num(moved.moved),
+      moves: (Array.isArray(moved.moves) ? moved.moves : [])
+        .filter(isRecord)
+        .map(calendarMove),
+      byStatus: Object.fromEntries(
+        Object.entries(byStatus).filter(
+          (e): e is [string, number] => typeof e[1] === 'number' && e[1] > 0,
+        ),
+      ),
+      locked: num(moved.locked),
+      skipped: strings(moved.skipped),
+      undoId: optStr(moved.undoId),
     }
   }
 
@@ -1147,6 +1237,22 @@ function repairResults(results: Record<string, unknown>): {
       skipped: (Array.isArray(c.skipped) ? c.skipped : [])
         .filter(isRecord)
         .map((x) => ({ postId: str(x.postId), reason: str(x.reason) })),
+      posts: (Array.isArray(c.posts) ? c.posts : [])
+        .filter(isRecord)
+        .map((p) => ({
+          postId: str(p.postId),
+          title: str(p.title),
+          platformId: optStr(p.platformId),
+          platform: optStr(p.platform),
+          fromStatus: str(p.fromStatus),
+          toStatus: optStr(p.toStatus),
+          wasAt: optStr(p.wasAt),
+          scheduledAt: optStr(p.scheduledAt),
+          fromType: optStr(p.fromType),
+          toType: optStr(p.toType),
+          kept: strings(p.kept),
+        }))
+        .filter((p) => p.postId),
       undoId: optStr(c.undoId),
     }
   }
@@ -1588,24 +1694,6 @@ function resultDetails(
     }
   }
 
-  const briefReview = record(parsed.briefReview)
-  if (briefReview) {
-    details.briefReview = {
-      consistent: briefReview.consistent === true,
-      findings: findings(briefReview.findings),
-    }
-  }
-
-  const postsReview = record(parsed.postsReview)
-  if (postsReview) {
-    details.postsReview = {
-      checked: num(postsReview.checked),
-      total: num(postsReview.total),
-      capped: postsReview.capped === true,
-      findings: findings(postsReview.findings),
-    }
-  }
-
   return details
 }
 
@@ -1615,23 +1703,6 @@ function touched(value: unknown): Touched[] {
     .filter(isRecord)
     .filter((t) => typeof t.kind === 'string' && t.kind)
     .map((t) => ({ kind: str(t.kind), id: optStr(t.id) }))
-}
-
-function findings(value: unknown): ReviewFinding[] {
-  if (!Array.isArray(value)) return []
-  return value.filter(isRecord).map((f) => ({
-    severity: severity(f.severity),
-    // Brief findings name their subject `aspect` — a snake_case key like
-    // `goal_alignment` — while post findings carry the post's own title.
-    label:
-      typeof f.aspect === 'string'
-        ? sentenceCase(humanizeStep(f.aspect))
-        : typeof f.title === 'string'
-          ? f.title
-          : undefined,
-    issue: str(f.issue),
-    suggestion: optStr(f.suggestion),
-  }))
 }
 
 function sentenceCase(text: string): string {

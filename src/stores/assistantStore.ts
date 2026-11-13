@@ -2,8 +2,14 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { queryClient } from '@/lib/queryClient'
 import { ASSISTANT_THREADS_KEY } from '@/hooks/useAssistantThreads'
-import { campaignProblemsKey } from '@/hooks/useCampaignProblems'
-import { dismissCampaignFinding } from '@/services/api/campaignProblems'
+import {
+  campaignProblemsKey,
+  dismissedFindingsKey,
+} from '@/hooks/useCampaignProblems'
+import {
+  dismissCampaignFinding,
+  restoreCampaignFinding,
+} from '@/services/api/campaignProblems'
 import { threadName } from '@/lib/assistantTools'
 import { refreshTouched, subjectTouches } from '@/lib/assistantTouched'
 import { flushPendingSave } from '@/lib/pendingSaves'
@@ -185,6 +191,8 @@ type AssistantState = {
     campaignId: string,
     key: string,
   ) => Promise<void>
+  /** Takes a dismissal back, in every turn showing the finding (CON-478). */
+  restoreFinding: (campaignId: string, key: string) => Promise<void>
   /** Puts the screen back to before one of a turn's `ui_action`s. */
   undoUiAction: (
     threadId: string,
@@ -913,11 +921,14 @@ export const useAssistantStore = create<AssistantState>()(
         dismissProposal: async (threadId, proposalId) => {
           const thread = get().threads[threadId]
           const found = thread && findProposal(thread, proposalId)
-          if (!found || found.status !== 'pending') return
-          setProposal(threadId, proposalId, { status: 'dismissed' })
+          // An offer the thread doesn't hold — a finding's fix drawn from its
+          // own card — is still dismissed on the server, as confirm does.
+          if (found && found.status !== 'pending') return
+          if (found) setProposal(threadId, proposalId, { status: 'dismissed' })
           try {
             await dismissProposalRequest(proposalId)
           } catch (err) {
+            if (!found) return
             setProposal(threadId, proposalId, {
               status: 'closed',
               error:
@@ -949,16 +960,60 @@ export const useAssistantStore = create<AssistantState>()(
               const rest = (t.ignored ?? []).filter((k) => k !== key)
               return { ...t, ignored: on ? [...rest, key] : rest }
             })
-          // Drawn as ignored at once; put back if the server refused.
+          // Drawn as ignored at once — in this turn, and through the
+          // campaign's list in every other — and put back if the server
+          // refused.
           mark(true)
+          const listed = setDismissed(campaignId, key, true)
           try {
             await dismissCampaignFinding(campaignId, key)
-            void queryClient.invalidateQueries({
-              queryKey: campaignProblemsKey(campaignId),
-            })
+            refreshDismissals(campaignId)
           } catch (error) {
             mark(false)
+            if (listed) setDismissed(campaignId, key, false)
             toast.error(i18next.t('assistant.findings.ignoreFailed'), {
+              description: error instanceof Error ? error.message : undefined,
+            })
+          }
+        },
+
+        restoreFinding: async (campaignId, key) => {
+          // Back in every turn at once: the turns' own marks and the list.
+          // The turns that held the mark are kept, to put it back if the
+          // server refuses.
+          const marked = new Set<string>()
+          const setMarks = (on: boolean) =>
+            set((s) => ({
+              threads: Object.fromEntries(
+                Object.entries(s.threads).map(([id, thread]) => [
+                  id,
+                  {
+                    ...thread,
+                    turns: thread.turns.map((t) => {
+                      if (on) {
+                        if (!marked.has(t.id)) return t
+                        return { ...t, ignored: [...(t.ignored ?? []), key] }
+                      }
+                      if (!t.ignored?.includes(key)) return t
+                      marked.add(t.id)
+                      return {
+                        ...t,
+                        ignored: t.ignored.filter((k) => k !== key),
+                      }
+                    }),
+                  },
+                ]),
+              ),
+            }))
+          setMarks(false)
+          const listed = setDismissed(campaignId, key, false)
+          try {
+            await restoreCampaignFinding(campaignId, key)
+            refreshDismissals(campaignId)
+          } catch (error) {
+            setMarks(true)
+            if (listed) setDismissed(campaignId, key, true)
+            toast.error(i18next.t('assistant.findings.restoreFailed'), {
               description: error instanceof Error ? error.message : undefined,
             })
           }
@@ -1289,4 +1344,31 @@ export function settleHistory(turns: AssistantTurn[], now: number): void {
       return turn === lastAssistant ? p : { ...p, status: 'superseded' }
     })
   }
+}
+
+/**
+ * Re-reads what a dismissal changed once the server has it: the Overview's
+ * problems, and the campaign's list — which also drops any read of the list
+ * still in flight from before the write, so it can't land on top of it.
+ */
+function refreshDismissals(campaignId: string) {
+  void queryClient.invalidateQueries({
+    queryKey: campaignProblemsKey(campaignId),
+  })
+  void queryClient.invalidateQueries({
+    queryKey: dismissedFindingsKey(campaignId),
+  })
+}
+
+/**
+ * Adds or takes a key out of the campaign's dismissed list, when that list is
+ * read; true when it changed it. The list is what every turn reads.
+ */
+function setDismissed(campaignId: string, key: string, on: boolean): boolean {
+  const queryKey = dismissedFindingsKey(campaignId)
+  const keys = queryClient.getQueryData<string[]>(queryKey)
+  if (!keys) return false
+  const rest = keys.filter((k) => k !== key)
+  queryClient.setQueryData(queryKey, on ? [...rest, key] : rest)
+  return true
 }
