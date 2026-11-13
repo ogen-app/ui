@@ -6723,8 +6723,8 @@ export const en = {
         /** Between the section a question would fill and why it is asked. */
         whyJoin: ' — ',
         /** Over the questions; answers confirmed in the rail fill them in. */
-        label_one: '{{count}} question · answers fill in as you confirm',
-        label_other: '{{count}} questions · answers fill in as you confirm',
+        label_one: '{{formatted}} question · answers fill in as you confirm',
+        label_other: '{{formatted}} questions · answers fill in as you confirm',
         placeholder: 'Your answer…',
         note: {
           website:
