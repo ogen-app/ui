@@ -15,6 +15,10 @@ import type {
   AnalysisLens,
   AnalysisRead,
   BrandChangeKind,
+  BrandRead,
+  EditCounts,
+  FieldChange,
+  SeriesRunChange,
   BrandCheck,
   FoundationResults,
   SeriesBrief,
@@ -457,6 +461,7 @@ function foundationResults(
           }
         : undefined,
       unbound: num(voice[0].unbound),
+      changes: fieldChanges(voice[0].changes),
       undoId: optStr(voice[0].undoId),
     }
   }
@@ -475,26 +480,32 @@ function foundationResults(
       who: str(a.who),
       readsOn: str(a.readsOn),
       unbound: num(audience[0].unbound),
+      changes: fieldChanges(audience[0].changes),
       undoId: optStr(audience[0].undoId),
     }
   }
 
   const guard = record(f.updateGuardrails)
-  const g = guard && record(guard.guardrails)
-  if (guard && g) {
+  if (guard) {
     out.guardrails = {
-      mayClaim: strings(g.mayClaim).length,
-      neverClaim: strings(g.neverClaim).length,
-      bannedWords: strings(g.bannedWords),
-      disclaimer: str(g.disclaimer),
+      changes: fieldChanges(guard.changes),
       undoId: optStr(guard.undoId),
     }
   }
 
-  const factOut = record(f.updateFact)
+  // Each fact tool is recorded under its own name (CON-477): a turn keeps the
+  // last of them, and the card says which it was.
+  const factTool = pick([
+    ['removeFact', 'removed'],
+    ['renewFact', 'updated'],
+    ['updateFact', 'updated'],
+    ['addFact', 'added'],
+  ])
+  const factOut = factTool?.[0]
   const fact = factOut && (record(factOut.fact) ?? factOut)
-  if (factOut && fact && str(fact.id) && str(fact.statement)) {
+  if (factTool && factOut && fact && str(fact.id) && str(fact.statement)) {
     out.fact = {
+      change: f.renewFact === factOut ? 'renewed' : factTool[1],
       id: str(fact.id),
       statement: str(fact.statement),
       source: str(fact.source),
@@ -505,9 +516,23 @@ function foundationResults(
 
   const bulk = record(f.editBrand)
   if (bulk) {
+    const made = record(bulk.made) ?? {}
     out.bulk = {
       done: num(bulk.done),
+      made: {
+        facts: editCounts(made.facts),
+        voices: editCounts(made.voices),
+        audiences: editCounts(made.audiences),
+      },
       undoIds: strings(bulk.undoIds),
+      kept: (Array.isArray(bulk.kept) ? bulk.kept : [])
+        .filter(isRecord)
+        .map((k) => ({
+          factId: str(k.factId),
+          statement: str(k.statement),
+          reason: str(k.reason),
+        }))
+        .filter((k) => k.factId),
       failed: (Array.isArray(bulk.failed) ? bulk.failed : [])
         .filter(isRecord)
         .map((x) => ({ what: str(x.what), reason: str(x.reason) })),
@@ -526,8 +551,9 @@ function foundationResults(
       runId: str(distill.runId),
       status: str(distill.status),
       failure: failure
-        ? str(failure.message) || str(failure.code) || undefined
+        ? str(failure.message) || str(failure.reason) || undefined
         : undefined,
+      failureCode: failure ? optStr(failure.code) : undefined,
       counts: {
         voices: num(counts.voices),
         audiences: num(counts.audiences),
@@ -539,6 +565,17 @@ function foundationResults(
         .filter(isRecord)
         .map((q) => ({ id: str(q.id), text: str(q.text) }))
         .filter((q) => q.id && q.text),
+      sources: distillSources(record(distill.sources)),
+      answered: (Array.isArray(distill.answered) ? distill.answered : [])
+        .filter(isRecord)
+        .map((a) => ({
+          questionId: str(a.questionId),
+          question: str(a.question),
+          answer: str(a.answer),
+          from: optStr(a.from),
+        }))
+        .filter((a) => a.question && a.answer),
+      grounding: parseGrounding(distill.grounding),
     }
   }
 
@@ -576,21 +613,16 @@ function foundationResults(
       ...brief,
       change: series[1],
       undoId: optStr(series[0].undoId),
+      run: seriesRun(record(series[0].run)),
+      notRun: optStr(series[0].notRun),
     }
   }
 
-  const run = record(f.stopSeries) ?? record(f.runSeries)
-  if (run && str(run.seriesId)) {
-    out.run = {
-      campaignId: str(run.campaignId),
-      seriesId: str(run.seriesId),
-      running: run.running === true,
-      rhythm: rhythm(run.rhythm),
-      undoId: optStr(run.undoId),
-    }
-  }
+  const run = seriesRun(record(f.stopSeries) ?? record(f.runSeries))
+  if (run) out.run = run
 
   const brand = record(f.getBrand)
+  if (brand) out.brand = brandRead(brand)
   if (brand && Array.isArray(brand.expiredFacts)) {
     out.expiredFacts = brand.expiredFacts
       .filter(isRecord)
@@ -609,6 +641,91 @@ function foundationResults(
   return Object.keys(out).length > 0 ? out : undefined
 }
 
+function fieldChanges(value: unknown): FieldChange[] {
+  return (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .map((c) => ({
+      field: str(c.field),
+      before: optStr(c.before),
+      after: optStr(c.after),
+      added: strings(c.added),
+      removed: strings(c.removed),
+    }))
+    .filter((c) => c.field)
+}
+
+function editCounts(value: unknown): EditCounts {
+  const c = record(value) ?? {}
+  return {
+    added: num(c.added),
+    updated: num(c.updated),
+    removed: num(c.removed),
+  }
+}
+
+function distillSources(raw: Record<string, unknown> | null) {
+  if (!raw) return undefined
+  return {
+    website: optStr(raw.website),
+    pages: num(raw.pages),
+    assets: num(raw.assets),
+  }
+}
+
+function seriesRun(
+  raw: Record<string, unknown> | null,
+): SeriesRunChange | undefined {
+  if (!raw || !str(raw.seriesId)) return undefined
+  return {
+    campaignId: str(raw.campaignId),
+    campaignName: str(raw.campaignName),
+    seriesId: str(raw.seriesId),
+    seriesName: str(raw.seriesName),
+    running: raw.running === true,
+    rhythm: rhythm(raw.rhythm),
+    undoId: optStr(raw.undoId),
+  }
+}
+
+function brandRead(raw: Record<string, unknown>): BrandRead {
+  const look = record(raw.look)
+  return {
+    voices: (Array.isArray(raw.voices) ? raw.voices : [])
+      .filter(isRecord)
+      .map((v) => ({
+        id: str(v.id),
+        name: str(v.name),
+        isDefault: v.isDefault === true,
+        rules: num(v.rules),
+        samples: num(v.samples),
+        channelNotes: num(v.channelNotes),
+      }))
+      .filter((v) => v.id && v.name),
+    factsTotal: num(raw.factsTotal),
+    look: look
+      ? {
+          palette: (Array.isArray(look.palette) ? look.palette : [])
+            .filter(isRecord)
+            .map((c) => ({ hex: str(c.hex), role: str(c.role) }))
+            .filter((c) => /^#[0-9a-f]{3,8}$/i.test(c.hex)),
+          typefaces: strings(look.typefaces),
+          logos: strings(look.logos).length,
+        }
+      : undefined,
+    templates: (Array.isArray(raw.templates) ? raw.templates : [])
+      .filter(isRecord)
+      .map((x) => ({
+        id: str(x.id),
+        name: str(x.name),
+        role: str(x.role),
+        ratios: strings(x.ratios),
+        platforms: strings(x.platforms),
+        isDefault: x.isDefault === true,
+      }))
+      .filter((x) => x.id && x.name),
+  }
+}
+
 function rhythm(value: unknown): SeriesRhythm | undefined {
   const r = record(value)
   if (!r || (r.per !== 'week' && r.per !== 'month') || num(r.times) < 1)
@@ -625,6 +742,14 @@ function seriesBrief(raw: Record<string, unknown>): SeriesBrief | null {
     runs: raw.runs === true,
     rhythm: rhythm(raw.rhythm),
     defaultRhythm: rhythm(raw.defaultRhythm),
+    runsIn: (Array.isArray(raw.runsIn) ? raw.runsIn : [])
+      .filter(isRecord)
+      .map((r) => ({
+        campaignId: str(r.campaignId),
+        campaignName: str(r.campaignName),
+        rhythm: rhythm(r.rhythm),
+      }))
+      .filter((r) => r.campaignId),
   }
 }
 
@@ -632,26 +757,31 @@ function brandCheck(
   raw: Record<string, unknown> | null,
 ): BrandCheck | undefined {
   if (!raw) return undefined
+  const against = record(raw.checkedAgainst) ?? {}
   return {
     checked: num(raw.checked),
+    clean: num(raw.clean),
     left: num(raw.left),
+    dismissed: num(raw.dismissed),
+    checkedAgainst: {
+      voices: (Array.isArray(against.voices) ? against.voices : [])
+        .filter(isRecord)
+        .map((v) => ({ id: str(v.id), name: str(v.name) }))
+        .filter((v) => v.name),
+      guardrails: against.guardrails === true,
+    },
     findings: (Array.isArray(raw.findings) ? raw.findings : [])
       .filter(isRecord)
-      .map((x) => {
-        const fix = record(x.fix) ?? {}
-        return {
-          postId: str(x.postId),
-          title: str(x.title),
-          rule: str(x.rule),
-          severity: str(x.severity),
-          quote: str(x.quote),
-          issue: str(x.issue),
-          suggestion: str(x.suggestion),
-          campaignId: optStr(x.campaignId),
-          fixTitle: str(fix.title),
-          proposalId: optStr(fix.proposalId),
-        }
-      })
+      .map((x) => ({
+        key: str(x.key),
+        postId: str(x.postId),
+        title: str(x.title),
+        rule: str(x.rule),
+        severity: str(x.severity),
+        issue: str(x.issue),
+        campaignId: str(x.campaignId),
+        fixes: repairFixes(x.fixes, str(x.campaignId)),
+      }))
       .filter((x) => x.postId && x.issue),
   }
 }
@@ -1027,6 +1157,10 @@ function repairResults(results: Record<string, unknown>): {
   if (revised && str(revised.postId)) {
     out.revised = {
       postId: str(revised.postId),
+      campaignId: optStr(revised.campaignId),
+      title: optStr(revised.title),
+      voiceName: optStr(revised.voiceName),
+      undoId: optStr(revised.undoId),
       revised: revised.revised === true,
       versioned: revised.versioned === true,
       grounding: parseGrounding(revised.grounding),

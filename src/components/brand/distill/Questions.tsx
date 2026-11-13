@@ -23,6 +23,7 @@ export function QuestionField({
   why,
   value,
   onChange,
+  placeholder,
 }: {
   number: number
   question: string
@@ -30,6 +31,8 @@ export function QuestionField({
   why?: string
   value: string
   onChange: (value: string) => void
+  /** The empty field's prompt; the starters' "skip, or say it" by default. */
+  placeholder?: string
 }) {
   const { t } = useTranslation()
   return (
@@ -49,7 +52,7 @@ export function QuestionField({
         variant="primary"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={t('brand.distill.questions.placeholder')}
+        placeholder={placeholder ?? t('brand.distill.questions.placeholder')}
         aria-label={question}
         className="col-start-2 min-h-10 bg-secondary px-3 py-2.5 leading-5"
       />
@@ -69,19 +72,32 @@ export function QuestionField({
  */
 export function GapQuestions({
   questions,
+  answered,
   route,
   busy,
   onAsk,
   onClose,
 }: {
   questions: DistillQuestion[]
+  /**
+   * The answers the run already holds — the user's, or the ones confirmed
+   * from the assistant (CON-477) — which fill the fields they answer. The
+   * caller keys this by run, so a new round starts from its own answers.
+   */
+  answered: DistillAnswer[]
   route: RunRoute
   busy: boolean
   onAsk: (answers: DistillAnswer[]) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
-  const [values, setValues] = useState<Record<string, string>>({})
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      answered
+        .filter((a) => questions.some((q) => q.id === a.questionId))
+        .map((a) => [a.questionId, a.answer]),
+    ),
+  )
   const answers = filledAnswers(t, questions, values)
 
   return (
@@ -107,10 +123,14 @@ export function GapQuestions({
           count: questions.length,
         })}
       </h2>
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-secondary-foreground">
+        {t('brand.distill.gaps.label', { count: questions.length })}
+      </p>
       <ol className="flex flex-col gap-5">
         {questions.map((q, i) => (
           <QuestionField
             key={q.id}
+            placeholder={t('brand.distill.gaps.placeholder')}
             number={i + 1}
             question={q.text}
             why={[brandSectionCopy(t, q.section).label, q.why]

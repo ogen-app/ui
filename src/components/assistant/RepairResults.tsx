@@ -12,7 +12,15 @@ import type {
   RepairResults as Results,
   UndoState,
 } from '@/types/assistant'
-import { ResolvedLine, ResultBlock, ResultRow, SourcesLine } from './blocks'
+import { Link } from '@tanstack/react-router'
+import { cn } from '@/lib/styles'
+import {
+  ResolvedLine,
+  ResultBlock,
+  ResultRow,
+  SourcesLine,
+  TEXT_ACTION_CLASS,
+} from './blocks'
 import { FindingRow, FixActions } from './FindingsBlock'
 import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
 
@@ -57,7 +65,10 @@ export function RepairResults({
       ),
     ],
     ['plan', r.plan && <PlanCard t={t} plan={r.plan} />],
-    ['revised', r.revised && <RevisedCard t={t} revised={r.revised} />],
+    [
+      'revised',
+      r.revised && <RevisedCard t={t} revised={r.revised} undo={undoFor} />,
+    ],
     [
       'converted',
       r.converted && (
@@ -307,29 +318,68 @@ function ChangedCard({
 }
 
 /**
- * One post rewritten (`revisePost`), and where its words came from: a
+ * One post rewritten (`revisePost`): the post by name, the voice it was
+ * rewritten in, OPEN and UNDO (CON-477) — and where its words came from: a
  * rewrite keeps the post's sources, so the line is the post's own (CON-474).
  */
-function RevisedCard({ t, revised }: { t: TFunction; revised: PostRevised }) {
+function RevisedCard({
+  t,
+  revised,
+  undo,
+}: {
+  t: TFunction
+  revised: PostRevised
+  undo: ResultUndo
+}) {
+  const undone = revised.undoId && undo.states[revised.undoId] === 'undone'
+  if (!revised.revised) {
+    return (
+      <ResultBlock
+        status={t('assistant.repair.revised.word')}
+        title={t('assistant.repair.revised.notRevised')}
+      />
+    )
+  }
   return (
     <ResultBlock
-      status={t('assistant.repair.revised.word')}
-      title={
-        revised.revised
-          ? t('assistant.repair.revised.title')
-          : t('assistant.repair.revised.notRevised')
-      }
-      meta={
-        revised.revised && revised.versioned
-          ? t('assistant.repair.revised.versioned')
-          : undefined
-      }
+      status={t('assistant.word.done')}
+      title={revised.title || t('assistant.repair.revised.title')}
+      meta={revised.title ? t('assistant.repair.revised.meta') : undefined}
+      action={<UndoAction t={t} undoId={revised.undoId} undo={undo} />}
     >
-      {revised.revised && !revised.versioned && (
-        <ResultRow className="text-[12.5px] text-warning">
-          {t('assistant.repair.revised.unversioned')}
-        </ResultRow>
-      )}
+      <ResultRow className="flex items-baseline gap-3">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-sm text-foreground">
+            {revised.voiceName
+              ? t('assistant.repair.revised.inVoice', {
+                  voice: revised.voiceName,
+                })
+              : t('assistant.repair.revised.newVersion')}
+          </span>
+          <span
+            className={cn(
+              'text-[12.5px]',
+              revised.versioned
+                ? 'text-secondary-foreground'
+                : 'text-warning-ink',
+            )}
+          >
+            {revised.versioned
+              ? t('assistant.repair.revised.versioned')
+              : t('assistant.repair.revised.unversioned')}
+          </span>
+        </span>
+        {revised.campaignId && !undone && (
+          <Link
+            to="/campaigns/$campaignId/posts/$postId"
+            params={{ campaignId: revised.campaignId, postId: revised.postId }}
+            className={`shrink-0 ${TEXT_ACTION_CLASS}`}
+          >
+            {t('assistant.repair.revised.open')}
+          </Link>
+        )}
+      </ResultRow>
+      <UndoNote t={t} undoId={revised.undoId} undo={undo} />
       {revised.grounding && <SourcesLine grounding={revised.grounding} />}
     </ResultBlock>
   )
