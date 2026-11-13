@@ -3604,6 +3604,8 @@ export const en = {
       compare: {
         word: 'Compared',
         beat: '{{second}} beat {{first}}',
+        level: '{{second}} level with {{first}}',
+        split: 'up on {{up}}, down on {{down}}',
         trailed: '{{second}} trailed {{first}}',
         on: 'on {{won}} of {{total}}',
         vs: '{{first}} vs {{second}}',

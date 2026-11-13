@@ -6,10 +6,9 @@ import {
   destinationFor,
   searchFromFilter,
   windowCampaign,
-  type AnalyticsWindow,
   type UIAction,
 } from '@/lib/assistantUiActions'
-import { OVERVIEW_WINDOWS } from '@/hooks/useAnalyticsOverview'
+import { offeredPeriod } from '@/lib/analyticsWindow'
 import { searchFromWindow, type AnalyticsSearch } from '@/lib/analyticsSearch'
 import { setUiActionApplier } from '@/stores/assistantStore'
 import { useViewContextStore } from '@/stores/viewContextStore'
@@ -17,17 +16,6 @@ import {
   useAnalyticsHighlightStore,
   windowControls,
 } from '@/stores/analyticsHighlightStore'
-
-/**
- * A window whose preset the picker doesn't offer lands as its dates: the
- * dashboard's address drops a span it can't label, which would quietly show
- * the default period instead.
- */
-function offeredPeriod(window: AnalyticsWindow): AnalyticsWindow {
-  if (!window.preset) return window
-  if (OVERVIEW_WINDOWS.some((w) => w.window === window.preset)) return window
-  return window.from && window.to ? { ...window, preset: undefined } : window
-}
 
 /**
  * Lets the assistant drive the screen (CON-450, D5). The store applies a
@@ -98,7 +86,12 @@ export function useAssistantUiActions() {
                   ...offeredPeriod(action.window),
                   campaignId: windowCampaign(action),
                 },
+                // A preset other than the one shown is a different period,
+                // even over the same dates: "last 7 days" moves, a range
+                // doesn't.
                 same &&
+                  (!action.window.preset ||
+                    action.window.preset === here.window) &&
                   router.state.location.pathname.replace(/\/$/, '') ===
                     destination.to
                   ? { window: here.window, from: here.from, to: here.to }

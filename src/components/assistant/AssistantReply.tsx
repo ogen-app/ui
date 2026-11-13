@@ -171,13 +171,9 @@ export function AssistantReply({
         />
       )}
 
-      {/* What the analytics tools read, each citing its filters (CON-463).
-          A reply to an offer doesn't repeat the trail the offer showed. */}
+      {/* What the analytics tools read, each citing its filters (CON-463). */}
       {settled && turn.analytics && (
-        <AnalyticsResults
-          results={turn.analytics}
-          fromOffer={Boolean(turn.answered)}
-        />
+        <AnalyticsResults results={turn.analytics} />
       )}
 
       {/* What the workspace pack read or changed (CON-464). */}
