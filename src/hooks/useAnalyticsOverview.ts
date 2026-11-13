@@ -96,6 +96,12 @@ export type AnalyticsOverviewResult = {
    * the picker's, which runs ahead of it while the next answer is in flight.
    */
   campaignId?: string
+  /**
+   * The relative span the answer on screen was fetched for (`28d`), absent
+   * for a range — like `platforms`, the answer's and not the picker's, so the
+   * assistant never hears a new preset beside the old one's dates.
+   */
+  preset?: string
 }
 
 export function useAnalyticsOverview(
@@ -113,6 +119,7 @@ export function useAnalyticsOverview(
     queryFn: async () => ({
       platforms: scope,
       campaignId,
+      preset: period.from && period.to ? undefined : period.window,
       envelope: await fetchAnalyticsOverview({
         ...period,
         platforms: scope,
@@ -152,6 +159,7 @@ export function useAnalyticsOverview(
     isEmpty: withheld && envelope?.reason === 'no_data',
     platforms: query.data?.platforms ?? scope,
     campaignId: query.data ? query.data.campaignId : campaignId,
+    preset: query.data?.preset,
     range: overview?.window,
   }
 }

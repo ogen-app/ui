@@ -8,9 +8,14 @@ import {
   windowCampaign,
   type UIAction,
 } from '@/lib/assistantUiActions'
+import { offeredPeriod } from '@/lib/analyticsWindow'
 import { searchFromWindow, type AnalyticsSearch } from '@/lib/analyticsSearch'
 import { setUiActionApplier } from '@/stores/assistantStore'
 import { useViewContextStore } from '@/stores/viewContextStore'
+import {
+  useAnalyticsHighlightStore,
+  windowControls,
+} from '@/stores/analyticsHighlightStore'
 
 /**
  * Lets the assistant drive the screen (CON-450, D5). The store applies a
@@ -33,10 +38,28 @@ export function useAssistantUiActions() {
         const before = router.state.location.href
         const destination = destinationFor(action)
         switch (action.type) {
-          case 'navigate':
+          case 'navigate': {
             if (!destination) return undefined
-            await go(destination.to, destination.params)
+            const windowed =
+              Boolean(action.window) && destination.to === '/analytics'
+            // A navigate to the dashboard may carry the window it opens on
+            // (CON-479): "Opened Analytics · last 90 days".
+            await go(
+              destination.to,
+              destination.params,
+              windowed && action.window
+                ? searchFromWindow({
+                    ...offeredPeriod(action.window),
+                    campaignId: windowCampaign(action),
+                  })
+                : undefined,
+            )
+            if (windowed)
+              useAnalyticsHighlightStore
+                .getState()
+                .mark(windowControls(action.changed))
             return before
+          }
           case 'set_filter':
             if (!destination) return undefined
             await go(
@@ -59,14 +82,26 @@ export function useAssistantUiActions() {
               destination.to,
               destination.params,
               searchFromWindow(
-                { ...action.window, campaignId: windowCampaign(action) },
+                {
+                  ...offeredPeriod(action.window),
+                  campaignId: windowCampaign(action),
+                },
+                // A preset other than the one shown is a different period,
+                // even over the same dates: "last 7 days" moves, a range
+                // doesn't.
                 same &&
+                  (!action.window.preset ||
+                    action.window.preset === here.window) &&
                   router.state.location.pathname.replace(/\/$/, '') ===
                     destination.to
                   ? { window: here.window, from: here.from, to: here.to }
                   : undefined,
               ),
             )
+            // The bar tints what moved; the user's next touch clears it.
+            useAnalyticsHighlightStore
+              .getState()
+              .mark(windowControls(action.changed))
             return before
           }
           case 'open_connect':
@@ -115,6 +150,7 @@ export function useAssistantUiActions() {
             selection: { kind: action.selection.kind, ids: [] },
           })
         }
+        if (action.window) useAnalyticsHighlightStore.getState().clear()
         await router.navigate({ href } as never)
       },
     })

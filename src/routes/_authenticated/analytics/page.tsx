@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { WorkspaceScopeBar } from '@/components/analytics/WorkspaceScopeBar'
@@ -52,6 +53,7 @@ import { searchPlatforms, type AnalyticsSearch } from '@/lib/analyticsSearch'
  * marks are a filter on the page, and no card has to disclaim them.
  */
 export function AnalyticsPage() {
+  const { t } = useTranslation()
   // The period, platforms and campaign are the address (CON-463): the
   // assistant's `set_window` lands there, and BACK puts the old one back.
   const search = useSearch({ from: '/_authenticated/analytics/' })
@@ -129,6 +131,7 @@ export function AnalyticsPage() {
   const answered = overview.range
   const answeredKey = overview.platforms.join(',')
   const answeredCampaign = overview.campaignId
+  const answeredPreset = overview.preset
   useAssistantPage(
     useMemo(() => {
       if (!answered && picked.size === 0) return null
@@ -138,6 +141,8 @@ export function AnalyticsPage() {
               window: {
                 from: answered.from,
                 to: answered.to,
+                // The picker's span, so the rail names it as the picker does.
+                ...(answeredPreset ? { preset: answeredPreset } : {}),
                 ...(answeredKey ? { platforms: answeredKey.split(',') } : {}),
                 ...(answeredCampaign ? { campaignId: answeredCampaign } : {}),
               },
@@ -153,7 +158,7 @@ export function AnalyticsPage() {
             }
           : {}),
       }
-    }, [answered, answeredKey, answeredCampaign, picked]),
+    }, [answered, answeredKey, answeredCampaign, answeredPreset, picked]),
   )
 
   const learnings = useAnalyticsLearnings(metric, slugs)
@@ -167,7 +172,7 @@ export function AnalyticsPage() {
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="h-0 grow overflow-y-auto flex flex-col">
-        <PageHeader title="Analytics" />
+        <PageHeader title={t('analytics.surface.title')} />
         {/*
           What happened, then which posts did it, then what holds whatever the
           period. The order is the order the questions arrive in: the overview's

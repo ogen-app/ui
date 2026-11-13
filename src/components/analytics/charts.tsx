@@ -1135,12 +1135,15 @@ export function DecayCurve({
   points,
   milestones = [],
   height = 'sm',
+  tone = 'neutral',
   className,
 }: {
   points: { hour: number; share: number }[]
   /** Shares worth calling out — 50/75/95%, drawn as guides down to the axis. */
   milestones?: { share: number; hour: number }[]
   height?: 'sm' | 'md'
+  /** `accent` draws the line in teal, as the assistant's cards do (CON-479). */
+  tone?: 'neutral' | 'accent'
   className?: string
 }) {
   const { t } = useTranslation()
@@ -1198,7 +1201,9 @@ export function DecayCurve({
         fill="none"
         strokeWidth={2}
         vectorEffect="non-scaling-stroke"
-        className="stroke-foreground"
+        className={
+          tone === 'accent' ? 'stroke-accent-ink' : 'stroke-foreground'
+        }
         strokeLinejoin="round"
       />
     </svg>
