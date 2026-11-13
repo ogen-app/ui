@@ -74,6 +74,11 @@ export type GroundingSource = {
   title: string
   analysisId?: string
   ideaId?: string
+  /**
+   * `post` for a post cited as a source (CON-479): an example whose idea
+   * cites nothing else. Absent for an asset, which is every other source.
+   */
+  kind?: 'post'
 }
 
 /** An entity kind a turn changed, for the client to refresh. */
@@ -176,6 +181,8 @@ export type ProposalDetails = {
   rows: ProposalRow[]
   sources: { id: string; title: string; type?: string }[]
   footnote?: string
+  /** The examples a "more like these" offer would follow (CON-479). */
+  trail?: TrailStep[]
   /** The same work over more sources than the narrow default offered. */
   widen?: { note: string; label: string; instruction: string }
 }
@@ -773,14 +780,63 @@ export type AnalyticsApplied = {
   campaign?: { id: string; name: string }
   postId?: string
   note?: string
+  /** The relative span the dates resolve (`30d`, `12w`, `6mo`); absent for dates picked by hand. */
+  preset?: string
 }
 
 /** A read's data, or why it has none (`not_configured`, `no_data`, …). */
-export type AnalyticsRead<T> = {
+export type AnalyticsRead<T, S = undefined> = {
   applied: AnalyticsApplied
   data?: T
+  /** What the server worked out from the data, for the card's headline (CON-479). */
+  summary?: S
   unavailable?: string
 }
+
+/** One weekday-and-hour slot as the summary ranks it; Monday is 0. */
+export type RankedSlot = {
+  day: number
+  hour: number
+  /** Average interactions per post — a count, not a rate. */
+  interactions: number
+  posts: number
+}
+
+export type BestTimesSummary = {
+  best?: RankedSlot
+  /** The best slot on another day. */
+  runnerUp?: RankedSlot
+  weakest?: RankedSlot
+  /** Too few posts in any slot to rank. */
+  tooFew: boolean
+  minPosts: number
+}
+
+/** Hours until a post has half its final engagement, and the age bucket that falls in. */
+export type HalfLife = { hours: number; bucket: string }
+
+export type DecaySummary = {
+  halfLife?: HalfLife
+  /** Each connected platform's own curve, when the read wasn't narrowed. */
+  platforms: { platform: string; halfLife?: HalfLife; buckets: DecayBucket[] }[]
+}
+
+/** How often the workspace actually posts, through Ogen (CON-479). */
+export type PostingCadence = {
+  /** Posts per ISO week, oldest first; `current` is this week. */
+  weeks: { weekStart: string; posts: number; current: boolean }[]
+  perWeek: number
+  lastMonth: number
+  platforms: { platform: string; perWeek: number }[]
+}
+
+export type FrequencySummary = {
+  cadence?: PostingCadence
+  unavailable?: string
+}
+
+/** The day the followers grew most, and the post that reached most then. */
+export type FollowerDay = { date: string; gain: number; postTitle?: string }
 
 /** The publisher's engagement in one weekday-and-hour slot; Monday is 0. */
 export type BestTimeSlot = {
@@ -837,14 +893,20 @@ export type PostsList = {
   items: PostFigures[]
   /** Every post the list matched, not just this page. */
   total: number
+  /** What the list was sorted on (`engagement_rate`, `reach`…), and which way. */
+  sortBy?: string
+  order?: 'asc' | 'desc'
 }
 
 /** One overview metric over both periods; the change is the server's. */
 export type PeriodMetric = {
   metric: string
   label: string
+  /** A count changes by a percent of itself; a rate by points. */
+  unit: 'count' | 'rate'
   first: number
   second: number
+  /** For a rate, in points. */
   change: number
   /** Null when the first period's figure is zero. */
   changePct: number | null
@@ -857,12 +919,27 @@ export type PeriodComparison = {
   unavailable?: string
 }
 
-/** An example post, and what it was made from. */
+/** An asset on a trail, with its kind for the badge. */
+export type TrailAsset = { id: string; title: string; type?: string }
+
+/**
+ * An example post, and what it was made from (CON-479): its rate, then each
+ * idea, the analysis behind it, the asset and the passages the analysis cited.
+ */
 export type TrailStep = {
   postId: string
   title: string
-  ideas: { id: string; title: string; asset?: { id: string; title: string } }[]
-  assets: { id: string; title: string }[]
+  /** The post's engagement rate, a fraction. */
+  rate?: number
+  ideas: {
+    id: string
+    title: string
+    analysis?: { id: string; campaignId?: string; campaignName?: string }
+    asset?: TrailAsset
+    /** "p. 12", "Slide 4", "12:03–12:47". */
+    passages: string[]
+  }[]
+  assets: TrailAsset[]
   /** Nothing recorded: the post's own words are the only source. */
   noTrail: boolean
 }
@@ -870,6 +947,8 @@ export type TrailStep = {
 /** "More like these" (CON-463): the trail, then the ideas it saved. */
 export type MoreLikeThese = {
   trail: TrailStep[]
+  /** The Ideas list's query for just the ideas this run saved. */
+  filter?: string
   /** The campaign's other sources the writer could draw on. */
   grounding: { id: string; title: string }[]
   campaignId?: string
@@ -893,10 +972,10 @@ export type AnalyticsResults = {
   lessons?: AnalyticsRead<unknown>
   /** Cited only. */
   postStats?: AnalyticsRead<unknown>
-  bestTimes?: AnalyticsRead<BestTimeSlot[]>
-  decay?: AnalyticsRead<DecayBucket[]>
-  frequency?: AnalyticsRead<FrequencyRow[]>
-  followers?: AnalyticsRead<FollowerAccount[]>
+  bestTimes?: AnalyticsRead<BestTimeSlot[], BestTimesSummary>
+  decay?: AnalyticsRead<DecayBucket[], DecaySummary>
+  frequency?: AnalyticsRead<FrequencyRow[], FrequencySummary>
+  followers?: AnalyticsRead<FollowerAccount[], FollowerDay>
   posts?: AnalyticsRead<PostsList>
   compare?: PeriodComparison
   more?: MoreLikeThese

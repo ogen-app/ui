@@ -147,3 +147,50 @@ describe('markerText', () => {
     expect(markerText(t, undefined, undefined)).toBeNull()
   })
 })
+
+describe('the analytics window (CON-479)', () => {
+  const window = {
+    from: '2026-03-01',
+    to: '2026-03-28',
+    preset: '28d',
+    platforms: ['instagram'],
+  }
+
+  it('is what the chip says on the dashboard when nothing is ticked', () => {
+    expect(
+      chipText(
+        t,
+        workspace,
+        { screen: 'analytics' },
+        { window },
+        undefined,
+        'Last 28 days · Instagram · All campaigns',
+      ),
+    ).toBe('Last 28 days · Instagram · All campaigns')
+  })
+
+  it('names ticked posts as posts', () => {
+    expect(
+      chipText(
+        t,
+        workspace,
+        { screen: 'analytics' },
+        { window, selection: { kind: 'post', ids: ['a', 'b'], count: 2 } },
+      ),
+    ).toBe('2 posts selected · Analytics')
+  })
+
+  it('draws a marker when only the window moved', () => {
+    const before = view({ screen: 'analytics', window })
+    const after = view({
+      screen: 'analytics',
+      window: { ...window, platforms: ['linkedin'] },
+    })
+    expect(markerText(t, before, before)).toBeNull()
+    expect(
+      markerText(t, after, before, (v) => ({
+        item: v.window?.platforms?.join('') ?? '',
+      })),
+    ).toBe('Now on Analytics · linkedin')
+  })
+})

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { AssetTypeBadge } from './AssetTypeBadge'
+import { TrailRows } from './AnalyticsResults'
 import { PendingBox, ResolvedLine, StatusWord, TextAction } from './blocks'
 import type {
   AssistantProposal,
@@ -254,6 +255,9 @@ function Details({
           </div>
         )
       })}
+      {/* "More like these": where each example came from (CON-479), so the
+          yes is given knowing what the new ideas will be modelled on. */}
+      {card.trail && card.trail.length > 0 && <TrailRows trail={card.trail} />}
       {card.sources.length > 0 && (
         <ul className="flex flex-col gap-2 border-t border-border py-2.5">
           {card.sources.map((source) => (

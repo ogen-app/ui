@@ -53,6 +53,11 @@ export function chipText(
   page: ViewPage | null,
   /** The open asset's title, when the screen has loaded it (CON-476). */
   focusTitle?: string,
+  /**
+   * The dashboard's window in the scope bar's words (CON-479), which is what
+   * goes with a message from it when nothing is ticked.
+   */
+  windowText?: string | null,
 ): string | null {
   const selection = selectionOf(page?.selection)
   if (selection && location.screen) {
@@ -70,13 +75,16 @@ export function chipText(
         total: formatNumber(selection.count),
         screen,
       })
-    return t('assistant.chip.selected', {
-      ...counted(selection.count),
-      screen,
-    })
+    // Ticked posts say what they are (CON-479): "2 posts selected".
+    return t(
+      page?.selection?.kind === 'post'
+        ? 'assistant.chip.selectedPosts'
+        : 'assistant.chip.selected',
+      { ...counted(selection.count), screen },
+    )
   }
   const focus = location.focus
-  if (!focus) return null
+  if (!focus) return page?.window && windowText ? windowText : null
   if (
     subject.kind === 'post' &&
     focus.kind === 'post' &&
@@ -102,10 +110,20 @@ export type MarkerDetail = (
 /** What makes two turns' screens the same place, for the marker. */
 function signature(view: ViewContext): string {
   const selection = selectionOf(view.selection)
+  const w = view.window
   return [
     view.screen,
     view.focus?.id ?? '',
     selection ? `${selection.matching ? 'all' : ''}${selection.count}` : '',
+    // A new period, platform or campaign on the dashboard is somewhere else
+    // too (CON-479), though the screen is the same.
+    w
+      ? [
+          w.preset ?? `${w.from}~${w.to}`,
+          [...(w.platforms ?? [])].sort().join(','),
+          w.campaignId ?? '',
+        ].join('/')
+      : '',
   ].join('|')
 }
 

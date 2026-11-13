@@ -230,4 +230,39 @@ describe('analyticsResults', () => {
     })
     expect(r?.overview?.data?.cards).toEqual([])
   })
+
+  it('reads each read’s summary (CON-479)', () => {
+    const r = analyticsResults({
+      analytics: {
+        bestTimes: {
+          applied: { platforms: [] },
+          data: [],
+          summary: {
+            best: { dayOfWeek: 4, hour: 18, avgInteractions: 42, posts: 9 },
+            tooFew: false,
+            minPosts: 3,
+          },
+        },
+        followerHistory: {
+          applied: window,
+          data: {
+            accounts: [],
+            biggest_day: { date: '2026-03-15', gain: 57, post_title: 'Reel' },
+          },
+        },
+      },
+    })
+    // Sunday-first on the wire, Monday-first here: Thursday is 3.
+    expect(r?.bestTimes?.summary?.best).toEqual({
+      day: 3,
+      hour: 18,
+      interactions: 42,
+      posts: 9,
+    })
+    expect(r?.followers?.summary).toEqual({
+      date: '2026-03-15',
+      gain: 57,
+      postTitle: 'Reel',
+    })
+  })
 })
