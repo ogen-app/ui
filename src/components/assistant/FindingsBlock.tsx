@@ -374,7 +374,12 @@ export function FixActions({
 
   const run = (fix: RepairFix) => {
     if (!fix.proposalId) return
-    if (fix.card || (fix.options && fix.options.length > 0)) {
+    // The card or choices can come on the fix or on its offer: either way
+    // the offer opens rather than running unseen.
+    const offer = offerOf(fix)
+    const choices =
+      (offer?.options.length ?? 0) > 0 || (fix.options?.length ?? 0) > 0
+    if (offer?.card || fix.card || choices) {
       setOpened(fix.proposalId)
       return
     }
