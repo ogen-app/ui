@@ -437,6 +437,8 @@ describe('the assets pack’s results (CON-460)', () => {
         { campaignId: 'c1', campaignName: 'Spring', status: 'ready' },
       ],
     })
+    // Recorded before the server sent it: unknown, not zero.
+    expect(assets?.analysis?.otherLenses[0].ideaCount).toBeUndefined()
     expect(assets?.compare).toMatchObject({
       mode: 'compare',
       assets: [
