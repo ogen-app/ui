@@ -742,24 +742,41 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   WITH ASSISTANT in the header asks for all of them. The server's problems are
   never folded behind SHOW MORE; only the client's rules are capped.
 - **The analytics pack's results are cards, and every card cites its
-  filters** (CON-463). `complete.results.analytics` holds each tool's last
-  output, and every read is `{applied, data}`: `applied` is what the read was
-  actually narrowed to, and the card's last line prints it — period ·
-  platforms · campaign, with "every platform" and "the whole workspace"
-  spelled out — or, for a read the window can't reach (the publisher's best
-  times, decay and cadence; followers; the posts list; lessons), what it
-  covers instead, worded here rather than taken from the server's `note`.
-  `services/api/assistantAnalytics` parses them; `AnalyticsResults` draws
-  them. `comparePeriods` is two columns and the server's change, a fall in
-  amber. `moreLikeThese` makes **ideas, not posts**: the trail each example
-  came from, then the undated ideas it saved, with OPEN to Ideas.
+  filters** (CON-463, drawn as CON-479 has them). `complete.results.analytics`
+  holds each tool's last output, and every read is `{applied, data, summary}`:
+  `applied` is what the read was actually narrowed to, and the card's last
+  line prints it in the **scope bar's own words** — period · platforms ·
+  campaign, the period as the picker names it (`applied.preset` →
+  "Last 28 days", `lib/analyticsWindow`) and "All platforms" / "All campaigns"
+  spelled out, so a card says what the screen says. A read no dates narrow
+  (best times, decay, the publisher's cadence, lessons) cites "All time"; the
+  cadence Ogen counts cites its weeks. `summary` is the server's reading of
+  the rows — best times' best, runner-up and weakest slot (average
+  interactions, a **count**), decay's half-life per platform, the weekly
+  cadence, the followers' biggest day — and the cards draw it rather than
+  ranking rows here. Figures are Plex Mono. `comparePeriods` is two columns
+  and the server's change by its `unit`: points for a rate, the count for
+  posts, a percent otherwise, a fall in amber. `services/api/assistantAnalytics`
+  parses them; `AnalyticsResults` draws them. `moreLikeThese` makes **ideas,
+  not posts**: the trail (post → idea → analysis → asset and its passages,
+  `TrailRows`) is drawn on the **offer** (`card.trail`) and on a result that
+  had none, OPEN lands on the server's `filter` on Ideas, and a run that saved
+  none draws no DONE card. A post cited as a source (`kind: 'post'`) is named,
+  never linked.
   **The dashboard's period, platforms and campaign are its address**
   (`lib/analyticsSearch`: `window` or `from`+`to`, `platform`,
   `campaign_id`), which is what `set_window` lands on — from a campaign's
   Analytics tab too, which has no window of its own, so that one opens the
   dashboard narrowed to the campaign. The window the page sends carries the
-  campaign (`window.campaignId`). A set_window whose dates are only the
-  period on screen resolved keeps the period a preset.
+  campaign and the picker's `preset`, and is what the composer's chip and the
+  thread's markers say on the dashboard, through one wording
+  (`assistant/useWindowWords`), which names only the platforms the page
+  actually counts. A set_window row names only what `changed`, offers BACK,
+  and shows before → after unless a navigate in the same turn led there
+  (CON-497) — that pair is one row; the scope bar tints what the assistant
+  changed (`stores/analyticsHighlightStore`) until the user's next touch. A
+  set_window whose dates are only the period on screen resolved keeps the
+  period a preset, and a preset the picker doesn't offer lands as its dates.
 - **The workspace pack's results are cards** (CON-464).
   `complete.results.workspace` holds each tool's last output:
   `activityReport` (a day or up to 31 days, totals plus the days that had

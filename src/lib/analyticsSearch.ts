@@ -71,6 +71,8 @@ export function searchFromWindow(
   window: {
     from?: string
     to?: string
+    /** A relative span (CON-479): kept as the picker's period over its dates. */
+    preset?: string
     platforms?: string[]
     campaignId?: string
   },
@@ -78,9 +80,11 @@ export function searchFromWindow(
 ): AnalyticsSearch {
   const out: AnalyticsSearch = keepPeriod
     ? { ...keepPeriod }
-    : window.from && window.to
-      ? { from: window.from, to: window.to }
-      : {}
+    : window.preset
+      ? { window: window.preset }
+      : window.from && window.to
+        ? { from: window.from, to: window.to }
+        : {}
   if (window.platforms && window.platforms.length > 0) {
     out.platform = window.platforms.join(',')
   }

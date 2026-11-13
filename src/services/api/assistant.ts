@@ -4,7 +4,7 @@ import { errorMessage } from './errors'
 import { parseGrounding } from './grounding'
 import { isRecord } from './json'
 import { parseAssetsState } from './content'
-import { analyticsResults } from './assistantAnalytics'
+import { analyticsResults, trailSteps } from './assistantAnalytics'
 import { workspaceResults } from './assistantWorkspace'
 import { draftedPost, ideasResults } from './assistantIdeas'
 import { readSSEStream } from '@/lib/sse'
@@ -1031,6 +1031,7 @@ function proposalDetails(raw: Record<string, unknown> | null) {
       }))
       .filter((s) => s.id && s.title),
     footnote: optStr(raw.footnote),
+    trail: Array.isArray(raw.trail) ? trailSteps(raw.trail) : undefined,
     widen:
       widen && str(widen.label) && str(widen.instruction)
         ? {
@@ -1291,6 +1292,20 @@ const UI_ACTION_TYPES: UIAction['type'][] = [
   'open_add_source',
 ]
 
+function analyticsWindow(
+  window: Record<string, unknown> | null,
+): UIAction['window'] {
+  return window
+    ? {
+        from: optStr(window.from),
+        to: optStr(window.to),
+        preset: optStr(window.preset),
+        platforms: strings(window.platforms),
+        campaignId: optStr(window.campaignId),
+      }
+    : undefined
+}
+
 /** Reads a `ui_action`; null for a type or screen this build can't apply. */
 function uiAction(raw: Record<string, unknown>): UIAction | null {
   const type = UI_ACTION_TYPES.find((t) => t === raw.type)
@@ -1317,14 +1332,9 @@ function uiAction(raw: Record<string, unknown>): UIAction | null {
       : undefined,
     savedViewId: optStr(raw.savedViewId),
     savedViewName: optStr(raw.savedViewName),
-    window: window
-      ? {
-          from: optStr(window.from),
-          to: optStr(window.to),
-          platforms: strings(window.platforms),
-          campaignId: optStr(window.campaignId),
-        }
-      : undefined,
+    window: analyticsWindow(window),
+    before: analyticsWindow(record(raw.before)),
+    changed: Array.isArray(raw.changed) ? strings(raw.changed) : undefined,
     connect:
       connect && str(connect.platform)
         ? {

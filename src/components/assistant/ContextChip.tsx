@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAsset } from '@/hooks/useContent'
 import { chipText } from '@/lib/assistantView'
 import { useViewContextStore } from '@/stores/viewContextStore'
+import { useWindowWords } from './useWindowWords'
 import type { ThreadSubject } from '@/types/assistant'
 
 /**
@@ -30,7 +31,15 @@ export function ContextChip({
   const focusedAsset = useAsset(
     location.focus?.kind === 'asset' ? location.focus.id : '',
   )
-  const text = chipText(t, subject, location, page, focusedAsset.data?.title)
+  const words = useWindowWords()
+  const text = chipText(
+    t,
+    subject,
+    location,
+    page,
+    focusedAsset.data?.title,
+    page?.window ? words.line(page.window) : null,
+  )
   if (!text || dismissed) return null
 
   return (

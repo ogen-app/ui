@@ -195,4 +195,40 @@ describe('ProposalCard', () => {
       screen.getByText('Draft 2 posts from 3 ideas · confirmed 3:12 PM'),
     ).toBeTruthy()
   })
+
+  it('shows the trail a "more like these" offer would follow (CON-479)', async () => {
+    await renderWithProviders(
+      <ProposalCard
+        threadId="t"
+        disabled={false}
+        proposal={{
+          ...base,
+          tool: 'moreLikeThese',
+          summary: 'Plan 4 ideas like these',
+          card: {
+            rows: [],
+            sources: [],
+            trail: [
+              {
+                postId: 'p1',
+                title: 'The thermal pool at dusk',
+                rate: 0.052,
+                ideas: [
+                  {
+                    id: 'i1',
+                    title: 'The pool cut into the rock',
+                    passages: [],
+                  },
+                ],
+                assets: [],
+                noTrail: false,
+              },
+            ],
+          },
+        }}
+      />,
+    )
+    expect(screen.getByText('The thermal pool at dusk')).toBeTruthy()
+    expect(screen.getByText('The pool cut into the rock')).toBeTruthy()
+  })
 })

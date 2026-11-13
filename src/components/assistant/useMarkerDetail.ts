@@ -5,6 +5,7 @@ import { counted } from '@/lib/intl'
 import type { MarkerDetail } from '@/lib/assistantView'
 import type { AssetsState } from '@/services/api/content'
 import type { Asset } from '@/types/content'
+import { useWindowWords } from './useWindowWords'
 
 /**
  * Names for the thread's markers, from what the app already holds: an open
@@ -12,11 +13,15 @@ import type { Asset } from '@/types/content'
  * the Assets list's size ("On Assets · 64 documents"). Nothing is fetched for
  * a marker, so a turn sent from an asset this tab never opened keeps the
  * plain "On an asset"; the size is the bank's now, not when the turn was sent.
+ * On the dashboard, the window the turn was read over.
  */
 export function useMarkerDetail(): MarkerDetail {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const words = useWindowWords()
   return (view) => {
+    // The dashboard's window, as its chip said it (CON-479).
+    if (view.window) return { item: words.line(view.window) }
     if (view.focus?.kind === 'asset') {
       const title = qc.getQueryData<Asset>(assetKey(view.focus.id))?.title
       if (!title) return null

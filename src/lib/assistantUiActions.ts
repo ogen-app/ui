@@ -7,6 +7,16 @@ import type { ViewEntityKind, ViewScreen } from '@/lib/viewContext'
  * order when the turn completes. Each is a read-tier action — no confirmation —
  * and each can be put back, because the screen it replaced is remembered.
  */
+/** An analytics window as an action carries it: dates or a preset, platforms, campaign. */
+export type AnalyticsWindow = {
+  from?: string
+  to?: string
+  /** The relative span the dates resolve, `30d`; absent for dates picked by hand. */
+  preset?: string
+  platforms: string[]
+  campaignId?: string
+}
+
 export type UIAction = {
   type:
     | 'navigate'
@@ -29,12 +39,11 @@ export type UIAction = {
    * An analytics screen's new window (CON-463): dates, platforms, campaign.
    * The server built it on the window on screen, so it is the whole state.
    */
-  window?: {
-    from?: string
-    to?: string
-    platforms: string[]
-    campaignId?: string
-  }
+  window?: AnalyticsWindow
+  /** The window a `set_window` replaced (CON-479). */
+  before?: AnalyticsWindow
+  /** What a `set_window` changed: `period`, `platforms`, `campaign`. */
+  changed?: string[]
   /**
    * Settings' connect flow to open (CON-464): a new account on `platform`,
    * or — `reconnect` — the account named. The user runs it; nothing is

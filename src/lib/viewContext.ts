@@ -26,6 +26,12 @@ export type ViewContext = {
   window?: {
     from: string
     to: string
+    /**
+     * The relative span the dates resolve, when the screen chose one
+     * (`28d`), so the assistant and the chip can name it as the picker does
+     * (CON-479).
+     */
+    preset?: string
     platforms?: string[]
     campaignId?: string
   }

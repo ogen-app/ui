@@ -166,14 +166,22 @@ export function Picker({
   value,
   options,
   onChange,
+  highlighted = false,
 }: {
   label: string
   value: string
   options: { value: string; label: string }[]
   onChange: (value: string) => void
+  /** Tinted while it shows a value the assistant just set (CON-479). */
+  highlighted?: boolean
 }) {
   return (
-    <label className="inline-flex items-center gap-1.5 rounded-md border border-border bg-primary px-2.5 py-1.5">
+    <label
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 transition-colors',
+        highlighted ? 'border-accent bg-accent/5' : 'border-border bg-primary',
+      )}
+    >
       <span className="text-xs text-tertiary-foreground">{label}</span>
       <span className="relative inline-flex items-center gap-1">
         <select

@@ -129,7 +129,9 @@ export function SourcesLine({
                 <Fragment key={s.id || s.title}>
                   {i > 0 && ', '}
                   {s.id && letters?.[s.id] && `${letters[s.id]} `}
-                  {s.id ? (
+                  {/* A post cited as a source (CON-479) is named, not linked:
+                      the link is the asset screen's. */}
+                  {s.id && s.kind !== 'post' ? (
                     <Link
                       to="/assets/$assetId"
                       params={{ assetId: s.id }}

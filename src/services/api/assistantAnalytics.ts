@@ -3,12 +3,20 @@ import type {
   AnalyticsRead,
   AnalyticsResults,
   BestTimeSlot,
+  BestTimesSummary,
   DecayBucket,
+  DecaySummary,
   FollowerAccount,
+  FollowerDay,
   FrequencyRow,
+  FrequencySummary,
+  HalfLife,
   MoreLikeThese,
   PeriodComparison,
   PostsList,
+  RankedSlot,
+  TrailAsset,
+  TrailStep,
 } from '@/types/assistant'
 import type {
   AnalyticsOverview,
@@ -35,10 +43,12 @@ export function analyticsResults(
     topPosts: read(a.topPosts, performers),
     lessons: read(a.analyticsLessons, (d) => d),
     postStats: read(a.postStats, (d) => d),
-    bestTimes: read(a.bestTimes, bestTimes),
-    decay: read(a.contentDecay, decay),
-    frequency: read(a.postingFrequency, frequency),
-    followers: read(a.followerHistory, followers),
+    bestTimes: read(a.bestTimes, bestTimes, bestTimesSummary),
+    decay: read(a.contentDecay, decay, decaySummary),
+    frequency: read(a.postingFrequency, frequency, frequencySummary),
+    followers: read(a.followerHistory, followers, (_, data) =>
+      biggestDay(record(record(data)?.biggest_day)),
+    ),
     posts: read(a.listPostAnalytics, posts),
     compare: compare(a.comparePeriods),
     more: moreLikeThese(a.moreLikeThese),
@@ -62,6 +72,7 @@ export function applied(raw: unknown): AnalyticsApplied {
         : undefined,
     postId: optStr(a.postId),
     note: optStr(a.note),
+    preset: optStr(a.preset),
   }
 }
 
@@ -69,13 +80,14 @@ export function applied(raw: unknown): AnalyticsApplied {
  * One read. A data the parser can't use is no data, said as `unavailable`
  * with no reason rather than as an empty card.
  */
-function read<T>(
+function read<T, S = undefined>(
   raw: unknown,
   parse: (data: unknown) => T | undefined,
-): AnalyticsRead<T> | undefined {
+  summarise?: (summary: unknown, data: unknown) => S | undefined,
+): AnalyticsRead<T, S> | undefined {
   const r = record(raw)
   if (!r) return undefined
-  const out: AnalyticsRead<T> = { applied: applied(r.applied) }
+  const out: AnalyticsRead<T, S> = { applied: applied(r.applied) }
   const data = record(r.data)
   if (data && data.available === false) {
     out.unavailable = str(data.reason) || 'unknown'
@@ -84,7 +96,94 @@ function read<T>(
   const parsed = r.data == null ? undefined : parse(r.data)
   if (parsed === undefined) out.unavailable = 'unknown'
   else out.data = parsed
+  const summary = summarise?.(r.summary, r.data)
+  if (summary !== undefined) out.summary = summary
   return out
+}
+
+/** A ranked slot; the publisher counts days from Sunday, the grid from Monday. */
+function rankedSlot(raw: unknown): RankedSlot | undefined {
+  const s = record(raw)
+  if (!s) return undefined
+  return {
+    day: (num(s.dayOfWeek) + 6) % 7,
+    hour: num(s.hour),
+    interactions: num(s.avgInteractions),
+    posts: num(s.posts),
+  }
+}
+
+function bestTimesSummary(raw: unknown): BestTimesSummary | undefined {
+  const s = record(raw)
+  if (!s) return undefined
+  return {
+    best: rankedSlot(s.best),
+    runnerUp: rankedSlot(s.runnerUp),
+    weakest: rankedSlot(s.weakest),
+    tooFew: s.tooFew === true,
+    minPosts: num(s.minPosts),
+  }
+}
+
+function halfLife(raw: unknown): HalfLife | undefined {
+  const h = record(raw)
+  return h && str(h.bucket)
+    ? { hours: num(h.hours), bucket: str(h.bucket) }
+    : undefined
+}
+
+function decaySummary(raw: unknown): DecaySummary | undefined {
+  const s = record(raw)
+  if (!s) return undefined
+  return {
+    halfLife: halfLife(s.halfLife),
+    platforms: (Array.isArray(s.platforms) ? s.platforms : [])
+      .filter(isRecord)
+      .map((p) => ({
+        platform: str(p.platform),
+        halfLife: halfLife(p.halfLife),
+        buckets: decay(p.buckets) ?? [],
+      }))
+      .filter((p) => p.platform),
+  }
+}
+
+function frequencySummary(raw: unknown): FrequencySummary | undefined {
+  const s = record(raw)
+  if (!s) return undefined
+  const c = record(s.cadence)
+  return {
+    unavailable: optStr(s.unavailable),
+    cadence: c
+      ? {
+          weeks: (Array.isArray(c.weeks) ? c.weeks : [])
+            .filter(isRecord)
+            .map((w) => ({
+              weekStart: str(w.weekStart),
+              posts: num(w.posts),
+              current: w.current === true,
+            }))
+            .filter((w) => w.weekStart),
+          perWeek: num(c.perWeek),
+          lastMonth: num(c.lastMonth),
+          platforms: (Array.isArray(c.platforms) ? c.platforms : [])
+            .filter(isRecord)
+            .map((p) => ({
+              platform: str(p.platform),
+              perWeek: num(p.perWeek),
+            }))
+            .filter((p) => p.platform),
+        }
+      : undefined,
+  }
+}
+
+function biggestDay(
+  d: Record<string, unknown> | null,
+): FollowerDay | undefined {
+  return d && str(d.date)
+    ? { date: str(d.date), gain: num(d.gain), postTitle: optStr(d.post_title) }
+    : undefined
 }
 
 /**
@@ -185,6 +284,8 @@ function posts(raw: unknown): PostsList | undefined {
   if (!p) return undefined
   return {
     total: num(p.total),
+    sortBy: optStr(p.sort_by),
+    order: p.order === 'asc' || p.order === 'desc' ? p.order : undefined,
     items: (Array.isArray(p.items) ? p.items : []).filter(isRecord).map((i) => {
       const m = record(i.analytics) ?? {}
       return {
@@ -211,6 +312,7 @@ function compare(raw: unknown): PeriodComparison | undefined {
       .map((m) => ({
         metric: str(m.metric),
         label: str(m.label),
+        unit: (m.unit === 'rate' ? 'rate' : 'count') as 'rate' | 'count',
         first: num(m.first),
         second: num(m.second),
         change: num(m.change),
@@ -237,21 +339,8 @@ function moreLikeThese(raw: unknown): MoreLikeThese | undefined {
   return {
     campaignId: optStr(m.campaignId),
     grounding: refs(m.grounding),
-    trail: (Array.isArray(m.trail) ? m.trail : [])
-      .filter(isRecord)
-      .map((s) => ({
-        postId: str(s.postId),
-        title: str(s.title),
-        ideas: (Array.isArray(s.ideas) ? s.ideas : [])
-          .filter(isRecord)
-          .map((i) => ({
-            id: str(i.id),
-            title: str(i.title),
-            asset: ref(i.asset),
-          })),
-        assets: refs(s.assets),
-        noTrail: s.noTrail === true,
-      })),
+    filter: optStr(m.filter),
+    trail: trailSteps(m.trail),
     ideas: (Array.isArray(m.ideas) ? m.ideas : [])
       .filter(isRecord)
       .map((i) => ({
@@ -262,6 +351,51 @@ function moreLikeThese(raw: unknown): MoreLikeThese | undefined {
       }))
       .filter((i) => i.id && i.title),
   }
+}
+
+function trailAsset(value: unknown): TrailAsset | undefined {
+  const a = record(value)
+  return a && str(a.id)
+    ? { id: str(a.id), title: str(a.title), type: optStr(a.type) }
+    : undefined
+}
+
+/**
+ * How each example came to be — the result's, and since CON-479 the offer
+ * card's too, shown before the yes.
+ */
+export function trailSteps(value: unknown): TrailStep[] {
+  return (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .map((s) => ({
+      postId: str(s.postId),
+      title: str(s.title),
+      rate: typeof s.rate === 'number' ? s.rate : undefined,
+      ideas: (Array.isArray(s.ideas) ? s.ideas : [])
+        .filter(isRecord)
+        .map((i) => {
+          const an = record(i.analysis)
+          return {
+            id: str(i.id),
+            title: str(i.title),
+            analysis:
+              an && str(an.id)
+                ? {
+                    id: str(an.id),
+                    campaignId: optStr(an.campaignId),
+                    campaignName: optStr(an.campaignName),
+                  }
+                : undefined,
+            asset: trailAsset(i.asset),
+            passages: strings(i.passages),
+          }
+        }),
+      assets: (Array.isArray(s.assets) ? s.assets : [])
+        .map(trailAsset)
+        .filter((a): a is TrailAsset => a !== undefined),
+      noTrail: s.noTrail === true,
+    }))
+    .filter((s) => s.postId)
 }
 
 function record(value: unknown): Record<string, unknown> | null {

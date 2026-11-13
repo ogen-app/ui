@@ -4,7 +4,8 @@ import { cn } from '@/lib'
 import { Picker } from './ComparisonBar'
 import type { PlatformOption } from './types'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
-import { formatDate } from '@/lib/intl'
+import { formatDate, formatList } from '@/lib/intl'
+import { useAnalyticsHighlightStore } from '@/stores/analyticsHighlightStore'
 
 /** The picker's value for a range the address names. */
 const CUSTOM = 'custom'
@@ -73,6 +74,10 @@ export function WorkspaceScopeBar({
   className?: string
 }) {
   const { t, i18n } = useTranslation()
+  // What the assistant just changed (CON-479), tinted until the user's next
+  // touch: the rail says it changed the window, and this says where.
+  const changed = useAnalyticsHighlightStore((s) => s.changed)
+  const clearHighlight = useAnalyticsHighlightStore((s) => s.clear)
   const connected = platforms.filter((p) => p.accounts > 0)
 
   // Nothing to filter. One connected platform means every state of this control
@@ -123,8 +128,12 @@ export function WorkspaceScopeBar({
       : chosen.includes(id)
         ? chosen.filter((c) => c !== id)
         : [...chosen, id]
+    clearHighlight()
     onSelectedChange(next.length === connected.length ? [] : next)
   }
+  const changedNames = (['platforms', 'campaign', 'period'] as const)
+    .filter((c) => changed.has(c))
+    .map((c) => t(`analytics.scopeBar.control.${c}`))
 
   return (
     <section
@@ -133,8 +142,22 @@ export function WorkspaceScopeBar({
         className,
       )}
     >
+      {/* Read out once when the assistant moves the bar, silent otherwise. */}
+      <p className="sr-only" aria-live="polite">
+        {changedNames.length > 0
+          ? t('analytics.scopeBar.assistantChanged', {
+              controls: formatList(changedNames),
+            })
+          : ''}
+      </p>
       {filterable && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-2 rounded-md transition-colors',
+            changed.has('platforms') &&
+              'bg-accent/5 outline outline-1 outline-accent outline-offset-4',
+          )}
+        >
           {connected.map((option) => (
             <PlatformMark
               key={option.id}
@@ -152,7 +175,10 @@ export function WorkspaceScopeBar({
               variant="ghost"
               size="sm"
               className="ml-1"
-              onClick={() => onSelectedChange([])}
+              onClick={() => {
+                clearHighlight()
+                onSelectedChange([])
+              }}
             >
               {t('analytics.scopeBar.allPlatforms')}
             </Button>
@@ -173,16 +199,20 @@ export function WorkspaceScopeBar({
             label={t('analytics.scopeBar.campaign')}
             value={campaignLabel}
             options={campaignOptions}
-            onChange={(value) =>
+            highlighted={changed.has('campaign')}
+            onChange={(value) => {
+              clearHighlight()
               onCampaignChange(value === ALL ? undefined : value)
-            }
+            }}
           />
         )}
         <Picker
           label={t('analytics.scopeBar.period')}
           value={custom ?? current.label}
           options={periods}
+          highlighted={changed.has('period')}
           onChange={(value) => {
+            clearHighlight()
             if (value !== CUSTOM) onWindowChange(value)
           }}
         />

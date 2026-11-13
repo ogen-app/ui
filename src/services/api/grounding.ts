@@ -27,6 +27,7 @@ function groundingSources(value: unknown): GroundingSource[] {
       title: text(s.title),
       ...(text(s.analysisId) ? { analysisId: text(s.analysisId) } : {}),
       ...(text(s.ideaId) ? { ideaId: text(s.ideaId) } : {}),
+      ...(s.kind === 'post' ? { kind: 'post' as const } : {}),
     }))
     .filter((s) => s.id || s.title)
 }
