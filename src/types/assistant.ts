@@ -84,17 +84,6 @@ export type TouchedKind =
 export type Touched = { kind: string; id?: string }
 
 /**
- * One item from a consistency review (CON-116). The backend names the subject
- * `aspect` for brief findings and `title` for post findings; both land here.
- */
-export type ReviewFinding = {
-  severity?: ReviewSeverity
-  label?: string
-  issue: string
-  suggestion?: string
-}
-
-/**
  * The structured half of a campaign turn's `complete` payload. Exactly one key
  * is populated, matching the action — the findings and counts exist nowhere
  * else, so the reply has to render them.
@@ -131,13 +120,6 @@ export type AssistantResultDetails = {
     undoId?: string
   }
   redistribute?: { postsUpdated: number; phaseCount: number }
-  briefReview?: { consistent: boolean; findings: ReviewFinding[] }
-  postsReview?: {
-    checked: number
-    total: number
-    capped: boolean
-    findings: ReviewFinding[]
-  }
 }
 
 /**
@@ -597,6 +579,18 @@ export type RepairFix = {
   /** The posts a convert, unschedule or delete fix changes. */
   postIds?: string[]
   proposalId?: string
+  /**
+   * The offer's own card (CON-478): a fix that carries one — a delete naming
+   * its posts, a type put back — or a choice (a move's free slots) opens as
+   * an offer under its row rather than running on the click.
+   */
+  card?: ProposalDetails
+  options?: {
+    id: string
+    title: string
+    description?: string
+    recommended?: boolean
+  }[]
 }
 
 /** A calendar problem with the fixes that would resolve it. */
@@ -607,7 +601,13 @@ export type CalendarFinding = {
   severity: 'warning' | 'info'
   /** The server's words. */
   message: string
+  /** More under the message: what it will cost, or the rule it breaks. */
+  detail?: string
+  /** Its posts will be refused when they publish: the number is amber. */
+  blocksPublishing: boolean
   postIds: string[]
+  /** The posts by title and day, when the server names them. */
+  posts: { id: string; title: string; date?: string }[]
   fixes: RepairFix[]
 }
 
@@ -620,6 +620,10 @@ export type CalendarFindings = {
   findings: CalendarFinding[]
   /** Findings left out because the user dismissed them. */
   dismissed: number
+  /** Those findings, without fixes, for SHOW and RESTORE. */
+  dismissedFindings: CalendarFinding[]
+  /** When the calendar was read. */
+  checkedAt?: string
 }
 
 /** A brief or post finding from `reviewCampaign` (CON-462). */
@@ -635,22 +639,76 @@ export type CampaignReviewFinding = {
   fixes: RepairFix[]
 }
 
-/** The campaign's brief and posts reviewed against each other. */
+/**
+ * The campaign's brief and posts reviewed against each other — by
+ * `reviewCampaign`, or by `checkBrief` / `checkPostsConsistency`, which
+ * answer in the same shape since CON-478.
+ */
 export type CampaignReview = {
   campaignId: string
   postsChecked: number
   findings: CampaignReviewFinding[]
   dismissed: number
+  /** Those findings, without fixes, for SHOW and RESTORE. */
+  dismissedFindings: CampaignReviewFinding[]
+  /** What it read: `brief`, `posts`. */
+  readFrom: string[]
+  checkedAt?: string
+}
+
+/** One move of a plan or a run: from a day (and time) to another. */
+export type CalendarMove = {
+  postId: string
+  title: string
+  /** Days, YYYY-MM-DD, in the campaign's timezone. */
+  from: string
+  to: string
+  /** The exact times, when the server sends them. */
+  fromAt?: string
+  toAt?: string
+  status?: string
 }
 
 /** The moves `optimiseCalendar` offers, and the posts it leaves in place. */
 export type CalendarPlan = {
   campaignId: string
   proposalId?: string
-  /** Dates are days, YYYY-MM-DD. */
-  moves: { postId: string; title: string; from: string; to: string }[]
+  /** The days the moves spread over, both included. */
+  window?: { from: string; to: string }
+  moves: CalendarMove[]
   /** Scheduled posts: a copy waits to publish, so they never move. */
-  locked: { postId: string; title: string; date: string }[]
+  locked: { postId: string; title: string; date: string; at?: string }[]
+  checkedAt?: string
+}
+
+/** What `applyCalendarMoves` did: each move, counted by status, and its UNDO. */
+export type CalendarMoved = {
+  moved: number
+  moves: CalendarMove[]
+  /** Moves by the post's status: `draft`, `ready_for_publish`… */
+  byStatus: Record<string, number>
+  /** Scheduled posts left where they were. */
+  locked: number
+  skipped: string[]
+  undoId?: string
+}
+
+/** One post a fix changed: its name, and what it was and is now. */
+export type ChangedPost = {
+  postId: string
+  title: string
+  platformId?: string
+  platform?: string
+  fromStatus: string
+  toStatus?: string
+  /** The time it had, for a post taken off the calendar. */
+  wasAt?: string
+  /** The time it keeps. */
+  scheduledAt?: string
+  /** A conversion's types, and what it kept: `caption`, `picture`. */
+  fromType?: string
+  toType?: string
+  kept: string[]
 }
 
 /** What a repair fix did to posts: converted, unscheduled or deleted. */
@@ -660,6 +718,8 @@ export type PostsChanged = {
   withdrawing: number
   /** Posts left as they were; the reason is the server's words. */
   skipped: { postId: string; reason: string }[]
+  /** Each post it changed, by name (CON-478). */
+  posts: ChangedPost[]
   undoId?: string
 }
 
@@ -670,7 +730,12 @@ export type PostsChanged = {
  */
 export type RepairResults = {
   review?: CampaignReview
+  /** `checkBrief` and `checkPostsConsistency`, in the review's shape. */
+  briefReview?: CampaignReview
+  postsReview?: CampaignReview
   plan?: CalendarPlan
+  /** `applyCalendarMoves`: a plan confirmed, or one post moved. */
+  moved?: CalendarMoved
   /** `changePostType`. */
   converted?: PostsChanged
   /** `unschedulePosts`. */

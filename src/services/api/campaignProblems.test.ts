@@ -27,6 +27,7 @@ describe('getCampaignProblems', () => {
     expect(await getCampaignProblems('c1')).toEqual({
       problems: [],
       dismissed: 2,
+      dismissedProblems: [],
     })
   })
 

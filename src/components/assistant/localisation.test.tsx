@@ -53,23 +53,13 @@ describe('assistant in Spanish', () => {
     render(
       <ResultCard
         details={{
-          postsReview: {
-            checked: 3,
-            total: 4,
-            capped: false,
-            findings: [{ severity: 'high', issue: 'Off-brief.' }],
-          },
           redistribute: { postsUpdated: 2, phaseCount: 1 },
         }}
       />,
     )
-    expect(screen.getByText('Comprobadas 3 de 4 publicaciones')).toBeTruthy()
-    expect(screen.getByText('1 desviación')).toBeTruthy()
-    expect(screen.getByText('alta')).toBeTruthy()
     expect(
       screen.getByText('Nueva fecha para 2 publicaciones en 1 fase.'),
     ).toBeTruthy()
-    expect(screen.queryByText(/Checked 3 of 4/)).toBeNull()
     expect(screen.queryByText(/Re-dated/)).toBeNull()
   })
 
@@ -96,17 +86,12 @@ describe('assistant in Spanish', () => {
     render(
       <ResultCard
         details={{
-          postsReview: {
-            checked: 12000,
-            total: 15000,
-            capped: false,
-            findings: [],
-          },
+          redistribute: { postsUpdated: 12000, phaseCount: 1 },
         }}
       />,
     )
     expect(
-      screen.getByText('Comprobadas 12.000 de 15.000 publicaciones'),
+      screen.getByText('Nueva fecha para 12.000 publicaciones en 1 fase.'),
     ).toBeTruthy()
   })
 

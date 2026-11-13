@@ -76,6 +76,7 @@ export function AssistantReply({
     return undefined
   })
   const showCard = settled && hasResultCard(turn.details)
+  const drawnElsewhere = offersDrawnInPlace(turn)
   const footer = !showCard && turn.action ? actionLabel(t, turn.action) : null
 
   return (
@@ -126,6 +127,7 @@ export function AssistantReply({
           turnId={turn.id}
           findings={turn.findings}
           ignored={turn.ignored}
+          proposals={turn.proposals}
           disabled={running}
         />
       )}
@@ -137,6 +139,7 @@ export function AssistantReply({
           turnId={turn.id}
           results={turn.repair}
           ignored={turn.ignored}
+          proposals={turn.proposals}
           undoStates={turn.undo ?? {}}
           disabled={running}
         />
@@ -162,6 +165,7 @@ export function AssistantReply({
           results={turn.foundation}
           undoStates={turn.undo ?? {}}
           ignored={turn.ignored}
+          proposals={turn.proposals}
           view={askedFrom}
           disabled={running}
         />
@@ -220,6 +224,9 @@ export function AssistantReply({
       {settled &&
         turn.proposals
           ?.filter((p) => p.status !== 'pending' || p.id !== retryId)
+          // A finding's fix and the optimise plan draw their own offers, in
+          // the row or the plan; a second card would answer the same offer.
+          .filter((p) => !drawnElsewhere.has(p.id))
           .map((proposal) => (
             <ProposalCard
               key={proposal.id}
@@ -314,4 +321,22 @@ function ListBlock({
       ))}
     </List>
   )
+}
+
+/**
+ * The offers a turn's findings and plan draw in place (CON-478): every fix
+ * of the calendar check, the reviews and the brand check, and the optimise
+ * plan's own offer.
+ */
+function offersDrawnInPlace(turn: AssistantTurn): Set<string> {
+  const ids = new Set<string>()
+  const add = (fixes: { proposalId?: string }[]) =>
+    fixes.forEach((f) => f.proposalId && ids.add(f.proposalId))
+  for (const f of turn.findings?.findings ?? []) add(f.fixes)
+  const r = turn.repair
+  for (const review of [r?.review, r?.briefReview, r?.postsReview])
+    for (const f of review?.findings ?? []) add(f.fixes)
+  if (r?.plan?.proposalId) ids.add(r.plan.proposalId)
+  for (const f of turn.foundation?.brandCheck?.findings ?? []) add(f.fixes)
+  return ids
 }

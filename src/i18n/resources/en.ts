@@ -1873,14 +1873,26 @@ export const en = {
      * asked of the campaign's assistant, which offers it to confirm.
      */
     problems: {
-      fix: 'FIX WITH ASSISTANT',
-      openPost: 'OPEN POST',
       ignore: 'IGNORE',
       ignoreFailed: 'Couldn’t ignore that problem. Try again.',
-      ignored_one: '{{formatted}} ignored',
-      ignored_other: '{{formatted}} ignored',
-      /** Sent to the campaign's assistant; it names the problem by its key. */
-      ask: 'Fix the problem {{key}}: {{problem}}',
+      or: 'or {{fix}}',
+      /** The card's header: every problem, to the campaign's assistant. */
+      fixAll: 'FIX WITH ASSISTANT',
+      askAll: 'Fix these with me.',
+      /** Sent to the campaign's assistant: the fix, then the problem. */
+      askFix: '{{fix}}: {{problem}}',
+    },
+    /** The Needs attention card. */
+    attention: {
+      title: 'Needs attention',
+      /** Beside the title: "4 · 1 ignored". */
+      countIgnored_one: '{{total}} · {{formatted}} ignored',
+      countIgnored_other: '{{total}} · {{formatted}} ignored',
+      showMore_one: 'SHOW {{formatted}} MORE',
+      showMore_other: 'SHOW {{formatted}} MORE',
+      allSet: 'You’re all set',
+      allSetBody:
+        'Nothing is failing, overdue, or waiting on you right now. If something comes up, it’ll show up here.',
     },
   },
 
@@ -3443,8 +3455,9 @@ export const en = {
     findings: {
       title_one: '{{formatted}} thing to look at',
       title_other: '{{formatted}} things to look at',
-      warnings_one: '{{formatted}} needs attention',
-      warnings_other: '{{formatted}} need attention',
+      /** Beside the headline: the findings whose posts will be refused. */
+      blocking_one: '{{formatted}} blocks publishing',
+      blocking_other: '{{formatted}} block publishing',
       none: 'Nothing wrong with the calendar.',
       or: 'or {{fix}}',
       dismissed_one: '{{formatted}} dismissed finding left out.',
@@ -3452,16 +3465,25 @@ export const en = {
       ignore: 'IGNORE',
       ignored: 'Ignored: {{finding}}',
       ignoreFailed: 'Couldn’t ignore that. Try again.',
-      /** Asked before a delete fix runs: nothing brings the posts back. */
-      deleteAsk_one: 'Delete this post? Nothing brings it back.',
-      deleteAsk_other:
-        'Delete these {{formatted}} posts? Nothing brings them back.',
-      deleteConfirm_one: 'DELETE POST',
-      deleteConfirm_other: 'DELETE {{formatted}} POSTS',
-      keep: 'KEEP',
+      /** The campaign's ignored findings, behind SHOW, each with RESTORE. */
+      ignoredCount_one: '{{formatted}} ignored on this campaign',
+      ignoredCount_other: '{{formatted}} ignored on this campaign',
+      show: 'SHOW',
+      hide: 'HIDE',
+      restore: 'RESTORE',
+      restoreFailed: 'Couldn’t restore that. Try again.',
+      /** A finding whose fix ran; `choice` is the slot or option picked. */
+      fixed: 'Fixed: {{fix}}',
+      fixedChose: 'Fixed: {{fix}} · {{choice}}',
+      fixing: 'Fixing…',
+      /** Under a fix's offer opened in the row: back to the row's fixes. */
+      back: 'BACK TO THE FIXES',
+      /** When the check read the calendar: "Read Wed 12 Nov, 16:40." */
+      readAt: 'Read {{when}}.',
+      checkAgain: 'CHECK AGAIN',
+      checkPrompt: 'Check the calendar again.',
     },
 
-    /** The repair pack's review, optimise and post fixes (CON-462). */
     /**
      * The analytics pack's cards (CON-463). Every figure card ends on what
      * the read was narrowed to: period · platforms · campaign.
@@ -3828,11 +3850,40 @@ export const en = {
         word: 'Converted',
         title_one: '{{formatted}} post changed type',
         title_other: '{{formatted}} posts changed type',
+        /** A post's types: "Story → Image post". */
+        types: '{{from}} → {{to}}',
+        kept: 'Kept {{what}}',
+        keptWhat: {
+          caption: 'caption',
+          media: 'media',
+        },
+        still: 'Still scheduled {{when}}',
       },
       unscheduled: {
-        word: 'Off the calendar',
+        word: 'Unscheduled',
         title_one: '{{formatted}} post taken off the calendar',
         title_other: '{{formatted}} posts taken off the calendar',
+        /** `status` is the post's status now, as the app names it. */
+        back: 'Back to {{status}}',
+        was: 'Was {{when}}',
+        wasOn: 'Was {{when}} on {{platform}}',
+      },
+      /** What a confirmed move did (`applyCalendarMoves`, CON-478). */
+      moved: {
+        word: 'Moved',
+        title_one: '{{formatted}} post',
+        title_other: '{{formatted}} posts',
+        over_one: 'over {{formatted}} week',
+        over_other: 'over {{formatted}} weeks',
+        early: 'Drafts and planned posts',
+        ready: 'Ready to publish',
+        count_one: '{{formatted}} moved',
+        count_other: '{{formatted}} moved',
+        locked_one: '{{formatted}} scheduled',
+        locked_other: '{{formatted}} scheduled',
+        lockedNote: 'Kept where they were',
+        skipped_one: '{{formatted}} couldn’t be moved',
+        skipped_other: '{{formatted}} couldn’t be moved',
       },
       deleted: {
         word: 'Deleted',
@@ -3846,7 +3897,26 @@ export const en = {
         title_other: '{{formatted}} things drift from the brief',
         read_one: '{{formatted}} post read',
         read_other: '{{formatted}} posts read',
-        detail: '{{label}} · {{suggestion}}',
+        /** The brief or the posts checked alone. */
+        briefTitle_one: '{{formatted}} thing in the brief',
+        briefTitle_other: '{{formatted}} things in the brief',
+        postsTitle_one: '{{formatted}} thing drifts from the brief',
+        postsTitle_other: '{{formatted}} things drift from the brief',
+        /** Nothing open, but not because nothing was found. */
+        noneOpen_one: 'Nothing open · {{formatted}} ignored',
+        noneOpen_other: 'Nothing open · {{formatted}} ignored',
+        /** Under a finding: where it is. */
+        inPost: 'In {{title}}.',
+        inBrief: '{{aspect}}.',
+        from: {
+          brief: 'Brief',
+          posts: 'Posts',
+        },
+        again: {
+          review: 'Review the campaign again.',
+          brief: 'Check the brief again.',
+          posts: 'Check the posts against the brief again.',
+        },
       },
       plan: {
         word: 'Proposed',
@@ -3857,8 +3927,16 @@ export const en = {
         locked_other: '{{formatted}} scheduled posts stay',
         move: '{{from}} → {{to}}',
         stays: 'Stays {{date}}',
-        more_one: 'and {{formatted}} more move',
-        more_other: 'and {{formatted}} more moves',
+        more_one: 'and {{formatted}} more',
+        more_other: 'and {{formatted}} more',
+        /** After the headline: "within Mon 13–Sun 19". */
+        window: 'within {{from}} – {{to}}',
+        confirm_one: 'MOVE {{formatted}} POST',
+        confirm_other: 'MOVE {{formatted}} POSTS',
+        before: 'Before',
+        after: 'After',
+        legendMoved: 'moved',
+        legendLocked: 'scheduled, stays',
       },
     },
 
@@ -3884,16 +3962,6 @@ export const en = {
 
     /** The structured result under a campaign turn. */
     result: {
-      briefConsistent: 'Brief is consistent',
-      briefIssues: 'Brief has issues',
-      findings_one: '{{formatted}} finding',
-      findings_other: '{{formatted}} findings',
-      nothingToFlag: 'Nothing to flag.',
-      checkedPosts: 'Checked {{checked}} of {{total}} posts',
-      drifts_one: '{{formatted}} drift',
-      drifts_other: '{{formatted}} drifts',
-      capped: '{{drifts}} · capped',
-      everyPostFollows: 'Every post follows the brief.',
       datesUpdated: 'Campaign dates updated',
       outsideRange_one:
         '{{formatted}} post now falls outside the range — ask to redistribute it.',
@@ -3927,11 +3995,6 @@ export const en = {
       },
       briefApplied: 'Brief updated and saved',
       briefNotApplied: 'Brief suggested but not applied',
-      severity: {
-        high: 'high',
-        medium: 'medium',
-        low: 'low',
-      },
     },
   },
 

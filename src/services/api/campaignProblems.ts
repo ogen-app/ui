@@ -11,6 +11,8 @@ import { isRecord } from './json'
 export type CampaignProblems = {
   problems: CalendarFinding[]
   dismissed: number
+  /** The dismissed ones the calendar still has, for SHOW and RESTORE. */
+  dismissedProblems: CalendarFinding[]
 }
 
 /**
@@ -27,33 +29,47 @@ export async function getCampaignProblems(
   )
   const ov = isRecord(raw) ? raw : {}
   if (!('problems' in ov)) return null
-  const problems = Array.isArray(ov.problems) ? ov.problems : []
   return {
     dismissed:
       typeof ov.problemsDismissed === 'number' ? ov.problemsDismissed : 0,
-    // A problem without a key can't be ignored or listed apart from another.
-    problems: problems
-      .filter(isRecord)
-      .filter((p) => text(p.key))
-      .map((p) => ({
-        key: text(p.key),
-        code: text(p.code),
-        severity: p.severity === 'warning' ? 'warning' : 'info',
-        message: text(p.message),
-        postIds: list(p.postIds),
-        // No offers here: the Overview doesn't run the assistant, so a fix is
-        // what to ask it for, or a post to open.
-        fixes: (Array.isArray(p.fixes) ? p.fixes : [])
-          .filter(isRecord)
-          .map((f) => ({
-            kind: text(f.kind),
-            title: text(f.title),
-            postId: typeof f.postId === 'string' ? f.postId : undefined,
-            postIds: list(f.postIds),
-          }))
-          .filter((f) => f.title),
-      })),
+    problems: problemList(ov.problems),
+    dismissedProblems: problemList(ov.dismissedProblems),
   }
+}
+
+// A problem without a key can't be ignored or listed apart from another.
+function problemList(value: unknown): CalendarFinding[] {
+  return (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .filter((p) => text(p.key))
+    .map((p) => ({
+      key: text(p.key),
+      code: text(p.code),
+      severity: p.severity === 'warning' ? 'warning' : 'info',
+      message: text(p.message),
+      detail: text(p.detail) || undefined,
+      blocksPublishing: p.blocksPublishing === true,
+      postIds: list(p.postIds),
+      posts: (Array.isArray(p.posts) ? p.posts : [])
+        .filter(isRecord)
+        .map((post) => ({
+          id: text(post.id),
+          title: text(post.title),
+          date: text(post.date) || undefined,
+        }))
+        .filter((post) => post.id),
+      // No offers here: the Overview doesn't run the assistant, so a fix is
+      // what to ask it for, or a post to open.
+      fixes: (Array.isArray(p.fixes) ? p.fixes : [])
+        .filter(isRecord)
+        .map((f) => ({
+          kind: text(f.kind),
+          title: text(f.title),
+          postId: typeof f.postId === 'string' ? f.postId : undefined,
+          postIds: list(f.postIds),
+        }))
+        .filter((f) => f.title),
+    }))
 }
 
 /**
@@ -79,4 +95,39 @@ function list(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((v): v is string => typeof v === 'string')
     : []
+}
+
+/**
+ * Takes a dismissal back (CON-478): the Overview and the campaign's thread
+ * raise the finding again while a check gives its key. Restoring one that
+ * isn't dismissed is a no-op.
+ */
+export function restoreCampaignFinding(
+  campaignId: string,
+  key: string,
+): Promise<void> {
+  return apiVoid(
+    `/api/campaigns/${campaignId}/findings/${encodeURIComponent(key)}/dismiss`,
+    'Unable to restore that problem',
+    { method: 'DELETE' },
+  )
+}
+
+/**
+ * The campaign's dismissed findings, by key — what a reloaded thread reads
+ * to show its findings as ignored since, in any turn.
+ */
+export async function listDismissedFindings(
+  campaignId: string,
+): Promise<string[]> {
+  const raw = await apiJson<unknown>(
+    `/api/campaigns/${campaignId}/findings/dismissed`,
+    'Unable to load the ignored problems',
+  )
+  const list =
+    isRecord(raw) && Array.isArray(raw.dismissed) ? raw.dismissed : []
+  return list
+    .filter(isRecord)
+    .map((d) => text(d.key))
+    .filter(Boolean)
 }

@@ -9,6 +9,7 @@ import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
 import type { ViewContext } from '@/lib/viewContext'
 import { useAssistantStore } from '@/stores/assistantStore'
 import type {
+  AssistantProposal,
   AudienceChange,
   BrandChangeKind,
   BrandCheck,
@@ -58,6 +59,7 @@ export function FoundationResults({
   results,
   undoStates,
   ignored = [],
+  proposals = [],
   view,
   disabled,
 }: {
@@ -67,6 +69,8 @@ export function FoundationResults({
   undoStates: Record<string, UndoState>
   /** Brand-check findings ignored from this card since. */
   ignored?: string[]
+  /** The turn's offers: what each brand-check fix's offer became. */
+  proposals?: AssistantProposal[]
   /** The screen the question was asked from. */
   view?: ViewContext
   disabled: boolean
@@ -112,6 +116,7 @@ export function FoundationResults({
           turnId={turnId}
           check={r.brandCheck}
           ignored={ignored}
+          proposals={proposals}
           disabled={disabled}
         />
       ),
@@ -1147,6 +1152,7 @@ function BrandCheckBlock({
   turnId,
   check,
   ignored,
+  proposals,
   disabled,
 }: {
   t: TFunction
@@ -1154,6 +1160,7 @@ function BrandCheckBlock({
   turnId: string
   check: BrandCheck
   ignored: string[]
+  proposals: AssistantProposal[]
   disabled: boolean
 }) {
   const ignore = useAssistantStore((s) => s.ignoreFinding)
@@ -1199,7 +1206,7 @@ function BrandCheckBlock({
                 threadId={threadId}
                 campaignId={f.campaignId}
                 fixes={f.fixes}
-                posts={1}
+                proposals={proposals}
                 disabled={disabled}
               />
             </FindingRow>
