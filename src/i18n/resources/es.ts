@@ -5498,9 +5498,9 @@ export const es: Translation = {
         },
         whyJoin: ': ',
         label_one:
-          '{{count}} pregunta · las respuestas se rellenan al confirmarlas',
+          '{{formatted}} pregunta · las respuestas se rellenan al confirmarlas',
         label_other:
-          '{{count}} preguntas · las respuestas se rellenan al confirmarlas',
+          '{{formatted}} preguntas · las respuestas se rellenan al confirmarlas',
         placeholder: 'Tu respuesta…',
         note: {
           website:

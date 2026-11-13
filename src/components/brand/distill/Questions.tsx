@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { brandSectionCopy } from '@/lib/brandSections'
 import type { RunRoute } from '@/lib/brandDistill'
 import { filledAnswers } from '@/lib/brandDistillCopy'
+import { counted } from '@/lib/intl'
 import type { DistillAnswer, DistillQuestion } from '@/types/brandDistill'
 
 /**
@@ -124,7 +125,7 @@ export function GapQuestions({
         })}
       </h2>
       <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-secondary-foreground">
-        {t('brand.distill.gaps.label', { count: questions.length })}
+        {t('brand.distill.gaps.label', counted(questions.length))}
       </p>
       <ol className="flex flex-col gap-5">
         {questions.map((q, i) => (
