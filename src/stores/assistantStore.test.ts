@@ -42,6 +42,20 @@ vi.mock('@/services/api/assistant', async (importOriginal) => {
   }
 })
 
+const problems = vi.hoisted(() => ({
+  dismiss: vi.fn(async () => {}),
+  restore: vi.fn(async () => {}),
+}))
+vi.mock('@/services/api/campaignProblems', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/services/api/campaignProblems')>()
+  return {
+    ...actual,
+    dismissCampaignFinding: problems.dismiss,
+    restoreCampaignFinding: problems.restore,
+  }
+})
+
 const refreshTouched = vi.hoisted(() => vi.fn(async () => {}))
 vi.mock('@/lib/assistantTouched', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/assistantTouched')>()
@@ -51,6 +65,7 @@ vi.mock('@/lib/assistantTouched', async (importOriginal) => {
 const { useAssistantStore, setUiActionApplier } =
   await import('./assistantStore')
 const { useViewContextStore } = await import('./viewContextStore')
+const { queryClient } = await import('@/lib/queryClient')
 
 function result(changes: Record<string, unknown> = {}) {
   return {
@@ -635,5 +650,52 @@ describe('screen changes', () => {
     await useAssistantStore.getState().send(id, 'Open ideas')
     expect(applied).toEqual([])
     setUiActionApplier(null)
+  })
+})
+
+describe('findings dismissed and restored (CON-478)', () => {
+  function threadWithMark() {
+    useAssistantStore.setState({
+      threads: {
+        'campaign:c1': {
+          id: 'campaign:c1',
+          subject: { kind: 'campaign', campaignId: 'c1' },
+          title: '',
+          turns: [
+            { id: 't1', role: 'assistant', content: '', ignored: ['k1'] },
+          ],
+          status: 'idle',
+          loaded: true,
+        } as never,
+      },
+    })
+  }
+
+  it('dismisses on the server an offer the thread doesn’t hold', async () => {
+    api.dismiss.mockClear()
+    await useAssistantStore.getState().dismissProposal('campaign:c1', 'pr9')
+    expect(api.dismiss).toHaveBeenCalledWith('pr9')
+  })
+
+  it('puts the turns’ marks back when the server refuses a restore', async () => {
+    threadWithMark()
+    problems.restore.mockRejectedValueOnce(new Error('no'))
+    await useAssistantStore.getState().restoreFinding('c1', 'k1')
+    expect(lastTurn('campaign:c1').ignored).toEqual(['k1'])
+  })
+
+  it('re-reads the campaign’s list once a dismissal lands', async () => {
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    threadWithMark()
+    await useAssistantStore
+      .getState()
+      .ignoreFinding('campaign:c1', 't1', 'c1', 'k2')
+    await useAssistantStore.getState().restoreFinding('c1', 'k1')
+    const keys = invalidate.mock.calls.map((c) => c[0]?.queryKey)
+    expect(keys).toContainEqual(['campaigns', 'c1', 'dismissedFindings'])
+    expect(
+      keys.filter((k) => JSON.stringify(k).includes('dismissedFindings')),
+    ).toHaveLength(2)
+    invalidate.mockRestore()
   })
 })

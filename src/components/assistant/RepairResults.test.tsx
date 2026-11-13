@@ -167,6 +167,19 @@ describe('a calendar finding', () => {
     expect(confirmProposal).toHaveBeenCalledWith('campaign:c1', 'pr2')
   })
 
+  it('opens the offer when the card comes on the offer, not the fix', async () => {
+    await findings({
+      proposals: [
+        offer('pr1', 'pending', {
+          card: { verb: 'Convert it', rows: [], sources: [] },
+        }),
+      ],
+    })
+    fireEvent.click(screen.getByText('Convert to image post'))
+    expect(confirmProposal).not.toHaveBeenCalled()
+    expect(screen.getByText('PROPOSAL')).toBeTruthy()
+  })
+
   it('lets a move choose its slot', async () => {
     await findings()
     fireEvent.click(screen.getByText('Move to another slot'))
