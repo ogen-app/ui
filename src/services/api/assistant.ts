@@ -3,6 +3,7 @@ import { apiJson } from './http'
 import { errorMessage } from './errors'
 import { parseGrounding } from './grounding'
 import { isRecord } from './json'
+import { parseAssetsState } from './content'
 import { analyticsResults } from './assistantAnalytics'
 import { workspaceResults } from './assistantWorkspace'
 import { draftedPost, ideasResults } from './assistantIdeas'
@@ -21,6 +22,7 @@ import type {
   AssetComparedRef,
   AssetComparison,
   AssetsAsk,
+  AssetsBankState,
   AssetsResults,
   AnalyticsResults,
   WorkspaceResults,
@@ -43,6 +45,8 @@ import type {
   StreamedPost,
   ThreadSubject,
   Touched,
+  ProposalDetails,
+  StepDetail,
 } from '@/types/assistant'
 
 /**
@@ -115,7 +119,7 @@ export type AssistantStreamEvent =
       input?: Record<string, unknown>
     }
   /** `ok` is false when the tool refused the call or hit a conflict. */
-  | { type: 'tool_result'; ref?: string; ok: boolean }
+  | { type: 'tool_result'; ref?: string; ok: boolean; detail?: StepDetail }
   /**
    * The turn restarted with another pack's tools. The reply streamed before
    * it is void.
@@ -664,6 +668,8 @@ function assetsResults(
 ): AssetsResults | undefined {
   const pack = record(results.assets) ?? {}
   const out: AssetsResults = {}
+  const state = bankState(record(pack.state))
+  if (state) out.state = state
   const ask =
     assetsAsk(record(pack.ask)) ??
     assetsAsk(record(record(results.campaign)?.ask))
@@ -698,6 +704,7 @@ function assetsAsk(raw: Record<string, unknown> | null): AssetsAsk | undefined {
       .map((x) => ({
         assetId: str(x.assetId),
         title: str(x.title),
+        type: optStr(x.type),
         pages: str(x.pages),
       }))
       .filter((x) => x.assetId),
@@ -712,6 +719,7 @@ function lens(raw: unknown): AnalysisLens | undefined {
     campaignName: optStr(l.campaignName),
     status: str(l.status),
     readAt: optStr(l.readAt),
+    ideaCount: num(l.ideaCount),
   }
 }
 
@@ -724,6 +732,12 @@ function analysisRead(
   return {
     assetId: str(raw.assetId),
     title: str(raw.title),
+    type: optStr(raw.type),
+    pageCount: typeof raw.pageCount === 'number' ? raw.pageCount : undefined,
+    durationMs:
+      typeof raw.durationMs === 'number' && raw.durationMs > 0
+        ? raw.durationMs
+        : undefined,
     lens: own,
     gist: str(raw.gist),
     summary: str(raw.summary),
@@ -801,6 +815,7 @@ function savedViewList(
         name: str(v.name),
         shared: v.shared === true,
         count: typeof v.count === 'number' ? v.count : undefined,
+        filter: str(v.filter),
       }))
       .filter((v) => v.id && v.name),
   }
@@ -818,7 +833,82 @@ function campaignFromAssets(
     endDate: optStr(raw.endDate),
     assetIds: strings(raw.assetIds),
     undoId: optStr(raw.undoId),
+    createdAt: optStr(raw.createdAt),
   }
+}
+
+/**
+ * The bank's state a turn read (`readAssetsState`), in the REST endpoint's
+ * own snake_case, so one reading of the counts serves both.
+ */
+function bankState(
+  raw: Record<string, unknown> | null,
+): AssetsBankState | undefined {
+  if (!raw) return undefined
+  const names = (value: unknown) =>
+    (Array.isArray(value) ? value : [])
+      .filter(isRecord)
+      .map((a) => ({ id: str(a.id), title: str(a.title) }))
+      .filter((a) => a.id)
+  return {
+    ...parseAssetsState(raw),
+    waitingAssets: names(raw.waiting_assets),
+    failedAssets: names(raw.failed_assets),
+  }
+}
+
+/** What a step read or made (`tool_result.step`); undefined when nothing. */
+function stepDetail(
+  raw: Record<string, unknown> | null,
+): StepDetail | undefined {
+  if (!raw) return undefined
+  const count = (v: unknown) => (typeof v === 'number' && v > 0 ? v : undefined)
+  const detail: StepDetail = {
+    subject: optStr(raw.subject),
+    workspace: raw.workspace === true || undefined,
+    passages: count(raw.passages),
+    analyses: count(raw.analyses),
+    sources: count(raw.sources),
+  }
+  return Object.values(detail).some((v) => v !== undefined) ? detail : undefined
+}
+
+/** An offer's details (`card`), or undefined when it has none. */
+function proposalDetails(raw: Record<string, unknown> | null) {
+  if (!raw) return undefined
+  const widen = record(raw.widen)
+  const details: ProposalDetails = {
+    verb: optStr(raw.verb),
+    meta: optStr(raw.meta),
+    rows: (Array.isArray(raw.rows) ? raw.rows : [])
+      .filter(isRecord)
+      .map((r) => ({
+        kind: str(r.kind),
+        value: str(r.value),
+        note: optStr(r.note),
+        start: optStr(r.start),
+        end: optStr(r.end),
+      }))
+      .filter((r) => r.kind && (r.value || r.start || r.end)),
+    sources: (Array.isArray(raw.sources) ? raw.sources : [])
+      .filter(isRecord)
+      .map((s) => ({
+        id: str(s.id),
+        title: str(s.title),
+        type: optStr(s.type),
+      }))
+      .filter((s) => s.id && s.title),
+    footnote: optStr(raw.footnote),
+    widen:
+      widen && str(widen.label) && str(widen.instruction)
+        ? {
+            note: str(widen.note),
+            label: str(widen.label),
+            instruction: str(widen.instruction),
+          }
+        : undefined,
+  }
+  return details
 }
 
 function calendarFindings(raw: Record<string, unknown>): CalendarFindings {
@@ -986,6 +1076,7 @@ function uiAction(raw: Record<string, unknown>): UIAction | null {
         }
       : undefined,
     savedViewId: optStr(raw.savedViewId),
+    savedViewName: optStr(raw.savedViewName),
     window: window
       ? {
           from: optStr(window.from),
@@ -1031,6 +1122,7 @@ function proposal(card: Record<string, unknown>): AssistantProposal | null {
           card.options.filter(isRecord).find((o) => o.recommended === true)?.id,
         )
       : undefined,
+    card: proposalDetails(record(card.card)),
     status: 'pending',
   }
 }
@@ -1142,6 +1234,7 @@ async function streamTurn(
           type: 'tool_result',
           ref: optStr(parsed.ref),
           ok: parsed.ok !== false,
+          detail: stepDetail(record(parsed.step)),
         })
         return
       case 'pack_loaded':

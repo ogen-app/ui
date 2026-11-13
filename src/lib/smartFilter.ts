@@ -125,3 +125,30 @@ export type SentenceVocabulary<Field extends string> = {
   /** "3 ideas", "4 assets" — beside a typed search. */
   matches: (count: number) => string
 }
+
+/**
+ * A filter's tokens in the order its sentence reads them: the subject first
+ * when it is included ("PDFs, in …"), then each field in the vocabulary's
+ * order, a left-out clause after a kept one. Only the fields the page offers.
+ */
+export function orderedTokens<F, Field extends string>(
+  model: Pick<FilterModel<F, Field>, 'tokensOf'>,
+  filter: F,
+  vocab: Pick<SentenceVocabulary<Field>, 'order' | 'subject' | 'fields'>,
+): SmartToken<Field>[] {
+  const { order, subject } = vocab
+  const rank = (token: SmartToken<Field>) =>
+    token.field === subject && !token.negated ? -1 : order.indexOf(token.field)
+  return model
+    .tokensOf(filter)
+    .filter((token) => vocab.fields.includes(token.field))
+    .sort((a, b) => rank(a) - rank(b) || Number(a.negated) - Number(b.negated))
+}
+
+/** Whether the sentence opens on its subject, which then names what is listed. */
+export function ledBySubject<Field extends string>(
+  tokens: SmartToken<Field>[],
+  subject: Field | undefined,
+): boolean {
+  return !!subject && tokens[0]?.field === subject && !tokens[0].negated
+}

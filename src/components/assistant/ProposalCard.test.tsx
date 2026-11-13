@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { renderWithProviders } from '@/test/renderWithProviders'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { ProposalCard } from './ProposalCard'
 import type { AssistantProposal } from '@/types/assistant'
@@ -118,5 +119,80 @@ describe('ProposalCard', () => {
       screen.getByText('Draft 2 posts from 3 ideas · confirmed'),
     ).toBeTruthy()
     expect(screen.queryByText('CONFIRM')).toBeNull()
+  })
+
+  it('shows what an offer draws on and makes, and names its confirm (CON-476)', async () => {
+    const confirm = vi.fn(async () => {})
+    const send = vi.fn(async () => {})
+    useAssistantStore.setState({ confirmProposal: confirm, send })
+    await renderWithProviders(
+      <ProposalCard
+        threadId="t"
+        disabled={false}
+        proposal={{
+          ...base,
+          tool: 'createCampaignFromAssets',
+          summary: 'New campaign',
+          card: {
+            verb: 'Create campaign',
+            meta: 'from 4 assets',
+            rows: [
+              { kind: 'type', value: 'Launch' },
+              {
+                kind: 'dates',
+                value: '2 Mar – 26 Apr 2026',
+                note: 'Around the 14 March opening, from the brochure',
+                start: '2026-03-02',
+                end: '2026-04-26',
+              },
+              { kind: 'grounding', value: 'Not grounded in an asset' },
+            ],
+            sources: [
+              { id: 'a1', title: 'Villa Aurora brochure', type: 'PDF' },
+            ],
+            footnote: 'The 4 become its sources.',
+            widen: {
+              note: 'Draws on the open asset only.',
+              label: 'Use the campaign’s 6 assets',
+              instruction: 'Use all the campaign’s assets.',
+            },
+          },
+        }}
+      />,
+    )
+    expect(screen.getByText('from 4 assets')).toBeTruthy()
+    expect(screen.getByText('Launch')).toBeTruthy()
+    expect(screen.getByText('Type')).toBeTruthy()
+    // The dates are formatted here, from the days; the reason sits under them.
+    expect(screen.getByText('Mar 2 – Apr 26')).toBeTruthy()
+    expect(
+      screen.getByText('Around the 14 March opening, from the brochure'),
+    ).toBeTruthy()
+    expect(screen.getByText('Not grounded in an asset')).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'PDF' })).toBeTruthy()
+    expect(screen.getByText('Villa Aurora brochure')).toBeTruthy()
+    expect(screen.getByText('The 4 become its sources.')).toBeTruthy()
+    fireEvent.click(screen.getByText('Use the campaign’s 6 assets'))
+    expect(send).toHaveBeenCalledWith('t', 'Use all the campaign’s assets.')
+    expect(screen.queryByText('CONFIRM')).toBeNull()
+    fireEvent.click(screen.getByText('Create campaign'))
+    expect(confirm).toHaveBeenCalledWith('t', 'pr1')
+  })
+
+  it('says when an offer was confirmed', () => {
+    render(
+      <ProposalCard
+        threadId="t"
+        disabled={false}
+        proposal={{
+          ...base,
+          status: 'confirmed',
+          answeredAt: new Date(2026, 10, 13, 15, 12).toISOString(),
+        }}
+      />,
+    )
+    expect(
+      screen.getByText('Draft 2 posts from 3 ideas · confirmed 3:12 PM'),
+    ).toBeTruthy()
   })
 })

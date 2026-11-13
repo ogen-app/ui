@@ -448,8 +448,73 @@ describe('the assets pack’s results (CON-460)', () => {
     expect(assets?.campaign).toMatchObject({ campaignId: 'c9', undoId: 'u7' })
     expect(assets?.savedViews).toEqual({
       list: 'assets',
-      views: [{ id: 'v1', name: 'Needs analysis', shared: true, count: 12 }],
+      views: [
+        {
+          id: 'v1',
+          name: 'Needs analysis',
+          shared: true,
+          count: 12,
+          filter: 'status=new',
+        },
+      ],
     })
+  })
+
+  it('reads the data the CON-476 cards draw from', () => {
+    const assets = read({
+      assets: {
+        state: {
+          total: 64,
+          analysed: 49,
+          waiting: 12,
+          analysis_failed: 3,
+          waiting_assets: [
+            { id: 'a1', title: 'Founder interview' },
+            { id: '', title: 'nameless' },
+          ],
+          failed_assets: [],
+          undecided: [{ ideas: 29 }, { campaign_id: 'c1', ideas: 12 }],
+        },
+        ask: {
+          scope: 'asked',
+          excerpts: [
+            { assetId: 'a1', title: 'Brochure', type: 'PDF', pages: 'p. 4' },
+          ],
+        },
+        analysis: {
+          assetId: 'a2',
+          title: 'Founder interview',
+          type: 'AUDIO',
+          durationMs: 1_080_000,
+          lens: { status: 'ready', ideaCount: 8 },
+          otherLenses: [{ campaignId: 'c1', status: 'ready', ideaCount: 4 }],
+        },
+        campaign: {
+          campaignId: 'c9',
+          name: 'Spring',
+          createdAt: '2026-11-13T15:12:00Z',
+          assetIds: [],
+        },
+      },
+    })
+    expect(assets?.state).toMatchObject({
+      total: 64,
+      analysed: 49,
+      waiting: 12,
+      analysisFailed: 3,
+      waitingAssets: [{ id: 'a1', title: 'Founder interview' }],
+      failedAssets: [],
+      undecided: [{ ideas: 29 }, { campaignId: 'c1', ideas: 12 }],
+    })
+    expect(assets?.ask?.excerpts[0].type).toBe('PDF')
+    expect(assets?.analysis).toMatchObject({
+      type: 'AUDIO',
+      durationMs: 1_080_000,
+      pageCount: undefined,
+      lens: { ideaCount: 8 },
+      otherLenses: [{ ideaCount: 4 }],
+    })
+    expect(assets?.campaign?.createdAt).toBe('2026-11-13T15:12:00Z')
   })
 
   it('reads the campaign pack’s search on a campaign’s asset page', () => {
@@ -954,6 +1019,87 @@ describe('a draft written from ideas (CON-466)', () => {
   })
 })
 
+describe('what a step read, and the smart group a turn opened (CON-476)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('reads a step’s detail and an opened group’s name off the stream', async () => {
+    const frames = [
+      [
+        'tool_result',
+        {
+          name: 'askAssets',
+          ref: 'r1',
+          ok: true,
+          step: { subject: 'Brochure', passages: 3 },
+        },
+      ],
+      [
+        'tool_result',
+        { name: 'listSavedViews', ref: 'r2', ok: true, step: { passages: 0 } },
+      ],
+      [
+        'ui_action',
+        {
+          type: 'open_saved_view',
+          screen: 'assets',
+          savedViewId: 'v1',
+          savedViewName: 'Needs analysis',
+        },
+      ],
+    ]
+      .map(
+        ([event, data]) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
+      )
+      .join('')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(frames, {
+            status: 200,
+            headers: { 'Content-Type': 'text/event-stream' },
+          }),
+      ),
+    )
+    const events: AssistantStreamEvent[] = []
+    await streamAssistantTurn(
+      {
+        instruction: 'which groups?',
+        viewContext: {
+          version: 1,
+          screen: 'assets',
+          scope: { kind: 'workspace' },
+        },
+      },
+      (e) => events.push(e),
+    )
+    expect(events).toEqual([
+      {
+        type: 'tool_result',
+        ref: 'r1',
+        ok: true,
+        detail: {
+          subject: 'Brochure',
+          workspace: undefined,
+          passages: 3,
+          analyses: undefined,
+          sources: undefined,
+        },
+      },
+      // A step that counted nothing says nothing beyond its tool.
+      { type: 'tool_result', ref: 'r2', ok: true, detail: undefined },
+      {
+        type: 'ui_action',
+        action: expect.objectContaining({
+          type: 'open_saved_view',
+          savedViewId: 'v1',
+          savedViewName: 'Needs analysis',
+        }),
+      },
+    ])
+  })
+})
+
 describe('an offer answered from its card (CON-467)', () => {
   it('reads what a run left undone, and its retry', () => {
     const r = parseHistoryResult(
@@ -1006,6 +1152,71 @@ describe('an offer answered from its card (CON-467)', () => {
         result: { drafted: { postCount: 4 }, deleted: 3, kept: ['p9'] },
       })?.replaced,
     ).toEqual({ deleted: 3, kept: 1 })
+  })
+
+  it('reads an offer’s details, and none when the card has nothing', () => {
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Here is the plan.',
+        action: 'answered',
+        results: {},
+        proposals: [
+          {
+            id: 'pr1',
+            tool: 'createCampaignFromAssets',
+            summary: 'New campaign',
+            card: {
+              verb: 'Create campaign',
+              meta: 'from 4 assets',
+              rows: [
+                { kind: 'type', value: 'Launch' },
+                {
+                  kind: 'dates',
+                  value: '2 Mar – 26 Apr 2026',
+                  note: 'Around the opening',
+                  start: '2026-03-02',
+                  end: '2026-04-26',
+                },
+                { kind: 'tags', value: '' },
+              ],
+              sources: [
+                { id: 'a1', title: 'Brochure', type: 'PDF' },
+                { id: '', title: 'nameless' },
+              ],
+              footnote: 'The 4 become its sources.',
+              widen: { note: 'Only this one.', label: 'Use all 6' },
+            },
+          },
+          { id: 'pr2', tool: 'tagAssets', summary: 'Tag 3 assets' },
+        ],
+      }),
+      'workspace',
+    )
+    expect(r.proposals[0].card).toEqual({
+      verb: 'Create campaign',
+      meta: 'from 4 assets',
+      rows: [
+        {
+          kind: 'type',
+          value: 'Launch',
+          note: undefined,
+          start: undefined,
+          end: undefined,
+        },
+        {
+          kind: 'dates',
+          value: '2 Mar – 26 Apr 2026',
+          note: 'Around the opening',
+          start: '2026-03-02',
+          end: '2026-04-26',
+        },
+      ],
+      sources: [{ id: 'a1', title: 'Brochure', type: 'PDF' }],
+      footnote: 'The 4 become its sources.',
+      // A widen without the turn it sends is no way to widen.
+      widen: undefined,
+    })
+    expect(r.proposals[1].card).toBeUndefined()
   })
 
   it('marks the option the server recommends', () => {

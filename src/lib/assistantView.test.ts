@@ -82,6 +82,19 @@ describe('chipText', () => {
   })
 })
 
+describe('chipText for an open asset', () => {
+  it('names it once its screen has loaded it', () => {
+    const location = {
+      screen: 'asset' as const,
+      focus: { kind: 'asset' as const, id: 'a1' },
+    }
+    expect(chipText(t, workspace, location, null, 'Villa Aurora')).toBe(
+      'Villa Aurora · open',
+    )
+    expect(chipText(t, workspace, location, null)).toBe('This asset is open')
+  })
+})
+
 describe('markerText', () => {
   it('says where a thread began', () => {
     expect(
@@ -99,6 +112,35 @@ describe('markerText', () => {
     expect(markerText(t, view({ screen: 'assets' }), ideas)).toBe(
       'Now on Assets',
     )
+  })
+
+  it('names the open asset on its list, and the list’s size, when known (CON-476)', () => {
+    const detail = (v: ViewContext) =>
+      v.focus
+        ? v.focus.id === 'a1'
+          ? { screen: 'assets' as const, item: 'Villa Aurora brochure' }
+          : null
+        : { item: '64 documents' }
+    expect(
+      markerText(
+        t,
+        view({ screen: 'asset', focus: { kind: 'asset', id: 'a1' } }),
+        undefined,
+        detail,
+      ),
+    ).toBe('On Assets · Villa Aurora brochure')
+    expect(markerText(t, view({ screen: 'assets' }), view({}), detail)).toBe(
+      'Now on Assets · 64 documents',
+    )
+    // An asset this tab never loaded keeps the plain marker.
+    expect(
+      markerText(
+        t,
+        view({ screen: 'asset', focus: { kind: 'asset', id: 'a2' } }),
+        undefined,
+        detail,
+      ),
+    ).toBe('On an asset')
   })
 
   it('draws nothing for a turn with no stored view', () => {

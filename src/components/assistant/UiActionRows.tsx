@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { screenName } from '@/lib/assistantView'
 import { counted } from '@/lib/intl'
@@ -99,7 +99,7 @@ function actionTitle(
   { action }: AppliedUIAction,
   describe: (action: UIAction) => string,
   platformName: (slug: string) => string,
-): string {
+): React.ReactNode {
   const screen = screenName(t, action.screen)
   switch (action.type) {
     case 'open_connect': {
@@ -127,6 +127,20 @@ function actionTitle(
         ...counted(action.selection?.ids.length ?? 0),
       })
     case 'open_saved_view':
-      return t('assistant.uiAction.openSavedView', { screen })
+      // The group by name, and where it opened in grey (CON-476).
+      return action.savedViewName ? (
+        <Trans
+          t={t}
+          i18nKey="assistant.uiAction.openSavedViewNamed"
+          values={{ name: action.savedViewName, screen }}
+          components={{
+            where: (
+              <span className="text-sm font-normal text-secondary-foreground" />
+            ),
+          }}
+        />
+      ) : (
+        t('assistant.uiAction.openSavedView', { screen })
+      )
   }
 }

@@ -23,6 +23,8 @@ export type UIAction = {
   filter?: string
   selection?: { kind: ViewEntityKind; ids: string[] }
   savedViewId?: string
+  /** The smart group an `open_saved_view` opens, by name, for the record. */
+  savedViewName?: string
   /**
    * An analytics screen's new window (CON-463): dates, platforms, campaign.
    * The server built it on the window on screen, so it is the whole state.

@@ -255,7 +255,9 @@
   /* Table */
   --color-destructive: var(--destructive);
   --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-tape: var(--tape);
   /* The Assets list's kind marks (CON-378/382) — `text-kind-pdf` and the rest. */
   --color-kind-pdf: var(--kind-pdf);
@@ -409,6 +411,13 @@
      value ever has to come back, the text sites need their own `--accent-ink`
      first. */
   --accent: oklch(0.55 0.0955 190.71);
+  /* The two hues as small text in the assistant's replies (CON-476): a
+     source's name, "Not grounded", a lens that hasn't read the asset. At
+     12.5px the fills read washed out, so the ink is the same hue a step
+     darker — `--accent` at L .50, `--warning` at L .55. Text only; a fill
+     stays on the base token. */
+  --accent-ink: oklch(0.5 0.0955 190.71);
+  --warning-ink: oklch(0.55 0.157 58.32);
   /* The sweep — the accented button's ink (`GradientButton`), the paywall's
      fill and its mark. Blue to green, ending in a splash of orange. Blue
      and green are text-safe on white and carry most of a label; the orange is

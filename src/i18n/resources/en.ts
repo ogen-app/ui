@@ -2080,6 +2080,8 @@ export const en = {
 
     panel: {
       title: 'Content Strategist',
+      /** Over the starters in a thread already going. */
+      onThisScreen: 'On this screen',
       /** The title block's label inside a thread, where it leads back out. */
       back: 'Back to all conversations',
       placeholderCampaign: 'Ask for a plan or a review...',
@@ -2141,6 +2143,8 @@ export const en = {
       matching_one: 'All {{formatted}} matching · {{screen}}',
       matching_other: 'All {{formatted}} matching · {{screen}}',
       focusAsset: 'This asset is open',
+      /** The open asset by name, once its screen has loaded it. */
+      focusNamed: '{{title}} · open',
       focusVoice: 'This voice is open',
       focusAudience: 'This audience is open',
       focusSeries: 'This series is open',
@@ -2164,6 +2168,11 @@ export const en = {
       nowSelected_other: 'Now on {{screen}} · {{formatted}} selected',
       nowMatching_one: 'Now on {{screen}} · all {{formatted}} matching',
       nowMatching_other: 'Now on {{screen}} · all {{formatted}} matching',
+      /** The open item, or the list's size: "On Assets · Villa Aurora brochure". */
+      onItem: 'On {{screen}} · {{item}}',
+      nowItem: 'Now on {{screen}} · {{item}}',
+      documents_one: '{{formatted}} document',
+      documents_other: '{{formatted}} documents',
     },
 
     composer: {
@@ -2320,6 +2329,9 @@ export const en = {
       askAssets: {
         running: 'Reading the assets',
         done: 'Read the assets',
+        /** `passages` is `count.passages`: "3 passages". */
+        doneIn: 'Searched {{subject}} · {{passages}}',
+        doneCount: 'Searched the assets · {{passages}}',
       },
       analyseAsset: {
         running: 'Analysing an asset',
@@ -2328,14 +2340,33 @@ export const en = {
       readAnalysis: {
         running: 'Reading the analysis',
         done: 'Read the analysis',
+        doneWorkspace: 'Read the analysis · workspace lens',
+        doneCampaign: 'Read the analysis · {{campaign}}’s lens',
       },
       compareAssets: {
         running: 'Comparing the assets',
         done: 'Compared the assets',
+        /** `what` joins `count.analyses` and `count.passages`. */
+        doneRead: 'Read {{what}}',
       },
       createCampaignFromAssets: {
         running: 'Setting up the campaign',
         done: 'Set up the campaign',
+        doneNamed: 'Created {{campaign}}',
+        doneSources_one: 'Created {{campaign}} · attached {{formatted}} source',
+        doneSources_other:
+          'Created {{campaign}} · attached {{formatted}} sources',
+      },
+      readAssetsState: {
+        running: 'Reading the bank’s state',
+        done: 'Read the bank’s state',
+      },
+      /** The amounts a step's detail carries, inside the sentences above. */
+      count: {
+        passages_one: '{{formatted}} passage',
+        passages_other: '{{formatted}} passages',
+        analyses_one: '{{formatted}} analysis',
+        analyses_other: '{{formatted}} analyses',
       },
       listSavedViews: {
         running: 'Looking up the smart groups',
@@ -2516,6 +2547,9 @@ export const en = {
       workspace1: 'Find and sort ideas. Ask your assets.',
       workspace2: 'Explain what worked, and make more of it.',
       workspace3: 'Say what happened while you were away.',
+      /** On the Assets list, where the chips lead with what is waiting. */
+      assets:
+        'Ask about the documents on this screen, or start where the bank needs you.',
     },
 
     /**
@@ -2623,13 +2657,9 @@ export const en = {
         label: 'Find similar ideas',
         text: 'Find ideas like these.',
       },
-      askAssets: {
-        label: 'Ask the assets',
-        text: 'What do the assets say about ',
-      },
-      ideasFromAssets: {
-        label: 'Ideas from the bank',
-        text: 'Which assets haven’t given us ideas yet?',
+      findDocuments: {
+        label: 'Find documents about…',
+        text: 'Find documents about ',
       },
       analyseWaiting: {
         label_one: 'Analyse the new one',
@@ -2703,7 +2733,7 @@ export const en = {
         text: 'Check the selected posts against our voice and guardrails.',
       },
       summariseSelected: {
-        label: 'Summarise these',
+        label: 'Summarise them',
         text: 'Summarise the selected assets.',
       },
       planFromSelected: {
@@ -2725,6 +2755,10 @@ export const en = {
       ideasFromThis: {
         label: 'Ideas from this',
         text: 'Distill ideas from this asset.',
+      },
+      tagIt: {
+        label: 'Tag it',
+        text: 'Tag this asset as ',
       },
       whyTopPost: {
         label: 'Why did the top post work?',
@@ -2816,6 +2850,28 @@ export const en = {
     /** Every open thread, in the rail's list. */
     /** The assets pack's results (CON-460). */
     assets: {
+      /** The bank's state a turn read (`readAssetsState`, CON-476). */
+      state: {
+        word: 'Assets · now',
+        title_one: '{{formatted}} document',
+        title_other: '{{formatted}} documents',
+        analysed_one: '{{formatted}} analysed',
+        analysed_other: '{{formatted}} analysed',
+        waiting_one: '{{formatted}} not analysed yet',
+        waiting_other: '{{formatted}} not analysed yet',
+        failed_one: '{{formatted}} analysis failed',
+        failed_other: '{{formatted}} analyses failed',
+        undecided_one: '{{formatted}} idea undecided',
+        undecided_other: '{{formatted}} ideas undecided',
+        /** One lens's undecided ideas: "Workspace lens 29". */
+        lensIdeas: '{{lens}} {{ideas}}',
+        /** The first few by name, then how many more. */
+        namesAndMore_one: '{{names}} and {{formatted}} more',
+        namesAndMore_other: '{{names}} and {{formatted}} more',
+        analyse: 'ANALYSE',
+        retry: 'RETRY',
+        triage: 'TRIAGE',
+      },
       ask: {
         /** A cited passage from one of several assets. */
         chip: '{{title}} · {{pages}}',
@@ -2826,8 +2882,8 @@ export const en = {
       lens: {
         workspace: 'Workspace lens',
         campaign: '{{name}}’s lens',
-        /** `date` is short: "6 Nov". */
-        readOn: '{{lens}} · read {{date}}',
+        /** Who a lens reads for, in "Read for the workspace on 2 Nov". */
+        theWorkspace: 'the workspace',
       },
       analysis: {
         word: {
@@ -2838,16 +2894,36 @@ export const en = {
           skipped: 'Skipped for this lens',
           notRead: 'Not read for this lens',
         },
+        /** The status word with its lens: "Analysed · Workspace lens". */
+        wordLens: '{{word}} · {{lens}}',
         ideas_one: '{{formatted}} idea distilled',
         ideas_other: '{{formatted}} ideas distilled',
-        ideasByVerdict:
-          '{{undecided}} undecided · {{yes}} yes · {{later}} later',
+        /** The piles, in the Ideas list's own words. */
+        pile: {
+          waiting_one: '{{formatted}} on the desk',
+          waiting_other: '{{formatted}} on the desk',
+          yes_one: '{{formatted}} making',
+          yes_other: '{{formatted}} making',
+          later_one: '{{formatted}} in the drawer',
+          later_other: '{{formatted}} in the drawer',
+          no_one: '{{formatted}} set aside',
+          no_other: '{{formatted}} set aside',
+        },
+        /** Another lens's row: "4 ideas · read 7 Nov". */
+        lensIdeas_one: '{{formatted}} idea',
+        lensIdeas_other: '{{formatted}} ideas',
+        readOn: 'read {{date}}',
         openIdeas: 'OPEN IDEAS',
-        notReadFor: '{{lens}} hasn’t read it.',
-        analyse: 'ANALYSE',
+        notReadFor: '{{lens}} hasn’t read it',
+        /** Where another lens has: "Read for the workspace on 2 Nov". */
+        readFor: 'Read for {{owner}}',
+        readForOn: 'Read for {{owner}} on {{date}}',
+        showThat: 'SHOW THAT',
+        analyseFor: 'Analyse for {{owner}}',
         analysePrompt: 'Analyse it for the {{lens}}.',
         show: 'SHOW',
         showPrompt: 'What did the analysis find for the {{lens}}?',
+        readFrom: 'Read from',
         analysisOf: 'Analysis of {{title}}',
       },
       compare: {
@@ -2855,15 +2931,18 @@ export const en = {
         wordSummarised: 'Summarised',
         title_one: '{{formatted}} document',
         title_other: '{{formatted}} documents',
-        shared: 'All of them',
-        partial: 'Only some',
+        /** A claim's label, counted by the documents behind it. */
+        shared_one: 'All {{formatted}}',
+        shared_other: 'All {{formatted}}',
+        partial_one: 'Only {{formatted}}',
+        partial_other: 'Only {{formatted}}',
         conflicts: 'They disagree',
         askWhich: 'ASK WHICH',
         askWhichPrompt: 'Which is right: {{claim}}?',
         fromPassages_one:
-          '{{titles}} was read from its passages: there’s no analysis for this lens.',
+          '{{titles}} isn’t analysed for this lens, so it was read from its passages.',
         fromPassages_other:
-          '{{titles}} were read from their passages: there’s no analysis for this lens.',
+          '{{titles}} aren’t analysed for this lens, so they were read from their passages.',
         skipped_one: '{{titles}} had nothing to read.',
         skipped_other: '{{titles}} had nothing to read.',
         missing_one:
@@ -2876,16 +2955,25 @@ export const en = {
         title_one: '{{formatted}} on {{list}}',
         title_other: '{{formatted}} on {{list}}',
         none: 'No smart groups on {{list}} yet',
+        /** A group's filter as one line; `clauses` is the list's own sentence. */
+        sentenceAssets: 'Documents {{clauses}}',
+        sentenceIdeas: 'Ideas {{clauses}}',
+        /** When the clauses open on what is listed: "PDFs, in Spring reopening". */
+        sentenceSubject: '{{clauses}}',
         countAssets_one: '{{formatted}} document',
         countAssets_other: '{{formatted}} documents',
         countIdeas_one: '{{formatted}} idea',
         countIdeas_other: '{{formatted}} ideas',
-        shared: 'Shared',
+        /** Inside a campaign: smart groups are the workspace's. */
+        workspaceOnly:
+          'Smart groups open on the workspace’s {{list}}, outside this campaign.',
         open: 'OPEN',
       },
       campaign: {
         sources_one: '{{formatted}} source attached',
         sources_other: '{{formatted}} sources attached',
+        sourcesNote:
+          'The documents stay in the bank; the campaign points at them.',
         open: 'OPEN',
       },
     },
@@ -3073,6 +3161,8 @@ export const en = {
       select_one: 'Selected {{formatted}} on {{screen}}',
       select_other: 'Selected {{formatted}} on {{screen}}',
       openSavedView: 'Opened a smart group on {{screen}}',
+      /** The group by name; `<where>` is drawn in grey. */
+      openSavedViewNamed: 'Opened “{{name}}” <where>on {{screen}}</where>',
       setWindow: 'Showed {{window}} on {{screen}}',
       openReconnect: 'Opened Settings to reconnect {{platform}}',
       openConnect: 'Opened Settings to connect {{platform}}',
@@ -3096,6 +3186,8 @@ export const en = {
       stopped:
         'Stopped before it finished. Anything it did is in the reply below.',
       confirmed: '{{summary}} · confirmed',
+      /** `time` is the clock: "15:12". */
+      confirmedAt: '{{summary}} · confirmed {{time}}',
       dismissed: '{{summary}} · dismissed',
       expired: '{{summary}} · expired',
       superseded: '{{summary}} · not answered',
@@ -3104,6 +3196,13 @@ export const en = {
       working: '{{summary}} · working…',
       /** Over the one option the server marks (CON-467). */
       recommended: 'RECOMMENDED',
+      /** Beside an offer's detail rows (CON-476): what each one is. */
+      row: {
+        destination: 'Where',
+        type: 'Type',
+        dates: 'When',
+        tags: 'Tags',
+      },
     },
 
     /**

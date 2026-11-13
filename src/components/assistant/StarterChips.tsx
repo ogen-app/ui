@@ -1,11 +1,10 @@
 import {
   ArchiveIcon,
+  ArrowClockwiseIcon,
   ArrowsClockwiseIcon,
   ArrowCounterClockwiseIcon,
   FunnelIcon,
   GitDiffIcon,
-  FlagIcon,
-  ScanIcon,
   IntersectIcon,
   ListBulletsIcon,
   MagnifyingGlassIcon,
@@ -36,6 +35,8 @@ import { useAssetsState } from '@/hooks/useContent'
 import type { AssetsState } from '@/services/api/content'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { useViewContextStore } from '@/stores/viewContextStore'
+import { cn } from '@/lib/styles'
+import { StatusWord } from './blocks'
 
 /**
  * `key` names the starter's label and draft under `assistant.starter`.
@@ -71,8 +72,7 @@ type StarterKey =
   | 'compileSelected'
   | 'whatShare'
   | 'findSimilar'
-  | 'askAssets'
-  | 'ideasFromAssets'
+  | 'findDocuments'
   | 'analyseWaiting'
   | 'retryFailed'
   | 'triageIdeas'
@@ -96,6 +96,7 @@ type StarterKey =
   | 'summariseIt'
   | 'askTheAsset'
   | 'ideasFromThis'
+  | 'tagIt'
   | 'whyTopPost'
   | 'compareMonth'
   | 'moreLikeThese'
@@ -166,16 +167,16 @@ const IDEAS: ScreenStarters = {
   ],
 }
 
+/** After what the bank has waiting (`stateStarters`), which leads. */
 const ASSETS: ScreenStarters = {
   none: [
-    { icon: QuestionIcon, key: 'askAssets' },
-    { icon: LightbulbIcon, key: 'ideasFromAssets' },
     { icon: FunnelIcon, key: 'smartGroups' },
+    { icon: MagnifyingGlassIcon, key: 'findDocuments' },
   ],
   selected: [
     { icon: GitDiffIcon, key: 'compareSelected' },
     { icon: ListBulletsIcon, key: 'summariseSelected' },
-    { icon: FlagIcon, key: 'campaignFromSelected' },
+    { icon: MegaphoneIcon, key: 'campaignFromSelected' },
     { icon: CalendarBlankIcon, key: 'planFromSelected' },
     { icon: TagIcon, key: 'tagSelected' },
   ],
@@ -184,9 +185,10 @@ const ASSETS: ScreenStarters = {
 const ASSET: ScreenStarters = {
   none: [
     { icon: ListBulletsIcon, key: 'summariseIt' },
-    { icon: QuestionIcon, key: 'askTheAsset' },
-    { icon: ScanIcon, key: 'whatAnalysisFound' },
+    { icon: MagnifyingGlassIcon, key: 'askTheAsset' },
+    { icon: SparkleIcon, key: 'whatAnalysisFound' },
     { icon: LightbulbIcon, key: 'ideasFromThis' },
+    { icon: TagIcon, key: 'tagIt' },
   ],
 }
 
@@ -200,7 +202,7 @@ function stateStarters(state: AssetsState | undefined): Starter[] {
   const starters: Starter[] = []
   if (state.waiting > 0)
     starters.push({
-      icon: SparkleIcon,
+      icon: ArrowClockwiseIcon,
       key: 'analyseWaiting',
       count: state.waiting,
     })
@@ -332,14 +334,21 @@ const STARTERS: Record<ThreadSubject['kind'], Starter[]> = {
   workspace: WORKSPACE_STARTERS,
 }
 
+/**
+ * In an empty thread the chips are the body's, centred under its lines; in a
+ * thread already going they sit over the composer under ON THIS SCREEN, since
+ * there they follow the screen rather than introduce the assistant.
+ */
 export function StarterChips({
   kind,
   onPick,
   disabled = false,
+  placement = 'body',
 }: {
   kind: ThreadSubject['kind']
   onPick: (text: string) => void
   disabled?: boolean
+  placement?: 'body' | 'footer'
 }) {
   const { t } = useTranslation()
   const screen = useViewContextStore((s) => s.location.screen)
@@ -365,13 +374,18 @@ export function StarterChips({
         ? [...stateStarters(state.data), ...forScreen.none]
         : forScreen.none)) ||
     STARTERS[kind]
-  return (
-    <div className="flex flex-wrap justify-center gap-1.5">
+  const chips = (
+    <div
+      className={cn(
+        'flex flex-wrap gap-1.5',
+        placement === 'body' && 'justify-center',
+      )}
+    >
       {starters.map(({ icon: Icon, key, count }) => {
         const label =
           count === undefined
             ? t(
-                `assistant.starter.${key}.label` as 'assistant.starter.askAssets.label',
+                `assistant.starter.${key}.label` as 'assistant.starter.findDocuments.label',
               )
             : t(
                 `assistant.starter.${key}.label` as 'assistant.starter.retryFailed.label',
@@ -385,13 +399,20 @@ export function StarterChips({
             disabled={disabled}
             onClick={() => onPick(text)}
             title={text}
-            className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-sm text-secondary-foreground transition-colors cursor-pointer hover:bg-tertiary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-full bg-tertiary px-3 py-1.5 text-[12.5px] text-secondary-foreground transition-colors cursor-pointer hover:bg-quaternary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
           >
-            <Icon className="size-4 shrink-0 text-tertiary-foreground" />
+            <Icon className="size-3.5 shrink-0 text-tertiary-foreground" />
             {label}
           </button>
         )
       })}
+    </div>
+  )
+  if (placement === 'body') return chips
+  return (
+    <div className="flex flex-col gap-2">
+      <StatusWord>{t('assistant.panel.onThisScreen')}</StatusWord>
+      {chips}
     </div>
   )
 }

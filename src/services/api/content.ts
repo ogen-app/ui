@@ -148,6 +148,14 @@ export async function getAssetsState(
     `/api/content-bank/assets-state${query}`,
     'Unable to load the state of the assets',
   )
+  return parseAssetsState(raw)
+}
+
+/**
+ * The state's counts from the server's snake_case — the REST endpoint's
+ * body, and the assistant's `readAssetsState` result, which is the same.
+ */
+export function parseAssetsState(raw: Record<string, unknown>): AssetsState {
   const n = (v: unknown) => (typeof v === 'number' ? v : 0)
   const undecided = Array.isArray(raw.undecided) ? raw.undecided : []
   return {

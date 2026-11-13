@@ -14,6 +14,7 @@ import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import { Logo } from '@/components/Logo'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/styles'
+import { formatDate } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { AssistantComposer } from './AssistantComposer'
@@ -23,6 +24,7 @@ import { ScreenMarker } from './ScreenMarker'
 import { ResolvedLine } from './blocks'
 import { turnMarkers } from '@/lib/assistantView'
 import { StarterChips } from './StarterChips'
+import { useMarkerDetail } from './useMarkerDetail'
 import { ThreadStatusSummary } from './ThreadStatusSummary'
 import { ThreadEmptyState } from './ThreadEmptyState'
 import { ThreadList } from './ThreadList'
@@ -182,6 +184,7 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
                 kind={thread.subject.kind}
                 onPick={pick}
                 disabled={running}
+                placement="footer"
               />
             )}
             <ContextChip
@@ -242,6 +245,7 @@ function ThreadView({
   showStarters: boolean
 }) {
   const { t } = useTranslation()
+  const markerDetail = useMarkerDetail()
   if (!thread.loaded) {
     return (
       <div className="flex flex-col gap-3" aria-busy>
@@ -264,7 +268,7 @@ function ThreadView({
 
   // Where the screen changed between turns, a quiet line says so — from each
   // turn's stored view context, so a reloaded thread draws the same markers.
-  const markers = turnMarkers(t, thread.turns)
+  const markers = turnMarkers(t, thread.turns, markerDetail)
   const rows = thread.turns.map((turn) => {
     if (turn.role !== 'user') {
       return (
@@ -279,11 +283,16 @@ function ThreadView({
     // The server's record of an offer answered from its card is not something
     // the user typed: it reads as the line the card collapsed into.
     if (turn.answer) {
+      const summary = turn.content.replace(/^(Confirmed|Dismissed): /, '')
+      const time =
+        turn.answer === 'confirmed'
+          ? formatDate(turn.at, { hour: 'numeric', minute: '2-digit' })
+          : null
       return (
         <ResolvedLine key={turn.id}>
-          {t(`assistant.proposal.${turn.answer}`, {
-            summary: turn.content.replace(/^(Confirmed|Dismissed): /, ''),
-          })}
+          {time
+            ? t('assistant.proposal.confirmedAt', { summary, time })
+            : t(`assistant.proposal.${turn.answer}`, { summary })}
         </ResolvedLine>
       )
     }

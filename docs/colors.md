@@ -79,6 +79,7 @@ Layer 3 — component    --sidebar-*, --popover-*, --input-*, --table-*,
 | `--border-primary` | black | Emphasized border |
 | `--ring` | gray-400 | Focus ring |
 | `--destructive`, `--positive`, `--negative`, `--warning`, `--info`, `--attention`, `--notification`, `--accent`, `--editable` | oklch accents | Status / affordance accents (`--warning` = validation warnings, orange; `--notification` = unread, orange; `--accent` = active/selected control, teal #40A9A4 — **fill, not ink**, see below) |
+| `--accent-ink`, `--warning-ink` | oklch, L .50 / .55 | The teal and the orange as small text in the assistant's replies (CON-476) — source names, "Not grounded", a lens that hasn't read. Ink only, never a fill |
 | `--tape` | oklch(88% 46% 86deg) | The Fix first row the editor is showing (CON-441), drawn as police tape. Fill only, never ink, and not a status |
 
 `--accent` is a brand colour, and it does not pass as text: 2.83:1 on white,
