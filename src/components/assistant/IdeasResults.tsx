@@ -349,15 +349,17 @@ function FoundCard({
             })
           : undefined
       }
+      // Only with the filter it ran: a reloaded thread keeps the result but
+      // not its steps, and an empty filter would clear the list instead.
       action={
-        found.total > 0 ? (
+        found.total > 0 && filter !== undefined ? (
           <TextAction
             onClick={() =>
               void run(threadId, turnId, {
                 type: 'set_filter',
                 screen: campaignId ? 'campaign.ideas' : 'ideas',
                 campaignId,
-                filter: filter ?? '',
+                filter,
               })
             }
           >
@@ -543,7 +545,15 @@ function CompiledCard({
         </>
       }
       meta={c.posts.length === 1 ? meta(first) : undefined}
-      action={c.posts.length === 1 ? open(first.postId) : undefined}
+      // UNDO sits with the ideas it was built from; with none listed (a
+      // server before CON-481) it takes the header, as the only way back.
+      action={
+        c.builtFrom.length === 0 ? (
+          <UndoAction t={t} undoId={c.undoId} undo={undo} />
+        ) : c.posts.length === 1 ? (
+          open(first.postId)
+        ) : undefined
+      }
     >
       {c.posts.length > 1 &&
         c.posts.map((p) => (
@@ -950,10 +960,12 @@ function planLine(
   t: TFunction,
   plan: IdeaPlanBrief | undefined,
   platformName: (slug: string) => string,
+  phaseName: (id: string) => string,
 ): string {
   const parts = [
     plan?.platformId ? platformName(plan.platformId) : '',
     plan?.postType ? plan.postType.replace(/[-_]/g, ' ') : '',
+    plan?.phaseId ? phaseName(plan.phaseId) : '',
     plan?.targetDate ? dayLabel(plan.targetDate) : '',
   ].filter(Boolean)
   return parts.length > 0
@@ -976,6 +988,10 @@ function EditedCard({
   const { t } = useTranslation()
   const { resolve } = usePlatformCatalog()
   const name = (slug: string) => resolve(slug)?.name ?? slug
+  // The idea's phases are its campaign type's, which the card doesn't hold:
+  // a phase reads as one, its slug made legible.
+  const phase = (id: string) =>
+    t('assistant.ideas.edited.phase', { phase: id.replace(/[-_]/g, ' ') })
   const before = edited.before
   const titleChanged = edited.changed.includes('title')
   const noteChanged = edited.changed.includes('note')
@@ -1019,13 +1035,15 @@ function EditedCard({
             field(
               t('assistant.ideas.edited.fields.note'),
               before.note || t('assistant.ideas.edited.empty'),
-              undefined,
+              // The server leaves out a cleared note; one it sends is the
+              // note as it now reads.
+              edited.note || t('assistant.ideas.edited.empty'),
             )}
           {planChanged &&
             field(
               t('assistant.ideas.edited.fields.plan'),
-              planLine(t, before.plan, name),
-              planLine(t, edited.idea.plan, name),
+              planLine(t, before.plan, name, phase),
+              planLine(t, edited.idea.plan, name, phase),
             )}
         </>
       ) : (

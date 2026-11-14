@@ -3982,6 +3982,7 @@ export const en = {
         changed: 'changed its {{fields}}',
         empty: 'No note',
         noPlan: 'Nothing planned',
+        phase: 'phase {{phase}}',
         fields: {
           title: 'Title',
           note: 'Note',

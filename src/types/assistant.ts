@@ -1299,6 +1299,8 @@ export type IdeasResults = {
     changed: string[]
     /** The editable fields before the edit (CON-481). */
     before?: { title: string; note?: string; plan: IdeaPlanBrief }
+    /** The note as it now reads; absent when it is empty. */
+    note?: string
     undoId?: string
   }
   similar?: {

@@ -3383,6 +3383,7 @@ export const es: Translation = {
         changed: 'cambió su {{fields}}',
         empty: 'Sin nota',
         noPlan: 'Nada planificado',
+        phase: 'fase {{phase}}',
         fields: {
           title: 'Título',
           note: 'Nota',
