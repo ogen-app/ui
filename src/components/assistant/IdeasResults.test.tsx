@@ -236,6 +236,31 @@ describe('compile and draft', () => {
     expect(screen.getByText(/the day you chose$/)).toBeTruthy()
   })
 
+  it('says a single draft’s day and why, or that it isn’t scheduled', async () => {
+    const one = (publishDate?: string) => ({
+      drafted: {
+        warnings: [],
+        posts: [
+          {
+            postId: 'p1',
+            title: 'Lemon, olive, sea salt',
+            platformId: 'instagram',
+            campaignId: 'c1',
+            ideaIds: ['i1'],
+            publishDate,
+            dateFrom: publishDate ? ('plan' as const) : undefined,
+            grounding: { mode: 'grounded' as const, sources: [] },
+          },
+        ],
+      },
+    })
+    const { unmount } = await show(one('2026-04-24'))
+    expect(screen.getByText(/the idea’s plan date$/)).toBeTruthy()
+    unmount()
+    await show(one())
+    expect(screen.getByText('Not scheduled')).toBeTruthy()
+  })
+
   it('draws the planned post with its type, theses and the ideas it was built from', async () => {
     await show({ compiled })
     expect(screen.getByText('Planned post')).toBeTruthy()

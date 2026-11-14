@@ -1022,6 +1022,10 @@ export const es: Translation = {
         onDay: 'Con fecha {{date}}, el día de la idea.',
         unscheduled:
           'Sin programar, salvo que una idea tenga un día planificado.',
+        allDated: 'Cada una con fecha en el día planificado de su idea.',
+        undated_one: 'Sin programar: la idea no tiene un día planificado.',
+        undated_other:
+          'Sin programar: ninguna de las ideas tiene un día planificado.',
         compile: 'COMPILAR',
         compileCount_one: 'COMPILAR {{formatted}} PUBLICACIÓN PLANIFICADA',
         compileCount_other: 'COMPILAR {{formatted}} PUBLICACIONES PLANIFICADAS',

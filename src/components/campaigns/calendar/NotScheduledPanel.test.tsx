@@ -5,8 +5,16 @@ import { useJustWrittenStore } from '@/stores/justWrittenStore'
 import type { Post } from '@/types/posts'
 import { NotScheduledPanel } from './NotScheduledPanel'
 
-const data = vi.hoisted(() => ({ posts: [] as Post[] }))
+const data = vi.hoisted(() => ({
+  posts: [] as Post[],
+  updating: [] as string[],
+}))
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
+  useMutationState: () => data.updating,
+}))
 vi.mock('@/hooks/usePosts', () => ({
+  UPDATE_POST_KEY: ['posts', 'update'],
   useCampaignPosts: () => ({
     data: data.posts,
     isPending: false,
@@ -52,6 +60,7 @@ const post = (id: string, overrides: Partial<Post> = {}): Post =>
 
 beforeEach(() => {
   useJustWrittenStore.setState({ ids: new Set() })
+  data.updating = []
 })
 
 describe('the Not scheduled panel (CON-485)', () => {
@@ -87,5 +96,13 @@ describe('the Not scheduled panel (CON-485)', () => {
     useJustWrittenStore.setState({ ids: new Set(['Dated']) })
     await renderWithProviders(<NotScheduledPanel campaignId="c1" />)
     expect(useJustWrittenStore.getState().ids.has('Dated')).toBe(false)
+  })
+
+  it('keeps the mark while the date is only the update in flight', async () => {
+    data.posts = [post('Moving', { scheduled_at: '2026-11-26T09:00:00Z' })]
+    data.updating = ['Moving']
+    useJustWrittenStore.setState({ ids: new Set(['Moving']) })
+    await renderWithProviders(<NotScheduledPanel campaignId="c1" />)
+    expect(useJustWrittenStore.getState().ids.has('Moving')).toBe(true)
   })
 })

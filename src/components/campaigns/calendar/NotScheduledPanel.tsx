@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useMutationState } from '@tanstack/react-query'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { useTranslation } from 'react-i18next'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
+  UPDATE_POST_KEY,
   useAddPost,
   useCampaignPosts,
   useUpdatePost,
@@ -94,14 +96,23 @@ function NotScheduled({
   // that sent the user here is gone, and nothing else says which are new.
   const justWritten = useJustWrittenStore((s) => s.ids)
   // A draft put on a day is no longer just written (CON-485): unscheduled
-  // again later, it is a stray like any other.
+  // again later, it is a stray like any other. Not while its update is in
+  // flight — that day is the list's optimistic copy, and a refused move
+  // puts the draft back undated, mark and all.
   const forget = useJustWrittenStore((s) => s.forget)
+  const updating = useMutationState({
+    filters: { mutationKey: UPDATE_POST_KEY, status: 'pending' },
+    select: (m) => (m.state.variables as { id: string } | undefined)?.id,
+  })
   useEffect(() => {
+    const pending = new Set(updating)
     const dated = (posts ?? [])
-      .filter((p) => p.scheduled_at && justWritten.has(p.id))
+      .filter(
+        (p) => p.scheduled_at && justWritten.has(p.id) && !pending.has(p.id),
+      )
       .map((p) => p.id)
     if (dated.length > 0) forget(dated)
-  }, [posts, justWritten, forget])
+  }, [posts, justWritten, forget, updating])
   const unscheduled = useMemo(() => {
     const strays = (posts ?? []).filter((p) => !p.scheduled_at)
     return [
