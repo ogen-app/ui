@@ -1,10 +1,9 @@
 import { useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import {
   BooksIcon,
   GlobeSimpleIcon,
-  PlusIcon,
   UploadSimpleIcon,
   XIcon,
 } from '@phosphor-icons/react'
@@ -24,7 +23,6 @@ import { AssetGlyph } from '@/components/content/AssetGlyph'
 import { AddWebPageModal } from '@/components/content/AddWebPageModal'
 import { UploadModal } from '@/components/uploads/UploadModal'
 import { AddSourcesModal } from '@/components/posts/sources/AddSourcesModal'
-import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import { isNotGrounded } from '@/lib/grounding'
 import {
   attachToPost,
@@ -165,7 +163,6 @@ export function PostSourcesControl({
           size="sm"
           className={cn(layout === 'rail' && 'w-full justify-center')}
         >
-          <PlusIcon />
           <span>{t('posts.sources.add')}</span>
         </Button>
       </DropdownMenuTrigger>
@@ -198,8 +195,11 @@ export function PostSourcesControl({
     </DropdownMenu>
   )
 
+  const notGrounded = isNotGrounded(post.grounding_mode)
   const list =
-    rows.length === 0 ? (
+    // The not-grounded sentence already says it reads from nothing, so an
+    // empty list adds no second one (CON-484).
+    rows.length === 0 && notGrounded ? null : rows.length === 0 ? (
       <p className="text-sm text-tertiary-foreground">
         {/* Locked drops the invitation and keeps the fact: on a submitted
             post "add the documents it should draw on" names something the
@@ -230,10 +230,21 @@ export function PostSourcesControl({
   // is, because that is where the remedy is: the ADD SOURCE beside it. It is
   // a fact about how the words were made, so attaching a document afterwards
   // does not take it away — the next generation is what reads the new list.
-  const grounding = isNotGrounded(post.grounding_mode) ? (
-    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-secondary-foreground">
-      <NotGroundedMark mode={post.grounding_mode} />
-      <span>{t('grounding.postNotGrounded')}</span>
+  // A grounded one says so above the list it was written from (CON-484) —
+  // here only, on the post's own page, never as a mark on a list.
+  const grounding = notGrounded ? (
+    <p className="text-sm text-secondary-foreground">
+      <Trans
+        t={t}
+        i18nKey="grounding.postNotGrounded"
+        components={{
+          lead: <span className="font-semibold text-warning-ink" />,
+        }}
+      />
+    </p>
+  ) : post.grounding_mode === 'grounded' && rows.length > 0 ? (
+    <p className="text-sm text-secondary-foreground">
+      {t('grounding.postGrounded')}
     </p>
   ) : null
 

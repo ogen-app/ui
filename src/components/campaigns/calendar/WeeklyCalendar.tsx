@@ -213,7 +213,6 @@ function WeeklyCalendarComponent({
           // keeping its indicator row is a card the ladder has to budget for.
           hasFlag:
             isDateLocked(post.status) ||
-            isNotGrounded(post.grounding_mode) ||
             // The card's off-campaign mark rides on the same row (CON-483).
             outsideCampaign(post, targets) !== null ||
             hasVisibleProblem(
@@ -233,6 +232,7 @@ function WeeklyCalendarComponent({
           // As the card decides whether to draw the row: a campaign that came
           // back unhydrated has no name to print, so it costs no height.
           hasCampaign: Boolean(post.campaign),
+          notGrounded: isNotGrounded(post.grounding_mode),
         }))
         const rung =
           laneHeight === null

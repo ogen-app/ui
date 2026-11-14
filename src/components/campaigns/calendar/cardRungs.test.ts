@@ -159,6 +159,13 @@ describe('cardHeight', () => {
     )
   })
 
+  it('charges NOT GROUNDED a line of its own, at every rung (CON-484)', () => {
+    for (const rung of CARD_RUNGS)
+      expect(cardHeight(rung, { ...TEXT, notGrounded: true })).toBeGreaterThan(
+        cardHeight(rung, TEXT),
+      )
+  })
+
   it('charges the picture its band, and only where there is a picture to show', () => {
     // The premise the ladder used to rest on — that a background image is free
     // — stopped being true when it grew a 100px band of its own. Everything

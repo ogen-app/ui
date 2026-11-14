@@ -81,6 +81,7 @@ describe('parseHistoryResult', () => {
     ).toEqual({
       postCount: 2,
       warnings: [],
+      posts: [],
       grounding: {
         mode: 'grounded',
         sources: [
@@ -131,7 +132,7 @@ describe('parseHistoryResult', () => {
     expect(result.action).toBe('content_plan_generated')
     // The old count was posts; it is read as the plan's size.
     expect(result.details.contentPlan?.ideaCount).toBe(8)
-    expect(result.details.brief).toEqual({ applied: true })
+    expect(result.details.brief).toEqual({ applied: true, fields: [] })
   })
 
   it('reads what an enriched brief drew on (CON-474)', () => {
@@ -156,6 +157,7 @@ describe('parseHistoryResult', () => {
     expect(result.details.brief).toEqual({
       applied: true,
       undoId: 'u1',
+      fields: [],
       grounding: {
         mode: 'grounded',
         sources: [{ id: 'a1', title: 'Brochure', analysisId: 'an1' }],
@@ -1871,6 +1873,166 @@ describe('offers that check again, partial runs and choices (CON-482)', () => {
       remove: [],
       assets: [{ id: 'a1', title: 'Brochure', added: ['spa'], removed: [] }],
       more: 12,
+    })
+  })
+})
+
+describe('grounding, drafts and adding a source (CON-484)', () => {
+  const read = (campaign: Record<string, unknown>, extra = {}) =>
+    parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Done.',
+        action: 'answered',
+        results: { campaign, ...extra },
+      }),
+      'campaign',
+    )
+
+  it('reads why a draft isn’t grounded, and each draft as a row', () => {
+    const r = read({
+      action: 'post_drafted',
+      draftedPosts: {
+        postCount: 1,
+        grounding: {
+          mode: 'exploratory',
+          sources: [],
+          reason: 'none_relevant',
+          note: 'nothing in the documents is about this',
+        },
+        posts: [
+          {
+            id: 'p1',
+            title: 'Why slow travel is back',
+            platformId: 'th',
+            platform: 'Threads',
+            postType: 'text-post',
+            date: '2026-04-24',
+          },
+        ],
+      },
+    })
+    expect(r.details.draftedPosts?.grounding).toEqual({
+      mode: 'exploratory',
+      sources: [],
+      reason: 'none_relevant',
+      note: 'nothing in the documents is about this',
+    })
+    expect(r.details.draftedPosts?.posts).toEqual([
+      {
+        id: 'p1',
+        title: 'Why slow travel is back',
+        platformId: 'th',
+        platform: 'Threads',
+        postType: 'text-post',
+        date: '2026-04-24',
+      },
+    ])
+  })
+
+  it('reads the brief fields an enrichment rewrote', () => {
+    const r = read({
+      action: 'brief_enriched',
+      brief: {
+        applied: true,
+        fields: [{ field: 'keyMessages', value: 'A house to slow down in.' }],
+      },
+    })
+    expect(r.details.brief?.fields).toEqual([
+      { field: 'keyMessages', value: 'A house to slow down in.' },
+    ])
+  })
+
+  it('reads an option’s input, the way in an add-source opens, and a revise’s length', () => {
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Choose.',
+        action: 'proposed',
+        proposals: [
+          {
+            id: 'pr1',
+            summary: 'This campaign has no sources yet',
+            options: [
+              {
+                id: 'add_document',
+                title: 'Add a document',
+                recommended: true,
+              },
+              {
+                id: 'import_page',
+                title: 'Import a page',
+                input: { kind: 'url', label: 'Page link', arg: 'url' },
+              },
+            ],
+          },
+        ],
+        uiActions: [
+          {
+            type: 'open_add_source',
+            screen: 'campaign.assets',
+            campaignId: 'c1',
+            via: 'upload',
+          },
+        ],
+        results: {
+          repair: {
+            revisePost: {
+              postId: 'p1',
+              revised: true,
+              length: { before: 212, after: 141 },
+            },
+          },
+        },
+      }),
+      'campaign',
+    )
+    expect(r.proposals[0].options[1].input).toEqual({
+      kind: 'url',
+      label: 'Page link',
+    })
+    expect(r.proposals[0].options[0].input).toBeUndefined()
+    expect(r.uiActions[0].via).toBe('upload')
+    expect(r.repair?.revised?.length).toEqual({ before: 212, after: 141 })
+  })
+
+  it('reads the assets pack’s import and distill', () => {
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Reading it.',
+        action: 'answered',
+        results: {
+          assets: {
+            import: {
+              assetId: 'a9',
+              title: 'Spa · Villa Aurora',
+              url: 'https://villaaurora.it/spa',
+              status: 'processing',
+              created: true,
+              attached: true,
+            },
+            distill: {
+              queued: true,
+              note: 'Queued.',
+              grounding: {
+                mode: 'grounded',
+                sources: [{ id: 'a1', title: 'B' }],
+              },
+            },
+          },
+        },
+      }),
+      'campaign',
+    )
+    expect(r.assets?.import).toEqual({
+      assetId: 'a9',
+      title: 'Spa · Villa Aurora',
+      url: 'https://villaaurora.it/spa',
+      status: 'processing',
+      attached: true,
+      attachError: undefined,
+    })
+    expect(r.assets?.distill).toEqual({
+      queued: true,
+      grounding: { mode: 'grounded', sources: [{ id: 'a1', title: 'B' }] },
     })
   })
 })

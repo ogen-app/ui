@@ -64,7 +64,7 @@ export const CARD_RUNGS: CardRung[] = [
 export type CardFacts = {
   hasTime: boolean
   /**
-   * The post is carrying a warning, a locked date or the not-grounded mark.
+   * The post is carrying a warning, a locked date or the off-campaign mark.
    * Its indicator row is then drawn at every rung, because those are the
    * things a card exists to surface — a ladder that hides them has optimised
    * away its own point.
@@ -78,6 +78,12 @@ export type CardFacts = {
    * a row that is off costs no height whether the name is there or not.
    */
   hasCampaign?: boolean
+  /**
+   * The post was written from general knowledge (CON-484): NOT GROUNDED is a
+   * line of its own under the title, drawn at every rung, so the ladder
+   * budgets it like the flag.
+   */
+  notGrounded?: boolean
 }
 
 /*
@@ -142,6 +148,7 @@ export function cardHeight(
   // the one case where two of these rows are drawn instead of one.
   if (showStatus && showTime) rows.push(TEXT_ROW)
   if (fields.title) rows.push(rung.titleLines * TITLE_LINE)
+  if (facts.notGrounded) rows.push(TEXT_ROW)
   if (fields.platform) rows.push(TEXT_ROW)
   if (fields.account) rows.push(TEXT_ROW)
   // Last, and only where the calendar being drawn has more than one campaign

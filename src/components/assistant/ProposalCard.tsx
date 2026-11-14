@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
+import { LinkSimpleIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { Button } from '@/components/ui/button'
@@ -174,7 +176,13 @@ export function ProposalCard({
                     disabled={disabled}
                     className="uppercase tracking-[0.06em]"
                     onClick={() =>
-                      void confirm(threadId, proposal.id, option.id)
+                      // An option that needs a value asks for it below rather
+                      // than running without it (CON-484).
+                      option.input
+                        ? document
+                            .getElementById(inputId(proposal.id, option.id))
+                            ?.focus()
+                        : void confirm(threadId, proposal.id, option.id)
                     }
                   >
                     {option.title}
@@ -196,6 +204,17 @@ export function ProposalCard({
                   <span className="text-[12.5px] text-tertiary-foreground">
                     {why}
                   </span>
+                )}
+                {option.input && (
+                  <OptionInput
+                    id={inputId(proposal.id, option.id)}
+                    label={option.input.label}
+                    disabled={disabled}
+                    error={proposal.error}
+                    onSubmit={(value) =>
+                      void confirm(threadId, proposal.id, option.id, value)
+                    }
+                  />
                 )}
               </li>
             )
@@ -242,6 +261,69 @@ export function ProposalCard({
         </div>
       )}
     </PendingBox>
+  )
+}
+
+/** Where an option's value is typed, so its button can focus it. */
+function inputId(proposalId: string, optionId: string): string {
+  return `offer-${proposalId}-${optionId}`
+}
+
+/**
+ * The value an option needs before it runs (CON-484) — a page's link for
+ * "Import a page" — typed in the card and sent with the choice. The option
+ * is picked by IMPORT, never by its button alone.
+ */
+function OptionInput({
+  id,
+  label,
+  disabled,
+  error,
+  onSubmit,
+}: {
+  id: string
+  label: string
+  disabled: boolean
+  error?: string
+  onSubmit: (value: string) => void
+}) {
+  const { t } = useTranslation()
+  const [value, setValue] = useState('')
+  const trimmed = value.trim()
+  return (
+    <form
+      className="flex w-full flex-col gap-1"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (trimmed) onSubmit(trimmed)
+      }}
+    >
+      <div className="flex w-full items-center gap-3">
+        <span className="flex min-w-0 flex-1 items-center gap-2 bg-tertiary px-2.5 py-1.5">
+          <LinkSimpleIcon
+            aria-hidden
+            className="size-3.5 shrink-0 text-tertiary-foreground"
+          />
+          <input
+            id={id}
+            // Text, not `url`: people type "villaaurora.it/spa", which the
+            // browser's own check would refuse; the server reads the link.
+            type="text"
+            inputMode="url"
+            value={value}
+            disabled={disabled}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={label}
+            aria-label={label}
+            className="min-w-0 flex-1 bg-transparent text-[12.5px] text-foreground outline-none placeholder:text-tertiary-foreground"
+          />
+        </span>
+        <TextAction type="submit" disabled={disabled || !trimmed}>
+          {t('assistant.proposal.import')}
+        </TextAction>
+      </div>
+      {error && <p className="text-[12.5px] text-warning-ink">{error}</p>}
+    </form>
   )
 }
 

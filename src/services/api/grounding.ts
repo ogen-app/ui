@@ -15,7 +15,18 @@ export function parseGrounding(value: unknown): Grounding | undefined {
   if (!isRecord(value)) return undefined
   if (value.mode !== 'grounded' && value.mode !== 'exploratory')
     return undefined
-  return { mode: value.mode, sources: groundingSources(value.sources) }
+  return {
+    mode: value.mode,
+    sources: groundingSources(value.sources),
+    // Why an exploratory output drew on nothing (CON-484), and the server's
+    // sentence for it — the fallback for a reason this build doesn't know.
+    ...(value.mode === 'exploratory' && text(value.reason)
+      ? { reason: text(value.reason) }
+      : {}),
+    ...(value.mode === 'exploratory' && text(value.note)
+      ? { note: text(value.note) }
+      : {}),
+  }
 }
 
 function groundingSources(value: unknown): GroundingSource[] {

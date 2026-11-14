@@ -599,9 +599,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   an offer or a choice is bordered (`PendingBox`); results, answers and history
   are a small-caps status word, a headline and hairline rows (`ResultBlock`).
   Every generating result ends on one sources slot (`SourcesLine`): teal names,
-  or amber "Not grounded" in the same place. Each name links its asset
-  (CON-474), and a source also names the analysis and idea it came by, which
-  nothing links yet. A tool that sends no `grounding` (a draft from pasted
+  or amber "Not grounded" in the same place, followed by why — worded here
+  from the grounding's `reason` (`no_sources`, `chosen`, `none_relevant`,
+  CON-484), the server's `note` only for a reason this build lacks. Each name
+  links its asset (CON-474), and a source also names the analysis and idea it
+  came by, which nothing links yet. A tool that sends no `grounding` (a draft from pasted
   text) gets no sources slot at all, never "Not grounded". The user's message is a light
   fill, so the one dark thing in the rail is the next action. A finished turn
   under ten seconds leaves no timing behind. Labels — tool steps included — are
@@ -622,10 +624,16 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   facts behind them; only the row labels, the dates (from `start`/`end`) and
   the marks are ours. A confirmed offer says when (`answeredAt`, or the
   stored answer's own time). Outside the rail the same fact is the record's: a post's
-  or idea's `grounding_mode` is drawn by `NotGroundedMark` on the posts list,
-  the calendar card, the idea row and the post's Sources card (CON-469) —
-  only `exploratory` is marked, and `null` (nobody generated it) is unknown,
-  never "not grounded".
+  or idea's `grounding_mode` is drawn by `NotGroundedMark` — a hollow amber
+  ring and the words, never a glyph alone — in the posts list's own column
+  before Status, on its own line under a calendar card's title (budgeted by
+  `cardRungs` as `notGrounded`), beside an idea's verdict, and on the post's
+  Sources card as a sentence (CON-469/484) — only `exploratory` is marked,
+  and `null` (nobody generated it) is unknown, never "not grounded". The
+  Sources card says a grounded post is grounded, on that page only.
+  draftPost's card is DRAFTED with a row per draft and its day — "not
+  scheduled" only when none has one — enrichBrief's is BRIEF with a row per
+  field, and revisePost's says its length before and after.
 - **Offers run exactly as proposed** (CON-446). Bulk work, generating more
   than three items, the calendar and anything external arrive as offers
   (`proposal_created`). Confirming from the card is `POST
@@ -662,7 +670,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   rather than pairing them with answers by summary, which is kept only for a
   server that sends none. A choice's options are named buttons: the one
   marked `recommended` (at most one) dark with the tag and its `why`, the rest
-  outlined; answered, it says "Chose: …".
+  outlined; answered, it says "Chose: …". **An option can ask for a value**
+  (`input`, CON-484): the card takes it in place — "Import a page" with a
+  link field and IMPORT — and the confirm carries it; its button only
+  focuses the field. A 409 `input_required` leaves the offer open and says
+  so on the card.
 - **The assistant can change the screen** (D5). A turn's `ui_action`s are
   applied in order when it completes (`useAssistantUiActions` registers the
   applier with the router; `lib/assistantUiActions.destinationFor` maps screen,
@@ -671,9 +683,19 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   params as the endpoint does. Ticking rows and opening a smart group are the
   list's own state, so the list picks the request up with
   `useAssistantRequest`. Each applied action keeps the address it replaced, for
-  UNDO / BACK. `open_add_source` (CON-474) lands on the campaign's Assets
-  tab with `add=source`, which opens ADD CONTENT once and leaves the address;
-  like `open_connect`, it offers the ways in and never takes one.
+  UNDO / BACK. `open_add_source` (CON-474) lands on Assets — the campaign's
+  or the workspace's — with `add=upload|page|source`, by its `via` (CON-484):
+  the upload dialog, the web page's, or ADD CONTENT offering both. It opens
+  once and leaves the address, and the file or link is always the user's to
+  give. While the user stays there and adds nothing, the page says the
+  assistant opened it, with BACK — the same UNDO as the rail row
+  (`stores/addSourceRequestStore`). Once the source is read the server
+  offers the waiting request again (`assistant.offer.created` on
+  `/api/events` reloads an open thread, `reloadHistory`), recorded as a
+  "Source ready: “…”" turn — its fixed wording, drawn as a divider — and the
+  fresh offer is an ordinary card. The assets pack's `import` is an
+  IMPORTING card reading its asset live; `distill` says the run is queued
+  (its ideas wait on CON-504).
 - **The assets pack's results are cards** (CON-460). `complete.results.assets`
   holds each tool's last output in the turn — `ask` (what was searched, with
   page citations), `analysis`, `compare`, `campaign` (with its `undoId`) —

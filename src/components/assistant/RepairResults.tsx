@@ -6,7 +6,7 @@ import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { getPostTypeLabel } from '@/lib/platformDictionary'
-import { counted, formatDate, formatList } from '@/lib/intl'
+import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
 import { cn } from '@/lib/styles'
 import { useAssistantStore } from '@/stores/assistantStore'
 import type {
@@ -805,9 +805,20 @@ function RevisedCard({
   }
   return (
     <ResultBlock
-      status={t('assistant.word.done')}
+      status={t('assistant.repair.revised.revisedWord')}
       title={revised.title || t('assistant.repair.revised.title')}
-      meta={revised.title ? t('assistant.repair.revised.meta') : undefined}
+      // How long it is now, against before (CON-484): the change a rewrite
+      // asked to be shorter is measured by.
+      meta={
+        revised.length
+          ? t('assistant.repair.revised.length', {
+              before: formatNumber(revised.length.before),
+              after: formatNumber(revised.length.after),
+            })
+          : revised.title
+            ? t('assistant.repair.revised.meta')
+            : undefined
+      }
       action={<UndoAction t={t} undoId={revised.undoId} undo={undo} />}
     >
       <ResultRow className="flex items-baseline gap-3">

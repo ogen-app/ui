@@ -182,22 +182,35 @@ function PostsTableComponent({
         },
       },
       {
+        // A post written from general knowledge says so in a column of its
+        // own, just before its status (CON-484) — the one place a row states
+        // what the post is. Empty for every other post.
+        id: 'grounding',
+        accessorFn: (row) => row.grounding_mode ?? '',
+        header: t('postsTable.columnGrounding'),
+        size: 130,
+        minSize: 120,
+        sortable: false,
+        cell: (_value, row) => (
+          <div className="flex h-[34px] items-center border-b-2 border-background px-3">
+            <NotGroundedMark mode={row.grounding_mode} />
+          </div>
+        ),
+      },
+      {
         id: 'status',
         accessorKey: 'status',
         header: t('postsTable.columnStatus'),
-        // Room for the longest status beside the not-grounded mark; narrower,
+        // Room for the longest status beside the off-campaign mark; narrower,
         // the status truncates and the mark stays whole.
         size: 230,
         minSize: 140,
         cell: (_value, row) => (
-          // A post written from general knowledge says so beside its status
-          // — the one place a row states what the post is.
           <div className="flex h-[34px] items-center gap-3 border-b-2 border-background px-3 leading-8">
             <TextCell
               value={postStatusLabel(t, row.status)}
               className="min-w-0 truncate"
             />
-            <NotGroundedMark mode={row.grounding_mode} />
             <OutsideCampaignMark outside={outsideCampaign(row, targets)} />
           </div>
         ),
@@ -323,6 +336,7 @@ function PostsTableComponent({
     () => [
       ...(selectable ? ['select'] : []),
       'title',
+      'grounding',
       'status',
       'platform',
       ...(formats ? ['format'] : []),
