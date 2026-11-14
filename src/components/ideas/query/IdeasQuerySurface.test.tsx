@@ -611,4 +611,28 @@ describe('an idea the address names (CON-481)', () => {
       expect(onSearchChange).toHaveBeenCalledWith({ pile: 'yes' }),
     )
   })
+
+  it('reads on a page at a time to reach an idea past the first', async () => {
+    // The undecided count reads the list too, so pages answer by cursor.
+    api.queryIdeas.mockImplementation(async (params: Record<string, string>) =>
+      params.cursor === 'p2'
+        ? page({
+            ideas: [idea('far', { group_key: 'none' })],
+            next_cursor: null,
+          })
+        : page({ next_cursor: 'p2' }),
+    )
+    Element.prototype.scrollIntoView = vi.fn()
+    await renderSurface({ idea: 'far' })
+    await waitFor(() =>
+      expect(
+        document
+          .querySelector('[data-idea-id="far"]')
+          ?.getAttribute('data-open'),
+      ).toBe('true'),
+    )
+    expect(api.queryIdeas).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: 'p2' }),
+    )
+  })
 })

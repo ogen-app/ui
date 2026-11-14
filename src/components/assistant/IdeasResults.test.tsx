@@ -434,6 +434,35 @@ describe('reads', () => {
   })
 })
 
+describe('review fixes', () => {
+  it('offers no SHOW ON SCREEN without the filter it ran (a reloaded thread)', async () => {
+    await show({
+      found: { total: 2, ideas: [{ id: 'i1', title: 'The pool' }] },
+    })
+    expect(screen.queryByText('SHOW ON SCREEN')).toBeNull()
+  })
+
+  it('keeps UNDO on a compile that names no ideas', async () => {
+    await show({ compiled: { ...compiled, builtFrom: [] } })
+    fireEvent.click(screen.getByText('UNDO'))
+    expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u3')
+  })
+
+  it('shows a phase in a plan, and a note’s new words', async () => {
+    await show({
+      edited: {
+        idea: { id: 'i1', title: 'A pool', plan: { phaseId: 'build-up' } },
+        changed: ['note', 'plan.phaseId'],
+        note: 'Lead with the water.',
+        before: { title: 'A pool', note: 'Lead with rooms.', plan: {} },
+      },
+    })
+    expect(screen.getByText('phase build up')).toBeTruthy()
+    expect(screen.getByText('Lead with rooms.').tagName).toBe('S')
+    expect(screen.getByText('Lead with the water.')).toBeTruthy()
+  })
+})
+
 describe('in Spanish', () => {
   afterAll(async () => {
     await i18next.changeLanguage('en')

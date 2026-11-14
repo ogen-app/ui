@@ -61,6 +61,7 @@ export function ideasResults(
         ? {
             idea: brief(edited.idea)!,
             changed: strings(edited.changed),
+            note: optStr(edited.note),
             before: record(edited.before)
               ? {
                   title: str(record(edited.before)!.title),
