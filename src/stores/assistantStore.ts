@@ -193,6 +193,16 @@ type AssistantState = {
   ) => Promise<void>
   /** Takes a dismissal back, in every turn showing the finding (CON-478). */
   restoreFinding: (campaignId: string, key: string) => Promise<void>
+  /**
+   * Runs a screen change a result's button asks for — the health card's
+   * RECONNECT (CON-480) — and records it on the turn like one of its own
+   * `ui_action`s, so it gets an ON SCREEN row with BACK.
+   */
+  runUiAction: (
+    threadId: string,
+    turnId: string,
+    action: UIAction,
+  ) => Promise<void>
   /** Puts the screen back to before one of a turn's `ui_action`s. */
   undoUiAction: (
     threadId: string,
@@ -951,6 +961,15 @@ export const useAssistantStore = create<AssistantState>()(
             uiActions: t.uiActions?.map((a, i) =>
               i === index ? { ...a, undone: true } : a,
             ),
+          }))
+        },
+
+        runUiAction: async (threadId, turnId, action) => {
+          if (!uiApplier) return
+          const before = await uiApplier.apply(action)
+          patchTurn(threadId, turnId, (t) => ({
+            ...t,
+            uiActions: [...(t.uiActions ?? []), { action, before }],
           }))
         },
 

@@ -182,9 +182,14 @@ export function searchFromFilter(filter: string): Record<string, string> {
 export function connectSearch(
   connect: NonNullable<UIAction['connect']>,
 ): Record<string, string> {
-  return connect.reconnect && connect.accountId
-    ? { reconnect: connect.accountId, platform: connect.platform }
-    : { connect: connect.platform }
+  // A reconnect with no account names the platform alone, which singles out
+  // its account that needs reconnecting — never the "connect a new account"
+  // tile (CON-480).
+  if (connect.reconnect)
+    return connect.accountId
+      ? { reconnect: connect.accountId, platform: connect.platform }
+      : { platform: connect.platform }
+  return { connect: connect.platform }
 }
 
 /**

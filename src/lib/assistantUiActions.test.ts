@@ -118,6 +118,12 @@ describe('an open_connect', () => {
     ).toEqual({ reconnect: 'a1', platform: 'instagram' })
   })
 
+  it('names the platform alone for a reconnect with no account (CON-480)', () => {
+    expect(connectSearch({ platform: 'instagram', reconnect: true })).toEqual({
+      platform: 'instagram',
+    })
+  })
+
   it('names the platform to connect a new account on', () => {
     expect(connectSearch({ platform: 'tiktok', reconnect: false })).toEqual({
       connect: 'tiktok',

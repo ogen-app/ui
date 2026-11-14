@@ -5,7 +5,8 @@ import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
-import { usePlatforms } from '@/hooks/usePlatforms'
+import { usePlatformViews, usePlatforms } from '@/hooks/usePlatforms'
+import { focusedAccount } from '@/lib/platformFocus'
 import {
   SettingsSaveBar,
   SettingsSaveProvider,
@@ -66,6 +67,19 @@ function WorkspaceSettings() {
   } = Route.useSearch()
   const platforms = usePlatforms()
   const { isError } = platforms
+  const views = usePlatformViews()
+  const reconnecting =
+    reconnect || platform ? { accountId: reconnect, platform } : undefined
+  // A reconnect whose account — or whole platform — isn't connected here
+  // lands on that platform's tile instead of on nothing (CON-480).
+  const unfound =
+    reconnecting &&
+    !focusedAccount(
+      views.filter((v) => v.connectedPublishers.length > 0),
+      reconnecting,
+    )
+      ? platform
+      : undefined
 
   // `awaiting`, not `isLoading` — see `lib/fetched`.
   if (awaiting(platforms)) {
@@ -115,14 +129,8 @@ function WorkspaceSettings() {
               <WorkspaceSection />
               <PlanSection />
               <PeopleSection />
-              <PlatformsSection
-                focus={
-                  reconnect || platform
-                    ? { accountId: reconnect, platform }
-                    : undefined
-                }
-              />
-              <ConnectPlatformsSection focus={connect} />
+              <PlatformsSection focus={reconnecting} />
+              <ConnectPlatformsSection focus={connect ?? unfound} />
               <IntegrationsSection />
               <DeleteWorkspaceCard />
             </div>

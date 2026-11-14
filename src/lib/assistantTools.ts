@@ -6,6 +6,7 @@
  * stored: a label baked into the store would freeze whichever language the
  * turn ran in.
  */
+import { periodLabel, windowDay } from '@/lib/analyticsCitation'
 import type { TFunction } from 'i18next'
 import { i18next } from '@/i18n'
 import type {
@@ -88,6 +89,10 @@ const SIMPLE_TOOLS = new Set([
   'removeFact',
   'activityReport',
   'workspaceSetup',
+  'weeklyDigest',
+  'emailWeeklyDigest',
+  'postHistory',
+  'setAutoPublish',
   'navigate',
   'setFilter',
   'select',
@@ -215,6 +220,33 @@ function describeDetail(
         : t('assistant.tool.createCampaignFromAssets.doneNamed', {
             campaign: detail.subject,
           })
+    // The workspace pack's steps name what they read (CON-480): the days as
+    // `from – to` or one day, a week by its Monday, a post by its title, a
+    // platform by its label.
+    case 'activityReport': {
+      if (!detail.subject) return null
+      const [from, to] = detail.subject.split(' – ')
+      return t('assistant.tool.activityReport.doneFor', {
+        period: to ? periodLabel(t, from, to) : windowDay(from),
+      })
+    }
+    case 'weeklyDigest':
+    case 'emailWeeklyDigest':
+      return detail.subject
+        ? t(`assistant.tool.${tool}.doneFor`, {
+            week: windowDay(detail.subject),
+          })
+        : null
+    case 'postHistory':
+      return detail.subject
+        ? t('assistant.tool.postHistory.doneFor', { post: detail.subject })
+        : null
+    case 'setAutoPublish':
+      return detail.subject
+        ? t('assistant.tool.setAutoPublish.doneFor', {
+            platform: detail.subject,
+          })
+        : null
     default:
       return null
   }
