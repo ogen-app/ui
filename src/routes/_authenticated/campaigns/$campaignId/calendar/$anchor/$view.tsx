@@ -37,6 +37,7 @@ import { useHotkeys } from '@/hooks/useHotkeys'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import type { Post } from '@/types/posts'
 import { awaiting } from '@/lib/fetched'
+import { cn } from '@/lib'
 import { counted, formatDate, formatDateRange } from '@/lib/intl'
 
 /** Stable identity for a grid with nothing in it yet. */
@@ -326,7 +327,17 @@ function CalendarView() {
           onAddPost={addPost}
         />
       ) : (
-        <div className="relative flex flex-1 min-h-0 min-w-0 flex-col">
+        <div
+          className={cn(
+            'relative flex flex-1 min-h-0 min-w-0 flex-col',
+            // While the bulk bar shows, its strip under the grid is the bar's
+            // (CON-486): its 48px and the 16px it stands off the edge. The
+            // grid ends above it, so no card or tick box is ever under it —
+            // the month grid can't scroll out from under a bar, and a week
+            // lane at its foot couldn't either.
+            selectedPosts.length > 0 && 'pb-16',
+          )}
+        >
           <CalendarSelectionContext.Provider value={selection}>
             {granularity === 'month' ? (
               <MonthlyCalendar

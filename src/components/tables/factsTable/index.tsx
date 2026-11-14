@@ -361,6 +361,10 @@ function FactsTableComponent({
       className={className}
       onEmptyStateAction={onEmptyStateAction}
       rowClassName={rowClassName}
+      // Room for the selection bar floating over the table's foot (CON-486):
+      // its 48px and the 16px it stands off the edge, so the last row can
+      // scroll clear of it.
+      endInset={selection && selection.ticked.size > 0 ? 64 : 0}
     />
   )
 }
