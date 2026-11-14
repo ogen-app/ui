@@ -6,7 +6,14 @@ import { UiActionRows } from './UiActionRows'
 
 const view = (zernioId: string, name: string, accounts: number) => ({
   info: { zernioId, name },
-  connectedPublishers: [{ accounts: Array.from({ length: accounts }) }],
+  connectedPublishers: [
+    {
+      accounts: Array.from({ length: accounts }, (_, i) => ({
+        id: `${zernioId}-${i}`,
+        is_active: true,
+      })),
+    },
+  ],
 })
 
 vi.mock('@/hooks/usePlatforms', () => ({
@@ -109,5 +116,53 @@ describe('a set_window row (CON-479)', () => {
       }),
     ])
     expect(screen.getByText('Analytics set to Mar 1 – Mar 31')).toBeTruthy()
+  })
+})
+
+describe('an open_connect row (CON-480)', () => {
+  const connect = (
+    connect: NonNullable<AppliedUIAction['action']['connect']>,
+    threadId = 'workspace',
+  ) =>
+    renderWithProviders(
+      <UiActionRows
+        threadId={threadId}
+        turnId="t1"
+        actions={[
+          {
+            before: '/activity',
+            action: { type: 'open_connect', screen: 'settings', connect },
+          },
+        ]}
+      />,
+    )
+
+  it('names the place it landed, with what is open in grey, and the note', async () => {
+    await connect({
+      platform: 'instagram',
+      accountId: 'instagram-0',
+      reconnect: true,
+    })
+    expect(screen.getByText('reconnect window open')).toBeTruthy()
+    expect(
+      screen.getByText(
+        'The sign-in is Instagram’s. Nothing changes until you finish it there.',
+      ),
+    ).toBeTruthy()
+    expect(screen.getByText('BACK')).toBeTruthy()
+  })
+
+  it('says when the account isn’t connected here (bug 5)', async () => {
+    await connect({ platform: 'tiktok', accountId: 'gone', reconnect: true })
+    expect(screen.getByText('tiktok isn’t connected here')).toBeTruthy()
+  })
+
+  it('points a campaign to Strategy once a new platform is connected', async () => {
+    await connect({ platform: 'tiktok', reconnect: false }, 'campaign:c1')
+    expect(
+      screen.getByText(
+        'Add tiktok to this campaign’s platforms once it is connected — on Strategy.',
+      ),
+    ).toBeTruthy()
   })
 })

@@ -12,7 +12,9 @@ import { isRecord } from './json'
  * The workspace pack's typed results (CON-464): `results.workspace` holds each
  * tool's last output in the turn — the activity over a day or a range, the
  * setup, the weekly report shown or emailed, a post's history, and an
- * auto-publish change with its `undoId`. `openConnect` has no card: what it did
+ * auto-publish change with its `undoId` — each with what CON-480 added: the
+ * failed posts' titles and the next post, recipients, change kinds with a
+ * schedule's from and to, and what an auto-publish change changed. `openConnect` has no card: what it did
  * is the turn's `open_connect` UI action.
  */
 export function workspaceResults(
@@ -28,11 +30,36 @@ export function workspaceResults(
     digest: digest(w.weeklyDigest),
     emailed:
       emailed && str(emailed.from)
-        ? { from: str(emailed.from), to: str(emailed.to) }
+        ? {
+            from: str(emailed.from),
+            to: str(emailed.to),
+            sent: Array.isArray(emailed.sent)
+              ? list(emailed.sent).map((r) => ({
+                  userId: str(r.userId),
+                  name: str(r.name),
+                  role: str(r.role),
+                  email: str(r.email),
+                }))
+              : undefined,
+            notSent: list(emailed.notSent)
+              .map((r) => ({
+                recipient: str(r.recipient),
+                reason: str(r.reason),
+              }))
+              .filter((r) => r.recipient),
+            sentAt: optStr(emailed.sentAt),
+          }
         : undefined,
     history: history(w.postHistory),
     autoPublish: auto
-      ? { platforms: strings(auto.autoPublish), undoId: optStr(auto.undoId) }
+      ? {
+          platforms: strings(auto.autoPublish),
+          undoId: optStr(auto.undoId),
+          platform: optStr(auto.platform),
+          platformLabel: optStr(auto.platformLabel),
+          on: typeof auto.on === 'boolean' ? auto.on : undefined,
+          scheduledUnaffected: num(auto.scheduledUnaffected),
+        }
       : undefined,
   }
   for (const key of Object.keys(out) as (keyof WorkspaceResults)[]) {
@@ -48,6 +75,8 @@ function activity(raw: unknown): ActivityRange | undefined {
   const failed = record(r.failed) ?? {}
   const created = record(r.created) ?? {}
   const campaigns = record(r.campaigns_created) ?? {}
+  const next = record(r.next_scheduled)
+  const campaign = record(r.campaign)
   return {
     from: str(r.from),
     to: str(r.to),
@@ -56,12 +85,29 @@ function activity(raw: unknown): ActivityRange | undefined {
     failed: num(failed.total),
     failedPosts: list(failed.posts).map((p) => ({
       postId: str(p.post_id),
+      title: optStr(p.title),
       status: str(p.status),
       reason: str(p.failure_reason),
     })),
     created: num(created.posts_total),
     scheduled: num(created.scheduled_total),
     campaignsCreated: num(campaigns.total),
+    ideasDecided: num(r.ideas_decided),
+    // CON-480's extras come together: a report with the ideas count looked
+    // the next post up too, so its absence there means none is scheduled.
+    nextKnown: typeof r.ideas_decided === 'number',
+    nextScheduled:
+      next && str(next.at)
+        ? {
+            postId: str(next.post_id),
+            title: str(next.title),
+            at: str(next.at),
+          }
+        : undefined,
+    campaign:
+      campaign && str(campaign.id)
+        ? { id: str(campaign.id), name: str(campaign.name) }
+        : undefined,
     days: list(r.days)
       .map((d) => ({
         date: str(d.date),
@@ -92,6 +138,8 @@ function setup(raw: unknown): WorkspaceSetup | undefined {
         health: optStr(a.health),
         tokenExpiresAt: optStr(a.tokenExpiresAt),
         autoPublish: a.autoPublish === true,
+        unhealthySince: optStr(a.unhealthySince),
+        waitingPosts: num(a.waitingPosts),
       }))
       .filter((a) => a.id),
   }
@@ -158,8 +206,17 @@ function digest(raw: unknown): WeeklyDigest | undefined {
         }
       : undefined,
     ideas:
-      ideas && (str(ideas.waiting) || str(ideas.summary))
-        ? { waiting: optStr(ideas.waiting), summary: optStr(ideas.summary) }
+      ideas &&
+      (str(ideas.waiting) ||
+        str(ideas.summary) ||
+        num(ideas.decided) ||
+        num(ideas.waiting_count))
+        ? {
+            waiting: optStr(ideas.waiting),
+            summary: optStr(ideas.summary),
+            decided: num(ideas.decided),
+            waitingCount: num(ideas.waiting_count),
+          }
         : undefined,
     team: optStr(team?.summary),
   }
@@ -168,16 +225,26 @@ function digest(raw: unknown): WeeklyDigest | undefined {
 function history(raw: unknown): PostHistory | undefined {
   const h = record(raw)
   if (!h || !str(h.postId)) return undefined
+  const scope = record(h.scope)
   return {
     postId: str(h.postId),
     title: str(h.title),
     more: h.more === true,
-    unrecorded: Boolean(optStr(h.note)),
+    unrecorded: Boolean(optStr(h.note) || optStr(h.unrecordedBefore)),
+    unrecordedBefore: optStr(h.unrecordedBefore),
+    timezone: optStr(h.timezone),
+    scope: scope
+      ? { since: optStr(scope.since), changes: strings(scope.changes) }
+      : undefined,
     entries: list(h.entries)
       .map((e) => ({
         at: str(e.at),
         kind: e.kind === 'version' ? ('version' as const) : ('event' as const),
+        change: optStr(e.change),
         what: str(e.what),
+        from: optStr(e.from),
+        to: optStr(e.to),
+        reason: optStr(e.reason),
         version:
           typeof e.version === 'number' && e.version > 0
             ? e.version

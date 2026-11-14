@@ -991,10 +991,27 @@ export type ActivityRange = {
   tz: string
   published: number
   failed: number
-  failedPosts: { postId: string; status: string; reason: string }[]
+  failedPosts: {
+    postId: string
+    /** The post's title, when the server looked it up (CON-480). */
+    title?: string
+    status: string
+    reason: string
+  }[]
   created: number
   scheduled: number
   campaignsCreated: number
+  /** Ideas decided inside the range's local days (CON-480). */
+  ideasDecided: number
+  /** The next post to go out, for a range where nothing has yet. */
+  nextScheduled?: { postId: string; title: string; at: string }
+  /**
+   * Whether the server looked the next post up (CON-480): without it, no
+   * `nextScheduled` says nothing about whether one is scheduled.
+   */
+  nextKnown: boolean
+  /** The campaign the range was narrowed to. */
+  campaign?: { id: string; name: string }
   days: {
     date: string
     published: number
@@ -1018,6 +1035,10 @@ export type WorkspaceSetup = {
     health?: string
     tokenExpiresAt?: string
     autoPublish: boolean
+    /** When it stopped working, while it isn't (CON-480). */
+    unhealthySince?: string
+    /** Scheduled posts that go out through it. */
+    waitingPosts: number
   }[]
 }
 
@@ -1053,21 +1074,68 @@ export type WeeklyDigest = {
     rows: { name: string; goal: string; status: string; met: boolean }[]
     summary?: string
   }
-  ideas?: { waiting?: string; summary?: string }
+  ideas?: {
+    waiting?: string
+    summary?: string
+    /** The week's ideas decided and still waiting, as numbers (CON-480). */
+    decided: number
+    waitingCount: number
+  }
   team?: string
 }
+
+/** Why the weekly report didn't go to someone (CON-480). */
+export type DigestSkipReason =
+  'not_member' | 'opted_out' | 'already_sent' | 'failed' | string
+
+/** `emailWeeklyDigest`: whom the week went to, and whom it didn't. */
+export type DigestSent = {
+  from: string
+  to: string
+  /**
+   * Who it went to; absent from a server before CON-480, which sent it to
+   * the asker without saying so — unknown, not "no one".
+   */
+  sent?: { userId: string; name: string; role: string; email: string }[]
+  notSent: { recipient: string; reason: DigestSkipReason }[]
+  /** When it was queued; absent when it went to no one. */
+  sentAt?: string
+}
+
+/** Which change a history entry is (CON-480). */
+export type HistoryChange =
+  | 'version'
+  | 'scheduled'
+  | 'rescheduled'
+  | 'unscheduled'
+  | 'status'
+  | 'failed'
+  | 'retried'
+  | 'copied'
+  | 'compiled'
+  | 'restored'
 
 /** One entry in a post's history, newest first. */
 export type PostHistoryEntry = {
   at: string
   kind: 'version' | 'event'
+  /** Which change; absent from a server that predates CON-480. */
+  change?: HistoryChange | string
   /** The server's words for what happened. */
   what: string
+  /** A schedule's times: the one it had and the one it got. */
+  from?: string
+  to?: string
+  /** Why the post failed to go out, on its latest failure. */
+  reason?: string
   version?: number
   /** Who, in the server's words — a member's name, or "the system". */
   by: string
   byId?: string
-  /** A version's creator: `user`, `assistant` or `system`. */
+  /**
+   * Who made it: `user`, `assistant` or `system`. For the assistant, `by`
+   * is who asked it.
+   */
   source?: string
 }
 
@@ -1078,6 +1146,12 @@ export type PostHistory = {
   more: boolean
   /** Some versions predate people being recorded on them. */
   unrecorded: boolean
+  /** When versions started saying who saved them. */
+  unrecordedBefore?: string
+  /** The workspace's, for showing the times. */
+  timezone?: string
+  /** How the history was narrowed. */
+  scope?: { since?: string; changes: string[] }
 }
 
 /** The workspace pack's typed results (CON-464), from `results.workspace`. */
@@ -1085,11 +1159,20 @@ export type WorkspaceResults = {
   activity?: ActivityRange
   setup?: WorkspaceSetup
   digest?: WeeklyDigest
-  /** `emailWeeklyDigest`: the week now on its way to the asker. */
-  emailed?: { from: string; to: string }
+  /** `emailWeeklyDigest`: whom the week went to, and whom it didn't. */
+  emailed?: DigestSent
   history?: PostHistory
-  /** `setAutoPublish`: the list as it now stands. */
-  autoPublish?: { platforms: string[]; undoId?: string }
+  /** `setAutoPublish`: what changed, and the list as it now stands. */
+  autoPublish?: {
+    platforms: string[]
+    undoId?: string
+    /** The platform switched and which way (CON-480). */
+    platform?: string
+    platformLabel?: string
+    on?: boolean
+    /** Its posts already scheduled the other way, which keep their route. */
+    scheduledUnaffected: number
+  }
 }
 
 /** An idea as the ideas pack names it (CON-465). */

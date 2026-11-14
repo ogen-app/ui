@@ -3,7 +3,8 @@ import type { TFunction } from 'i18next'
 import { screenName } from '@/lib/assistantView'
 import { counted } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
-import { usePlatformCatalog } from '@/hooks/usePlatforms'
+import { usePlatformCatalog, usePlatformViews } from '@/hooks/usePlatforms'
+import { focusedAccount } from '@/lib/platformFocus'
 import {
   destinationFor,
   windowCampaign,
@@ -38,6 +39,19 @@ export function UiActionRows({
   const words = useWindowWords({ counted: true })
   const { resolve } = usePlatformCatalog()
   const platformName = (slug: string) => resolve(slug)?.name ?? slug
+  const connectedViews = usePlatformViews().filter(
+    (v) => v.connectedPublishers.length > 0,
+  )
+  // Whether Settings found the account a reconnect named: when not, it lands
+  // on the platform's tile instead, and the row says so (CON-480).
+  const found = (connect: NonNullable<UIAction['connect']>) =>
+    Boolean(
+      focusedAccount(connectedViews, {
+        accountId: connect.accountId,
+        platform: connect.platform,
+      }),
+    )
+  const inCampaign = threadId.startsWith('campaign:')
   return (
     <div className="flex flex-col gap-4">
       {actions.map((applied, index) => {
@@ -77,7 +91,7 @@ export function UiActionRows({
                     screen: screenName(t, action.screen),
                     window: words.line(windowOf(folded.action)),
                   })
-                : actionTitle(t, applied, words.line, platformName)
+                : actionTitle(t, applied, words.line, platformName, found)
             }
             action={
               applied.before && !applied.undone ? (
@@ -97,6 +111,17 @@ export function UiActionRows({
             }
           >
             {showChange && <WindowChange action={action} />}
+            {action.type === 'open_connect' && action.connect && (
+              <p className="pt-2.5 text-[12.5px] text-secondary-foreground">
+                {!action.connect.reconnect && inCampaign
+                  ? t('assistant.uiAction.connectCampaignNote', {
+                      platform: platformName(action.connect.platform),
+                    })
+                  : t('assistant.uiAction.connectNote', {
+                      platform: platformName(action.connect.platform),
+                    })}
+              </p>
+            )}
             {applied.undone && (
               <ResolvedLine>{t('assistant.uiAction.putBack')}</ResolvedLine>
             )}
@@ -170,14 +195,38 @@ function actionTitle(
   { action }: AppliedUIAction,
   describe: (w: WindowLike, only?: readonly WindowControl[]) => string,
   platformName: (slug: string) => string,
+  found: (connect: NonNullable<UIAction['connect']>) => boolean,
 ): React.ReactNode {
   const screen = screenName(t, action.screen)
+  const grey = (
+    <span className="text-sm font-normal text-secondary-foreground" />
+  )
   switch (action.type) {
     case 'open_connect': {
+      // The place it landed, not the act (CON-480): "Settings at Instagram",
+      // with what is open there in grey.
       const platform = platformName(action.connect?.platform ?? '')
-      return action.connect?.reconnect
-        ? t('assistant.uiAction.openReconnect', { platform })
-        : t('assistant.uiAction.openConnect', { platform })
+      if (action.connect?.reconnect && !found(action.connect))
+        return (
+          <Trans
+            t={t}
+            i18nKey="assistant.uiAction.openNotFound"
+            values={{ platform }}
+            components={{ where: grey }}
+          />
+        )
+      return (
+        <Trans
+          t={t}
+          i18nKey={
+            action.connect?.reconnect
+              ? 'assistant.uiAction.openReconnect'
+              : 'assistant.uiAction.openConnect'
+          }
+          values={{ platform }}
+          components={{ where: grey }}
+        />
+      )
     }
     case 'open_add_source':
       return t('assistant.uiAction.openAddSource', { screen })
@@ -205,11 +254,7 @@ function actionTitle(
           t={t}
           i18nKey="assistant.uiAction.openSavedViewNamed"
           values={{ name: action.savedViewName, screen }}
-          components={{
-            where: (
-              <span className="text-sm font-normal text-secondary-foreground" />
-            ),
-          }}
+          components={{ where: grey }}
         />
       ) : (
         t('assistant.uiAction.openSavedView', { screen })

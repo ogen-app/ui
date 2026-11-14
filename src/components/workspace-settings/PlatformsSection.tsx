@@ -6,6 +6,7 @@ import type { PublisherAccount } from '@/types/campaigns'
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
+import { ModalContainer } from '@/components/ui/modal'
 import { StatusBadge } from '@/components/ui/status-badge'
 import {
   Tooltip,
@@ -248,13 +249,26 @@ function AccountRow({
   account: PublisherAccount
   /**
    * Singled out by the address: outlined, scrolled to, and its Reconnect
-   * button focused. Never pressed for the user — the flow leaves the app.
+   * button focused. A broken one also asks first (CON-480) — the dialog
+   * names what happens and CONTINUE is the user's click; nothing here starts
+   * the flow on its own, because it leaves the app.
    */
   focused?: boolean
   onReconnect: () => void
 }) {
   const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
+  // Arriving at a broken account asks once; CANCEL leaves the row singled
+  // out with its button focused, as before the dialog existed. Opened when
+  // the row becomes focused — during render, so there is no effect to run.
+  const [asking, setAsking] = useState(focused && !account.is_active)
+  const [wasFocused, setWasFocused] = useState(focused)
+  if (focused !== wasFocused) {
+    setWasFocused(focused)
+    // Opens for a broken account the address names, and closes when the
+    // address moves on, so an old dialog never outlives its account.
+    setAsking(focused && !account.is_active)
+  }
   const name = account.display_name || account.username
   const broken = !account.is_active
   const rowRef = useRef<HTMLLIElement>(null)
@@ -263,9 +277,16 @@ function AccountRow({
   useEffect(() => {
     if (!focused) return
     rowRef.current?.scrollIntoView({ block: 'center' })
+  }, [focused])
+
+  // The open dialog holds the focus: a background Reconnect focused under it
+  // would start the flow on Enter without the asking. Once it closes, the
+  // focus comes back to the row's button.
+  useEffect(() => {
+    if (!focused || asking) return
     // A healthy account has no Reconnect button; the row takes the focus.
     ;(reconnectRef.current ?? rowRef.current)?.focus({ preventScroll: true })
-  }, [focused])
+  }, [focused, asking])
 
   return (
     <li
@@ -273,7 +294,8 @@ function AccountRow({
       tabIndex={focused ? -1 : undefined}
       className={cn(
         'flex items-center gap-3 min-w-0',
-        focused && 'outline-2 outline-offset-4 outline-accent',
+        focused &&
+          'rounded-md bg-accent/5 outline-2 -outline-offset-2 outline-accent',
       )}
     >
       <AccountAvatar
@@ -288,14 +310,15 @@ function AccountRow({
           {name}
         </p>
         <p className="w-full text-xs text-tertiary-foreground truncate text-left">
-          {broken
-            ? t('workspaceSettings.platforms.accountInactive', {
-                platform: view.info.name,
-              })
-            : `@${account.username}`}
+          @{account.username}
         </p>
       </div>
 
+      {broken && (
+        <span className="shrink-0 text-xs text-warning-ink">
+          {t('workspaceSettings.platforms.needsReconnect')}
+        </span>
+      )}
       {broken ? (
         <Button
           ref={reconnectRef}
@@ -338,6 +361,43 @@ function AccountRow({
           {t('workspaceSettings.platforms.disconnectTooltip')}
         </TooltipContent>
       </Tooltip>
+
+      <ModalContainer
+        isOpen={asking}
+        onClose={() => setAsking(false)}
+        title={t('workspaceSettings.platforms.reconnectDialog.title', {
+          platform: view.info.name,
+        })}
+        size="default"
+      >
+        <div className="flex flex-col gap-5">
+          <p className="text-sm text-secondary-foreground">
+            {t('workspaceSettings.platforms.reconnectDialog.body', {
+              platform: view.info.name,
+            })}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={() => {
+                setAsking(false)
+                onReconnect()
+              }}
+            >
+              {t('workspaceSettings.platforms.reconnectDialog.continue', {
+                platform: view.info.name.toUpperCase(),
+              })}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setAsking(false)}
+            >
+              {t('workspaceSettings.platforms.reconnectDialog.cancel')}
+            </Button>
+          </div>
+        </div>
+      </ModalContainer>
 
       <DisconnectAccountDialog
         account={account}
