@@ -406,6 +406,31 @@ describe('reads', () => {
     )
   })
 
+  it('names the page an idea came from, and opens the asset there (CON-487)', async () => {
+    await show({
+      idea: {
+        idea: { id: 'i1', title: 'The pool cut into the rock' },
+        sourceAsset: {
+          id: 'a1',
+          title: 'Villa Aurora brochure',
+          passage: { chunkId: 'c9', label: 'p. 12', page: 12 },
+        },
+        lens: { campaignId: 'c1', campaignName: 'Spring reopening' },
+        posts: [],
+      },
+    })
+    expect(
+      screen.getByText(
+        'Villa Aurora brochure · p. 12 · lens: Spring reopening',
+      ),
+    ).toBeTruthy()
+    const href = screen.getByText('OPEN').getAttribute('href') ?? ''
+    const url = new URL(href, 'http://app')
+    expect(url.pathname).toBe('/campaigns/c1/assets/a1')
+    expect(url.searchParams.get('lens')).toBe('c1')
+    expect(url.searchParams.get('at')).toBe('p. 12')
+  })
+
   it('says what a selection shares, and in amber where it splits', async () => {
     await show({
       common: {
@@ -535,5 +560,24 @@ describe('in Spanish', () => {
     expect(screen.getByText('Hecha con 2 ideas')).toBeTruthy()
     expect(screen.queryByText('3 ideas deleted')).toBeNull()
     expect(screen.queryByText('Built from 2 ideas')).toBeNull()
+  })
+
+  it('words the passage an idea came from (CON-487)', async () => {
+    await loadLocaleResources('es')
+    await i18next.changeLanguage('es')
+    await show({
+      idea: {
+        idea: { id: 'i1', title: 'La piscina' },
+        sourceAsset: {
+          id: 'a1',
+          title: 'Folleto',
+          passage: { label: 'p. 12', page: 12 },
+        },
+        lens: { campaignId: 'c1', campaignName: 'Primavera' },
+        posts: [],
+      },
+    })
+    expect(screen.getByText('Folleto · p. 12 · lente: Primavera')).toBeTruthy()
+    expect(screen.queryByText(/lens:/)).toBeNull()
   })
 })

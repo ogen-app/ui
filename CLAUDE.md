@@ -853,7 +853,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   parses them; `AnalyticsResults` draws them. `moreLikeThese` makes **ideas,
   not posts**: the trail (post → idea → analysis → asset and its passages,
   `TrailRows`) is drawn on the **offer** (`card.trail`) and again on the
-  result, since a confirmed offer collapses to one line; OPEN lands on the server's `filter` on Ideas, and a run that saved
+  result, since a confirmed offer collapses to one line, and an idea's asset
+  opens at its passage on its analysis's lens (CON-487); OPEN lands on the server's `filter` on Ideas, and a run that saved
   none draws no DONE card. A post cited as a source (`kind: 'post'`) is named,
   never linked.
   **The dashboard's period, platforms and campaign are its address**
@@ -933,7 +934,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   the summary replaces them. **An idea open on the list is the turn's
   focus** (`ViewPage.focus`), which is what "this one" means, with its own
   starters; questions about a set need two ticked. `getIdea`'s fit is drawn
-  by the Ideas list's own `FitSection`, compact in the rail.
+  by the Ideas list's own `FitSection`, compact in the rail. **An idea knows
+  the passage it came from** (CON-487, `sourceAsset`'s flat `label`, `page`,
+  `slide`, `startMs`…, read by `services/api/passage`): the source row names
+  it ("Brochure · p. 12 · lens: offers") and OPEN lands there as `?at=`, the
+  label the asset page already reads (`passagePlace`) — never by `chunkId`,
+  which a re-ingest can reuse. Older ideas and ones from web pages or notes
+  have none, and say only the asset and the lens.
 - **A planned post is a post with theses and no body** (CON-449). `planned`
   can only become `draft`, and only by gaining a body — the server moves it,
   so it has no button. Ideas are never posts: on the week calendar an idea

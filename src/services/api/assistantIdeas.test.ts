@@ -181,6 +181,34 @@ describe('ideasResults', () => {
     })
   })
 
+  it('reads the passage an idea came from, flat on its asset (CON-487)', () => {
+    const read = (sourceAsset: unknown) =>
+      ideasResults({
+        ideas: {
+          getIdea: { idea: { id: 'i1', title: 'The pool' }, sourceAsset },
+        },
+      })?.idea?.sourceAsset
+    expect(
+      read({
+        id: 'a1',
+        title: 'Brochure',
+        chunkId: 'c9',
+        label: 'pp. 5–6',
+        page: 5,
+        pageEnd: 6,
+      }),
+    ).toEqual({
+      id: 'a1',
+      title: 'Brochure',
+      passage: { chunkId: 'c9', label: 'pp. 5–6', page: 5, pageEnd: 6 },
+    })
+    // An older idea, or one from a web page, has none.
+    expect(read({ id: 'a1', title: 'Brochure' })).toEqual({
+      id: 'a1',
+      title: 'Brochure',
+    })
+  })
+
   it('reads what a selection shares, in the card’s order, empty kinds left out', () => {
     const r = ideasResults({
       ideas: {
