@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { useCampaign } from '@/hooks/useCampaigns'
 import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
@@ -88,6 +89,9 @@ function WeeklyCalendarComponent({
   /** Column whose empty space the pointer is on — see the column's onMouseOver. */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
   const { t, i18n } = useTranslation()
+  // What the campaign targets, so a post left outside it is marked
+  // (CON-483); none on the workspace grid.
+  const targets = useCampaign(campaignId ?? '').data?.target_platforms
   const today = useMemo(() => new Date(), [])
   // Covers that would not load — a card that dropped its picture is not
   // charged the band for it (`lib/failedCovers`).
@@ -350,6 +354,7 @@ function WeeklyCalendarComponent({
                   post={post}
                   rung={col.rung}
                   fields={fields}
+                  targets={targets}
                 />
               ))}
 

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { outsideCampaign } from '@/lib/campaignTarget'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
@@ -480,7 +481,9 @@ function PostEditorSurface({
   )
   // The thread list leads every row with its campaign, so a post thread has to
   // carry its parent's name too. Cached from the campaign page in practice.
-  const campaignName = useCampaign(campaignId).data?.name
+  const campaignQuery = useCampaign(campaignId)
+  const campaignName = campaignQuery.data?.name
+  const campaignTargets = campaignQuery.data?.target_platforms
 
   // What this post did, once it is out there. The facts come off the document
   // because the wire carries none of them — the snapshot knows figures, not
@@ -747,8 +750,27 @@ function PostEditorSurface({
   // Last, after the length and media rows it sits beside on the platform's
   // side of the gate: the server refuses an over-limit comment and one on a
   // type that takes none exactly as it refuses an over-long body.
+  // A post left outside the campaign's platforms or post types — a removal
+  // keeps it, flagged (CON-483). A warning: it still publishes where it is.
+  const outside = outsideCampaign(doc, campaignTargets)
+  const targetChecks = useMemo<PostCheck[]>(
+    () =>
+      outside
+        ? [
+            ...checks,
+            {
+              id: 'campaign-target',
+              label: t('posts.outsideCampaign.check'),
+              status: 'warn',
+              detail: t(`posts.outsideCampaign.${outside}`),
+            },
+          ]
+        : checks,
+    [checks, outside, t],
+  )
+
   const allChecks = useMemo<PostCheck[]>(() => {
-    if (!firstComment || firstComment.state === 'unknown') return checks
+    if (!firstComment || firstComment.state === 'unknown') return targetChecks
     const label = t('posts.firstComment.check.label')
     const row: PostCheck =
       firstComment.state === 'unsupported'
@@ -775,8 +797,8 @@ function PostEditorSurface({
               },
             ),
           }
-    return [...checks, row]
-  }, [checks, firstComment, firstCommentTarget, t])
+    return [...targetChecks, row]
+  }, [targetChecks, firstComment, firstCommentTarget, t])
 
   const handleDownloadMarkdown = useCallback(
     () => downloadMarkdown(doc.title, doc.content, 'post'),

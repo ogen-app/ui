@@ -18,6 +18,9 @@ import { postStatusLabel } from '@/lib/postStatusLabel'
 import { contentFormat, contentFormatLabel } from '@/lib/contentFormats'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
+import { OutsideCampaignMark } from '@/components/campaigns/OutsideCampaignMark'
+import { outsideCampaign } from '@/lib/campaignTarget'
+import { useCampaign } from '@/hooks/useCampaigns'
 
 type PostRow = Post & Record<string, unknown>
 
@@ -105,6 +108,8 @@ function PostsTableComponent({
   const { t, i18n } = useTranslation()
   const locale = i18n.language
   const formats = useFeatureFlag('content-formats')
+  // What the campaign targets, so a post left outside it is marked (CON-483).
+  const targets = useCampaign(campaignId).data?.target_platforms
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
   // Against the rows on screen, not against the whole selection: the header
@@ -193,6 +198,7 @@ function PostsTableComponent({
               className="min-w-0 truncate"
             />
             <NotGroundedMark mode={row.grounding_mode} />
+            <OutsideCampaignMark outside={outsideCampaign(row, targets)} />
           </div>
         ),
       },
@@ -309,6 +315,7 @@ function PostsTableComponent({
       visibleSelected,
       locale,
       t,
+      targets,
     ],
   )
 

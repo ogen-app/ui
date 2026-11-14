@@ -752,12 +752,40 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `channel-dropped` — not its scheduled twin, whose alert says the posts
   still publish; `lib/serverCheckedRules`) once they have arrived, and only
   while the last read of them succeeded. A removed platform
-  leaves its posts where they were, and that finding is how they surface,
-  with `enable_platform` among its fixes. The campaign pack's result says
-  what a platforms change `added` and `removed`, and a raised `goal` as its
-  rate with the campaign's total, with UNDO (`campaign_goal`). The budget
-  guard's options are ordinary choices; its "replace the weakest drafts"
-  deletes for good, and `OfferOutcome` says how many. The Overview runs no
+  leaves its unpublished posts where they were — flagged, never deleted —
+  and that finding is how they surface, with `enable_platform` among its
+  fixes; but **a post already scheduled there blocks the assistant's
+  removal** (CON-483): the offer turns into a choice, UNSCHEDULE N, THEN
+  REMOVE or REMOVE LATER, with the card's footnote saying why. Removing a
+  platform on Strategy doesn't ask, which is why the client keeps
+  `channel-dropped-scheduled`. **A post outside its campaign's platforms or
+  post types is flagged outside the rail** (`lib/campaignTarget`,
+  `OutsideCampaignMark`): a warning row in the post's Quality checks, a mark
+  on the calendar card and in the posts list. The campaign pack's result
+  says what a platforms change `added` and `removed` — REMOVED "Facebook is
+  off the campaign", with "no posts on it" or the posts it left by name
+  (`kept`, "and N more") and how many it unscheduled first, which UNDO
+  doesn't put back — and Strategy strikes what the assistant removed
+  through, under a band saying so, until the page reloads
+  (`stores/assistantRemovalStore`, cleared by its UNDO). A raised `goal`
+  says its rate with the campaign's total, with UNDO (`campaign_goal`).
+  The budget guard's options are ordinary choices, each with its cost line
+  and the recommended one's `why`, and a choice card's footnote says why an
+  option isn't offered; its "replace the weakest drafts" deletes for good
+  and has no UNDO, and `OfferOutcome` draws it as one REPLACED card — both
+  lists, the removed by score, and where the goal period stands — with the
+  turn's own drafts card left out. Ideas saved instead say the days they
+  target, with OPEN and UNDO (`ideas_created`). **Every campaign turn
+  carries what it read** (`state`, `starters`; also
+  `GET /api/campaigns/:id/assistant-state` through
+  `useCampaignAssistantState`, re-read when a campaign turn completes): a
+  reply that changed nothing cites it in one quiet line ("Read from the
+  campaign · April 14 of 20 · 2 conflicts · 4 of 8 sources ready"), with a
+  SOURCES card when some of the campaign's sources aren't ready, and a
+  campaign's screens lead ON THIS SCREEN with its starters, worded here from
+  their kind and figures and sending the server's instruction. Which figures
+  a reply actually used, the period as data and a drafted post's score wait
+  on CON-503. The Overview runs no
   assistant, so each of a problem's fixes — the first a bordered button, the
   rest "or …" — sends `<fix>: <problem>` to the campaign's thread, never a raw
   key, which answers with that finding's fixes as offers; a fix that is only a

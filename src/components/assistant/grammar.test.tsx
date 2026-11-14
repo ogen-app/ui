@@ -151,6 +151,8 @@ describe('results', () => {
           platforms: {
             added: 'Threads',
             removed: 'the carousel post type on LinkedIn',
+            kept: [],
+            unscheduled: 0,
           },
         }}
       />,
@@ -178,7 +180,9 @@ describe('results', () => {
 
   it('are never boxed', () => {
     const { container } = render(
-      <ResultCard details={{ platforms: { added: 'Threads' } }} />,
+      <ResultCard
+        details={{ platforms: { added: 'Threads', kept: [], unscheduled: 0 } }}
+      />,
     )
     expect(container.querySelector('.border-quinary-foreground')).toBeNull()
   })

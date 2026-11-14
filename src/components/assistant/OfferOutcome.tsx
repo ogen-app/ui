@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { Button } from '@/components/ui/button'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
-import { counted, formatList, formatNumber } from '@/lib/intl'
+import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
 import type {
   AssistantProposal,
@@ -15,6 +15,7 @@ import {
   ResolvedLine,
   ResultBlock,
   ResultRow,
+  SourcesLine,
   TEXT_ACTION_CLASS,
   TextAction,
 } from './blocks'
@@ -68,7 +69,7 @@ export function OfferOutcome({
     states: undoStates,
     onUndo: (undoId) => void undo(threadId, turnId, undoId),
   }
-  const { notMade, tagged, replaced, made, total } = outcome
+  const { notMade, tagged, replaced, later, made, total } = outcome
   const partly = notMade.length > 0
   const lapsed = useLapsed(
     retry?.status === 'pending' ? retry.expiresAt : undefined,
@@ -77,30 +78,23 @@ export function OfferOutcome({
     retry !== undefined && (retry.status === 'expired' || lapsed)
   return (
     <>
-      {replaced && replaced.deleted + replaced.kept > 0 && (
+      {replaced && <ReplacedCard t={t} replaced={replaced} />}
+      {later && (
         <ResultBlock
-          status={
-            replaced.deleted > 0
-              ? t('assistant.answered.replaced.word')
-              : t('assistant.answered.replaced.noneWord')
+          status={t('assistant.answered.later.word')}
+          title={t('assistant.answered.later.title', { what: later.removed })}
+          meta={
+            later.until
+              ? t('assistant.answered.later.until', {
+                  date: formatDate(later.until, {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                  }),
+                })
+              : undefined
           }
-          title={
-            replaced.deleted > 0
-              ? t(
-                  'assistant.answered.replaced.title',
-                  counted(replaced.deleted),
-                )
-              : t('assistant.answered.replaced.none')
-          }
-        >
-          {replaced.kept > 0 && (
-            <ResultRow>
-              <p className="text-[12.5px] text-secondary-foreground">
-                {t('assistant.answered.replaced.kept', counted(replaced.kept))}
-              </p>
-            </ResultRow>
-          )}
-        </ResultBlock>
+        />
       )}
       {tagged && (
         <TaggedCard
@@ -180,6 +174,129 @@ export function OfferOutcome({
 function quoted(t: TFunction, tags: string[]): string {
   return formatList(
     tags.map((tag) => t('assistant.answered.tagged.quote', { tag })),
+  )
+}
+
+/** Rows each side of a swap lists before it sums up the rest. */
+const SWAP_ROWS = 2
+
+/**
+ * The budget guard's "replace the weakest drafts" (CON-468, drawn as CON-483
+ * has it): one card for the swap — what it drafted and what it deleted for
+ * good, each side by name with "and N more", and where the goal period
+ * stands after it. No UNDO: the deleted drafts are gone, files included.
+ * A swap that deleted nothing says so, with what it kept and why.
+ */
+function ReplacedCard({
+  t,
+  replaced,
+}: {
+  t: TFunction
+  replaced: NonNullable<Outcome['replaced']>
+}) {
+  const { deleted, kept, draftedCount, drafted, removed, period } = replaced
+  if (deleted === 0) {
+    if (kept === 0) return null
+    return (
+      <ResultBlock
+        status={t('assistant.answered.replaced.noneWord')}
+        title={t('assistant.answered.replaced.none')}
+      >
+        <KeptRow t={t} kept={kept} />
+      </ResultBlock>
+    )
+  }
+  return (
+    <ResultBlock
+      status={t('assistant.answered.replaced.replacedWord')}
+      title={t('assistant.answered.replaced.replacedTitle', {
+        ...counted(deleted),
+        drafted: formatNumber(draftedCount),
+      })}
+      meta={
+        period
+          ? t('assistant.answered.replaced.period', {
+              period: period.label,
+              planned: formatNumber(period.planned),
+            })
+          : undefined
+      }
+    >
+      <SwapList
+        t={t}
+        label={t(
+          'assistant.answered.replaced.draftedGroup',
+          counted(draftedCount),
+        )}
+        posts={drafted}
+        total={draftedCount}
+      />
+      <SwapList
+        t={t}
+        label={t('assistant.answered.replaced.removedGroup', counted(deleted))}
+        posts={removed}
+        total={deleted}
+      />
+      {kept > 0 && <KeptRow t={t} kept={kept} />}
+      {replaced.draftedGrounding && (
+        <SourcesLine grounding={replaced.draftedGrounding} />
+      )}
+    </ResultBlock>
+  )
+}
+
+function KeptRow({ t, kept }: { t: TFunction; kept: number }) {
+  return (
+    <ResultRow>
+      <p className="text-[12.5px] text-secondary-foreground">
+        {t('assistant.answered.replaced.kept', counted(kept))}
+      </p>
+    </ResultRow>
+  )
+}
+
+/** One side of a swap: a group label, the first posts, "and N more". */
+function SwapList({
+  t,
+  label,
+  posts,
+  total,
+}: {
+  t: TFunction
+  label: string
+  posts: NonNullable<Outcome['replaced']>['removed']
+  total: number
+}) {
+  if (total === 0) return null
+  const shown = posts.slice(0, SWAP_ROWS)
+  const more = total - shown.length
+  return (
+    <>
+      <p className="pt-3 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-tertiary-foreground">
+        {label}
+      </p>
+      {shown.map((post) => (
+        <ResultRow key={post.id} className="flex flex-col gap-0.5">
+          <span className="text-sm text-foreground">{post.title}</span>
+          <span className="text-[12.5px] text-tertiary-foreground">
+            {[
+              post.platform,
+              post.fitPct !== undefined &&
+                t('assistant.answered.replaced.fit', {
+                  score: formatNumber(post.fitPct),
+                }),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
+        </ResultRow>
+      ))}
+      {more > 0 && (
+        <p className="pt-2.5 text-[12.5px] text-tertiary-foreground">
+          {t('assistant.answered.notMade.more', counted(more))}
+        </p>
+      )}
+    </>
   )
 }
 

@@ -1,4 +1,7 @@
 import { memo } from 'react'
+import { OutsideCampaignMark } from '@/components/campaigns/OutsideCampaignMark'
+import { outsideCampaign } from '@/lib/campaignTarget'
+import type { CampaignPlatform } from '@/types/campaigns'
 import {
   coverDrawable,
   markCoverFailed,
@@ -57,6 +60,12 @@ type PostCardProps = {
    * default; the month asks for `compact`. See `CARD_BANDS`.
    */
   band?: CardBand
+  /**
+   * What the post's campaign targets, from the grid that holds the campaign
+   * — so a post left outside them is marked (CON-483). Omitted where there
+   * is no one campaign, as on the workspace calendar.
+   */
+  targets?: readonly CampaignPlatform[]
 }
 
 /** `line-clamp-N` as static strings, so Tailwind can see them. */
@@ -223,6 +232,7 @@ function PostCardComponent({
   rung = CARD_RUNGS[0],
   fields = DEFAULT_WEEK_FIELDS,
   band = 'full',
+  targets,
 }: PostCardProps) {
   const { t, i18n } = useTranslation()
   const title = formatTitle(post.title)
@@ -278,6 +288,7 @@ function PostCardComponent({
     post.social_account,
   )
   const problem = hasVisibleProblem(post, account, platformInfo)
+  const outside = outsideCampaign(post, targets)
 
   // Dragging rewrites scheduled_at, which is locked while `scheduled`
   // (the Zernio submission owns the publish time) and once `published`.
@@ -294,7 +305,8 @@ function PostCardComponent({
   // drop it — see `cardRungs`. What it must not do is survive on the status
   // glyph alone, which every card has. Not grounded is among them: it rides on
   // this row, so a ladder that dropped the row would drop the mark with it.
-  const flag = problem || locked || isNotGrounded(post.grounding_mode)
+  const flag =
+    problem || locked || isNotGrounded(post.grounding_mode) || outside !== null
   // What the user allows, narrowed by what this post has and what the rung
   // can afford. The rung only ever subtracts.
   const showTime = fields.time && Boolean(time) && rung.time
@@ -503,6 +515,7 @@ function PostCardComponent({
                 post is and before what you can't do to it. A flag like the
                 warning and the lock, so this row survives every rung. */}
             <NotGroundedMark mode={post.grounding_mode} compact />
+            <OutsideCampaignMark outside={outside} compact />
             {/* `ml-auto` rather than `justify-between`: the row has a variable
                 number of things on the left and exactly one on the right, and
                 a card with no lock must not have its status mark pushed

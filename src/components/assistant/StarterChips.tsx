@@ -29,7 +29,14 @@ import {
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
-import { subjectCampaignId, type ThreadSubject } from '@/types/assistant'
+import type { TFunction } from 'i18next'
+import {
+  subjectCampaignId,
+  type CampaignStarter,
+  type CampaignStateRead,
+  type ThreadSubject,
+} from '@/types/assistant'
+import { useCampaignAssistantState } from '@/hooks/useCampaignAssistantState'
 import type { ViewScreen } from '@/lib/viewContext'
 import { counted } from '@/lib/intl'
 import { useAssetsState } from '@/hooks/useContent'
@@ -405,6 +412,60 @@ function screenStarters(screen: ViewScreen | null): ScreenStarters | null {
   return null
 }
 
+/** How many of the campaign's own starters lead the screen's. */
+const LEADING_CHIPS = 2
+
+const STATE_ICON: Record<CampaignStarter['kind'], Icon> = {
+  fill: CalendarBlankIcon,
+  draft: NotePencilIcon,
+  calendar: WarningCircleIcon,
+  sources: PaperclipIcon,
+}
+
+/**
+ * The campaign's starters (CON-483), worded here from their kind and the
+ * state's figures — "Fill April", "Draft 20 posts" — and sending the
+ * server's instruction. A starter whose figure the state doesn't carry is
+ * left out rather than worded without it.
+ */
+function campaignStarterChips(
+  t: TFunction,
+  read: CampaignStateRead | null | undefined,
+) {
+  if (!read) return []
+  const { state } = read
+  return read.starters.flatMap(({ kind, instruction }) => {
+    const label =
+      kind === 'fill' && state.goal?.period
+        ? t('assistant.campaignState.starter.fill', {
+            period: state.goal.period.label,
+          })
+        : kind === 'draft' && state.goal && state.goal.room > 0
+          ? t('assistant.campaignState.starter.draft', counted(state.goal.room))
+          : kind === 'calendar' && state.calendar && state.calendar.total > 0
+            ? t(
+                'assistant.campaignState.starter.calendar',
+                counted(state.calendar.total),
+              )
+            : kind === 'sources' && state.sources && state.sources.notReady > 0
+              ? t(
+                  'assistant.campaignState.starter.sources',
+                  counted(state.sources.notReady),
+                )
+              : null
+    return label
+      ? [
+          {
+            key: `state-${kind}`,
+            icon: STATE_ICON[kind],
+            label,
+            text: instruction,
+          },
+        ]
+      : []
+  })
+}
+
 const STARTERS: Record<ThreadSubject['kind'], Starter[]> = {
   campaign: CAMPAIGN_STARTERS,
   post: POST_STARTERS,
@@ -449,6 +510,20 @@ export function StarterChips({
       ? (subjectCampaignId(subject) ?? null)
       : null
   const state = useAssetsState(campaignId, onAssets && !hasSelection)
+  // On a campaign's screens, over a thread already going, the chips lead
+  // with what the campaign's numbers suggest (CON-483).
+  const campaignScreen =
+    placement === 'footer' &&
+    !hasSelection &&
+    !focusKind &&
+    !!screen?.startsWith('campaign.') &&
+    subject?.kind === 'campaign'
+  const campaignState = useCampaignAssistantState(
+    campaignScreen && subject ? subjectCampaignId(subject) : undefined,
+  )
+  const leading = campaignScreen
+    ? campaignStarterChips(t, campaignState.data).slice(0, LEADING_CHIPS)
+    : []
   const starters =
     (hasSelection && single && forScreen?.one) ||
     (hasSelection && forScreen?.selected) ||
@@ -465,31 +540,35 @@ export function StarterChips({
         placement === 'body' && 'justify-center',
       )}
     >
-      {starters.map(({ icon: Icon, key, count }) => {
-        const label =
-          count === undefined
-            ? t(
-                `assistant.starter.${key}.label` as 'assistant.starter.findDocuments.label',
-              )
-            : t(
-                `assistant.starter.${key}.label` as 'assistant.starter.retryFailed.label',
-                counted(count),
-              )
-        const text = t(`assistant.starter.${key}.text`)
-        return (
-          <button
-            key={key}
-            type="button"
-            disabled={disabled}
-            onClick={() => onPick(text)}
-            title={text}
-            className="flex items-center gap-1.5 rounded-full bg-tertiary px-3 py-1.5 text-[12.5px] text-secondary-foreground transition-colors cursor-pointer hover:bg-quaternary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-          >
-            <Icon className="size-3.5 shrink-0 text-tertiary-foreground" />
-            {label}
-          </button>
-        )
-      })}
+      {[
+        ...leading,
+        ...starters.map(({ icon, key, count }) => ({
+          key,
+          icon,
+          label:
+            count === undefined
+              ? t(
+                  `assistant.starter.${key}.label` as 'assistant.starter.findDocuments.label',
+                )
+              : t(
+                  `assistant.starter.${key}.label` as 'assistant.starter.retryFailed.label',
+                  counted(count),
+                ),
+          text: t(`assistant.starter.${key}.text`),
+        })),
+      ].map(({ icon: Icon, key, label, text }) => (
+        <button
+          key={key}
+          type="button"
+          disabled={disabled}
+          onClick={() => onPick(text)}
+          title={text}
+          className="flex items-center gap-1.5 rounded-full bg-tertiary px-3 py-1.5 text-[12.5px] text-secondary-foreground transition-colors cursor-pointer hover:bg-quaternary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+        >
+          <Icon className="size-3.5 shrink-0 text-tertiary-foreground" />
+          {label}
+        </button>
+      ))}
     </div>
   )
   if (placement === 'body') return chips

@@ -3454,8 +3454,38 @@ export const en = {
       reviewed: 'REVIEWED',
       notApplied: 'NOT APPLIED',
       proposal: 'PROPOSAL',
-      choose: 'CHOOSE ONE',
+      choose: 'CHOOSE',
       onScreen: 'ON SCREEN',
+    },
+
+    /**
+     * What a campaign turn read (CON-483): the one quiet line under a reply
+     * that changed nothing, the SOURCES card, and the starters that lead
+     * with the numbers. The period's name is the server's ("April").
+     */
+    campaignState: {
+      readFrom: 'Read from the campaign',
+      period: '{{period}} {{planned}} of {{target}}',
+      conflicts_one: '{{formatted}} conflict',
+      conflicts_other: '{{formatted}} conflicts',
+      sourcesReady: '{{ready}} of {{attached}} sources ready',
+      sources: {
+        word: 'SOURCES',
+        title: '{{ready}} of {{attached}} ready',
+        open: 'OPEN ASSETS',
+        ready: 'ready',
+        analysing: 'analysing',
+        unreadable: 'couldn’t be read',
+      },
+      starter: {
+        fill: 'Fill {{period}}',
+        draft_one: 'Draft {{formatted}} post',
+        draft_other: 'Draft {{formatted}} posts',
+        calendar_one: 'Fix {{formatted}} calendar problem',
+        calendar_other: 'Fix {{formatted}} calendar problems',
+        sources_one: '{{formatted}} source not ready',
+        sources_other: '{{formatted}} sources not ready',
+      },
     },
 
     /** What a turn did to the screen behind the rail (CON-450, D5). */
@@ -3925,16 +3955,32 @@ export const en = {
         more_other: 'and {{formatted}} more',
       },
       replaced: {
-        word: 'DELETED',
+        /**
+         * One card for the swap (CON-483): what it drafted, what it deleted
+         * for good, and where the goal period stands after it.
+         */
+        replacedWord: 'REPLACED',
+        replacedTitle_one:
+          '{{drafted}} drafted, {{formatted}} weaker draft removed',
+        replacedTitle_other:
+          '{{drafted}} drafted, {{formatted}} weaker drafts removed',
+        period: '{{period}} stays at {{planned}}',
+        draftedGroup: 'DRAFTED · {{formatted}}',
+        removedGroup: 'REMOVED · {{formatted}}',
+        fit: 'fit {{score}}',
         /** Every draft it named was kept, so none went. */
         noneWord: 'NOTHING DELETED',
         none: 'No drafts deleted',
-        title_one: '{{formatted}} weaker draft deleted for good',
-        title_other: '{{formatted}} weaker drafts deleted for good',
         kept_one:
           '{{formatted}} kept: it changed since the offer, or wasn’t needed.',
         kept_other:
           '{{formatted}} kept: they changed since the offer, or weren’t needed.',
+      },
+      /** A removal put off until its scheduled posts are out (CON-483). */
+      later: {
+        word: 'NOTHING REMOVED',
+        title: '{{what}} stays until its scheduled posts are out',
+        until: 'until {{date}}',
       },
       tagged: {
         word: 'TAGGED',
@@ -4280,6 +4326,27 @@ export const en = {
       platformsAdded: 'added {{what}}',
       platformsRemoved: 'removed {{what}}',
       platformsChanged: 'added {{added}} · removed {{removed}}',
+      /**
+       * A removal or an addition on its own (CON-483): the platform or post
+       * type in the server's words, e.g. "Facebook", "reel".
+       */
+      removedWord: 'REMOVED',
+      addedWord: 'ADDED',
+      platformsOff: '{{what}} is off the campaign',
+      platformsOn: '{{what}} is on the campaign',
+      noPostsOn: 'no posts on it',
+      /** The posts a removal leaves where they were, flagged. */
+      keptNote_one:
+        '{{formatted}} unpublished post stays where it is, flagged in Quality.',
+      keptNote_other:
+        '{{formatted}} unpublished posts stay where they are, flagged in Quality.',
+      unscheduled_one:
+        '{{formatted}} post unscheduled first. UNDO puts the platform back, not the schedule.',
+      unscheduled_other:
+        '{{formatted}} posts unscheduled first. UNDO puts the platform back, not the schedule.',
+      /** The days saved ideas target, after their count. */
+      ideasWindow: 'targeting {{range}}',
+      openIdeas: 'OPEN',
       /** The goal is a rate; the total is the whole campaign's. */
       goal: {
         week_one: 'Goal raised to {{formatted}} post a week',
@@ -5454,6 +5521,12 @@ export const en = {
      * only says to go and look — so this is deliberately the whole of it.
      */
     hasProblem: 'This post has a problem',
+    /** A post left outside its campaign's platforms or post types (CON-483). */
+    outsideCampaign: {
+      check: 'Campaign',
+      platform: 'Not a platform of this campaign',
+      postType: 'Not a post type of this campaign',
+    },
 
     /**
      * The bottom bar's read-only publish status (CON-195). `when` arrives
@@ -7887,6 +7960,12 @@ export const en = {
     strategy: {
       commitment: 'The commitment',
       spend: 'Spend & language',
+      /**
+       * What the assistant just took off the campaign (CON-483), until the
+       * page reloads; the platforms or types in the server's words.
+       */
+      removedByAssistant: '{{what}} removed by the assistant',
+      undoInThread: 'UNDO is in the thread',
     },
     /**
      * The campaign's type on Strategy (CON-166). It locks once a post is

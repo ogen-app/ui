@@ -6,6 +6,11 @@ import { useViewContextStore } from '@/stores/viewContextStore'
 import { FindingsBlock } from './FindingsBlock'
 import { StarterChips } from './StarterChips'
 
+const campaignState = vi.hoisted(() => ({ data: null as unknown }))
+vi.mock('@/hooks/useCampaignAssistantState', () => ({
+  useCampaignAssistantState: () => campaignState,
+}))
+
 beforeEach(() => {
   useViewContextStore.setState({
     location: { screen: null },
@@ -17,6 +22,48 @@ beforeEach(() => {
 })
 
 describe('starters follow the screen', () => {
+  it('leads a campaign’s screens with its numbers, over a thread going (CON-483)', () => {
+    campaignState.data = {
+      state: {
+        goal: {
+          cadence: 'month',
+          perPeriod: 20,
+          target: 60,
+          planned: 40,
+          room: 20,
+          unknown: false,
+          period: { label: 'next week', target: 5, planned: 2, left: 3 },
+        },
+      },
+      starters: [
+        { kind: 'fill', instruction: 'Draft 3 posts for next week.' },
+        { kind: 'draft', instruction: 'Draft 20 posts to reach the goal.' },
+      ],
+    }
+    useAssistantStore.setState({
+      activeThreadId: 'campaign:c1',
+      threads: {
+        'campaign:c1': {
+          id: 'campaign:c1',
+          subject: { kind: 'campaign', campaignId: 'c1' },
+          turns: [],
+          status: 'idle',
+        },
+      } as never,
+    })
+    useViewContextStore.setState({ location: { screen: 'campaign.calendar' } })
+    const onPick = vi.fn()
+    render(
+      <StarterChips kind="campaign" onPick={onPick} placement="footer" />,
+      { wrapper: QueryWrapper },
+    )
+    const chips = screen.getAllByRole('button').map((b) => b.textContent)
+    expect(chips.slice(0, 2)).toEqual(['Fill next week', 'Draft 20 posts'])
+    fireEvent.click(screen.getByText('Fill next week'))
+    expect(onPick).toHaveBeenCalledWith('Draft 3 posts for next week.')
+    campaignState.data = null
+  })
+
   it('offers a screen’s own verbs', () => {
     useViewContextStore.setState({ location: { screen: 'campaign.calendar' } })
     render(<StarterChips kind="campaign" onPick={() => {}} />, {

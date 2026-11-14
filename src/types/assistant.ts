@@ -100,6 +100,11 @@ export type AssistantResultDetails = {
     ideaCount: number
     warnings: string[]
     grounding?: Grounding
+    /** The days the ideas target, YYYY-MM-DD (CON-483). */
+    windowStart?: string
+    windowEnd?: string
+    /** Deletes the ideas while they are as made (`ideas_created`). */
+    undoId?: string
   }
   /** Content-first drafts the draftPost tool wrote. */
   draftedPosts?: {
@@ -115,7 +120,20 @@ export type AssistantResultDetails = {
     undoId?: string
   }
   /** What updateCampaignPlatforms added and removed, in the server's words. */
-  platforms?: { added: string; removed?: string; undoId?: string }
+  platforms?: {
+    added?: string
+    removed?: string
+    /**
+     * The unpublished posts left on what was removed (CON-483): set when
+     * they were read, zero when nothing was on it.
+     */
+    postsLeft?: { posts: number; scheduled: number }
+    /** The first few of them, which stay where they are, flagged. */
+    kept: KeptPost[]
+    /** Posts withdrawn from publishing before the removal; no undo. */
+    unscheduled: number
+    undoId?: string
+  }
   /** The post goal setCampaignGoal raised (CON-468): a rate per period. */
   goal?: {
     perPeriod: number
@@ -1459,6 +1477,8 @@ export type AssistantTurn = {
   answered?: OfferOutcome
   /** The offers this turn answered, or found changed or expired (CON-482). */
   resolved?: { id: string; status: string }[]
+  /** What a campaign turn read, cited under its reply (CON-483). */
+  campaignState?: CampaignStateRead
   /** What this turn did to the screen, and where each can be put back to. */
   uiActions?: AppliedUIAction[]
   /**
@@ -1563,7 +1583,93 @@ export type OfferOutcome = {
    * since the offer or outnumbered the posts written. The new drafts are the
    * campaign pack's own card.
    */
-  replaced?: { deleted: number; kept: number }
+  replaced?: {
+    deleted: number
+    kept: number
+    /** How many it drafted, and the first of them (CON-483). */
+    draftedCount: number
+    drafted: PostRef[]
+    draftedGrounding?: Grounding
+    /** The drafts deleted, weakest first. */
+    removed: PostRef[]
+    /** The goal period today falls in, after the swap. */
+    period?: GoalPeriod
+  }
+  /**
+   * A platform removal put off until the posts scheduled on it are out
+   * (CON-483): nothing was removed.
+   */
+  later?: { removed: string; until?: string }
+}
+
+/** A post a platform removal left where it was, flagged (CON-483). */
+export type KeptPost = {
+  id: string
+  title: string
+  /** The platform's name, in the server's words. */
+  platform: string
+  postType?: string
+  status: string
+}
+
+/** A post on a result card: its title, platform name and score. */
+export type PostRef = {
+  id: string
+  title: string
+  platform: string
+  /** Its overall quality score, 0–100; absent until scored. */
+  fitPct?: number
+}
+
+/** A goal period's figures: "April: 14 of 20 planned". */
+export type GoalPeriod = {
+  /** The server's name for the period ("April", "next week"). */
+  label: string
+  target: number
+  planned: number
+  left: number
+}
+
+/**
+ * The campaign as a turn read it (CON-483): the goal and its current
+ * period, the calendar's problems and the sources' readiness — the figures
+ * a reply leans on, which the rail cites rather than the model restating.
+ */
+export type CampaignState = {
+  goal?: {
+    cadence: string
+    perPeriod: number
+    target: number
+    planned: number
+    room: number
+    unknown: boolean
+    period?: GoalPeriod
+  }
+  calendar?: { total: number }
+  sources?: {
+    wholeBank: boolean
+    attached: number
+    notReady: number
+    items: {
+      id: string
+      title: string
+      kind?: string
+      status: 'ready' | 'analysing' | 'unreadable'
+    }[]
+  }
+}
+
+/** A starter that leads with the state's numbers (CON-483). */
+export type CampaignStarter = {
+  kind: 'fill' | 'draft' | 'calendar' | 'sources'
+  /** The server's sentence, sent as the message on a click. */
+  instruction: string
+}
+
+/** What a campaign turn read, and the starters it suggests next. */
+export type CampaignStateRead = {
+  state: CampaignState
+  starters: CampaignStarter[]
 }
 
 /** An item a run left undone. `title` is missing where the tool names none. */

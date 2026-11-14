@@ -16,6 +16,10 @@ import { flushPendingSave } from '@/lib/pendingSaves'
 import { beginLocalRun } from '@/lib/localRuns'
 import { buildViewContext, type ViewContext } from '@/lib/viewContext'
 import { useViewContextStore } from '@/stores/viewContextStore'
+import { useAssistantRemovalStore } from '@/stores/assistantRemovalStore'
+import { campaignAssistantStateKey } from '@/hooks/useCampaignAssistantState'
+import { campaignKey } from '@/hooks/useCampaigns'
+import type { Campaign } from '@/types/campaigns'
 import {
   confirmProposal as confirmProposalRequest,
   dismissProposal as dismissProposalRequest,
@@ -654,6 +658,7 @@ export const useAssistantStore = create<AssistantState>()(
 
             case 'complete':
               touched = event.result.touched
+              noteCampaignTurn(subject, event.result)
               // Each was streamed just before `complete`; a stream that
               // dropped them still has the result's copy.
               if (uiActions.length === 0) uiActions = event.result.uiActions
@@ -1195,6 +1200,15 @@ export const useAssistantStore = create<AssistantState>()(
           try {
             const { kind } = await undoAssistantAction(undoId)
             state('undone')
+            // The platforms are back, so Strategy stops striking them.
+            if (
+              kind === 'campaign_platforms' &&
+              thread &&
+              thread.subject.kind !== 'workspace'
+            )
+              useAssistantRemovalStore
+                .getState()
+                .clear(thread.subject.campaignId)
             await refreshTouched(queryClient, undoTouches(kind, thread))
           } catch (err) {
             const status = err instanceof ApiError ? err.status : 0
@@ -1252,6 +1266,25 @@ function storedView(value: unknown): ViewContext | undefined {
     : undefined
 }
 
+/**
+ * What a campaign turn leaves behind outside the rail (CON-483): the state
+ * its starters read is re-read, and a removal is remembered — with what the
+ * campaign targeted before — so Strategy can strike it through.
+ */
+function noteCampaignTurn(subject: ThreadSubject, result: AssistantTurnResult) {
+  if (subject.kind === 'workspace') return
+  const { campaignId } = subject
+  void queryClient.invalidateQueries({
+    queryKey: campaignAssistantStateKey(campaignId),
+  })
+  const removed = result.details.platforms?.removed
+  const before = queryClient.getQueryData<Campaign>(
+    campaignKey(campaignId),
+  )?.target_platforms
+  if (removed && before)
+    useAssistantRemovalStore.getState().mark(campaignId, { before, removed })
+}
+
 /** The parts of a turn its result decides, for a live or a reloaded turn. */
 function turnFields(
   subject: ThreadSubject,
@@ -1274,6 +1307,7 @@ function turnFields(
   | 'ideas'
   | 'answered'
   | 'resolved'
+  | 'campaignState'
 > {
   return {
     proposals: result.proposals.length > 0 ? result.proposals : undefined,
@@ -1286,6 +1320,7 @@ function turnFields(
     ideas: result.ideas,
     answered: result.answered,
     resolved: result.resolved?.length ? result.resolved : undefined,
+    campaignState: result.campaignState,
     content: result.explanation,
     action: result.action,
     details: result.details,
@@ -1483,6 +1518,8 @@ function undoTouches(
     return [{ kind: 'asset' }, { kind: 'campaign' }]
   if (kind === 'auto_publish') return [{ kind: 'auto_publish' }]
   if (kind === 'asset_tags') return [{ kind: 'asset' }]
+  // Saved ideas deleted again (CON-483).
+  if (kind === 'ideas_created') return [{ kind: 'idea' }]
   const campaignId =
     thread && thread.subject.kind !== 'workspace'
       ? thread.subject.campaignId

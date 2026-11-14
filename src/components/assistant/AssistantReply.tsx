@@ -8,6 +8,7 @@ import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
 import { hasResultCard, ResultCard } from './ResultCard'
 import { OfferOutcome } from './OfferOutcome'
+import { SourcesCard, StateCitation } from './CampaignStateLines'
 import { ProposalCard } from './ProposalCard'
 import { UiActionRows } from './UiActionRows'
 import { FindingsBlock } from './FindingsBlock'
@@ -77,6 +78,20 @@ export function AssistantReply({
     return undefined
   })
   const showCard = settled && hasResultCard(turn.details)
+  const campaignId = subject ? subjectCampaignId(subject) : undefined
+  // A turn that changed nothing — an answer, a push-back, an offer still
+  // waiting — is the one that cites what it read (CON-483).
+  const quiet =
+    !hasResultCard(turn.details) &&
+    !turn.answered &&
+    !turn.findings &&
+    !turn.repair &&
+    !turn.assets &&
+    !turn.foundation &&
+    !turn.analytics &&
+    !turn.workspace &&
+    !turn.ideas &&
+    !turn.uiActions?.length
   const drawnElsewhere = offersDrawnInPlace(turn)
   // A retry's run, summed with the run it retried (CON-482): the first run's
   // total, found through the offer this turn answered and its `retryOf`.
@@ -135,10 +150,17 @@ export function AssistantReply({
         </div>
       )}
 
-      {/* The structured result behind the action — campaign turns only. */}
+      {/* The structured result behind the action — campaign turns only. A
+          replace's drafts are its REPLACED card's, not a card of their own
+          (CON-483). */}
       {showCard && turn.details && (
         <ResultCard
-          details={turn.details}
+          campaignId={campaignId}
+          details={
+            turn.answered?.replaced
+              ? { ...turn.details, draftedPosts: undefined }
+              : turn.details
+          }
           undo={{
             states: turn.undo ?? {},
             onUndo: (undoId) => void undo(threadId, turn.id, undoId),
@@ -276,6 +298,19 @@ export function AssistantReply({
               disabled={running}
             />
           ))}
+
+      {/* What a reply that changed nothing leaned on (CON-483): the
+          campaign's sources when some aren't ready, and one quiet line
+          citing the figures. */}
+      {settled && quiet && turn.campaignState && (
+        <>
+          <SourcesCard
+            state={turn.campaignState.state}
+            campaignId={campaignId}
+          />
+          <StateCitation state={turn.campaignState.state} />
+        </>
+      )}
 
       {/* A clone the turn created — an opt-in jump to the new post's editor
           (CON-59). The source thread stays put; the user chooses to switch. */}

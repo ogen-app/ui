@@ -197,9 +197,15 @@ describe('the budget guard’s replace (CON-468)', () => {
     await show({
       reoffered: false,
       notMade: [],
-      replaced: { deleted: 4, kept: 1 },
+      replaced: {
+        deleted: 4,
+        kept: 1,
+        draftedCount: 4,
+        drafted: [],
+        removed: [],
+      },
     })
-    expect(screen.getByText('4 weaker drafts deleted for good')).toBeTruthy()
+    expect(screen.getByText('4 drafted, 4 weaker drafts removed')).toBeTruthy()
     expect(
       screen.getByText('1 kept: it changed since the offer, or wasn’t needed.'),
     ).toBeTruthy()
@@ -213,9 +219,15 @@ describe('a replace that deleted nothing', () => {
     await show({
       reoffered: false,
       notMade: [],
-      replaced: { deleted: 0, kept: 2 },
+      replaced: {
+        deleted: 0,
+        kept: 2,
+        draftedCount: 0,
+        drafted: [],
+        removed: [],
+      },
     })
-    expect(screen.queryByText('DELETED')).toBeNull()
+    expect(screen.queryByText('REPLACED')).toBeNull()
     expect(screen.getByText('NOTHING DELETED')).toBeTruthy()
     expect(screen.getByText('No drafts deleted')).toBeTruthy()
     expect(

@@ -22,6 +22,11 @@ type Props = {
    * for the header Save — it reads as a toggle, not as an edit.
    */
   onCommitPlatforms: (next: CampaignPlatform[]) => void
+  /**
+   * What the campaign targeted before the assistant removed some of it
+   * (CON-483): what has gone since is struck through until the page reloads.
+   */
+  before?: CampaignPlatform[]
 }
 
 /** Keeps a nested control from also triggering the row's add/remove. */
@@ -66,6 +71,7 @@ export function PlatformsControl({
   value,
   onChange,
   onCommitPlatforms,
+  before,
 }: Props) {
   const views = usePlatformViews()
   const selectedById = useMemo(
@@ -92,6 +98,7 @@ export function PlatformsControl({
             key={view.platform.id}
             view={view}
             selection={selectedById.get(view.platform.id)}
+            was={before?.find((p) => p.id === view.platform.id)}
             onAdd={() =>
               onCommitPlatforms(
                 addPlatform(
@@ -165,6 +172,8 @@ type PlatformRowProps = {
   onAdd: () => void
   onTogglePostType: (slug: string) => void
   onDeactivate: () => void
+  /** The campaign's entry for it before the assistant's removal, if any. */
+  was?: CampaignPlatform
 }
 
 /**
@@ -187,6 +196,7 @@ function PlatformRow({
   onAdd,
   onTogglePostType,
   onDeactivate,
+  was,
 }: PlatformRowProps) {
   const { info, available, unavailable } = view
   const selected = selection !== undefined
@@ -211,6 +221,7 @@ function PlatformRow({
           <PlatformLabel
             view={view}
             selectedCount={selected ? postTypes.length : undefined}
+            struck={!selected && was !== undefined}
           />
         </div>
         {!selected && (
@@ -257,6 +268,11 @@ function PlatformRow({
                 label={pt.label}
                 ariaLabel={`${info.name} — ${pt.label}`}
                 checked={postTypes.includes(pt.slug)}
+                struck={
+                  selected &&
+                  !!was?.post_types.includes(pt.slug) &&
+                  !postTypes.includes(pt.slug)
+                }
                 onToggle={() => onTogglePostType(pt.slug)}
                 muted={unavailable.includes(pt)}
               />
@@ -360,9 +376,12 @@ function ConnectLink({ platformName }: { platformName: string }) {
 function PlatformLabel({
   view,
   selectedCount,
+  struck = false,
 }: {
   view: PlatformView
   selectedCount?: number
+  /** The assistant just removed it (CON-483). */
+  struck?: boolean
 }) {
   const { info } = view
   const Icon = info.icon
@@ -422,7 +441,12 @@ function PlatformLabel({
         )}
       </span>
       <div className="min-w-0 flex flex-col">
-        <span className="text-base font-semibold text-primary-foreground">
+        <span
+          className={cn(
+            'text-base font-semibold text-primary-foreground',
+            struck && 'line-through decoration-accent',
+          )}
+        >
           {info.name}
         </span>
         <span className="text-xs text-tertiary-foreground truncate">
@@ -468,6 +492,8 @@ type PostTypeSwitchRowProps = {
   checked: boolean
   onToggle: () => void
   muted?: boolean
+  /** The assistant just switched it off (CON-483). */
+  struck?: boolean
 }
 
 function PostTypeSwitchRow({
@@ -476,6 +502,7 @@ function PostTypeSwitchRow({
   checked,
   onToggle,
   muted = false,
+  struck = false,
 }: PostTypeSwitchRowProps) {
   return (
     <label
@@ -493,6 +520,7 @@ function PostTypeSwitchRow({
         className={cn(
           'text-sm',
           checked ? 'text-primary-foreground' : 'text-tertiary-foreground',
+          struck && 'line-through decoration-accent',
         )}
       >
         {label}

@@ -1474,7 +1474,146 @@ describe('an offer answered from its card (CON-467)', () => {
         status: 'ok',
         result: { drafted: { postCount: 4 }, deleted: 3, kept: ['p9'] },
       })?.replaced,
-    ).toEqual({ deleted: 3, kept: 1 })
+    ).toMatchObject({ deleted: 3, kept: 1, draftedCount: 4 })
+  })
+
+  it('reads both sides of a replace and its period, and one with no drafted (CON-483)', () => {
+    expect(
+      offerOutcome({
+        status: 'ok',
+        result: {
+          drafted: {
+            postCount: 12,
+            posts: [{ id: 'n1', title: 'A pool', platform: 'Instagram' }],
+          },
+          deleted: 12,
+          removed: [
+            { id: 'o1', title: 'Car park', platform: 'LinkedIn', fitPct: 28 },
+          ],
+          period: { label: 'April', target: 20, planned: 20, left: 0 },
+        },
+      })?.replaced,
+    ).toEqual({
+      deleted: 12,
+      kept: 0,
+      draftedCount: 12,
+      drafted: [
+        { id: 'n1', title: 'A pool', platform: 'Instagram', fitPct: undefined },
+      ],
+      draftedGrounding: undefined,
+      removed: [
+        { id: 'o1', title: 'Car park', platform: 'LinkedIn', fitPct: 28 },
+      ],
+      period: { label: 'April', target: 20, planned: 20, left: 0 },
+    })
+    // Bug 1: no `drafted` still draws the deletion.
+    expect(
+      offerOutcome({ status: 'ok', result: { deleted: 3 } })?.replaced?.deleted,
+    ).toBe(3)
+  })
+
+  it('reads a removal put off until its scheduled posts are out (CON-483)', () => {
+    expect(
+      offerOutcome({
+        status: 'ok',
+        result: {
+          later: { removed: 'LinkedIn', until: '2026-04-22T09:00:00Z' },
+        },
+      })?.later,
+    ).toEqual({ removed: 'LinkedIn', until: '2026-04-22T09:00:00Z' })
+  })
+
+  it('reads a campaign turn’s platforms, ideas and state (CON-483)', () => {
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Done.',
+        action: 'answered',
+        results: {
+          campaign: {
+            action: 'platforms_updated',
+            platforms: {
+              removed: 'Facebook',
+              postsLeft: { posts: 3, scheduled: 0 },
+              kept: [
+                {
+                  id: 'p1',
+                  title: 'A pool',
+                  platform: 'Facebook',
+                  status: 'draft',
+                },
+              ],
+              undoId: 'u1',
+            },
+            generatedPosts: {
+              ideaCount: 12,
+              windowStart: '2026-04-01',
+              windowEnd: '2026-04-30',
+              undoId: 'u2',
+            },
+            state: {
+              goal: {
+                cadence: 'month',
+                perPeriod: 20,
+                target: 60,
+                planned: 34,
+                room: 26,
+                period: { label: 'April', target: 20, planned: 14, left: 6 },
+              },
+              calendar: { total: 2, kinds: [], top: [] },
+              sources: {
+                wholeBank: false,
+                attached: 8,
+                ready: 6,
+                analysed: 5,
+                notReady: 4,
+                items: [{ id: 'a1', title: 'Brochure', status: 'unreadable' }],
+              },
+            },
+            starters: [
+              { kind: 'fill', label: 'Fill April', instruction: 'Draft 6…' },
+              { kind: 'nope', label: 'x', instruction: 'y' },
+            ],
+          },
+        },
+      }),
+      'campaign',
+    )
+    expect(r.details.platforms).toEqual({
+      added: undefined,
+      removed: 'Facebook',
+      postsLeft: { posts: 3, scheduled: 0 },
+      kept: [
+        {
+          id: 'p1',
+          title: 'A pool',
+          platform: 'Facebook',
+          postType: undefined,
+          status: 'draft',
+        },
+      ],
+      unscheduled: 0,
+      undoId: 'u1',
+    })
+    expect(r.details.generatedPosts).toMatchObject({
+      windowStart: '2026-04-01',
+      windowEnd: '2026-04-30',
+      undoId: 'u2',
+    })
+    expect(r.campaignState?.state.goal?.period).toEqual({
+      label: 'April',
+      target: 20,
+      planned: 14,
+      left: 6,
+    })
+    expect(r.campaignState?.state.sources).toMatchObject({
+      attached: 8,
+      notReady: 4,
+      items: [{ id: 'a1', title: 'Brochure', status: 'unreadable' }],
+    })
+    // A kind this build doesn't know is left out.
+    expect(r.campaignState?.starters).toEqual([
+      { kind: 'fill', instruction: 'Draft 6…' },
+    ])
   })
 
   it('reads an offer’s details, and none when the card has nothing', () => {
@@ -1589,11 +1728,12 @@ describe('the campaign state (CON-468)', () => {
       target: 96,
       undoId: 'u1',
     })
-    expect(r.details.platforms).toEqual({
-      added: '',
+    // A removal alone has no `added` (CON-483 bug 2).
+    expect(r.details.platforms).toMatchObject({
       removed: 'Threads',
       undoId: 'u2',
     })
+    expect(r.details.platforms?.added).toBeUndefined()
   })
 })
 

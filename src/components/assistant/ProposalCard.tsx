@@ -185,9 +185,16 @@ export function ProposalCard({
                     </StatusWord>
                   )}
                 </div>
-                {(why || option.description) && (
+                {/* What the option costs, then — on the recommended one —
+                    why it is the one to pick (CON-483). */}
+                {option.description && (
                   <span className="text-[12.5px] text-secondary-foreground">
-                    {why ?? option.description}
+                    {option.description}
+                  </span>
+                )}
+                {why && (
+                  <span className="text-[12.5px] text-tertiary-foreground">
+                    {why}
                   </span>
                 )}
               </li>
@@ -214,6 +221,14 @@ export function ProposalCard({
             {t('assistant.proposal.dismiss')}
           </TextAction>
         </div>
+      )}
+
+      {/* Why the choice is being asked, or why an option isn't offered
+          (CON-483): the card's footnote, under the options. */}
+      {choice && card?.footnote && (
+        <p className="border-t border-border pt-2.5 text-[12.5px] text-secondary-foreground">
+          {card.footnote}
+        </p>
       )}
 
       {choice && (
@@ -382,7 +397,14 @@ function Details({
                 {row.kind === 'dates' ? rowDates(row) : row.value}
               </span>
               {row.note && (
-                <span className="text-[12.5px] text-secondary-foreground">
+                <span
+                  className={
+                    // Posts a removal leaves, flagged (CON-483).
+                    row.kind === 'posts'
+                      ? 'text-[12.5px] text-warning-ink'
+                      : 'text-[12.5px] text-secondary-foreground'
+                  }
+                >
                   {row.note}
                 </span>
               )}
