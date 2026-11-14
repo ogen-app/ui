@@ -238,6 +238,7 @@ describe('workspaceResults', () => {
     })
     expect(r?.activity).toMatchObject({
       ideasDecided: 12,
+      nextKnown: true,
       failedPosts: [{ postId: 'p1', title: 'Easter brunch' }],
       nextScheduled: { postId: 'p9', title: 'Rooftop' },
       campaign: { id: 'c1', name: 'Spring reopening' },

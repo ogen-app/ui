@@ -1005,6 +1005,11 @@ export type ActivityRange = {
   ideasDecided: number
   /** The next post to go out, for a range where nothing has yet. */
   nextScheduled?: { postId: string; title: string; at: string }
+  /**
+   * Whether the server looked the next post up (CON-480): without it, no
+   * `nextScheduled` says nothing about whether one is scheduled.
+   */
+  nextKnown: boolean
   /** The campaign the range was narrowed to. */
   campaign?: { id: string; name: string }
   days: {
@@ -1087,7 +1092,11 @@ export type DigestSkipReason =
 export type DigestSent = {
   from: string
   to: string
-  sent: { userId: string; name: string; role: string; email: string }[]
+  /**
+   * Who it went to; absent from a server before CON-480, which sent it to
+   * the asker without saying so — unknown, not "no one".
+   */
+  sent?: { userId: string; name: string; role: string; email: string }[]
   notSent: { recipient: string; reason: DigestSkipReason }[]
   /** When it was queued; absent when it went to no one. */
   sentAt?: string

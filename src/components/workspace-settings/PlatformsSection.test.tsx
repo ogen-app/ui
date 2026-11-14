@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/renderWithProviders'
@@ -69,6 +70,37 @@ describe('arriving at an account to reconnect (CON-480)', () => {
 
   it('asks nothing when the address names no account', async () => {
     await renderWithProviders(<PlatformsSection />)
+    expect(screen.queryByText('Reconnect Instagram')).toBeNull()
+  })
+
+  it('keeps the focus in the dialog, and gives it back to Reconnect after', async () => {
+    await renderWithProviders(
+      <PlatformsSection focus={{ accountId: 'a1', platform: 'instagram' }} />,
+    )
+    expect(document.activeElement?.textContent).not.toBe('Reconnect')
+    fireEvent.click(screen.getByText('CANCEL'))
+    expect(document.activeElement?.textContent).toBe('Reconnect')
+  })
+
+  it('closes the dialog when the address moves on', async () => {
+    function Moving() {
+      const [here, setHere] = useState(true)
+      return (
+        <>
+          <button type="button" onClick={() => setHere(false)}>
+            move on
+          </button>
+          <PlatformsSection
+            focus={
+              here ? { accountId: 'a1', platform: 'instagram' } : undefined
+            }
+          />
+        </>
+      )
+    }
+    await renderWithProviders(<Moving />)
+    expect(screen.getByText('Reconnect Instagram')).toBeTruthy()
+    fireEvent.click(screen.getByText('move on'))
     expect(screen.queryByText('Reconnect Instagram')).toBeNull()
   })
 })

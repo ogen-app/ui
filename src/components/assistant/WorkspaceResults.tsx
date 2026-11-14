@@ -357,7 +357,9 @@ function ActivityCard({ activity: a }: { activity: ActivityRange }) {
                   }),
                 }),
               })
-            : t('assistant.workspace.activity.quietNone')}
+            : a.nextKnown
+              ? t('assistant.workspace.activity.quietNone')
+              : t('assistant.workspace.activity.quietUnknown')}
         </p>
       )}
       <CiteFooter>
@@ -611,6 +613,16 @@ function EmailedCard({ emailed: e }: { emailed: DigestSent }) {
       </ResultRow>
     )
   })
+  // A server before CON-480 sent it to the asker and said only the week.
+  if (!e.sent) {
+    return (
+      <ResultBlock
+        status={t('assistant.workspace.emailed.sentWord')}
+        title={t('assistant.workspace.emailed.onItsWay')}
+        meta={t('assistant.workspace.digest.weekOf', { week: weekOf(e.from) })}
+      />
+    )
+  }
   if (e.sent.length === 0) {
     // Every skip for one reason says it in the headline; a mix says only
     // that nothing went.
@@ -768,7 +780,15 @@ function useEntryBy(): (e: PostHistoryEntry) => string {
     return m ? m.name || m.email : t('assistant.workspace.history.former')
   }
   return (e) => {
-    const name = e.byId ? (members ? nameOf(e.byId) : e.by) : undefined
+    // A person the server named without an id is still that person; only
+    // an entry naming no one falls to "Ogen" or "not recorded".
+    const name = e.byId
+      ? members
+        ? nameOf(e.byId)
+        : e.by
+      : e.source === 'user' && e.by
+        ? e.by
+        : undefined
     if (e.source === 'assistant')
       return name
         ? t('assistant.workspace.history.assistantFor', { name })

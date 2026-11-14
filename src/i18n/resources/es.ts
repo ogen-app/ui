@@ -3115,6 +3115,7 @@ export const es: Translation = {
         nothingDays: '{{days}}: nada.',
         quietNext: 'Aún no ha salido nada. La próxima es el {{when}}.',
         quietNone: 'No ha salido nada y no hay nada programado.',
+        quietUnknown: 'Aún no ha salido nada.',
         nextAt: '{{day}} a las {{time}}',
         toToday: '{{period}}, hasta hoy',
       },
@@ -3124,6 +3125,7 @@ export const es: Translation = {
         sentTo_one: 'Enviado a {{formatted}} persona',
         sentTo_other: 'Enviado a {{formatted}} personas',
         justNow: 'ahora mismo',
+        onItsWay: 'De camino a tu bandeja de entrada',
         invite: 'Invítalos antes, desde Ajustes › Personas',
         none: {
           notMember: 'Solo pueden recibirlo los miembros',

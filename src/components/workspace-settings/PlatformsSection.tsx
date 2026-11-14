@@ -265,7 +265,9 @@ function AccountRow({
   const [wasFocused, setWasFocused] = useState(focused)
   if (focused !== wasFocused) {
     setWasFocused(focused)
-    if (focused && !account.is_active) setAsking(true)
+    // Opens for a broken account the address names, and closes when the
+    // address moves on, so an old dialog never outlives its account.
+    setAsking(focused && !account.is_active)
   }
   const name = account.display_name || account.username
   const broken = !account.is_active
@@ -275,9 +277,16 @@ function AccountRow({
   useEffect(() => {
     if (!focused) return
     rowRef.current?.scrollIntoView({ block: 'center' })
+  }, [focused])
+
+  // The open dialog holds the focus: a background Reconnect focused under it
+  // would start the flow on Enter without the asking. Once it closes, the
+  // focus comes back to the row's button.
+  useEffect(() => {
+    if (!focused || asking) return
     // A healthy account has no Reconnect button; the row takes the focus.
     ;(reconnectRef.current ?? rowRef.current)?.focus({ preventScroll: true })
-  }, [focused])
+  }, [focused, asking])
 
   return (
     <li
