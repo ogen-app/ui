@@ -153,7 +153,10 @@ export function IdeaRow({
         {analysed ? (
           <FitTrack score={idea.fitScore} />
         ) : (
-          <AuthorSlot name={idea.authorName ?? null} id={idea.createdBy} />
+          <AuthorSlot
+            name={writerName(t, idea)}
+            id={suggested(idea) ? null : idea.createdBy}
+          />
         )}
       </span>
 
@@ -265,6 +268,21 @@ export function IdeaRow({
  * A written idea's slot: its writer's initials in their identity colour, and
  * *Written* beside them. Named for a screen reader, as the fit track is.
  */
+/**
+ * An idea the assistant generated from no document (CON-484): it was
+ * suggested, whoever's request it came from, and every place that names the
+ * idea's writer says so alike — the row, its slot and the opened idea.
+ */
+function suggested(idea: Idea): boolean {
+  return !isAnalysed(idea) && isNotGrounded(idea.groundingMode)
+}
+
+/** Who to name as the idea's writer. */
+function writerName(t: TFunction, idea: Idea): string {
+  if (suggested(idea)) return t('ideas.card.assistant')
+  return idea.authorName || t('ideas.card.someone')
+}
+
 function AuthorSlot({ name, id }: { name: string | null; id: string | null }) {
   const { t } = useTranslation()
   const who = name || t('ideas.card.someone')
@@ -377,7 +395,7 @@ function SourceLine({
       <span key="who" className="truncate">
         {/* Generated with no document behind it (CON-484): the assistant
             suggested it, whoever's request it came from. */}
-        {isNotGrounded(idea.groundingMode)
+        {suggested(idea)
           ? t('ideas.card.byAssistant')
           : idea.authorName || t('ideas.card.someone')}
       </span>,
@@ -638,10 +656,12 @@ function WrittenBody({
       {/* No rule above: the note field's own underline is the line. */}
       <div className="flex flex-col gap-1 text-xs text-secondary-foreground">
         <p>
-          {t('ideas.card.writtenByAt', {
-            name: idea.authorName || t('ideas.card.someone'),
-            at: when(idea.createdAt),
-          })}
+          {suggested(idea)
+            ? t('ideas.card.suggestedAt', { at: when(idea.createdAt) })
+            : t('ideas.card.writtenByAt', {
+                name: writerName(t, idea),
+                at: when(idea.createdAt),
+              })}
         </p>
         <p>{t('ideas.card.unscored')}</p>
       </div>

@@ -272,17 +272,9 @@ export function ContentPage({
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [webPageModalOpen, setWebPageModalOpen] = useState(false)
   const [addMenuOpen, setAddMenuOpen] = useState(addSource === 'source')
-  // Opened as the request arrives, during render: the page may already be
-  // on screen when the assistant asks.
   const [askedForSource, setAskedForSource] = useState<
     AddSourceOpen | undefined
   >(undefined)
-  if (addSource !== askedForSource) {
-    setAskedForSource(addSource)
-    if (addSource === 'source') setAddMenuOpen(true)
-    if (addSource === 'upload') setUploadModalOpen(true)
-    if (addSource === 'page') setWebPageModalOpen(true)
-  }
   // Opened by the assistant (CON-484): the page says so, with BACK, while
   // the user is here and hasn't added anything yet.
   const sourceRequest = useAddSourceRequestStore((s) =>
@@ -293,11 +285,21 @@ export function ContentPage({
   const clearSourceRequest = useAddSourceRequestStore((s) => s.clear)
   const undoUiAction = useAssistantStore((s) => s.undoUiAction)
   useEffect(() => () => clearSourceRequest(), [clearSourceRequest])
-  const uploadsBefore = useRef(uploadItems.length)
+  // A file that really went to this page's scope ends the request: one that
+  // failed validation or its transfer leaves it, and BACK, standing.
+  const requestScope = campaign?.id ?? null
+  const addedHere = uploadItems
+    .filter(
+      (i) => i.campaignId === requestScope && i.assetId && i.phase !== 'failed',
+    )
+    .map((i) => i.id)
+  const addedBefore = useRef(new Set(addedHere))
+  const addedKey = addedHere.join(',')
   useEffect(() => {
-    if (uploadItems.length > uploadsBefore.current) clearSourceRequest()
-    uploadsBefore.current = uploadItems.length
-  }, [uploadItems.length, clearSourceRequest])
+    const ids = addedKey ? addedKey.split(',') : []
+    if (ids.some((id) => !addedBefore.current.has(id))) clearSourceRequest()
+    addedBefore.current = new Set(ids)
+  }, [addedKey, clearSourceRequest])
   useEffect(() => {
     if (addSource) onAddSourceOpened?.()
   }, [addSource, onAddSourceOpened])
@@ -437,6 +439,16 @@ export function ContentPage({
   const upload = bankGate.intent(() => setUploadModalOpen(true))
   const addWebPage = bankGate.intent(() => setWebPageModalOpen(true))
 
+  // Opened as the request arrives, during render: the page may already be
+  // on screen when the assistant asks. Through the same gate as the menu's
+  // own items, so an exhausted bank answers with the upgrade, not a form.
+  if (addSource !== askedForSource) {
+    setAskedForSource(addSource)
+    if (addSource === 'source') setAddMenuOpen(true)
+    if (addSource === 'upload') upload()
+    if (addSource === 'page') addWebPage()
+  }
+
   /**
    * A page the backend has accepted for scraping, joining this scope.
    *
@@ -448,7 +460,6 @@ export function ContentPage({
    * (CON-210 phase 1), and a second copy of the same page would be worse.
    */
   const handleWebPage = (asset: Asset) => {
-    clearSourceRequest()
     const alreadyHere = campaign
       ? campaign.asset_ids.includes(asset.id)
       : list.rows.some((a) => a.id === asset.id)
@@ -466,14 +477,18 @@ export function ContentPage({
       }
     }
     if (!campaign) {
+      clearSourceRequest()
       announce()
       return
     }
     // "It appears in the list below" is only true once the campaign holds it,
     // so the toast waits for the membership write; a refusal raises its own
-    // toast inside `addToCampaign` instead.
+    // toast inside `addToCampaign` instead — and keeps the assistant's
+    // request, and its BACK, standing (CON-484).
     void addToCampaign(campaign.id, [asset.id]).then((attached) => {
-      if (attached) announce()
+      if (!attached) return
+      clearSourceRequest()
+      announce()
     })
   }
 

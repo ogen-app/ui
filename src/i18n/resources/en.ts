@@ -1056,6 +1056,10 @@ export const en = {
       written: 'Written',
       writtenBy: 'Written by {{name}}',
       writtenByAt: 'Written by {{name}} · {{at}}',
+      /** An idea generated from no document, opened (CON-484). */
+      suggestedAt: 'Suggested by the assistant · {{at}}',
+      /** Its writer's slot: the assistant, not whoever asked. */
+      assistant: 'Assistant',
       /** A written idea whose writer was never named. */
       someone: 'Someone',
       /** An idea generated from no document (CON-484). */
@@ -3575,6 +3579,7 @@ export const en = {
       /** An option's own small form: the page's link, then IMPORT (CON-484). */
       import: 'IMPORT',
       inputRequired: 'Paste the page’s link to import it.',
+      badLink: 'That doesn’t look like a web address.',
       /** Before a confirmed run: every confirm re-checks the offer first. */
       checked: 'Checked again — nothing changed',
       /** A choice, answered: which way was taken. */

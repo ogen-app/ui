@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, screen } from '@testing-library/react'
+import { act, fireEvent, screen } from '@testing-library/react'
+import { useUploadStore } from '@/stores/uploadStore'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { useAddSourceRequestStore } from '@/stores/addSourceRequestStore'
 import { renderWithProviders } from '@/test/renderWithProviders'
@@ -174,6 +175,47 @@ describe('ContentPage', () => {
     ).toBeInTheDocument()
     fireEvent.click(screen.getByText('BACK'))
     expect(undoUiAction).toHaveBeenCalledWith('workspace', 't1', 0)
+  })
+
+  it('keeps the banner past a file that failed, and drops it once one goes', async () => {
+    given({ status: 'success', fetchStatus: 'idle', data: { pages: [] } })
+    useAddSourceRequestStore.getState().mark({
+      campaignId: null,
+      threadId: 'workspace',
+      turnId: 't1',
+      index: 0,
+    })
+    await renderWithProviders(
+      <SidebarProvider>
+        <ContentPage campaign={null} search={{}} onSearchChange={() => {}} />
+      </SidebarProvider>,
+    )
+    const banner =
+      'Opened by the assistant — the request waits until a file is read.'
+    const item = (
+      id: string,
+      phase: 'failed' | 'processing',
+      assetId?: string,
+    ) => ({
+      id,
+      campaignId: null,
+      postId: null,
+      file: new File(['x'], `${id}.pdf`),
+      filename: `${id}.pdf`,
+      sizeBytes: 1,
+      kind: null,
+      phase,
+      progress: 100,
+      ...(assetId ? { assetId } : {}),
+    })
+    act(() => useUploadStore.setState({ items: [item('u1', 'failed')] }))
+    expect(screen.getByText(banner)).toBeInTheDocument()
+    act(() =>
+      useUploadStore.setState({
+        items: [item('u1', 'failed'), item('u2', 'processing', 'a2')],
+      }),
+    )
+    expect(screen.queryByText(banner)).not.toBeInTheDocument()
   })
 
   it('keeps ADD CONTENT closed otherwise', async () => {
