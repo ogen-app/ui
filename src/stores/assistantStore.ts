@@ -95,6 +95,14 @@ export async function applyScreenAction(action: UIAction): Promise<void> {
 /** In-flight runs, keyed by thread id. Never rendered — kept out of state. */
 const runners = new Map<string, AbortController>()
 
+/**
+ * Threads the server offered something in while a turn was running (CON-484),
+ * reloaded once it ends; and, for a reload in flight, the turns the thread
+ * held when it began — the history replaces those, never appends to them.
+ */
+const pendingReloads = new Set<string>()
+const reloadSnapshots = new Map<string, Set<string>>()
+
 export function threadIdFor(subject: ThreadSubject): string {
   switch (subject.kind) {
     case 'workspace':
@@ -461,6 +469,9 @@ export const useAssistantStore = create<AssistantState>()(
             runStartedAt: null,
             unread: !watching,
           })
+          // An offer the server made while this ran (CON-484) is read now.
+          if (pendingReloads.delete(threadId))
+            void get().reloadHistory(threadId)
           // The turn moved this thread to the top of the workspace's list, or
           // put it there for the first time (CON-459).
           void queryClient.invalidateQueries({
@@ -915,7 +926,15 @@ export const useAssistantStore = create<AssistantState>()(
 
         reloadHistory: async (threadId) => {
           const thread = get().threads[threadId]
-          if (!thread?.loaded || thread.status === 'running') return
+          if (!thread?.loaded) return
+          // Not over a turn that is streaming: read it once the turn ends.
+          if (thread.status === 'running') {
+            pendingReloads.add(threadId)
+            return
+          }
+          // The history replaces what is held; only a turn started while it
+          // loads is kept after it.
+          reloadSnapshots.set(threadId, new Set(thread.turns.map((t) => t.id)))
           patchThread(threadId, { loaded: false })
           await get().loadHistory(threadId)
         },
@@ -957,10 +976,15 @@ export const useAssistantStore = create<AssistantState>()(
             })
             settleHistory(turns, Date.now(), offers)
             // A turn may have started while history was loading; keep it last.
+            // A reload's history already holds what the thread held before.
+            const held = reloadSnapshots.get(threadId)
+            reloadSnapshots.delete(threadId)
             set((s) => {
               const current = s.threads[threadId]
               if (!current) return s
-              const live = current.turns
+              const live = held
+                ? current.turns.filter((t) => !held.has(t.id))
+                : current.turns
               return {
                 threads: {
                   ...s.threads,
@@ -970,6 +994,7 @@ export const useAssistantStore = create<AssistantState>()(
             })
           } catch {
             // History is a nicety — a failed load leaves the thread usable.
+            reloadSnapshots.delete(threadId)
             patchThread(threadId, { loaded: true })
           }
         },

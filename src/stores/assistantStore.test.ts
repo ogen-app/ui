@@ -1013,3 +1013,60 @@ describe('settleHistory with the server’s offer states (CON-482)', () => {
     })
   })
 })
+
+describe('an offer made again once its source is read (CON-484)', () => {
+  const thread = (status: 'idle' | 'running', turns: { id: string }[]) =>
+    useAssistantStore.setState({
+      threads: {
+        'campaign:c1': {
+          id: 'campaign:c1',
+          subject: { kind: 'campaign', campaignId: 'c1' },
+          campaignTitle: 'Spring reopening',
+          turns: turns.map((t) => ({
+            id: t.id,
+            role: 'assistant' as const,
+            content: t.id,
+          })),
+          status,
+          loaded: true,
+        },
+      } as never,
+    })
+
+  it('replaces the thread with its history rather than appending to it', async () => {
+    const { listThreadMessages } = await import('@/services/api/assistant')
+    vi.mocked(listThreadMessages).mockResolvedValueOnce(
+      ['a', 'b', 'c'].map((id) => ({
+        id,
+        role: 'assistant',
+        content: JSON.stringify({ explanation: id, action: 'answered' }),
+        created_at: '2026-11-14T10:00:00Z',
+      })) as never,
+    )
+    thread('idle', [{ id: 'a' }, { id: 'b' }])
+    await useAssistantStore.getState().reloadHistory('campaign:c1')
+    expect(
+      useAssistantStore
+        .getState()
+        .threads['campaign:c1'].turns.map((t) => t.id),
+    ).toEqual(['a', 'b', 'c'])
+  })
+
+  it('waits for a running turn, then reads it', async () => {
+    const { listThreadMessages } = await import('@/services/api/assistant')
+    vi.mocked(listThreadMessages).mockClear()
+    thread('running', [{ id: 'a' }])
+    await useAssistantStore.getState().reloadHistory('campaign:c1')
+    expect(listThreadMessages).not.toHaveBeenCalled()
+    // The turn ends — here, through a send that completes.
+    useAssistantStore.setState((s) => ({
+      threads: {
+        ...s.threads,
+        'campaign:c1': { ...s.threads['campaign:c1'], status: 'idle' },
+      },
+    }))
+    stream.events = [{ type: 'complete', result: result() }]
+    await useAssistantStore.getState().send('campaign:c1', 'hello')
+    await vi.waitFor(() => expect(listThreadMessages).toHaveBeenCalled())
+  })
+})

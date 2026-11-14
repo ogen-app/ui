@@ -873,6 +873,8 @@ export const es: Translation = {
       written: 'Escrita',
       writtenBy: 'Escrita por {{name}}',
       writtenByAt: 'Escrita por {{name}} · {{at}}',
+      suggestedAt: 'Sugerida por el asistente · {{at}}',
+      assistant: 'Asistente',
       someone: 'Alguien',
       byAssistant: 'sugerida por el asistente',
       documentDeleted: 'Documento eliminado',
@@ -2981,6 +2983,7 @@ export const es: Translation = {
       sourceReady: 'Fuente lista: «{{title}}»',
       import: 'IMPORTAR',
       inputRequired: 'Pega el enlace de la página para importarla.',
+      badLink: 'Eso no parece una dirección web.',
       checked: 'Comprobado de nuevo — nada ha cambiado',
       chose: 'Elegido: {{option}}',
       staleCard: {

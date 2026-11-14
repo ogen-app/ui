@@ -165,12 +165,25 @@ describe('a choice that asks for a link', () => {
       target: { value: ' villaaurora.it/spa ' },
     })
     fireEvent.click(screen.getByText('IMPORT'))
+    // Typed without its scheme, sent as a page on the web.
     expect(confirm).toHaveBeenCalledWith(
       't',
       'pr1',
       'import_page',
-      'villaaurora.it/spa',
+      'https://villaaurora.it/spa',
     )
+  })
+
+  it('says a link that isn’t one, and sends nothing', () => {
+    render(<ProposalCard threadId="t" proposal={noSources} disabled={false} />)
+    fireEvent.change(screen.getByLabelText('Page link'), {
+      target: { value: 'not a link' },
+    })
+    fireEvent.click(screen.getByText('IMPORT'))
+    expect(confirm).not.toHaveBeenCalled()
+    expect(
+      screen.getByText('That doesn’t look like a web address.'),
+    ).toBeTruthy()
   })
 
   it('runs an option without an input on its button', () => {

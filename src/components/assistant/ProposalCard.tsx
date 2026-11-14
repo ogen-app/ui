@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/intl'
+import { checkPageUrl } from '@/lib/webPageUrl'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { AssetTypeBadge } from './AssetTypeBadge'
 import { TrailRows } from './AnalyticsResults'
@@ -208,6 +209,7 @@ export function ProposalCard({
                 {option.input && (
                   <OptionInput
                     id={inputId(proposal.id, option.id)}
+                    kind={option.input.kind}
                     label={option.input.label}
                     disabled={disabled}
                     error={proposal.error}
@@ -276,12 +278,14 @@ function inputId(proposalId: string, optionId: string): string {
  */
 function OptionInput({
   id,
+  kind,
   label,
   disabled,
   error,
   onSubmit,
 }: {
   id: string
+  kind: string
   label: string
   disabled: boolean
   error?: string
@@ -289,13 +293,24 @@ function OptionInput({
 }) {
   const { t } = useTranslation()
   const [value, setValue] = useState('')
+  const [invalid, setInvalid] = useState(false)
   const trimmed = value.trim()
   return (
     <form
       className="flex w-full flex-col gap-1"
       onSubmit={(e) => {
         e.preventDefault()
-        if (trimmed) onSubmit(trimmed)
+        if (!trimmed) return
+        if (kind !== 'url') {
+          onSubmit(trimmed)
+          return
+        }
+        // A link typed without its scheme is read as a page on the web, as
+        // the import dialog reads it — never sent bare, which the server
+        // would take for a path.
+        const checked = checkPageUrl(trimmed)
+        setInvalid(!checked.ok)
+        if (checked.ok) onSubmit(checked.url)
       }}
     >
       <div className="flex w-full items-center gap-3">
@@ -312,7 +327,10 @@ function OptionInput({
             inputMode="url"
             value={value}
             disabled={disabled}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              setValue(e.target.value)
+              setInvalid(false)
+            }}
             placeholder={label}
             aria-label={label}
             className="min-w-0 flex-1 bg-transparent text-[12.5px] text-foreground outline-none placeholder:text-tertiary-foreground"
@@ -322,7 +340,11 @@ function OptionInput({
           {t('assistant.proposal.import')}
         </TextAction>
       </div>
-      {error && <p className="text-[12.5px] text-warning-ink">{error}</p>}
+      {(invalid || error) && (
+        <p className="text-[12.5px] text-warning-ink">
+          {invalid ? t('assistant.proposal.badLink') : error}
+        </p>
+      )}
     </form>
   )
 }
