@@ -147,4 +147,47 @@ describe('IdeaPostForm, as CON-485 draws it', () => {
     expect(onSubmit).not.toHaveBeenCalled()
     expect(screen.queryByText('Draft “The kitchen garden”')).toBeNull()
   })
+
+  it('dates one idea from its plan, and says when none or all of them have a day', () => {
+    const { unmount } = render(
+      <IdeaPostForm
+        verb="draft"
+        ideaCount={1}
+        campaignId="c1"
+        plans={[{ targetDate: '2026-11-26' }]}
+        onSubmit={vi.fn()}
+      >
+        <button type="button">open</button>
+      </IdeaPostForm>,
+      { wrapper: QueryWrapper },
+    )
+    fireEvent.click(screen.getByText('open'))
+    expect(screen.getByText(/^Dated .*26.*, the idea’s day\.$/)).toBeTruthy()
+    expect(screen.queryByText(/Not scheduled/)).toBeNull()
+    unmount()
+
+    for (const [plans, words] of [
+      [
+        [{ targetDate: '2026-11-26' }, { targetDate: '2026-11-27' }],
+        'Each dated on its idea’s planned day.',
+      ],
+      [[{}, {}], 'Not scheduled: none of the ideas has a day planned.'],
+    ] as const) {
+      const view = render(
+        <IdeaPostForm
+          verb="draft"
+          ideaCount={2}
+          campaignId="c1"
+          plans={[...plans]}
+          onSubmit={vi.fn()}
+        >
+          <button type="button">open</button>
+        </IdeaPostForm>,
+        { wrapper: QueryWrapper },
+      )
+      fireEvent.click(screen.getByText('open'))
+      expect(screen.getByText(words)).toBeTruthy()
+      view.unmount()
+    }
+  })
 })

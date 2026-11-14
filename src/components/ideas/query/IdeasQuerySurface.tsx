@@ -307,11 +307,15 @@ export function IdeasQuerySurface({
   // The campaign whose platforms the form offers: the page's, or the one
   // every ticked idea is filed under (CON-470).
   const tickedCampaign = campaignId ?? sharedCampaign(rows, ticked)
-  // What the ticked ideas' plans name, for the form to preset (CON-485).
-  const tickedPlans = useMemo(
-    () => rows.filter((r) => ticked.has(r.id)).map((r) => r.plan ?? {}),
-    [rows, ticked],
-  )
+  // What the ticked ideas' plans name, for the form to preset (CON-485) —
+  // in the order the ids are sent, which is the order the server reads them.
+  const tickedPlans = useMemo(() => {
+    const byId = new Map(rows.map((r) => [r.id, r]))
+    return [...ticked].flatMap((id) => {
+      const row = byId.get(id)
+      return row ? [row.plan ?? {}] : []
+    })
+  }, [rows, ticked])
 
   // The assistant can tick rows here, or open one of the smart groups.
   useAssistantRequest((action) => {

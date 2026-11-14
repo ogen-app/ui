@@ -1238,6 +1238,11 @@ export const en = {
         cancel: 'CANCEL',
         onDay: 'Dated {{date}}, the idea’s day.',
         unscheduled: 'Not scheduled, unless an idea has a day planned.',
+        /** Every idea has a day planned (CON-485). */
+        allDated: 'Each dated on its idea’s planned day.',
+        /** No idea has a day planned (CON-485). */
+        undated_one: 'Not scheduled: the idea has no day planned.',
+        undated_other: 'Not scheduled: none of the ideas has a day planned.',
         compile: 'COMPILE',
         compileCount_one: 'COMPILE {{formatted}} PLANNED POST',
         compileCount_other: 'COMPILE {{formatted}} PLANNED POSTS',

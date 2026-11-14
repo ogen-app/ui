@@ -635,8 +635,8 @@ function draftCampaign(
 }
 
 /**
- * One draft as it is written (CON-481): its title and platform, OPEN, the
- * start of its body, and where it came from — or that it came from the idea's
+ * One draft as it is written (CON-481): its title, platform and type, its
+ * day and why — or "Not scheduled" (CON-485) —, OPEN, the start of its body, and where it came from — or that it came from the idea's
  * own words.
  */
 function DraftCard({
@@ -649,11 +649,20 @@ function DraftCard({
   const { t } = useTranslation()
   const { resolve } = usePlatformCatalog()
   const campaign = draftCampaign(draft, campaignId)
+  const platform = resolve(draft.platformId)
+  const what = [platform?.name, postTypeLabel(platform, draft.postType)]
+    .filter(Boolean)
+    .join(' · ')
   return (
     <ResultBlock
       status={t('assistant.ideas.drafted.one')}
       title={draft.title || t('assistant.ideas.untitled')}
-      meta={resolve(draft.platformId)?.name}
+      meta={
+        <>
+          {what && `${what} · `}
+          <WhenLabel t={t} date={draft.publishDate} from={draft.dateFrom} />
+        </>
+      }
       action={
         campaign ? (
           <Link
@@ -778,10 +787,7 @@ function DraftedCard({
       {d.posts.map((p) => {
         const campaign = draftCampaign(p, campaignId)
         const platform = resolve(p.platformId)
-        const type = p.postType
-          ? (platform?.postTypes?.find((pt) => pt.slug === p.postType)?.label ??
-            p.postType)
-          : undefined
+        const type = postTypeLabel(platform, p.postType)
         return (
           <ResultRow key={p.postId} className="flex items-baseline gap-3">
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -814,6 +820,15 @@ function DraftedCard({
       )}
     </ResultBlock>
   )
+}
+
+/** A made post's type as its platform words it, else the slug. */
+function postTypeLabel(
+  platform: { postTypes?: { slug: string; label: string }[] } | undefined,
+  slug: string | undefined,
+): string | undefined {
+  if (!slug) return undefined
+  return platform?.postTypes?.find((pt) => pt.slug === slug)?.label ?? slug
 }
 
 /**

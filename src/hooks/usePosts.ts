@@ -320,12 +320,19 @@ export function useDuplicatePost(campaignId: string) {
  * workspace key and the summaries roll-up alongside it, so one call keeps all
  * three in step.
  */
+/**
+ * Every post update, so a screen can tell an optimistic value in the list
+ * from one the server has taken (CON-485).
+ */
+export const UPDATE_POST_KEY = ['posts', 'update'] as const
+
 export function useUpdatePost(campaignId: string | null) {
   const qc = useQueryClient()
   const listKey = campaignId
     ? campaignPostsKey(campaignId)
     : WORKSPACE_POSTS_KEY
   return useMutation({
+    mutationKey: UPDATE_POST_KEY,
     mutationFn: ({ id, payload }: { id: string; payload: PostPayload }) =>
       updatePost(id, payload),
     onMutate: async ({ id, payload }) => {

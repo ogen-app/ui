@@ -153,6 +153,19 @@ function FormBody({
         : t('ideas.lifecycle.form.draftCount', counted(made))
   const blocked = platforms !== null && ticked.length === 0
   const dated = plans.filter((p) => p.targetDate).length
+  // The day the posts take: the slot's, or a single idea's planned one —
+  // the server dates from the plan whenever no day is given.
+  const day = date ?? (ideaCount === 1 ? plans[0]?.targetDate : undefined)
+  // Whether every idea's plan is known, so "none" and "all" can be said.
+  const known = plans.length === ideaCount
+  const dayLabel = (d: string) =>
+    t('ideas.lifecycle.form.onDay', {
+      date: formatDate(
+        startOfDay(d),
+        { weekday: 'short', day: 'numeric', month: 'short' },
+        i18n.language,
+      ),
+    })
 
   const toggle = (id: string, on: boolean) =>
     setPicked(on ? [...ticked, id] : ticked.filter((p) => p !== id))
@@ -279,31 +292,21 @@ function FormBody({
           </p>
           {/* From a slot the planned posts take its day; otherwise none. */}
           <p className="pt-1 text-xs/[18px] text-tertiary-foreground">
-            {date
-              ? t('ideas.lifecycle.form.onDay', {
-                  date: formatDate(
-                    startOfDay(date),
-                    { weekday: 'short', day: 'numeric', month: 'short' },
-                    i18n.language,
-                  ),
-                })
-              : t('ideas.lifecycle.form.compileNote')}
+            {day ? dayLabel(day) : t('ideas.lifecycle.form.compileNote')}
           </p>
         </Group>
       ) : (
         <Group heading={t('ideas.lifecycle.form.when')}>
           <p className="text-[13px]/5 text-foreground">
-            {date
-              ? t('ideas.lifecycle.form.onDay', {
-                  date: formatDate(
-                    startOfDay(date),
-                    { weekday: 'short', day: 'numeric', month: 'short' },
-                    i18n.language,
-                  ),
-                })
-              : t('ideas.lifecycle.form.unscheduled')}
+            {day
+              ? dayLabel(day)
+              : known && dated === ideaCount
+                ? t('ideas.lifecycle.form.allDated')
+                : known && dated === 0
+                  ? t('ideas.lifecycle.form.undated', { count: ideaCount })
+                  : t('ideas.lifecycle.form.unscheduled')}
           </p>
-          {!date && ideaCount > 1 && plans.length > 0 && dated > 0 && (
+          {!day && ideaCount > 1 && dated > 0 && dated < ideaCount && (
             <p className="pt-0.5 text-xs text-tertiary-foreground">
               {t('ideas.lifecycle.form.datedOf', {
                 count: dated,
