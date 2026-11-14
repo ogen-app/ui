@@ -5,7 +5,11 @@ import type { AppliedUIAction } from '@/lib/assistantUiActions'
 import { UiActionRows } from './UiActionRows'
 
 const view = (zernioId: string, name: string, accounts: number) => ({
-  info: { zernioId, name },
+  info: {
+    zernioId,
+    name,
+    postTypes: [{ slug: 'image-post', label: 'Image post' }],
+  },
   connectedPublishers: [
     {
       accounts: Array.from({ length: accounts }, (_, i) => ({
@@ -180,13 +184,14 @@ describe('list rows (CON-482)', () => {
               type: 'set_filter',
               screen: 'campaign.list',
               campaignId: 'c1',
-              filter: 'status=draft&platform=instagram',
+              filter: 'status=draft&platform=instagram&post_type=image-post',
             },
           },
         ]}
       />,
     )
-    expect(screen.getByText('draft · Instagram')).toBeTruthy()
+    // The post type as the platforms word it, not its slug.
+    expect(screen.getByText('draft · Instagram · Image post')).toBeTruthy()
   })
 
   it('counts the rows the list ticked, not the ids sent', async () => {

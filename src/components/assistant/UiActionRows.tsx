@@ -41,9 +41,13 @@ export function UiActionRows({
   const words = useWindowWords({ counted: true })
   const { resolve } = usePlatformCatalog()
   const platformName = (slug: string) => resolve(slug)?.name ?? slug
-  const connectedViews = usePlatformViews().filter(
-    (v) => v.connectedPublishers.length > 0,
-  )
+  const views = usePlatformViews()
+  const connectedViews = views.filter((v) => v.connectedPublishers.length > 0)
+  // A post type as the platforms word it — the operator's label for a type
+  // this build doesn't name — never its slug.
+  const postTypeName = (slug: string) =>
+    views.flatMap((v) => v.info.postTypes).find((p) => p.slug === slug)
+      ?.label ?? slug
   // Whether Settings found the account a reconnect named: when not, it lands
   // on the platform's tile instead, and the row says so (CON-480).
   const found = (connect: NonNullable<UIAction['connect']>) =>
@@ -93,7 +97,14 @@ export function UiActionRows({
                     screen: screenName(t, action.screen),
                     window: words.line(windowOf(folded.action)),
                   })
-                : actionTitle(t, applied, words.line, platformName, found)
+                : actionTitle(
+                    t,
+                    applied,
+                    words.line,
+                    platformName,
+                    postTypeName,
+                    found,
+                  )
             }
             action={
               applied.before && !applied.undone ? (
@@ -197,6 +208,7 @@ function actionTitle(
   applied: AppliedUIAction,
   describe: (w: WindowLike, only?: readonly WindowControl[]) => string,
   platformName: (slug: string) => string,
+  postTypeName: (slug: string) => string,
   found: (connect: NonNullable<UIAction['connect']>) => boolean,
 ): React.ReactNode {
   const { action } = applied
@@ -245,7 +257,7 @@ function actionTitle(
       if (!action.filter) return t('assistant.uiAction.clearFilter', { screen })
       // What it filtered to, on a posts screen (CON-482): "drafts ·
       // Instagram", in grey after the screen.
-      const detail = postFilterDetail(t, action, platformName)
+      const detail = postFilterDetail(t, action, platformName, postTypeName)
       return detail ? (
         <Trans
           t={t}
@@ -290,6 +302,7 @@ function postFilterDetail(
   t: TFunction,
   action: UIAction,
   platformName: (slug: string) => string,
+  postTypeName: (slug: string) => string,
 ): string | undefined {
   if (!POST_SCREENS.includes(action.screen) || !action.filter) return undefined
   const q = new URLSearchParams(action.filter)
@@ -299,7 +312,7 @@ function postFilterDetail(
       postStatusLabel(t, s as PostStatus).toLowerCase(),
     ),
     ...list('platform').map(platformName),
-    ...list('post_type').map((p) => p.replace(/[-_]/g, ' ')),
+    ...list('post_type').map(postTypeName),
   ]
   return parts.length > 0 ? parts.join(' · ') : undefined
 }

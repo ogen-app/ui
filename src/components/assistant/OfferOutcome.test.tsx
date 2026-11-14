@@ -143,6 +143,31 @@ describe('a tagging', () => {
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u1')
   })
 
+  it('says both when a job adds and takes tags away', async () => {
+    await show({
+      reoffered: false,
+      notMade: [],
+      tagged: {
+        ...tagged,
+        add: ['summer'],
+        remove: ['winter'],
+        assets: [
+          {
+            id: 'a1',
+            title: 'Villa Aurora brochure',
+            added: ['summer'],
+            removed: ['winter'],
+          },
+        ],
+        more: 0,
+      },
+    })
+    expect(
+      screen.getByText('14 assets retagged: “summer” added, “winter” removed'),
+    ).toBeTruthy()
+    expect(screen.getByText('“summer” added, “winter” removed')).toBeTruthy()
+  })
+
   it('says what UNDO put back', async () => {
     await show(
       { reoffered: false, notMade: [], tagged },

@@ -1526,17 +1526,19 @@ function answerOf(content: string): AssistantTurn['answer'] {
  * its card (a later answer turn names it by summary) — and, from the reply
  * under it, whether that confirm ran or found the offer stale — expired, or
  * moved past by a later turn. Only the last turn's open offer stays pending
- * that way.
+ * that way. A thread holding both is read each way for its own offers.
  */
 export function settleHistory(
   turns: AssistantTurn[],
   now: number,
   offers?: Map<string, OfferState[]>,
 ): void {
-  if (offers && offers.size > 0) {
-    const states = new Map(
-      [...offers.values()].flat().map((o) => [o.id, o] as const),
-    )
+  // Offers the server states are settled by id; the rest — rows from before
+  // CON-482 in the same thread — fall back to the summary pairing below.
+  const states = new Map(
+    [...(offers?.values() ?? [])].flat().map((o) => [o.id, o] as const),
+  )
+  if (states.size > 0) {
     for (const turn of turns) {
       if (!turn.proposals) continue
       turn.proposals = turn.proposals.map((p) => {
@@ -1563,7 +1565,6 @@ export function settleHistory(
         return { ...p, ...links }
       })
     }
-    return
   }
   const answered = new Map<
     string,
@@ -1601,6 +1602,7 @@ export function settleHistory(
   for (const turn of turns) {
     if (!turn.proposals) continue
     turn.proposals = turn.proposals.map((p) => {
+      if (states.has(p.id)) return p
       const answer = answered.get(p.summary)
       if (answer) return { ...p, ...answer }
       if (p.expiresAt && Date.parse(p.expiresAt) <= now)

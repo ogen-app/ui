@@ -3946,8 +3946,13 @@ export const en = {
         titleNamed_other: '{{formatted}} assets tagged {{tags}}',
         untagged_one: '{{formatted}} asset untagged {{tags}}',
         untagged_other: '{{formatted}} assets untagged {{tags}}',
+        titleRetagged_one:
+          '{{formatted}} asset retagged: {{added}} added, {{removed}} removed',
+        titleRetagged_other:
+          '{{formatted}} assets retagged: {{added}} added, {{removed}} removed',
         added: '{{tags}} added',
         removed: '{{tags}} removed',
+        addedRemoved: '{{added}} added, {{removed}} removed',
         already: 'already as asked',
         putBack_one:
           'Put back: {{tags}} taken back from the {{formatted}} it changed',

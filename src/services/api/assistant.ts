@@ -479,7 +479,16 @@ export function offerOutcome(raw: unknown): OfferOutcome | undefined {
       ? { deleted: out.deleted, kept: strings(out.kept).length }
       : undefined
   const reoffered = r.status === 'proposed'
-  if (!reoffered && notMade.length === 0 && !tagged && !replaced)
+  // A run that made everything still carries its counts, which a retry's
+  // DONE adds up (CON-482).
+  if (
+    !reoffered &&
+    notMade.length === 0 &&
+    !tagged &&
+    !replaced &&
+    made === undefined &&
+    total === undefined
+  )
     return undefined
   return {
     reoffered,

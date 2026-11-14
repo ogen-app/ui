@@ -3339,8 +3339,13 @@ export const es: Translation = {
         titleNamed_other: '{{formatted}} recursos etiquetados {{tags}}',
         untagged_one: '{{formatted}} recurso sin {{tags}}',
         untagged_other: '{{formatted}} recursos sin {{tags}}',
+        titleRetagged_one:
+          '{{formatted}} recurso reetiquetado: {{added}} añadida, {{removed}} quitada',
+        titleRetagged_other:
+          '{{formatted}} recursos reetiquetados: {{added}} añadida, {{removed}} quitada',
         added: '{{tags}} añadida',
         removed: '{{tags}} quitada',
+        addedRemoved: '{{added}} añadida, {{removed}} quitada',
         already: 'ya estaba así',
         putBack_one: 'Devuelto: {{tags}} retirada del {{formatted}} que cambió',
         putBack_other:

@@ -903,6 +903,44 @@ describe('findings dismissed and restored (CON-478)', () => {
 })
 
 describe('settleHistory with the server’s offer states (CON-482)', () => {
+  it('settles an older row’s offer by its answer when a newer row has states', async () => {
+    const { settleHistory } = await import('./assistantStore')
+    const offer = (id: string, summary: string) => ({
+      id,
+      tool: 't',
+      summary,
+      options: [],
+      status: 'pending' as const,
+    })
+    const turns = [
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        content: '',
+        proposals: [offer('p1', 'Move 5 posts')],
+      },
+      {
+        id: 'u1',
+        role: 'user' as const,
+        content: 'Confirmed: Move 5 posts',
+        answer: 'confirmed' as const,
+      },
+      {
+        id: 'a2',
+        role: 'assistant' as const,
+        content: '',
+        proposals: [offer('p2', 'Tag 14 assets')],
+      },
+    ]
+    settleHistory(
+      turns,
+      Date.now(),
+      new Map([['a2', [{ id: 'p2', status: 'dismissed' }]]]),
+    )
+    expect(turns[0].proposals?.[0].status).toBe('confirmed')
+    expect(turns[2].proposals?.[0].status).toBe('dismissed')
+  })
+
   it('reads each offer as it stands now, a replaced one stale and a retry still open', async () => {
     const { settleHistory } = await import('./assistantStore')
     const offer = (id: string, summary: string) => ({
