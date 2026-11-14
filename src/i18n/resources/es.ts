@@ -741,9 +741,9 @@ export const es: Translation = {
         post_type: 'en formato <v>{{values}}</v>',
         post_type_not: 'que no están en formato <v>{{values}}</v>',
         scheduled: '<v>{{values}}</v>',
-        date: 'con fecha <v>desde el {{values}}</v>',
-        date_range: 'con fecha <v>entre el {{from}} y el {{to}}</v>',
-        date_not: 'con fecha <v>antes del {{values}}</v>',
+        date: 'programadas <v>desde el {{values}}</v>',
+        date_range: 'programadas <v>entre el {{from}} y el {{to}}</v>',
+        date_not: 'programadas <v>antes del {{values}}</v>',
       },
       status: {
         planned: 'planificadas',
@@ -764,7 +764,7 @@ export const es: Translation = {
         platform: 'Publicaciones en…',
         post_type: 'Publicaciones en formato…',
         scheduled: 'Publicaciones…',
-        date: 'Publicaciones con fecha…',
+        date: 'Publicaciones programadas…',
       },
       include: {
         status: 'son',
@@ -783,7 +783,7 @@ export const es: Translation = {
         platform: 'en una plataforma…',
         post_type: 'en un formato…',
         scheduled: 'con fecha, o sin ella…',
-        date: 'con fecha…',
+        date: 'programadas…',
       },
       starterHint: {
         status: 'borradores, fallidas',
@@ -1602,12 +1602,17 @@ export const es: Translation = {
     addPostOn: 'Añadir una publicación el {{date}}',
     density_one: '{{count}} publicación el {{date}} — abrir esta semana',
     density_other: '{{count}} publicaciones el {{date}} — abrir esta semana',
+    densityTicked_one: '{{formatted}} marcada',
+    densityTicked_other: '{{formatted}} marcadas',
+    today: 'HOY',
 
     notScheduled: 'Sin programar',
     notScheduledHint: 'Arrastra una publicación a un día para programarla.',
     justWritten: 'RECIÉN ESCRITA',
     fromIdeas_one: 'de {{formatted}} idea',
     fromIdeas_other: 'de {{formatted}} ideas',
+    notScheduledNoMatch:
+      'Ninguna publicación sin fecha coincide con el filtro.',
     addPost: 'AÑADIR PUBLICACIÓN',
     dateLocked: 'La fecha de esta publicación está bloqueada',
 
@@ -1700,6 +1705,10 @@ export const es: Translation = {
       matching_one: 'La {{formatted}} coincidente · {{screen}}',
       matching_other: 'Las {{formatted}} coincidentes · {{screen}}',
       focusIdea: 'Esta idea está abierta',
+      postsOnDay_one: '{{formatted}} publicación el {{day}}',
+      postsOnDay_other: '{{formatted}} publicaciones el {{day}}',
+      postsInWindow_one: '{{formatted}} publicación · {{window}}',
+      postsInWindow_other: '{{formatted}} publicaciones · {{window}}',
       focusAsset: 'Este recurso está abierto',
       focusNamed: '{{title}} · abierto',
       focusVoice: 'Esta voz está abierta',
@@ -1725,6 +1734,27 @@ export const es: Translation = {
       nowItem: 'Ahora en {{screen}} · {{item}}',
       documents_one: '{{formatted}} documento',
       documents_other: '{{formatted}} documentos',
+      foundationPlace: 'Fundamentos · {{screen}}',
+      windowPlace: '{{screen}} · {{window}}',
+    },
+
+    kindCount: {
+      idea_one: '{{formatted}} idea',
+      idea_other: '{{formatted}} ideas',
+      asset_one: '{{formatted}} recurso',
+      asset_other: '{{formatted}} recursos',
+      post_one: '{{formatted}} publicación',
+      post_other: '{{formatted}} publicaciones',
+      campaign_one: '{{formatted}} campaña',
+      campaign_other: '{{formatted}} campañas',
+      voice_one: '{{formatted}} voz',
+      voice_other: '{{formatted}} voces',
+      audience_one: '{{formatted}} audiencia',
+      audience_other: '{{formatted}} audiencias',
+      fact_one: '{{formatted}} dato',
+      fact_other: '{{formatted}} datos',
+      series_one: '{{formatted}} serie',
+      series_other: '{{formatted}} series',
     },
 
     composer: {
@@ -2964,6 +2994,7 @@ export const es: Translation = {
       clearFilter: 'Quitó el filtro de {{screen}}',
       select_one: 'Seleccionó {{formatted}} en {{screen}}',
       select_other: 'Seleccionó {{formatted}} en {{screen}}',
+      selectKind: 'Seleccionó {{what}}',
       openSavedView: 'Abrió un grupo inteligente en {{screen}}',
       openSavedViewNamed: 'Abrió «{{name}}» <where>en {{screen}}</where>',
       setWindow: 'Puso {{screen}} en {{window}}',
@@ -4183,11 +4214,22 @@ export const es: Translation = {
     columnPublishDate: 'Fecha de publicación',
     columnWhen: 'Cuándo',
 
-    notSet: 'Sin definir',
+    notSet: 'Sin programar',
+
+    count_one: '{{formatted}} publicación',
+    count_other: '{{formatted}} publicaciones',
+    countOf_one: '{{formatted}} de {{total}} publicaciones',
+    countOf_other: '{{formatted}} de {{total}} publicaciones',
 
     noPosts: 'No hay publicaciones',
 
     selectAll: 'Seleccionar todas las publicaciones',
+    selectAllCount_one: 'Seleccionar la {{formatted}} publicación',
+    selectAllCount_other: 'Seleccionar las {{formatted}} publicaciones',
+    selectAllMatching_one:
+      'Seleccionar la {{formatted}} publicación coincidente',
+    selectAllMatching_other:
+      'Seleccionar las {{formatted}} publicaciones coincidentes',
     clearSelection: 'Borrar la selección',
     selectPost: 'Seleccionar {{title}}',
 
@@ -5678,6 +5720,7 @@ export const es: Translation = {
       selectAll: 'Seleccionar todos los datos mostrados',
       clearAll: 'Quitar la selección',
       clear: 'QUITAR',
+      remove: 'ELIMINAR',
     },
     binding: {
       voice: 'Voz',
@@ -5761,6 +5804,36 @@ export const es: Translation = {
       duplicate: 'Este espacio de trabajo ya tiene esa afirmación como dato.',
       gone: 'Alguien eliminó este dato mientras estaba abierto. El registro se ha actualizado.',
       saveFailed: 'No se pudo guardar el dato. Inténtalo de nuevo.',
+      table: {
+        statement: 'Afirmación',
+        about: 'Sobre',
+        kind: 'Tipo',
+        source: 'Fuente',
+        added: 'Añadido',
+        checked: 'Comprobado',
+        expires: 'Caduca',
+        notWritten: 'Sin escribir todavía',
+        nobodySaid: 'nadie lo dijo',
+        never: 'nunca',
+        noExpiry: 'no caduca',
+        expiredOn: 'Caducó el {{date}}',
+        expiresOn: 'Caduca el {{date}}',
+        remove: 'Eliminar «{{statement}}»',
+        removeUnnamed: 'Eliminar este dato',
+      },
+      remove: {
+        titleNamed: '¿Eliminar «{{statement}}»?',
+        title_one: '¿Eliminar {{formatted}} dato?',
+        title_other: '¿Eliminar {{formatted}} datos?',
+        body_one:
+          'Las publicaciones que se escriban a partir de ahora no podrán afirmarlo. No se puede recuperar.',
+        body_other:
+          'Las publicaciones que se escriban a partir de ahora no podrán afirmarlos. No se pueden recuperar.',
+        keep_one: 'CONSERVARLO',
+        keep_other: 'CONSERVARLOS',
+        confirm_one: 'ELIMINAR DATO',
+        confirm_other: 'ELIMINAR {{formatted}} DATOS',
+      },
     },
     facts: {
       samplesNone: 'sin ejemplos',

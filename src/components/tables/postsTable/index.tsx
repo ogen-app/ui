@@ -34,6 +34,11 @@ type PostsTableProps = {
   loading?: boolean
   /** Ids currently ticked. Omitted entirely turns the select column off. */
   selectedIds?: Set<string>
+  /**
+   * The header box's name while it would tick: the match it ticks, counted
+   * (CON-486). Defaults to plain "Select all posts".
+   */
+  selectAllLabel?: string
   onToggleRow?: (id: string) => void
   /** Ticks every row, or clears them all when none are missing. */
   onToggleAll?: () => void
@@ -99,6 +104,7 @@ function PostsTableComponent({
   onEmptyStateAction,
   loading = false,
   selectedIds,
+  selectAllLabel,
   onToggleRow,
   onToggleAll,
   sorting,
@@ -140,7 +146,7 @@ function PostsTableComponent({
                     aria-label={
                       visibleSelected === posts.length
                         ? t('postsTable.clearSelection')
-                        : t('postsTable.selectAll')
+                        : (selectAllLabel ?? t('postsTable.selectAll'))
                     }
                   />
                 </div>
@@ -322,6 +328,7 @@ function PostsTableComponent({
       onDelete,
       selectable,
       selectedIds,
+      selectAllLabel,
       onToggleRow,
       onToggleAll,
       posts,

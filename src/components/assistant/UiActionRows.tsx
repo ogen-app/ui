@@ -1,6 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { screenName } from '@/lib/assistantView'
+import { kindCount, screenName } from '@/lib/assistantView'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import type { PostStatus } from '@/types/posts'
 import { counted } from '@/lib/intl'
@@ -270,12 +270,21 @@ function actionTitle(
       )
     }
     case 'select':
-      // What the list ticked, when it said: ids it doesn't hold are dropped
-      // (CON-482).
-      return t('assistant.uiAction.select', {
-        screen,
-        ...counted(applied.ticked ?? action.selection?.ids.length ?? 0),
-      })
+      // Named by what was ticked — "Selected 2 voices" (CON-486) — and
+      // counted as the list ticked it, when it said: ids it doesn't hold are
+      // dropped (CON-482).
+      return action.selection
+        ? t('assistant.uiAction.selectKind', {
+            what: kindCount(
+              t,
+              action.selection.kind,
+              applied.ticked ?? action.selection.ids.length,
+            ),
+          })
+        : t('assistant.uiAction.select', {
+            screen,
+            ...counted(applied.ticked ?? 0),
+          })
     case 'open_saved_view':
       // The group by name, and where it opened in grey (CON-476).
       return action.savedViewName ? (

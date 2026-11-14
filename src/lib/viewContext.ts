@@ -149,7 +149,14 @@ export type ViewPage = Pick<
    * route's.
    */
   | 'focus'
->
+> & {
+  /**
+   * What the composer's chip calls the selection, where the page can say it
+   * better than a count — the calendar's "2 posts on Tue 22" (CON-486).
+   * Words for the chip only: never sent, since the turn carries references.
+   */
+  selectionLabel?: string
+}
 
 /**
  * The screen each route is, keyed by the route's full path. A route missing
@@ -247,7 +254,8 @@ export function buildViewContext(
 }
 
 function capped(page: ViewPage): ViewPage {
-  const out: ViewPage = { ...page }
+  // The chip's words stay on the client.
+  const { selectionLabel: _label, ...out }: ViewPage = { ...page }
   if (out.selection && 'ids' in out.selection) {
     // Past the cap the first ids go and `count` keeps the whole tally, so the
     // turn says it is partial rather than passing for the whole selection —

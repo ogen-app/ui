@@ -33,15 +33,19 @@ export type PostFilterField = (typeof POST_FILTER_FIELDS)[number]
 const CHOICE_FIELDS = ['status', 'platform', 'post_type'] as const
 type ChoiceField = (typeof CHOICE_FIELDS)[number]
 
-/** Every status, in the order a post moves through them — the server's. */
+/**
+ * Every status the server has, in the order a post moves through them: the
+ * way out before the failures (CON-486), a published post being where the
+ * line ends and a failed one where it broke off.
+ */
 export const POST_STATUSES: readonly PostStatus[] = [
   'planned',
   'draft',
   'ready_for_publish',
   'scheduled',
   'scheduled_for_manual_publishing',
-  'failed',
   'published',
+  'failed',
   'not_published',
 ]
 

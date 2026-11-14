@@ -76,4 +76,25 @@ describe('the posts filter in Spanish (CON-472)', () => {
     )
     expect(screen.getByText('todas las publicaciones')).toBeTruthy()
   })
+
+  it('says a date range as scheduled, and leaves the count to the page that says it once (CON-486)', () => {
+    render(
+      <PostsFilterBar
+        campaignId="c1"
+        filter={postFilterFromSearch({
+          scheduled_after: '2026-04-21',
+          scheduled_before: '2026-04-27',
+        })}
+        onChange={() => {}}
+        total={2}
+        totalUnfiltered={6}
+        showCount={false}
+      />,
+      { wrapper: QueryWrapper },
+    )
+    const words = sentence()
+    expect(words).toContain('programadas')
+    expect(words).not.toContain('con fecha')
+    expect(words).not.toMatch(/2 de 6/)
+  })
 })

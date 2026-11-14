@@ -56,6 +56,11 @@ type Props<F, Field extends string> = {
   trailing?: ReactNode
   /** Whether Clear is offered — not while a smart group is open. */
   clearable: boolean
+  /**
+   * Whether the line says how many match. Off where the page says it once
+   * already, on its own line — the posts list's toolbar (CON-486).
+   */
+  showCount?: boolean
 }
 
 /** The values a field's token holds for this operator. */
@@ -119,6 +124,7 @@ export function FilterSentence<F, Field extends string>({
   leading,
   trailing,
   clearable,
+  showCount = true,
 }: Props<F, Field>) {
   const { t, i18n } = useTranslation()
   const locale = i18n.language
@@ -303,12 +309,14 @@ export function FilterSentence<F, Field extends string>({
           }}
         />
         <span className="ml-2.5 inline-flex items-baseline gap-2.5 text-[13px] whitespace-nowrap text-tertiary-foreground">
-          <span
-            aria-live="polite"
-            className="text-secondary-foreground tabular-nums"
-          >
-            {count}
-          </span>
+          {showCount && (
+            <span
+              aria-live="polite"
+              className="text-secondary-foreground tabular-nums"
+            >
+              {count}
+            </span>
+          )}
           {clearable && narrowed && (
             <button
               type="button"

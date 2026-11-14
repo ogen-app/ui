@@ -473,7 +473,7 @@ describe('a post fix', () => {
       },
     })
     expect(screen.getByText('Unscheduled')).toBeTruthy()
-    expect(screen.getByText('Back to Ready for Publish')).toBeTruthy()
+    expect(screen.getByText('Back to Ready to publish')).toBeTruthy()
     expect(screen.getByText(/^Was /)).toBeTruthy()
     expect(
       screen.getByText(/withdrawn from publishing\. It keeps its date/),

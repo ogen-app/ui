@@ -213,6 +213,6 @@ describe('list rows (CON-482)', () => {
         ]}
       />,
     )
-    expect(screen.getByText(/^Selected 2 on/)).toBeTruthy()
+    expect(screen.getByText('Selected 2 posts')).toBeTruthy()
   })
 })

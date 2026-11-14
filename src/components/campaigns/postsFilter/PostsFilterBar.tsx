@@ -38,6 +38,7 @@ export function PostsFilterBar({
   total,
   totalUnfiltered,
   setByAssistant = false,
+  showCount = true,
 }: {
   campaignId: string
   filter: PostFilter
@@ -46,6 +47,8 @@ export function PostsFilterBar({
   totalUnfiltered: number
   /** The assistant put this filter here (CON-482), and it hasn't changed. */
   setByAssistant?: boolean
+  /** Off on the list, whose toolbar line says it (CON-486). */
+  showCount?: boolean
 }) {
   const { t } = useTranslation()
   const vocabulary = usePostVocabulary(campaignId)
@@ -67,6 +70,7 @@ export function PostsFilterBar({
       totalUnfiltered={totalUnfiltered}
       countQuery={countQuery}
       clearable
+      showCount={showCount}
     />
   )
 }

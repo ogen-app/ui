@@ -39,6 +39,30 @@ export function calendarRange(
   }
 }
 
+/**
+ * The posts a calendar draws over a range from `calendarRange`: dated inside
+ * its days, less the weekdays this user hides. What the grid shows, all a tick
+ * can reach, and what the filter sentence counts (CON-486).
+ */
+export function postsInRange<P extends { scheduled_at: string | null }>(
+  posts: readonly P[],
+  range: { from: string; to: string },
+  hiddenDays: readonly number[] | undefined,
+): P[] {
+  // Both are days `calendarRange` made, so they parse.
+  const from = parseAnchor(range.from)!.getTime()
+  const end = addDays(parseAnchor(range.to)!, 1).getTime()
+  return posts.filter((p) => {
+    if (!p.scheduled_at) return false
+    const at = new Date(p.scheduled_at)
+    return (
+      at.getTime() >= from &&
+      at.getTime() < end &&
+      !(hiddenDays ?? []).includes(at.getDay())
+    )
+  })
+}
+
 export function addDays(date: Date, days: number): Date {
   const d = new Date(date)
   d.setDate(d.getDate() + days)
