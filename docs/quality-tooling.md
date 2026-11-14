@@ -42,10 +42,18 @@ running vitest's workers and a type-check. It rsyncs the working tree with
 doesn't; each checkout or worktree gets its own directory there
 (`~/src/ui-<dir>`), so several can run at once. The remote installs from the
 lockfile on every run (seconds when nothing changed), and puts the pnpm
-version `packageManager` pins in `~/.local` if it has another. With
-arguments it runs one package script instead: `scripts/test-remote.sh test
-src/components/ideas`, `… typecheck`, `… exec vitest run -t 'MADE INTO'`.
-The remote needs only Node (see `.nvmrc`) on its login shell's `PATH`.
+version `packageManager` pins in `~/.local` if it has another. All four run
+even when one fails, as CI's steps do. With arguments it runs one package
+script instead: `scripts/test-remote.sh test src/components/ideas`,
+`… typecheck`, `… exec vitest run -t 'MADE INTO'`. The remote needs only Node
+(see `.nvmrc`) on its login shell's `PATH`.
+
+A local stray — a sketch or an export at the root that is never committed —
+is synced like any other untracked file, and `format:check` fails on it there
+as it would here. List it in `.git/info/exclude`, which the script reads as
+well; one already synced stays on the remote until it is removed by hand,
+because the sync leaves excluded paths alone (that is what keeps the remote's
+`node_modules`).
 
 ## ESLint
 
