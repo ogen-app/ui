@@ -32,6 +32,21 @@ was stale.
 
 `knip` is deliberately **not** a gate. See below.
 
+### Running them on another machine
+
+`scripts/test-remote.sh` (`pnpm test:remote`) runs the first four on another
+Mac over SSH — `REMOTE_HOST`, default `mac2`, an `~/.ssh/config` alias — so a
+local machine running an editor, a dev server and an assistant isn't also
+running vitest's workers and a type-check. It rsyncs the working tree with
+`.gitignore` as its filter, so uncommitted work goes and `node_modules`
+doesn't; each checkout or worktree gets its own directory there
+(`~/src/ui-<dir>`), so several can run at once. The remote installs from the
+lockfile on every run (seconds when nothing changed), and puts the pnpm
+version `packageManager` pins in `~/.local` if it has another. With
+arguments it runs one package script instead: `scripts/test-remote.sh test
+src/components/ideas`, `… typecheck`, `… exec vitest run -t 'MADE INTO'`.
+The remote needs only Node (see `.nvmrc`) on its login shell's `PATH`.
+
 ## ESLint
 
 Two jobs, kept in separate blocks in `eslint.config.js`.
