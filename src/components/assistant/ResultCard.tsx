@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import {
@@ -266,21 +266,27 @@ export function UndoNote({
   t,
   undoId,
   undo,
+  undone,
+  changed,
 }: {
   t: TFunction
   undoId?: string
   undo?: ResultUndo
+  /** What was put back, when the card can say: "5 ideas back on the desk". */
+  undone?: string
+  /** Why it can't, and what to do instead, when the card can say. */
+  changed?: ReactNode
 }) {
   const state = undoId ? undo?.states[undoId] : undefined
   if (!state || state === 'pending') return null
   return (
     <ResultRow>
       {state === 'undone' ? (
-        <ResolvedLine>{t('assistant.undo.undone')}</ResolvedLine>
+        <ResolvedLine>{undone ?? t('assistant.undo.undone')}</ResolvedLine>
       ) : (
         <p className="text-[12.5px] text-warning">
           {state === 'changed'
-            ? t('assistant.undo.changed')
+            ? (changed ?? t('assistant.undo.changed'))
             : t('assistant.undo.gone')}
         </p>
       )}

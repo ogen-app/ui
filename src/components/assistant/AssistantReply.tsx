@@ -13,7 +13,7 @@ import { FindingsBlock } from './FindingsBlock'
 import { AnalyticsResults } from './AnalyticsResults'
 import { AssetsResults } from './AssetsResults'
 import { WorkspaceResults } from './WorkspaceResults'
-import { IdeasResults } from './IdeasResults'
+import { IdeaReadOnly, IdeasResults, LiveDrafts } from './IdeasResults'
 import { FoundationResults } from './FoundationResults'
 import { RepairResults } from './RepairResults'
 import { useAssistantStore } from '@/stores/assistantStore'
@@ -186,12 +186,24 @@ export function AssistantReply({
         />
       )}
 
+      {/* Drafts from ideas as they are written (CON-481), until the turn's
+          summary replaces them. */}
+      {turn.streaming && turn.liveDrafts && (
+        <LiveDrafts drafts={turn.liveDrafts} />
+      )}
+
+      {/* A refusal the server named: an analysed idea's words (CON-481). */}
+      {settled && turn.refusals?.some((r) => r.code === 'idea_read_only') && (
+        <IdeaReadOnly />
+      )}
+
       {/* What the ideas pack read or changed (CON-465/466). */}
       {settled && turn.ideas && (
         <IdeasResults
           threadId={threadId}
           turnId={turn.id}
           campaignId={subject ? subjectCampaignId(subject) : undefined}
+          findFilter={findFilter(turn)}
           results={turn.ideas}
           undoStates={turn.undo ?? {}}
         />
@@ -339,4 +351,13 @@ function offersDrawnInPlace(turn: AssistantTurn): Set<string> {
   if (r?.plan?.proposalId) ids.add(r.plan.proposalId)
   for (const f of turn.foundation?.brandCheck?.findings ?? []) add(f.fixes)
   return ids
+}
+
+/** What the turn's last `findIdeas` was asked, for SHOW ON SCREEN (CON-481). */
+function findFilter(turn: AssistantTurn): string | undefined {
+  const step = [...(turn.steps ?? [])]
+    .reverse()
+    .find((s) => s.tool === 'findIdeas')
+  const filter = step?.input?.filter
+  return typeof filter === 'string' ? filter : undefined
 }

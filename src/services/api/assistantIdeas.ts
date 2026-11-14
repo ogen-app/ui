@@ -1,7 +1,9 @@
 import type {
   CompiledPost,
+  DraftedIdeaPost,
   Grounding,
   IdeaBrief,
+  IdeaPlanBrief,
   IdeasChanged,
   IdeasResults,
   IdeasShared,
@@ -30,14 +32,19 @@ export function ideasResults(
   const merged = record(r.mergeIdeas)
   const out: IdeasResults = {
     found: found
-      ? { ideas: briefs(found.ideas), total: num(found.total) }
+      ? {
+          ideas: briefs(found.ideas),
+          total: num(found.total),
+          pileTotal:
+            typeof found.pileTotal === 'number' ? found.pileTotal : undefined,
+        }
       : undefined,
     decided:
       decided && brief(decided.idea)
         ? { idea: brief(decided.idea)!, undoId: optStr(decided.undoId) }
         : undefined,
-    decidedMany: changed(r.setIdeaVerdicts),
-    moved: changed(r.moveIdeas),
+    decidedMany: triaged(r.setIdeaVerdicts),
+    moved: withIdeas(r.moveIdeas),
     deleted: changed(r.deleteIdeas),
     compiled: compiled ? compiledResult(compiled) : undefined,
     drafted: drafted
@@ -54,6 +61,13 @@ export function ideasResults(
         ? {
             idea: brief(edited.idea)!,
             changed: strings(edited.changed),
+            before: record(edited.before)
+              ? {
+                  title: str(record(edited.before)!.title),
+                  note: optStr(record(edited.before)!.note),
+                  plan: plan(record(edited.before)!.plan),
+                }
+              : undefined,
             undoId: optStr(edited.undoId),
           }
         : undefined,
@@ -79,13 +93,7 @@ export function ideasResults(
           })),
         }
       : undefined,
-    merged:
-      merged && brief(merged.idea)
-        ? {
-            idea: brief(merged.idea)!,
-            deleted: strings(merged.deleted).length,
-          }
-        : undefined,
+    merged: merged ? mergedResult(merged) : undefined,
   }
   for (const key of Object.keys(out) as (keyof IdeasResults)[]) {
     if (out[key] === undefined) delete out[key]
@@ -99,7 +107,7 @@ export function ideasResults(
  */
 export function draftedPost(
   raw: Record<string, unknown>,
-): NonNullable<IdeasResults['drafted']>['posts'][number] | null {
+): DraftedIdeaPost | null {
   const id = str(raw.postId)
   if (!id) return null
   return {
@@ -107,7 +115,61 @@ export function draftedPost(
     title: str(raw.title),
     platformId: str(raw.platformId),
     publishDate: optStr(raw.publishDate),
+    campaignId: optStr(raw.campaignId),
+    ideaIds: strings(raw.ideaIds),
+    excerpt: optStr(raw.excerpt),
     grounding: grounding(raw.grounding),
+  }
+}
+
+/** A merge (CON-481): every group, or the one an older server sent. */
+function mergedResult(
+  raw: Record<string, unknown>,
+): IdeasResults['merged'] | undefined {
+  const groups = list(raw.groups)
+    .map((g) => ({ idea: brief(g.idea), deleted: strings(g.deleted).length }))
+    .filter((g): g is { idea: IdeaBrief; deleted: number } => Boolean(g.idea))
+  const one = brief(raw.idea)
+  const all =
+    groups.length > 0
+      ? groups
+      : one
+        ? [{ idea: one, deleted: strings(raw.deleted).length }]
+        : []
+  return all.length > 0
+    ? { groups: all, stopped: optStr(raw.stopped) }
+    : undefined
+}
+
+function withIdeas(
+  raw: unknown,
+): (IdeasChanged & { ideas: IdeaBrief[] }) | undefined {
+  const c = changed(raw)
+  return c ? { ...c, ideas: briefs(record(raw)?.ideas) } : undefined
+}
+
+const TRIAGE = ['yes', 'later', 'no', 'none'] as const
+
+function triaged(raw: unknown): IdeasResults['decidedMany'] {
+  const c = withIdeas(raw)
+  const r = record(raw)
+  return c && r
+    ? {
+        ...c,
+        verdict: TRIAGE.find((v) => v === r.verdict),
+        remindAt: optStr(r.remindAt),
+      }
+    : undefined
+}
+
+/** An idea's plan, from the server's camel or snake keys. */
+function plan(raw: unknown): IdeaPlanBrief {
+  const p = record(raw) ?? {}
+  return {
+    platformId: optStr(p.platformId) ?? optStr(p.platform_id),
+    postType: optStr(p.postType) ?? optStr(p.post_type),
+    phaseId: optStr(p.phaseId) ?? optStr(p.phase_id),
+    targetDate: optStr(p.targetDate) ?? optStr(p.target_date),
   }
 }
 
@@ -121,6 +183,7 @@ function compiledResult(
       postId: str(p.postId),
       title: str(p.title),
       platformId: optStr(p.platformId),
+      postType: optStr(p.postType),
       date: optStr(p.date),
     }))
   if (posts.length === 0) return undefined
@@ -128,6 +191,12 @@ function compiledResult(
     posts,
     campaignId: str(raw.campaignId),
     ideas: num(raw.ideas),
+    builtFrom: list(raw.builtFrom)
+      .map((i) => ({ id: str(i.id), title: str(i.title) }))
+      .filter((i) => i.id),
+    theses: list(raw.theses)
+      .map((th) => ({ title: str(th.title), points: strings(th.points) }))
+      .filter((th) => th.title || th.points.length > 0),
     grounding: grounding(raw.grounding),
     undoId: optStr(raw.undoId),
   }
@@ -142,9 +211,11 @@ function brief(raw: unknown): IdeaBrief | undefined {
     id: str(i.id),
     title: str(i.title),
     verdict: VERDICTS.find((v) => v === i.verdict),
+    remindAt: optStr(i.remindAt),
     campaignId: optStr(i.campaignId),
     fitScore: typeof i.fitScore === 'number' ? i.fitScore : undefined,
     posts: typeof i.posts === 'number' ? i.posts : undefined,
+    plan: isRecord(i.plan) ? plan(i.plan) : undefined,
   }
 }
 
@@ -212,6 +283,12 @@ function idea(raw: unknown): IdeasResults['idea'] {
         ? { id: str(asset.id), title: str(asset.title) }
         : undefined,
     analysisGist: optStr(analysis?.gist),
+    lens: record(analysis?.lens)
+      ? {
+          campaignId: optStr(record(analysis?.lens)!.campaignId),
+          campaignName: optStr(record(analysis?.lens)!.campaignName),
+        }
+      : undefined,
     posts: list(g.posts)
       .map((p) => ({
         id: str(p.id),
@@ -252,6 +329,20 @@ function common(raw: unknown): IdeasResults['common'] {
         }))
         .filter((v) => v.value),
     })).filter((s) => s.values.length > 0),
+    theme: optStr(c.theme),
+    angle: optStr(c.angle),
+    splits: list(c.splits)
+      .map((sp) => ({
+        field: str(sp.field),
+        values: list(sp.values)
+          .map((v): IdeasShared => ({
+            value: str(v.value),
+            label: str(v.label) || str(v.value),
+            ideaIds: strings(v.ideaIds),
+          }))
+          .filter((v) => v.value),
+      }))
+      .filter((sp) => sp.field && sp.values.length > 0),
   }
 }
 

@@ -118,6 +118,8 @@ export function IdeaRow({
 
   return (
     <li
+      // What a link to this idea scrolls to (`?idea=`, CON-481).
+      data-idea-id={idea.id}
       data-open={expanded || undefined}
       className={cn(
         // The Assets row's frame (CON-388): a rule under each row, 20px of
