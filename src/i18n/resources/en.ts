@@ -3708,6 +3708,7 @@ export const en = {
         nothingDays: '{{days}} had nothing.',
         quietNext: 'Nothing has gone out yet. The next is {{when}}.',
         quietNone: 'Nothing has gone out, and nothing is scheduled.',
+        quietUnknown: 'Nothing has gone out yet.',
         nextAt: '{{day}} at {{time}}',
         toToday: '{{period}}, to today',
       },
@@ -3717,6 +3718,7 @@ export const en = {
         sentTo_one: 'Sent to {{formatted}} person',
         sentTo_other: 'Sent to {{formatted}} people',
         justNow: 'just now',
+        onItsWay: 'On its way to your inbox',
         invite: 'Invite them first, from Settings › People',
         none: {
           notMember: 'Only members can receive it',

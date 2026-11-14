@@ -33,12 +33,14 @@ export function workspaceResults(
         ? {
             from: str(emailed.from),
             to: str(emailed.to),
-            sent: list(emailed.sent).map((r) => ({
-              userId: str(r.userId),
-              name: str(r.name),
-              role: str(r.role),
-              email: str(r.email),
-            })),
+            sent: Array.isArray(emailed.sent)
+              ? list(emailed.sent).map((r) => ({
+                  userId: str(r.userId),
+                  name: str(r.name),
+                  role: str(r.role),
+                  email: str(r.email),
+                }))
+              : undefined,
             notSent: list(emailed.notSent)
               .map((r) => ({
                 recipient: str(r.recipient),
@@ -91,6 +93,9 @@ function activity(raw: unknown): ActivityRange | undefined {
     scheduled: num(created.scheduled_total),
     campaignsCreated: num(campaigns.total),
     ideasDecided: num(r.ideas_decided),
+    // CON-480's extras come together: a report with the ideas count looked
+    // the next post up too, so its absence there means none is scheduled.
+    nextKnown: typeof r.ideas_decided === 'number',
     nextScheduled:
       next && str(next.at)
         ? {

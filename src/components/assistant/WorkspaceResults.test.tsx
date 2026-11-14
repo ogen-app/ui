@@ -63,6 +63,7 @@ const week: NonNullable<Results['activity']> = {
   scheduled: 4,
   campaignsCreated: 0,
   ideasDecided: 0,
+  nextKnown: true,
   days: [
     {
       date: '2026-04-13',
@@ -137,6 +138,55 @@ describe('the week card (CON-480)', () => {
       ),
     ).toBeTruthy()
     expect(screen.getByText(/Spring reopening$/)).toBeTruthy()
+  })
+})
+
+describe('an older server’s answers', () => {
+  it('doesn’t claim nothing is scheduled when the next post wasn’t looked up', async () => {
+    await show({
+      activity: {
+        ...week,
+        published: 0,
+        failed: 0,
+        failedPosts: [],
+        days: [],
+        nextKnown: false,
+      },
+    })
+    expect(screen.getByText('Nothing has gone out yet.')).toBeTruthy()
+    expect(
+      screen.queryByText('Nothing has gone out, and nothing is scheduled.'),
+    ).toBeNull()
+  })
+
+  it('reads a send with no recipients listed as sent, not as refused', async () => {
+    await show({
+      emailed: { from: '2026-04-13', to: '2026-04-19', notSent: [] },
+    })
+    expect(screen.getByText('On its way to your inbox')).toBeTruthy()
+    expect(screen.queryByText('Not sent', { exact: false })).toBeNull()
+  })
+
+  it('keeps a person the server named without an id', async () => {
+    await show({
+      history: {
+        postId: 'p1',
+        title: 'Easter brunch',
+        more: false,
+        unrecorded: false,
+        entries: [
+          {
+            at: '2026-04-15T15:42:00Z',
+            kind: 'version',
+            what: 'saved a version',
+            by: 'Dan Cole',
+            source: 'user',
+          },
+        ],
+      },
+    })
+    expect(screen.getByText('Dan Cole')).toBeTruthy()
+    expect(screen.queryByText('Someone (not recorded)')).toBeNull()
   })
 })
 
