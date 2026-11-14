@@ -780,22 +780,39 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   changed (`stores/analyticsHighlightStore`) until the user's next touch. A
   set_window whose dates are only the period on screen resolved keeps the
   period a preset, and a preset the picker doesn't offer lands as its dates.
-- **The workspace pack's results are cards** (CON-464).
-  `complete.results.workspace` holds each tool's last output:
-  `activityReport` (a day or up to 31 days, totals plus the days that had
-  something, each opening `/activity/:date`), `workspaceSetup`,
-  `weeklyDigest`, `emailWeeklyDigest`, `postHistory` and `setAutoPublish`
-  (with its `undoId`; it touches `auto_publish`, which refreshes the
-  allowlist). The weekly report's figures and sentences are the email's own,
-  rendered by the server for both, and only the labels around them are
-  ours. A post's history names people from the workspace's members, and words
-  each event from the server's sentence where it knows it, showing the
-  sentence as written where it doesn't. **`open_connect` opens Settings at
-  the account or platform** — `?reconnect=<account>&platform=` or
-  `?connect=<platform>` — which outlines that row and focuses its button but
-  never presses it: the connect flow leaves the app, and that is the user's
-  to start. The same address is what the expiry emails' `reconnect` link now
-  lands on.
+- **The workspace pack's results are cards** (CON-464, drawn as CON-480 has
+  them). `complete.results.workspace` holds each tool's last output:
+  `activityReport` (a day or up to 31 days: four tiles — published,
+  scheduled, didn't go out, ideas decided — with every zero kept, the failed
+  posts by title and reason, the days that had something, each opening
+  `/activity/:date`, which days had nothing, and on a quiet run when the next
+  post goes), `workspaceSetup`, `weeklyDigest`, `emailWeeklyDigest`,
+  `postHistory` and `setAutoPublish` (with its `undoId`; it touches
+  `auto_publish`, which refreshes the allowlist). A span is
+  `formatDateRange`, never two dates glued together. The weekly report's
+  figures and sentences are the email's own, rendered by the server for
+  both, and only the labels around them are ours; a good change is muted.
+  Emailing it names its recipients — the offer has a `recipient` row each —
+  and the result is SENT to whom, or NOT SENT with each reason, someone
+  outside the workspace pointed at Settings › People. A post's history is
+  worded from each entry's `change` (a reschedule with its from and to, a
+  failure amber with its reason), in the workspace's zone, names people from
+  the workspace's members — an assistant change as "Assistant, asked by …",
+  events included — and on the post itself offers VERSIONS; a version's note
+  is the author's and shown as written. `workspaceSetup` is drawn twice: the
+  connections (signed out since when, what waits on it, when a token
+  expires, and a RECONNECT that goes through `runUiAction`, so it leaves an
+  ON SCREEN row with BACK) and which platforms publish on their own.
+  Turning auto-publish on or off **never re-routes a post already
+  scheduled** — its route is set when it is scheduled — and the result says
+  how many keep theirs. **`open_connect` opens Settings at the account or
+  platform** — `?reconnect=<account>&platform=`, `?platform=` alone for a
+  reconnect with no account, or `?connect=<platform>` — which outlines that
+  row; one that needs reconnecting opens a dialog that says what happens,
+  and only its CONTINUE starts the flow, because the flow leaves the app and
+  that is the user's to start. An account Settings can't find lands on its
+  platform's tile, and the rail row says so. The same address is what the
+  expiry emails' `reconnect` link lands on.
 - **The ideas pack's results are cards** (CON-465/466). `complete.results.
   ideas` holds each tool's last output — found, a verdict and many, moved,
   deleted, compiled, drafted, `getIdea`, `editIdea`, `similarIdeas`,

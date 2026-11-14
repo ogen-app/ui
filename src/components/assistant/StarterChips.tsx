@@ -25,6 +25,8 @@ import {
   SparkleIcon,
   TextAaIcon,
   QuestionIcon,
+  EnvelopeSimpleIcon,
+  WarningCircleIcon,
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
@@ -61,6 +63,9 @@ type StarterKey =
   | 'callToAction'
   | 'missing'
   | 'yesterday'
+  | 'lastWeek'
+  | 'weeklyReport'
+  | 'failing'
   | 'waitingIdeas'
   | 'whatWorked'
   | 'connections'
@@ -322,17 +327,19 @@ const CAMPAIGN_LIST: ScreenStarters = {
   selected: [{ icon: SealCheckIcon, key: 'checkBrandSelected' }],
 }
 
+// The CON-464 boards' three (CON-480): the week, the report, the misses.
 const ACTIVITY: ScreenStarters = {
   none: [
-    { icon: CalendarBlankIcon, key: 'yesterday' },
-    { icon: ListBulletsIcon, key: 'thisWeek' },
+    { icon: CalendarBlankIcon, key: 'lastWeek' },
+    { icon: EnvelopeSimpleIcon, key: 'weeklyReport' },
+    { icon: WarningCircleIcon, key: 'failing' },
   ],
 }
 
 const SETTINGS: ScreenStarters = {
   none: [
-    { icon: PlugsConnectedIcon, key: 'connections' },
     { icon: QuestionIcon, key: 'autoPublish' },
+    { icon: PlugsConnectedIcon, key: 'connections' },
   ],
 }
 
@@ -355,7 +362,12 @@ function screenStarters(screen: ViewScreen | null): ScreenStarters | null {
   if (screen.startsWith('foundation')) return FOUNDATION
   if (screen === 'campaign.list') return CAMPAIGN_LIST
   if (screen === 'activity' || screen === 'campaign.activity') return ACTIVITY
-  if (screen === 'settings' || screen === 'profile') return SETTINGS
+  if (
+    screen === 'settings' ||
+    screen === 'profile' ||
+    screen === 'campaign.settings'
+  )
+    return SETTINGS
   return null
 }
 
