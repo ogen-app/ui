@@ -3562,6 +3562,7 @@ export const es: Translation = {
         rationale: 'Razonamiento',
         from: 'De',
         fromLens: '{{asset}} · lente: {{lens}}',
+        fromLensAt: '{{asset}} · {{place}} · lente: {{lens}}',
         post: 'Convertida en',
       },
       edited: {

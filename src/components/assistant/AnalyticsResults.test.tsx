@@ -325,6 +325,17 @@ describe('more like these', () => {
         .getByRole('link', { name: 'Villa Aurora brochure' })
         .getAttribute('href'),
     ).toBe('/assets/a1')
+    // The trail's own link opens the asset at the passage (CON-487), on the
+    // workspace's lens the analysis read in.
+    const trail = new URL(
+      screen
+        .getByRole('link', { name: 'Villa Aurora brochure · p. 12' })
+        .getAttribute('href') ?? '',
+      'http://app',
+    )
+    expect(trail.pathname).toBe('/assets/a1')
+    expect(trail.searchParams.get('at')).toBe('p. 12')
+    expect(trail.searchParams.get('lens')).toBe('workspace')
     expect(screen.getByText('OPEN').getAttribute('href')).toContain(
       '/campaigns/c1/ideas',
     )

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assetPlace, findPlace } from './assetPlace'
+import { assetPlace, findPlace, passagePlace } from './assetPlace'
 
 describe('assetPlace', () => {
   it('reads each kind of cited place', () => {
@@ -25,5 +25,19 @@ describe('findPlace', () => {
       'slide',
     )
     expect(findPlace(document, { kind: 'page', page: 40 })).toBeNull()
+  })
+})
+
+describe('passagePlace (CON-487)', () => {
+  it('opens at the passage’s own label, else its page, never its chunk', () => {
+    expect(passagePlace({ chunkId: 'c9', label: 'pp. 5–6', page: 5 })).toBe(
+      'pp. 5–6',
+    )
+    expect(passagePlace({ label: '12:03–12:47', startMs: 723000 })).toBe(
+      '12:03–12:47',
+    )
+    expect(passagePlace({ chunkId: 'c9', page: 12 })).toBe('p. 12')
+    expect(passagePlace({ chunkId: 'c9' })).toBeUndefined()
+    expect(passagePlace(undefined)).toBeUndefined()
   })
 })

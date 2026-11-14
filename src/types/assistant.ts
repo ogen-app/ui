@@ -996,7 +996,29 @@ export type PeriodComparison = {
 }
 
 /** An asset on a trail, with its kind for the badge. */
-export type TrailAsset = { id: string; title: string; type?: string }
+export type TrailAsset = {
+  id: string
+  title: string
+  type?: string
+  /** Where in it the trail's idea came from (CON-487); none on a post's own. */
+  passage?: AssetPassage
+}
+
+/**
+ * Where in an asset an idea came from (CON-487): the label the analysis
+ * cited ("pp. 5–6", "Slide 4", "12:03–12:47") and what it resolves to. The
+ * chunk id is a hint only — a re-ingest can reuse it — so a link opens by the
+ * label or the page.
+ */
+export type AssetPassage = {
+  chunkId?: string
+  label?: string
+  page?: number
+  pageEnd?: number
+  slide?: number
+  startMs?: number
+  endMs?: number
+}
 
 /**
  * An example post, and what it was made from (CON-479): its rate, then each
@@ -1371,7 +1393,8 @@ export type IdeasResults = {
       }[]
       caps: string[]
     }
-    sourceAsset?: { id: string; title: string }
+    /** With the passage the idea came from, where the server knows it. */
+    sourceAsset?: { id: string; title: string; passage?: AssetPassage }
     analysisGist?: string
     /** The lens the analysis it came from read in; none is the workspace's. */
     lens?: { campaignId?: string; campaignName?: string }

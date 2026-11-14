@@ -15,6 +15,7 @@ import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
 import { cn } from '@/lib/styles'
 import { periodLabel, windowDay as day } from '@/lib/analyticsCitation'
 import { presetName } from '@/lib/analyticsWindow'
+import { passagePlace } from '@/lib/assetPlace'
 import { searchFromViewQuery } from '@/lib/ideaFilter'
 import type {
   AnalyticsApplied,
@@ -1140,6 +1141,9 @@ export function TrailRows({ trail }: { trail: TrailStep[] }) {
                   <Link
                     to="/assets/$assetId"
                     params={{ assetId: idea.asset.id }}
+                    // At the idea's passage (CON-487), else the first the
+                    // analysis cited, on the lens that analysis read in.
+                    search={trailAssetSearch(idea) as never}
                     className="hover:underline"
                   >
                     {idea.passages.length > 0
@@ -1272,4 +1276,17 @@ function MoreLikeTheseCard({ more }: { more: MoreLikeThese }) {
       )}
     </div>
   )
+}
+
+/**
+ * Where a trail idea's asset opens (CON-487): at the passage the server
+ * located for the idea, else the first place its analysis cited, and on the
+ * lens that analysis read in — as the Ideas list's own links open it.
+ */
+function trailAssetSearch(idea: TrailStep['ideas'][number]) {
+  const at = passagePlace(idea.asset?.passage) ?? idea.passages[0]
+  return {
+    lens: idea.analysis?.campaignId ?? 'workspace',
+    ...(at ? { at } : {}),
+  }
 }

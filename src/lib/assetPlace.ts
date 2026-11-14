@@ -1,5 +1,6 @@
 import { pageSpan, timeLabelSeconds } from '@/lib/assetAnalysis'
 import { parseSheetLabel } from '@/lib/sheetChunks'
+import type { AssetPassage } from '@/types/assistant'
 
 /**
  * A place in an asset, as an idea cites it (`p. 5`, `12:03–12:47`,
@@ -46,4 +47,18 @@ export function findPlace(
     if (from > 0 && place.page >= from && place.page <= to) return part
   }
   return null
+}
+
+/**
+ * The place to open the asset at, as the asset page's `?at=` reads it
+ * (`assetPlace` above): the passage's own label — a page, a slide or a time,
+ * as the analysis cited it — or, failing one, its page. Never the chunk id,
+ * which a re-ingest can reuse for other text (ogen#312).
+ */
+export function passagePlace(
+  passage: AssetPassage | undefined,
+): string | undefined {
+  if (!passage) return undefined
+  if (passage.label) return passage.label
+  return passage.page !== undefined ? `p. ${passage.page}` : undefined
 }

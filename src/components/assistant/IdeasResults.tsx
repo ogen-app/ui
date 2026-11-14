@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useCampaignNames } from '@/hooks/useCampaignNames'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { startOfDay } from '@/lib/assetFilter'
+import { passagePlace } from '@/lib/assetPlace'
 import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import { cn } from '@/lib/styles'
@@ -922,6 +923,13 @@ function IdeaCard({
       t('assistant.ideas.idea.aCampaign'))
     : t('assistant.ideas.idea.workspace')
   const asset = read.sourceAsset
+  // Where in the asset it came from (CON-487): said on the row, and where
+  // OPEN lands — the asset page reads the same label as `?at=`.
+  const place = passagePlace(asset?.passage)
+  const openSearch = {
+    ...(read.lens?.campaignId ? { lens: read.lens.campaignId } : {}),
+    ...(place ? { at: place } : {}),
+  }
   return (
     <ResultBlock
       status={t('assistant.ideas.idea.word')}
@@ -961,7 +969,16 @@ function IdeaCard({
               {t('assistant.ideas.idea.from')}
             </span>
             <span className="text-[12.5px] text-tertiary-foreground">
-              {t('assistant.ideas.idea.fromLens', { asset: asset.title, lens })}
+              {place
+                ? t('assistant.ideas.idea.fromLensAt', {
+                    asset: asset.title,
+                    place,
+                    lens,
+                  })
+                : t('assistant.ideas.idea.fromLens', {
+                    asset: asset.title,
+                    lens,
+                  })}
             </span>
             {read.analysisGist && (
               <span className="text-[12.5px] text-tertiary-foreground">
@@ -973,11 +990,7 @@ function IdeaCard({
             <Link
               to="/campaigns/$campaignId/assets/$assetId"
               params={{ campaignId, assetId: asset.id }}
-              search={
-                (read.lens?.campaignId
-                  ? { lens: read.lens.campaignId }
-                  : {}) as never
-              }
+              search={openSearch as never}
               className={TEXT_ACTION_CLASS}
             >
               {t('assistant.ideas.open')}
@@ -986,11 +999,7 @@ function IdeaCard({
             <Link
               to="/assets/$assetId"
               params={{ assetId: asset.id }}
-              search={
-                (read.lens?.campaignId
-                  ? { lens: read.lens.campaignId }
-                  : {}) as never
-              }
+              search={openSearch as never}
               className={TEXT_ACTION_CLASS}
             >
               {t('assistant.ideas.open')}

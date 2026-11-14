@@ -4216,6 +4216,8 @@ export const en = {
         rationale: 'Rationale',
         from: 'From',
         fromLens: '{{asset}} · lens: {{lens}}',
+        /** With the passage it came from (CON-487): "Brochure · p. 12 · lens: offers". */
+        fromLensAt: '{{asset}} · {{place}} · lens: {{lens}}',
         post: 'Made into',
       },
       edited: {

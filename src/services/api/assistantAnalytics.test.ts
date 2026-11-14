@@ -159,7 +159,12 @@ describe('analyticsResults', () => {
                 {
                   id: 'i1',
                   title: 'The pool',
-                  asset: { id: 'a1', title: 'Brochure' },
+                  asset: {
+                    id: 'a1',
+                    title: 'Brochure',
+                    label: 'Slide 4',
+                    slide: 4,
+                  },
                 },
               ],
               assets: [],
@@ -190,6 +195,10 @@ describe('analyticsResults', () => {
       },
     })
     expect(r?.more?.trail[0].ideas[0].asset?.title).toBe('Brochure')
+    expect(r?.more?.trail[0].ideas[0].asset?.passage).toEqual({
+      label: 'Slide 4',
+      slide: 4,
+    })
     expect(r?.more?.trail[1].noTrail).toBe(true)
     expect(r?.more?.ideas).toEqual([
       {

@@ -10,6 +10,7 @@ import type {
   DateFrom,
 } from '@/types/assistant'
 import { parseGrounding } from './grounding'
+import { parsePassage } from './passage'
 import { isRecord } from './json'
 
 /**
@@ -290,7 +291,11 @@ function idea(raw: unknown): IdeasResults['idea'] {
       : undefined,
     sourceAsset:
       asset && str(asset.id)
-        ? { id: str(asset.id), title: str(asset.title) }
+        ? {
+            id: str(asset.id),
+            title: str(asset.title),
+            ...withPassage(asset),
+          }
         : undefined,
     analysisGist: optStr(analysis?.gist),
     lens: record(analysis?.lens)
@@ -380,4 +385,10 @@ function strings(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((v): v is string => typeof v === 'string')
     : []
+}
+
+/** The asset's passage as a field, or nothing when it names none. */
+function withPassage(asset: Record<string, unknown>) {
+  const passage = parsePassage(asset)
+  return passage ? { passage } : {}
 }

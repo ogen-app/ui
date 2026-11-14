@@ -25,6 +25,7 @@ import type {
 } from '@/types/analytics'
 import { parseGrounding } from './grounding'
 import { isRecord } from './json'
+import { parsePassage } from './passage'
 
 /**
  * The analytics pack's typed results (CON-463): `results.analytics` holds each
@@ -355,9 +356,14 @@ function moreLikeThese(raw: unknown): MoreLikeThese | undefined {
 
 function trailAsset(value: unknown): TrailAsset | undefined {
   const a = record(value)
-  return a && str(a.id)
-    ? { id: str(a.id), title: str(a.title), type: optStr(a.type) }
-    : undefined
+  if (!a || !str(a.id)) return undefined
+  const passage = parsePassage(a)
+  return {
+    id: str(a.id),
+    title: str(a.title),
+    type: optStr(a.type),
+    ...(passage ? { passage } : {}),
+  }
 }
 
 /**
