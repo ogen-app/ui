@@ -177,8 +177,11 @@ function CalendarView() {
     [anchorDate, granularity, firstDayOfWeek],
   )
   // Moving to other days or another filter starts a new selection, so ticks
-  // left behind never come back unasked.
-  const selectionScope = `${range.from}|${range.to}|${listFilter(params)}`
+  // left behind never come back unasked. Keyed on the day and view the user
+  // chose, not on the range: that shifts when the stored first day of the
+  // week arrives, which would clear an assistant's select on a cold mount
+  // (CON-482).
+  const selectionScope = `${anchor}|${granularity}|${listFilter(params)}`
   const [scopeOfTicks, setScopeOfTicks] = useState(selectionScope)
   if (scopeOfTicks !== selectionScope) {
     setScopeOfTicks(selectionScope)
@@ -216,11 +219,14 @@ function CalendarView() {
     }),
     [selectedPosts],
   )
+  // Only the cards on screen can be ticked, and the rail says how many were.
   useAssistantRequest((action) => {
     if (action.type !== 'select' || action.selection?.kind !== 'post')
       return false
-    setSelectedIds(new Set(action.selection.ids))
-    return true
+    const here = new Set(onScreen.map((p) => p.id))
+    const ids = action.selection.ids.filter((id) => here.has(id))
+    setSelectedIds(new Set(ids))
+    return ids.length
   })
 
   // What the assistant sees (CON-472): the days on screen as the window, the

@@ -58,6 +58,8 @@ export type AppliedUIAction = {
   /** The address before it ran, for UNDO / BACK; absent when it never ran. */
   before?: string
   undone?: boolean
+  /** How many rows a `select` ticked, when the list said (CON-482). */
+  ticked?: number
 }
 
 /**

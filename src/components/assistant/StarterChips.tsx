@@ -71,6 +71,9 @@ type StarterKey =
   | 'findIdeas'
   | 'mergeDuplicates'
   | 'triageUndecided'
+  | 'onlyDrafts'
+  | 'moveThese'
+  | 'askAboutThese'
   | 'whyFits'
   | 'similarIdeas'
   | 'draftIt'
@@ -270,6 +273,11 @@ const CALENDAR: ScreenStarters = {
   ],
 }
 
+/** What a ticked set of a Foundation list can be asked (CON-482). */
+const FOUNDATION_SELECTED: Starter[] = [
+  { icon: QuestionIcon, key: 'askAboutThese' },
+]
+
 const FOUNDATION: ScreenStarters = {
   none: [
     { icon: QuestionIcon, key: 'stanceOn' },
@@ -306,6 +314,7 @@ const FOUNDATION_VOICES: ScreenStarters = {
     { icon: SealCheckIcon, key: 'checkGuardrails' },
     { icon: QuestionIcon, key: 'stanceOn' },
   ],
+  selected: FOUNDATION_SELECTED,
 }
 
 const FOUNDATION_FACTS: ScreenStarters = {
@@ -314,6 +323,7 @@ const FOUNDATION_FACTS: ScreenStarters = {
     { icon: ArrowClockwiseIcon, key: 'renewFact' },
     { icon: NotePencilIcon, key: 'addFact' },
   ],
+  selected: FOUNDATION_SELECTED,
 }
 
 const FOUNDATION_SERIES: ScreenStarters = {
@@ -322,6 +332,7 @@ const FOUNDATION_SERIES: ScreenStarters = {
     { icon: NotePencilIcon, key: 'makeSeries' },
     { icon: MegaphoneIcon, key: 'runInCampaign' },
   ],
+  selected: FOUNDATION_SELECTED,
 }
 
 const FOUNDATION_TEMPLATES: ScreenStarters = {
@@ -342,8 +353,12 @@ const FOUNDATION_LOOK: ScreenStarters = {
 
 /** A campaign's posts list: its own verbs, and the brand check for a selection. */
 const CAMPAIGN_LIST: ScreenStarters = {
-  none: CAMPAIGN_STARTERS,
-  selected: [{ icon: SealCheckIcon, key: 'checkBrandSelected' }],
+  // The CON-467 board's (CON-482): a filter to set, and moves for a selection.
+  none: [{ icon: FunnelIcon, key: 'onlyDrafts' }, ...CAMPAIGN_STARTERS],
+  selected: [
+    { icon: CalendarBlankIcon, key: 'moveThese' },
+    { icon: SealCheckIcon, key: 'checkBrandSelected' },
+  ],
 }
 
 // The CON-464 boards' three (CON-480): the week, the report, the misses.

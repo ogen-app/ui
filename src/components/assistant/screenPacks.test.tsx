@@ -62,6 +62,35 @@ describe('starters follow the screen', () => {
     expect(screen.getByText('Draft it')).toBeTruthy()
   })
 
+  it('offers the posts list a filter, and moves for a selection (CON-482)', () => {
+    useViewContextStore.setState({ location: { screen: 'campaign.list' } })
+    const { unmount } = render(
+      <StarterChips kind="campaign" onPick={() => {}} />,
+      { wrapper: QueryWrapper },
+    )
+    expect(screen.getByText('Only the drafts')).toBeTruthy()
+    unmount()
+    useViewContextStore.setState({
+      location: { screen: 'campaign.list' },
+      page: { selection: { kind: 'post', ids: ['p1', 'p2'], count: 2 } },
+    })
+    render(<StarterChips kind="campaign" onPick={() => {}} />, {
+      wrapper: QueryWrapper,
+    })
+    expect(screen.getByText('Move these')).toBeTruthy()
+  })
+
+  it('gives a Foundation list’s selection its own starters (CON-482)', () => {
+    useViewContextStore.setState({
+      location: { screen: 'foundation.voices' },
+      page: { selection: { kind: 'voice', ids: ['v1', 'v2'], count: 2 } },
+    })
+    render(<StarterChips kind="workspace" onPick={() => {}} />, {
+      wrapper: QueryWrapper,
+    })
+    expect(screen.getByText('Ask about these')).toBeTruthy()
+  })
+
   it('falls back to the thread’s own on a screen with none', () => {
     useViewContextStore.setState({ location: { screen: 'post' } })
     render(<StarterChips kind="post" onPick={() => {}} />, {

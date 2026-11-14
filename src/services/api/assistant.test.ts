@@ -1456,7 +1456,7 @@ describe('an offer answered from its card (CON-467)', () => {
     expect(
       offerOutcome({ status: 'ok', result: { tagged: 14, undoId: 'u1' } })
         ?.tagged,
-    ).toEqual({ count: 14, undoId: 'u1' })
+    ).toMatchObject({ count: 14, undoId: 'u1', add: [], assets: [], more: 0 })
     expect(offerOutcome({ status: 'ok', result: { done: 3 } })).toBeUndefined()
     expect(offerOutcome(undefined)).toBeUndefined()
   })
@@ -1586,6 +1586,144 @@ describe('the campaign state (CON-468)', () => {
       added: '',
       removed: 'Threads',
       undoId: 'u2',
+    })
+  })
+})
+
+describe('offers that check again, partial runs and choices (CON-482)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('reads a stale or lapsed answer, a conflict’s reason and the turn’s resolved offers', async () => {
+    const frames = [
+      [
+        'proposal_created',
+        {
+          id: 'pr2',
+          tool: 'applyCalendarMoves',
+          summary: 'Move 2 posts instead',
+          replaces: 'pr1',
+          options: [
+            {
+              id: 'a',
+              title: 'Move it to Friday',
+              recommended: true,
+              why: 'Friday is empty',
+            },
+          ],
+        },
+      ],
+      [
+        'proposal_resolved',
+        {
+          id: 'pr1',
+          status: 'stale',
+          reasons: ['“Spa” was scheduled since'],
+          replacedBy: 'pr2',
+        },
+      ],
+      ['proposal_resolved', { id: 'pr3', status: 'expired' }],
+      [
+        'error',
+        { message: 'That offer lapsed.', code: 409, reason: 'offer_expired' },
+      ],
+    ]
+      .map(
+        ([event, data]) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
+      )
+      .join('')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(frames, {
+            status: 200,
+            headers: { 'Content-Type': 'text/event-stream' },
+          }),
+      ),
+    )
+    const events: AssistantStreamEvent[] = []
+    await streamAssistantTurn(
+      {
+        instruction: 'yes',
+        viewContext: {
+          version: 1,
+          screen: 'calendar',
+          scope: { kind: 'workspace' },
+        },
+      },
+      (e) => events.push(e),
+    )
+    expect(events[0]).toMatchObject({
+      type: 'proposal_created',
+      proposal: {
+        replaces: 'pr1',
+        recommended: 'a',
+        options: [{ id: 'a', why: 'Friday is empty' }],
+      },
+    })
+    expect(events[1]).toEqual({
+      type: 'proposal_resolved',
+      id: 'pr1',
+      status: 'stale',
+      chosen: undefined,
+      reasons: ['“Spa” was scheduled since'],
+      replacedBy: 'pr2',
+    })
+    expect(events[2]).toMatchObject({
+      type: 'proposal_resolved',
+      status: 'expired',
+    })
+    expect(events[3]).toMatchObject({ type: 'error', reason: 'offer_expired' })
+  })
+
+  it('reads how much a run made, a miss’s platform, a tagging’s names and the offers answered', () => {
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'Done in part.',
+        action: 'answered',
+        resolved: [{ id: 'pr1', status: 'confirmed' }],
+        result: {
+          status: 'ok',
+          made: 9,
+          total: 12,
+          notMade: [
+            {
+              id: 'i1',
+              title: 'Six rooms',
+              platform: 'pl1',
+              reason: 'timed out',
+            },
+          ],
+        },
+      }),
+      'campaign',
+    )
+    expect(r.answered).toMatchObject({
+      made: 9,
+      total: 12,
+      notMade: [{ title: 'Six rooms', platform: 'pl1' }],
+    })
+    expect(r.resolved).toEqual([{ id: 'pr1', status: 'confirmed' }])
+    expect(
+      offerOutcome({
+        status: 'ok',
+        result: {
+          tagged: 14,
+          changed: 13,
+          add: ['spa'],
+          assets: [{ id: 'a1', title: 'Brochure', added: ['spa'] }],
+          more: 12,
+          undoId: 'u1',
+        },
+      })?.tagged,
+    ).toEqual({
+      count: 14,
+      undoId: 'u1',
+      changed: 13,
+      add: ['spa'],
+      remove: [],
+      assets: [{ id: 'a1', title: 'Brochure', added: ['spa'], removed: [] }],
+      more: 12,
     })
   })
 })

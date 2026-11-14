@@ -881,6 +881,8 @@ export const en = {
    * field and operator, its chosen words marked `<v>`.
    */
   postsFilter: {
+    /** After a filter the assistant set, until it changes (CON-482). */
+    setByAssistant: 'set by the assistant',
     unknownPlatform: 'A removed platform',
     nothingMatches: 'No posts match these filters',
     scheduled: {
@@ -2860,6 +2862,18 @@ export const en = {
         label: 'Our palette',
         text: 'What’s our palette?',
       },
+      onlyDrafts: {
+        label: 'Only the drafts',
+        text: 'Show only the drafts.',
+      },
+      moveThese: {
+        label: 'Move these',
+        text: 'Move the selected posts to ',
+      },
+      askAboutThese: {
+        label: 'Ask about these',
+        text: 'Tell me about the selected ones.',
+      },
       checkBrandSelected: {
         label: 'Check against the brand',
         text: 'Check the selected posts against our voice and guardrails.',
@@ -3448,6 +3462,8 @@ export const en = {
     uiAction: {
       navigate: 'Opened {{screen}}',
       setFilter: 'Filtered {{screen}}',
+      /** What it filtered to, in grey: "drafts · Instagram". */
+      setFilterDetail: 'Filtered {{screen}} <where>{{detail}}</where>',
       clearFilter: 'Cleared the filter on {{screen}}',
       select_one: 'Selected {{formatted}} on {{screen}}',
       select_other: 'Selected {{formatted}} on {{screen}}',
@@ -3486,7 +3502,6 @@ export const en = {
       /** The composer, while an offer is waiting. */
       placeholder: 'Reply “yes” to run it, or say what to change',
       confirm: 'CONFIRM',
-      choose: 'CHOOSE',
       dismiss: 'DISMISS',
       gone: 'This offer no longer exists.',
       failed: 'It didn’t go through. Ask again to retry.',
@@ -3502,6 +3517,26 @@ export const en = {
       stale: '{{summary}} · changed since, nothing ran',
       working: '{{summary}} · working…',
       /** Over the one option the server marks (CON-467). */
+      answeredElsewhere: 'This offer was already answered.',
+      /** Before a confirmed run: every confirm re-checks the offer first. */
+      checked: 'Checked again — nothing changed',
+      /** A choice, answered: which way was taken. */
+      chose: 'Chose: {{option}}',
+      /** A yes that ran nothing because what the offer was made on changed (CON-482). */
+      staleCard: {
+        checked: 'Checked again before running',
+        word: 'NOTHING RAN',
+        title: 'Things changed since this offer',
+        fresh: 'FRESH OFFER',
+      },
+      /** An offer that lapsed before its yes. */
+      expiredCard: {
+        word: 'EXPIRED',
+        title: 'That offer lapsed',
+        nothing: 'Nothing ran',
+        hint: 'Ask again and it will be built from things as they are now.',
+        askAgain: 'ASK AGAIN',
+      },
       recommended: 'RECOMMENDED',
       /** Beside an offer's detail rows (CON-476): what each one is. */
       row: {
@@ -3860,16 +3895,34 @@ export const en = {
      * undone, each with the server's reason, and a tagging with its undo.
      */
     answered: {
+      /** A run that did part of the job (CON-482). */
+      partly: {
+        word: 'PARTLY DONE',
+        title: '{{made}} of {{total}} made',
+      },
+      /** A retry that made the rest: both runs summed. */
+      done: {
+        word: 'DONE',
+        title: 'All {{total}} made',
+        onRetry_one: '{{formatted}} on retry',
+        onRetry_other: '{{formatted}} on retry',
+      },
+      retried_one: 'Retried: {{formatted}} not made',
+      retried_other: 'Retried: {{formatted}} not made',
       notMade: {
-        word: 'NOT DONE',
-        title_one: '{{formatted}} not done',
-        title_other: '{{formatted}} not done',
+        word: 'NOT MADE',
+        group_one: 'NOT MADE · {{formatted}}',
+        group_other: 'NOT MADE · {{formatted}}',
+        title_one: '{{formatted}} not made',
+        title_other: '{{formatted}} not made',
+        retryCount_one: 'RETRY {{formatted}}',
+        retryCount_other: 'RETRY {{formatted}}',
+        lapsed: 'The offer behind them lapsed; ask again to make them.',
         /** Items the server names no title for, under one reason. */
         unnamed_one: '{{formatted}} item',
         unnamed_other: '{{formatted}} items',
         more_one: 'and {{formatted}} more',
         more_other: 'and {{formatted}} more',
-        retry: 'RETRY',
       },
       replaced: {
         word: 'DELETED',
@@ -3887,6 +3940,26 @@ export const en = {
         word: 'TAGGED',
         title_one: '{{formatted}} asset tagged',
         title_other: '{{formatted}} assets tagged',
+        /** A tag by name, as the card quotes it. */
+        quote: '“{{tag}}”',
+        titleNamed_one: '{{formatted}} asset tagged {{tags}}',
+        titleNamed_other: '{{formatted}} assets tagged {{tags}}',
+        untagged_one: '{{formatted}} asset untagged {{tags}}',
+        untagged_other: '{{formatted}} assets untagged {{tags}}',
+        added: '{{tags}} added',
+        removed: '{{tags}} removed',
+        already: 'already as asked',
+        putBack_one:
+          'Put back: {{tags}} taken back from the {{formatted}} it changed',
+        putBack_other:
+          'Put back: {{tags}} taken back from the {{formatted}} it changed',
+        note: 'Undo takes back only what the job changed — the ones already as asked keep their tags.',
+        cantWord: 'CAN’T UNDO',
+        cantTitle: 'Tags changed since',
+        changedSince: '{{changed}} of {{of}} retagged since',
+        cantHint:
+          'Undo would overwrite that change; untag by hand from Assets.',
+        open: 'OPEN',
       },
     },
 
@@ -7773,6 +7846,22 @@ export const en = {
   },
 
   campaigns: {
+    /** The posts list's and calendar's selection bar (CON-482). */
+    bulk: {
+      selected_one: '{{formatted}} selected',
+      selected_other: '{{formatted}} selected',
+      allMatching_one: 'All {{formatted}} matching post selected',
+      allMatching_other: 'All {{formatted}} matching posts selected',
+      when: 'Publication date & time',
+      changeDate: 'Change date',
+      changeTime: 'Change time',
+      status: 'Status',
+      unschedule: 'Unschedule',
+      delete: 'Delete',
+      clear: 'CLEAR',
+      deleted_one: '{{formatted}} post deleted',
+      deleted_other: '{{formatted}} posts deleted',
+    },
     title: 'Campaigns',
     add: 'ADD CAMPAIGN',
     error: 'Failed to load campaigns',

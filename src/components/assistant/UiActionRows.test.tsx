@@ -166,3 +166,48 @@ describe('an open_connect row (CON-480)', () => {
     ).toBeTruthy()
   })
 })
+
+describe('list rows (CON-482)', () => {
+  it('words what a posts filter set, in grey after the screen', async () => {
+    await renderWithProviders(
+      <UiActionRows
+        threadId="campaign:c1"
+        turnId="t1"
+        actions={[
+          {
+            before: '/campaigns/c1/list',
+            action: {
+              type: 'set_filter',
+              screen: 'campaign.list',
+              campaignId: 'c1',
+              filter: 'status=draft&platform=instagram',
+            },
+          },
+        ]}
+      />,
+    )
+    expect(screen.getByText('draft · Instagram')).toBeTruthy()
+  })
+
+  it('counts the rows the list ticked, not the ids sent', async () => {
+    await renderWithProviders(
+      <UiActionRows
+        threadId="campaign:c1"
+        turnId="t1"
+        actions={[
+          {
+            before: '/campaigns/c1/list',
+            ticked: 2,
+            action: {
+              type: 'select',
+              screen: 'campaign.list',
+              campaignId: 'c1',
+              selection: { kind: 'post', ids: ['p1', 'p2', 'p3'] },
+            },
+          },
+        ]}
+      />,
+    )
+    expect(screen.getByText(/^Selected 2 on/)).toBeTruthy()
+  })
+})

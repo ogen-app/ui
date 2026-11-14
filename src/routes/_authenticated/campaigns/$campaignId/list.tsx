@@ -20,6 +20,8 @@ import {
   PostsNoMatches,
 } from '@/components/campaigns/postsFilter/PostsFilterBar'
 import { viewerTimeZone } from '@/lib/assetFilter'
+import { listFilter, sameFilter } from '@/lib/viewContext'
+import { useViewContextStore } from '@/stores/viewContextStore'
 import {
   isPostFilterActive,
   parsePostListSearch,
@@ -58,12 +60,18 @@ function CampaignListView() {
   )
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   // A new filter starts a new selection: ticks the filter hides would come
-  // back unasked when it is relaxed.
+  // back unasked when it is relaxed. Read off the address, so the
+  // assistant's set_filter and its UNDO clear them too (CON-482).
+  const question = listFilter(params)
+  const assistantFilter = useViewContextStore((st) => st.assistantFilter)
+  const [selectionFor, setSelectionFor] = useState(question)
+  if (selectionFor !== question) {
+    setSelectionFor(question)
+    setSelectedIds(new Set())
+  }
   const onFilterChange = useCallback(
-    (next: PostFilter) => {
-      setSelectedIds(new Set())
-      void navigate({ search: searchFromPostFilter(next), replace: true })
-    },
+    (next: PostFilter) =>
+      void navigate({ search: searchFromPostFilter(next), replace: true }),
     [navigate],
   )
   const postsQuery = useCampaignPosts(campaignId, params)
@@ -105,12 +113,15 @@ function CampaignListView() {
     [rows, selectedIds],
   )
 
-  // The assistant can tick posts here.
+  // The assistant can tick posts here — the ones the list holds, and says
+  // how many that was (CON-482).
   useAssistantRequest((action) => {
     if (action.type !== 'select' || action.selection?.kind !== 'post')
       return false
-    setSelectedIds(new Set(action.selection.ids))
-    return true
+    const here = new Set(rows.map((p) => p.id))
+    const ids = action.selection.ids.filter((id) => here.has(id))
+    setSelectedIds(new Set(ids))
+    return ids.length
   })
 
   // The assistant sees the filter and the ticked posts (CON-451/472). Every
@@ -152,6 +163,7 @@ function CampaignListView() {
       {selectedPosts.length > 0 ? (
         <BulkActionsBar
           posts={selectedPosts}
+          allMatching={filtered && selectedPosts.length === rows.length}
           onClear={clearSelection}
           onApply={applyPlan}
           onDelete={deletePosts}
@@ -178,6 +190,11 @@ function CampaignListView() {
             onChange={onFilterChange}
             total={rows.length}
             totalUnfiltered={allPosts.data?.length ?? rows.length}
+            setByAssistant={
+              !!assistantFilter &&
+              assistantFilter.screen === 'campaign.list' &&
+              sameFilter(assistantFilter.filter, question)
+            }
           />
         </div>
       )}

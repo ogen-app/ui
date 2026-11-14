@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ViewLocation, ViewPage } from '@/lib/viewContext'
+import type { ViewLocation, ViewPage, ViewScreen } from '@/lib/viewContext'
 import type { UIAction } from '@/lib/assistantUiActions'
 
 /**
@@ -29,8 +29,24 @@ type ViewContextState = {
    * rows, open a smart group (CON-450, D5). Its selection and its saved views
    * are its own state, so the list picks the request up and consumes it.
    */
-  request: { seq: number; action: UIAction } | null
-  ask: (action: UIAction) => void
+  /**
+   * What the assistant asked a list to do. `report` hears back how many rows
+   * the list acted on (CON-482), for the rail's "Selected N".
+   */
+  request: {
+    seq: number
+    action: UIAction
+    report?: (count: number) => void
+  } | null
+  ask: (action: UIAction, report?: (count: number) => void) => void
+  /**
+   * The filter the assistant last put on a list (CON-482), so the list can
+   * say so until it changes; null once put back.
+   */
+  assistantFilter: { screen: ViewScreen; filter: string } | null
+  markAssistantFilter: (
+    mark: { screen: ViewScreen; filter: string } | null,
+  ) => void
   consume: (seq: number) => void
   setLocation: (location: ViewLocation) => void
   registerPage: (page: ViewPage) => number
@@ -49,7 +65,11 @@ export const useViewContextStore = create<ViewContextState>()((set, get) => ({
   dismissed: false,
   request: null,
 
-  ask: (action) => set({ request: { seq: ++nextToken, action } }),
+  ask: (action, report) =>
+    set({ request: { seq: ++nextToken, action, report } }),
+
+  assistantFilter: null,
+  markAssistantFilter: (mark) => set({ assistantFilter: mark }),
   consume: (seq) => {
     if (get().request?.seq === seq) set({ request: null })
   },

@@ -49,12 +49,23 @@ export class ApiError extends Error {
    * prose.
    */
   readonly code?: string
+  /**
+   * The rest of the body, for a refusal that says more than its code — an
+   * undo's `changed` of `of` (CON-482).
+   */
+  readonly body?: Record<string, unknown>
 
-  constructor(status: number, message: string, code?: string) {
+  constructor(
+    status: number,
+    message: string,
+    code?: string,
+    body?: Record<string, unknown>,
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
+    this.body = body
   }
 }
 
@@ -133,6 +144,8 @@ type PlatformValidationError = {
 type ApiErrorBody = {
   error?: string
   code?: string
+  /** An assistant conflict's name (CON-482): `offer_expired`, `changed_since`. */
+  reason?: string
   /**
    * Keyed by platform id. Sent with 422s from the validation gate — post
    * create, the draft → ready_for_publish PUT, and POST /:id/schedule.
@@ -312,7 +325,18 @@ export async function apiErrorFrom(
   if (res.status === 402 && body?.error === BILLING_REQUIRED) {
     return new ApiError(res.status, message, BILLING_REQUIRED)
   }
+  // `reason` is how the assistant's conflicts name themselves (CON-482):
+  // `offer_expired`, `changed_since`.
   const code =
-    typeof body?.code === 'string' && body.code ? body.code : undefined
-  return new ApiError(res.status, message, code)
+    typeof body?.code === 'string' && body.code
+      ? body.code
+      : typeof body?.reason === 'string' && body.reason
+        ? body.reason
+        : undefined
+  return new ApiError(
+    res.status,
+    message,
+    code,
+    (body as Record<string, unknown> | null) ?? undefined,
+  )
 }
