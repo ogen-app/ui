@@ -88,4 +88,9 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
   manualSorting?: boolean
   /** The last rows are on screen: load more, if there are more. */
   onEndReached?: () => void
+  /**
+   * Extra classes for one row — a ticked row's tint (CON-486). Applied after
+   * the row's own fill and hover, so a tint can hold under the pointer.
+   */
+  rowClassName?: (row: TData) => string | false | undefined
 }

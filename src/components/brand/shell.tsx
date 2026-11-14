@@ -10,7 +10,7 @@ import {
 } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { TickBox } from '@/components/ui/tick-box'
 import { cn } from '@/lib'
 import { formatList } from '@/lib/intl'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -481,7 +481,11 @@ export function LibraryEntry({
       onClick={onOpen}
       className={cn(
         tick && 'pl-10',
-        tick?.checked && 'outline-2 -outline-offset-2 outline-foreground',
+        // Ticked, a light tint of the accent, as a ticked Ideas row is
+        // (CON-486) — mixed into the card's own fill rather than laid over
+        // the page, since the card sits on the grey and the row on white.
+        tick?.checked &&
+          'bg-[color-mix(in_srgb,var(--color-accent)_5%,var(--color-primary))]',
       )}
     >
       <header className="flex min-w-0 flex-col gap-1">
@@ -539,7 +543,7 @@ function LibraryTick({
 }) {
   const { t } = useTranslation()
   return (
-    <Checkbox
+    <TickBox
       checked={checked}
       onCheckedChange={onToggle}
       aria-label={t('brand.selection.select', { name })}

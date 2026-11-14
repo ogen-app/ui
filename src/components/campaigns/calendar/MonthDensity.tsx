@@ -1,11 +1,13 @@
 import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
-import { CircleDashedIcon } from '@phosphor-icons/react'
+import { CheckIcon, CircleDashedIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { formatDate } from '@/lib/intl'
 import { formatAnchor } from './date'
+import { useCalendarSelection } from './calendarSelection'
+import { counted } from '@/lib/intl'
 import { cn } from '@/lib'
 
 type Props = {
@@ -57,6 +59,15 @@ function MonthDensityComponent({ campaignId, day, posts }: Props) {
       )
   }, [posts, resolve])
 
+  // Posts ticked in a day too busy to draw its cards (CON-486): the summary
+  // says how many and is outlined as a ticked card is, so a selection — the
+  // assistant's included — is never invisible. The ticks themselves are made
+  // on the week, one click away.
+  const selection = useCalendarSelection()
+  const ticked = selection
+    ? posts.filter((p) => selection.ticked.has(p.id)).length
+    : 0
+
   const anchor = formatAnchor(day)
   const shared = {
     title: t('calendar.density', {
@@ -66,6 +77,7 @@ function MonthDensityComponent({ campaignId, day, posts }: Props) {
     className: cn(
       'flex flex-wrap content-start items-center gap-x-2 gap-y-1 p-1',
       'cursor-pointer transition-colors hover:bg-quaternary',
+      ticked > 0 && 'outline-2 -outline-offset-2 outline-foreground',
     ),
   }
 
@@ -87,10 +99,20 @@ function MonthDensityComponent({ campaignId, day, posts }: Props) {
               aria-hidden
             />
             <span className="tabular-nums">{count}</span>
-            <span className="sr-only">{info?.name ?? 'no platform'}</span>
+            <span className="sr-only">
+              {info?.name ?? t('posts.noPlatform')}
+            </span>
           </span>
         )
       })}
+      {ticked > 0 && (
+        <span className="flex shrink-0 items-center gap-0.5 text-[11px]/4 font-medium text-foreground">
+          <CheckIcon weight="bold" className="size-3 shrink-0" aria-hidden />
+          <span className="tabular-nums">
+            {t('calendar.densityTicked', counted(ticked))}
+          </span>
+        </span>
+      )}
     </>
   )
 

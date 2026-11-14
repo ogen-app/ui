@@ -11,6 +11,7 @@ import {
   calendarRange,
   formatAnchor,
   parseAnchor,
+  postsInRange,
 } from '@/components/campaigns/calendar/date'
 import { CalendarSelectionContext } from '@/components/campaigns/calendar/calendarSelection'
 import { BulkActionsBar } from '@/components/campaigns/BulkActionsBar'
@@ -36,6 +37,7 @@ import { useHotkeys } from '@/hooks/useHotkeys'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import type { Post } from '@/types/posts'
 import { awaiting } from '@/lib/fetched'
+import { counted, formatDate, formatDateRange } from '@/lib/intl'
 
 /** Stable identity for a grid with nothing in it yet. */
 const NO_POSTS: Post[] = []
@@ -73,7 +75,7 @@ export const Route = createFileRoute(
 
 function CalendarView() {
   const { campaignId, anchor, view } = Route.useParams()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const search = Route.useSearch()
   const filter = useMemo(() => postFilterFromSearch(search), [search])
@@ -143,8 +145,6 @@ function CalendarView() {
       search: true,
     })
 
-  const Calendar = granularity === 'month' ? MonthlyCalendar : WeeklyCalendar
-
   // The same step the toolbar's arrows take, on the arrow keys. Unbounded in
   // both directions — a campaign's calendar has no first or last week, so
   // unlike stepping through posts there is no end to stop at.
@@ -187,20 +187,16 @@ function CalendarView() {
     setScopeOfTicks(selectionScope)
     setSelectedIds(new Set())
   }
-  const onScreen = useMemo(() => {
-    // Both are days `calendarRange` made, so they parse.
-    const from = parseAnchor(range.from)!.getTime()
-    const end = addDays(parseAnchor(range.to)!, 1).getTime()
-    return rows.filter((p) => {
-      if (!p.scheduled_at) return false
-      const at = new Date(p.scheduled_at)
-      return (
-        at.getTime() >= from &&
-        at.getTime() < end &&
-        !(hiddenDays ?? []).includes(at.getDay())
-      )
-    })
-  }, [rows, range, hiddenDays])
+  const onScreen = useMemo(
+    () => postsInRange(rows, range, hiddenDays),
+    [rows, range, hiddenDays],
+  )
+  // The sentence counts the days on screen (CON-486), matching and in all —
+  // "3 of 5" over a week showing three, not the campaign's whole match.
+  const onScreenUnfiltered = useMemo(
+    () => postsInRange(allPosts.data ?? NO_POSTS, range, hiddenDays),
+    [allPosts.data, range, hiddenDays],
+  )
   // Resolved against the cards on screen, so a post that has gone, that the
   // filter hides or that is in another week is never counted or acted on.
   const selectedPosts = useMemo(
@@ -232,6 +228,34 @@ function CalendarView() {
     return ids.length
   }, posts)
 
+  // What the composer's chip calls the ticks (CON-486): their day when they
+  // share one — "2 posts on Tue 22" — else the days on screen.
+  const selectionLabel = useMemo(() => {
+    if (selectedPosts.length === 0) return undefined
+    const days = new Set(
+      selectedPosts.map((p) => new Date(p.scheduled_at!).toDateString()),
+    )
+    const count = counted(selectedPosts.length, i18n.language)
+    if (days.size === 1)
+      return t('assistant.chip.postsOnDay', {
+        ...count,
+        day: formatDate(
+          new Date(selectedPosts[0].scheduled_at!),
+          { weekday: 'short', day: 'numeric' },
+          i18n.language,
+        ),
+      })
+    return t('assistant.chip.postsInWindow', {
+      ...count,
+      window: formatDateRange(
+        parseAnchor(range.from)!,
+        parseAnchor(range.to)!,
+        { day: 'numeric', month: 'short' },
+        i18n.language,
+      ),
+    })
+  }, [selectedPosts, range, t, i18n.language])
+
   // What the assistant sees (CON-472): the days on screen as the window, the
   // filter in the endpoint's words — with the zone the window's days are read
   // in — the posts drawn in those days, and what is ticked.
@@ -242,14 +266,24 @@ function CalendarView() {
       window: { from: range.from, to: range.to, campaignId },
     }
     if (visible.length > 0) out.visible = { kind: 'post', ids: visible }
-    if (selectedPosts.length > 0)
+    if (selectedPosts.length > 0) {
       out.selection = {
         kind: 'post',
         ids: selectedPosts.map((p) => p.id),
         count: selectedPosts.length,
       }
+      out.selectionLabel = selectionLabel
+    }
     return out
-  }, [onScreen, range, params, timeZone, campaignId, selectedPosts])
+  }, [
+    onScreen,
+    range,
+    params,
+    timeZone,
+    campaignId,
+    selectedPosts,
+    selectionLabel,
+  ])
   useAssistantPage(page)
 
   // `awaiting`, not `isLoading` — see `lib/fetched`: the empty state is a
@@ -259,30 +293,22 @@ function CalendarView() {
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0">
-      {selectedPosts.length > 0 ? (
-        <BulkActionsBar
-          posts={selectedPosts}
-          onClear={() => setSelectedIds(new Set())}
-          onApply={applyPlan}
-          onDelete={deletePosts}
-          busy={busy}
-        />
-      ) : (
-        <PostsToolbar
-          campaignId={campaignId}
-          view={granularity}
-          anchor={anchorDate}
-          onAnchorChange={handleAnchorChange}
-        />
-      )}
+      {/* The toolbar stays while posts are ticked (CON-486): it is the week's
+          navigation, and the bulk bar floats over the grid's foot instead. */}
+      <PostsToolbar
+        campaignId={campaignId}
+        view={granularity}
+        anchor={anchorDate}
+        onAnchorChange={handleAnchorChange}
+      />
       {!campaignEmpty && (
         <div className="px-6 pb-3">
           <PostsFilterBar
             campaignId={campaignId}
             filter={filter}
             onChange={onFilterChange}
-            total={rows.length}
-            totalUnfiltered={allPosts.data?.length ?? rows.length}
+            total={onScreen.length}
+            totalUnfiltered={onScreenUnfiltered.length}
           />
         </div>
       )}
@@ -300,9 +326,34 @@ function CalendarView() {
           onAddPost={addPost}
         />
       ) : (
-        <CalendarSelectionContext.Provider value={selection}>
-          <Calendar campaignId={campaignId} posts={rows} anchor={anchorDate} />
-        </CalendarSelectionContext.Provider>
+        <div className="relative flex flex-1 min-h-0 min-w-0 flex-col">
+          <CalendarSelectionContext.Provider value={selection}>
+            {granularity === 'month' ? (
+              <MonthlyCalendar
+                campaignId={campaignId}
+                posts={rows}
+                anchor={anchorDate}
+              />
+            ) : (
+              <WeeklyCalendar
+                campaignId={campaignId}
+                posts={rows}
+                anchor={anchorDate}
+                hideIdeaSlots={filtered}
+              />
+            )}
+          </CalendarSelectionContext.Provider>
+          {selectedPosts.length > 0 && (
+            <BulkActionsBar
+              floating
+              posts={selectedPosts}
+              onClear={() => setSelectedIds(new Set())}
+              onApply={applyPlan}
+              onDelete={deletePosts}
+              busy={busy}
+            />
+          )}
+        </div>
       )}
     </div>
   )

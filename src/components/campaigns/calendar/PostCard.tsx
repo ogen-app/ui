@@ -34,7 +34,7 @@ import {
 import { LockMark, isDateLocked } from './LockMark'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import { STATUS_ACCENT_COLOR, STATUS_ICON, STATUS_TEXT_COLOR } from './status'
-import { Checkbox } from '@/components/ui/checkbox'
+import { TickBox } from '@/components/ui/tick-box'
 import { useCalendarSelection } from './calendarSelection'
 
 type PostCardProps = {
@@ -445,7 +445,14 @@ function PostCardComponent({
           card's `@container` makes it a stacking context, so a negative
           z-index on the image would put it behind the card's own fill instead,
           which is not the same thing. */}
-      <div className="relative flex flex-col gap-1.5">
+      <div
+        className={cn(
+          'relative flex flex-col gap-1.5',
+          // The corner box's room (CON-486): 16px kept clear on the right, so
+          // the lock and the title's last word are never under it.
+          selection && 'pr-4',
+        )}
+      >
         {/* Row 1 — the marks and one time, where the status label and a
             separate time row used to be two.
 
@@ -619,7 +626,7 @@ function PostCardComponent({
   return (
     <div className="group/card relative w-full shrink-0">
       {card}
-      <Checkbox
+      <TickBox
         checked={ticked}
         onCheckedChange={() => selection.toggle(post.id)}
         aria-label={t('postsTable.selectPost', { title })}

@@ -13,6 +13,7 @@ import { BulkActionDialog, type BulkAction } from './BulkActionDialog'
 import { describeResult, type BulkPlan } from '@/lib/bulkPostEdits'
 import { counted } from '@/lib/intl'
 import { toast } from '@/stores/toastStore'
+import { ZIndex } from '@/config/zIndex'
 import type { Post } from '@/types/posts'
 
 type Props = {
@@ -29,16 +30,25 @@ type Props = {
    * the Ideas and Assets bars do, because that is what the assistant hears.
    */
   allMatching?: boolean
+  /**
+   * Floats over the foot of the grid instead of standing in for the toolbar —
+   * the calendar's form (CON-486), where the toolbar is the week's navigation
+   * and must stay while posts are ticked.
+   */
+  floating?: boolean
 }
 
 /**
- * Replaces the posts toolbar while a selection is live: what is selected on
- * the left, the action groups in the middle, and the way out on the right.
+ * What is selected on the left, the action groups in the middle, and the way
+ * out on the right.
  *
- * It stands in for the toolbar rather than sitting under it so the table
- * never moves. The white fill is the 40px band the toolbar's controls
+ * On the list it replaces the posts toolbar while a selection is live, so the
+ * table never moves. The white fill is the 40px band the toolbar's controls
  * occupy — the surrounding 8px stays transparent, so this row is exactly as
  * tall as the one it replaced and keeps the same gap above the table.
+ *
+ * On the calendar it floats: the toolbar there holds the week's arrows,
+ * WEEK / MONTH and ADD POST, which a selection is no reason to take away.
  */
 export function BulkActionsBar({
   posts,
@@ -47,6 +57,7 @@ export function BulkActionsBar({
   onDelete,
   busy = false,
   allMatching = false,
+  floating = false,
 }: Props) {
   const { t } = useTranslation()
   const [action, setAction] = useState<BulkAction | null>(null)
@@ -70,17 +81,47 @@ export function BulkActionsBar({
   }
 
   return (
-    <div className="py-2 shrink-0">
-      <div className="flex h-10 items-center gap-4 bg-primary px-4">
-        {/* Fixed width, tabular figures: the count changes on every tick and
-            the actions beside it must not slide as it does. */}
-        <span className="min-w-32 shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap">
+    <div
+      className={
+        floating
+          ? // Over the grid's foot, centred, as the Ideas bar sits over its
+            // list; only the bar itself takes the pointer.
+            'pointer-events-none absolute inset-x-0 bottom-4 flex justify-center'
+          : 'py-2 shrink-0'
+      }
+      style={floating ? { zIndex: ZIndex.pageActionBar } : undefined}
+    >
+      <div
+        className={
+          floating
+            ? 'pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg'
+            : 'flex h-10 items-center gap-4 bg-primary px-4'
+        }
+      >
+        {/* Fixed width on the list, tabular figures: the count changes on
+            every tick and the actions beside it must not slide as it does. */}
+        <span
+          className={
+            floating
+              ? 'shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap'
+              : 'min-w-32 shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap'
+          }
+        >
           {allMatching
             ? t('campaigns.bulk.allMatching', counted(posts.length))
             : t('campaigns.bulk.selected', counted(posts.length))}
         </span>
+        {floating && (
+          <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
+        )}
 
-        <div className="flex flex-1 items-center gap-2">
+        <div
+          className={
+            floating
+              ? 'flex items-center gap-1'
+              : 'flex flex-1 items-center gap-2'
+          }
+        >
           <ActionGroup
             label={t('campaigns.bulk.when')}
             disabled={busy}

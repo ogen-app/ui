@@ -195,15 +195,23 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   ticked on the list goes to the assistant as `allMatching` plus the filter;
   the calendar sends the days on screen as its `window` (`calendarRange`),
   the cards in them as `visible`, and its ticks — a card's corner box, read
-  through `CalendarSelectionContext` — as the selection. Foundation's voices,
-  audiences, facts and series tick the same way (`useLibrarySelection`), as
-  something to ask about: their bar only clears.
+  through `CalendarSelectionContext` — as the selection. The calendar keeps
+  its toolbar while posts are ticked; the bulk bar floats over the grid's
+  foot, and a month day too busy for cards says how many of its posts are
+  ticked (CON-486). The sentence counts the days on screen, idea slots hide
+  under a filter, and the Not scheduled panel reads the same filter.
+  Foundation's voices, audiences, facts and series tick the same way
+  (`useLibrarySelection`), as something to ask about: their bar clears, and
+  on facts it also REMOVEs, asking first through `RemoveFactsDialog` — the
+  row's trash asks the same way. A fact selection is held against the rows
+  the tab and search show.
   Ticks clear when the filter in the **address** changes — the assistant's
   `set_filter` and its UNDO included — and on the calendar when the day or
   view the user chose does, not when the computed range shifts (CON-482). An
   assistant `select` ticks only the rows the list holds and reports how many
   (`useAssistantRequest` returning a count), which is what the rail's
-  "Selected N" says; the posts list marks a filter the assistant set until it
+  "Selected 2 posts" says — on a calendar the server keeps only the posts on
+  screen (CON-486); the posts list marks a filter the assistant set until it
   changes (`viewContextStore.assistantFilter`).
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,
   600ms debounce, generation-counter guarded, flush-on-unmount). Campaign forms

@@ -209,3 +209,46 @@ describe('an idea open on the list (CON-481)', () => {
     ).toBe('This idea is open')
   })
 })
+
+describe('the words for ticks and places (CON-486)', () => {
+  it('counts a library’s ticks by what they are', () => {
+    expect(
+      chipText(
+        t,
+        workspace,
+        { screen: 'foundation.voices' },
+        { selection: { kind: 'voice', ids: ['a', 'b'], count: 2 } },
+      ),
+    ).toBe('2 voices')
+  })
+
+  it('uses the page’s own words for its ticks when it has them', () => {
+    expect(
+      chipText(
+        t,
+        workspace,
+        { screen: 'campaign.calendar' },
+        {
+          selection: { kind: 'post', ids: ['a', 'b'], count: 2 },
+          selectionLabel: '2 posts on Tue 22',
+        },
+      ),
+    ).toBe('2 posts on Tue 22')
+  })
+
+  it('puts a library under the Foundation, and a calendar with its days', () => {
+    expect(
+      markerText(t, view({ screen: 'foundation.voices' }), undefined),
+    ).toMatch(/Foundation · Voices/)
+    expect(
+      markerText(
+        t,
+        view({
+          screen: 'campaign.calendar',
+          window: { from: '2026-04-21', to: '2026-04-27' },
+        }),
+        undefined,
+      ),
+    ).toMatch(/Calendar · (Apr 21\s*–\s*27|21\s*–\s*27 Apr)/)
+  })
+})

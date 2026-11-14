@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { LibrarySelectionBar } from '@/components/brand/librarySelection'
+import { RemoveFactsDialog } from '@/components/brand/RemoveFactsDialog'
 import { useLibrarySelection } from '@/components/brand/useLibrarySelection'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
@@ -128,9 +129,11 @@ import {
  * leaves the row exactly as it was and a fact added and thought better of
  * leaves nothing behind.
  *
- * Removing is not confirmed, which is the app's rule for a row in a list —
- * see `DeleteAssetDialog`, where it is written down: the mistake is one row
- * among twenty and it is visible the instant it happens.
+ * Removing asks first (CON-486), from the row's trash and from the selection
+ * bar's REMOVE alike — `RemoveFactsDialog`, which names the one fact or counts
+ * the several. It used to go on one click, on the argument that a row is one
+ * of twenty and the mistake is visible at once; the documents list gave that
+ * argument up for the reason that applies here too — nothing undoes it.
  */
 export function FactsLedger({
   facts: ledger,
@@ -160,16 +163,30 @@ export function FactsLedger({
   // `brand-materials`.
   const info = brandSectionCopy(t, 'facts')
   const narrowed = view !== 'all' || query.trim() !== ''
-  const shown = ledger.filter(
-    (fact) =>
-      (view === 'all' || fact.subject === view) && factMatches(fact, query),
+  const shown = useMemo(
+    () =>
+      ledger.filter(
+        (fact) =>
+          (view === 'all' || fact.subject === view) && factMatches(fact, query),
+      ),
+    [ledger, view, query],
   )
-  // Ticks for the assistant to read (CON-472).
-  const selection = useLibrarySelection(
-    'fact',
-    useMemo(() => ledger.map((f) => f.id), [ledger]),
-  )
-  const shownIds = shown.map((f) => f.id)
+  const shownIds = useMemo(() => shown.map((f) => f.id), [shown])
+  // Ticks for the assistant to read (CON-472), held against the rows shown
+  // (CON-486): a fact a tab or the search hides is neither counted nor sent,
+  // with nothing on screen to show it is ticked.
+  const selection = useLibrarySelection('fact', shownIds)
+  // And a new tab or search starts a new selection, so ticks it hid never
+  // come back unasked — the posts list's rule for its filter.
+  const narrowing = `${view}|${query}`
+  const [ticksNarrowing, setTicksNarrowing] = useState(narrowing)
+  if (ticksNarrowing !== narrowing) {
+    setTicksNarrowing(narrowing)
+    selection.clear()
+  }
+  /** The facts awaiting a yes to their removal: a row's, or the ticked. */
+  const [confirming, setConfirming] = useState<string[] | null>(null)
+  const [removing, setRemoving] = useState(false)
   const tableSelection = {
     ...selection,
     // Ticks every row shown, or clears them when none are missing.
@@ -197,6 +214,22 @@ export function FactsLedger({
   const commit = (fact: BrandFact) => onSave(fact).then(() => setEditing(null))
 
   const remove = (id: string) => onRemove(id).then(() => setEditing(null))
+
+  // Each removal is its own request; a failure toasts from the mutation, so
+  // the dialog only waits for them all to settle.
+  const removeConfirmed = () => {
+    if (!confirming) return
+    setRemoving(true)
+    void Promise.allSettled(confirming.map((id) => onRemove(id))).then(() => {
+      setRemoving(false)
+      setConfirming(null)
+      selection.clear()
+    })
+  }
+  const confirmingStatement =
+    confirming?.length === 1
+      ? (ledger.find((f) => f.id === confirming[0])?.statement ?? null)
+      : null
 
   return (
     // The page's own shape, not `BrandEditorFrame`: that frame is a scroller
@@ -227,7 +260,7 @@ export function FactsLedger({
         }
       />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 pb-4 lg:px-6">
+      <div className="relative flex min-h-0 flex-1 flex-col gap-3 px-3 pb-4 lg:px-6">
         {ledger.length === 0 ? (
           // No toolbar over an empty ledger: three tabs reading zero and a box
           // to search nothing with is chrome around an absence. What the absence
@@ -259,8 +292,8 @@ export function FactsLedger({
                   showSubject={view === 'all'}
                   selection={tableSelection}
                   onEdit={open}
-                  // A failure toasts from the mutation; nothing to add here.
-                  onRemove={(id) => void remove(id).catch(() => {})}
+                  // Asks first, naming the fact — see `RemoveFactsDialog`.
+                  onRemove={(id) => setConfirming([id])}
                   // Only ever empty here because the search emptied it, so the
                   // way out is to undo the search — and the tab with it, since
                   // a query that matches nothing under Problems may well match
@@ -278,9 +311,25 @@ export function FactsLedger({
             )}
           </>
         )}
+        {/* Over the table's foot rather than under it (CON-486): the table
+            scrolls inside itself, so a bar in the column would shrink it. */}
+        <LibrarySelectionBar
+          kind="fact"
+          selection={selection}
+          overlay
+          onRemove={() => setConfirming([...selection.ticked])}
+          busy={removing}
+        />
       </div>
 
-      <LibrarySelectionBar kind="fact" selection={selection} />
+      <RemoveFactsDialog
+        count={confirming?.length ?? 0}
+        statement={confirmingStatement}
+        isOpen={confirming !== null}
+        onClose={() => setConfirming(null)}
+        onConfirm={removeConfirmed}
+        removing={removing}
+      />
 
       {editing && (
         <FactModal

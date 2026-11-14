@@ -22,6 +22,7 @@ import {
   startOfWeek,
 } from '@/components/campaigns/calendar/date'
 import { formatDate } from '@/lib/intl'
+import { cn } from '@/lib'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useAddPost } from '@/hooks/usePosts'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
@@ -152,7 +153,16 @@ export function PostsToolbar({
           month's label doesn't depend on it and needs no such wait.
           The list has no range to show, so the slot carries what the view is
           showing instead of standing empty. */}
-      <span className="flex h-6 items-center text-[18px] font-medium">
+      <span
+        className={cn(
+          'flex h-6 items-center',
+          // The list's line is a count, not a heading (CON-486): the page's
+          // header already names the screen, so it is quiet beside ADD POST.
+          anchor
+            ? 'text-[18px] font-medium'
+            : 'text-[13px] text-tertiary-foreground tabular-nums',
+        )}
+      >
         {!anchor
           ? subheading
           : view === 'month'
@@ -189,7 +199,7 @@ export function PostsToolbar({
               size="default"
               onClick={() => onAnchorChange(new Date())}
             >
-              TODAY
+              {t('calendar.today')}
             </Button>
             <Button
               variant="default"

@@ -7,11 +7,12 @@ import { BulkActionsBar } from './BulkActionsBar'
 
 const posts = [{ id: 'p1' }, { id: 'p2' }] as Post[]
 
-function show(allMatching = false) {
+function show(allMatching = false, floating = false) {
   return renderWithProviders(
     <BulkActionsBar
       posts={posts}
       allMatching={allMatching}
+      floating={floating}
       onClear={() => {}}
       onApply={async () => 0}
       onDelete={async () => 0}
@@ -29,6 +30,14 @@ describe('the posts selection bar (CON-482)', () => {
   it('counts a plain selection', async () => {
     await show()
     expect(screen.getByText('2 selected')).toBeTruthy()
+  })
+
+  it('floats over the calendar’s grid rather than standing in for its toolbar (CON-486)', async () => {
+    const { container } = await show(false, true)
+    expect(screen.getByText('2 selected')).toBeTruthy()
+    expect(
+      (container.firstElementChild?.firstElementChild as HTMLElement).className,
+    ).toMatch(/absolute/)
   })
 })
 

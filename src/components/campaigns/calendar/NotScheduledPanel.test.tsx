@@ -8,6 +8,7 @@ import { NotScheduledPanel } from './NotScheduledPanel'
 const data = vi.hoisted(() => ({
   posts: [] as Post[],
   updating: [] as string[],
+  params: [] as unknown[],
 }))
 vi.mock('@tanstack/react-query', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tanstack/react-query')>()),
@@ -15,14 +16,17 @@ vi.mock('@tanstack/react-query', async (importOriginal) => ({
 }))
 vi.mock('@/hooks/usePosts', () => ({
   UPDATE_POST_KEY: ['posts', 'update'],
-  useCampaignPosts: () => ({
-    data: data.posts,
-    isPending: false,
-    isFetching: false,
-    isError: false,
-    status: 'success',
-    fetchStatus: 'idle',
-  }),
+  useCampaignPosts: (_campaignId: string, params?: unknown) => {
+    data.params.push(params)
+    return {
+      data: data.posts,
+      isPending: false,
+      isFetching: false,
+      isError: false,
+      status: 'success',
+      fetchStatus: 'idle',
+    }
+  },
   useWorkspacePosts: () => ({ data: [] }),
   useAddPost: () => () => {},
   useUpdatePost: () => ({ mutate: vi.fn() }),
@@ -61,6 +65,7 @@ const post = (id: string, overrides: Partial<Post> = {}): Post =>
 beforeEach(() => {
   useJustWrittenStore.setState({ ids: new Set() })
   data.updating = []
+  data.params = []
 })
 
 describe('the Not scheduled panel (CON-485)', () => {
@@ -104,5 +109,18 @@ describe('the Not scheduled panel (CON-485)', () => {
     useJustWrittenStore.setState({ ids: new Set(['Moving']) })
     await renderWithProviders(<NotScheduledPanel campaignId="c1" />)
     expect(useJustWrittenStore.getState().ids.has('Moving')).toBe(true)
+  })
+
+  it('reads the posts screen’s filter off the address, and says when nothing undated matches (CON-486)', async () => {
+    data.posts = [post('Dated', { scheduled_at: '2026-11-26T09:00:00Z' })]
+    await renderWithProviders(<NotScheduledPanel campaignId="c1" />, {
+      search: '?status=draft',
+    })
+    expect(data.params[data.params.length - 1]).toMatchObject({
+      status: 'draft',
+    })
+    expect(
+      screen.getByText('No post without a date matches the filter.'),
+    ).toBeTruthy()
   })
 })

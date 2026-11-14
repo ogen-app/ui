@@ -56,6 +56,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   loading = false,
   manualSorting = false,
   onEndReached,
+  rowClassName,
 }: VirtualTableProps<TData>) {
   // Controlled when the caller passes `sorting`, otherwise the table owns it.
   // Whoever owns it, the header below only ever calls `setSorting`.
@@ -546,6 +547,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                       measureRows
                         ? 'contain-[layout_style_paint]'
                         : 'contain-strict',
+                      rowClassName?.(row.original),
                     )}
                     style={{
                       // Was hard-coded `h-[34px]`, which silently disagreed

@@ -1,8 +1,9 @@
 import type { TFunction } from 'i18next'
-import { counted, formatNumber } from '@/lib/intl'
+import { counted, formatDateRange, formatNumber } from '@/lib/intl'
 import { MAX_SELECTION_IDS } from '@/lib/viewContext'
 import type {
   ViewContext,
+  ViewEntityKind,
   ViewLocation,
   ViewPage,
   ViewScreen,
@@ -21,16 +22,69 @@ export function screenName(t: TFunction, screen: ViewScreen): string {
   )
 }
 
-/** How many a selection holds, and whether it is a whole match. */
+/** How many a selection holds, of what, and whether it is a whole match. */
 function selectionOf(
   selection: ViewContext['selection'],
-): { count: number; matching: boolean } | null {
+): { kind: ViewEntityKind; count: number; matching: boolean } | null {
   if (!selection) return null
   if ('allMatching' in selection) {
-    return { count: selection.count ?? 0, matching: true }
+    return { kind: selection.kind, count: selection.count ?? 0, matching: true }
   }
   const count = selection.count ?? selection.ids.length
-  return count > 0 ? { count, matching: false } : null
+  return count > 0 ? { kind: selection.kind, count, matching: false } : null
+}
+
+/** "2 voices", "1 post" — a count of one kind of thing. */
+export function kindCount(
+  t: TFunction,
+  kind: ViewEntityKind,
+  count: number,
+): string {
+  return t(`assistant.kindCount.${kind}`, counted(count))
+}
+
+/**
+ * The Foundation's libraries, whose selections are named by what they hold
+ * ("2 voices") rather than by the screen — the screen's name is the same noun.
+ */
+const LIBRARY_KINDS: ReadonlySet<ViewEntityKind> = new Set([
+  'voice',
+  'audience',
+  'fact',
+  'series',
+])
+
+/**
+ * Where a turn was sent from, as the marker names it (CON-486): a Foundation
+ * library under the Foundation — "Foundation · Voices" — and a calendar with
+ * the days it showed — "Calendar · 21–27 Apr".
+ */
+function placeName(t: TFunction, view: ViewContext): string {
+  const screen = screenName(t, view.screen)
+  if (view.screen.startsWith('foundation.'))
+    return t('assistant.marker.foundationPlace', { screen })
+  if (isCalendar(view.screen) && view.window) {
+    const from = dayOf(view.window.from)
+    const to = dayOf(view.window.to)
+    if (from && to)
+      return t('assistant.marker.windowPlace', {
+        screen,
+        window: formatDateRange(from, to, { day: 'numeric', month: 'short' }),
+      })
+  }
+  return screen
+}
+
+function isCalendar(screen: ViewScreen): boolean {
+  return screen === 'calendar' || screen === 'campaign.calendar'
+}
+
+/** A window's `YYYY-MM-DD` as that local day, or null if it isn't one. */
+function dayOf(value: string): Date | null {
+  const [y, m, d] = value.split('-').map(Number)
+  if (!y || !m || !d) return null
+  const date = new Date(y, m - 1, d)
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
 const FOCUS_CHIP = {
@@ -62,6 +116,13 @@ export function chipText(
 ): string | null {
   const selection = selectionOf(page?.selection)
   if (selection && location.screen) {
+    // The page's own words for its ticks, where it has them (the calendar's
+    // day), and a library's count of what it holds (CON-486).
+    if (!selection.matching && selection.count <= MAX_SELECTION_IDS) {
+      if (page?.selectionLabel) return page.selectionLabel
+      if (LIBRARY_KINDS.has(selection.kind))
+        return kindCount(t, selection.kind, selection.count)
+    }
     const screen = screenName(t, location.screen)
     if (selection.matching)
       return t('assistant.chip.matching', {
@@ -142,7 +203,7 @@ export function markerText(
 ): string | null {
   if (!view) return null
   if (previous && signature(previous) === signature(view)) return null
-  const screen = screenName(t, view.screen)
+  const screen = placeName(t, view)
   const selection = selectionOf(view.selection)
   const moved = previous !== undefined
   if (!selection) {

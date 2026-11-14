@@ -900,9 +900,9 @@ export const en = {
         post_type: 'in the <v>{{values}}</v> format',
         post_type_not: 'not in the <v>{{values}}</v> format',
         scheduled: '<v>{{values}}</v>',
-        date: 'dated <v>from {{values}}</v>',
-        date_range: 'dated <v>between {{from}} and {{to}}</v>',
-        date_not: 'dated <v>before {{values}}</v>',
+        date: 'scheduled <v>from {{values}}</v>',
+        date_range: 'scheduled <v>between {{from}} and {{to}}</v>',
+        date_not: 'scheduled <v>before {{values}}</v>',
       },
       status: {
         planned: 'planned',
@@ -923,7 +923,7 @@ export const en = {
         platform: 'Posts on…',
         post_type: 'Posts in the format…',
         scheduled: 'Posts…',
-        date: 'Posts dated…',
+        date: 'Posts scheduled…',
       },
       include: {
         status: 'are',
@@ -942,7 +942,7 @@ export const en = {
         platform: 'on a platform…',
         post_type: 'in a format…',
         scheduled: 'with a date, or without…',
-        date: 'dated…',
+        date: 'scheduled…',
       },
       starterHint: {
         status: 'drafts, failed',
@@ -2048,6 +2048,11 @@ export const en = {
     addPostOn: 'Add a post on {{date}}',
     density_one: '{{count}} post on {{date}} — open this week',
     density_other: '{{count}} posts on {{date}} — open this week',
+    /** On a day too busy to draw its cards, how many of its posts are ticked. */
+    densityTicked_one: '{{formatted}} ticked',
+    densityTicked_other: '{{formatted}} ticked',
+    /** The toolbar's way back to this week. */
+    today: 'TODAY',
 
     /** The right rail's holding pen for posts with no date yet. */
     notScheduled: 'Not scheduled',
@@ -2061,6 +2066,8 @@ export const en = {
     /** A panel row's ideas: "Instagram · Carousel · from 1 idea" (CON-485). */
     fromIdeas_one: 'from {{formatted}} idea',
     fromIdeas_other: 'from {{formatted}} ideas',
+    /** The rail's panel under a filter that leaves no undated post (CON-486). */
+    notScheduledNoMatch: 'No post without a date matches the filter.',
 
     /**
      * The one control a day offers, in both grids. Capitalised like every
@@ -2210,6 +2217,11 @@ export const en = {
       matching_one: 'All {{formatted}} matching · {{screen}}',
       matching_other: 'All {{formatted}} matching · {{screen}}',
       focusIdea: 'This idea is open',
+      /** Ticks on the calendar that share a day, and ticks across its days. */
+      postsOnDay_one: '{{formatted}} post on {{day}}',
+      postsOnDay_other: '{{formatted}} posts on {{day}}',
+      postsInWindow_one: '{{formatted}} post · {{window}}',
+      postsInWindow_other: '{{formatted}} posts · {{window}}',
       focusAsset: 'This asset is open',
       /** The open asset by name, once its screen has loaded it. */
       focusNamed: '{{title}} · open',
@@ -2241,6 +2253,29 @@ export const en = {
       nowItem: 'Now on {{screen}} · {{item}}',
       documents_one: '{{formatted}} document',
       documents_other: '{{formatted}} documents',
+      /** The place a Foundation library is, and a calendar with its days. */
+      foundationPlace: 'Foundation · {{screen}}',
+      windowPlace: '{{screen}} · {{window}}',
+    },
+
+    /** A count of one kind of thing: the chip's and the rail's selections. */
+    kindCount: {
+      idea_one: '{{formatted}} idea',
+      idea_other: '{{formatted}} ideas',
+      asset_one: '{{formatted}} asset',
+      asset_other: '{{formatted}} assets',
+      post_one: '{{formatted}} post',
+      post_other: '{{formatted}} posts',
+      campaign_one: '{{formatted}} campaign',
+      campaign_other: '{{formatted}} campaigns',
+      voice_one: '{{formatted}} voice',
+      voice_other: '{{formatted}} voices',
+      audience_one: '{{formatted}} audience',
+      audience_other: '{{formatted}} audiences',
+      fact_one: '{{formatted}} fact',
+      fact_other: '{{formatted}} facts',
+      series_one: '{{formatted}} series',
+      series_other: '{{formatted}} series',
     },
 
     composer: {
@@ -3563,6 +3598,8 @@ export const en = {
       clearFilter: 'Cleared the filter on {{screen}}',
       select_one: 'Selected {{formatted}} on {{screen}}',
       select_other: 'Selected {{formatted}} on {{screen}}',
+      /** `what` is a `kindCount`: "Selected 2 voices". */
+      selectKind: 'Selected {{what}}',
       openSavedView: 'Opened a smart group on {{screen}}',
       /** The group by name; `<where>` is drawn in grey. */
       openSavedViewNamed: 'Opened “{{name}}” <where>on {{screen}}</where>',
@@ -4902,7 +4939,13 @@ export const en = {
     columnWhen: 'When',
 
     /** A post with no publish date, in either date column. */
-    notSet: 'Not set',
+    notSet: 'Not scheduled',
+
+    /** The toolbar's line: the posts listed, and what a filter left of them. */
+    count_one: '{{formatted}} post',
+    count_other: '{{formatted}} posts',
+    countOf_one: '{{formatted}} of {{total}} posts',
+    countOf_other: '{{formatted}} of {{total}} posts',
 
     /** The table with no rows in it — the campaign has posts, this filter doesn't. */
     noPosts: 'No posts',
@@ -4913,7 +4956,12 @@ export const en = {
      * which from its state alone.
      */
     selectAll: 'Select all posts',
+    selectAllCount_one: 'Select the {{formatted}} post',
+    selectAllCount_other: 'Select all {{formatted}} posts',
+    selectAllMatching_one: 'Select the {{formatted}} matching post',
+    selectAllMatching_other: 'Select all {{formatted}} matching posts',
     clearSelection: 'Clear selection',
+
     selectPost: 'Select {{title}}',
 
     /**
@@ -5563,12 +5611,12 @@ export const en = {
     status: {
       draft: 'Draft',
       planned: 'Planned',
-      ready_for_publish: 'Ready for Publish',
+      ready_for_publish: 'Ready to publish',
       scheduled: 'Auto-publish',
       scheduled_for_manual_publishing: 'Manual publish',
       failed: 'Failed',
       published: 'Published',
-      not_published: 'Not Published',
+      not_published: 'Not published',
     },
 
     /**
@@ -6941,6 +6989,8 @@ export const en = {
       selectAll: 'Select every fact shown',
       clearAll: 'Clear the selection',
       clear: 'CLEAR',
+      /** The facts ledger's bulk removal, which asks first. */
+      remove: 'REMOVE',
     },
     binding: {
       voice: 'Voice',
@@ -7038,6 +7088,38 @@ export const en = {
       duplicate: 'This workspace already has that statement as a fact.',
       gone: 'Someone removed this fact while it was open. The ledger has been refreshed.',
       saveFailed: 'The fact could not be saved. Try again.',
+      /** The ledger's table. */
+      table: {
+        statement: 'Statement',
+        about: 'About',
+        kind: 'Kind',
+        source: 'Source',
+        added: 'Added',
+        checked: 'Checked',
+        expires: 'Expires',
+        notWritten: 'Not written yet',
+        nobodySaid: 'nobody said',
+        never: 'never',
+        noExpiry: 'doesn’t expire',
+        expiredOn: 'Expired {{date}}',
+        expiresOn: 'Expires {{date}}',
+        remove: 'Remove “{{statement}}”',
+        removeUnnamed: 'Remove this fact',
+      },
+      /** Asking before facts go: one named, several counted. */
+      remove: {
+        titleNamed: 'Remove “{{statement}}”?',
+        title_one: 'Remove {{formatted}} fact?',
+        title_other: 'Remove {{formatted}} facts?',
+        body_one:
+          'Posts written from now on won’t be able to state it. Nothing brings it back.',
+        body_other:
+          'Posts written from now on won’t be able to state them. Nothing brings them back.',
+        keep_one: 'KEEP IT',
+        keep_other: 'KEEP THEM',
+        confirm_one: 'REMOVE FACT',
+        confirm_other: 'REMOVE {{formatted}} FACTS',
+      },
     },
     /**
      * The counts a piece of material is described by — `components/brand/

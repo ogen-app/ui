@@ -6,6 +6,7 @@ import {
   isSameMonth,
   monthColumnDays,
   monthWeeks,
+  postsInRange,
 } from './date'
 
 describe('addMonths', () => {
@@ -113,5 +114,27 @@ describe('calendarRange (CON-472)', () => {
       from: '2026-03-30',
       to: '2026-05-03',
     })
+  })
+})
+
+describe('postsInRange (CON-486)', () => {
+  const at = (id: string, scheduled_at: string | null) => ({ id, scheduled_at })
+  const posts = [
+    at('mon', new Date(2026, 3, 20, 9).toISOString()),
+    at('sun', new Date(2026, 3, 26, 9).toISOString()),
+    at('next', new Date(2026, 3, 27, 9).toISOString()),
+    at('undated', null),
+  ]
+  const week = { from: '2026-04-20', to: '2026-04-26' }
+
+  it('keeps what the days on screen draw, the last day included', () => {
+    expect(postsInRange(posts, week, []).map((p) => p.id)).toEqual([
+      'mon',
+      'sun',
+    ])
+  })
+
+  it('leaves out the weekdays this user hides', () => {
+    expect(postsInRange(posts, week, [0]).map((p) => p.id)).toEqual(['mon'])
   })
 })

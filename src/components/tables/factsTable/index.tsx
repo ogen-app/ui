@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import {
   ClockCountdownIcon,
   ClockIcon,
@@ -13,7 +13,7 @@ import type { ColumnConfig } from '../types'
 import { tableDate } from '../utils'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { TickBox } from '@/components/ui/tick-box'
 import {
   Tooltip,
   TooltipContent,
@@ -124,7 +124,7 @@ function FactsTableComponent({
               id: 'select',
               header: () => (
                 <div className="flex h-full items-center justify-center">
-                  <Checkbox
+                  <TickBox
                     checked={
                       shownTicked === 0
                         ? false
@@ -147,7 +147,7 @@ function FactsTableComponent({
               isControl: true,
               cell: (_value: unknown, row: FactRow) => (
                 <div className={cn(CELL, 'justify-center')}>
-                  <Checkbox
+                  <TickBox
                     checked={selection.ticked.has(row.id)}
                     onCheckedChange={() => selection.toggle(row.id)}
                     aria-label={t('brand.selection.select', {
@@ -162,7 +162,7 @@ function FactsTableComponent({
       {
         id: 'statement',
         accessorKey: 'statement',
-        header: 'Statement',
+        header: t('brand.factsLedger.table.statement'),
         isAutoSize: true,
         minSize: 190,
         cell: (_value, row) => (
@@ -182,14 +182,14 @@ function FactsTableComponent({
                 !row.statement && 'text-tertiary-foreground',
               )}
             >
-              {row.statement || 'Not written yet'}
+              {row.statement || t('brand.factsLedger.table.notWritten')}
             </span>
           </button>
         ),
       },
       {
         id: 'subject',
-        header: 'About',
+        header: t('brand.factsLedger.table.about'),
         size: 120,
         minSize: 105,
         // Ordered as `FACT_SUBJECTS` is — us, the problem, the opening — which
@@ -211,7 +211,7 @@ function FactsTableComponent({
       },
       {
         id: 'kind',
-        header: 'Kind',
+        header: t('brand.factsLedger.table.kind'),
         size: 130,
         minSize: 110,
         // Sorted down the subjectivity ladder rather than alphabetically: the
@@ -234,7 +234,7 @@ function FactsTableComponent({
       {
         id: 'source',
         accessorKey: 'source',
-        header: 'Source',
+        header: t('brand.factsLedger.table.source'),
         size: 160,
         minSize: 120,
         cell: (_value, row) => (
@@ -247,7 +247,7 @@ function FactsTableComponent({
                   : 'text-senary-foreground',
               )}
             >
-              {row.source || 'nobody said'}
+              {row.source || t('brand.factsLedger.table.nobodySaid')}
             </span>
           </div>
         ),
@@ -256,7 +256,7 @@ function FactsTableComponent({
         id: 'added',
         accessorFn: (row) => row.addedAt || undefined,
         sortUndefined: 'last',
-        header: 'Added',
+        header: t('brand.factsLedger.table.added'),
         size: 105,
         minSize: 95,
         cell: (_value, row) => <Stamp value={row.addedAt} />,
@@ -265,20 +265,25 @@ function FactsTableComponent({
         id: 'checked',
         accessorFn: (row) => row.checkedAt || undefined,
         sortUndefined: 'last',
-        header: 'Checked',
+        header: t('brand.factsLedger.table.checked'),
         size: 110,
         minSize: 95,
         // Not the same column as `Added` with a different label: a figure that
         // went in a year ago and was confirmed last week is worth repeating,
         // and the identical sentence never looked at since is what this
         // section exists to surface. "Never" says which one this is.
-        cell: (_value, row) => <Stamp value={row.checkedAt} unset="never" />,
+        cell: (_value, row) => (
+          <Stamp
+            value={row.checkedAt}
+            unset={t('brand.factsLedger.table.never')}
+          />
+        ),
       },
       {
         id: 'expires',
         accessorFn: (row) => row.expiresAt || undefined,
         sortUndefined: 'last',
-        header: 'Expires',
+        header: t('brand.factsLedger.table.expires'),
         size: 130,
         minSize: 110,
         cell: (_value, row) => (
@@ -301,7 +306,13 @@ function FactsTableComponent({
             <Button
               variant="ghost"
               size="xsIcon"
-              aria-label={`Remove “${row.statement || 'this fact'}”`}
+              aria-label={
+                row.statement
+                  ? t('brand.factsLedger.table.remove', {
+                      statement: row.statement,
+                    })
+                  : t('brand.factsLedger.table.removeUnnamed')
+              }
               onClick={(e) => {
                 e.stopPropagation()
                 onRemove(row.id)
@@ -314,6 +325,13 @@ function FactsTableComponent({
       },
     ],
     [today, onEdit, onRemove, selection, shownTicked, facts.length, t],
+  )
+
+  // A ticked row is tinted, as a ticked Ideas row is (CON-486).
+  const ticked = selection?.ticked
+  const rowClassName = useCallback(
+    (row: FactRow) => ticked?.has(row.id) && 'bg-accent/5 hover:bg-accent/5',
+    [ticked],
   )
 
   // The table draws only the columns named here, so the tick column has to
@@ -342,6 +360,7 @@ function FactsTableComponent({
       fillHeight={false}
       className={className}
       onEmptyStateAction={onEmptyStateAction}
+      rowClassName={rowClassName}
     />
   )
 }
@@ -431,6 +450,7 @@ function ExpiryCell({
   today: string
   status: FactStatus
 }) {
+  const { t } = useTranslation()
   if (!fact.expiresAt)
     return (
       <div className={cn(CELL, 'gap-1.5 text-senary-foreground')}>
@@ -438,7 +458,9 @@ function ExpiryCell({
             start at the same x — a column of text with one unindented row in
             it reads as a rendering fault. */}
         <InfinityIcon className="size-4 shrink-0" aria-hidden />
-        <span className="table-text truncate">doesn’t expire</span>
+        <span className="table-text truncate">
+          {t('brand.factsLedger.table.noExpiry')}
+        </span>
       </div>
     )
 
@@ -462,8 +484,12 @@ function ExpiryCell({
         </div>
       </TooltipTrigger>
       <TooltipContent>
-        {status === 'expired' ? 'Expired ' : 'Expires '}
-        {tableDate(fact.expiresAt)}
+        {t(
+          status === 'expired'
+            ? 'brand.factsLedger.table.expiredOn'
+            : 'brand.factsLedger.table.expiresOn',
+          { date: tableDate(fact.expiresAt) },
+        )}
       </TooltipContent>
     </Tooltip>
   )
