@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import { ArrowRightIcon, WarningIcon } from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { useShallow } from 'zustand/react/shallow'
 import type { TFunction } from 'i18next'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
 import { ThinkingTimeline } from './ThinkingTimeline'
@@ -77,6 +78,31 @@ export function AssistantReply({
   })
   const showCard = settled && hasResultCard(turn.details)
   const drawnElsewhere = offersDrawnInPlace(turn)
+  // A retry's run, summed with the run it retried (CON-482): the first run's
+  // total, found through the offer this turn answered and its `retryOf`.
+  const retriedTotal = useAssistantStore((s) => {
+    const turns = s.threads[threadId]?.turns ?? []
+    const answered = new Set((turn.resolved ?? []).map((r) => r.id))
+    if (answered.size === 0) return 0
+    const offers = turns.flatMap((x) => x.proposals ?? [])
+    const retried = offers.find((p) => answered.has(p.id) && p.retryOf)
+    if (!retried?.retryOf) return 0
+    const first = turns.find((x) =>
+      x.resolved?.some((r) => r.id === retried.retryOf),
+    )
+    return first?.answered?.total ?? 0
+  })
+  // A fresh offer made for a stale one is drawn under it (CON-482), so its
+  // own turn leaves it out.
+  const staleIds = useAssistantStore(
+    useShallow((s) =>
+      (s.threads[threadId]?.turns ?? []).flatMap((x) =>
+        (x.proposals ?? [])
+          .filter((p) => p.status === 'stale')
+          .map((p) => p.id),
+      ),
+    ),
+  )
   const footer = !showCard && turn.action ? actionLabel(t, turn.action) : null
 
   return (
@@ -226,7 +252,9 @@ export function AssistantReply({
           turnId={turn.id}
           outcome={turn.answered}
           retry={turn.proposals?.find((p) => p.id === retryId)}
+          retriedTotal={retriedTotal || undefined}
           undoStates={turn.undo ?? {}}
+          undoRefused={turn.undoRefused}
           disabled={running}
         />
       )}
@@ -239,6 +267,7 @@ export function AssistantReply({
           // A finding's fix and the optimise plan draw their own offers, in
           // the row or the plan; a second card would answer the same offer.
           .filter((p) => !drawnElsewhere.has(p.id))
+          .filter((p) => !p.replaces || !staleIds.includes(p.replaces))
           .map((proposal) => (
             <ProposalCard
               key={proposal.id}

@@ -71,6 +71,23 @@ export type AssistantHistoryMessage = {
   content: string
   view_context?: Record<string, unknown>
   created_at: string
+  /**
+   * A model turn's offers as they stand now (CON-482): what a reload settles
+   * its cards from, instead of pairing them with answers by summary.
+   */
+  offers?: OfferState[]
+}
+
+/** An offer as the server holds it now, in a thread's history. */
+export type OfferState = {
+  id: string
+  status: 'pending' | 'confirmed' | 'dismissed' | 'expired' | string
+  chosen?: string
+  expires_at?: string
+  resolved_at?: string
+  replaces?: string
+  retry_of?: string
+  replaced_by?: string
 }
 
 /**
@@ -112,6 +129,8 @@ export type AssistantTurnResult = {
   ideas?: IdeasResults
   /** How an offer answered from its card went (CON-467). */
   answered?: OfferOutcome
+  /** The offers this turn answered, or found changed or expired (CON-482). */
+  resolved?: { id: string; status: string }[]
 }
 
 export type AssistantStreamEvent =
@@ -156,11 +175,22 @@ export type AssistantStreamEvent =
   | {
       type: 'proposal_resolved'
       id: string
-      status: 'confirmed' | 'dismissed'
+      /**
+       * `stale`: a yes ran nothing because what it was made on changed, the
+       * offer staying open; `expired`: the yes came after its expiry
+       * (CON-482).
+       */
+      status: 'confirmed' | 'dismissed' | 'stale' | 'expired'
       chosen?: string
+      reasons?: string[]
+      replacedBy?: string
     }
-  /** `status` is the HTTP status the server put on the failure, when it did. */
-  | { type: 'error'; message: string; status?: number }
+  /**
+   * `status` is the HTTP status the server put on the failure, when it did;
+   * `reason` names a conflict drawn its own way (CON-482): `offer_expired`,
+   * `offer_answered`, `offer_replaced`.
+   */
+  | { type: 'error'; message: string; status?: number; reason?: string }
   /** Namespaced sub-flow progress, annotating the running tool step. */
   | { type: 'progress'; step: string }
 
@@ -386,6 +416,10 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
   result.workspace = workspaceResults(results)
   result.ideas = ideasResults(results)
   result.answered = offerOutcome(parsed.result)
+  result.resolved = (Array.isArray(parsed.resolved) ? parsed.resolved : [])
+    .filter(isRecord)
+    .map((r) => ({ id: str(r.id), status: str(r.status) }))
+    .filter((r) => r.id)
   return result
 }
 
@@ -403,6 +437,7 @@ export function offerOutcome(raw: unknown): OfferOutcome | undefined {
         .map((n) => ({
           id: str(n.id),
           title: optStr(n.title),
+          platform: optStr(n.platform),
           reason: str(n.reason),
         }))
         .filter((n) => n.id || n.title)
@@ -410,8 +445,34 @@ export function offerOutcome(raw: unknown): OfferOutcome | undefined {
   const out = record(r.result)
   const tagged =
     r.status === 'ok' && typeof out?.tagged === 'number'
-      ? { count: out.tagged, undoId: optStr(out.undoId) }
+      ? {
+          count: out.tagged,
+          undoId: optStr(out.undoId),
+          changed: typeof out.changed === 'number' ? out.changed : undefined,
+          add: strings(out.add),
+          remove: strings(out.remove),
+          assets: (Array.isArray(out.assets) ? out.assets : [])
+            .filter(isRecord)
+            .map((a) => ({
+              id: str(a.id),
+              title: str(a.title),
+              added: strings(a.added),
+              removed: strings(a.removed),
+            }))
+            .filter((a) => a.id),
+          more: typeof out.more === 'number' ? out.more : 0,
+        }
       : undefined
+  // How much of the job a run did (CON-482), beside `notMade` — or inside
+  // the result, where a pack's result embeds it.
+  const count = (key: 'made' | 'total') =>
+    typeof r[key] === 'number'
+      ? (r[key] as number)
+      : typeof out?.[key] === 'number'
+        ? (out[key] as number)
+        : 0
+  const made = count('made') || undefined
+  const total = count('total') || undefined
   // replaceWeakestDrafts: what it drafted, and the drafts it deleted.
   const replaced =
     r.status === 'ok' && typeof out?.deleted === 'number' && record(out.drafted)
@@ -422,6 +483,8 @@ export function offerOutcome(raw: unknown): OfferOutcome | undefined {
     return undefined
   return {
     reoffered,
+    made,
+    total,
     notMade,
     retryProposalId: optStr(r.retryProposalId),
     tagged,
@@ -1373,6 +1436,7 @@ function proposal(card: Record<string, unknown>): AssistantProposal | null {
             id: str(o.id),
             title: str(o.title),
             description: optStr(o.description),
+            why: optStr(o.why),
           }))
           .filter((o) => o.id && o.title)
       : [],
@@ -1383,6 +1447,8 @@ function proposal(card: Record<string, unknown>): AssistantProposal | null {
         )
       : undefined,
     card: proposalDetails(record(card.card)),
+    replaces: optStr(card.replaces),
+    retryOf: optStr(card.retryOf),
     status: 'pending',
   }
 }
@@ -1523,13 +1589,20 @@ async function streamTurn(
       case 'proposal_resolved':
         if (
           typeof parsed.id === 'string' &&
-          (parsed.status === 'confirmed' || parsed.status === 'dismissed')
+          (parsed.status === 'confirmed' ||
+            parsed.status === 'dismissed' ||
+            parsed.status === 'stale' ||
+            parsed.status === 'expired')
         ) {
           onEvent({
             type: 'proposal_resolved',
             id: parsed.id,
             status: parsed.status,
             chosen: optStr(parsed.chosen),
+            reasons: Array.isArray(parsed.reasons)
+              ? strings(parsed.reasons)
+              : undefined,
+            replacedBy: optStr(parsed.replacedBy),
           })
         }
         return
@@ -1590,6 +1663,7 @@ async function streamTurn(
               ? parsed.message
               : 'The assistant failed',
           status: typeof parsed.code === 'number' ? parsed.code : undefined,
+          reason: optStr(parsed.reason),
         })
         return
       default:

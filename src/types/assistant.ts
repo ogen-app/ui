@@ -157,7 +157,13 @@ export type AssistantProposal = {
   summary: string
   expiresAt?: string
   /** A choice of ways forward (a budget conflict); empty for a plain offer. */
-  options: { id: string; title: string; description?: string }[]
+  options: {
+    id: string
+    title: string
+    description?: string
+    /** Why the recommended option is the one to pick (CON-482). */
+    why?: string
+  }[]
   /** The option the card leads with, when the server marks one (CON-467). */
   recommended?: string
   status: ProposalStatus
@@ -167,6 +173,14 @@ export type AssistantProposal = {
   answeredAt?: string
   /** Why it could not be answered — gone, expired, refused. */
   error?: string
+  /** What changed since it was offered, when a yes found it stale (CON-482). */
+  reasons?: string[]
+  /** The fresh offer of what still holds, made for a stale one. */
+  replacedBy?: string
+  /** The stale offer this one was made afresh for. */
+  replaces?: string
+  /** The offer whose run left the items this one tries again. */
+  retryOf?: string
   /**
    * What the card shows beyond the summary (CON-476): the confirm button's
    * verb, what the work draws on and makes. The words are the server's, like
@@ -1410,6 +1424,11 @@ export type AssistantTurn = {
   proposals?: AssistantProposal[]
   /** Undos asked for from this turn's results, by undo id. */
   undo?: Record<string, UndoState>
+  /**
+   * Why an undo was refused, by undo id, when the server counted it
+   * (CON-482): `changed` of `of` entities changed again since.
+   */
+  undoRefused?: Record<string, { changed: number; of: number }>
   /** A calendar check this turn ran (CON-454). */
   findings?: CalendarFindings
   /** Findings ignored from this turn's cards, by key. */
@@ -1438,6 +1457,8 @@ export type AssistantTurn = {
   refusals?: { tool: string; code: string }[]
   /** How an offer answered from its card went, on the reply it ran in. */
   answered?: OfferOutcome
+  /** The offers this turn answered, or found changed or expired (CON-482). */
+  resolved?: { id: string; status: string }[]
   /** What this turn did to the screen, and where each can be put back to. */
   uiActions?: AppliedUIAction[]
   /**
@@ -1445,7 +1466,7 @@ export type AssistantTurn = {
    * card ("Confirmed: …"), drawn as a resolved line rather than as words the
    * user typed.
    */
-  answer?: 'confirmed' | 'dismissed'
+  answer?: 'confirmed' | 'dismissed' | 'stale' | 'expired'
   /** When a stored turn was recorded — history only. */
   at?: string
   /** Post turns only. */
@@ -1513,6 +1534,9 @@ export type AssistantThread = {
 export type OfferOutcome = {
   /** Nothing ran; what still holds waits on a fresh card. */
   reoffered: boolean
+  /** How much of the job the run did (CON-482); absent when it didn't say. */
+  made?: number
+  total?: number
   notMade: OfferNotMade[]
   /** The fresh offer of just what is worth retrying. */
   retryProposalId?: string
@@ -1521,7 +1545,18 @@ export type OfferOutcome = {
    * assets pack doesn't record a tagging among its results, so this is the
    * only place it reaches the client.
    */
-  tagged?: { count: number; undoId?: string }
+  tagged?: {
+    count: number
+    undoId?: string
+    /** How many assets' tags changed; the rest already were as asked. */
+    changed?: number
+    /** The tags, by name (CON-482). */
+    add: string[]
+    remove: string[]
+    /** The first few assets, with what each gained and lost. */
+    assets: { id: string; title: string; added: string[]; removed: string[] }[]
+    more: number
+  }
   /**
    * The budget guard's "replace the weakest drafts" (CON-468): the drafts
    * deleted for good to make room, and those kept because they changed
@@ -1532,4 +1567,10 @@ export type OfferOutcome = {
 }
 
 /** An item a run left undone. `title` is missing where the tool names none. */
-export type OfferNotMade = { id: string; title?: string; reason: string }
+export type OfferNotMade = {
+  id: string
+  title?: string
+  /** The platform an idea's post was for, by id (CON-482). */
+  platform?: string
+  reason: string
+}

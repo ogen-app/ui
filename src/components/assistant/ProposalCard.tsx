@@ -6,9 +6,18 @@ import { formatDate } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { AssetTypeBadge } from './AssetTypeBadge'
 import { TrailRows } from './AnalyticsResults'
-import { PendingBox, ResolvedLine, StatusWord, TextAction } from './blocks'
+import { useLapsed } from './useLapsed'
+import {
+  PendingBox,
+  ResolvedLine,
+  ResultBlock,
+  ResultRow,
+  StatusWord,
+  TextAction,
+} from './blocks'
 import type {
   AssistantProposal,
+  AssistantTurn,
   ProposalDetails,
   ProposalRow,
 } from '@/types/assistant'
@@ -51,16 +60,40 @@ export function ProposalCard({
   threadId,
   proposal,
   disabled,
+  label,
 }: {
   threadId: string
   proposal: AssistantProposal
   disabled: boolean
+  /** The status word over a waiting card; FRESH OFFER under a stale one. */
+  label?: string
 }) {
   const { t } = useTranslation()
   const confirm = useAssistantStore((s) => s.confirmProposal)
   const dismiss = useAssistantStore((s) => s.dismissProposal)
   const send = useAssistantStore((s) => s.send)
   const { summary, card } = proposal
+  // An offer lapses at its expiry while the card is open (CON-482), rather
+  // than keeping CONFIRM until a click finds it gone.
+  const lapsed = useLapsed(
+    proposal.status === 'pending' ? proposal.expiresAt : undefined,
+  )
+
+  if (proposal.status === 'stale')
+    return (
+      <StaleCard threadId={threadId} proposal={proposal} disabled={disabled} />
+    )
+  if (
+    proposal.status === 'expired' ||
+    (proposal.status === 'pending' && lapsed)
+  )
+    return (
+      <ExpiredCard
+        summary={summary}
+        disabled={disabled}
+        onAskAgain={() => void send(threadId, summary)}
+      />
+    )
 
   if (proposal.status !== 'pending') {
     const time =
@@ -70,17 +103,28 @@ export function ProposalCard({
             minute: '2-digit',
           })
         : null
+    const chosen =
+      proposal.status === 'confirmed' && proposal.chosen
+        ? proposal.options.find((o) => o.id === proposal.chosen)?.title
+        : undefined
     return (
       <div className="flex flex-col gap-1">
-        <ResolvedLine>
-          {time
-            ? t('assistant.proposal.confirmedAt', { summary, time })
-            : t(`assistant.proposal.${RESOLVED[proposal.status]}`, {
-                summary,
-              })}
+        {/* Every confirm re-checks the offer before it runs (CON-467); one
+            that ran found nothing changed. */}
+        {proposal.status === 'confirmed' && (
+          <ResolvedLine>{t('assistant.proposal.checked')}</ResolvedLine>
+        )}
+        <ResolvedLine ran={proposal.status === 'confirmed'}>
+          {chosen
+            ? t('assistant.proposal.chose', { option: chosen })
+            : time
+              ? t('assistant.proposal.confirmedAt', { summary, time })
+              : t(`assistant.proposal.${RESOLVED[proposal.status]}`, {
+                  summary,
+                })}
         </ResolvedLine>
         {proposal.error && (
-          <p className="text-[12.5px] text-warning">{proposal.error}</p>
+          <p className="text-[12.5px] text-warning-ink">{proposal.error}</p>
         )}
       </div>
     )
@@ -90,7 +134,8 @@ export function ProposalCard({
   return (
     <PendingBox>
       <StatusWord>
-        {choice ? t('assistant.word.choose') : t('assistant.word.proposal')}
+        {label ??
+          (choice ? t('assistant.word.choose') : t('assistant.word.proposal'))}
       </StatusWord>
       <h3 className="text-base/6 font-medium text-foreground">
         {summary}
@@ -110,49 +155,40 @@ export function ProposalCard({
       )}
 
       {choice ? (
+        // Each option is a button named for what it does (CON-482): the one
+        // the server recommends dark, with the tag and why; the rest
+        // outlined. Without the mark none is dark — the card never picks.
         <ul className="mt-2 flex flex-col">
           {proposal.options.map((option) => {
             const recommended = proposal.recommended === option.id
+            const why = recommended ? option.why : undefined
             return (
               <li
                 key={option.id}
-                className="flex items-start gap-3 border-t border-border py-3"
+                className="flex flex-col items-start gap-1.5 border-t border-border py-3"
               >
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant={recommended ? 'defaultInverted' : 'outline'}
+                    size="sm"
+                    disabled={disabled}
+                    className="uppercase tracking-[0.06em]"
+                    onClick={() =>
+                      void confirm(threadId, proposal.id, option.id)
+                    }
+                  >
+                    {option.title}
+                  </Button>
                   {recommended && (
                     <StatusWord tone="accent">
                       {t('assistant.proposal.recommended')}
                     </StatusWord>
                   )}
-                  <span className="text-sm font-medium text-foreground">
-                    {option.title}
-                  </span>
-                  {option.description && (
-                    <span className="text-[12.5px] text-secondary-foreground">
-                      {option.description}
-                    </span>
-                  )}
                 </div>
-                {recommended ? (
-                  <Button
-                    variant="defaultInverted"
-                    size="sm"
-                    disabled={disabled}
-                    onClick={() =>
-                      void confirm(threadId, proposal.id, option.id)
-                    }
-                  >
-                    {t('assistant.proposal.choose')}
-                  </Button>
-                ) : (
-                  <TextAction
-                    disabled={disabled}
-                    onClick={() =>
-                      void confirm(threadId, proposal.id, option.id)
-                    }
-                  >
-                    {t('assistant.proposal.choose')}
-                  </TextAction>
+                {(why || option.description) && (
+                  <span className="text-[12.5px] text-secondary-foreground">
+                    {why ?? option.description}
+                  </span>
                 )}
               </li>
             )
@@ -181,7 +217,7 @@ export function ProposalCard({
       )}
 
       {choice && (
-        <div className="border-t border-border pt-3">
+        <div className="pt-1">
           <TextAction
             disabled={disabled}
             onClick={() => void dismiss(threadId, proposal.id)}
@@ -191,6 +227,110 @@ export function ProposalCard({
         </div>
       )}
     </PendingBox>
+  )
+}
+
+/**
+ * A yes that ran nothing because what the offer was made on changed
+ * (CON-482): NOTHING RAN in amber, what changed, and — when what still holds
+ * was offered afresh — that offer under it, the one now to answer.
+ */
+function StaleCard({
+  threadId,
+  proposal,
+  disabled,
+}: {
+  threadId: string
+  proposal: AssistantProposal
+  disabled: boolean
+}) {
+  const { t } = useTranslation()
+  const fresh = useAssistantStore((s) =>
+    findOffer(s.threads[threadId]?.turns, (p) =>
+      proposal.replacedBy
+        ? p.id === proposal.replacedBy
+        : p.replaces === proposal.id,
+    ),
+  )
+  return (
+    <div className="flex flex-col gap-3">
+      <ResolvedLine>{t('assistant.proposal.staleCard.checked')}</ResolvedLine>
+      <ResultBlock
+        status={t('assistant.proposal.staleCard.word')}
+        tone="warning"
+        title={t('assistant.proposal.staleCard.title')}
+        meta={proposal.summary}
+      >
+        {(proposal.reasons ?? []).map((reason, i) => (
+          <ResultRow key={i} className="flex items-baseline gap-2 text-sm">
+            <span aria-hidden className="text-warning-ink">
+              ·
+            </span>
+            <span className="min-w-0 text-foreground">{reason}</span>
+          </ResultRow>
+        ))}
+        {proposal.error && (
+          <ResultRow className="text-[12.5px] text-warning-ink">
+            {proposal.error}
+          </ResultRow>
+        )}
+      </ResultBlock>
+      {fresh && (
+        <ProposalCard
+          threadId={threadId}
+          proposal={fresh}
+          disabled={disabled}
+          label={t('assistant.proposal.staleCard.fresh')}
+        />
+      )}
+    </div>
+  )
+}
+
+/** The first offer in a thread's turns that matches. */
+function findOffer(
+  turns: AssistantTurn[] | undefined,
+  match: (p: AssistantProposal) => boolean,
+): AssistantProposal | undefined {
+  for (const turn of turns ?? []) {
+    const hit = turn.proposals?.find(match)
+    if (hit) return hit
+  }
+  return undefined
+}
+
+/** An offer that lapsed before its yes (CON-482): nothing ran, ASK AGAIN. */
+function ExpiredCard({
+  summary,
+  disabled,
+  onAskAgain,
+}: {
+  summary: string
+  disabled: boolean
+  onAskAgain: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <ResultBlock
+      status={t('assistant.proposal.expiredCard.word')}
+      tone="warning"
+      title={t('assistant.proposal.expiredCard.title')}
+      meta={summary}
+    >
+      <ResultRow className="flex items-baseline gap-3">
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-sm text-foreground">
+            {t('assistant.proposal.expiredCard.nothing')}
+          </span>
+          <span className="text-[12.5px] text-secondary-foreground">
+            {t('assistant.proposal.expiredCard.hint')}
+          </span>
+        </span>
+        <TextAction disabled={disabled} onClick={onAskAgain}>
+          {t('assistant.proposal.expiredCard.askAgain')}
+        </TextAction>
+      </ResultRow>
+    </ResultBlock>
   )
 }
 

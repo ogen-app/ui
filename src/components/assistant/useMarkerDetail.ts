@@ -5,6 +5,7 @@ import { counted } from '@/lib/intl'
 import type { MarkerDetail } from '@/lib/assistantView'
 import type { AssetsState } from '@/services/api/content'
 import type { Asset } from '@/types/content'
+import { useCampaignNames } from '@/hooks/useCampaignNames'
 import { useWindowWords } from './useWindowWords'
 
 /**
@@ -13,12 +14,14 @@ import { useWindowWords } from './useWindowWords'
  * the Assets list's size ("On Assets · 64 documents"). Nothing is fetched for
  * a marker, so a turn sent from an asset this tab never opened keeps the
  * plain "On an asset"; the size is the bank's now, not when the turn was sent.
- * On the dashboard, the window the turn was read over.
+ * On the dashboard, the window the turn was read over; on a campaign's own
+ * screen, the campaign.
  */
 export function useMarkerDetail(): MarkerDetail {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const words = useWindowWords()
+  const { names } = useCampaignNames()
   return (view) => {
     // The dashboard's window, as its chip said it (CON-479).
     if (view.window) return { item: words.line(view.window) }
@@ -30,8 +33,15 @@ export function useMarkerDetail(): MarkerDetail {
         item: title,
       }
     }
-    if (view.screen !== 'assets' && view.screen !== 'campaign.assets')
-      return null
+    if (view.screen !== 'assets' && view.screen !== 'campaign.assets') {
+      // A campaign's own screen names the campaign (CON-482): "On Posts ·
+      // Spring reopening".
+      const name =
+        view.screen.startsWith('campaign.') && view.scope.kind === 'campaign'
+          ? names.get(view.scope.id)
+          : undefined
+      return name ? { item: name } : null
+    }
     const scope = view.scope.kind === 'campaign' ? view.scope.id : 'workspace'
     const state = qc.getQueryData<AssetsState>([...ASSETS_KEY, 'state', scope])
     return state

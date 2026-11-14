@@ -116,12 +116,14 @@ export function useListAssistantPage({
 
 /**
  * Picks up what the assistant asked this list to do — tick rows, open a smart
- * group (`viewContextStore.request`). `handle` returns whether it acted; a
- * request it can't act on yet (its smart groups still loading) waits, and is
- * tried again when `ready` changes.
+ * group (`viewContextStore.request`). `handle` returns whether it acted, or
+ * how many rows it acted on (CON-482) — fewer than asked when some aren't on
+ * the list — which the rail's row then says; a request it can't act on yet
+ * (its smart groups still loading) waits, and is tried again when `ready`
+ * changes.
  */
 export function useAssistantRequest(
-  handle: (action: UIAction) => boolean,
+  handle: (action: UIAction) => boolean | number,
   ready?: unknown,
 ) {
   const request = useViewContextStore((s) => s.request)
@@ -131,6 +133,10 @@ export function useAssistantRequest(
     latest.current = handle
   })
   useEffect(() => {
-    if (request && latest.current(request.action)) consume(request.seq)
+    if (!request) return
+    const acted = latest.current(request.action)
+    if (acted === false) return
+    if (typeof acted === 'number') request.report?.(acted)
+    consume(request.seq)
   }, [request, consume, ready])
 }

@@ -37,17 +37,28 @@ export function PostsFilterBar({
   onChange,
   total,
   totalUnfiltered,
+  setByAssistant = false,
 }: {
   campaignId: string
   filter: PostFilter
   onChange: (next: PostFilter) => void
   total: number
   totalUnfiltered: number
+  /** The assistant put this filter here (CON-482), and it hasn't changed. */
+  setByAssistant?: boolean
 }) {
+  const { t } = useTranslation()
   const vocabulary = usePostVocabulary(campaignId)
   const countQuery = countQueryFor(campaignId)
   return (
     <FilterSentence
+      trailing={
+        setByAssistant ? (
+          <span className="rounded-sm bg-accent/10 px-1.5 py-0.5 text-[12px] text-accent-ink">
+            {t('postsFilter.setByAssistant')}
+          </span>
+        ) : undefined
+      }
       filter={filter}
       model={POST_FILTER_MODEL}
       onChange={onChange}

@@ -34,7 +34,7 @@ export function useAssistantUiActions() {
       router.navigate({ to, params, search } as never)
 
     setUiActionApplier({
-      apply: async (action: UIAction) => {
+      apply: async (action: UIAction, report?: (count: number) => void) => {
         const before = router.state.location.href
         const destination = destinationFor(action)
         switch (action.type) {
@@ -67,6 +67,14 @@ export function useAssistantUiActions() {
               destination.params,
               searchFromFilter(action.filter ?? ''),
             )
+            // The list says the filter was the assistant's until it changes.
+            useViewContextStore
+              .getState()
+              .markAssistantFilter(
+                action.filter
+                  ? { screen: action.screen, filter: action.filter }
+                  : null,
+              )
             return before
           case 'set_window': {
             if (!destination || !action.window) return undefined
@@ -134,7 +142,7 @@ export function useAssistantUiActions() {
             if (destination && here !== action.screen) {
               await go(destination.to, destination.params)
             }
-            useViewContextStore.getState().ask(action)
+            useViewContextStore.getState().ask(action, report)
             return before
           }
         }
@@ -151,6 +159,8 @@ export function useAssistantUiActions() {
           })
         }
         if (action.window) useAnalyticsHighlightStore.getState().clear()
+        if (action.type === 'set_filter')
+          useViewContextStore.getState().markAssistantFilter(null)
         await router.navigate({ href } as never)
       },
     })

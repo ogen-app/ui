@@ -283,13 +283,16 @@ function ThreadView({
     // The server's record of an offer answered from its card is not something
     // the user typed: it reads as the line the card collapsed into.
     if (turn.answer) {
-      const summary = turn.content.replace(/^(Confirmed|Dismissed): /, '')
+      const summary = turn.content.replace(
+        /^(Confirmed|Dismissed|Stale|Expired): /,
+        '',
+      )
       const time =
         turn.answer === 'confirmed'
           ? formatDate(turn.at, { hour: 'numeric', minute: '2-digit' })
           : null
       return (
-        <ResolvedLine key={turn.id}>
+        <ResolvedLine key={turn.id} ran={turn.answer === 'confirmed'}>
           {time
             ? t('assistant.proposal.confirmedAt', { summary, time })
             : t(`assistant.proposal.${turn.answer}`, { summary })}

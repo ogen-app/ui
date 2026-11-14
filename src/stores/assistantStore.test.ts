@@ -508,8 +508,42 @@ describe('assistantStore', () => {
       await useAssistantStore.getState().confirmProposal(id, 'pr1')
       expect(offer(id)).toMatchObject({
         status: 'stale',
-        error: 'the ideas were deleted',
+        reasons: ['the ideas were deleted'],
       })
+    })
+
+    it('marks an offer stale from the stream, with what changed and its replacement (CON-482)', async () => {
+      const id = await withOffer()
+      stream.events = [
+        {
+          type: 'proposal_resolved',
+          id: 'pr1',
+          status: 'stale',
+          reasons: ['“Spa” was scheduled since'],
+          replacedBy: 'pr2',
+        },
+        { type: 'complete', result: result() },
+      ]
+      await useAssistantStore.getState().send(id, 'yes')
+      expect(offer(id)).toMatchObject({
+        status: 'stale',
+        reasons: ['“Spa” was scheduled since'],
+        replacedBy: 'pr2',
+      })
+    })
+
+    it('reads a lapsed offer from a confirm’s conflict reason (CON-482)', async () => {
+      const id = await withOffer()
+      stream.events = [
+        {
+          type: 'error',
+          message: 'That offer lapsed.',
+          status: 409,
+          reason: 'offer_expired',
+        },
+      ]
+      await useAssistantStore.getState().confirmProposal(id, 'pr1')
+      expect(offer(id)?.status).toBe('expired')
     })
 
     it('dismisses from the card', async () => {
@@ -552,6 +586,30 @@ describe('assistantStore', () => {
       api.undo.mockRejectedValueOnce(new ApiError(409, 'changed'))
       await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u2')
       expect(lastTurn(id).undo).toEqual({ u2: 'changed' })
+    })
+
+    it('reads an undo 409’s reason and how many changed since (CON-482)', async () => {
+      const id = useAssistantStore
+        .getState()
+        .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+      stream.events = [{ type: 'complete', result: result() }]
+      await useAssistantStore.getState().send(id, 'Tag these')
+      const { ApiError } = await import('@/services/api/errors')
+      api.undo.mockRejectedValueOnce(
+        new ApiError(409, 'changed', 'changed_since', {
+          reason: 'changed_since',
+          changed: 4,
+          of: 14,
+        }),
+      )
+      await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u5')
+      expect(lastTurn(id).undo).toEqual({ u5: 'changed' })
+      expect(lastTurn(id).undoRefused).toEqual({ u5: { changed: 4, of: 14 } })
+      api.undo.mockRejectedValueOnce(
+        new ApiError(409, 'done', 'already_undone'),
+      )
+      await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u6')
+      expect(lastTurn(id).undo?.u6).toBe('undone')
     })
 
     it('offers UNDO again after a failure that says nothing about the change', async () => {
@@ -722,7 +780,7 @@ describe('settleHistory', () => {
     expect(turns[0].proposals?.[0].status).toBe('stale')
     expect(turns[0].proposals?.[1]).toMatchObject({
       status: 'stale',
-      error: '3 assets were deleted',
+      reasons: ['3 assets were deleted'],
     })
   })
 })
@@ -841,5 +899,79 @@ describe('findings dismissed and restored (CON-478)', () => {
       keys.filter((k) => JSON.stringify(k).includes('dismissedFindings')),
     ).toHaveLength(2)
     invalidate.mockRestore()
+  })
+})
+
+describe('settleHistory with the server’s offer states (CON-482)', () => {
+  it('reads each offer as it stands now, a replaced one stale and a retry still open', async () => {
+    const { settleHistory } = await import('./assistantStore')
+    const offer = (id: string, summary: string) => ({
+      id,
+      tool: 't',
+      summary,
+      options: [],
+      status: 'pending' as const,
+    })
+    const turns = [
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        content: '',
+        proposals: [offer('p1', 'Move 5 posts'), offer('p2', 'Pick one')],
+      },
+      {
+        id: 'a2',
+        role: 'assistant' as const,
+        content: '',
+        proposals: [
+          offer('p3', 'Move 2 posts instead'),
+          offer('p4', 'Retry 3'),
+        ],
+      },
+      { id: 'a3', role: 'assistant' as const, content: 'Later' },
+    ]
+    settleHistory(
+      turns,
+      Date.now(),
+      new Map([
+        [
+          'a1',
+          [
+            { id: 'p1', status: 'pending', replaced_by: 'p3' },
+            {
+              id: 'p2',
+              status: 'confirmed',
+              chosen: 'friday',
+              resolved_at: '2026-11-13T10:00:00Z',
+            },
+          ],
+        ],
+        [
+          'a2',
+          [
+            { id: 'p3', status: 'pending', replaces: 'p1' },
+            { id: 'p4', status: 'pending', retry_of: 'p0' },
+          ],
+        ],
+      ]),
+    )
+    expect(turns[0].proposals?.[0]).toMatchObject({
+      status: 'stale',
+      replacedBy: 'p3',
+    })
+    expect(turns[0].proposals?.[1]).toMatchObject({
+      status: 'confirmed',
+      chosen: 'friday',
+      answeredAt: '2026-11-13T10:00:00Z',
+    })
+    expect(turns[1].proposals?.[0]).toMatchObject({
+      status: 'pending',
+      replaces: 'p1',
+    })
+    // A retry outside the last turn stays open: the server says it is.
+    expect(turns[1].proposals?.[1]).toMatchObject({
+      status: 'pending',
+      retryOf: 'p0',
+    })
   })
 })

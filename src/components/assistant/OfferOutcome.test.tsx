@@ -6,34 +6,59 @@ import { useAssistantStore } from '@/stores/assistantStore'
 import type {
   AssistantProposal,
   OfferOutcome as Outcome,
+  UndoState,
 } from '@/types/assistant'
 import { OfferOutcome } from './OfferOutcome'
 
+vi.mock('@/hooks/usePlatforms', () => ({
+  usePlatformCatalog: () => ({
+    resolve: (id: string) =>
+      ({ pl1: { name: 'LinkedIn' }, pl2: { name: 'Instagram' } })[id],
+  }),
+}))
+
 const confirm = vi.fn(async () => {})
 const undo = vi.fn(async () => {})
+const send = vi.fn(async () => {})
 
 beforeEach(() => {
   confirm.mockClear()
   undo.mockClear()
-  useAssistantStore.setState({ confirmProposal: confirm, undo })
+  send.mockClear()
+  useAssistantStore.setState({ confirmProposal: confirm, undo, send })
 })
 
 const retry: AssistantProposal = {
   id: 'pr9',
   tool: 'draftIdeas',
-  summary: 'Retry: Draft 2 posts from 2 ideas',
+  summary: 'Retry: Draft 3 posts from 3 ideas',
   options: [],
   status: 'pending',
 }
 
-function show(outcome: Outcome, proposal?: AssistantProposal) {
+function show(
+  outcome: Outcome,
+  {
+    proposal,
+    undoStates = {},
+    undoRefused,
+    retriedTotal,
+  }: {
+    proposal?: AssistantProposal
+    undoStates?: Record<string, UndoState>
+    undoRefused?: Record<string, { changed: number; of: number }>
+    retriedTotal?: number
+  } = {},
+) {
   return renderWithProviders(
     <OfferOutcome
       threadId="campaign:c1"
       turnId="t1"
       outcome={outcome}
       retry={proposal}
-      undoStates={{}}
+      retriedTotal={retriedTotal}
+      undoStates={undoStates}
+      undoRefused={undoRefused}
       disabled={false}
     />,
   )
@@ -41,10 +66,13 @@ function show(outcome: Outcome, proposal?: AssistantProposal) {
 
 const partial: Outcome = {
   reoffered: false,
+  made: 9,
+  total: 12,
   notMade: [
     {
       id: 'i1',
-      title: 'Six rooms · instagram',
+      title: 'What the water does in March',
+      platform: 'pl1',
       reason: 'the writer timed out',
     },
     { id: 'i2', reason: 'it no longer exists or can’t be changed' },
@@ -53,34 +81,89 @@ const partial: Outcome = {
   retryProposalId: 'pr9',
 }
 
-describe('OfferOutcome', () => {
-  it('lists what a run left undone, and RETRY confirms the retry offer', async () => {
-    await show(partial, retry)
-    expect(screen.getByText('3 not done')).toBeTruthy()
-    expect(screen.getByText('Six rooms · instagram')).toBeTruthy()
-    expect(screen.getByText('the writer timed out').className).toContain(
-      'text-warning',
-    )
+describe('OfferOutcome (CON-482)', () => {
+  it('is PARTLY DONE, X of Y, with the platform on each miss and RETRY N', async () => {
+    await show(partial, { proposal: retry })
+    expect(screen.getByText('PARTLY DONE')).toBeTruthy()
+    expect(screen.getByText('9 of 12 made')).toBeTruthy()
+    expect(screen.getByText('NOT MADE · 3')).toBeTruthy()
+    expect(
+      screen.getByText('LinkedIn · the writer timed out').className,
+    ).toContain('text-warning-ink')
     // Items the server names no title for are counted under their reason.
     expect(screen.getByText('2 items')).toBeTruthy()
-    fireEvent.click(screen.getByText('RETRY'))
+    fireEvent.click(screen.getByText('RETRY 3'))
     expect(confirm).toHaveBeenCalledWith('campaign:c1', 'pr9')
   })
 
-  it('drops RETRY once the retry offer is answered', async () => {
-    await show(partial, { ...retry, status: 'confirmed' })
-    expect(screen.queryByText('RETRY')).toBeNull()
+  it('asks again once the retry offer has lapsed', async () => {
+    await show(partial, { proposal: { ...retry, status: 'expired' } })
+    expect(screen.queryByText('RETRY 3')).toBeNull()
+    fireEvent.click(screen.getByText('ASK AGAIN'))
+    expect(send).toHaveBeenCalledWith('campaign:c1', retry.summary)
   })
 
-  it('draws a tagging with UNDO', async () => {
-    await show({
-      reoffered: false,
-      notMade: [],
-      tagged: { count: 14, undoId: 'u1' },
-    })
-    expect(screen.getByText('14 assets tagged')).toBeTruthy()
+  it('drops RETRY once the retry offer is answered', async () => {
+    await show(partial, { proposal: { ...retry, status: 'confirmed' } })
+    expect(screen.queryByText('RETRY 3')).toBeNull()
+  })
+
+  it('sums a retry that made the rest with the run it retried', async () => {
+    await show(
+      { reoffered: false, made: 3, total: 3, notMade: [] },
+      { retriedTotal: 12 },
+    )
+    expect(screen.getByText('Retried: 3 not made')).toBeTruthy()
+    expect(screen.getByText('All 12 made')).toBeTruthy()
+    expect(screen.getByText('3 on retry')).toBeTruthy()
+  })
+})
+
+const tagged: NonNullable<Outcome['tagged']> = {
+  count: 14,
+  undoId: 'u1',
+  changed: 13,
+  add: ['spa'],
+  remove: [],
+  assets: [
+    { id: 'a1', title: 'Villa Aurora brochure', added: ['spa'], removed: [] },
+    { id: 'a2', title: 'Spa menu: spring', added: [], removed: [] },
+  ],
+  more: 12,
+}
+
+describe('a tagging', () => {
+  it('names the tag and each asset, with UNDO', async () => {
+    await show({ reoffered: false, notMade: [], tagged })
+    expect(screen.getByText('14 assets tagged “spa”')).toBeTruthy()
+    expect(screen.getByText('“spa” added')).toBeTruthy()
+    expect(screen.getByText('already as asked')).toBeTruthy()
+    expect(screen.getByText('and 12 more')).toBeTruthy()
     fireEvent.click(screen.getByText('UNDO'))
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u1')
+  })
+
+  it('says what UNDO put back', async () => {
+    await show(
+      { reoffered: false, notMade: [], tagged },
+      { undoStates: { u1: 'undone' } },
+    )
+    expect(
+      screen.getByText('Put back: “spa” taken back from the 13 it changed'),
+    ).toBeTruthy()
+  })
+
+  it('is CAN’T UNDO when tags moved since, saying how many', async () => {
+    await show(
+      { reoffered: false, notMade: [], tagged },
+      {
+        undoStates: { u1: 'changed' },
+        undoRefused: { u1: { changed: 4, of: 14 } },
+      },
+    )
+    expect(screen.getByText('CAN’T UNDO')).toBeTruthy()
+    expect(screen.getByText('4 of 14 retagged since')).toBeTruthy()
+    expect(screen.getByText('OPEN').getAttribute('href')).toBe('/assets')
   })
 })
 
@@ -126,9 +209,9 @@ describe('in Spanish', () => {
   it('words the block', async () => {
     await loadLocaleResources('es')
     await i18next.changeLanguage('es')
-    await show(partial, retry)
-    expect(screen.getByText('3 sin hacer')).toBeTruthy()
-    expect(screen.getByText('REINTENTAR')).toBeTruthy()
-    expect(screen.queryByText('RETRY')).toBeNull()
+    await show(partial, { proposal: retry })
+    expect(screen.getByText('9 de 12 hechas')).toBeTruthy()
+    expect(screen.getByText('REINTENTAR 3')).toBeTruthy()
+    expect(screen.queryByText('RETRY 3')).toBeNull()
   })
 })

@@ -25,6 +25,7 @@ import {
   undoAssistantAction,
   type AssistantStreamEvent,
   type AssistantTurnResult,
+  type OfferState,
 } from '@/services/api/assistant'
 import { ApiError } from '@/services/api/errors'
 import type { AppliedUIAction, UIAction } from '@/lib/assistantUiActions'
@@ -60,8 +61,14 @@ import type {
  * where a turn's `ui_action`s are kept but not run.
  */
 export type UiActionApplier = {
-  /** Runs one action; returns the address it replaced, or undefined. */
-  apply: (action: UIAction) => Promise<string | undefined>
+  /**
+   * Runs one action; returns the address it replaced, or undefined. `report`
+   * hears how many rows a list acted on, when it says (CON-482).
+   */
+  apply: (
+    action: UIAction,
+    report?: (count: number) => void,
+  ) => Promise<string | undefined>
   /** Puts the screen back to `href`, undoing `action`. */
   restore: (href: string, action: UIAction) => Promise<void>
 }
@@ -251,16 +258,39 @@ export const useAssistantStore = create<AssistantState>()(
         actions: UIAction[],
       ) => {
         const applied: AppliedUIAction[] = []
-        for (const action of actions) {
+        // A list answers how many it ticked after it renders, which may be
+        // before or after the row is stored; either way the count lands.
+        const ticked: (number | undefined)[] = []
+        const report = (index: number) => (count: number) => {
+          ticked[index] = count
+          patchTurn(threadId, turnId, (t) => ({
+            ...t,
+            uiActions: t.uiActions?.map((a, i) =>
+              i === index ? { ...a, ticked: count } : a,
+            ),
+          }))
+        }
+        for (const [index, action] of actions.entries()) {
           let before: string | undefined
           try {
-            before = (await uiApplier?.apply(action)) ?? undefined
+            before =
+              (await uiApplier?.apply(action, report(index))) ?? undefined
           } catch {
             before = undefined
           }
-          applied.push({ action, before })
+          applied.push({
+            action,
+            before,
+            ...(ticked[index] !== undefined ? { ticked: ticked[index] } : {}),
+          })
         }
-        patchTurn(threadId, turnId, (t) => ({ ...t, uiActions: applied }))
+        patchTurn(threadId, turnId, (t) => ({
+          ...t,
+          // Counts that arrived while later actions were still applying.
+          uiActions: applied.map((a, i) =>
+            ticked[i] !== undefined ? { ...a, ticked: ticked[i] } : a,
+          ),
+        }))
       }
 
       /** Replace one turn of a thread, by id. */
@@ -326,7 +356,11 @@ export const useAssistantStore = create<AssistantState>()(
           onEvent: (event: AssistantStreamEvent) => void,
           signal: AbortSignal,
         ) => Promise<void>,
-        onStreamError?: (status: number | undefined, message: string) => void,
+        onStreamError?: (
+          status: number | undefined,
+          message: string,
+          reason?: string,
+        ) => void,
       ): Promise<TurnOutcome | null> => {
         const thread = get().threads[threadId]
         if (!thread) return null
@@ -667,17 +701,22 @@ export const useAssistantStore = create<AssistantState>()(
               break
 
             case 'proposal_resolved':
+              // A typed yes and the card's button resolve alike (CON-482): a
+              // stale offer says what changed and which offer replaces it.
               setProposal(threadId, event.id, {
                 status: event.status,
                 chosen: event.chosen,
                 ...(event.status === 'confirmed'
                   ? { answeredAt: new Date().toISOString() }
                   : {}),
+                ...(event.status === 'stale'
+                  ? { reasons: event.reasons, replacedBy: event.replacedBy }
+                  : {}),
               })
               break
 
             case 'error':
-              onStreamError?.(event.status, event.message)
+              onStreamError?.(event.status, event.message, event.reason)
               sawErrorEvent = true
               patchLastTurn(threadId, (t) => ({
                 ...t,
@@ -860,6 +899,12 @@ export const useAssistantStore = create<AssistantState>()(
             const { subject } = thread
             const rows = await listThreadMessages(subject)
 
+            // How each turn's offers stand now (CON-482), by turn.
+            const offers = new Map(
+              rows
+                .filter((row) => row.offers && row.offers.length > 0)
+                .map((row) => [row.id, row.offers!] as const),
+            )
             const turns: AssistantTurn[] = rows.map((row) => {
               if (row.role === 'user') {
                 return {
@@ -880,7 +925,7 @@ export const useAssistantStore = create<AssistantState>()(
                 ),
               }
             })
-            settleHistory(turns, Date.now())
+            settleHistory(turns, Date.now(), offers)
             // A turn may have started while history was loading; keep it last.
             set((s) => {
               const current = s.threads[threadId]
@@ -955,24 +1000,34 @@ export const useAssistantStore = create<AssistantState>()(
             null,
             (onEvent, signal) =>
               confirmProposalRequest(proposalId, optionId, onEvent, signal),
-            (status, message) =>
+            (status, message, reason) =>
               // Gone, already answered, expired, or refused because what it
-              // was offered on changed: the card stops offering.
+              // was offered on changed: the card stops offering. The
+              // conflict's `reason` says which (CON-482); a server before it
+              // only opened a changed offer's message with fixed words.
               setProposal(
                 threadId,
                 proposalId,
-                message.startsWith(CHANGED_SINCE)
-                  ? {
-                      status: 'stale',
-                      error: message.slice(CHANGED_SINCE.length),
-                    }
-                  : {
-                      status: 'closed',
-                      error:
-                        status === 404
-                          ? i18next.t('assistant.proposal.gone')
-                          : message,
-                    },
+                reason === 'offer_expired'
+                  ? { status: 'expired' }
+                  : reason === 'offer_replaced'
+                    ? { status: 'stale' }
+                    : message.startsWith(CHANGED_SINCE)
+                      ? {
+                          status: 'stale',
+                          reasons: [message.slice(CHANGED_SINCE.length)],
+                        }
+                      : {
+                          status: 'closed',
+                          error:
+                            status === 404 || reason === 'offer_answered'
+                              ? i18next.t(
+                                  reason === 'offer_answered'
+                                    ? 'assistant.proposal.answeredElsewhere'
+                                    : 'assistant.proposal.gone',
+                                )
+                              : message,
+                        },
               ),
           )
           // Only a turn that answered ran the offer. One that failed before or
@@ -1148,7 +1203,22 @@ export const useAssistantStore = create<AssistantState>()(
             // a 500, a dropped connection — says nothing about the change, so
             // UNDO comes back to be tried again.
             if (status === 404) return state('gone')
-            if (status === 409) return state('changed')
+            if (status === 409) {
+              // Its reason says which (CON-482): already undone is done, and
+              // changed since may say how many of how many.
+              const code = err instanceof ApiError ? err.code : undefined
+              if (code === 'already_undone') return state('undone')
+              const body = err instanceof ApiError ? err.body : undefined
+              const changed =
+                typeof body?.changed === 'number' ? body.changed : 0
+              const of = typeof body?.of === 'number' ? body.of : 0
+              if (changed > 0 && of > 0)
+                patchTurn(threadId, turnId, (t) => ({
+                  ...t,
+                  undoRefused: { ...t.undoRefused, [undoId]: { changed, of } },
+                }))
+              return state('changed')
+            }
             patchTurn(threadId, turnId, (t) => {
               const rest = { ...t.undo }
               delete rest[undoId]
@@ -1203,6 +1273,7 @@ function turnFields(
   | 'workspace'
   | 'ideas'
   | 'answered'
+  | 'resolved'
 > {
   return {
     proposals: result.proposals.length > 0 ? result.proposals : undefined,
@@ -1214,6 +1285,7 @@ function turnFields(
     workspace: result.workspace,
     ideas: result.ideas,
     answered: result.answered,
+    resolved: result.resolved?.length ? result.resolved : undefined,
     content: result.explanation,
     action: result.action,
     details: result.details,
@@ -1422,7 +1494,16 @@ function undoTouches(
  * The server records an offer answered from its card as a user turn of its
  * own, in fixed words (`Confirmed: <summary>`, `Dismissed: <summary>`).
  */
-const ANSWER_PREFIX = { confirmed: 'Confirmed: ', dismissed: 'Dismissed: ' }
+const ANSWER_PREFIX = {
+  confirmed: 'Confirmed: ',
+  dismissed: 'Dismissed: ',
+  // A yes that ran nothing, as the server records it (CON-482).
+  stale: 'Stale: ',
+  expired: 'Expired: ',
+}
+
+/** How the server ends a partial run's answer: " · 9 of 12 made". */
+const MADE_SUFFIX = / · \d+ of \d+ made$/
 
 /**
  * How the server opens why a confirmed offer ran nothing: what it was made on
@@ -1432,25 +1513,67 @@ const ANSWER_PREFIX = { confirmed: 'Confirmed: ', dismissed: 'Dismissed: ' }
 const CHANGED_SINCE = 'Things changed since the offer: '
 
 function answerOf(content: string): AssistantTurn['answer'] {
-  if (content.startsWith(ANSWER_PREFIX.confirmed)) return 'confirmed'
-  if (content.startsWith(ANSWER_PREFIX.dismissed)) return 'dismissed'
+  for (const answer of ['confirmed', 'dismissed', 'stale', 'expired'] as const)
+    if (content.startsWith(ANSWER_PREFIX[answer])) return answer
   return undefined
 }
 
 /**
- * Gives a reloaded thread's offers the state the server doesn't store on the
- * card: answered from its card (a later answer turn names it) — and, from the
- * reply under it, whether that confirm ran or found the offer stale —
- * expired, or moved past by a later turn. Only the last turn's open offer stays pending.
+ * Gives a reloaded thread's offers their state. Since CON-482 the server says
+ * how each stands now (`offers`, by turn): pending, confirmed with what was
+ * chosen and when, dismissed, expired — and a pending one another offer
+ * replaced is stale. A server before it is read the old way: answered from
+ * its card (a later answer turn names it by summary) — and, from the reply
+ * under it, whether that confirm ran or found the offer stale — expired, or
+ * moved past by a later turn. Only the last turn's open offer stays pending
+ * that way.
  */
-export function settleHistory(turns: AssistantTurn[], now: number): void {
+export function settleHistory(
+  turns: AssistantTurn[],
+  now: number,
+  offers?: Map<string, OfferState[]>,
+): void {
+  if (offers && offers.size > 0) {
+    const states = new Map(
+      [...offers.values()].flat().map((o) => [o.id, o] as const),
+    )
+    for (const turn of turns) {
+      if (!turn.proposals) continue
+      turn.proposals = turn.proposals.map((p) => {
+        const o = states.get(p.id)
+        if (!o) return p
+        const links = {
+          replaces: o.replaces ?? p.replaces,
+          retryOf: o.retry_of ?? p.retryOf,
+        }
+        if (o.status === 'pending')
+          return o.replaced_by
+            ? { ...p, ...links, status: 'stale', replacedBy: o.replaced_by }
+            : { ...p, ...links }
+        if (o.status === 'confirmed')
+          return {
+            ...p,
+            ...links,
+            status: 'confirmed',
+            chosen: o.chosen,
+            answeredAt: o.resolved_at,
+          }
+        if (o.status === 'dismissed' || o.status === 'expired')
+          return { ...p, ...links, status: o.status }
+        return { ...p, ...links }
+      })
+    }
+    return
+  }
   const answered = new Map<
     string,
-    Pick<AssistantProposal, 'status' | 'error' | 'answeredAt'>
+    Pick<AssistantProposal, 'status' | 'reasons' | 'answeredAt'>
   >()
   turns.forEach((turn, i) => {
     if (turn.role !== 'user' || !turn.answer) return
-    const summary = turn.content.slice(ANSWER_PREFIX[turn.answer].length)
+    const summary = turn.content
+      .slice(ANSWER_PREFIX[turn.answer].length)
+      .replace(MADE_SUFFIX, '')
     // The reply under a confirm says whether it ran: a fresh offer, or a
     // refusal opening with what changed, means nothing did.
     const reply = turns[i + 1]
@@ -1458,7 +1581,7 @@ export function settleHistory(turns: AssistantTurn[], now: number): void {
       if (reply.content.startsWith(CHANGED_SINCE)) {
         answered.set(summary, {
           status: 'stale',
-          error: reply.content.slice(CHANGED_SINCE.length),
+          reasons: [reply.content.slice(CHANGED_SINCE.length)],
         })
         return
       }

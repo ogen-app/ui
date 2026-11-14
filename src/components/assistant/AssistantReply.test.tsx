@@ -34,7 +34,7 @@ describe('a confirm’s retry offer (CON-467)', () => {
         })}
       />,
     )
-    expect(screen.getByText('RETRY')).toBeTruthy()
+    expect(screen.getByText('RETRY 1')).toBeTruthy()
     expect(screen.queryByText(retry.summary)).toBeNull()
   })
 
@@ -45,7 +45,7 @@ describe('a confirm’s retry offer (CON-467)', () => {
         turn={reply({ reoffered: true, notMade: [], retryProposalId: 'pr9' })}
       />,
     )
-    expect(screen.queryByText('RETRY')).toBeNull()
+    expect(screen.queryByText(/^RETRY/)).toBeNull()
     expect(screen.getByText(retry.summary)).toBeTruthy()
     expect(screen.getByText('CONFIRM')).toBeTruthy()
   })

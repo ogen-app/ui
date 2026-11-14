@@ -1,6 +1,8 @@
 import { Trans, useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { screenName } from '@/lib/assistantView'
+import { postStatusLabel } from '@/lib/postStatusLabel'
+import type { PostStatus } from '@/types/posts'
 import { counted } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { usePlatformCatalog, usePlatformViews } from '@/hooks/usePlatforms'
@@ -192,11 +194,12 @@ function WindowChange({ action }: { action: UIAction }) {
 
 function actionTitle(
   t: TFunction,
-  { action }: AppliedUIAction,
+  applied: AppliedUIAction,
   describe: (w: WindowLike, only?: readonly WindowControl[]) => string,
   platformName: (slug: string) => string,
   found: (connect: NonNullable<UIAction['connect']>) => boolean,
 ): React.ReactNode {
+  const { action } = applied
   const screen = screenName(t, action.screen)
   const grey = (
     <span className="text-sm font-normal text-secondary-foreground" />
@@ -238,14 +241,28 @@ function actionTitle(
       })
     case 'navigate':
       return t('assistant.uiAction.navigate', { screen })
-    case 'set_filter':
-      return action.filter
-        ? t('assistant.uiAction.setFilter', { screen })
-        : t('assistant.uiAction.clearFilter', { screen })
+    case 'set_filter': {
+      if (!action.filter) return t('assistant.uiAction.clearFilter', { screen })
+      // What it filtered to, on a posts screen (CON-482): "drafts ·
+      // Instagram", in grey after the screen.
+      const detail = postFilterDetail(t, action, platformName)
+      return detail ? (
+        <Trans
+          t={t}
+          i18nKey="assistant.uiAction.setFilterDetail"
+          values={{ screen, detail }}
+          components={{ where: grey }}
+        />
+      ) : (
+        t('assistant.uiAction.setFilter', { screen })
+      )
+    }
     case 'select':
+      // What the list ticked, when it said: ids it doesn't hold are dropped
+      // (CON-482).
       return t('assistant.uiAction.select', {
         screen,
-        ...counted(action.selection?.ids.length ?? 0),
+        ...counted(applied.ticked ?? action.selection?.ids.length ?? 0),
       })
     case 'open_saved_view':
       // The group by name, and where it opened in grey (CON-476).
@@ -260,4 +277,29 @@ function actionTitle(
         t('assistant.uiAction.openSavedView', { screen })
       )
   }
+}
+
+/** The posts screens, whose filter the row can word. */
+const POST_SCREENS: readonly string[] = ['campaign.list', 'campaign.calendar']
+
+/**
+ * A posts filter as a few words — statuses, platforms, post types — or
+ * undefined for another screen's filter or one it can't word.
+ */
+function postFilterDetail(
+  t: TFunction,
+  action: UIAction,
+  platformName: (slug: string) => string,
+): string | undefined {
+  if (!POST_SCREENS.includes(action.screen) || !action.filter) return undefined
+  const q = new URLSearchParams(action.filter)
+  const list = (key: string) => (q.get(key) ?? '').split(',').filter(Boolean)
+  const parts = [
+    ...list('status').map((s) =>
+      postStatusLabel(t, s as PostStatus).toLowerCase(),
+    ),
+    ...list('platform').map(platformName),
+    ...list('post_type').map((p) => p.replace(/[-_]/g, ' ')),
+  ]
+  return parts.length > 0 ? parts.join(' · ') : undefined
 }

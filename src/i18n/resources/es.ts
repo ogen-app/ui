@@ -723,6 +723,7 @@ export const es: Translation = {
     },
   },
   postsFilter: {
+    setByAssistant: 'puesto por el asistente',
     unknownPlatform: 'Una plataforma retirada',
     nothingMatches: 'Ninguna publicación coincide con estos filtros',
     scheduled: {
@@ -2339,6 +2340,18 @@ export const es: Translation = {
         label: 'Nuestra paleta',
         text: '¿Cuál es nuestra paleta?',
       },
+      onlyDrafts: {
+        label: 'Solo los borradores',
+        text: 'Muestra solo los borradores.',
+      },
+      moveThese: {
+        label: 'Moverlas',
+        text: 'Mueve las publicaciones seleccionadas a ',
+      },
+      askAboutThese: {
+        label: 'Preguntar por estas',
+        text: 'Háblame de las seleccionadas.',
+      },
       checkBrandSelected: {
         label: 'Revisar con la marca',
         text: 'Revisa las publicaciones seleccionadas con nuestra voz y nuestras pautas.',
@@ -2880,6 +2893,7 @@ export const es: Translation = {
     uiAction: {
       navigate: 'Abrió {{screen}}',
       setFilter: 'Filtró {{screen}}',
+      setFilterDetail: 'Filtró {{screen}} <where>{{detail}}</where>',
       clearFilter: 'Quitó el filtro de {{screen}}',
       select_one: 'Seleccionó {{formatted}} en {{screen}}',
       select_other: 'Seleccionó {{formatted}} en {{screen}}',
@@ -2910,7 +2924,6 @@ export const es: Translation = {
     proposal: {
       placeholder: 'Responde «sí» para ejecutarla, o di qué cambiar',
       confirm: 'CONFIRMAR',
-      choose: 'ELEGIR',
       dismiss: 'DESCARTAR',
       gone: 'Esta propuesta ya no existe.',
       failed: 'No se completó. Pídelo de nuevo para reintentarlo.',
@@ -2924,6 +2937,22 @@ export const es: Translation = {
       closed: '{{summary}} · no ejecutada',
       stale: '{{summary}} · cambió desde entonces, no se ejecutó nada',
       working: '{{summary}} · en marcha…',
+      answeredElsewhere: 'Esta oferta ya tiene respuesta.',
+      checked: 'Comprobado de nuevo — nada ha cambiado',
+      chose: 'Elegido: {{option}}',
+      staleCard: {
+        checked: 'Comprobado de nuevo antes de ejecutar',
+        word: 'NO SE EJECUTÓ NADA',
+        title: 'Algo cambió desde esta oferta',
+        fresh: 'OFERTA NUEVA',
+      },
+      expiredCard: {
+        word: 'CADUCADA',
+        title: 'Esa oferta caducó',
+        nothing: 'No se ejecutó nada',
+        hint: 'Vuelve a pedirlo y se preparará con las cosas como están ahora.',
+        askAgain: 'PEDIR DE NUEVO',
+      },
       recommended: 'RECOMENDADA',
       row: {
         destination: 'Dónde',
@@ -3263,15 +3292,31 @@ export const es: Translation = {
     },
 
     answered: {
+      partly: {
+        word: 'HECHO EN PARTE',
+        title: '{{made}} de {{total}} hechas',
+      },
+      done: {
+        word: 'HECHO',
+        title: 'Hechas las {{total}}',
+        onRetry_one: '{{formatted}} al reintentar',
+        onRetry_other: '{{formatted}} al reintentar',
+      },
+      retried_one: 'Reintentado: {{formatted}} sin hacer',
+      retried_other: 'Reintentado: {{formatted}} sin hacer',
       notMade: {
         word: 'SIN HACER',
+        group_one: 'SIN HACER · {{formatted}}',
+        group_other: 'SIN HACER · {{formatted}}',
         title_one: '{{formatted}} sin hacer',
         title_other: '{{formatted}} sin hacer',
+        retryCount_one: 'REINTENTAR {{formatted}}',
+        retryCount_other: 'REINTENTAR {{formatted}}',
+        lapsed: 'La oferta caducó; vuelve a pedirlo para hacerlas.',
         unnamed_one: '{{formatted}} elemento',
         unnamed_other: '{{formatted}} elementos',
         more_one: 'y {{formatted}} más',
         more_other: 'y {{formatted}} más',
-        retry: 'REINTENTAR',
       },
       replaced: {
         word: 'ELIMINADOS',
@@ -3286,9 +3331,27 @@ export const es: Translation = {
           '{{formatted}} conservados: cambiaron desde la propuesta o no hacían falta.',
       },
       tagged: {
-        word: 'ETIQUETADOS',
+        word: 'ETIQUETADO',
         title_one: '{{formatted}} recurso etiquetado',
         title_other: '{{formatted}} recursos etiquetados',
+        quote: '«{{tag}}»',
+        titleNamed_one: '{{formatted}} recurso etiquetado {{tags}}',
+        titleNamed_other: '{{formatted}} recursos etiquetados {{tags}}',
+        untagged_one: '{{formatted}} recurso sin {{tags}}',
+        untagged_other: '{{formatted}} recursos sin {{tags}}',
+        added: '{{tags}} añadida',
+        removed: '{{tags}} quitada',
+        already: 'ya estaba así',
+        putBack_one: 'Devuelto: {{tags}} retirada del {{formatted}} que cambió',
+        putBack_other:
+          'Devuelto: {{tags}} retirada de los {{formatted}} que cambió',
+        note: 'Deshacer retira solo lo que cambió la tarea: los que ya estaban así conservan sus etiquetas.',
+        cantWord: 'NO SE PUEDE DESHACER',
+        cantTitle: 'Las etiquetas cambiaron desde entonces',
+        changedSince: '{{changed}} de {{of}} reetiquetados desde entonces',
+        cantHint:
+          'Deshacer pisaría ese cambio; quita la etiqueta a mano desde Recursos.',
+        open: 'ABRIR',
       },
     },
 
@@ -6445,6 +6508,22 @@ export const es: Translation = {
   },
 
   campaigns: {
+    bulk: {
+      selected_one: '{{formatted}} seleccionada',
+      selected_other: '{{formatted}} seleccionadas',
+      allMatching_one: 'Seleccionada la {{formatted}} publicación que coincide',
+      allMatching_other:
+        'Seleccionadas las {{formatted}} publicaciones que coinciden',
+      when: 'Fecha y hora de publicación',
+      changeDate: 'Cambiar la fecha',
+      changeTime: 'Cambiar la hora',
+      status: 'Estado',
+      unschedule: 'Desprogramar',
+      delete: 'Eliminar',
+      clear: 'BORRAR SELECCIÓN',
+      deleted_one: '{{formatted}} publicación eliminada',
+      deleted_other: '{{formatted}} publicaciones eliminadas',
+    },
     title: 'Campañas',
     add: 'AÑADIR CAMPAÑA',
     error: 'No se pudieron cargar las campañas',

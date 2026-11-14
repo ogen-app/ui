@@ -166,12 +166,31 @@ export function SourcesLine({
   )
 }
 
-/** A thing already decided, as one grey line: what, and how it ended. */
-export function ResolvedLine({ children }: { children: React.ReactNode }) {
+/**
+ * A thing already decided, as one grey line: what, and how it ended. The tick
+ * is for something that ran (CON-482); a line saying nothing ran — dismissed,
+ * lapsed, not answered — has none. It wraps rather than cutting its end off,
+ * which is where "nothing ran" sits.
+ */
+export function ResolvedLine({
+  children,
+  ran = true,
+}: {
+  children: React.ReactNode
+  ran?: boolean
+}) {
   return (
-    <p className="flex items-center gap-1.5 text-[12.5px] text-tertiary-foreground">
-      <CheckIcon aria-hidden className="size-3 shrink-0" weight="bold" />
-      <span className="min-w-0 truncate">{children}</span>
+    <p className="flex items-start gap-1.5 text-[12.5px] text-tertiary-foreground">
+      {ran ? (
+        <CheckIcon
+          aria-hidden
+          className="mt-[3px] size-3 shrink-0"
+          weight="bold"
+        />
+      ) : (
+        <span aria-hidden className="w-3 shrink-0" />
+      )}
+      <span className="min-w-0">{children}</span>
     </p>
   )
 }

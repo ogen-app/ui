@@ -184,7 +184,7 @@ describe('a calendar finding', () => {
     await findings()
     fireEvent.click(screen.getByText('Move to another slot'))
     expect(screen.getByText('CHOOSE ONE')).toBeTruthy()
-    fireEvent.click(screen.getAllByText('CHOOSE')[1])
+    fireEvent.click(screen.getByText('Wed 16, 12:00'))
     expect(confirmProposal).toHaveBeenCalledWith('campaign:c1', 'pr3', 's2')
   })
 

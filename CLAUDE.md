@@ -186,6 +186,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   through `CalendarSelectionContext` — as the selection. Foundation's voices,
   audiences, facts and series tick the same way (`useLibrarySelection`), as
   something to ask about: their bar only clears.
+  Ticks clear when the filter in the **address** changes — the assistant's
+  `set_filter` and its UNDO included — and on the calendar when the day or
+  view the user chose does, not when the computed range shifts (CON-482). An
+  assistant `select` ticks only the rows the list holds and reports how many
+  (`useAssistantRequest` returning a count), which is what the rail's
+  "Selected N" says; the posts list marks a filter the assistant set until it
+  changes (`viewContextStore.assistantFilter`).
 - **The post editor autosaves through the Query cache** (`usePost.changeDoc`,
   600ms debounce, generation-counter guarded, flush-on-unmount). Campaign forms
   autosave similarly. Prefer these patterns over new local edit stores.
@@ -628,18 +635,34 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   which `settleHistory` reads to settle a reloaded thread's offers. That
   prefix is the server's fixed wording; change both ends together. A typed
   "yes" runs the same stored offer, and the composer says so while one waits.
-  UNDO calls `…/actions/:id/undo` with the result's `undoId`; a 409 means the
-  entity changed again since and is said as such.
-  **A confirm re-checks first** (CON-467/471): an offer whose ground moved
-  runs nothing, and the card goes `stale` — a confirm whose `complete.result`
-  is `proposed` again, with what still holds as a fresh card below, or a 409
-  whose message opens with the server's fixed `Things changed since the
-  offer: `, which history reads off the reply too. A run that did part of the
-  job carries `notMade` and a `retryProposalId` on that same `result`;
-  `OfferOutcome` lists what wasn't done with the server's reasons, and its
-  RETRY confirms the retry offer, which is never drawn as a card of its own
-  while it waits. An option marked `recommended` (at most one) is the card's
-  dark button with the tag; without the mark every option weighs the same.
+  UNDO calls `…/actions/:id/undo` with the result's `undoId`; a 409 says why
+  in its `reason` — `already_undone`, or `changed_since` with how many of how
+  many (`undoRefused`), which a tag job draws as CAN'T UNDO.
+  **A confirm re-checks first** (CON-467/482): an offer whose ground moved
+  runs nothing and **stays open**, resolving `stale` with `reasons` and the
+  fresh offer of what still holds (`replacedBy`; its card's `replaces`) —
+  the same whether the yes was typed or clicked. The card is NOTHING RAN in
+  amber with what changed, and the fresh offer is drawn under it as FRESH
+  OFFER, not in its own turn. A yes after an offer's expiry resolves
+  `expired`, and an open card also lapses on its own timer (`useLapsed`):
+  EXPIRED, with ASK AGAIN, which sends the summary as a new message. A 409
+  says which in its `reason` (`offer_expired`, `offer_answered`,
+  `offer_replaced`); a server before CON-482 is still read off its fixed
+  `Things changed since the offer: ` opening. **A resolved line ticks only
+  what ran** (`ResolvedLine ran`), and a confirmed one says "Checked again —
+  nothing changed" above it, because every confirm re-checks (CON-502 asks
+  for a signal). A run that did part of the job carries `made` of `total`,
+  `notMade` (with each miss's own `platform`) and a `retryProposalId`;
+  `OfferOutcome` is PARTLY DONE "9 of 12 made" with what wasn't, and RETRY N
+  confirms the retry offer — never drawn as a card of its own while it waits,
+  ASK AGAIN once it has lapsed — and a retry that made the rest is DONE over
+  both runs, found through the turn's `resolved` offers and the retry's
+  `retryOf`. **A reloaded thread settles its offers from the server's
+  `offers`** on each model turn (status, choice, expiry, `replaced_by`, links)
+  rather than pairing them with answers by summary, which is kept only for a
+  server that sends none. A choice's options are named buttons: the one
+  marked `recommended` (at most one) dark with the tag and its `why`, the rest
+  outlined; answered, it says "Chose: …".
 - **The assistant can change the screen** (D5). A turn's `ui_action`s are
   applied in order when it completes (`useAssistantUiActions` registers the
   applier with the router; `lib/assistantUiActions.destinationFor` maps screen,

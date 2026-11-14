@@ -286,3 +286,17 @@ export function listFilter(params: Record<string, string>): string {
   )
   return new URLSearchParams(rest).toString()
 }
+
+/**
+ * Whether two filters in a list endpoint's query form ask the same thing,
+ * whatever their order (CON-482): the assistant's and the address's.
+ */
+export function sameFilter(a: string, b: string): boolean {
+  const norm = (q: string) =>
+    [...new URLSearchParams(q).entries()]
+      .filter(([key]) => key !== 'tz')
+      .map(([key, value]) => `${key}=${value.split(',').sort().join(',')}`)
+      .sort()
+      .join('&')
+  return norm(a) === norm(b)
+}

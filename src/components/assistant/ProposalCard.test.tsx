@@ -23,7 +23,7 @@ describe('ProposalCard', () => {
     expect(confirm).toHaveBeenCalledWith('t', 'pr1')
   })
 
-  it('offers each option, and confirms the one picked', () => {
+  it('names each option as its button, and confirms the one picked', () => {
     const confirm = vi.fn(async () => {})
     useAssistantStore.setState({ confirmProposal: confirm })
     render(
@@ -41,11 +41,11 @@ describe('ProposalCard', () => {
       />,
     )
     expect(screen.getByText('CHOOSE ONE')).toBeTruthy()
-    fireEvent.click(screen.getAllByText('CHOOSE')[1])
+    fireEvent.click(screen.getByText('Save 10 as ideas instead'))
     expect(confirm).toHaveBeenCalledWith('t', 'pr1', 'ideas')
   })
 
-  it('leads with the option the server recommends (CON-467)', () => {
+  it('leads with the option the server recommends, saying why (CON-482)', () => {
     render(
       <ProposalCard
         threadId="t"
@@ -54,18 +54,28 @@ describe('ProposalCard', () => {
           ...base,
           summary: 'Thursday already has 3 posts',
           options: [
-            { id: 'friday', title: 'Move it to Friday' },
-            { id: 'anyway', title: 'Add it anyway' },
+            {
+              id: 'friday',
+              title: 'Move it to Friday',
+              why: 'Friday is empty.',
+            },
+            {
+              id: 'anyway',
+              title: 'Add it anyway',
+              description: 'Four on one day.',
+            },
           ],
           recommended: 'friday',
         }}
       />,
     )
     expect(screen.getAllByText('RECOMMENDED')).toHaveLength(1)
-    const [lead, other] = screen.getAllByText('CHOOSE')
-    expect(lead.closest('li')?.textContent).toContain('Move it to Friday')
-    // The lead is the dark button; the rest are text actions.
+    const lead = screen.getByText('Move it to Friday')
+    const other = screen.getByText('Add it anyway')
+    // The lead is the dark button; the rest are outlined.
     expect(lead.className).not.toBe(other.className)
+    expect(screen.getByText('Friday is empty.')).toBeTruthy()
+    expect(screen.getByText('Four on one day.')).toBeTruthy()
   })
 
   it('weighs every option alike without a recommendation', () => {
@@ -83,11 +93,54 @@ describe('ProposalCard', () => {
       />,
     )
     expect(screen.queryByText('RECOMMENDED')).toBeNull()
-    const [a, b] = screen.getAllByText('CHOOSE')
+    const a = screen.getByText('Rewrite the tone line')
+    const b = screen.getByText('Pick the Host voice')
     expect(a.className).toBe(b.className)
   })
 
-  it('says a confirm ran nothing because the offer went stale', () => {
+  it('says what was chosen once answered', () => {
+    render(
+      <ProposalCard
+        threadId="t"
+        disabled={false}
+        proposal={{
+          ...base,
+          status: 'confirmed',
+          chosen: 'friday',
+          options: [{ id: 'friday', title: 'Move it to Friday' }],
+        }}
+      />,
+    )
+    expect(screen.getByText('Chose: Move it to Friday')).toBeTruthy()
+    expect(screen.getByText('Checked again — nothing changed')).toBeTruthy()
+  })
+
+  it('says a yes ran nothing because the offer went stale, with what changed and the fresh offer under it', () => {
+    const fresh: AssistantProposal = {
+      ...base,
+      id: 'pr2',
+      summary: 'Move 2 posts instead',
+      replaces: 'pr1',
+    }
+    useAssistantStore.setState({
+      threads: {
+        t: {
+          id: 't',
+          subject: { kind: 'workspace' },
+          title: '',
+          campaignTitle: '',
+          turns: [
+            { id: 'a2', role: 'assistant', content: '', proposals: [fresh] },
+          ],
+          status: 'idle',
+          runStartedAt: null,
+          lastActiveAt: null,
+          unread: false,
+          loaded: true,
+          streamedPosts: [],
+        },
+      },
+    })
     render(
       <ProposalCard
         threadId="t"
@@ -95,16 +148,43 @@ describe('ProposalCard', () => {
         proposal={{
           ...base,
           status: 'stale',
-          error: 'the ideas were deleted',
+          reasons: ['“Wedding packages” was deleted'],
+          replacedBy: 'pr2',
         }}
       />,
     )
-    expect(
-      screen.getByText(
-        'Draft 2 posts from 3 ideas · changed since, nothing ran',
-      ),
-    ).toBeTruthy()
-    expect(screen.getByText('the ideas were deleted')).toBeTruthy()
+    expect(screen.getByText('NOTHING RAN')).toBeTruthy()
+    expect(screen.getByText('“Wedding packages” was deleted')).toBeTruthy()
+    expect(screen.getByText('FRESH OFFER')).toBeTruthy()
+    expect(screen.getByText('Move 2 posts instead')).toBeTruthy()
+  })
+
+  it('is EXPIRED with ASK AGAIN once lapsed, even while open', () => {
+    const send = vi.fn(async () => {})
+    useAssistantStore.setState({ send })
+    render(
+      <ProposalCard
+        threadId="t"
+        disabled={false}
+        proposal={{ ...base, expiresAt: '2020-01-01T00:00:00Z' }}
+      />,
+    )
+    expect(screen.getByText('EXPIRED')).toBeTruthy()
+    expect(screen.queryByText('CONFIRM')).toBeNull()
+    fireEvent.click(screen.getByText('ASK AGAIN'))
+    expect(send).toHaveBeenCalledWith('t', base.summary)
+  })
+
+  it('draws a line that ran nothing without a tick', () => {
+    render(
+      <ProposalCard
+        threadId="t"
+        disabled={false}
+        proposal={{ ...base, status: 'dismissed' }}
+      />,
+    )
+    const line = screen.getByText('Draft 2 posts from 3 ideas · dismissed')
+    expect(line.parentElement?.querySelector('svg')).toBeNull()
   })
 
   it('collapses to one line once answered', () => {
