@@ -41,4 +41,31 @@ describe('FactsTable ticks (CON-472)', () => {
     )
     expect(screen.queryByRole('checkbox')).toBeNull()
   })
+
+  it('leaves room after the last row for the selection bar while facts are ticked (CON-486)', () => {
+    const body = (ticked: string[]) => {
+      const { container, unmount } = render(
+        <FactsTable
+          facts={[FACT]}
+          today="2026-04-21"
+          onEdit={() => {}}
+          onRemove={() => {}}
+          selection={{
+            ticked: new Set(ticked),
+            toggle: vi.fn(),
+            toggleAll: vi.fn(),
+          }}
+        />,
+      )
+      // The rows' box: its height is the rows' and whatever follows them.
+      const box = [...container.querySelectorAll<HTMLElement>('div.relative')]
+        .map((el) => el.style.height)
+        .find((h) => h.endsWith('px'))
+      unmount()
+      return box
+    }
+    const without = parseFloat(body([]) ?? '0')
+    const withBar = parseFloat(body(['f1']) ?? '0')
+    expect(withBar - without).toBe(64)
+  })
 })

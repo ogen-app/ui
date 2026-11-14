@@ -89,6 +89,11 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
   /** The last rows are on screen: load more, if there are more. */
   onEndReached?: () => void
   /**
+   * Scrollable room after the last row, in px — for a bar floating over the
+   * table's foot (CON-486), so the last row can scroll fully above it.
+   */
+  endInset?: number
+  /**
    * Extra classes for one row — a ticked row's tint (CON-486). Applied after
    * the row's own fill and hover, so a tint can hold under the pointer.
    */

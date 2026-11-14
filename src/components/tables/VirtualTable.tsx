@@ -57,6 +57,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   manualSorting = false,
   onEndReached,
   rowClassName,
+  endInset = 0,
 }: VirtualTableProps<TData>) {
   // Controlled when the caller passes `sorting`, otherwise the table owns it.
   // Whoever owns it, the header below only ever calls `setSorting`.
@@ -374,7 +375,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
       const footerHeight = hasFooter
         ? (footerRef.current?.clientHeight ?? 0)
         : 0
-      const contentHeight = headerHeight + totalSize + footerHeight
+      const contentHeight = headerHeight + totalSize + endInset + footerHeight
 
       // Update spacer height for fillHeight mode
       if (fillHeight) {
@@ -397,7 +398,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
     }
 
     return () => resizeObserver.disconnect()
-  }, [fillHeight, totalSize, hasFooter])
+  }, [fillHeight, totalSize, hasFooter, endInset])
 
   return (
     <div
@@ -527,7 +528,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             <div
               className="relative"
               style={{
-                height: `${totalSize}px`,
+                height: `${totalSize + endInset}px`,
                 width: hasOverflow ? `${totalWidth}px` : '100%',
               }}
             >

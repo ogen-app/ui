@@ -162,6 +162,10 @@ export function PostsToolbar({
             ? 'text-[18px] font-medium'
             : 'text-[13px] text-tertiary-foreground tabular-nums',
         )}
+        // On the list the line is the filter's result, said once (CON-486),
+        // so it is the live region the sentence's count used to be: a change
+        // of filter is announced. The calendar's line is a heading.
+        {...(!anchor ? { role: 'status', 'aria-live': 'polite' as const } : {})}
       >
         {!anchor
           ? subheading
