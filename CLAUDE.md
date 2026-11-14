@@ -923,12 +923,21 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   form (`ideas/IdeaPostForm`) on the selection bar and the slot (CON-470).
   **Unscheduled is the default**: a post is dated only by a day the user
   chose or one planned on its idea, and the server has no way to leave a
-  planned one undated, so the form says which rather than asking. Unscheduled
-  drafts land in the calendar's Not scheduled panel, marked on top for the
-  tab (`justWrittenStore`), and the toast's SHOW opens it. "Used" is a fact,
-  not a verdict: an idea carries `post_count`, the row says "Used in N
-  posts", the opened idea lists them (MADE INTO), and `used=used|unused` is a
-  clause, facet and grouping like any other.
+  planned one undated, so the form says which rather than asking — and how
+  many of the ideas have a day (CON-485). The form presets its platforms
+  from the ideas' `plan`, each with the type the plan names, says what each
+  "how many" choice makes, and names a single idea. Unscheduled drafts land
+  in the calendar's Not scheduled panel — compact rows, "Platform · Type ·
+  from N ideas" (`idea_count`), with a count and a drag hint — marked on top
+  for the tab (`justWrittenStore`), the assistant's drafts as well as the
+  list's; a draft lets go of the mark once it has a date. The toast's SHOW
+  opens it, one toast per campaign when the drafts went to several. A
+  drafted or compiled row says why it has its day (`dateFrom`: the idea's
+  plan, or the day chosen). Deleting a post refreshes the ideas. "Used" is a
+  fact, not a verdict: an idea carries `post_count`, the row says "Used in N
+  posts", the opened idea lists them (MADE INTO: two lines a row, the whole
+  row opening the post, a loading and an emptied state), and
+  `used=used|unused` is a clause, facet and grouping like any other.
 - **The right sidebar never stores which panel is open.** It persists one
   remembered choice per screen (`panelMemory` in `settingsStore`) and derives
   the rest: ask `selectActivePanel`, never `panelMemory` directly. A route makes

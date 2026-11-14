@@ -37,6 +37,8 @@ export type IdeaPostRef = {
   status: PostStatus
   campaign_id: string
   platform_id: string
+  /** Its type on the platform (CON-485); empty while automatic. */
+  platform_post_type?: string
   scheduled_at: string | null
 }
 
@@ -104,6 +106,8 @@ export type DraftIdeasEvent =
       title: string
       /** YYYY-MM-DD; absent when the draft is unscheduled (CON-470). */
       publishDate?: string
+      /** The campaign it was written into (CON-485). */
+      campaignId?: string
     }
   | { type: 'complete'; postIds: string[]; warnings: string[] }
   | { type: 'error'; message: string }
@@ -155,6 +159,9 @@ export async function draftIdeas(
         title: typeof parsed.title === 'string' ? parsed.title : '',
         ...(typeof parsed.publishDate === 'string' && parsed.publishDate
           ? { publishDate: parsed.publishDate }
+          : {}),
+        ...(typeof parsed.campaignId === 'string' && parsed.campaignId
+          ? { campaignId: parsed.campaignId }
           : {}),
       })
     } else if (event === 'complete') {

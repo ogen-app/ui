@@ -1070,3 +1070,30 @@ describe('an offer made again once its source is read (CON-484)', () => {
     await vi.waitFor(() => expect(listThreadMessages).toHaveBeenCalled())
   })
 })
+
+describe('drafts the assistant writes (CON-485)', () => {
+  it('marks an undated one as just written, and not a dated one', async () => {
+    const { useJustWrittenStore } = await import('./justWrittenStore')
+    useJustWrittenStore.setState({ ids: new Set() })
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+    const post = (pid: string, scheduled_at: string | null) => ({
+      id: pid,
+      campaign_id: 'c1',
+      title: 'Draft',
+      content: '',
+      platform_id: 'linkedin',
+      platform_post_type: '',
+      campaign_type_phase_id: null,
+      scheduled_at,
+    })
+    stream.events = [
+      { type: 'post_generated', post: post('p1', null) },
+      { type: 'post_generated', post: post('p2', '2026-11-26T09:00:00Z') },
+      { type: 'complete', result: result() },
+    ]
+    await useAssistantStore.getState().send(id, 'Draft two posts')
+    expect([...useJustWrittenStore.getState().ids]).toEqual(['p1'])
+  })
+})

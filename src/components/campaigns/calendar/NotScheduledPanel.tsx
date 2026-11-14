@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { useTranslation } from 'react-i18next'
-import { useParams } from '@tanstack/react-router'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -11,12 +10,11 @@ import {
   useWorkspacePosts,
 } from '@/hooks/usePosts'
 import type { Post } from '@/types/posts'
-import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { postToPayload } from '@/services/api/posts'
 import { canEditScheduledAt } from '@/lib/postStatusMachine'
-import { PostCard } from './PostCard'
-import { withCampaignRow } from './cardFields'
+import { UnscheduledRow } from './UnscheduledRow'
+import { formatNumber } from '@/lib/intl'
 import { cn } from '@/lib'
 import { awaiting } from '@/lib/fetched'
 import { useJustWrittenStore } from '@/stores/justWrittenStore'
@@ -92,25 +90,18 @@ function NotScheduled({
   const targets = useCampaign(campaignId ?? '').data?.target_platforms
   const { mutate: updatePost } = useUpdatePost(campaignId)
 
-  // These cards are the ones the user drags onto the grid, so they are drawn
-  // as that grid draws them: the panel is mounted by the right rail rather
-  // than by the calendar route, so which view is open is read off the router
-  // (`strict: false` — this component also renders on screens with no `view`
-  // param at all, and week is the calendar's own default).
-  const { view } = useParams({ strict: false })
-  const { card } = useCalendarSettings()
-  const viewFields = card[view === 'month' ? 'month' : 'week']
-  // On the workspace panel the cards name their campaign, exactly as the grid
-  // they are about to be dragged onto does — see `cardFields`. Memoized: the
-  // object is a `memo` prop on every card below.
-  const fields = useMemo(
-    () => withCampaignRow(viewFields, campaignId === null),
-    [viewFields, campaignId],
-  )
-
   // The drafts just written from ideas lead, marked (CON-470): the toast
   // that sent the user here is gone, and nothing else says which are new.
   const justWritten = useJustWrittenStore((s) => s.ids)
+  // A draft put on a day is no longer just written (CON-485): unscheduled
+  // again later, it is a stray like any other.
+  const forget = useJustWrittenStore((s) => s.forget)
+  useEffect(() => {
+    const dated = (posts ?? [])
+      .filter((p) => p.scheduled_at && justWritten.has(p.id))
+      .map((p) => p.id)
+    if (dated.length > 0) forget(dated)
+  }, [posts, justWritten, forget])
   const unscheduled = useMemo(() => {
     const strays = (posts ?? []).filter((p) => !p.scheduled_at)
     return [
@@ -146,6 +137,19 @@ function NotScheduled({
   return (
     <RailPanel
       title={t('calendar.notScheduled')}
+      // How many wait, muted beside the title, and what to do with them.
+      titleAdornment={
+        !waiting && unscheduled.length > 0 ? (
+          <span className="text-base font-normal text-tertiary-foreground">
+            {formatNumber(unscheduled.length)}
+          </span>
+        ) : undefined
+      }
+      subheader={
+        <p className="text-[12.5px] text-tertiary-foreground">
+          {t('calendar.notScheduledHint')}
+        </p>
+      }
       onClose={onClose}
       className="h-full"
       bodyClassName="flex-1"
@@ -169,20 +173,19 @@ function NotScheduled({
         ) : unscheduled.length === 0 ? (
           <PostsEmptyState variant="panel" onAddPost={onAddPost} />
         ) : (
-          unscheduled.map((post) => (
-            <div key={post.id} className="border border-border shrink-0">
-              {justWritten.has(post.id) && (
-                <p className="border-b border-border px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-accent uppercase">
-                  {t('calendar.justWritten')}
-                </p>
-              )}
-              {/* No rung: the panel is a column with room, so the card draws
-                  itself at its roomiest. The rung is what a *cell* imposes,
-                  and there is no cell here — what carries over from the view
-                  is which rows the user allows, which is the part they set. */}
-              <PostCard post={post} fields={fields} targets={targets} />
-            </div>
-          ))
+          // Compact rows rather than calendar cards (CON-485): a list to drag
+          // from, the just written on top and tinted.
+          <div className="flex flex-col border-t border-border">
+            {unscheduled.map((post) => (
+              <UnscheduledRow
+                key={post.id}
+                post={post}
+                justWritten={justWritten.has(post.id)}
+                showCampaign={campaignId === null}
+                targets={targets}
+              />
+            ))}
+          </div>
         )}
       </div>
     </RailPanel>

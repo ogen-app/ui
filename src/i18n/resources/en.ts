@@ -1115,10 +1115,13 @@ export const en = {
         low: '10–39',
       },
       fitRange: '{{band}} · {{range}}',
-      /** Whether a post was made from the idea (CON-470). */
+      /**
+       * Whether a post was made from the idea (CON-470), worded as the
+       * sentence reads it (CON-485).
+       */
       used: {
-        unused: 'Not used yet',
-        used: 'Used in a post',
+        unused: 'not used yet',
+        used: 'used in a post',
       },
       /** `source_asset=none`: written ideas, and ones whose document was deleted. */
       noDocument: 'No document',
@@ -1177,7 +1180,10 @@ export const en = {
         '{{formatted}} drafts written, {{unscheduled}} not scheduled',
       /** The toast's way to the drafts: the calendar's Not scheduled panel. */
       show: 'SHOW',
-      inNotScheduled: 'In Not scheduled, until you put them on a day.',
+      inNotScheduled: 'In Not scheduled, until you drag them onto a day.',
+      /** Drafts that went to several campaigns: one toast each (CON-485). */
+      inCampaign: 'In {{campaign}}',
+      aCampaign: 'a campaign',
       /** Used in the row's source line (CON-470): a fact, not a verdict. */
       used_one: 'Used in {{formatted}} post',
       used_other: 'Used in {{formatted}} posts',
@@ -1187,6 +1193,9 @@ export const en = {
         untitled: 'Untitled post',
         notScheduled: 'Not scheduled',
         failed: 'Couldn’t load the posts made from this idea.',
+        loading: 'Reading its posts…',
+        /** The count said posts, but none came back: deleted since. */
+        empty: 'The posts made from it have been deleted.',
       },
       /**
        * The small form behind COMPILE and DRAFT (CON-470): which platforms,
@@ -1197,8 +1206,12 @@ export const en = {
         compileTitle_other: 'Compile {{formatted}} ideas',
         draftTitle_one: 'Draft {{formatted}} idea',
         draftTitle_other: 'Draft {{formatted}} ideas',
+        /** One idea, named (CON-485): Draft “The kitchen garden”. */
+        compileNamed: 'Compile “{{title}}”',
+        draftNamed: 'Draft “{{title}}”',
         platforms: 'Platforms',
-        fromPlan: 'from the idea’s plan',
+        fromPlan_one: 'from the idea’s plan',
+        fromPlan_other: 'from the ideas’ plan',
         pickOne: 'Pick at least one platform.',
         noPlatforms: 'This campaign has no platforms yet.',
         platformsFailed: 'Couldn’t load the campaign’s platforms.',
@@ -1206,9 +1219,23 @@ export const en = {
         noCampaign:
           'These ideas aren’t filed under one campaign, so each goes to the platform its plan names.',
         howMany: 'How many',
-        perIdea: 'One post per idea, on each platform',
-        together: 'One post from all of them, on each platform',
-        compileNote: 'A planned post holds the theses, with no body yet.',
+        perIdea: 'One post per idea, per platform',
+        together: 'One post from all {{count}}, per platform',
+        /** Under each choice: what it makes (CON-485). */
+        drafts_one: '{{formatted}} draft',
+        drafts_other: '{{formatted}} drafts',
+        when: 'When',
+        /** How many of the ideas have a day planned (CON-485). */
+        datedOf_one:
+          '{{dated}} of {{total}} has a date; the rest stay unscheduled.',
+        datedOf_other:
+          '{{dated}} of {{total}} have a date; the rest stay unscheduled.',
+        result: 'Result',
+        compileResult:
+          'One planned post per platform: the same theses, each with its platform’s type.',
+        compileNote:
+          'Planned posts have no body and no date; WRITE THE POST turns each into a draft.',
+        cancel: 'CANCEL',
         onDay: 'Dated {{date}}, the idea’s day.',
         unscheduled: 'Not scheduled, unless an idea has a day planned.',
         compile: 'COMPILE',
@@ -1220,8 +1247,8 @@ export const en = {
       },
       draftFailed: 'The drafts could not all be written',
       compileFailed: 'Couldn’t compile the idea',
-      draftsKept_one: 'The {{count}} already written was kept.',
-      draftsKept_other: 'The {{count}} already written were kept.',
+      draftsKept_one: 'The {{formatted}} already written was kept.',
+      draftsKept_other: 'The {{formatted}} already written were kept.',
       tooMany: 'Pick up to 10 ideas to compile or draft them',
       noBody: 'No body yet.',
       noBodyHint: 'Write it from the theses, or ask the assistant.',
@@ -2018,9 +2045,17 @@ export const en = {
     density_other: '{{count}} posts on {{date}} — open this week',
 
     /** The right rail's holding pen for posts with no date yet. */
-    notScheduled: 'Not Scheduled Posts',
-    /** On a draft just written from ideas in this tab (CON-470), at the panel's top. */
-    justWritten: 'Just written',
+    notScheduled: 'Not scheduled',
+    /** Under its title (CON-485): what the panel is for. */
+    notScheduledHint: 'Drag a post onto a day to schedule it.',
+    /**
+     * On a draft just written in this tab (CON-470), at the panel's top —
+     * an eyebrow in literal capitals, like the cards' status words.
+     */
+    justWritten: 'JUST WRITTEN',
+    /** A panel row's ideas: "Instagram · Carousel · from 1 idea" (CON-485). */
+    fromIdeas_one: 'from {{formatted}} idea',
+    fromIdeas_other: 'from {{formatted}} ideas',
 
     /**
      * The one control a day offers, in both grids. Capitalised like every
@@ -4109,11 +4144,16 @@ export const en = {
         one: 'Draft',
         writing: 'Writing',
         writingNth: 'Draft {{n}} of {{total}}',
-        title_one: '{{formatted}} draft',
-        title_other: '{{formatted}} drafts',
+        title_one: '{{formatted}} post',
+        title_other: '{{formatted}} posts',
         fromIdeas_one: '{{drafts}} from {{formatted}} idea',
         fromIdeas_other: '{{drafts}} from {{formatted}} ideas',
-        unscheduled: 'none scheduled',
+        /** Opens the calendar's Not scheduled panel (CON-485). */
+        show: 'SHOW',
+        /** A row's day, and why it is that day (CON-485). */
+        notScheduled: 'Not scheduled',
+        datedPlan: '{{date}} · the idea’s plan date',
+        datedAsked: '{{date}} · the day you chose',
         someUnscheduled_one: '{{formatted}} not scheduled',
         someUnscheduled_other: '{{formatted}} not scheduled',
         grounded: 'grounded',

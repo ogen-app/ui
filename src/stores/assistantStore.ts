@@ -18,6 +18,7 @@ import { buildViewContext, type ViewContext } from '@/lib/viewContext'
 import { useViewContextStore } from '@/stores/viewContextStore'
 import { useAssistantRemovalStore } from '@/stores/assistantRemovalStore'
 import { useAddSourceRequestStore } from '@/stores/addSourceRequestStore'
+import { useJustWrittenStore } from '@/stores/justWrittenStore'
 import { campaignAssistantStateKey } from '@/hooks/useCampaignAssistantState'
 import { campaignKey } from '@/hooks/useCampaigns'
 import type { Campaign } from '@/types/campaigns'
@@ -537,6 +538,10 @@ export const useAssistantStore = create<AssistantState>()(
               const campaign =
                 event.post.campaign_id ??
                 (subject.kind === 'campaign' ? subject.campaignId : undefined)
+              // An undated draft waits in Not scheduled, marked on top for
+              // the tab like one written from the Ideas list (CON-485).
+              if (!event.post.scheduled_at)
+                useJustWrittenStore.getState().add([event.post.id])
               if (!campaign) break
               if (
                 subject.kind === 'campaign' &&

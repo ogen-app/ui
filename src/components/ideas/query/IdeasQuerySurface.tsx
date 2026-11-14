@@ -78,7 +78,7 @@ import {
   type IdeaPile,
   type IdeaSort,
 } from '@/lib/ideaFilter'
-import type { Idea } from '@/lib/ideas'
+import type { Idea, IdeaPlan } from '@/lib/ideas'
 import { formatNumber } from '@/lib/intl'
 import { queryIdeaIds } from '@/services/api/ideas'
 import { toast } from '@/stores/toastStore'
@@ -307,6 +307,11 @@ export function IdeasQuerySurface({
   // The campaign whose platforms the form offers: the page's, or the one
   // every ticked idea is filed under (CON-470).
   const tickedCampaign = campaignId ?? sharedCampaign(rows, ticked)
+  // What the ticked ideas' plans name, for the form to preset (CON-485).
+  const tickedPlans = useMemo(
+    () => rows.filter((r) => ticked.has(r.id)).map((r) => r.plan ?? {}),
+    [rows, ticked],
+  )
 
   // The assistant can tick rows here, or open one of the smart groups.
   useAssistantRequest((action) => {
@@ -631,6 +636,7 @@ export function IdeasQuerySurface({
           busy={deleting || resolving || compile.isPending || draft.isPending}
           onClear={clearSelection}
           campaignId={tickedCampaign}
+          plans={tickedPlans}
           onCompile={({ platformIds }) =>
             compile.mutate(
               {
@@ -1159,6 +1165,7 @@ function SelectionBar({
   count,
   busy,
   campaignId,
+  plans,
   onClear,
   onDelete,
   onCompile,
@@ -1168,6 +1175,8 @@ function SelectionBar({
   busy: boolean
   /** The ideas' one campaign, whose platforms COMPILE and DRAFT offer. */
   campaignId: string | null
+  /** The ticked ideas' plans, which the form presets from (CON-485). */
+  plans: IdeaPlan[]
   onClear: () => void
   onDelete: () => void
   /** Ideas into a planned post per platform (CON-449/470) — at most ten at a time. */
@@ -1200,6 +1209,7 @@ function SelectionBar({
           verb="compile"
           ideaCount={count}
           campaignId={campaignId}
+          plans={plans}
           disabled={busy || tooMany}
           onSubmit={onCompile}
         >
@@ -1217,6 +1227,7 @@ function SelectionBar({
           verb="draft"
           ideaCount={count}
           campaignId={campaignId}
+          plans={plans}
           disabled={busy || tooMany}
           onSubmit={onDraft}
         >

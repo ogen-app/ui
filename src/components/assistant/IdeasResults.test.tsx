@@ -204,6 +204,38 @@ const compiled: NonNullable<Results['compiled']> = {
 }
 
 describe('compile and draft', () => {
+  it('says why each draft has its day (CON-485)', async () => {
+    await show({
+      drafted: {
+        warnings: [],
+        posts: [
+          {
+            postId: 'p1',
+            title: 'Lemon, olive, sea salt',
+            platformId: 'instagram',
+            campaignId: 'c1',
+            ideaIds: ['i1'],
+            publishDate: '2026-04-24',
+            dateFrom: 'plan',
+            grounding: { mode: 'grounded', sources: [] },
+          },
+          {
+            postId: 'p2',
+            title: 'A pool in the rock',
+            platformId: 'instagram',
+            campaignId: 'c1',
+            ideaIds: ['i2'],
+            publishDate: '2026-04-22',
+            dateFrom: 'asked',
+            grounding: { mode: 'grounded', sources: [] },
+          },
+        ],
+      },
+    })
+    expect(screen.getByText(/the idea’s plan date$/)).toBeTruthy()
+    expect(screen.getByText(/the day you chose$/)).toBeTruthy()
+  })
+
   it('draws the planned post with its type, theses and the ideas it was built from', async () => {
     await show({ compiled })
     expect(screen.getByText('Planned post')).toBeTruthy()
@@ -272,17 +304,19 @@ describe('compile and draft', () => {
       },
       { campaignId: undefined },
     )
-    expect(screen.getByText('2 drafts from 2 ideas')).toBeTruthy()
+    expect(screen.getByText('2 posts from 2 ideas')).toBeTruthy()
     expect(screen.getByText('1 not scheduled')).toBeTruthy()
-    expect(screen.getByText('Instagram · not grounded').className).toContain(
-      'text-warning-ink',
+    // Each row's day on the right: not scheduled, or its date (CON-485).
+    expect(screen.getByText('Not scheduled')).toBeTruthy()
+    expect(screen.getByText(/^Thu,? 26 Nov|^Thu,? Nov 26/).className).toContain(
+      'text-accent-ink',
     )
+    expect(screen.getByText('Not grounded')).toBeTruthy()
     expect(screen.getByText('The rooftop').getAttribute('href')).toBe(
       '/campaigns/c2/posts/p2',
     )
-    expect(screen.getByText('OPEN ALL').getAttribute('href')).toBe(
-      '/campaigns/c2/list?status=draft',
-    )
+    // One undated: SHOW opens the campaign's Not scheduled panel.
+    expect(screen.getByText('SHOW')).toBeTruthy()
   })
 
   it('draws drafts as they are written, then the next as a placeholder', async () => {
