@@ -1280,9 +1280,13 @@ describe('a draft written from ideas (CON-466)', () => {
       postId: 'p1',
       title: 'A pool in the rock',
       platformId: 'instagram',
+      campaignId: 'c2',
+      publishDate: '2026-11-26',
       ideaIds: ['i1'],
       usedAssetIds: [],
       grounding: { mode: 'exploratory' },
+      done: 1,
+      total: 3,
     }
     vi.stubGlobal(
       'fetch',
@@ -1306,17 +1310,28 @@ describe('a draft written from ideas (CON-466)', () => {
       },
       (e) => events.push(e),
     )
+    // Its campaign and its day travel with it (CON-481, bugs 2–3), and the
+    // rail hears it as a draft with how many of the planned are done.
     expect(events).toEqual([
       {
         type: 'post_generated',
         post: expect.objectContaining({
           id: 'p1',
+          campaign_id: 'c2',
           title: 'A pool in the rock',
           platform_id: 'instagram',
-          scheduled_at: null,
         }),
       },
+      {
+        type: 'idea_draft',
+        draft: expect.objectContaining({ postId: 'p1', campaignId: 'c2' }),
+        done: 1,
+        total: 3,
+      },
     ])
+    const scheduled = (events[0] as { post: { scheduled_at: string | null } })
+      .post.scheduled_at
+    expect(scheduled && new Date(scheduled).getDate()).toBe(26)
   })
 })
 

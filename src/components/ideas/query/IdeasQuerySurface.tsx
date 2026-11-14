@@ -201,6 +201,27 @@ export function IdeasQuerySurface({
   }
   const visibleRows =
     shown.rows === rows && shown.expandedId === expandedId ? shown.list : rows
+
+  // An idea the address names (`?idea=`, CON-481) — a result card's row —
+  // opens once it is on the page; the address then lets it go, because what
+  // is open is the reader's from there on. One the page doesn't hold, once
+  // the list has answered, is let go too: there is no read of one idea by id.
+  const named = search.idea
+  const [opened, setOpened] = useState<string | undefined>(undefined)
+  if (named && named !== opened && rows.some((r) => r.id === named)) {
+    setOpened(named)
+    setExpandedId(named)
+  }
+  useEffect(() => {
+    if (!named) return
+    if (opened === named) {
+      document
+        .querySelector(`[data-idea-id="${CSS.escape(named)}"]`)
+        ?.scrollIntoView({ block: 'center' })
+    } else if (query.isFetching || !query.isSuccess) return
+    const { idea: _idea, ...rest } = search
+    onSearchChange(rest)
+  }, [named, opened, query.isFetching, query.isSuccess, search, onSearchChange])
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   const [allMatching, setAllMatching] = useState(false)
   const [resolving, setResolving] = useState(false)
@@ -238,6 +259,7 @@ export function IdeasQuerySurface({
     total,
     rowIds: visibleIds,
     savedViewId: search.view,
+    openId: expandedId,
   })
 
   const change = (next: Partial<IdeaListSearch>) =>

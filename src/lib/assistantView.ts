@@ -34,6 +34,7 @@ function selectionOf(
 }
 
 const FOCUS_CHIP = {
+  idea: 'assistant.chip.focusIdea',
   asset: 'assistant.chip.focusAsset',
   voice: 'assistant.chip.focusVoice',
   audience: 'assistant.chip.focusAudience',
@@ -83,7 +84,8 @@ export function chipText(
       { ...counted(selection.count), screen },
     )
   }
-  const focus = location.focus
+  // An item open inside a list is the focus over the route's (CON-481).
+  const focus = page?.focus ?? location.focus
   if (!focus) return page?.window && windowText ? windowText : null
   if (
     subject.kind === 'post' &&

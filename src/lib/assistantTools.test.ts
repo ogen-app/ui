@@ -106,3 +106,16 @@ describe('the workspace pack’s steps (CON-480)', () => {
     )
   })
 })
+
+describe('drafts from ideas (CON-481)', () => {
+  it('say how many they mean to write, and how many are done', () => {
+    const running = step({
+      tool: 'draftIdeas',
+      endedAt: null,
+      planned: 4,
+      generated: 2,
+    })
+    expect(stepLabel(t, running)).toBe('Writing 4 drafts')
+    expect(stepDetail(t, running)).toBe('2 done')
+  })
+})

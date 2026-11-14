@@ -38,6 +38,30 @@ describe('starters follow the screen', () => {
     expect(screen.queryByText('Find ideas about…')).toBeNull()
   })
 
+  it('asks about a set only when more than one idea is ticked (CON-481)', () => {
+    useViewContextStore.setState({
+      location: { screen: 'ideas' },
+      page: { selection: { kind: 'idea', ids: ['i1'], count: 1 } },
+    })
+    render(<StarterChips kind="workspace" onPick={() => {}} />, {
+      wrapper: QueryWrapper,
+    })
+    expect(screen.getByText('Find similar ideas')).toBeTruthy()
+    expect(screen.queryByText('What do these share?')).toBeNull()
+  })
+
+  it('offers an open idea’s own verbs (CON-481)', () => {
+    useViewContextStore.setState({
+      location: { screen: 'ideas' },
+      page: { focus: { kind: 'idea', id: 'i1' } },
+    })
+    render(<StarterChips kind="workspace" onPick={() => {}} />, {
+      wrapper: QueryWrapper,
+    })
+    expect(screen.getByText('Why does this fit?')).toBeTruthy()
+    expect(screen.getByText('Draft it')).toBeTruthy()
+  })
+
   it('falls back to the thread’s own on a screen with none', () => {
     useViewContextStore.setState({ location: { screen: 'post' } })
     render(<StarterChips kind="post" onPick={() => {}} />, {

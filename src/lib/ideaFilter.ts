@@ -139,7 +139,9 @@ export type IdeaListSearch = Partial<
     | 'pile'
     | 'sort'
     | 'group'
-    | 'view',
+    | 'view'
+    /** An idea to open on arrival (CON-481); never sent to the endpoint. */
+    | 'idea',
     string
   >
 >
@@ -234,6 +236,8 @@ export function parseIdeaListSearch(
   // The smart group open, by id — ours, never sent to the list endpoint.
   if (typeof raw.view === 'string' && raw.view.trim())
     out.view = raw.view.trim()
+  if (typeof raw.idea === 'string' && raw.idea.trim())
+    out.idea = raw.idea.trim()
   return out
 }
 
@@ -479,7 +483,7 @@ export const CREATED_PRESETS = UPDATED_PRESETS
 
 /** The parts of a search a smart group stores: the filter, the sort, the grouping. */
 const VIEW_KEYS = (search: IdeaListSearch): IdeaListSearch => {
-  const { pile: _pile, view: _view, ...rest } = search
+  const { pile: _pile, view: _view, idea: _idea, ...rest } = search
   return rest
 }
 

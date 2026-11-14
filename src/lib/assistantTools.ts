@@ -157,6 +157,9 @@ export function stepLabel(t: TFunction, step: AssistantStep): string {
       ? describeDetail(t, step.tool ?? '', step.detail)
       : null
   if (detailed) return detailed
+  // Drafts from ideas say how many they mean to write (CON-481).
+  if (step.tool === 'draftIdeas' && step.planned && step.endedAt === null)
+    return t('assistant.tool.draftIdeas.runningCount', counted(step.planned))
   return describeTool(
     t,
     step.tool ?? '',
@@ -278,6 +281,8 @@ export function stepDetail(
   step: AssistantStep,
 ): string | undefined {
   if (step.failed) return t('assistant.step.failed')
+  if (step.generated && step.planned)
+    return t('assistant.step.done', counted(step.generated))
   if (step.generated)
     return t('assistant.step.generated', counted(step.generated))
   if (!step.progress) return undefined

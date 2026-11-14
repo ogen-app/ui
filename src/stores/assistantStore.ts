@@ -117,6 +117,11 @@ type TurnOutcome = 'answered' | 'failed' | 'cancelled'
 
 type AssistantState = {
   threads: Record<string, AssistantThread>
+  /**
+   * Drafts streamed by a thread that isn't their campaign's own (CON-481),
+   * by campaign: the workspace thread drafting from ideas.
+   */
+  streamedElsewhere: Record<string, StreamedPost[]>
   /** The thread the panel is showing, or null for the thread list. */
   activeThreadId: string | null
   /**
@@ -427,6 +432,9 @@ export const useAssistantStore = create<AssistantState>()(
         let touched: Touched[] | null = null
         // Changes to the screen, in order, applied once the turn completes.
         let uiActions: UIAction[] = []
+        // Campaigns this turn streamed drafts into from outside their own
+        // thread, cleared with the turn (CON-481).
+        const elsewhere = new Set<string>()
 
         const onEvent = (event: AssistantStreamEvent) => {
           const now = performance.now()
@@ -451,26 +459,45 @@ export const useAssistantStore = create<AssistantState>()(
               patchLastTurn(threadId, (t) => ({ ...t, content: '' }))
               break
 
-            case 'post_generated':
-              // Already persisted server-side — merged into the campaign's
-              // post list so drafts appear on the calendar as they land.
-              if (subject.kind !== 'campaign') break
-              set((s) => {
-                const current = s.threads[threadId]
-                if (!current) return s
-                return {
-                  threads: {
-                    ...s.threads,
-                    [threadId]: {
-                      ...current,
-                      streamedPosts: upsertPost(
-                        current.streamedPosts,
-                        event.post,
-                      ),
+            case 'post_generated': {
+              // Already persisted server-side — merged into its campaign's
+              // post list so drafts appear on the calendar as they land. A
+              // campaign thread's own; any other thread's, by the campaign the
+              // event names (CON-481).
+              const campaign =
+                subject.kind === 'campaign'
+                  ? subject.campaignId
+                  : event.post.campaign_id
+              if (!campaign) break
+              if (subject.kind === 'campaign') {
+                set((s) => {
+                  const current = s.threads[threadId]
+                  if (!current) return s
+                  return {
+                    threads: {
+                      ...s.threads,
+                      [threadId]: {
+                        ...current,
+                        streamedPosts: upsertPost(
+                          current.streamedPosts,
+                          event.post,
+                        ),
+                      },
                     },
+                  }
+                })
+              } else {
+                elsewhere.add(campaign)
+                set((s) => ({
+                  streamedElsewhere: {
+                    ...s.streamedElsewhere,
+                    [campaign]: upsertPost(
+                      s.streamedElsewhere[campaign] ?? [],
+                      event.post,
+                    ),
                   },
-                }
-              })
+                }))
+              }
               patchLastTurn(threadId, (t) => {
                 const steps = (t.steps ?? []).slice()
                 const idx = lastOpenToolIndex(steps)
@@ -480,6 +507,33 @@ export const useAssistantStore = create<AssistantState>()(
                   generated: (steps[idx].generated ?? 0) + 1,
                 }
                 return { ...t, steps }
+              })
+              break
+            }
+
+            case 'idea_draft':
+              // Drawn in the rail as it is written (CON-481), and the step
+              // counts it against the plan: "Writing 4 drafts · 2 done".
+              patchLastTurn(threadId, (t) => {
+                const live = t.liveDrafts ?? { posts: [], done: 0, total: 0 }
+                const steps = (t.steps ?? []).slice()
+                const idx = lastOpenToolIndex(steps)
+                if (idx >= 0 && event.total > 0)
+                  steps[idx] = { ...steps[idx], planned: event.total }
+                return {
+                  ...t,
+                  steps,
+                  liveDrafts: {
+                    posts: [
+                      ...live.posts.filter(
+                        (p) => p.postId !== event.draft.postId,
+                      ),
+                      event.draft,
+                    ],
+                    done: Math.max(live.done, event.done),
+                    total: Math.max(live.total, event.total),
+                  },
+                }
               })
               break
 
@@ -516,6 +570,20 @@ export const useAssistantStore = create<AssistantState>()(
                       }
                     : s,
                 ),
+                // A refusal with a code gets a card of its own (CON-481).
+                ...(event.code
+                  ? {
+                      refusals: [
+                        ...(t.refusals ?? []),
+                        {
+                          tool:
+                            (t.steps ?? []).find((s) => s.ref === event.ref)
+                              ?.tool ?? '',
+                          code: event.code,
+                        },
+                      ],
+                    }
+                  : {}),
               }))
               break
 
@@ -652,11 +720,18 @@ export const useAssistantStore = create<AssistantState>()(
           runners.delete(threadId)
           endLocalRun()
           patchThread(threadId, { streamedPosts: [] })
+          if (elsewhere.size > 0)
+            set((s) => {
+              const rest = { ...s.streamedElsewhere }
+              for (const id of elsewhere) delete rest[id]
+              return { streamedElsewhere: rest }
+            })
         }
       }
 
       return {
         threads: {},
+        streamedElsewhere: {},
         activeThreadId: null,
         currentThreadId: null,
         prefillRequest: null,
@@ -756,6 +831,7 @@ export const useAssistantStore = create<AssistantState>()(
           runners.clear()
           set({
             threads: {},
+            streamedElsewhere: {},
             activeThreadId: null,
             currentThreadId: null,
             prefillRequest: null,
@@ -1155,10 +1231,18 @@ export function selectCampaignRunning(campaignId: string) {
 
 const NO_POSTS: StreamedPost[] = []
 
-/** Drafts the campaign's running turn has persisted but not yet refetched. */
+/**
+ * Drafts a running turn has persisted for the campaign but not yet refetched:
+ * its own thread's, else another thread's that named it (CON-481). One list
+ * or the other, never a new array, so the selector stays stable.
+ */
 export function selectStreamedPosts(campaignId: string) {
-  return (state: AssistantState): StreamedPost[] =>
-    state.threads[`campaign:${campaignId}`]?.streamedPosts ?? NO_POSTS
+  return (state: AssistantState): StreamedPost[] => {
+    const own = state.threads[`campaign:${campaignId}`]?.streamedPosts
+    return own && own.length > 0
+      ? own
+      : (state.streamedElsewhere[campaignId] ?? own ?? NO_POSTS)
+  }
 }
 
 function upsertPost(posts: StreamedPost[], post: StreamedPost): StreamedPost[] {

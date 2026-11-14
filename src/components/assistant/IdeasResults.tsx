@@ -2,7 +2,10 @@ import { Fragment, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
+import { LightbulbIcon } from '@phosphor-icons/react'
 import { FitSection } from '@/components/ideas/card/IdeaCardParts'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useCampaignNames } from '@/hooks/useCampaignNames'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { startOfDay } from '@/lib/assetFilter'
 import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
@@ -11,31 +14,40 @@ import { cn } from '@/lib/styles'
 import { useAssistantStore } from '@/stores/assistantStore'
 import type { PostStatus } from '@/types/posts'
 import type {
+  CompiledPost,
+  DraftedIdeaPost,
   IdeaBrief,
+  IdeaPlanBrief,
   IdeasChanged,
   IdeasResults as Results,
+  IdeasShared,
   UndoState,
 } from '@/types/assistant'
-import { ResultBlock, ResultRow, SourcesLine } from './blocks'
+import {
+  ResultBlock,
+  ResultRow,
+  SourcesLine,
+  TEXT_ACTION_CLASS,
+  TextAction,
+} from './blocks'
 import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
 
 /** Rows a list card shows before it sums up the rest. */
 const LIST_ROWS = 8
 
-const LINK =
-  'shrink-0 text-xs font-medium tracking-[0.03em] text-secondary-foreground hover:text-foreground'
-
 /**
- * What the ideas pack read or changed this turn (CON-465/466), one card each:
- * the ideas found, the verdicts given, a move or delete, a compiled planned
- * post, the drafts written, why an idea fits, an edit, similar ideas, what a
- * selection shares, duplicates and a merge. Every change that can be put back
- * carries UNDO.
+ * What the ideas pack read or changed this turn (CON-465/466, drawn as
+ * CON-481 has them), one card each: the ideas found, the verdicts given, a
+ * move or delete, a compiled planned post, the drafts written, why an idea
+ * fits, an edit, similar ideas, what a selection shares, duplicates and a
+ * merge. Every change that can be put back carries UNDO, and every idea row
+ * opens its idea (`?idea=` on the Ideas list).
  */
 export function IdeasResults({
   threadId,
   turnId,
   campaignId,
+  findFilter,
   results: r,
   undoStates,
 }: {
@@ -43,6 +55,8 @@ export function IdeasResults({
   turnId: string
   /** The thread's campaign: where its ideas and drafts open. */
   campaignId?: string
+  /** What `findIdeas` was asked, in the Ideas list's syntax: SHOW ON SCREEN. */
+  findFilter?: string
   results: Results
   undoStates: Record<string, UndoState>
 }) {
@@ -53,13 +67,25 @@ export function IdeasResults({
     onUndo: (undoId) => void undo(threadId, turnId, undoId),
   }
   const entries: [string, ReactNode][] = [
-    ['found', r.found && <FoundCard found={r.found} campaignId={campaignId} />],
+    [
+      'found',
+      r.found && (
+        <FoundCard
+          found={r.found}
+          campaignId={campaignId}
+          filter={findFilter}
+          threadId={threadId}
+          turnId={turnId}
+        />
+      ),
+    ],
     [
       'decided',
       r.decided && (
         <ResultBlock
           status={t('assistant.ideas.decided.word')}
           title={verdictLine(t, r.decided.idea)}
+          meta={backOn(t, r.decided.idea.verdict, r.decided.idea.remindAt)}
           action={<UndoAction t={t} undoId={r.decided.undoId} undo={u} />}
         >
           <UndoNote t={t} undoId={r.decided.undoId} undo={u} />
@@ -68,15 +94,7 @@ export function IdeasResults({
     ],
     [
       'decidedMany',
-      r.decidedMany && (
-        <ChangedCard
-          t={t}
-          word={t('assistant.ideas.decided.word')}
-          title={t('assistant.ideas.decided.many', counted(r.decidedMany.done))}
-          change={r.decidedMany}
-          undo={u}
-        />
-      ),
+      r.decidedMany && <TriageCard triage={r.decidedMany} undo={u} />,
     ],
     [
       'moved',
@@ -86,6 +104,7 @@ export function IdeasResults({
           word={t('assistant.ideas.moved.word')}
           title={t('assistant.ideas.moved.title', counted(r.moved.done))}
           change={r.moved}
+          ideas={r.moved.ideas}
           undo={u}
         />
       ),
@@ -106,38 +125,15 @@ export function IdeasResults({
       'drafted',
       r.drafted && <DraftedCard drafted={r.drafted} campaignId={campaignId} />,
     ],
-    ['idea', r.idea && <IdeaCard read={r.idea} />],
-    [
-      'edited',
-      r.edited && (
-        <ResultBlock
-          status={t('assistant.ideas.edited.word')}
-          title={r.edited.idea.title || t('assistant.ideas.untitled')}
-          meta={changedFields(t, r.edited.changed)}
-          action={<UndoAction t={t} undoId={r.edited.undoId} undo={u} />}
-        >
-          <UndoNote t={t} undoId={r.edited.undoId} undo={u} />
-        </ResultBlock>
-      ),
-    ],
+    ['idea', r.idea && <IdeaCard read={r.idea} campaignId={campaignId} />],
+    ['edited', r.edited && <EditedCard edited={r.edited} undo={u} />],
     ['similar', r.similar && <SimilarCard similar={r.similar} />],
     ['common', r.common && <CommonCard common={r.common} />],
     [
       'duplicates',
       r.duplicates && <DuplicatesCard duplicates={r.duplicates} />,
     ],
-    [
-      'merged',
-      r.merged && (
-        <ResultBlock
-          status={t('assistant.ideas.merged.word')}
-          title={t('assistant.ideas.merged.title', {
-            idea: r.merged.idea.title,
-          })}
-          meta={t('assistant.ideas.merged.removed', counted(r.merged.deleted))}
-        />
-      ),
-    ],
+    ['merged', r.merged && <MergedCard merged={r.merged} />],
   ]
   const blocks = entries.filter(([, node]) => Boolean(node))
   if (blocks.length === 0) return null
@@ -150,189 +146,49 @@ export function IdeasResults({
   )
 }
 
-/** An idea's pile, named as the Ideas list names it. */
-function pileName(t: TFunction, verdict: IdeaBrief['verdict']): string {
-  return verdict ? t(`ideas.verdict.${verdict}`) : t('ideas.pile.waiting')
+type Pile = 'waiting' | 'yes' | 'later' | 'no'
+
+/**
+ * The pile an idea sits in, as the Ideas list counts it: a `later` idea past
+ * its day is woken and back on the desk (bug 6), though its verdict stays.
+ */
+function pileOf(idea: IdeaBrief, now = Date.now()): Pile {
+  if (
+    idea.verdict === 'later' &&
+    idea.remindAt &&
+    Date.parse(idea.remindAt) <= now
+  )
+    return 'waiting'
+  return idea.verdict ?? 'waiting'
+}
+
+/** A pile's name, as the Ideas list names it. */
+function pileName(t: TFunction, pile: Pile): string {
+  return pile === 'waiting'
+    ? t('ideas.pile.waiting')
+    : t(`ideas.verdict.${pile}`)
 }
 
 function verdictLine(t: TFunction, idea: IdeaBrief): string {
   return t('assistant.ideas.decided.title', {
-    pile: pileName(t, idea.verdict),
+    pile: pileName(t, pileOf(idea)),
     idea: idea.title || t('assistant.ideas.untitled'),
   })
 }
 
-function IdeaRow({ idea, aside }: { idea: IdeaBrief; aside?: ReactNode }) {
-  const { t } = useTranslation()
-  return (
-    <ResultRow className="flex items-baseline gap-3 text-sm">
-      <span className="min-w-0 flex-1 truncate text-foreground">
-        {idea.title || t('assistant.ideas.untitled')}
-      </span>
-      {aside}
-      <span
-        className={cn(
-          'shrink-0 text-[12.5px]',
-          idea.verdict === 'yes' ? 'text-accent' : 'text-tertiary-foreground',
-        )}
-      >
-        {pileName(t, idea.verdict)}
-      </span>
-    </ResultRow>
-  )
+/** "back on 1 May", for a `later` that names its day. */
+function backOn(
+  t: TFunction,
+  verdict: string | undefined,
+  remindAt: string | undefined,
+): string | undefined {
+  return verdict === 'later' && remindAt
+    ? t('assistant.ideas.backOn', { day: shortDay(remindAt) })
+    : undefined
 }
 
-function IdeasLink({
-  campaignId,
-  children,
-}: {
-  campaignId?: string
-  children: ReactNode
-}) {
-  return campaignId ? (
-    <Link
-      to="/campaigns/$campaignId/ideas"
-      params={{ campaignId }}
-      className={LINK}
-    >
-      {children}
-    </Link>
-  ) : (
-    <Link to="/ideas" className={LINK}>
-      {children}
-    </Link>
-  )
-}
-
-function FoundCard({
-  found,
-  campaignId,
-}: {
-  found: NonNullable<Results['found']>
-  campaignId?: string
-}) {
-  const { t } = useTranslation()
-  const shown = found.ideas.slice(0, LIST_ROWS)
-  const more = Math.max(found.total, found.ideas.length) - shown.length
-  return (
-    <ResultBlock
-      status={t('assistant.ideas.found.word')}
-      title={
-        found.total === 0
-          ? t('assistant.ideas.found.none')
-          : t('assistant.ideas.found.title', counted(found.total))
-      }
-      action={
-        found.total > 0 ? (
-          <IdeasLink campaignId={campaignId}>
-            {t('assistant.ideas.open')}
-          </IdeasLink>
-        ) : undefined
-      }
-    >
-      {shown.map((idea) => (
-        <IdeaRow key={idea.id} idea={idea} />
-      ))}
-      {more > 0 && (
-        <ResultRow className="text-[12.5px] text-tertiary-foreground">
-          {t('assistant.ideas.more', counted(more))}
-        </ResultRow>
-      )}
-    </ResultBlock>
-  )
-}
-
-/** A bulk change: how many, how many it couldn't, why it stopped, UNDO. */
-function ChangedCard({
-  t,
-  word,
-  title,
-  change,
-  undo,
-}: {
-  t: TFunction
-  word: string
-  title: string
-  change: IdeasChanged
-  undo?: ResultUndo
-}) {
-  return (
-    <ResultBlock
-      status={word}
-      title={title}
-      action={<UndoAction t={t} undoId={change.undoId} undo={undo} />}
-    >
-      {change.failed > 0 && (
-        <ResultRow className="text-[12.5px] text-warning">
-          {t('assistant.ideas.failed', counted(change.failed))}
-        </ResultRow>
-      )}
-      {change.stopped && (
-        <ResultRow className="text-[12.5px] text-warning">
-          {t('assistant.ideas.stopped')}
-        </ResultRow>
-      )}
-      <UndoNote t={t} undoId={change.undoId} undo={undo} />
-    </ResultBlock>
-  )
-}
-
-/**
- * Planned posts compiled from ideas (CON-449): theses, no body, one per
- * platform asked for (CON-470), each saying whether it got a date. UNDO
- * deletes them all while they are as the assistant made them; once someone
- * has changed one the server answers 409, which the undo note words as
- * "changed since".
- */
-function CompiledCard({
-  compiled: c,
-  undo,
-}: {
-  compiled: NonNullable<Results['compiled']>
-  undo: ResultUndo
-}) {
-  const { t } = useTranslation()
-  const { resolve } = usePlatformCatalog()
-  return (
-    <div className="flex flex-col gap-2">
-      <ResultBlock
-        status={t('assistant.ideas.compiled.word', counted(c.posts.length))}
-        title={c.posts[0].title || t('assistant.ideas.untitled')}
-        meta={t('assistant.ideas.compiled.from', counted(c.ideas))}
-        action={<UndoAction t={t} undoId={c.undoId} undo={undo} />}
-      >
-        <ResultRow className="text-[12.5px] text-tertiary-foreground">
-          {t('assistant.ideas.compiled.planned')}
-        </ResultRow>
-        {c.posts.map((p) => (
-          <ResultRow
-            key={p.postId}
-            className="flex items-baseline gap-3 text-[12.5px]"
-          >
-            <span className="min-w-0 flex-1 truncate text-secondary-foreground">
-              {[
-                p.platformId && resolve(p.platformId)?.name,
-                p.date ? dayLabel(p.date) : t('assistant.ideas.notScheduled'),
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </span>
-            {c.campaignId && (
-              <Link
-                to="/campaigns/$campaignId/posts/$postId"
-                params={{ campaignId: c.campaignId, postId: p.postId }}
-                className={LINK}
-              >
-                {t('assistant.ideas.open')}
-              </Link>
-            )}
-          </ResultRow>
-        ))}
-        <UndoNote t={t} undoId={c.undoId} undo={undo} />
-      </ResultBlock>
-      <SourcesLine grounding={c.grounding} />
-    </div>
-  )
+function shortDay(iso: string): string {
+  return formatDate(iso, { day: 'numeric', month: 'short' }) ?? iso
 }
 
 /** A `YYYY-MM-DD` day as the card prints it, read as the local day. */
@@ -345,8 +201,502 @@ function dayLabel(day: string): string {
 }
 
 /**
- * The drafts written from ideas, each with whether it is grounded; the one
- * sources line names everything the grounded ones drew on, or says none was.
+ * An idea on the Ideas list, opened (`?idea=`, CON-481): its campaign's
+ * list, or the workspace's, on the pile that holds it.
+ */
+function IdeaLink({
+  idea,
+  className,
+  children,
+}: {
+  idea: IdeaBrief
+  className?: string
+  children: ReactNode
+}) {
+  const pile = pileOf(idea)
+  const search = {
+    idea: idea.id,
+    ...(pile === 'waiting' ? {} : { pile }),
+  }
+  return idea.campaignId ? (
+    <Link
+      to="/campaigns/$campaignId/ideas"
+      params={{ campaignId: idea.campaignId }}
+      search={search as never}
+      className={className}
+    >
+      {children}
+    </Link>
+  ) : (
+    <Link to="/ideas" search={search as never} className={className}>
+      {children}
+    </Link>
+  )
+}
+
+/** The pile, as a small-caps word in its own ink: the desk amber, a yes teal. */
+function PileWord({ pile }: { pile: Pile }) {
+  const { t } = useTranslation()
+  return (
+    <span
+      className={cn(
+        'shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em]',
+        pile === 'waiting'
+          ? 'text-warning-ink'
+          : pile === 'yes'
+            ? 'text-accent-ink'
+            : 'text-tertiary-foreground',
+      )}
+    >
+      {pileName(t, pile)}
+    </span>
+  )
+}
+
+/**
+ * One idea as a row: the lightbulb, its title — which opens it — wrapping
+ * rather than cut, a detail line under it, and its pile on the right.
+ */
+function IdeaLine({
+  idea,
+  detail,
+  pile = true,
+}: {
+  idea: IdeaBrief
+  detail?: ReactNode
+  pile?: boolean
+}) {
+  const { t } = useTranslation()
+  return (
+    <ResultRow className="flex items-baseline gap-2.5">
+      <LightbulbIcon
+        aria-hidden
+        className="size-3.5 shrink-0 translate-y-0.5 text-tertiary-foreground"
+      />
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <IdeaLink
+          idea={idea}
+          className="text-sm text-foreground hover:underline"
+        >
+          {idea.title || t('assistant.ideas.untitled')}
+        </IdeaLink>
+        {detail && (
+          <span className="text-[12.5px] text-tertiary-foreground">
+            {detail}
+          </span>
+        )}
+      </span>
+      {pile && <PileWord pile={pileOf(idea)} />}
+    </ResultRow>
+  )
+}
+
+/** "and 3 more" under a list cut at `LIST_ROWS` (bug 7). */
+function More({ count }: { count: number }) {
+  const { t } = useTranslation()
+  if (count <= 0) return null
+  return (
+    <p className="pt-2.5 text-[12.5px] text-tertiary-foreground">
+      {t('assistant.ideas.more', counted(count))}
+    </p>
+  )
+}
+
+/** The pile a filter names, when it names one. */
+function filterPile(filter: string | undefined): Pile | undefined {
+  const p = new URLSearchParams(filter ?? '').get('pile')
+  return p === 'waiting' || p === 'yes' || p === 'later' || p === 'no'
+    ? p
+    : undefined
+}
+
+/**
+ * The ideas a question found (CON-481): how many, of the pile's whole when
+ * the filter named one, each with its fit; SHOW ON SCREEN puts the same
+ * filter on the Ideas list, as a screen change with BACK (bug 5).
+ */
+function FoundCard({
+  found,
+  campaignId,
+  filter,
+  threadId,
+  turnId,
+}: {
+  found: NonNullable<Results['found']>
+  campaignId?: string
+  filter?: string
+  threadId: string
+  turnId: string
+}) {
+  const { t } = useTranslation()
+  const run = useAssistantStore((s) => s.runUiAction)
+  const shown = found.ideas.slice(0, LIST_ROWS)
+  const more = Math.max(found.total, found.ideas.length) - shown.length
+  const pile = filterPile(filter)
+  return (
+    <ResultBlock
+      status={t('assistant.ideas.found.word')}
+      title={
+        found.total === 0
+          ? t('assistant.ideas.found.none')
+          : t('assistant.ideas.found.title', counted(found.total))
+      }
+      meta={
+        found.pileTotal !== undefined && pile
+          ? t('assistant.ideas.found.ofPile', {
+              total: formatNumber(found.pileTotal),
+              pile: pileName(t, pile),
+            })
+          : undefined
+      }
+      action={
+        found.total > 0 ? (
+          <TextAction
+            onClick={() =>
+              void run(threadId, turnId, {
+                type: 'set_filter',
+                screen: campaignId ? 'campaign.ideas' : 'ideas',
+                campaignId,
+                filter: filter ?? '',
+              })
+            }
+          >
+            {t('assistant.ideas.found.show')}
+          </TextAction>
+        ) : undefined
+      }
+    >
+      {shown.map((idea) => (
+        <IdeaLine
+          key={idea.id}
+          idea={idea}
+          detail={
+            idea.fitScore !== undefined
+              ? t('assistant.ideas.found.fit', {
+                  score: formatNumber(idea.fitScore),
+                })
+              : undefined
+          }
+        />
+      ))}
+      <More count={more} />
+    </ResultBlock>
+  )
+}
+
+/**
+ * Many verdicts at once (CON-481): which pile they went to and when they come
+ * back, each idea named, and UNDO — whose line says where they went back to.
+ */
+function TriageCard({
+  triage,
+  undo,
+}: {
+  triage: NonNullable<Results['decidedMany']>
+  undo: ResultUndo
+}) {
+  const { t } = useTranslation()
+  const to: Pile | undefined =
+    triage.verdict === 'none' ? 'waiting' : triage.verdict
+  const shown = triage.ideas.slice(0, LIST_ROWS)
+  return (
+    <ResultBlock
+      status={t('assistant.ideas.decided.word')}
+      title={
+        to
+          ? t('assistant.ideas.decided.manyTo', {
+              ...counted(triage.done),
+              pile: pileName(t, to),
+            })
+          : t('assistant.ideas.decided.many', counted(triage.done))
+      }
+      meta={backOn(t, triage.verdict, triage.remindAt)}
+      action={<UndoAction t={t} undoId={triage.undoId} undo={undo} />}
+    >
+      {shown.map((idea) => (
+        <IdeaLine
+          key={idea.id}
+          idea={idea}
+          pile={false}
+          detail={[
+            pileName(t, pileOf(idea)),
+            idea.verdict === 'later' && idea.remindAt
+              ? shortDay(idea.remindAt)
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        />
+      ))}
+      <More count={triage.ideas.length - shown.length} />
+      <Problems t={t} change={triage} />
+      <UndoNote
+        t={t}
+        undoId={triage.undoId}
+        undo={undo}
+        undone={t('assistant.ideas.decided.undone', counted(triage.done))}
+      />
+    </ResultBlock>
+  )
+}
+
+function Problems({ t, change }: { t: TFunction; change: IdeasChanged }) {
+  return (
+    <>
+      {change.failed > 0 && (
+        <ResultRow className="text-[12.5px] text-warning-ink">
+          {t('assistant.ideas.failed', counted(change.failed))}
+        </ResultRow>
+      )}
+      {change.stopped && (
+        <ResultRow className="text-[12.5px] text-warning-ink">
+          {t('assistant.ideas.stopped')}
+        </ResultRow>
+      )}
+    </>
+  )
+}
+
+/** A bulk move or delete: how many, the ideas moved, why it stopped, UNDO. */
+function ChangedCard({
+  t,
+  word,
+  title,
+  change,
+  ideas = [],
+  undo,
+}: {
+  t: TFunction
+  word: string
+  title: string
+  change: IdeasChanged
+  ideas?: IdeaBrief[]
+  undo?: ResultUndo
+}) {
+  const shown = ideas.slice(0, LIST_ROWS)
+  return (
+    <ResultBlock
+      status={word}
+      title={title}
+      action={<UndoAction t={t} undoId={change.undoId} undo={undo} />}
+    >
+      {shown.map((idea) => (
+        <IdeaLine key={idea.id} idea={idea} />
+      ))}
+      <More count={ideas.length - shown.length} />
+      <Problems t={t} change={change} />
+      <UndoNote t={t} undoId={change.undoId} undo={undo} />
+    </ResultBlock>
+  )
+}
+
+/**
+ * A planned post compiled from ideas (CON-449, drawn as CON-481 has it): its
+ * platform, type and date, the theses one per idea, the ideas it was built
+ * from with UNDO, and the sources. UNDO deletes the post while it is as the
+ * assistant made it; once someone has changed it the card says so, and how
+ * to remove it by hand.
+ */
+function CompiledCard({
+  compiled: c,
+  undo,
+}: {
+  compiled: NonNullable<Results['compiled']>
+  undo: ResultUndo
+}) {
+  const { t } = useTranslation()
+  const { resolve } = usePlatformCatalog()
+  const changed = c.undoId ? undo.states[c.undoId] === 'changed' : false
+  const plainType = (slug?: string) => slug?.replace(/[-_]/g, ' ')
+  const meta = (p: CompiledPost) =>
+    p.platformId
+      ? [
+          resolve(p.platformId)?.name,
+          plainType(p.postType),
+          p.date ? dayLabel(p.date) : t('assistant.ideas.noDate'),
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : t('assistant.ideas.compiled.noPlatform')
+  const open = (postId: string) =>
+    c.campaignId ? (
+      <Link
+        to="/campaigns/$campaignId/posts/$postId"
+        params={{ campaignId: c.campaignId, postId }}
+        className={TEXT_ACTION_CLASS}
+      >
+        {t('assistant.ideas.open')}
+      </Link>
+    ) : undefined
+  const first = c.posts[0]
+  return (
+    <ResultBlock
+      status={t('assistant.ideas.compiled.word', counted(c.posts.length))}
+      title={
+        <>
+          {first.title || t('assistant.ideas.untitled')}
+          {changed && (
+            <span className="ml-1.5 text-sm font-normal text-secondary-foreground">
+              {t('assistant.ideas.compiled.editedSince')}
+            </span>
+          )}
+        </>
+      }
+      meta={c.posts.length === 1 ? meta(first) : undefined}
+      action={c.posts.length === 1 ? open(first.postId) : undefined}
+    >
+      {c.posts.length > 1 &&
+        c.posts.map((p) => (
+          <ResultRow
+            key={p.postId}
+            className="flex items-baseline gap-3 text-[12.5px]"
+          >
+            <span className="min-w-0 flex-1 truncate text-secondary-foreground">
+              {meta(p)}
+            </span>
+            {open(p.postId)}
+          </ResultRow>
+        ))}
+      {c.theses.map((th, i) => (
+        <ResultRow key={i} className="flex items-baseline gap-3 text-sm">
+          <span className="w-5 shrink-0 font-mono text-[12px] text-tertiary-foreground">
+            {String(i + 1).padStart(2, '0')}
+          </span>
+          <span className="min-w-0 flex-1 text-foreground">
+            {th.title}
+            {th.points.length > 0 && (
+              <span className="block text-[12.5px] text-tertiary-foreground">
+                {th.points.join(' · ')}
+              </span>
+            )}
+          </span>
+        </ResultRow>
+      ))}
+      {c.builtFrom.length > 0 && (
+        <ResultRow className="flex items-baseline gap-3">
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-sm text-foreground">
+              {t(
+                'assistant.ideas.compiled.builtFrom',
+                counted(c.builtFrom.length),
+              )}
+            </span>
+            <span className="text-[12.5px] text-tertiary-foreground">
+              {c.builtFrom.map((i) => i.title).join(' · ')}
+            </span>
+          </span>
+          <UndoAction t={t} undoId={c.undoId} undo={undo} />
+        </ResultRow>
+      )}
+      <UndoNote
+        t={t}
+        undoId={c.undoId}
+        undo={undo}
+        changed={t('assistant.ideas.compiled.cantUndo')}
+      />
+      <SourcesLine
+        grounding={c.grounding}
+        note={t('assistant.ideas.compiled.fromIdeas', counted(c.ideas))}
+      />
+    </ResultBlock>
+  )
+}
+
+/** Where a draft opens: its own campaign, else the thread's (bug 4). */
+function draftCampaign(
+  p: DraftedIdeaPost,
+  campaignId: string | undefined,
+): string | undefined {
+  return p.campaignId || campaignId
+}
+
+/**
+ * One draft as it is written (CON-481): its title and platform, OPEN, the
+ * start of its body, and where it came from — or that it came from the idea's
+ * own words.
+ */
+function DraftCard({
+  draft,
+  campaignId,
+}: {
+  draft: DraftedIdeaPost
+  campaignId?: string
+}) {
+  const { t } = useTranslation()
+  const { resolve } = usePlatformCatalog()
+  const campaign = draftCampaign(draft, campaignId)
+  return (
+    <ResultBlock
+      status={t('assistant.ideas.drafted.one')}
+      title={draft.title || t('assistant.ideas.untitled')}
+      meta={resolve(draft.platformId)?.name}
+      action={
+        campaign ? (
+          <Link
+            to="/campaigns/$campaignId/posts/$postId"
+            params={{ campaignId: campaign, postId: draft.postId }}
+            className={TEXT_ACTION_CLASS}
+          >
+            {t('assistant.ideas.open')}
+          </Link>
+        ) : undefined
+      }
+    >
+      {draft.excerpt && (
+        <p className="py-2.5 text-sm text-secondary-foreground">
+          {draft.excerpt}
+        </p>
+      )}
+      <SourcesLine
+        grounding={draft.grounding}
+        note={t(
+          'assistant.ideas.drafted.fromIdea',
+          counted(draft.ideaIds.length || 1),
+        )}
+      />
+    </ResultBlock>
+  )
+}
+
+/**
+ * The drafts while they are being written (CON-481): each finished one as a
+ * card, then the next as a placeholder. The turn's summary replaces them.
+ */
+export function LiveDrafts({
+  drafts,
+}: {
+  drafts: { posts: DraftedIdeaPost[]; done: number; total: number }
+}) {
+  const { t } = useTranslation()
+  const writing = Math.max(drafts.done, drafts.posts.length)
+  return (
+    <div className="flex flex-col gap-5">
+      {drafts.posts.map((p) => (
+        <DraftCard key={p.postId} draft={p} />
+      ))}
+      {drafts.total > writing && (
+        <ResultBlock
+          status={t('assistant.ideas.drafted.writing')}
+          title={t('assistant.ideas.drafted.writingNth', {
+            n: formatNumber(writing + 1),
+            total: formatNumber(drafts.total),
+          })}
+        >
+          <div className="flex flex-col gap-2 py-2.5" aria-hidden>
+            <Skeleton className="h-2.5 w-3/5" />
+            <Skeleton className="h-2.5 w-2/5" />
+          </div>
+        </ResultBlock>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The drafts written from ideas, as one summary (CON-481): how many from how
+ * many ideas, OPEN ALL to the campaign's drafts when they share one, and each
+ * draft with its platform and whether it is grounded — amber where it isn't.
+ * A single draft is drawn as its own card.
  */
 function DraftedCard({
   drafted: d,
@@ -357,50 +707,75 @@ function DraftedCard({
 }) {
   const { t } = useTranslation()
   const { resolve } = usePlatformCatalog()
-  const sources = [
-    ...new Map(
-      d.posts.flatMap((p) => p.grounding.sources).map((s) => [s.id, s]),
-    ).values(),
-  ]
-  // Unscheduled is the default (CON-470): a draft is dated only by a day
-  // the user named or one planned on its idea, and each row says which.
+  if (d.posts.length === 1 && d.warnings.length === 0)
+    return <DraftCard draft={d.posts[0]} campaignId={campaignId} />
+  const ideas = new Set(d.posts.flatMap((p) => p.ideaIds)).size
+  const campaigns = new Set(d.posts.map((p) => draftCampaign(p, campaignId)))
+  const only = campaigns.size === 1 ? [...campaigns][0] : undefined
   const unscheduled = d.posts.filter((p) => !p.publishDate).length
   return (
-    <div className="flex flex-col gap-2">
-      <ResultBlock
-        status={t('assistant.ideas.drafted.word')}
-        title={t('assistant.ideas.drafted.title', counted(d.posts.length))}
-        meta={
-          unscheduled === d.posts.length
-            ? t('assistant.ideas.drafted.unscheduled')
-            : unscheduled > 0
-              ? t(
-                  'assistant.ideas.drafted.someUnscheduled',
-                  counted(unscheduled),
-                )
-              : undefined
-        }
-      >
-        {d.posts.map((p) => (
+    <ResultBlock
+      status={t('assistant.ideas.drafted.word')}
+      title={
+        ideas > 0
+          ? t('assistant.ideas.drafted.fromIdeas', {
+              drafts: t(
+                'assistant.ideas.drafted.title',
+                counted(d.posts.length),
+              ),
+              ...counted(ideas),
+            })
+          : t('assistant.ideas.drafted.title', counted(d.posts.length))
+      }
+      meta={
+        unscheduled === d.posts.length
+          ? t('assistant.ideas.drafted.unscheduled')
+          : unscheduled > 0
+            ? t('assistant.ideas.drafted.someUnscheduled', counted(unscheduled))
+            : undefined
+      }
+      action={
+        only ? (
+          <Link
+            to="/campaigns/$campaignId/list"
+            params={{ campaignId: only }}
+            search={{ status: 'draft' } as never}
+            className={TEXT_ACTION_CLASS}
+          >
+            {t('assistant.ideas.drafted.openAll')}
+          </Link>
+        ) : undefined
+      }
+    >
+      {d.posts.map((p) => {
+        const campaign = draftCampaign(p, campaignId)
+        const grounded = p.grounding.mode === 'grounded'
+        return (
           <ResultRow key={p.postId} className="flex items-baseline gap-3">
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="truncate text-sm text-foreground">
-                {p.title || t('assistant.ideas.untitled')}
-              </span>
+              {campaign ? (
+                <Link
+                  to="/campaigns/$campaignId/posts/$postId"
+                  params={{ campaignId: campaign, postId: p.postId }}
+                  className="text-sm text-foreground hover:underline"
+                >
+                  {p.title || t('assistant.ideas.untitled')}
+                </Link>
+              ) : (
+                <span className="text-sm text-foreground">
+                  {p.title || t('assistant.ideas.untitled')}
+                </span>
+              )}
               <span
                 className={cn(
                   'text-[12.5px]',
-                  p.grounding.mode === 'grounded'
-                    ? 'text-tertiary-foreground'
-                    : 'text-warning',
+                  grounded ? 'text-tertiary-foreground' : 'text-warning-ink',
                 )}
               >
                 {[
                   resolve(p.platformId)?.name,
-                  p.publishDate
-                    ? dayLabel(p.publishDate)
-                    : t('assistant.ideas.notScheduled'),
-                  p.grounding.mode === 'grounded'
+                  p.publishDate ? dayLabel(p.publishDate) : '',
+                  grounded
                     ? t('assistant.ideas.drafted.grounded')
                     : t('assistant.ideas.drafted.notGrounded'),
                 ]
@@ -408,43 +783,34 @@ function DraftedCard({
                   .join(' · ')}
               </span>
             </span>
-            {campaignId && (
-              <Link
-                to="/campaigns/$campaignId/posts/$postId"
-                params={{ campaignId, postId: p.postId }}
-                className={LINK}
-              >
-                {t('assistant.ideas.open')}
-              </Link>
-            )}
           </ResultRow>
-        ))}
-        {d.warnings.length > 0 && (
-          <ResultRow className="text-[12.5px] text-warning">
-            {t('assistant.ideas.drafted.dropped', counted(d.warnings.length))}
-          </ResultRow>
-        )}
-      </ResultBlock>
-      {d.posts.length > 0 && (
-        <SourcesLine
-          grounding={{
-            mode: sources.length > 0 ? 'grounded' : 'exploratory',
-            sources,
-          }}
-        />
+        )
+      })}
+      {d.warnings.length > 0 && (
+        <ResultRow className="text-[12.5px] text-warning-ink">
+          {t('assistant.ideas.drafted.dropped', counted(d.warnings.length))}
+        </ResultRow>
       )}
-    </div>
+    </ResultBlock>
   )
 }
 
 /**
- * Why an idea fits: its angle and rationale in its own words, the fit
- * breakdown as the Ideas list draws it, the page it came from, and the posts
- * already made from it.
+ * Why an idea fits (CON-481): "Fit 82 for Spring reopening", the breakdown
+ * first, then its angle and rationale in its own words, the analysis it came
+ * from — opening the asset on that lens — and the posts made from it.
  */
-function IdeaCard({ read }: { read: NonNullable<Results['idea']> }) {
+function IdeaCard({
+  read,
+  campaignId,
+}: {
+  read: NonNullable<Results['idea']>
+  campaignId?: string
+}) {
   const { t } = useTranslation()
+  const { names } = useCampaignNames()
   const fit = read.fit
+  const score = fit?.score ?? read.idea.fitScore
   const breakdown = fit
     ? {
         lens: fit.lens,
@@ -463,12 +829,37 @@ function IdeaCard({ read }: { read: NonNullable<Results['idea']> }) {
         ),
       }
     : undefined
+  const scoredFor = fit?.campaignId
+    ? (names.get(fit.campaignId) ?? t('assistant.ideas.idea.aCampaign'))
+    : t('assistant.ideas.idea.workspace')
+  const lens = read.lens?.campaignId
+    ? (read.lens.campaignName ??
+      names.get(read.lens.campaignId) ??
+      t('assistant.ideas.idea.aCampaign'))
+    : t('assistant.ideas.idea.workspace')
+  const asset = read.sourceAsset
   return (
     <ResultBlock
       status={t('assistant.ideas.idea.word')}
-      title={read.idea.title || t('assistant.ideas.untitled')}
-      meta={pileName(t, read.idea.verdict)}
+      title={
+        score !== undefined
+          ? t('assistant.ideas.idea.fitFor', {
+              score: formatNumber(score),
+              scope: scoredFor,
+            })
+          : read.idea.title || t('assistant.ideas.untitled')
+      }
+      meta={score !== undefined ? read.idea.title : undefined}
     >
+      {breakdown && score !== undefined && (
+        <div className="py-2.5">
+          <FitSection
+            idea={{ fitScore: score, fitBreakdown: breakdown }}
+            scoredFor={null}
+            compact
+          />
+        </div>
+      )}
       {read.angle && (
         <Labelled label={t('assistant.ideas.idea.angle')}>
           {read.angle}
@@ -479,37 +870,48 @@ function IdeaCard({ read }: { read: NonNullable<Results['idea']> }) {
           {read.rationale}
         </Labelled>
       )}
-      {breakdown && (
-        <div className="py-2.5">
-          <FitSection
-            idea={{
-              fitScore: fit?.score ?? read.idea.fitScore,
-              fitBreakdown: breakdown,
-            }}
-            scoredFor={null}
-          />
-        </div>
-      )}
-      {read.sourceAsset && (
-        <ResultRow className="flex items-baseline gap-3 text-[12.5px]">
-          <span className="min-w-0 flex-1">
-            <span className="text-tertiary-foreground">
+      {asset && (
+        <ResultRow className="flex items-baseline gap-3">
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-sm text-foreground">
               {t('assistant.ideas.idea.from')}
-            </span>{' '}
-            <span className="text-foreground">{read.sourceAsset.title}</span>
+            </span>
+            <span className="text-[12.5px] text-tertiary-foreground">
+              {t('assistant.ideas.idea.fromLens', { asset: asset.title, lens })}
+            </span>
             {read.analysisGist && (
-              <span className="block text-tertiary-foreground">
+              <span className="text-[12.5px] text-tertiary-foreground">
                 {read.analysisGist}
               </span>
             )}
           </span>
-          <Link
-            to="/assets/$assetId"
-            params={{ assetId: read.sourceAsset.id }}
-            className={LINK}
-          >
-            {t('assistant.ideas.open')}
-          </Link>
+          {campaignId ? (
+            <Link
+              to="/campaigns/$campaignId/assets/$assetId"
+              params={{ campaignId, assetId: asset.id }}
+              search={
+                (read.lens?.campaignId
+                  ? { lens: read.lens.campaignId }
+                  : {}) as never
+              }
+              className={TEXT_ACTION_CLASS}
+            >
+              {t('assistant.ideas.open')}
+            </Link>
+          ) : (
+            <Link
+              to="/assets/$assetId"
+              params={{ assetId: asset.id }}
+              search={
+                (read.lens?.campaignId
+                  ? { lens: read.lens.campaignId }
+                  : {}) as never
+              }
+              className={TEXT_ACTION_CLASS}
+            >
+              {t('assistant.ideas.open')}
+            </Link>
+          )}
         </ResultRow>
       )}
       {read.posts.map((p) => (
@@ -534,14 +936,109 @@ function IdeaCard({ read }: { read: NonNullable<Results['idea']> }) {
 
 function Labelled({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <ResultRow className="flex flex-col gap-0.5 text-sm">
-      <span className="text-[12px] text-tertiary-foreground">{label}</span>
-      <span className="text-foreground">{children}</span>
+    <ResultRow className="flex flex-col gap-0.5">
+      <span className="text-sm text-foreground">{label}</span>
+      <span className="text-[12.5px] text-secondary-foreground">
+        {children}
+      </span>
     </ResultRow>
   )
 }
 
-/** The fields an edit changed, in words; a plan field by its own name. */
+/** A plan in words: "Instagram · carousel", or that nothing is planned. */
+function planLine(
+  t: TFunction,
+  plan: IdeaPlanBrief | undefined,
+  platformName: (slug: string) => string,
+): string {
+  const parts = [
+    plan?.platformId ? platformName(plan.platformId) : '',
+    plan?.postType ? plan.postType.replace(/[-_]/g, ' ') : '',
+    plan?.targetDate ? dayLabel(plan.targetDate) : '',
+  ].filter(Boolean)
+  return parts.length > 0
+    ? parts.join(' · ')
+    : t('assistant.ideas.edited.noPlan')
+}
+
+/**
+ * An edit (CON-481): each field it changed, the old value struck through over
+ * the new one, and UNDO. A plan field is the plan as a whole, as the idea
+ * reads it.
+ */
+function EditedCard({
+  edited,
+  undo,
+}: {
+  edited: NonNullable<Results['edited']>
+  undo: ResultUndo
+}) {
+  const { t } = useTranslation()
+  const { resolve } = usePlatformCatalog()
+  const name = (slug: string) => resolve(slug)?.name ?? slug
+  const before = edited.before
+  const titleChanged = edited.changed.includes('title')
+  const noteChanged = edited.changed.includes('note')
+  const planChanged = edited.changed.some(
+    (f) =>
+      f.startsWith('plan') ||
+      ['platformId', 'postType', 'phaseId', 'targetDate'].includes(f),
+  )
+  const field = (
+    label: string,
+    from: string | undefined,
+    to: string | undefined,
+  ) => (
+    <ResultRow className="flex flex-col gap-0.5">
+      <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-tertiary-foreground">
+        {label}
+      </span>
+      {from !== undefined && (
+        <s className="text-[12.5px] text-tertiary-foreground">{from}</s>
+      )}
+      {to !== undefined && (
+        <span className="text-sm text-foreground">{to}</span>
+      )}
+    </ResultRow>
+  )
+  return (
+    <ResultBlock
+      status={t('assistant.ideas.edited.word')}
+      title={edited.idea.title || t('assistant.ideas.untitled')}
+      action={<UndoAction t={t} undoId={edited.undoId} undo={undo} />}
+    >
+      {before ? (
+        <>
+          {titleChanged &&
+            field(
+              t('assistant.ideas.edited.fields.title'),
+              before.title,
+              edited.idea.title,
+            )}
+          {noteChanged &&
+            field(
+              t('assistant.ideas.edited.fields.note'),
+              before.note || t('assistant.ideas.edited.empty'),
+              undefined,
+            )}
+          {planChanged &&
+            field(
+              t('assistant.ideas.edited.fields.plan'),
+              planLine(t, before.plan, name),
+              planLine(t, edited.idea.plan, name),
+            )}
+        </>
+      ) : (
+        <ResultRow className="text-[12.5px] text-tertiary-foreground">
+          {changedFields(t, edited.changed)}
+        </ResultRow>
+      )}
+      <UndoNote t={t} undoId={edited.undoId} undo={undo} />
+    </ResultBlock>
+  )
+}
+
+/** The fields an edit changed, in words, for a server that sent no `before`. */
 function changedFields(t: TFunction, fields: string[]): string | undefined {
   const words = fields.map((f) => {
     switch (f) {
@@ -570,6 +1067,30 @@ function changedFields(t: TFunction, fields: string[]): string | undefined {
     : undefined
 }
 
+/**
+ * An edit the server refused because the idea came from an analysis
+ * (`idea_read_only`, bug 9): NOT CHANGED, and what can change instead.
+ */
+export function IdeaReadOnly() {
+  const { t } = useTranslation()
+  return (
+    <ResultBlock
+      status={t('assistant.ideas.readOnly.word')}
+      tone="warning"
+      title={t('assistant.ideas.readOnly.title')}
+    >
+      <ResultRow className="flex flex-col gap-0.5">
+        <span className="text-sm text-foreground">
+          {t('assistant.ideas.readOnly.why')}
+        </span>
+        <span className="text-[12.5px] text-tertiary-foreground">
+          {t('assistant.ideas.readOnly.instead')}
+        </span>
+      </ResultRow>
+    </ResultBlock>
+  )
+}
+
 /** Ideas like one, each with the server's reasons it matched. */
 function SimilarCard({
   similar,
@@ -577,6 +1098,7 @@ function SimilarCard({
   similar: NonNullable<Results['similar']>
 }) {
   const { t } = useTranslation()
+  const shown = similar.items.slice(0, LIST_ROWS)
   return (
     <ResultBlock
       status={t('assistant.ideas.similar.word')}
@@ -585,102 +1107,104 @@ function SimilarCard({
           ? t('assistant.ideas.similar.none')
           : t('assistant.ideas.similar.title', counted(similar.items.length))
       }
-      meta={similar.title || undefined}
     >
-      {similar.items.slice(0, LIST_ROWS).map((s) => (
-        <ResultRow key={s.idea.id} className="flex flex-col gap-0.5">
-          <span className="flex items-baseline gap-3 text-sm">
-            <span className="min-w-0 flex-1 truncate text-foreground">
-              {s.idea.title || t('assistant.ideas.untitled')}
-            </span>
-            <span
-              className={cn(
-                'shrink-0 text-[12.5px]',
-                s.idea.verdict === 'yes'
-                  ? 'text-accent'
-                  : 'text-tertiary-foreground',
-              )}
-            >
-              {pileName(t, s.idea.verdict)}
-            </span>
-          </span>
-          {s.why.length > 0 && (
-            <span className="text-[12.5px] text-tertiary-foreground">
-              {s.why.join(' · ')}
-            </span>
-          )}
-        </ResultRow>
+      {shown.map((s) => (
+        <IdeaLine
+          key={s.idea.id}
+          idea={s.idea}
+          detail={s.why.length > 0 ? s.why.join(' · ') : undefined}
+        />
       ))}
+      <More count={similar.items.length - shown.length} />
+      {similar.items.length > 0 && (
+        <p className="border-t border-border pt-2.5 text-[12.5px] text-tertiary-foreground">
+          {t('assistant.ideas.similar.note')}
+        </p>
+      )}
     </ResultBlock>
   )
 }
 
-const SHARED_LABEL = {
-  assets: 'assistant.ideas.common.assets',
-  lenses: 'assistant.ideas.common.lenses',
-  campaigns: 'assistant.ideas.common.campaigns',
-  platforms: 'assistant.ideas.common.platforms',
-  postTypes: 'assistant.ideas.common.postTypes',
-  phases: 'assistant.ideas.common.phases',
-  origins: 'assistant.ideas.common.origins',
-  terms: 'assistant.ideas.common.terms',
+/** The kinds the card shows, in its order; the rest are left to the model. */
+const SHARED_SHOWN = ['lenses', 'assets'] as const
+
+const SPLIT_FIELDS = {
+  campaign: 'assistant.ideas.common.split.campaign',
+  lens: 'assistant.ideas.common.split.lens',
+  platform: 'assistant.ideas.common.split.platform',
+  postType: 'assistant.ideas.common.split.postType',
+  phase: 'assistant.ideas.common.split.phase',
 } as const
 
 /**
- * What a selection shares: per kind, each value and how many of the ideas
- * carry it — all of them in the foreground, some of them quieter.
+ * What a selection shares (CON-481): "3 ideas, one thread · the spa", the
+ * angle they take, the lens and the sources with how many carry each, and —
+ * in amber, the thing to settle before compiling — where they split.
  */
 function CommonCard({ common }: { common: NonNullable<Results['common']> }) {
   const { t } = useTranslation()
   const { resolve } = usePlatformCatalog()
   const n = common.ideas.length
-  const name = (kind: string, value: string, label: string) => {
-    if (kind === 'platforms') return resolve(value)?.name ?? label
-    if (kind === 'origins')
-      return value === 'asset_analysis'
-        ? t('assistant.ideas.common.fromAnalysis')
-        : value === 'manual'
-          ? t('assistant.ideas.common.byHand')
-          : label
-    return label
-  }
+  const value = (v: IdeasShared) =>
+    t('assistant.ideas.common.value', {
+      value: v.label,
+      ...counted(v.ideaIds.length),
+      of: formatNumber(n),
+    })
+  const shared = SHARED_SHOWN.flatMap((kind) => {
+    const s = common.shared.find((x) => x.kind === kind)
+    return s ? [{ ...s, kind }] : []
+  })
+  const nothing = !common.theme && !common.angle && shared.length === 0
   return (
     <ResultBlock
       status={t('assistant.ideas.common.word')}
       title={
-        common.shared.length === 0
+        nothing
           ? t('assistant.ideas.common.nothing', counted(n))
           : t('assistant.ideas.common.title', counted(n))
       }
+      meta={common.theme}
     >
-      {common.shared.map((s) => (
-        <ResultRow key={s.kind} className="flex flex-col gap-0.5 text-sm">
-          <span className="text-[12px] text-tertiary-foreground">
-            {t(
-              SHARED_LABEL[s.kind as keyof typeof SHARED_LABEL] ??
-                'assistant.ideas.common.other',
-            )}
-          </span>
-          <span className="flex flex-wrap gap-x-2">
-            {s.values.map((v) => (
-              <span
-                key={v.value}
-                className={
-                  v.ideaIds.length >= n
-                    ? 'text-foreground'
-                    : 'text-secondary-foreground'
-                }
-              >
-                {t('assistant.ideas.common.value', {
-                  value: name(s.kind, v.value, v.label),
-                  ...counted(v.ideaIds.length),
-                  of: formatNumber(n),
-                })}
-              </span>
-            ))}
-          </span>
-        </ResultRow>
+      {common.angle && (
+        <Labelled label={t('assistant.ideas.common.angle')}>
+          {common.angle}
+        </Labelled>
+      )}
+      {shared.map((s) => (
+        <Labelled key={s.kind} label={t(`assistant.ideas.common.${s.kind}`)}>
+          {s.values.map(value).join(' · ')}
+        </Labelled>
       ))}
+      {common.splits.length > 0 && (
+        <ResultRow className="flex flex-col gap-0.5">
+          <span className="text-sm text-foreground">
+            {t('assistant.ideas.common.splitTitle')}
+          </span>
+          {common.splits.map((sp) => (
+            <span key={sp.field} className="text-[12.5px] text-warning-ink">
+              {t(
+                SPLIT_FIELDS[sp.field as keyof typeof SPLIT_FIELDS] ??
+                  'assistant.ideas.common.split.other',
+                {
+                  values: formatList(
+                    sp.values.map((v) =>
+                      t('assistant.ideas.common.value', {
+                        value:
+                          sp.field === 'platform'
+                            ? (resolve(v.value)?.name ?? v.label)
+                            : v.label,
+                        ...counted(v.ideaIds.length),
+                        of: formatNumber(n),
+                      }),
+                    ),
+                  ),
+                },
+              )}
+            </span>
+          ))}
+        </ResultRow>
+      )}
     </ResultBlock>
   )
 }
@@ -707,25 +1231,53 @@ function DuplicatesCard({
         const others = g.ideas.filter((i) => i !== keep)
         if (!keep) return null
         return (
-          <ResultRow key={g.keepId} className="flex flex-col gap-0.5">
-            <span className="flex items-baseline gap-3 text-sm">
-              <span className="min-w-0 flex-1 truncate text-foreground">
-                {keep.title || t('assistant.ideas.untitled')}
-              </span>
-              <span className="shrink-0 font-mono text-[12px] text-tertiary-foreground">
-                {formatNumber(g.similarity, { maximumFractionDigits: 2 })}
-              </span>
-            </span>
-            <span className="text-[12.5px] text-tertiary-foreground">
-              {t('assistant.ideas.duplicates.with', {
-                ideas: formatList(
-                  others.map((i) => i.title || t('assistant.ideas.untitled')),
-                ),
-              })}
-            </span>
-          </ResultRow>
+          <IdeaLine
+            key={g.keepId}
+            idea={keep}
+            pile={false}
+            detail={t('assistant.ideas.duplicates.with', {
+              ideas: formatList(
+                others.map((i) => i.title || t('assistant.ideas.untitled')),
+              ),
+              alike: formatNumber(g.similarity, { maximumFractionDigits: 2 }),
+            })}
+          />
         )
       })}
+      <More count={duplicates.groups.length - shown.length} />
+    </ResultBlock>
+  )
+}
+
+/**
+ * Merges (CON-481): "2 groups merged · 4 ideas → 2", one row per kept idea.
+ * No UNDO: a merge deletes, and nothing puts a deleted idea back.
+ */
+function MergedCard({ merged }: { merged: NonNullable<Results['merged']> }) {
+  const { t } = useTranslation()
+  const kept = merged.groups.length
+  const before = merged.groups.reduce((n, g) => n + g.deleted + 1, 0)
+  return (
+    <ResultBlock
+      status={t('assistant.ideas.merged.word')}
+      title={t('assistant.ideas.merged.groups', counted(kept))}
+      meta={t('assistant.ideas.merged.ideas', {
+        before: formatNumber(before),
+        after: formatNumber(kept),
+      })}
+    >
+      {merged.groups.map((g) => (
+        <IdeaLine
+          key={g.idea.id}
+          idea={g.idea}
+          detail={t('assistant.ideas.merged.removed', counted(g.deleted))}
+        />
+      ))}
+      {merged.stopped && (
+        <ResultRow className="text-[12.5px] text-warning-ink">
+          {t('assistant.ideas.stopped')}
+        </ResultRow>
+      )}
     </ResultBlock>
   )
 }

@@ -110,10 +110,16 @@ export function SourcesLine({
   grounding,
   label,
   letters,
+  note,
 }: {
   grounding: Grounding
   label?: string
   letters?: Record<string, string>
+  /**
+   * What an ungrounded result was written from, when the card can say better
+   * than "general knowledge" — "the ideas' own words" (CON-481).
+   */
+  note?: string
 }) {
   const { t } = useTranslation()
   const names = groundingAssets(grounding.sources)
@@ -152,7 +158,7 @@ export function SourcesLine({
             {t('assistant.sources.notGrounded')}
           </span>{' '}
           <span className="text-secondary-foreground">
-            {t('assistant.sources.generalKnowledge')}
+            {note ?? t('assistant.sources.generalKnowledge')}
           </span>
         </>
       )}

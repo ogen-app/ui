@@ -591,3 +591,24 @@ describe('IdeasQuerySurface in Spanish', () => {
     expect(screen.queryByText(/high or medium/)).not.toBeInTheDocument()
   })
 })
+
+describe('an idea the address names (CON-481)', () => {
+  it('opens once it is on the page, then lets the address go', async () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    await renderSurface({ idea: 'b' })
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-idea-id="b"]')?.getAttribute('data-open'),
+      ).toBe('true'),
+    )
+    await waitFor(() => expect(onSearchChange).toHaveBeenCalledWith({}))
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
+  })
+
+  it('lets go of one the page doesn’t hold', async () => {
+    await renderSurface({ idea: 'gone', pile: 'yes' })
+    await waitFor(() =>
+      expect(onSearchChange).toHaveBeenCalledWith({ pile: 'yes' }),
+    )
+  })
+})

@@ -49,6 +49,7 @@ import type {
   PostAssistantAction,
   ReviewSeverity,
   StreamedPost,
+  DraftedIdeaPost,
   ThreadSubject,
   Touched,
   ProposalDetails,
@@ -125,7 +126,14 @@ export type AssistantStreamEvent =
       input?: Record<string, unknown>
     }
   /** `ok` is false when the tool refused the call or hit a conflict. */
-  | { type: 'tool_result'; ref?: string; ok: boolean; detail?: StepDetail }
+  | {
+      type: 'tool_result'
+      ref?: string
+      ok: boolean
+      detail?: StepDetail
+      /** A refusal the reply draws a card for (CON-481): `idea_read_only`. */
+      code?: string
+    }
   /**
    * The turn restarted with another pack's tools. The reply streamed before
    * it is void.
@@ -134,6 +142,8 @@ export type AssistantStreamEvent =
   | { type: 'complete'; result: AssistantTurnResult }
   /** A draft the draftPost sub-flow has already persisted. */
   | { type: 'post_generated'; post: StreamedPost }
+  /** A draft written from ideas (CON-481), with how many of the planned. */
+  | { type: 'idea_draft'; draft: DraftedIdeaPost; done: number; total: number }
   /** The assistant cloned the post into a new, already-persisted one (CON-59). */
   | { type: 'clone_complete'; newPostId: string }
   /** A calendar check's findings, each with its fixes (CON-454). */
@@ -1485,6 +1495,7 @@ async function streamTurn(
           ref: optStr(parsed.ref),
           ok: parsed.ok !== false,
           detail: stepDetail(record(parsed.step)),
+          code: optStr(parsed.code),
         })
         return
       case 'pack_loaded':
@@ -1538,13 +1549,28 @@ async function streamTurn(
             type: 'post_generated',
             post: {
               id: drafted.postId,
+              // Its own campaign, so a draft from any thread reaches that
+              // campaign's lists; its day, so a dated one waits on the grid
+              // rather than in Not scheduled (bugs 2–3).
+              campaign_id: drafted.campaignId,
               title: drafted.title,
-              content: '',
+              content: drafted.excerpt ?? '',
               platform_id: drafted.platformId,
               platform_post_type: '',
               campaign_type_phase_id: null,
-              scheduled_at: null,
+              // Midday local: the event names a day, not a time, and midday
+              // keeps it on that day in any zone until the refetch has the
+              // real one.
+              scheduled_at: drafted.publishDate
+                ? new Date(`${drafted.publishDate}T12:00:00`).toISOString()
+                : null,
             },
+          })
+          onEvent({
+            type: 'idea_draft',
+            draft: drafted,
+            done: typeof parsed.done === 'number' ? parsed.done : 0,
+            total: typeof parsed.total === 'number' ? parsed.total : 0,
           })
         }
         return

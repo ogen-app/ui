@@ -194,3 +194,18 @@ describe('the analytics window (CON-479)', () => {
     ).toBe('Now on Analytics · linkedin')
   })
 })
+
+describe('an idea open on the list (CON-481)', () => {
+  it('is what the chip says goes with the message', () => {
+    expect(
+      chipText(
+        t,
+        workspace,
+        { screen: 'ideas' },
+        {
+          focus: { kind: 'idea', id: 'i1' },
+        },
+      ),
+    ).toBe('This idea is open')
+  })
+})

@@ -813,20 +813,34 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   that is the user's to start. An account Settings can't find lands on its
   platform's tile, and the rail row says so. The same address is what the
   expiry emails' `reconnect` link lands on.
-- **The ideas pack's results are cards** (CON-465/466). `complete.results.
-  ideas` holds each tool's last output — found, a verdict and many, moved,
-  deleted, compiled, drafted, `getIdea`, `editIdea`, `similarIdeas`,
-  `ideasInCommon`, duplicates and a merge — and `IdeasResults` draws one card
-  each, with UNDO on every change the server can put back: a verdict,
-  verdicts in bulk, an edit, and a compile (`post_created`, which deletes the
-  planned post while it is as the assistant made it, and is "changed since"
+- **The ideas pack's results are cards** (CON-465/466, drawn as CON-481
+  has them). `complete.results.ideas` holds each tool's last output — found,
+  a verdict and many, moved, deleted, compiled, drafted, `getIdea`,
+  `editIdea`, `similarIdeas`, `ideasInCommon`, duplicates and merges — and
+  `IdeasResults` draws one card each, with UNDO on every change the server
+  can put back: a verdict, verdicts in bulk, an edit, and a compile
+  (`post_created`, which deletes the planned post while it is as the
+  assistant made it, and says "changed since" and how to delete it by hand
   after). A delete and a merge have none. Piles are named as the Ideas list
-  names them. Compile and draft carry `grounding`, drawn in the one
-  sources slot; a draft that isn't grounded says so on its own row. **Drafts
-  made from ideas stream**: `idea_draft_post` is read as the same
-  `post_generated` the draftPost sub-flow gives, so they land on the
-  campaign's lists as they are written. `getIdea`'s fit is drawn by the Ideas
-  list's own `FitSection`.
+  names them, and a `later` idea past its `remindAt` is on the desk. **Every
+  idea row opens its idea**: `?idea=<id>` on the Ideas pages, with its pile,
+  opens it once it is on the page and then leaves the address — there is no
+  read of one idea by id, so one past the first page stays closed (CON-500).
+  FOUND's SHOW ON SCREEN puts the `findIdeas` filter on the list through
+  `runUiAction`, so it is a screen change with BACK. Bulk verdicts name
+  their pile, day and ideas; edits are before → after per field; compiles
+  show their theses and the ideas they were built from; in common is a theme,
+  an angle, the lens and sources with counts, and where they split in amber.
+  An analysed idea's edit refused with `tool_result.code` `idea_read_only`
+  is a NOT CHANGED card. **Drafts made from ideas stream**: each
+  `idea_draft_post` is the `post_generated` the draftPost sub-flow gives —
+  with its date and its own campaign, so a workspace thread's drafts reach
+  that campaign's lists too (`streamedElsewhere`) — and an `idea_draft` the
+  rail draws as a card while the turn runs, "Writing 4 drafts · 2 done", until
+  the summary replaces them. **An idea open on the list is the turn's
+  focus** (`ViewPage.focus`), which is what "this one" means, with its own
+  starters; questions about a set need two ticked. `getIdea`'s fit is drawn
+  by the Ideas list's own `FitSection`, compact in the rail.
 - **A planned post is a post with theses and no body** (CON-449). `planned`
   can only become `draft`, and only by gaining a body — the server moves it,
   so it has no button. Ideas are never posts: on the week calendar an idea

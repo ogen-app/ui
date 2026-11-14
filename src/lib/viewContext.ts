@@ -137,7 +137,18 @@ export type ViewLocation = {
  */
 export type ViewPage = Pick<
   ViewContext,
-  'selection' | 'filter' | 'savedViewId' | 'sort' | 'window' | 'visible'
+  | 'selection'
+  | 'filter'
+  | 'savedViewId'
+  | 'sort'
+  | 'window'
+  | 'visible'
+  /**
+   * An item open inside a list rather than on a route of its own — an idea
+   * expanded on the Ideas list (CON-481). It is the turn's focus, over the
+   * route's.
+   */
+  | 'focus'
 >
 
 /**
