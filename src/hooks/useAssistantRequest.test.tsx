@@ -31,4 +31,26 @@ describe('useAssistantRequest (CON-482)', () => {
     })
     expect(useViewContextStore.getState().request).not.toBeNull()
   })
+  it('acts once what it waits on arrives, so a cold open keeps the request', () => {
+    const report = vi.fn()
+    const { rerender } = renderHook(
+      ({ posts }: { posts?: string[] }) =>
+        useAssistantRequest(() => (posts ? posts.length : false), posts),
+      { initialProps: {} as { posts?: string[] } },
+    )
+    act(() => {
+      useViewContextStore.getState().ask(
+        {
+          type: 'select',
+          screen: 'campaign.list',
+          selection: { kind: 'post', ids: ['a'] },
+        },
+        report,
+      )
+    })
+    expect(report).not.toHaveBeenCalled()
+    rerender({ posts: ['a'] })
+    expect(report).toHaveBeenCalledWith(1)
+    expect(useViewContextStore.getState().request).toBeNull()
+  })
 })

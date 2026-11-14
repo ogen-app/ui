@@ -1458,6 +1458,13 @@ describe('an offer answered from its card (CON-467)', () => {
         ?.tagged,
     ).toMatchObject({ count: 14, undoId: 'u1', add: [], assets: [], more: 0 })
     expect(offerOutcome({ status: 'ok', result: { done: 3 } })).toBeUndefined()
+    // A run that made everything keeps its counts, which a retry's DONE adds.
+    expect(offerOutcome({ status: 'ok', made: 3, total: 3 })).toMatchObject({
+      reoffered: false,
+      made: 3,
+      total: 3,
+      notMade: [],
+    })
     expect(offerOutcome(undefined)).toBeUndefined()
   })
 

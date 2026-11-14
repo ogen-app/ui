@@ -118,11 +118,14 @@ function CampaignListView() {
   useAssistantRequest((action) => {
     if (action.type !== 'select' || action.selection?.kind !== 'post')
       return false
+    // Not before the posts have arrived: a cold open would tick nothing and
+    // spend the request, so it waits for them (`ready`).
+    if (!posts) return false
     const here = new Set(rows.map((p) => p.id))
     const ids = action.selection.ids.filter((id) => here.has(id))
     setSelectedIds(new Set(ids))
     return ids.length
-  })
+  }, posts)
 
   // The assistant sees the filter and the ticked posts (CON-451/472). Every
   // row ticked is the whole match, which goes as the filter rather than ids —

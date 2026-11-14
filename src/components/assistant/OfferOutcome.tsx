@@ -201,19 +201,27 @@ function TaggedCard({
   refused?: { changed: number; of: number }
 }) {
   const state = tagged.undoId ? undo.states[tagged.undoId] : undefined
-  const tags = quoted(t, tagged.add.length > 0 ? tagged.add : tagged.remove)
+  const tags = quoted(t, [...tagged.add, ...tagged.remove])
   const named = tagged.add.length + tagged.remove.length > 0
-  const title = named
-    ? tagged.add.length > 0
-      ? t('assistant.answered.tagged.titleNamed', {
+  // A job that both added and took tags away says both (CON-482).
+  const title =
+    tagged.add.length > 0 && tagged.remove.length > 0
+      ? t('assistant.answered.tagged.titleRetagged', {
           ...counted(tagged.count),
-          tags,
+          added: quoted(t, tagged.add),
+          removed: quoted(t, tagged.remove),
         })
-      : t('assistant.answered.tagged.untagged', {
-          ...counted(tagged.count),
-          tags,
-        })
-    : t('assistant.answered.tagged.title', counted(tagged.count))
+      : tagged.add.length > 0
+        ? t('assistant.answered.tagged.titleNamed', {
+            ...counted(tagged.count),
+            tags,
+          })
+        : named
+          ? t('assistant.answered.tagged.untagged', {
+              ...counted(tagged.count),
+              tags,
+            })
+          : t('assistant.answered.tagged.title', counted(tagged.count))
   return (
     <>
       <ResultBlock
@@ -229,15 +237,20 @@ function TaggedCard({
           <ResultRow key={a.id} className="flex flex-col gap-0.5">
             <span className="text-sm text-foreground">{a.title}</span>
             <span className="text-[12.5px] text-tertiary-foreground">
-              {a.added.length > 0
-                ? t('assistant.answered.tagged.added', {
-                    tags: quoted(t, a.added),
+              {a.added.length > 0 && a.removed.length > 0
+                ? t('assistant.answered.tagged.addedRemoved', {
+                    added: quoted(t, a.added),
+                    removed: quoted(t, a.removed),
                   })
-                : a.removed.length > 0
-                  ? t('assistant.answered.tagged.removed', {
-                      tags: quoted(t, a.removed),
+                : a.added.length > 0
+                  ? t('assistant.answered.tagged.added', {
+                      tags: quoted(t, a.added),
                     })
-                  : t('assistant.answered.tagged.already')}
+                  : a.removed.length > 0
+                    ? t('assistant.answered.tagged.removed', {
+                        tags: quoted(t, a.removed),
+                      })
+                    : t('assistant.answered.tagged.already')}
             </span>
           </ResultRow>
         ))}
