@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { LightbulbIcon } from '@phosphor-icons/react'
@@ -12,9 +12,12 @@ import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import { cn } from '@/lib/styles'
 import { useAssistantStore } from '@/stores/assistantStore'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import type { PostStatus } from '@/types/posts'
 import type {
   CompiledPost,
+  DateFrom,
   DraftedIdeaPost,
   IdeaBrief,
   IdeaPlanBrief,
@@ -509,14 +512,25 @@ function CompiledCard({
   const { t } = useTranslation()
   const { resolve } = usePlatformCatalog()
   const changed = c.undoId ? undo.states[c.undoId] === 'changed' : false
-  const plainType = (slug?: string) => slug?.replace(/[-_]/g, ' ')
+  const typeLabel = (p: CompiledPost) =>
+    p.postType
+      ? (resolve(p.platformId ?? '')?.postTypes?.find(
+          (pt) => pt.slug === p.postType,
+        )?.label ?? p.postType)
+      : undefined
+  // Its day says why it is that day (CON-485): the idea's plan, or the day
+  // asked for.
+  const day = (p: CompiledPost) =>
+    !p.date
+      ? t('assistant.ideas.noDate')
+      : p.dateFrom === 'plan'
+        ? t('assistant.ideas.drafted.datedPlan', { date: dayLabel(p.date) })
+        : p.dateFrom === 'asked'
+          ? t('assistant.ideas.drafted.datedAsked', { date: dayLabel(p.date) })
+          : dayLabel(p.date)
   const meta = (p: CompiledPost) =>
     p.platformId
-      ? [
-          resolve(p.platformId)?.name,
-          plainType(p.postType),
-          p.date ? dayLabel(p.date) : t('assistant.ideas.noDate'),
-        ]
+      ? [resolve(p.platformId)?.name, typeLabel(p), day(p)]
           .filter(Boolean)
           .join(' · ')
       : t('assistant.ideas.compiled.noPlatform')
@@ -703,10 +717,11 @@ export function LiveDrafts({
 }
 
 /**
- * The drafts written from ideas, as one summary (CON-481): how many from how
- * many ideas, OPEN ALL to the campaign's drafts when they share one, and each
- * draft with its platform and whether it is grounded — amber where it isn't.
- * A single draft is drawn as its own card.
+ * The drafts written from ideas, as one summary (CON-481, drawn as CON-485
+ * has it): "3 posts · 2 not scheduled", SHOW to the campaign's Not scheduled
+ * panel — OPEN ALL when every one has a day — and each draft with its
+ * platform and type, its day on the right and why it is that day, or "Not
+ * scheduled". A single draft is drawn as its own card.
  */
 function DraftedCard({
   drafted: d,
@@ -717,6 +732,7 @@ function DraftedCard({
 }) {
   const { t } = useTranslation()
   const { resolve } = usePlatformCatalog()
+  const showUnscheduled = useShowUnscheduled()
   if (d.posts.length === 1 && d.warnings.length === 0)
     return <DraftCard draft={d.posts[0]} campaignId={campaignId} />
   const ideas = new Set(d.posts.flatMap((p) => p.ideaIds)).size
@@ -738,14 +754,16 @@ function DraftedCard({
           : t('assistant.ideas.drafted.title', counted(d.posts.length))
       }
       meta={
-        unscheduled === d.posts.length
-          ? t('assistant.ideas.drafted.unscheduled')
-          : unscheduled > 0
-            ? t('assistant.ideas.drafted.someUnscheduled', counted(unscheduled))
-            : undefined
+        unscheduled > 0
+          ? t('assistant.ideas.drafted.someUnscheduled', counted(unscheduled))
+          : undefined
       }
       action={
-        only ? (
+        only && unscheduled > 0 ? (
+          <TextAction onClick={() => showUnscheduled(only)}>
+            {t('assistant.ideas.drafted.show')}
+          </TextAction>
+        ) : only ? (
           <Link
             to="/campaigns/$campaignId/list"
             params={{ campaignId: only }}
@@ -759,7 +777,11 @@ function DraftedCard({
     >
       {d.posts.map((p) => {
         const campaign = draftCampaign(p, campaignId)
-        const grounded = p.grounding.mode === 'grounded'
+        const platform = resolve(p.platformId)
+        const type = p.postType
+          ? (platform?.postTypes?.find((pt) => pt.slug === p.postType)?.label ??
+            p.postType)
+          : undefined
         return (
           <ResultRow key={p.postId} className="flex items-baseline gap-3">
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -776,23 +798,12 @@ function DraftedCard({
                   {p.title || t('assistant.ideas.untitled')}
                 </span>
               )}
-              <span
-                className={cn(
-                  'text-[12.5px]',
-                  grounded ? 'text-tertiary-foreground' : 'text-warning-ink',
-                )}
-              >
-                {[
-                  resolve(p.platformId)?.name,
-                  p.publishDate ? dayLabel(p.publishDate) : '',
-                  grounded
-                    ? t('assistant.ideas.drafted.grounded')
-                    : t('assistant.ideas.drafted.notGrounded'),
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
+              <span className="flex flex-wrap items-center gap-x-2 text-[12.5px] text-tertiary-foreground">
+                {[platform?.name, type].filter(Boolean).join(' · ')}
+                <NotGroundedMark mode={p.grounding.mode} />
               </span>
             </span>
+            <WhenLabel t={t} date={p.publishDate} from={p.dateFrom} />
           </ResultRow>
         )
       })}
@@ -803,6 +814,54 @@ function DraftedCard({
       )}
     </ResultBlock>
   )
+}
+
+/**
+ * A made post's day on the right of its row (CON-485), in teal with why it
+ * is that day — the idea's plan, or the day asked for — or "Not scheduled".
+ */
+function WhenLabel({
+  t,
+  date,
+  from,
+}: {
+  t: TFunction
+  date?: string
+  from?: DateFrom
+}) {
+  if (!date)
+    return (
+      <span className="shrink-0 text-[12.5px] text-tertiary-foreground">
+        {t('assistant.ideas.drafted.notScheduled')}
+      </span>
+    )
+  const day = dayLabel(date)
+  return (
+    <span className="shrink-0 text-[12.5px] text-accent-ink">
+      {from === 'plan'
+        ? t('assistant.ideas.drafted.datedPlan', { date: day })
+        : from === 'asked'
+          ? t('assistant.ideas.drafted.datedAsked', { date: day })
+          : day}
+    </span>
+  )
+}
+
+/**
+ * SHOW for drafts left undated (CON-485): the campaign's calendar with its
+ * Not scheduled panel open — recorded before the calendar mounts, so the
+ * panel is what it opens with — the new drafts on top of it.
+ */
+function useShowUnscheduled() {
+  const navigate = useNavigate()
+  const openPanel = useSettingsStore((s) => s.openRightPanel)
+  return (campaignId: string) => {
+    openPanel('notScheduled')
+    void navigate({
+      to: '/campaigns/$campaignId/calendar',
+      params: { campaignId },
+    })
+  }
 }
 
 /**

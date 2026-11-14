@@ -271,7 +271,7 @@ function DraftsCard({
     >
       {posts.map((post) => {
         const type =
-          resolve(post.platformId)?.postTypes.find(
+          resolve(post.platformId)?.postTypes?.find(
             (pt) => pt.slug === post.postType,
           )?.label ?? post.postType
         return (

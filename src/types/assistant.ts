@@ -1261,7 +1261,16 @@ export type CompiledPost = {
   postType?: string
   /** YYYY-MM-DD; absent when the post is undated. */
   date?: string
+  /** Where its date came from (CON-485): the day asked for, or the plan. */
+  dateFrom?: DateFrom
 }
+
+/**
+ * Why a post made from ideas has the date it has (CON-485): `asked` is the
+ * day the call named (a calendar slot), `plan` the ideas' plan date. Absent
+ * on an undated post — only the server knows which applied.
+ */
+export type DateFrom = 'asked' | 'plan'
 
 export type IdeaBrief = {
   id: string
@@ -1409,6 +1418,10 @@ export type DraftedIdeaPost = {
   platformId: string
   /** YYYY-MM-DD; absent when the draft is unscheduled (CON-470). */
   publishDate?: string
+  /** Where that date came from (CON-485). */
+  dateFrom?: DateFrom
+  /** Its post type's slug, for "Instagram · Carousel" (CON-485). */
+  postType?: string
   /** The post's own campaign (CON-481), for OPEN in any thread. */
   campaignId?: string
   /** The ideas it was written from. */

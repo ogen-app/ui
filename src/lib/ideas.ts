@@ -119,6 +119,20 @@ export type Idea = {
    * verdict: making a post from an idea never moves it between piles.
    */
   postCount?: number
+  /**
+   * Where it would land as a post (CON-485): the platform, type and day its
+   * plan names — what COMPILE and DRAFT preset from. Absent fields are
+   * unplanned.
+   */
+  plan?: IdeaPlan
+}
+
+/** An idea's plan, as far as it goes. */
+export type IdeaPlan = {
+  platformId?: string
+  postType?: string
+  /** YYYY-MM-DD. */
+  targetDate?: string
 }
 
 export type IdeaOrigin = 'manual' | 'asset_analysis'

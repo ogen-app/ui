@@ -262,10 +262,20 @@ describe('an idea made into posts in Spanish (CON-470)', () => {
     )
     expect(screen.getByText('Convertida en')).toBeInTheDocument()
     expect(
-      await screen.findByRole('link', { name: 'Una piscina en la roca' }),
+      await screen.findByRole('link', { name: /^Una piscina en la roca/ }),
     ).toHaveAttribute('href', '/campaigns/c1/posts/p1')
     expect(screen.getByText(/Sin programar/)).toBeInTheDocument()
     expect(screen.queryByText('Made into')).not.toBeInTheDocument()
+  })
+
+  it('says its posts were deleted when the count says some but none come back (CON-485)', async () => {
+    madeInto.list.mockResolvedValue([])
+    renderRow(idea({ postCount: 1 }), { expanded: true })
+    expect(
+      await screen.findByText(
+        'Las publicaciones hechas con ella se han eliminado.',
+      ),
+    ).toBeInTheDocument()
   })
 
   it('asks for nothing when no post was made from it', () => {

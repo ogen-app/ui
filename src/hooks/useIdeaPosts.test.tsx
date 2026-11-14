@@ -35,11 +35,16 @@ vi.mock('@tanstack/react-router', async (importOriginal) => ({
   useNavigate: () => api.navigate,
 }))
 
-const post = (postId: string, publishDate?: string): DraftIdeasEvent => ({
+const post = (
+  postId: string,
+  publishDate?: string,
+  campaignId?: string,
+): DraftIdeasEvent => ({
   type: 'post',
   postId,
   title: postId,
   ...(publishDate ? { publishDate } : {}),
+  ...(campaignId ? { campaignId } : {}),
 })
 
 async function draft(campaignId?: string) {
@@ -68,7 +73,7 @@ describe('useDraftIdeas (CON-470)', () => {
     const toast = await draft('c1')
     expect(toast.title).toBe('2 drafts written, not scheduled')
     expect(toast.description).toBe(
-      'In Not scheduled, until you put them on a day.',
+      'In Not scheduled, until you drag them onto a day.',
     )
     expect([...useJustWrittenStore.getState().ids]).toEqual(['p1', 'p2'])
 
@@ -110,5 +115,25 @@ describe('useDraftIdeas (CON-470)', () => {
     const toast = await draft()
     expect(toast.title).toBe('1 draft written, not scheduled')
     expect(toast.action).toBeUndefined()
+  })
+  it('gives drafts that went to several campaigns a toast each, with its SHOW (CON-485)', async () => {
+    api.events = [
+      post('p1', undefined, 'c1'),
+      post('p2', '2026-11-26', 'c2'),
+      post('p3', undefined, 'c2'),
+    ]
+    const { result } = renderHook(() => useDraftIdeas(), {
+      wrapper: QueryWrapper,
+    })
+    await act(() => result.current.mutateAsync({ ids: ['i1', 'i2'] }))
+    await waitFor(() => expect(useToastStore.getState().toasts).toHaveLength(2))
+    const [first, second] = useToastStore.getState().toasts
+    expect(first.title).toBe('1 draft written, not scheduled')
+    expect(second.title).toBe('2 drafts written, 1 not scheduled')
+    second.action!.onClick()
+    expect(api.navigate).toHaveBeenCalledWith({
+      to: '/campaigns/$campaignId/calendar',
+      params: { campaignId: 'c2' },
+    })
   })
 })

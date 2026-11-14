@@ -57,7 +57,7 @@ describe('IdeaPostForm (CON-470)', () => {
     expect(screen.getByText('DRAFT 6 POSTS')).toBeTruthy()
     fireEvent.click(
       screen.getByRole('radio', {
-        name: 'One post from all of them, on each platform',
+        name: /^One post from all 3, per platform/,
       }),
     )
     fireEvent.click(screen.getByText('DRAFT 2 POSTS'))
@@ -83,5 +83,68 @@ describe('IdeaPostForm (CON-470)', () => {
     fireEvent.click(screen.getByText('TRY AGAIN'))
     expect(query.refetch).toHaveBeenCalled()
     query.failed = false
+  })
+})
+
+describe('IdeaPostForm, as CON-485 draws it', () => {
+  it('ticks what the ideas’ plans name, says how many each choice makes, and how many have a date', () => {
+    const onSubmit = vi.fn()
+    render(
+      <IdeaPostForm
+        verb="draft"
+        ideaCount={3}
+        campaignId="c1"
+        plans={[
+          {
+            platformId: 'sq-ig',
+            postType: 'carousel',
+            targetDate: '2026-04-24',
+          },
+          {},
+          {},
+        ]}
+        onSubmit={onSubmit}
+      >
+        <button type="button">open</button>
+      </IdeaPostForm>,
+      { wrapper: QueryWrapper },
+    )
+    fireEvent.click(screen.getByText('open'))
+    // Ticked from the plan, and the button isn't blocked.
+    expect(
+      screen.getByRole('checkbox', { name: /^Instagram/ }),
+    ).toHaveAttribute('data-state', 'checked')
+    expect(screen.getByText('carousel · from the ideas’ plan')).toBeTruthy()
+    expect(screen.getByText('3 drafts')).toBeTruthy()
+    expect(screen.getByText('1 draft')).toBeTruthy()
+    expect(
+      screen.getByText('1 of 3 has a date; the rest stay unscheduled.'),
+    ).toBeTruthy()
+    fireEvent.click(screen.getByText('DRAFT 3 POSTS'))
+    expect(onSubmit).toHaveBeenCalledWith({
+      platformIds: ['sq-ig'],
+      together: false,
+    })
+  })
+
+  it('names one idea, and CANCEL closes it without running', () => {
+    const onSubmit = vi.fn()
+    render(
+      <IdeaPostForm
+        verb="draft"
+        ideaCount={1}
+        campaignId="c1"
+        title="The kitchen garden"
+        onSubmit={onSubmit}
+      >
+        <button type="button">open</button>
+      </IdeaPostForm>,
+      { wrapper: QueryWrapper },
+    )
+    fireEvent.click(screen.getByText('open'))
+    expect(screen.getByText('Draft “The kitchen garden”')).toBeTruthy()
+    fireEvent.click(screen.getByText('CANCEL'))
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(screen.queryByText('Draft “The kitchen garden”')).toBeNull()
   })
 })

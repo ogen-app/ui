@@ -226,6 +226,11 @@ export type Post = {
    * `PostPayload`.
    */
   grounding_mode: GroundingMode | null
+  /**
+   * How many ideas it was made from (CON-485); 0 for one written directly.
+   * Counted per read on the server, so it is read-only here.
+   */
+  idea_count?: number
   created_by: string
   created_at: string
   updated_at: string

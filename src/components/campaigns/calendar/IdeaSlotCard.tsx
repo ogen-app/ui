@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { LightbulbIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { IdeaPostForm } from '@/components/ideas/IdeaPostForm'
@@ -39,13 +40,27 @@ export function IdeaSlotCard({
     platformIds,
     targetDate: slot.date,
   })
-  // Both verbs open the Ideas list's form, the slot's platform and day preset.
+  // Both verbs open the Ideas list's form, the slot's platform and day
+  // preset, the idea named (CON-485).
+  const [formOpen, setFormOpen] = useState(false)
   const form = {
     ideaCount: 1,
     campaignId: slot.campaign_id,
-    suggestedPlatform: slot.platform_id,
+    plans: [
+      {
+        ...(slot.platform_id ? { platformId: slot.platform_id } : {}),
+        ...(slot.platform_post_type
+          ? { postType: slot.platform_post_type }
+          : {}),
+        targetDate: slot.date,
+      },
+    ],
+    title: slot.title,
     date: slot.date,
     disabled: busy,
+    // Focus moves into the form's portal, so the slot's buttons would fade
+    // under it; they stay while it is open.
+    onOpenChange: setFormOpen,
   }
 
   return (
@@ -71,7 +86,7 @@ export function IdeaSlotCard({
           'absolute inset-0 flex items-center justify-center gap-1.5 bg-primary/95',
           'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100',
           '[@media(hover:none)]:pointer-events-none [@media(hover:none)]:group-focus-within:pointer-events-auto',
-          busy && 'opacity-100',
+          (busy || formOpen) && 'opacity-100',
         )}
       >
         <IdeaPostForm

@@ -153,6 +153,12 @@ export type IdeaBody = {
   grounding_mode?: GroundingMode | null
   /** The posts made from it, any status (CON-470). */
   post_count?: number
+  /** Where it would land as a post; every field null when unplanned. */
+  plan?: {
+    platform_id?: string | null
+    post_type?: string | null
+    target_date?: string | null
+  } | null
 }
 
 export type IdeaSourceAssetBody = {
@@ -170,6 +176,17 @@ export type IdeaEdit = {
   title?: string
   note?: string
   campaign_id?: string | null
+}
+
+/** An idea's plan (CON-485), only the fields it names. */
+function ideaPlan(plan: IdeaBody['plan']): Idea['plan'] {
+  if (!plan) return undefined
+  const out: NonNullable<Idea['plan']> = {
+    ...(plan.platform_id ? { platformId: plan.platform_id } : {}),
+    ...(plan.post_type ? { postType: plan.post_type } : {}),
+    ...(plan.target_date ? { targetDate: plan.target_date } : {}),
+  }
+  return Object.keys(out).length > 0 ? out : undefined
 }
 
 export function ideaFromWire(body: IdeaBody): Idea {
@@ -202,6 +219,7 @@ export function ideaFromWire(body: IdeaBody): Idea {
     fitBreakdown: body.fit_breakdown ?? undefined,
     groundingMode: body.grounding_mode ?? null,
     postCount: body.post_count ?? 0,
+    plan: ideaPlan(body.plan),
   }
 }
 

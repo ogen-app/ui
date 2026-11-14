@@ -362,6 +362,10 @@ export function useDeletePost(campaignId: string) {
     mutationFn: (id: string) => deletePost(id),
     onSuccess: () => {
       invalidateCampaignPosts(qc, campaignId)
+      // An idea's post count, its used filter and its MADE INTO list all
+      // counted this post (CON-485) — from the dialog and the bulk bar alike,
+      // which deletes through this mutation one post at a time.
+      void qc.invalidateQueries({ queryKey: ['ideas'] })
     },
   })
 }

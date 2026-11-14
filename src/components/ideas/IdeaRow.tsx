@@ -4,7 +4,11 @@ import { Link } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Note01Icon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
-import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react'
+import {
+  CaretDownIcon,
+  CaretRightIcon,
+  NotePencilIcon,
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CampaignIcon } from '@/components/layout/CampaignIcon'
@@ -419,8 +423,15 @@ function SourceLine({
   if (idea.postCount)
     // What it fed (CON-470) — a fact beside the verdict, never a verdict.
     bits.push(
-      <span key="used" className="shrink-0">
-        {t('ideas.lifecycle.used', counted(idea.postCount))}
+      // A muted post mark, then the fact in foreground (CON-485).
+      <span key="used" className="inline-flex shrink-0 items-center gap-1">
+        <NotePencilIcon
+          aria-hidden
+          className="size-3.5 text-tertiary-foreground"
+        />
+        <span className="text-foreground">
+          {t('ideas.lifecycle.used', counted(idea.postCount))}
+        </span>
       </span>,
     )
   if (hasWokenUp(idea, now))
@@ -597,34 +608,62 @@ function MadeInto({ idea }: { idea: Idea }) {
         <p className="text-sm text-secondary-foreground">
           {t('ideas.lifecycle.madeInto.failed')}
         </p>
+      ) : posts.isPending ? (
+        <p className="text-sm text-tertiary-foreground">
+          {t('ideas.lifecycle.madeInto.loading')}
+        </p>
+      ) : (posts.data ?? []).length === 0 ? (
+        // The count said posts, but none came back: deleted since.
+        <p className="text-sm text-tertiary-foreground">
+          {t('ideas.lifecycle.madeInto.empty')}
+        </p>
       ) : (
-        <ul className="flex flex-col gap-1.5">
-          {(posts.data ?? []).map((post) => (
-            <li key={post.id} className="flex min-w-0 items-baseline gap-3">
-              <Link
-                to="/campaigns/$campaignId/posts/$postId"
-                params={{ campaignId: post.campaign_id, postId: post.id }}
-                className="min-w-0 flex-1 truncate text-sm text-foreground hover:underline"
-              >
-                {post.title || t('ideas.lifecycle.madeInto.untitled')}
-              </Link>
-              <span className="shrink-0 text-xs text-secondary-foreground">
-                {[
-                  resolve(post.platform_id)?.name,
-                  postStatusLabel(t, post.status),
-                  post.scheduled_at
-                    ? formatDate(
-                        post.scheduled_at,
-                        { weekday: 'short', day: 'numeric', month: 'short' },
-                        i18n.language,
-                      )
-                    : t('ideas.lifecycle.madeInto.notScheduled'),
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </span>
-            </li>
-          ))}
+        // Two lines a row, hairlines between, the whole row opening the post
+        // (CON-485): the title, then "Platform · Type · Status"; its day and
+        // time on the right.
+        <ul className="flex flex-col border-t border-border">
+          {(posts.data ?? []).map((post) => {
+            const platform = resolve(post.platform_id)
+            const type = post.platform_post_type
+              ? (platform?.postTypes?.find(
+                  (pt) => pt.slug === post.platform_post_type,
+                )?.label ?? post.platform_post_type)
+              : undefined
+            return (
+              <li key={post.id} className="border-b border-border">
+                <Link
+                  to="/campaigns/$campaignId/posts/$postId"
+                  params={{ campaignId: post.campaign_id, postId: post.id }}
+                  className="flex min-w-0 items-baseline gap-3 py-2 hover:bg-secondary"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-sm text-foreground">
+                      {post.title || t('ideas.lifecycle.madeInto.untitled')}
+                    </span>
+                    <span className="text-xs text-secondary-foreground">
+                      {[platform?.name, type, postStatusLabel(t, post.status)]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-xs text-secondary-foreground tabular-nums">
+                    {post.scheduled_at
+                      ? formatDate(
+                          post.scheduled_at,
+                          {
+                            weekday: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          },
+                          i18n.language,
+                        )
+                      : t('ideas.lifecycle.madeInto.notScheduled')}
+                  </span>
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       )}
     </Part>

@@ -59,10 +59,10 @@ export type IdeaChoiceField = (typeof IDEA_CHOICE_FIELDS)[number]
 export const IDEA_ORIGINS = ['asset_analysis', 'manual'] as const
 export const FIT_BANDS = ['high', 'medium', 'low', 'unscored'] as const
 /**
- * Whether a post was made from the idea, of any status (CON-470), not yet
- * used first as the server orders them. A fact, not a verdict.
+ * Whether a post was made from the idea, of any status (CON-470): used
+ * first, as the board lists them (CON-485). A fact, not a verdict.
  */
-export const IDEA_USES = ['unused', 'used'] as const
+export const IDEA_USES = ['used', 'unused'] as const
 
 /** The value `source_asset` and `campaign_id` take for "none". */
 export const NONE = 'none'

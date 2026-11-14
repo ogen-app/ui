@@ -7,6 +7,7 @@ import type {
   IdeasChanged,
   IdeasResults,
   IdeasShared,
+  DateFrom,
 } from '@/types/assistant'
 import { parseGrounding } from './grounding'
 import { isRecord } from './json'
@@ -116,11 +117,18 @@ export function draftedPost(
     title: str(raw.title),
     platformId: str(raw.platformId),
     publishDate: optStr(raw.publishDate),
+    dateFrom: dateFrom(raw.dateFrom),
+    postType: optStr(raw.platformPostType) ?? optStr(raw.postType),
     campaignId: optStr(raw.campaignId),
     ideaIds: strings(raw.ideaIds),
     excerpt: optStr(raw.excerpt),
     grounding: grounding(raw.grounding),
   }
+}
+
+/** Where a date came from (CON-485); absent on an undated post. */
+function dateFrom(value: unknown): DateFrom | undefined {
+  return value === 'asked' || value === 'plan' ? value : undefined
 }
 
 /** A merge (CON-481): every group, or the one an older server sent. */
@@ -184,8 +192,9 @@ function compiledResult(
       postId: str(p.postId),
       title: str(p.title),
       platformId: optStr(p.platformId),
-      postType: optStr(p.postType),
+      postType: optStr(p.platformPostType) ?? optStr(p.postType),
       date: optStr(p.date),
+      dateFrom: dateFrom(p.dateFrom),
     }))
   if (posts.length === 0) return undefined
   return {

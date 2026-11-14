@@ -14,6 +14,12 @@ import { create } from 'zustand'
 type JustWrittenState = {
   ids: ReadonlySet<string>
   add: (ids: string[]) => void
+  /**
+   * Lets go of drafts that have since had a date (CON-485): once one is put
+   * on a day it is no longer just written, and unscheduling it later must
+   * not bring the mark back.
+   */
+  forget: (ids: string[]) => void
 }
 
 export const useJustWrittenStore = create<JustWrittenState>((set) => ({
@@ -22,4 +28,11 @@ export const useJustWrittenStore = create<JustWrittenState>((set) => ({
     set((state) =>
       ids.length ? { ids: new Set([...state.ids, ...ids]) } : {},
     ),
+  forget: (ids) =>
+    set((state) => {
+      if (!ids.some((id) => state.ids.has(id))) return {}
+      const next = new Set(state.ids)
+      for (const id of ids) next.delete(id)
+      return { ids: next }
+    }),
 }))
