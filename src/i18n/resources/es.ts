@@ -3355,6 +3355,8 @@ export const es: Translation = {
         fit: 'encaje {{score}}',
         noneWord: 'NADA ELIMINADO',
         none: 'No se eliminó ningún borrador',
+        draftedOnly_one: '{{formatted}} redactado, nada eliminado',
+        draftedOnly_other: '{{formatted}} redactados, nada eliminado',
         kept_one:
           '{{formatted}} conservado: cambió desde la propuesta o no hacía falta.',
         kept_other:

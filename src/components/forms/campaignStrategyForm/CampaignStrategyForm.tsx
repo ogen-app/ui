@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useAssistantRemovalStore } from '@/stores/assistantRemovalStore'
+import { formatList } from '@/lib/intl'
+import {
+  targetedBefore,
+  useAssistantRemovalStore,
+} from '@/stores/assistantRemovalStore'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -243,7 +247,13 @@ export function CampaignStrategyForm({ campaign }: Props) {
   const accountsEnabled = useFeatureFlag('campaign-accounts')
   // What the assistant just took off, struck through with a band saying so
   // until the page reloads (CON-483).
-  const removal = useAssistantRemovalStore((s) => s.removals[campaign.id])
+  const removals = useAssistantRemovalStore((s) => s.removals[campaign.id])
+  const removal = removals?.length
+    ? {
+        removed: formatList(removals.map((r) => r.removed)),
+        before: targetedBefore(removals),
+      }
+    : undefined
 
   // `enrichBrief` rewrites all four messaging fields, and `setCampaignDates` /
   // `redistributePosts` rewrite the window and the schedule (CON-112 §6.5,

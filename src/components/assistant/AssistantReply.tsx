@@ -277,6 +277,7 @@ export function AssistantReply({
           retriedTotal={retriedTotal || undefined}
           undoStates={turn.undo ?? {}}
           undoRefused={turn.undoRefused}
+          draftWarnings={turn.details?.draftedPosts?.warnings}
           disabled={running}
         />
       )}

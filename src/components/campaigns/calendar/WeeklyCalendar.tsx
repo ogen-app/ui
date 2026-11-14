@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { outsideCampaign } from '@/lib/campaignTarget'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
@@ -213,6 +214,8 @@ function WeeklyCalendarComponent({
           hasFlag:
             isDateLocked(post.status) ||
             isNotGrounded(post.grounding_mode) ||
+            // The card's off-campaign mark rides on the same row (CON-483).
+            outsideCampaign(post, targets) !== null ||
             hasVisibleProblem(
               post,
               resolveForPlatform(
@@ -265,6 +268,7 @@ function WeeklyCalendarComponent({
       fields,
       failedCovers,
       i18n.language,
+      targets,
     ],
   )
 

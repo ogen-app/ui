@@ -1200,15 +1200,17 @@ export const useAssistantStore = create<AssistantState>()(
           try {
             const { kind } = await undoAssistantAction(undoId)
             state('undone')
-            // The platforms are back, so Strategy stops striking them.
-            if (
-              kind === 'campaign_platforms' &&
-              thread &&
-              thread.subject.kind !== 'workspace'
-            )
-              useAssistantRemovalStore
-                .getState()
-                .clear(thread.subject.campaignId)
+            if (thread && thread.subject.kind !== 'workspace') {
+              const { campaignId } = thread.subject
+              // Those platforms are back, so Strategy stops striking them;
+              // any other removal stays struck.
+              if (kind === 'campaign_platforms')
+                useAssistantRemovalStore.getState().clear(campaignId, undoId)
+              // What a turn's starters and citation read may have moved too.
+              void queryClient.invalidateQueries({
+                queryKey: campaignAssistantStateKey(campaignId),
+              })
+            }
             await refreshTouched(queryClient, undoTouches(kind, thread))
           } catch (err) {
             const status = err instanceof ApiError ? err.status : 0
@@ -1277,12 +1279,16 @@ function noteCampaignTurn(subject: ThreadSubject, result: AssistantTurnResult) {
   void queryClient.invalidateQueries({
     queryKey: campaignAssistantStateKey(campaignId),
   })
-  const removed = result.details.platforms?.removed
+  const platforms = result.details.platforms
   const before = queryClient.getQueryData<Campaign>(
     campaignKey(campaignId),
   )?.target_platforms
-  if (removed && before)
-    useAssistantRemovalStore.getState().mark(campaignId, { before, removed })
+  if (platforms?.removed && before)
+    useAssistantRemovalStore.getState().mark(campaignId, {
+      before,
+      removed: platforms.removed,
+      undoId: platforms.undoId,
+    })
 }
 
 /** The parts of a turn its result decides, for a live or a reloaded turn. */

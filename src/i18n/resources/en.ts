@@ -3971,6 +3971,9 @@ export const en = {
         /** Every draft it named was kept, so none went. */
         noneWord: 'NOTHING DELETED',
         none: 'No drafts deleted',
+        /** Drafted, but every draft it named was kept. */
+        draftedOnly_one: '{{formatted}} drafted, nothing deleted',
+        draftedOnly_other: '{{formatted}} drafted, nothing deleted',
         kept_one:
           '{{formatted}} kept: it changed since the offer, or wasn’t needed.',
         kept_other:
