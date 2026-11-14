@@ -45,6 +45,7 @@ export function OfferOutcome({
   retriedTotal,
   undoStates,
   undoRefused,
+  draftWarnings,
   disabled,
 }: {
   threadId: string
@@ -59,6 +60,11 @@ export function OfferOutcome({
   retriedTotal?: number
   undoStates: Record<string, UndoState>
   undoRefused?: Record<string, { changed: number; of: number }>
+  /**
+   * What the drafting under a replace warned about (CON-483): its own drafts
+   * card is left out for the REPLACED one, which says them instead.
+   */
+  draftWarnings?: string[]
   disabled: boolean
 }) {
   const { t } = useTranslation()
@@ -78,7 +84,13 @@ export function OfferOutcome({
     retry !== undefined && (retry.status === 'expired' || lapsed)
   return (
     <>
-      {replaced && <ReplacedCard t={t} replaced={replaced} />}
+      {replaced && (
+        <ReplacedCard
+          t={t}
+          replaced={replaced}
+          warnings={draftWarnings ?? []}
+        />
+      )}
       {later && (
         <ResultBlock
           status={t('assistant.answered.later.word')}
@@ -185,24 +197,56 @@ const SWAP_ROWS = 2
  * has it): one card for the swap — what it drafted and what it deleted for
  * good, each side by name with "and N more", and where the goal period
  * stands after it. No UNDO: the deleted drafts are gone, files included.
- * A swap that deleted nothing says so, with what it kept and why.
+ * A swap that deleted nothing says so — with what it drafted all the same,
+ * and what it kept and why.
  */
 function ReplacedCard({
   t,
   replaced,
+  warnings,
 }: {
   t: TFunction
   replaced: NonNullable<Outcome['replaced']>
+  warnings: string[]
 }) {
   const { deleted, kept, draftedCount, drafted, removed, period } = replaced
+  const drafts = (
+    <>
+      <SwapList
+        t={t}
+        label={t(
+          'assistant.answered.replaced.draftedGroup',
+          counted(draftedCount),
+        )}
+        posts={drafted}
+        total={draftedCount}
+      />
+      {warnings.map((warning, i) => (
+        <ResultRow key={i}>
+          <p className="text-sm text-warning">{warning}</p>
+        </ResultRow>
+      ))}
+    </>
+  )
   if (deleted === 0) {
-    if (kept === 0) return null
+    if (kept === 0 && draftedCount === 0) return null
     return (
       <ResultBlock
         status={t('assistant.answered.replaced.noneWord')}
-        title={t('assistant.answered.replaced.none')}
+        title={
+          draftedCount > 0
+            ? t(
+                'assistant.answered.replaced.draftedOnly',
+                counted(draftedCount),
+              )
+            : t('assistant.answered.replaced.none')
+        }
       >
-        <KeptRow t={t} kept={kept} />
+        {drafts}
+        {kept > 0 && <KeptRow t={t} kept={kept} />}
+        {replaced.draftedGrounding && (
+          <SourcesLine grounding={replaced.draftedGrounding} />
+        )}
       </ResultBlock>
     )
   }
@@ -222,15 +266,7 @@ function ReplacedCard({
           : undefined
       }
     >
-      <SwapList
-        t={t}
-        label={t(
-          'assistant.answered.replaced.draftedGroup',
-          counted(draftedCount),
-        )}
-        posts={drafted}
-        total={draftedCount}
-      />
+      {drafts}
       <SwapList
         t={t}
         label={t('assistant.answered.replaced.removedGroup', counted(deleted))}

@@ -222,42 +222,11 @@ function platforms(
   const { added, removed, postsLeft, kept, unscheduled, undoId } =
     details.platforms
   const action = <UndoAction t={t} undoId={undoId} undo={undo} />
-  if (added && removed) {
-    return (
-      <ResultBlock
-        status={t('assistant.word.done')}
-        title={t('assistant.result.platformsUpdated')}
-        meta={t('assistant.result.platformsChanged', { added, removed })}
-        action={action}
-      >
-        <UndoNote t={t} undoId={undoId} undo={undo} />
-      </ResultBlock>
-    )
-  }
-  if (added) {
-    return (
-      <ResultBlock
-        status={t('assistant.result.addedWord')}
-        title={t('assistant.result.platformsOn', { what: added })}
-        action={action}
-      >
-        <UndoNote t={t} undoId={undoId} undo={undo} />
-      </ResultBlock>
-    )
-  }
-  if (!removed) return null
   const left = postsLeft?.posts ?? 0
-  const more = left - kept.length
-  return (
-    <ResultBlock
-      status={t('assistant.result.removedWord')}
-      title={t('assistant.result.platformsOff', { what: removed })}
-      meta={
-        postsLeft && left === 0 ? t('assistant.result.noPostsOn') : undefined
-      }
-      action={action}
-    >
-      <UndoNote t={t} undoId={undoId} undo={undo} />
+  // What a removal did to the posts on it, whether or not the same change
+  // also added something.
+  const consequences = (
+    <>
       {kept.map((post) => (
         <ResultRow key={post.id} className="flex flex-col gap-0.5">
           <span className="text-sm text-foreground">{post.title}</span>
@@ -266,9 +235,9 @@ function platforms(
           </span>
         </ResultRow>
       ))}
-      {more > 0 && (
+      {left - kept.length > 0 && (
         <p className="pt-2.5 text-[12.5px] text-tertiary-foreground">
-          {t('assistant.answered.notMade.more', counted(more))}
+          {t('assistant.answered.notMade.more', counted(left - kept.length))}
         </p>
       )}
       {left > 0 && (
@@ -285,6 +254,44 @@ function platforms(
           </p>
         </ResultRow>
       )}
+    </>
+  )
+  if (added && removed) {
+    return (
+      <ResultBlock
+        status={t('assistant.word.done')}
+        title={t('assistant.result.platformsUpdated')}
+        meta={t('assistant.result.platformsChanged', { added, removed })}
+        action={action}
+      >
+        <UndoNote t={t} undoId={undoId} undo={undo} />
+        {consequences}
+      </ResultBlock>
+    )
+  }
+  if (added) {
+    return (
+      <ResultBlock
+        status={t('assistant.result.addedWord')}
+        title={t('assistant.result.platformsOn', { what: added })}
+        action={action}
+      >
+        <UndoNote t={t} undoId={undoId} undo={undo} />
+      </ResultBlock>
+    )
+  }
+  if (!removed) return null
+  return (
+    <ResultBlock
+      status={t('assistant.result.removedWord')}
+      title={t('assistant.result.platformsOff', { what: removed })}
+      meta={
+        postsLeft && left === 0 ? t('assistant.result.noPostsOn') : undefined
+      }
+      action={action}
+    >
+      <UndoNote t={t} undoId={undoId} undo={undo} />
+      {consequences}
     </ResultBlock>
   )
 }

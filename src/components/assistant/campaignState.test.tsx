@@ -4,6 +4,10 @@ import { i18next, loadLocaleResources } from '@/i18n'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { outsideCampaign } from '@/lib/campaignTarget'
+import {
+  targetedBefore,
+  useAssistantRemovalStore,
+} from '@/stores/assistantRemovalStore'
 import type { CampaignState } from '@/types/assistant'
 import { ResultCard } from './ResultCard'
 import { OfferOutcome } from './OfferOutcome'
@@ -65,6 +69,41 @@ describe('removing a platform (CON-483)', () => {
     expect(
       screen.getByText(
         '3 unpublished posts stay where they are, flagged in Quality.',
+      ),
+    ).toBeTruthy()
+    expect(
+      screen.getByText(
+        '1 post unscheduled first. UNDO puts the platform back, not the schedule.',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('says what a removal left even when the change also added', () => {
+    render(
+      <ResultCard
+        details={{
+          platforms: {
+            added: 'Threads',
+            removed: 'LinkedIn',
+            postsLeft: { posts: 1, scheduled: 0 },
+            kept: [
+              {
+                id: 'p1',
+                title: 'Wedding packages',
+                platform: 'LinkedIn',
+                status: 'draft',
+              },
+            ],
+            unscheduled: 1,
+          },
+        }}
+      />,
+    )
+    expect(screen.getByText('added Threads · removed LinkedIn')).toBeTruthy()
+    expect(screen.getByText('Wedding packages')).toBeTruthy()
+    expect(
+      screen.getByText(
+        '1 unpublished post stays where it is, flagged in Quality.',
       ),
     ).toBeTruthy()
     expect(
@@ -155,6 +194,40 @@ describe('the budget guard', () => {
     expect(screen.getAllByText('and 11 more')).toHaveLength(2)
     // The drafts are deleted for good: no UNDO.
     expect(screen.queryByText('UNDO')).toBeNull()
+  })
+
+  it('keeps what it drafted, and the drafting’s warnings, when it deleted nothing', async () => {
+    await renderWithProviders(
+      <OfferOutcome
+        threadId="campaign:c1"
+        turnId="t1"
+        undoStates={{}}
+        disabled={false}
+        draftWarnings={['One post came out short.']}
+        outcome={{
+          reoffered: false,
+          notMade: [],
+          replaced: {
+            deleted: 0,
+            kept: 2,
+            draftedCount: 2,
+            drafted: [
+              { id: 'n1', title: 'A pool in the rock', platform: 'Instagram' },
+            ],
+            removed: [],
+          },
+        }}
+      />,
+    )
+    expect(screen.getByText('NOTHING DELETED')).toBeTruthy()
+    expect(screen.getByText('2 drafted, nothing deleted')).toBeTruthy()
+    expect(screen.getByText('A pool in the rock')).toBeTruthy()
+    expect(screen.getByText('One post came out short.')).toBeTruthy()
+    expect(
+      screen.getByText(
+        '2 kept: they changed since the offer, or weren’t needed.',
+      ),
+    ).toBeTruthy()
   })
 
   it('says a removal put off until its scheduled posts are out', async () => {
@@ -302,6 +375,34 @@ describe('what it knows', () => {
     expect(screen.getByText('OPEN ASSETS').getAttribute('href')).toBe(
       '/campaigns/c1/assets',
     )
+  })
+})
+
+describe('Strategy’s memory of a removal', () => {
+  it('undoes one removal and keeps striking the other', () => {
+    const store = useAssistantRemovalStore.getState()
+    store.mark('c1', {
+      before: [
+        { id: 'fb', post_types: ['image-post'] },
+        { id: 'li', post_types: ['text-post'] },
+      ],
+      removed: 'Facebook',
+      undoId: 'u1',
+    })
+    store.mark('c1', {
+      before: [{ id: 'li', post_types: ['text-post'] }],
+      removed: 'LinkedIn',
+      undoId: 'u2',
+    })
+    useAssistantRemovalStore.getState().clear('c1', 'u2')
+    const left = useAssistantRemovalStore.getState().removals.c1
+    expect(left?.map((r) => r.removed)).toEqual(['Facebook'])
+    expect(targetedBefore(left ?? [])).toEqual([
+      { id: 'fb', post_types: ['image-post'] },
+      { id: 'li', post_types: ['text-post'] },
+    ])
+    useAssistantRemovalStore.getState().clear('c1', 'u1')
+    expect(useAssistantRemovalStore.getState().removals.c1).toBeUndefined()
   })
 })
 
