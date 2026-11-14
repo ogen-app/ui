@@ -68,7 +68,12 @@ describe('assistant in Spanish', () => {
       <ResultCard
         details={{
           goal: { perPeriod: 12, cadence: 'week', target: 12000 },
-          platforms: { added: 'LinkedIn', removed: 'Threads' },
+          platforms: {
+            added: 'LinkedIn',
+            removed: 'Threads',
+            kept: [],
+            unscheduled: 0,
+          },
         }}
       />,
     )

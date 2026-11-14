@@ -40,7 +40,7 @@ describe('ProposalCard', () => {
         }}
       />,
     )
-    expect(screen.getByText('CHOOSE ONE')).toBeTruthy()
+    expect(screen.getByText('CHOOSE')).toBeTruthy()
     fireEvent.click(screen.getByText('Save 10 as ideas instead'))
     expect(confirm).toHaveBeenCalledWith('t', 'pr1', 'ideas')
   })

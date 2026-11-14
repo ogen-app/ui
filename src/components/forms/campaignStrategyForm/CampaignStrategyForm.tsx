@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useAssistantRemovalStore } from '@/stores/assistantRemovalStore'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -240,6 +241,9 @@ export function CampaignStrategyForm({ campaign }: Props) {
   // fields — the values it holds are still the campaign's own, and Save
   // round-trips them untouched.
   const accountsEnabled = useFeatureFlag('campaign-accounts')
+  // What the assistant just took off, struck through with a band saying so
+  // until the page reloads (CON-483).
+  const removal = useAssistantRemovalStore((s) => s.removals[campaign.id])
 
   // `enrichBrief` rewrites all four messaging fields, and `setCampaignDates` /
   // `redistributePosts` rewrite the window and the schedule (CON-112 §6.5,
@@ -428,6 +432,16 @@ export function CampaignStrategyForm({ campaign }: Props) {
               </>
             }
           >
+            {removal && (
+              <p className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-accent bg-accent/5 px-3 py-2 text-sm text-foreground">
+                {t('campaigns.strategy.removedByAssistant', {
+                  what: removal.removed,
+                })}
+                <span className="text-[12.5px] text-secondary-foreground">
+                  {t('campaigns.strategy.undoInThread')}
+                </span>
+              </p>
+            )}
             {accountsEnabled ? (
               // Outside the form field: the account choice is stored beside the
               // campaign rather than on it, and it writes `target_platforms`
@@ -447,6 +461,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
                       value={field.value}
                       onChange={field.onChange}
                       onCommitPlatforms={commitPlatforms}
+                      before={removal?.before}
                     />
                     <FormMessage />
                   </FormItem>

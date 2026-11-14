@@ -54,6 +54,10 @@ import type {
   Touched,
   ProposalDetails,
   StepDetail,
+  CampaignState,
+  CampaignStateRead,
+  GoalPeriod,
+  PostRef,
 } from '@/types/assistant'
 
 /**
@@ -131,6 +135,8 @@ export type AssistantTurnResult = {
   answered?: OfferOutcome
   /** The offers this turn answered, or found changed or expired (CON-482). */
   resolved?: { id: string; status: string }[]
+  /** What a campaign turn read, and its starters (CON-483). */
+  campaignState?: CampaignStateRead
 }
 
 export type AssistantStreamEvent =
@@ -381,6 +387,7 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
   result.action = parsed.action === 'declined' ? 'declined' : 'answered'
   if (campaign) {
     result.details = resultDetails(campaign)
+    result.campaignState = campaignStateRead(campaign)
     const action = campaignAction(campaign.action)
     if (action !== 'answered') result.action = action
   }
@@ -474,9 +481,26 @@ export function offerOutcome(raw: unknown): OfferOutcome | undefined {
   const made = count('made') || undefined
   const total = count('total') || undefined
   // replaceWeakestDrafts: what it drafted, and the drafts it deleted.
+  // `drafted` is always an object on a replace, but a goal raise that drafted
+  // nothing leaves it out: the deletion is what makes it a replace.
+  const drafted = record(out?.drafted)
   const replaced =
-    r.status === 'ok' && typeof out?.deleted === 'number' && record(out.drafted)
-      ? { deleted: out.deleted, kept: strings(out.kept).length }
+    r.status === 'ok' && typeof out?.deleted === 'number'
+      ? {
+          deleted: out.deleted,
+          kept: strings(out.kept).length,
+          draftedCount: num(drafted?.postCount),
+          drafted: postRefs(drafted?.posts),
+          draftedGrounding: parseGrounding(drafted?.grounding),
+          removed: postRefs(out.removed),
+          period: goalPeriod(out.period),
+        }
+      : undefined
+  // A platform removal put off until its scheduled posts are out.
+  const laterOut = record(out?.later)
+  const later =
+    r.status === 'ok' && laterOut && str(laterOut.removed)
+      ? { removed: str(laterOut.removed), until: optStr(laterOut.until) }
       : undefined
   const reoffered = r.status === 'proposed'
   // A run that made everything still carries its counts, which a retry's
@@ -486,6 +510,7 @@ export function offerOutcome(raw: unknown): OfferOutcome | undefined {
     notMade.length === 0 &&
     !tagged &&
     !replaced &&
+    !later &&
     made === undefined &&
     total === undefined
   )
@@ -498,6 +523,7 @@ export function offerOutcome(raw: unknown): OfferOutcome | undefined {
     retryProposalId: optStr(r.retryProposalId),
     tagged,
     replaced,
+    later,
   }
 }
 
@@ -1749,6 +1775,9 @@ function resultDetails(
       ideaCount: num(generated.ideaCount ?? generated.postCount),
       warnings: strings(generated.warnings),
       grounding: parseGrounding(generated.grounding),
+      windowStart: optStr(generated.windowStart),
+      windowEnd: optStr(generated.windowEnd),
+      undoId: optStr(generated.undoId),
     }
   }
 
@@ -1788,9 +1817,24 @@ function resultDetails(
 
   const platforms = record(parsed.platforms)
   if (platforms) {
+    const left = record(platforms.postsLeft)
     details.platforms = {
-      added: str(platforms.added),
+      added: optStr(platforms.added),
       removed: optStr(platforms.removed),
+      postsLeft: left
+        ? { posts: num(left.posts), scheduled: num(left.scheduled) }
+        : undefined,
+      kept: (Array.isArray(platforms.kept) ? platforms.kept : [])
+        .filter(isRecord)
+        .map((k) => ({
+          id: str(k.id),
+          title: str(k.title),
+          platform: str(k.platform),
+          postType: optStr(k.postType),
+          status: str(k.status),
+        }))
+        .filter((k) => k.id),
+      unscheduled: num(platforms.unscheduled),
       undoId: optStr(platforms.undoId),
     }
   }
@@ -1814,6 +1858,101 @@ function resultDetails(
   }
 
   return details
+}
+
+/**
+ * The campaign as the assistant would read it now, with its starters
+ * (CON-483) — the same as a campaign turn's `state`, before the first one
+ * and with no model call.
+ */
+export async function getCampaignAssistantState(
+  campaignId: string,
+): Promise<CampaignStateRead | null> {
+  const body = await apiJson<unknown>(
+    `/api/campaigns/${encodeURIComponent(campaignId)}/assistant-state`,
+    'Unable to read the campaign for the assistant',
+  )
+  const parsed = record(body)
+  return (parsed && campaignStateRead(parsed)) ?? null
+}
+
+/** Posts named on a result card: title, platform name, score. */
+function postRefs(value: unknown): PostRef[] {
+  return (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .map((p) => ({
+      id: str(p.id),
+      title: str(p.title),
+      platform: str(p.platform),
+      fitPct: typeof p.fitPct === 'number' ? p.fitPct : undefined,
+    }))
+    .filter((p) => p.id)
+}
+
+function goalPeriod(value: unknown): GoalPeriod | undefined {
+  const p = record(value)
+  if (!p || !str(p.label)) return undefined
+  return {
+    label: str(p.label),
+    target: num(p.target),
+    planned: num(p.planned),
+    left: num(p.left),
+  }
+}
+
+const SOURCE_STATUSES = ['ready', 'analysing', 'unreadable'] as const
+const STARTER_KINDS = ['fill', 'draft', 'calendar', 'sources'] as const
+
+/**
+ * What a campaign turn read (CON-483) — `state` and `starters` on its
+ * result, and the same from `GET /api/campaigns/:id/assistant-state`.
+ * Undefined when the result carries no state (a server before it).
+ */
+export function campaignStateRead(
+  parsed: Record<string, unknown>,
+): CampaignStateRead | undefined {
+  const raw = record(parsed.state)
+  if (!raw) return undefined
+  const state: CampaignState = {}
+  const goal = record(raw.goal)
+  if (goal) {
+    state.goal = {
+      cadence: str(goal.cadence),
+      perPeriod: num(goal.perPeriod),
+      target: num(goal.target),
+      planned: num(goal.planned),
+      room: num(goal.room),
+      unknown: goal.unknown === true,
+      period: goalPeriod(goal.period),
+    }
+  }
+  const calendar = record(raw.calendar)
+  if (calendar) state.calendar = { total: num(calendar.total) }
+  const sources = record(raw.sources)
+  if (sources) {
+    state.sources = {
+      wholeBank: sources.wholeBank === true,
+      attached: num(sources.attached),
+      notReady: num(sources.notReady),
+      items: (Array.isArray(sources.items) ? sources.items : [])
+        .filter(isRecord)
+        .map((i) => ({
+          id: str(i.id),
+          title: str(i.title),
+          kind: optStr(i.kind),
+          status: SOURCE_STATUSES.find((x) => x === i.status) ?? 'analysing',
+        }))
+        .filter((i) => i.id),
+    }
+  }
+  const starters = (Array.isArray(parsed.starters) ? parsed.starters : [])
+    .filter(isRecord)
+    .flatMap((x) => {
+      const kind = STARTER_KINDS.find((k) => k === x.kind)
+      const instruction = str(x.instruction)
+      return kind && instruction ? [{ kind, instruction }] : []
+    })
+  return { state, starters }
 }
 
 function touched(value: unknown): Touched[] {

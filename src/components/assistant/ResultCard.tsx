@@ -1,15 +1,18 @@
 import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
+import { Link } from '@tanstack/react-router'
 import {
   ResolvedLine,
   ResultBlock,
   ResultRow,
   SourcesLine,
+  TEXT_ACTION_CLASS,
   TextAction,
 } from './blocks'
 import type { AssistantResultDetails, UndoState } from '@/types/assistant'
-import { counted } from '@/lib/intl'
+import { counted, formatDateRange } from '@/lib/intl'
+import { startOfDay } from '@/lib/assetFilter'
 
 /**
  * The structured half of a campaign-pack turn. Its two reviews (CON-116) are
@@ -50,15 +53,18 @@ export type ResultUndo = {
 export function ResultCard({
   details,
   undo,
+  campaignId,
 }: {
   details: AssistantResultDetails
   undo?: ResultUndo
+  /** The thread's campaign, for OPEN to its Ideas (CON-483). */
+  campaignId?: string
 }) {
   const { t } = useTranslation()
   const blocks = [
     dates(t, details, undo),
     redistribute(t, details),
-    ideas(t, details),
+    ideas(t, details, undo, campaignId),
     drafts(t, details),
     platforms(t, details, undo),
     goal(t, details, undo),
@@ -121,10 +127,42 @@ function redistribute(t: TFunction, details: AssistantResultDetails) {
   )
 }
 
-/** Planning writes ideas, not posts (CON-449): they wait on the Ideas tab. */
-function ideas(t: TFunction, details: AssistantResultDetails) {
+/**
+ * Planning writes ideas, not posts (CON-449): they wait on the Ideas tab —
+ * the days they target beside the count, OPEN to that tab, and UNDO, which
+ * deletes the ideas still as made (CON-483).
+ */
+function ideas(
+  t: TFunction,
+  details: AssistantResultDetails,
+  undo?: ResultUndo,
+  campaignId?: string,
+) {
   const planned = details.contentPlan ?? details.generatedPosts
   if (!planned) return null
+  const generated = details.contentPlan ? undefined : details.generatedPosts
+  const undoId = generated?.undoId
+  const window =
+    generated?.windowStart && generated.windowEnd
+      ? t('assistant.result.ideasWindow', {
+          range: formatDateRange(
+            startOfDay(generated.windowStart),
+            startOfDay(generated.windowEnd),
+            { day: 'numeric', month: 'short' },
+          ),
+        })
+      : undefined
+  const open =
+    campaignId && planned.ideaCount > 0 ? (
+      <Link
+        to="/campaigns/$campaignId/ideas"
+        params={{ campaignId }}
+        className={TEXT_ACTION_CLASS}
+      >
+        {t('assistant.result.openIdeas')}
+      </Link>
+    ) : undefined
+  const undoAction = <UndoAction t={t} undoId={undoId} undo={undo} />
   return (
     <ResultBlock
       status={t('assistant.word.done')}
@@ -133,7 +171,17 @@ function ideas(t: TFunction, details: AssistantResultDetails) {
           ? t('assistant.result.ideasNone')
           : t('assistant.result.ideas', counted(planned.ideaCount))
       }
+      meta={window}
+      action={
+        open || undoId ? (
+          <span className="flex items-center gap-4">
+            {undoAction}
+            {open}
+          </span>
+        ) : undefined
+      }
     >
+      <UndoNote t={t} undoId={undoId} undo={undo} />
       <Warnings warnings={planned.warnings} />
       {planned.grounding && <SourcesLine grounding={planned.grounding} />}
     </ResultBlock>
@@ -158,32 +206,85 @@ function drafts(t: TFunction, details: AssistantResultDetails) {
   )
 }
 
+/**
+ * What updateCampaignPlatforms changed. A removal or an addition on its own
+ * names what it took off or put on (CON-483): "Facebook is off the
+ * campaign", with "no posts on it" when nothing was, or the unpublished posts
+ * it left where they were — flagged in Quality, never deleted — and how many
+ * scheduled ones it withdrew first, which UNDO doesn't put back.
+ */
 function platforms(
   t: TFunction,
   details: AssistantResultDetails,
   undo?: ResultUndo,
 ) {
   if (!details.platforms) return null
-  const { added, removed, undoId } = details.platforms
-  // What changed, in the server's words: "Threads", "the carousel post type
-  // on LinkedIn". A removal leaves the posts on it, which the calendar check
-  // then offers to deal with (CON-468).
-  const meta =
-    added && removed
-      ? t('assistant.result.platformsChanged', { added, removed })
-      : added
-        ? t('assistant.result.platformsAdded', { what: added })
-        : removed
-          ? t('assistant.result.platformsRemoved', { what: removed })
-          : undefined
+  const { added, removed, postsLeft, kept, unscheduled, undoId } =
+    details.platforms
+  const action = <UndoAction t={t} undoId={undoId} undo={undo} />
+  if (added && removed) {
+    return (
+      <ResultBlock
+        status={t('assistant.word.done')}
+        title={t('assistant.result.platformsUpdated')}
+        meta={t('assistant.result.platformsChanged', { added, removed })}
+        action={action}
+      >
+        <UndoNote t={t} undoId={undoId} undo={undo} />
+      </ResultBlock>
+    )
+  }
+  if (added) {
+    return (
+      <ResultBlock
+        status={t('assistant.result.addedWord')}
+        title={t('assistant.result.platformsOn', { what: added })}
+        action={action}
+      >
+        <UndoNote t={t} undoId={undoId} undo={undo} />
+      </ResultBlock>
+    )
+  }
+  if (!removed) return null
+  const left = postsLeft?.posts ?? 0
+  const more = left - kept.length
   return (
     <ResultBlock
-      status={t('assistant.word.done')}
-      title={t('assistant.result.platformsUpdated')}
-      meta={meta}
-      action={<UndoAction t={t} undoId={undoId} undo={undo} />}
+      status={t('assistant.result.removedWord')}
+      title={t('assistant.result.platformsOff', { what: removed })}
+      meta={
+        postsLeft && left === 0 ? t('assistant.result.noPostsOn') : undefined
+      }
+      action={action}
     >
       <UndoNote t={t} undoId={undoId} undo={undo} />
+      {kept.map((post) => (
+        <ResultRow key={post.id} className="flex flex-col gap-0.5">
+          <span className="text-sm text-foreground">{post.title}</span>
+          <span className="text-[12.5px] text-tertiary-foreground">
+            {[post.platform, post.postType].filter(Boolean).join(' · ')}
+          </span>
+        </ResultRow>
+      ))}
+      {more > 0 && (
+        <p className="pt-2.5 text-[12.5px] text-tertiary-foreground">
+          {t('assistant.answered.notMade.more', counted(more))}
+        </p>
+      )}
+      {left > 0 && (
+        <ResultRow>
+          <p className="text-[12.5px] text-warning-ink">
+            {t('assistant.result.keptNote', counted(left))}
+          </p>
+        </ResultRow>
+      )}
+      {unscheduled > 0 && (
+        <ResultRow>
+          <p className="text-[12.5px] text-secondary-foreground">
+            {t('assistant.result.unscheduled', counted(unscheduled))}
+          </p>
+        </ResultRow>
+      )}
     </ResultBlock>
   )
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useCampaign } from '@/hooks/useCampaigns'
 import { useTranslation } from 'react-i18next'
 import { useParams } from '@tanstack/react-router'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
@@ -86,6 +87,9 @@ function NotScheduled({
 }) {
   const { t } = useTranslation()
   const [dragOver, setDragOver] = useState(false)
+  // What the campaign targets, so a post left outside it is marked
+  // (CON-483); none on the workspace grid.
+  const targets = useCampaign(campaignId ?? '').data?.target_platforms
   const { mutate: updatePost } = useUpdatePost(campaignId)
 
   // These cards are the ones the user drags onto the grid, so they are drawn
@@ -176,7 +180,7 @@ function NotScheduled({
                   itself at its roomiest. The rung is what a *cell* imposes,
                   and there is no cell here — what carries over from the view
                   is which rows the user allows, which is the part they set. */}
-              <PostCard post={post} fields={fields} />
+              <PostCard post={post} fields={fields} targets={targets} />
             </div>
           ))
         )}

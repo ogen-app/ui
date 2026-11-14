@@ -2886,8 +2886,33 @@ export const es: Translation = {
       reviewed: 'REVISADO',
       notApplied: 'SIN APLICAR',
       proposal: 'PROPUESTA',
-      choose: 'ELIGE UNA',
+      choose: 'ELIGE',
       onScreen: 'EN PANTALLA',
+    },
+
+    campaignState: {
+      readFrom: 'Leído de la campaña',
+      period: '{{period}} {{planned}} de {{target}}',
+      conflicts_one: '{{formatted}} conflicto',
+      conflicts_other: '{{formatted}} conflictos',
+      sourcesReady: '{{ready}} de {{attached}} fuentes listas',
+      sources: {
+        word: 'FUENTES',
+        title: '{{ready}} de {{attached}} listas',
+        open: 'ABRIR RECURSOS',
+        ready: 'lista',
+        analysing: 'analizándose',
+        unreadable: 'no se pudo leer',
+      },
+      starter: {
+        fill: 'Completar {{period}}',
+        draft_one: 'Redactar {{formatted}} publicación',
+        draft_other: 'Redactar {{formatted}} publicaciones',
+        calendar_one: 'Arreglar {{formatted}} problema del calendario',
+        calendar_other: 'Arreglar {{formatted}} problemas del calendario',
+        sources_one: '{{formatted}} fuente sin preparar',
+        sources_other: '{{formatted}} fuentes sin preparar',
+      },
     },
 
     uiAction: {
@@ -3319,16 +3344,27 @@ export const es: Translation = {
         more_other: 'y {{formatted}} más',
       },
       replaced: {
-        word: 'ELIMINADOS',
+        replacedWord: 'SUSTITUIDOS',
+        replacedTitle_one:
+          '{{drafted}} redactados, {{formatted}} borrador más débil eliminado',
+        replacedTitle_other:
+          '{{drafted}} redactados, {{formatted}} borradores más débiles eliminados',
+        period: '{{period}} se queda en {{planned}}',
+        draftedGroup: 'REDACTADOS · {{formatted}}',
+        removedGroup: 'ELIMINADOS · {{formatted}}',
+        fit: 'encaje {{score}}',
         noneWord: 'NADA ELIMINADO',
         none: 'No se eliminó ningún borrador',
-        title_one: '{{formatted}} borrador más débil eliminado definitivamente',
-        title_other:
-          '{{formatted}} borradores más débiles eliminados definitivamente',
         kept_one:
           '{{formatted}} conservado: cambió desde la propuesta o no hacía falta.',
         kept_other:
           '{{formatted}} conservados: cambiaron desde la propuesta o no hacían falta.',
+      },
+      later: {
+        word: 'NADA QUITADO',
+        title:
+          '{{what}} se queda hasta que salgan sus publicaciones programadas',
+        until: 'hasta el {{date}}',
       },
       tagged: {
         word: 'ETIQUETADO',
@@ -3657,6 +3693,21 @@ export const es: Translation = {
       platformsAdded: 'añadido: {{what}}',
       platformsRemoved: 'quitado: {{what}}',
       platformsChanged: 'añadido: {{added}} · quitado: {{removed}}',
+      removedWord: 'QUITADO',
+      addedWord: 'AÑADIDO',
+      platformsOff: '{{what}} ya no está en la campaña',
+      platformsOn: '{{what}} ya está en la campaña',
+      noPostsOn: 'sin publicaciones',
+      keptNote_one:
+        '{{formatted}} publicación sin publicar se queda donde está, marcada en Calidad.',
+      keptNote_other:
+        '{{formatted}} publicaciones sin publicar se quedan donde están, marcadas en Calidad.',
+      unscheduled_one:
+        '{{formatted}} publicación desprogramada antes. DESHACER devuelve la plataforma, no la programación.',
+      unscheduled_other:
+        '{{formatted}} publicaciones desprogramadas antes. DESHACER devuelve la plataforma, no la programación.',
+      ideasWindow: 'para {{range}}',
+      openIdeas: 'ABRIR',
       goal: {
         week_one: 'Objetivo ampliado a {{formatted}} publicación por semana',
         week_other:
@@ -4762,6 +4813,11 @@ export const es: Translation = {
     backToPosts: 'Volver a las publicaciones',
 
     hasProblem: 'Esta publicación tiene un problema',
+    outsideCampaign: {
+      check: 'Campaña',
+      platform: 'No es una plataforma de esta campaña',
+      postType: 'No es un tipo de publicación de esta campaña',
+    },
 
     /**
      * Adjuntar una imagen de Recursos a una publicación (CON-290).
@@ -6546,6 +6602,8 @@ export const es: Translation = {
     strategy: {
       commitment: 'El compromiso',
       spend: 'Presupuesto e idioma',
+      removedByAssistant: '{{what}} quitado por el asistente',
+      undoInThread: 'DESHACER está en la conversación',
     },
     type: {
       label: 'Tipo de campaña',
