@@ -85,6 +85,7 @@ export function useListAssistantPage({
   total,
   rowIds,
   savedViewId,
+  openId,
 }: {
   kind: ViewEntityKind
   /** The list endpoint's query, as the page sends it. */
@@ -94,9 +95,12 @@ export function useListAssistantPage({
   total: number
   rowIds: string[]
   savedViewId?: string
+  /** The row open in place, if any: what "this one" means (CON-481). */
+  openId?: string | null
 }) {
   const page = useMemo<ViewPage>(() => {
     const out: ViewPage = { filter: listFilter(params) }
+    if (openId) out.focus = { kind, id: openId }
     if (params.sort) out.sort = params.sort
     if (savedViewId) out.savedViewId = savedViewId
     if (allMatching) {
@@ -106,7 +110,7 @@ export function useListAssistantPage({
     }
     if (rowIds.length > 0) out.visible = { kind, ids: rowIds }
     return out
-  }, [kind, params, ticked, allMatching, total, rowIds, savedViewId])
+  }, [kind, params, ticked, allMatching, total, rowIds, savedViewId, openId])
   useAssistantPage(page)
 }
 

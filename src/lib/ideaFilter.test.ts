@@ -179,3 +179,16 @@ describe('smart group queries', () => {
     expect(matchesView({ fit: 'high' }, 'fit=high')).toBe(false)
   })
 })
+
+describe('an idea to open (CON-481)', () => {
+  it('is read from the address and never saved with a smart group', async () => {
+    const { ideaViewQuery } = await import('./ideaFilter')
+    expect(parseIdeaListSearch({ idea: ' i1 ', pile: 'yes' })).toEqual({
+      idea: 'i1',
+      pile: 'yes',
+    })
+    expect(ideaViewQuery({ idea: 'i1', fit: 'high', group: 'none' })).toBe(
+      'fit=high',
+    )
+  })
+})

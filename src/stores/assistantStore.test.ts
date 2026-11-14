@@ -62,7 +62,7 @@ vi.mock('@/lib/assistantTouched', async (importOriginal) => {
   return { ...actual, refreshTouched }
 })
 
-const { useAssistantStore, setUiActionApplier } =
+const { useAssistantStore, setUiActionApplier, selectStreamedPosts } =
   await import('./assistantStore')
 const { useViewContextStore } = await import('./viewContextStore')
 const { queryClient } = await import('@/lib/queryClient')
@@ -176,6 +176,150 @@ describe('assistantStore', () => {
     expect(refreshTouched).toHaveBeenCalledWith(expect.anything(), [
       { kind: 'campaign', id: 'c1' },
       { kind: 'idea' },
+    ])
+  })
+
+  it('merges a workspace thread’s drafts into the campaign they name (CON-481)', async () => {
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'workspace' }, '', '')
+    let seen = 0
+    stream.events = [
+      {
+        type: 'post_generated',
+        post: {
+          id: 'p1',
+          campaign_id: 'c7',
+          title: 'Draft',
+          content: '',
+          platform_id: 'linkedin',
+          platform_post_type: '',
+          campaign_type_phase_id: null,
+          scheduled_at: null,
+        },
+      },
+    ]
+    const unsubscribe = useAssistantStore.subscribe((s) => {
+      seen = Math.max(seen, selectStreamedPosts('c7')(s).length)
+    })
+    await useAssistantStore.getState().send(id, 'Draft two posts')
+    unsubscribe()
+    expect(seen).toBe(1)
+    // Cleared with the turn, as a campaign thread's are.
+    expect(selectStreamedPosts('c7')(useAssistantStore.getState())).toEqual([])
+  })
+
+  it('sends a draft to the campaign it names, and shows both threads’ drafts (review)', async () => {
+    const own = useAssistantStore
+      .getState()
+      .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+    const post = (id: string, campaign: string) => ({
+      id,
+      campaign_id: campaign,
+      title: 'Draft',
+      content: '',
+      platform_id: 'linkedin',
+      platform_post_type: '',
+      campaign_type_phase_id: null,
+      scheduled_at: null,
+    })
+    // A draft for c9 from c1's thread goes to c9, not into c1's list.
+    stream.events = [
+      { type: 'post_generated', post: post('p1', 'c9') },
+      { type: 'post_generated', post: post('p2', 'c1') },
+    ]
+    let c1 = 0
+    let c9 = 0
+    const unsubscribe = useAssistantStore.subscribe((s) => {
+      c1 = Math.max(c1, selectStreamedPosts('c1')(s).length)
+      c9 = Math.max(c9, selectStreamedPosts('c9')(s).length)
+    })
+    await useAssistantStore.getState().send(own, 'Draft them')
+    unsubscribe()
+    expect(c1).toBe(1)
+    expect(c9).toBe(1)
+  })
+
+  it('reads the same merged list twice as the same array', () => {
+    const p = (id: string) => ({
+      id,
+      title: '',
+      content: '',
+      platform_id: '',
+      platform_post_type: '',
+      campaign_type_phase_id: null,
+      scheduled_at: null,
+    })
+    useAssistantStore.setState((s) => ({
+      threads: {
+        ...s.threads,
+        'campaign:c3': {
+          ...(s.threads['campaign:c3'] ?? {
+            id: 'campaign:c3',
+            subject: { kind: 'campaign', campaignId: 'c3' },
+            title: '',
+            turns: [],
+            status: 'idle',
+            runStartedAt: null,
+            lastActiveAt: null,
+            unread: false,
+            loaded: true,
+          }),
+          streamedPosts: [p('a')],
+        },
+      },
+      streamedElsewhere: { c3: [p('a'), p('b')] },
+    }))
+    const state = useAssistantStore.getState()
+    const first = selectStreamedPosts('c3')(state)
+    expect(first.map((x) => x.id)).toEqual(['a', 'b'])
+    expect(selectStreamedPosts('c3')(state)).toBe(first)
+  })
+
+  it('keeps the drafts it is writing on the turn, and counts them against the plan', async () => {
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+    stream.events = [
+      { type: 'tool_call', name: 'draftIdeas', ref: 'r1' },
+      {
+        type: 'idea_draft',
+        draft: {
+          postId: 'p1',
+          title: 'A pool',
+          platformId: 'instagram',
+          ideaIds: ['i1'],
+          grounding: { mode: 'exploratory', sources: [] },
+        },
+        done: 1,
+        total: 3,
+      },
+    ]
+    let live: unknown
+    const unsubscribe = useAssistantStore.subscribe((s) => {
+      const turns = s.threads[id]?.turns ?? []
+      const turn = turns[turns.length - 1]
+      if (turn?.liveDrafts) live = turn.liveDrafts
+    })
+    await useAssistantStore.getState().send(id, 'Draft them')
+    unsubscribe()
+    expect(live).toMatchObject({ done: 1, total: 3, posts: [{ postId: 'p1' }] })
+    expect(
+      lastTurn(id).steps?.find((s) => s.tool === 'draftIdeas')?.planned,
+    ).toBe(3)
+  })
+
+  it('keeps a refusal’s code on the turn, for its card (CON-481)', async () => {
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+    stream.events = [
+      { type: 'tool_call', name: 'editIdea', ref: 'r1' },
+      { type: 'tool_result', ref: 'r1', ok: false, code: 'idea_read_only' },
+    ]
+    await useAssistantStore.getState().send(id, 'Change its angle')
+    expect(lastTurn(id).refusals).toEqual([
+      { tool: 'editIdea', code: 'idea_read_only' },
     ])
   })
 

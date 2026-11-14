@@ -102,6 +102,9 @@ type Confirming = {
   fromSelection: boolean
 }
 
+/** Pages the list reads on to reach an idea a link names (`?idea=`). */
+const ARRIVAL_PAGES = 5
+
 /**
  * The Ideas list as the server's answer to the address (CON-388 §4, §6),
  * behind `ideas-smart-filter`: the Assets list's way of narrowing, for ideas.
@@ -201,6 +204,38 @@ export function IdeasQuerySurface({
   }
   const visibleRows =
     shown.rows === rows && shown.expandedId === expandedId ? shown.list : rows
+
+  // An idea the address names (`?idea=`, CON-481) — a result card's row —
+  // opens once it is on the page, its band unfolded; the address then lets
+  // it go, because what is open is the reader's from there on. Not yet on
+  // the page, the list reads on, a page at a time, up to `ARRIVAL_PAGES`:
+  // there is no read of one idea by id. Past that, or once the list has no
+  // more, it is let go closed.
+  const named = search.idea
+  const [opened, setOpened] = useState<string | undefined>(undefined)
+  // Each arrival is its own: following the same link again opens it again.
+  if (!named && opened) setOpened(undefined)
+  if (named && named !== opened && rows.some((r) => r.id === named)) {
+    setOpened(named)
+    setExpandedId(named)
+  }
+  const pagesRead = query.data?.pages.length ?? 0
+  useEffect(() => {
+    if (!named) return
+    if (opened === named) {
+      document
+        .querySelector(`[data-idea-id="${CSS.escape(named)}"]`)
+        ?.scrollIntoView({ block: 'center' })
+    } else {
+      if (query.isFetching || !query.isSuccess) return
+      if (query.hasNextPage && pagesRead < ARRIVAL_PAGES) {
+        void query.fetchNextPage()
+        return
+      }
+    }
+    const { idea: _idea, ...rest } = search
+    onSearchChange(rest)
+  }, [named, opened, query, pagesRead, search, onSearchChange])
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   const [allMatching, setAllMatching] = useState(false)
   const [resolving, setResolving] = useState(false)
@@ -238,6 +273,7 @@ export function IdeasQuerySurface({
     total,
     rowIds: visibleIds,
     savedViewId: search.view,
+    openId: expandedId,
   })
 
   const change = (next: Partial<IdeaListSearch>) =>
@@ -570,6 +606,7 @@ export function IdeasQuerySurface({
                   fromSelection: false,
                 })
               }
+              revealId={opened === named ? named : undefined}
               onEndReached={() => {
                 // Not after a page failed: re-observing the foot would ask
                 // again at once, and again. The retry below is the way on.
@@ -815,6 +852,7 @@ function IdeaRows({
   onToggleRow,
   writer,
   onDelete,
+  revealId,
   onEndReached,
   loadingMore,
   moreFailed,
@@ -835,6 +873,8 @@ function IdeaRows({
   onToggleRow: (id: string) => void
   writer: ReturnType<typeof useIdeaListWriter>
   onDelete: (idea: Idea) => void
+  /** An idea a link opened (CON-481): its band unfolds to show it. */
+  revealId?: string
   onEndReached: () => void
   loadingMore: boolean
   /** The next page failed; paging waits for the retry. */
@@ -861,6 +901,17 @@ function IdeaRows({
   // an edge to pin under the page header (CON-392).
   const grouped = group !== 'none' && groups.length > 0
   usePinnedBands(listRef, rows.length > 0, [rows, folded, group])
+
+  // A linked idea in a folded band unfolds it, before the page scrolls to it.
+  const revealed = revealId ? rows.find((r) => r.id === revealId) : undefined
+  const revealBand = revealed
+    ? `${group}:${grouped ? (revealed.groupKey ?? '') : ''}`
+    : undefined
+  if (revealBand && folded.has(revealBand)) {
+    const next = new Set(folded)
+    next.delete(revealBand)
+    setFolded(next)
+  }
 
   // The foot coming into view asks for the next page; a ref to the callback
   // so a new one each render doesn't re-observe.

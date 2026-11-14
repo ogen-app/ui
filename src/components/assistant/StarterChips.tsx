@@ -1,5 +1,4 @@
 import {
-  ArchiveIcon,
   ArrowClockwiseIcon,
   ArrowsClockwiseIcon,
   ArrowCounterClockwiseIcon,
@@ -71,8 +70,10 @@ type StarterKey =
   | 'connections'
   | 'findIdeas'
   | 'mergeDuplicates'
-  | 'setAsideWeak'
-  | 'distillMore'
+  | 'triageUndecided'
+  | 'whyFits'
+  | 'similarIdeas'
+  | 'draftIt'
   | 'draftSelected'
   | 'compileSelected'
   | 'whatShare'
@@ -164,20 +165,38 @@ const WORKSPACE_STARTERS: Starter[] = [
  * the screen has a selection — the verbs for what is ticked. A screen with no
  * set here falls back to its thread's.
  */
-type ScreenStarters = { none: Starter[]; selected?: Starter[] }
+/**
+ * `one` is a selection of a single item, where "these" questions about a
+ * set make no sense (CON-481); `focused` is a list with one of its items
+ * open, which is what "this one" means.
+ */
+type ScreenStarters = {
+  none: Starter[]
+  selected?: Starter[]
+  one?: Starter[]
+  focused?: Starter[]
+}
 
+// The CON-465 boards' (CON-481).
 const IDEAS: ScreenStarters = {
   none: [
-    { icon: MagnifyingGlassIcon, key: 'findIdeas' },
+    { icon: SparkleIcon, key: 'triageUndecided' },
     { icon: IntersectIcon, key: 'mergeDuplicates' },
-    { icon: ArchiveIcon, key: 'setAsideWeak' },
-    { icon: SparkleIcon, key: 'distillMore' },
+    { icon: MagnifyingGlassIcon, key: 'findIdeas' },
   ],
   selected: [
-    { icon: NotePencilIcon, key: 'draftSelected' },
     { icon: StackIcon, key: 'compileSelected' },
+    { icon: NotePencilIcon, key: 'draftSelected' },
     { icon: IntersectIcon, key: 'whatShare' },
+  ],
+  one: [
     { icon: MagnifyingGlassIcon, key: 'findSimilar' },
+    { icon: NotePencilIcon, key: 'draftSelected' },
+  ],
+  focused: [
+    { icon: ChartBarIcon, key: 'whyFits' },
+    { icon: IntersectIcon, key: 'similarIdeas' },
+    { icon: NotePencilIcon, key: 'draftIt' },
   ],
 }
 
@@ -396,8 +415,13 @@ export function StarterChips({
   const { t } = useTranslation()
   const screen = useViewContextStore((s) => s.location.screen)
   const selection = useViewContextStore((s) => s.page?.selection)
+  const focusKind = useViewContextStore((s) => s.page?.focus?.kind)
   const hasSelection =
     !!selection && ('allMatching' in selection || selection.ids.length > 0)
+  const single =
+    !!selection &&
+    'ids' in selection &&
+    (selection.count ?? selection.ids.length) <= 1
   const forScreen = screenStarters(screen)
   // The bank's state, on the Assets list only: a campaign's sources inside
   // one, the workspace's otherwise — the scope the assistant reads.
@@ -411,7 +435,9 @@ export function StarterChips({
       : null
   const state = useAssetsState(campaignId, onAssets && !hasSelection)
   const starters =
+    (hasSelection && single && forScreen?.one) ||
     (hasSelection && forScreen?.selected) ||
+    (focusKind && forScreen?.focused) ||
     (forScreen?.none &&
       (onAssets
         ? [...stateStarters(state.data), ...forScreen.none]

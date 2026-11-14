@@ -591,3 +591,48 @@ describe('IdeasQuerySurface in Spanish', () => {
     expect(screen.queryByText(/high or medium/)).not.toBeInTheDocument()
   })
 })
+
+describe('an idea the address names (CON-481)', () => {
+  it('opens once it is on the page, then lets the address go', async () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    await renderSurface({ idea: 'b' })
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-idea-id="b"]')?.getAttribute('data-open'),
+      ).toBe('true'),
+    )
+    await waitFor(() => expect(onSearchChange).toHaveBeenCalledWith({}))
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
+  })
+
+  it('lets go of one the page doesn’t hold', async () => {
+    await renderSurface({ idea: 'gone', pile: 'yes' })
+    await waitFor(() =>
+      expect(onSearchChange).toHaveBeenCalledWith({ pile: 'yes' }),
+    )
+  })
+
+  it('reads on a page at a time to reach an idea past the first', async () => {
+    // The undecided count reads the list too, so pages answer by cursor.
+    api.queryIdeas.mockImplementation(async (params: Record<string, string>) =>
+      params.cursor === 'p2'
+        ? page({
+            ideas: [idea('far', { group_key: 'none' })],
+            next_cursor: null,
+          })
+        : page({ next_cursor: 'p2' }),
+    )
+    Element.prototype.scrollIntoView = vi.fn()
+    await renderSurface({ idea: 'far' })
+    await waitFor(() =>
+      expect(
+        document
+          .querySelector('[data-idea-id="far"]')
+          ?.getAttribute('data-open'),
+      ).toBe('true'),
+    )
+    expect(api.queryIdeas).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: 'p2' }),
+    )
+  })
+})

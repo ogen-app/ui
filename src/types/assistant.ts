@@ -134,6 +134,8 @@ export type AssistantResultDetails = {
  */
 export type StreamedPost = {
   id: string
+  /** Its campaign, when the event said (CON-481): drafts from any thread. */
+  campaign_id?: string
   title: string
   content: string
   platform_id: string
@@ -1181,6 +1183,8 @@ export type CompiledPost = {
   postId: string
   title: string
   platformId?: string
+  /** Its post type's slug (CON-481); absent while automatic. */
+  postType?: string
   /** YYYY-MM-DD; absent when the post is undated. */
   date?: string
 }
@@ -1190,11 +1194,29 @@ export type IdeaBrief = {
   title: string
   /** `yes`, `later`, `no`; absent while it is on the desk. */
   verdict?: 'yes' | 'later' | 'no'
+  /**
+   * When a `later` idea comes back (CON-481). Past it the idea is woken: it
+   * sits on the desk although its verdict stays `later`.
+   */
+  remindAt?: string
   campaignId?: string
   fitScore?: number
   /** How many posts were made from it (CON-470); absent when not said. */
   posts?: number
+  /** What it is planned as; absent fields aren't planned. */
+  plan?: IdeaPlanBrief
 }
+
+/** An idea's plan, as the ideas pack sends it. */
+export type IdeaPlanBrief = {
+  platformId?: string
+  postType?: string
+  phaseId?: string
+  targetDate?: string
+}
+
+/** A compiled post's thesis: one per idea, with its points (CON-481). */
+export type IdeaThesis = { title: string; points: string[] }
 
 /** A bulk change over ideas: how many, which failed, its undo. */
 export type IdeasChanged = {
@@ -1210,12 +1232,24 @@ export type IdeasShared = { value: string; label: string; ideaIds: string[] }
 
 /** The ideas pack's typed results (CON-465), from `results.ideas`. */
 export type IdeasResults = {
-  found?: { ideas: IdeaBrief[]; total: number }
+  found?: {
+    ideas: IdeaBrief[]
+    total: number
+    /** The pile the filter named, counted with no other filter (CON-481). */
+    pileTotal?: number
+  }
   /** `setIdeaVerdict`. */
   decided?: { idea: IdeaBrief; undoId?: string }
-  /** `setIdeaVerdicts`. */
-  decidedMany?: IdeasChanged
-  moved?: IdeasChanged
+  /**
+   * `setIdeaVerdicts`: the ideas as they are now, and what the triage set
+   * (CON-481) — `none` is back on the desk.
+   */
+  decidedMany?: IdeasChanged & {
+    ideas: IdeaBrief[]
+    verdict?: 'yes' | 'later' | 'no' | 'none'
+    remindAt?: string
+  }
+  moved?: IdeasChanged & { ideas: IdeaBrief[] }
   /** Never undone. */
   deleted?: IdeasChanged
   /**
@@ -1226,18 +1260,14 @@ export type IdeasResults = {
     posts: CompiledPost[]
     campaignId: string
     ideas: number
+    /** The ideas, in their theses' order (CON-481). */
+    builtFrom: { id: string; title: string }[]
+    theses: IdeaThesis[]
     grounding: Grounding
     undoId?: string
   }
   drafted?: {
-    posts: {
-      postId: string
-      title: string
-      platformId: string
-      /** YYYY-MM-DD; absent when the draft is unscheduled (CON-470). */
-      publishDate?: string
-      grounding: Grounding
-    }[]
+    posts: DraftedIdeaPost[]
     warnings: string[]
   }
   /** `getIdea`: why it fits, where it came from, what it became. */
@@ -1260,9 +1290,19 @@ export type IdeasResults = {
     }
     sourceAsset?: { id: string; title: string }
     analysisGist?: string
+    /** The lens the analysis it came from read in; none is the workspace's. */
+    lens?: { campaignId?: string; campaignName?: string }
     posts: { id: string; title: string; status: string; campaignId: string }[]
   }
-  edited?: { idea: IdeaBrief; changed: string[]; undoId?: string }
+  edited?: {
+    idea: IdeaBrief
+    changed: string[]
+    /** The editable fields before the edit (CON-481). */
+    before?: { title: string; note?: string; plan: IdeaPlanBrief }
+    /** The note as it now reads; absent when it is empty. */
+    note?: string
+    undoId?: string
+  }
   similar?: {
     ideaId: string
     title: string
@@ -1271,12 +1311,37 @@ export type IdeasResults = {
   common?: {
     ideas: { id: string; title: string }[]
     shared: { kind: string; values: IdeasShared[] }[]
+    /** The thread they share, in a few words and a sentence (CON-481). */
+    theme?: string
+    angle?: string
+    /** Where they differ: a field and every value they hold of it. */
+    splits: { field: string; values: IdeasShared[] }[]
   }
   duplicates?: {
     groups: { keepId: string; similarity: number; ideas: IdeaBrief[] }[]
     total: number
   }
-  merged?: { idea: IdeaBrief; deleted: number }
+  /** Each group merged (CON-481); `stopped` when a later one failed. */
+  merged?: {
+    groups: { idea: IdeaBrief; deleted: number }[]
+    stopped?: string
+  }
+}
+
+/** A draft written from ideas: the result's rows and each streamed event. */
+export type DraftedIdeaPost = {
+  postId: string
+  title: string
+  platformId: string
+  /** YYYY-MM-DD; absent when the draft is unscheduled (CON-470). */
+  publishDate?: string
+  /** The post's own campaign (CON-481), for OPEN in any thread. */
+  campaignId?: string
+  /** The ideas it was written from. */
+  ideaIds: string[]
+  /** The start of its body. */
+  excerpt?: string
+  grounding: Grounding
 }
 
 /** Where an undo stands, by the action's undo id. */
@@ -1304,6 +1369,8 @@ export type AssistantStep = {
   progress?: string
   /** Posts a generation step has persisted so far. */
   generated?: number
+  /** Posts it means to write, when it says (CON-481's draftIdeas). */
+  planned?: number
   /** The tool refused the call or hit a conflict (`tool_result.ok: false`). */
   failed?: boolean
   /**
@@ -1359,6 +1426,16 @@ export type AssistantTurn = {
   workspace?: WorkspaceResults
   /** What the ideas pack read or changed this turn (CON-465). */
   ideas?: IdeasResults
+  /**
+   * Drafts from ideas as they are written (CON-481): drawn in the rail while
+   * the turn runs, replaced by the summary card when it completes.
+   */
+  liveDrafts?: { posts: DraftedIdeaPost[]; done: number; total: number }
+  /**
+   * Refusals the server named with a code (CON-481) — `idea_read_only` —
+   * which the reply draws as a card of its own.
+   */
+  refusals?: { tool: string; code: string }[]
   /** How an offer answered from its card went, on the reply it ran in. */
   answered?: OfferOutcome
   /** What this turn did to the screen, and where each can be put back to. */

@@ -114,12 +114,18 @@ function humanise(key: string): string {
 export function FitSection({
   idea,
   scoredFor,
+  compact = false,
 }: {
   /** Only the score and its breakdown are read — the assistant's idea card
    *  (CON-465) has those and nothing else of an idea. */
   idea: Pick<Idea, 'fitScore' | 'fitBreakdown'>
   /** Which reading the score is for, beside the heading. */
   scoredFor: string | null
+  /**
+   * The rail's width (CON-481): no heading — the card's headline says the
+   * score — and each reason under its row rather than in a column beside it.
+   */
+  compact?: boolean
 }) {
   const { t } = useTranslation()
   const breakdown = idea.fitBreakdown
@@ -129,11 +135,8 @@ export function FitSection({
   const caps = (breakdown.caps ?? []).filter((cap): cap is CapKey =>
     (KNOWN_CAPS as readonly string[]).includes(cap),
   )
-  return (
-    <Part
-      heading={t('assetInsights.ideaFit.heading', { score: idea.fitScore })}
-      aside={scoredFor}
-    >
+  const body = (
+    <>
       {caps.map((cap) => (
         <p key={cap} className="text-xs text-foreground">
           {t(`assetInsights.ideaFit.cap.${cap}`)}
@@ -148,7 +151,12 @@ export function FitSection({
           return (
             <li
               key={row.key}
-              className="grid grid-cols-[8.5rem_auto_minmax(0,1fr)] items-start gap-x-3 text-[12.5px]/[18px]"
+              className={cn(
+                'grid items-start gap-x-3 text-[12.5px]/[18px]',
+                compact
+                  ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-0.5'
+                  : 'grid-cols-[8.5rem_auto_minmax(0,1fr)]',
+              )}
             >
               <span className="text-foreground">{name}</span>
               <span
@@ -181,7 +189,12 @@ export function FitSection({
                   ))}
                 </span>
               </span>
-              <span className="text-secondary-foreground">
+              <span
+                className={cn(
+                  'text-secondary-foreground',
+                  compact && 'col-span-2',
+                )}
+              >
                 {row.hint && (
                   <span className="mr-1 inline-block rounded-full bg-border px-1.5 text-[11.5px]/[18px] font-medium text-foreground">
                     {row.hint}
@@ -193,6 +206,16 @@ export function FitSection({
           )
         })}
       </ul>
+    </>
+  )
+  return compact ? (
+    <div className="flex flex-col gap-2">{body}</div>
+  ) : (
+    <Part
+      heading={t('assetInsights.ideaFit.heading', { score: idea.fitScore })}
+      aside={scoredFor}
+    >
+      {body}
     </Part>
   )
 }
