@@ -11,7 +11,8 @@ import {
   TextAction,
 } from './blocks'
 import type { AssistantResultDetails, UndoState } from '@/types/assistant'
-import { counted, formatDateRange } from '@/lib/intl'
+import { counted, formatDate, formatDateRange, formatList } from '@/lib/intl'
+import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { startOfDay } from '@/lib/assetFilter'
 
 /**
@@ -65,7 +66,13 @@ export function ResultCard({
     dates(t, details, undo),
     redistribute(t, details),
     ideas(t, details, undo, campaignId),
-    drafts(t, details),
+    details.draftedPosts && (
+      <DraftsCard
+        t={t}
+        drafted={details.draftedPosts}
+        campaignId={campaignId}
+      />
+    ),
     platforms(t, details, undo),
     goal(t, details, undo),
     brief(t, details, undo),
@@ -188,21 +195,108 @@ function ideas(
   )
 }
 
-function drafts(t: TFunction, details: AssistantResultDetails) {
-  const drafted = details.draftedPosts
-  if (!drafted) return null
+/**
+ * What draftPost made (CON-484): DRAFTED, how many, where and when — "1 post
+ * · Threads · Thu 24" — with OPEN, and a row per draft. The day is the
+ * drafts' own, or "not scheduled" only when none of them has one.
+ */
+function DraftsCard({
+  t,
+  drafted,
+  campaignId,
+}: {
+  t: TFunction
+  drafted: NonNullable<AssistantResultDetails['draftedPosts']>
+  campaignId?: string
+}) {
+  const { resolve } = usePlatformCatalog()
+  if (drafted.postCount === 0)
+    return (
+      <ResultBlock
+        status={t('assistant.word.done')}
+        title={t('assistant.result.draftsNone')}
+      >
+        <Warnings warnings={drafted.warnings} />
+      </ResultBlock>
+    )
+  const { posts } = drafted
+  const platforms = [...new Set(posts.map((p) => p.platform).filter(Boolean))]
+  const days = posts
+    .map((p) => p.date)
+    .filter((d): d is string => !!d)
+    .sort()
+  const when =
+    posts.length === 0
+      ? undefined
+      : days.length === 0
+        ? t('assistant.result.notScheduled')
+        : days.length === posts.length
+          ? days[0] === days[days.length - 1]
+            ? dayLabel(days[0])
+            : formatDateRange(
+                startOfDay(days[0]),
+                startOfDay(days[days.length - 1]),
+                {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
+                },
+              )
+          : undefined
+  const meta = [formatList(platforms), when].filter(Boolean).join(' · ')
+  const open =
+    campaignId && posts.length === 1 ? (
+      <Link
+        to="/campaigns/$campaignId/posts/$postId"
+        params={{ campaignId, postId: posts[0].id }}
+        className={TEXT_ACTION_CLASS}
+      >
+        {t('assistant.result.openPost')}
+      </Link>
+    ) : campaignId && posts.length > 1 ? (
+      <Link
+        to="/campaigns/$campaignId/list"
+        params={{ campaignId }}
+        className={TEXT_ACTION_CLASS}
+      >
+        {t('assistant.result.openPosts')}
+      </Link>
+    ) : undefined
   return (
     <ResultBlock
-      status={t('assistant.word.done')}
-      title={
-        drafted.postCount === 0
-          ? t('assistant.result.draftsNone')
-          : t('assistant.result.drafts', counted(drafted.postCount))
-      }
+      status={t('assistant.result.draftedWord')}
+      title={t('assistant.result.drafted', counted(drafted.postCount))}
+      meta={meta || undefined}
+      action={open}
     >
+      {posts.map((post) => {
+        const type =
+          resolve(post.platformId)?.postTypes.find(
+            (pt) => pt.slug === post.postType,
+          )?.label ?? post.postType
+        return (
+          <ResultRow key={post.id} className="flex flex-col gap-0.5">
+            <span className="text-sm text-foreground">{post.title}</span>
+            <span className="text-[12.5px] text-tertiary-foreground">
+              {[post.platform, type].filter(Boolean).join(' · ')}
+            </span>
+          </ResultRow>
+        )
+      })}
       <Warnings warnings={drafted.warnings} />
       {drafted.grounding && <SourcesLine grounding={drafted.grounding} />}
     </ResultBlock>
+  )
+}
+
+/** A `YYYY-MM-DD` day as the card prints it: "Thu 24 Apr". */
+function dayLabel(day: string): string {
+  return (
+    formatDate(startOfDay(day), {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    }) ?? day
   )
 }
 
@@ -316,29 +410,68 @@ function goal(
   )
 }
 
+/** The brief fields the catalogue names; another is shown by its slug. */
+const BRIEF_FIELDS = [
+  'description',
+  'targetPersona',
+  'keyMessages',
+  'toneGuidelines',
+] as const
+
+/**
+ * enrichBrief (CON-484): BRIEF, "Messaging rewritten · 4 fields", a row per
+ * field with its new value, and UNDO. A server that names no fields gets
+ * the plain line it always had.
+ */
 function brief(
   t: TFunction,
   details: AssistantResultDetails,
   undo?: ResultUndo,
 ) {
   if (!details.brief) return null
-  const { applied, undoId } = details.brief
+  const { applied, undoId, fields } = details.brief
+  const named = applied && fields.length > 0
   return (
     <ResultBlock
       status={
-        applied ? t('assistant.word.done') : t('assistant.word.notApplied')
+        named
+          ? t('assistant.result.briefWord')
+          : applied
+            ? t('assistant.word.done')
+            : t('assistant.word.notApplied')
       }
       tone={applied ? 'neutral' : 'warning'}
       title={
-        applied
-          ? t('assistant.result.briefApplied')
-          : t('assistant.result.briefNotApplied')
+        named
+          ? t('assistant.result.briefRewritten')
+          : applied
+            ? t('assistant.result.briefApplied')
+            : t('assistant.result.briefNotApplied')
+      }
+      meta={
+        named
+          ? t('assistant.result.briefFields', counted(fields.length))
+          : undefined
       }
       action={
         applied ? <UndoAction t={t} undoId={undoId} undo={undo} /> : undefined
       }
     >
       <UndoNote t={t} undoId={undoId} undo={undo} />
+      {named &&
+        fields.map(({ field, value }) => {
+          const known = BRIEF_FIELDS.find((f) => f === field)
+          return (
+            <ResultRow key={field} className="flex flex-col gap-0.5">
+              <span className="text-sm text-foreground">
+                {known ? t(`assistant.result.briefField.${known}`) : field}
+              </span>
+              <span className="text-[12.5px] whitespace-pre-line text-secondary-foreground">
+                {value}
+              </span>
+            </ResultRow>
+          )
+        })}
       {details.brief.grounding && (
         <SourcesLine grounding={details.brief.grounding} />
       )}

@@ -106,6 +106,13 @@ export function ResultRow({
  * reason beside it. `label` replaces "Sources" where the card read rather than
  * made ("Read from"); `letters` puts a comparison's letter before each name.
  */
+/** The catalogue's sentence for each reason output drew on nothing. */
+const UNGROUNDED_REASON = {
+  no_sources: 'assistant.sources.reason.noSources',
+  chosen: 'assistant.sources.reason.chosen',
+  none_relevant: 'assistant.sources.reason.noneRelevant',
+} as const
+
 export function SourcesLine({
   grounding,
   label,
@@ -123,11 +130,18 @@ export function SourcesLine({
 }) {
   const { t } = useTranslation()
   const names = groundingAssets(grounding.sources)
+  // Why it drew on nothing, worded here from the server's reason (CON-484);
+  // its own sentence only for a reason this build doesn't know.
+  const why =
+    note ??
+    (grounding.reason && grounding.reason in UNGROUNDED_REASON
+      ? t(UNGROUNDED_REASON[grounding.reason as keyof typeof UNGROUNDED_REASON])
+      : (grounding.note ?? t('assistant.sources.generalKnowledge')))
   return (
     <p className="border-t border-border pt-2.5 text-[12.5px]">
-      <span className="text-secondary-foreground">
+      <span className="mr-2 text-secondary-foreground">
         {label ?? t('assistant.sources.label')}
-      </span>{' '}
+      </span>
       {grounding.mode === 'grounded' ? (
         <span className="font-semibold text-accent-ink">
           {names.length > 0
@@ -141,7 +155,7 @@ export function SourcesLine({
                     <Link
                       to="/assets/$assetId"
                       params={{ assetId: s.id }}
-                      className="hover:underline"
+                      className="transition-colors hover:text-foreground"
                     >
                       {s.title}
                     </Link>
@@ -154,12 +168,10 @@ export function SourcesLine({
         </span>
       ) : (
         <>
-          <span className="font-semibold text-warning-ink">
+          <span className="mr-2 font-semibold text-warning-ink">
             {t('assistant.sources.notGrounded')}
-          </span>{' '}
-          <span className="text-secondary-foreground">
-            {note ?? t('assistant.sources.generalKnowledge')}
           </span>
+          <span className="text-secondary-foreground">{why}</span>
         </>
       )}
     </p>
@@ -215,14 +227,17 @@ export function TextAction({
   children,
   onClick,
   disabled,
+  type = 'button',
 }: {
   children: React.ReactNode
   onClick?: () => void
   disabled?: boolean
+  /** `submit` inside a card's own small form (CON-484). */
+  type?: 'button' | 'submit'
 }) {
   return (
     <button
-      type="button"
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className={TEXT_ACTION_CLASS}

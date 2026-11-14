@@ -3,10 +3,11 @@ import { createFileRoute } from '@tanstack/react-router'
 import { ContentPage } from '@/components/content/ContentPage'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { parseAssetListSearch, type AssetListSearch } from '@/lib/assetFilter'
+import { parseAddSource, type AddSourceOpen } from '@/lib/assistantUiActions'
 
 type CampaignAssetsSearch = AssetListSearch & {
-  /** The assistant asking for a source (`open_add_source`, CON-474). */
-  add?: 'source'
+  /** The assistant asking for a source (`open_add_source`, CON-474/484). */
+  add?: AddSourceOpen
 }
 
 export const Route = createFileRoute(
@@ -19,7 +20,7 @@ export const Route = createFileRoute(
   // `add=source` is the assistant's: it opens ADD CONTENT once and goes.
   validateSearch: (raw: Record<string, unknown>): CampaignAssetsSearch => ({
     ...parseAssetListSearch(raw),
-    ...(raw.add === 'source' ? { add: 'source' as const } : {}),
+    ...(parseAddSource(raw.add) ? { add: parseAddSource(raw.add) } : {}),
   }),
 })
 
@@ -61,7 +62,7 @@ function CampaignAssets() {
       campaign={campaign}
       search={search}
       onSearchChange={onSearchChange}
-      addSource={add === 'source'}
+      addSource={add}
       onAddSourceOpened={onAddSourceOpened}
     />
   )

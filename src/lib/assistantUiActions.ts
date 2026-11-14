@@ -50,6 +50,11 @@ export type UIAction = {
    * connected here.
    */
   connect?: { platform: string; accountId?: string; reconnect: boolean }
+  /**
+   * The way in an `open_add_source` opens (CON-484): the upload, a page's
+   * import, or — absent — the menu offering both.
+   */
+  via?: 'upload' | 'page'
 }
 
 /** An action as the thread keeps it: what it did, and where it was before. */
@@ -194,11 +199,22 @@ export function connectSearch(
   return { connect: connect.platform }
 }
 
+/** What an Assets page opens on the assistant's asking (CON-474/484). */
+export type AddSourceOpen = 'source' | 'upload' | 'page'
+
+/** Reads `add` off an Assets page's address. */
+export function parseAddSource(value: unknown): AddSourceOpen | undefined {
+  return value === 'source' || value === 'upload' || value === 'page'
+    ? value
+    : undefined
+}
+
 /**
  * The Assets page's address for an `open_add_source` (CON-474): the
- * campaign's Assets tab with its ADD CONTENT menu open, so the upload and the
- * web page are one click away. The page drops `add` once the menu is open —
- * it is a moment, not a place, and a reload should not open the menu again.
+ * campaign's Assets tab with the way in open — the upload, a page's import,
+ * or the ADD CONTENT menu offering both when the action names neither
+ * (`via`, CON-484). The page drops `add` once it is open — it is a moment,
+ * not a place, and a reload should not open it again.
  *
  * Already on that page, its filter stays: the request is added to the address
  * rather than replacing it. Arriving from anywhere else, the search is only
@@ -207,11 +223,13 @@ export function connectSearch(
 export function addSourceSearch(
   target: string,
   here: { pathname: string; search: Record<string, unknown> },
+  via?: UIAction['via'],
 ): Record<string, unknown> {
   const trim = (path: string) => path.replace(/\/$/, '')
+  const add: AddSourceOpen = via ?? 'source'
   return trim(here.pathname) === trim(target)
-    ? { ...here.search, add: 'source' }
-    : { add: 'source' }
+    ? { ...here.search, add }
+    : { add }
 }
 
 /**

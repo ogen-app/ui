@@ -128,6 +128,7 @@ describe('results', () => {
           draftedPosts: {
             postCount: 2,
             warnings: [],
+            posts: [],
             grounding: {
               mode: 'grounded',
               sources: [{ id: 'a1', title: 'Press kit 2026' }],
@@ -138,8 +139,10 @@ describe('results', () => {
     )
     expect(screen.getByText('Press kit 2026')).toBeTruthy()
     unmount()
-    render(
-      <ResultCard details={{ draftedPosts: { postCount: 2, warnings: [] } }} />,
+    await renderWithProviders(
+      <ResultCard
+        details={{ draftedPosts: { postCount: 2, warnings: [], posts: [] } }}
+      />,
     )
     expect(screen.queryByText('Not grounded')).toBeNull()
   })

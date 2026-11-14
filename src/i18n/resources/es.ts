@@ -795,7 +795,8 @@ export const es: Translation = {
   grounding: {
     notGrounded: 'Sin fuentes',
     postNotGrounded:
-      'Esta publicación se escribió con conocimiento general, no con los documentos de la campaña.',
+      '<lead>Sin fuentes</lead> — escrita con conocimiento general, no con los documentos de esta campaña.',
+    postGrounded: 'Basada en los documentos de esta campaña.',
   },
   ideas: {
     capture: {
@@ -873,6 +874,7 @@ export const es: Translation = {
       writtenBy: 'Escrita por {{name}}',
       writtenByAt: 'Escrita por {{name}} · {{at}}',
       someone: 'Alguien',
+      byAssistant: 'sugerida por el asistente',
       documentDeleted: 'Documento eliminado',
       morePlaces: '+{{count}} más',
       quickAnswers: 'Responder a «{{title}}»',
@@ -2513,6 +2515,19 @@ export const es: Translation = {
     },
 
     assets: {
+      import: {
+        importing: 'IMPORTANDO',
+        imported: 'IMPORTADA',
+        reading: 'leyendo la página',
+        webPage: 'página web',
+      },
+      distill: {
+        word: 'IDEAS',
+        queued: 'Más ideas en camino',
+        notQueued: 'No se pidieron más ideas',
+        meta: 'se guardan en Ideas a medida que aparecen',
+        open: 'ABRIR IDEAS',
+      },
       state: {
         word: 'Recursos · ahora',
         title_one: '{{formatted}} documento',
@@ -2963,6 +2978,9 @@ export const es: Translation = {
       stale: '{{summary}} · cambió desde entonces, no se ejecutó nada',
       working: '{{summary}} · en marcha…',
       answeredElsewhere: 'Esta oferta ya tiene respuesta.',
+      sourceReady: 'Fuente lista: «{{title}}»',
+      import: 'IMPORTAR',
+      inputRequired: 'Pega el enlace de la página para importarla.',
       checked: 'Comprobado de nuevo — nada ha cambiado',
       chose: 'Elegido: {{option}}',
       staleCard: {
@@ -3559,6 +3577,8 @@ export const es: Translation = {
         'Se están retirando de la publicación {{formatted}} publicaciones programadas. Conservan sus fechas y ningún deshacer las devuelve.',
       skipped: 'Se dejó como estaba: {{reason}}',
       revised: {
+        revisedWord: 'REVISADO',
+        length: '{{before}} → {{after}} caracteres',
         word: 'Reescrito',
         title: 'Publicación reescrita',
         meta: 'reescrita',
@@ -3670,6 +3690,11 @@ export const es: Translation = {
       yourMaterial: 'tu material',
       notGrounded: 'Sin fuentes',
       generalKnowledge: '— conocimiento general',
+      reason: {
+        noSources: 'aún no hay documentos de los que partir',
+        chosen: 'elegiste seguir sin fuentes',
+        noneRelevant: 'nada en los documentos de la campaña trata de esto',
+      },
     },
 
     result: {
@@ -3689,8 +3714,12 @@ export const es: Translation = {
       ideas_one: '+{{formatted}} idea en la pestaña Ideas',
       ideas_other: '+{{formatted}} ideas en la pestaña Ideas',
       draftsNone: 'No se escribió ningún borrador',
-      drafts_one: '+{{formatted}} borrador, sin programar',
-      drafts_other: '+{{formatted}} borradores, sin programar',
+      draftedWord: 'REDACTADO',
+      drafted_one: '{{formatted}} publicación',
+      drafted_other: '{{formatted}} publicaciones',
+      notScheduled: 'sin programar',
+      openPost: 'ABRIR',
+      openPosts: 'ABRIR TODAS',
       platformsUpdated: 'Plataformas actualizadas',
       platformsAdded: 'añadido: {{what}}',
       platformsRemoved: 'quitado: {{what}}',
@@ -3721,6 +3750,16 @@ export const es: Translation = {
       },
       briefApplied: 'Briefing actualizado y guardado',
       briefNotApplied: 'Briefing sugerido pero no aplicado',
+      briefWord: 'BRIEFING',
+      briefRewritten: 'Mensajes reescritos',
+      briefFields_one: '{{formatted}} campo',
+      briefFields_other: '{{formatted}} campos',
+      briefField: {
+        description: 'Descripción',
+        targetPersona: 'Persona objetivo',
+        keyMessages: 'Mensajes clave',
+        toneGuidelines: 'Tono',
+      },
     },
   },
 
@@ -4107,6 +4146,7 @@ export const es: Translation = {
 
     columnTitle: 'Título',
     columnStatus: 'Estado',
+    columnGrounding: 'Fuentes',
     columnPlatform: 'Plataforma',
     columnFormat: 'Formato',
     columnPublishDate: 'Fecha de publicación',
@@ -4917,7 +4957,7 @@ export const es: Translation = {
     sources: {
       heading: 'Fuentes',
       sectionTitle: 'FUENTES',
-      add: 'AÑADIR FUENTE',
+      add: 'AÑADIR UNA FUENTE',
       fromBank: 'Elegir del banco de contenido',
       upload: 'Subir archivos',
       webPage: 'Añadir una página web',
@@ -6682,6 +6722,15 @@ export const es: Translation = {
     page: {
       title: 'Recursos',
       campaignTitle: 'Recursos de {{campaign}}',
+      add: {
+        button: 'AÑADIR CONTENIDO',
+        note: 'Escribir una nota',
+        upload: 'Subir archivo',
+        webPage: 'Añadir una página web',
+      },
+      openedForSource:
+        'Abierto por el asistente — la petición espera a que se lea un archivo.',
+      back: 'VOLVER',
     },
 
     kinds: {

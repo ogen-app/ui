@@ -121,7 +121,8 @@ export function useAssistantUiActions() {
             )
             return before
           case 'open_add_source':
-            // The menu offers the ways in; choosing one is the user's.
+            // The way in it names, or the menu offering both; the file or the
+            // link is always the user's to give.
             if (!destination) return undefined
             await go(
               destination.to,
@@ -132,6 +133,7 @@ export function useAssistantUiActions() {
                   params: destination.params,
                 } as never).pathname,
                 router.state.location,
+                action.via,
               ),
             )
             return before

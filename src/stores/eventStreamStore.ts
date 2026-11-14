@@ -13,6 +13,7 @@ import {
 import { createStreamConnection } from '@/lib/streamConnection'
 import { streamAppEvents } from '@/services/api/events'
 import { toast } from '@/stores/toastStore'
+import { useAssistantStore } from '@/stores/assistantStore'
 import {
   autoAssessmentEnded,
   autoAssessmentStarted,
@@ -153,9 +154,30 @@ async function reconcile(): Promise<void> {
   }
 }
 
+/**
+ * A thread the server offered something in on its own (CON-484): a request
+ * that waited on a source, offered again now it is read. The thread is the
+ * store's, not the query cache's, so it is reloaded rather than invalidated
+ * — and only when this tab has it open.
+ */
+function reloadOfferedThread(event: AppEvent): void {
+  if (event.type !== 'assistant.offer.created') return
+  const scope = event.payload?.scope
+  if (!scope || typeof scope !== 'object') return
+  const { kind, id } = scope as { kind?: unknown; id?: unknown }
+  const threadId =
+    kind === 'workspace'
+      ? 'workspace'
+      : (kind === 'campaign' || kind === 'post') && typeof id === 'string'
+        ? `${kind}:${id}`
+        : null
+  if (threadId) void useAssistantStore.getState().reloadHistory(threadId)
+}
+
 /** Exported for tests; the stream is the only caller. */
 export function handleEvent(event: AppEvent): void {
   trackAutoAssessment(event)
+  reloadOfferedThread(event)
 
   // A run this tab is streaming reports its own outcome; the hub copy of it is
   // an echo, and acting on it would refetch a cache the run is still writing.

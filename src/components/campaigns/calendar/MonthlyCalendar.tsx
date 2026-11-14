@@ -200,7 +200,6 @@ function MonthlyCalendarComponent({
                 hasTime: Boolean(post.scheduled_at ?? post.published_at),
                 hasFlag:
                   isDateLocked(post.status) ||
-                  isNotGrounded(post.grounding_mode) ||
                   // The card's off-campaign mark rides on the same row (CON-483).
                   outsideCampaign(post, targets) !== null ||
                   hasVisibleProblem(
@@ -215,6 +214,7 @@ function MonthlyCalendarComponent({
                   ),
                 hasImage: coverDrawable(post.cover_url, failedCovers),
                 hasCampaign: Boolean(post.campaign),
+                notGrounded: isNotGrounded(post.grounding_mode),
               }))
               // `null` means the day fits at no rung, with or without its
               // pictures — draw the summary. A cell cannot scroll the way a

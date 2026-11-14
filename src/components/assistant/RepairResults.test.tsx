@@ -525,6 +525,20 @@ describe('a rewritten post (CON-474)', () => {
     expect(screen.getByText('UNDO')).toBeTruthy()
   })
 
+  it('is REVISED, with how long it is now against before (CON-484)', async () => {
+    await show({
+      revised: {
+        postId: 'p1',
+        title: 'A pool in the rock',
+        revised: true,
+        versioned: true,
+        length: { before: 212, after: 141 },
+      },
+    })
+    expect(screen.getByText('REVISED')).toBeTruthy()
+    expect(screen.getByText('212 → 141 characters')).toBeTruthy()
+  })
+
   it('warns when no version was kept, and says nothing of sources it never knew', async () => {
     await show({ revised: { postId: 'p1', revised: true, versioned: false } })
     expect(screen.getByText(/history has no copy of it/)).toBeTruthy()

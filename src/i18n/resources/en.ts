@@ -954,8 +954,13 @@ export const en = {
   grounding: {
     notGrounded: 'Not grounded',
     /** The post page's Sources card, under its heading. */
+    /**
+     * The post page's Sources card, under its heading (CON-484): the mark's
+     * words lead in bold, then why.
+     */
     postNotGrounded:
-      'This post was written from general knowledge, not from the campaign’s documents.',
+      '<lead>Not grounded</lead> — written from general knowledge, not from this campaign’s documents.',
+    postGrounded: 'Grounded in this campaign’s documents.',
   },
   ideas: {
     capture: {
@@ -1053,6 +1058,8 @@ export const en = {
       writtenByAt: 'Written by {{name}} · {{at}}',
       /** A written idea whose writer was never named. */
       someone: 'Someone',
+      /** An idea generated from no document (CON-484). */
+      byAssistant: 'suggested by the assistant',
       documentDeleted: 'Document deleted',
       morePlaces: '+{{count}} more',
       quickAnswers: 'Answer “{{title}}”',
@@ -3044,6 +3051,21 @@ export const en = {
     /** Every open thread, in the rail's list. */
     /** The assets pack's results (CON-460). */
     assets: {
+      /** A page imported as a source (CON-484). */
+      import: {
+        importing: 'IMPORTING',
+        imported: 'IMPORTED',
+        reading: 'reading the page',
+        webPage: 'web page',
+      },
+      /** distillMoreIdeas: queued, so its ideas aren't known yet (CON-484). */
+      distill: {
+        word: 'IDEAS',
+        queued: 'More ideas on the way',
+        notQueued: 'No more ideas were asked for',
+        meta: 'saved to Ideas as they’re found',
+        open: 'OPEN IDEAS',
+      },
       /** The bank's state a turn read (`readAssetsState`, CON-476). */
       state: {
         word: 'Assets · now',
@@ -3548,6 +3570,11 @@ export const en = {
       working: '{{summary}} · working…',
       /** Over the one option the server marks (CON-467). */
       answeredElsewhere: 'This offer was already answered.',
+      /** The request that waited on a source, back once it is read (CON-484). */
+      sourceReady: 'Source ready: “{{title}}”',
+      /** An option's own small form: the page's link, then IMPORT (CON-484). */
+      import: 'IMPORT',
+      inputRequired: 'Paste the page’s link to import it.',
       /** Before a confirmed run: every confirm re-checks the offer first. */
       checked: 'Checked again — nothing changed',
       /** A choice, answered: which way was taken. */
@@ -4179,6 +4206,9 @@ export const en = {
         '{{formatted}} scheduled posts are being withdrawn from publishing. They keep their dates, and no undo puts them back.',
       skipped: 'Left as it was: {{reason}}',
       revised: {
+        /** A rewrite that ran (CON-484), and how long it is now. */
+        revisedWord: 'REVISED',
+        length: '{{before}} → {{after}} characters',
         word: 'Rewritten',
         title: 'Post rewritten',
         /** After the post's title: "Chef’s table rewritten". */
@@ -4303,6 +4333,12 @@ export const en = {
       yourMaterial: 'your material',
       notGrounded: 'Not grounded',
       generalKnowledge: '— general knowledge',
+      /** Why it drew on nothing, from the server's reason (CON-484). */
+      reason: {
+        noSources: 'there are no documents to draw on yet',
+        chosen: 'you chose to go ahead without sources',
+        noneRelevant: 'nothing in the campaign’s documents is about this',
+      },
     },
 
     /** The structured result under a campaign turn. */
@@ -4322,8 +4358,16 @@ export const en = {
       ideas_one: '+{{formatted}} idea on the Ideas tab',
       ideas_other: '+{{formatted}} ideas on the Ideas tab',
       draftsNone: 'No drafts written',
-      drafts_one: '+{{formatted}} draft, not scheduled',
-      drafts_other: '+{{formatted}} drafts, not scheduled',
+      /**
+       * What draftPost made (CON-484): the count, then where and when —
+       * "1 post · Threads · Thu 24" — and a row per draft.
+       */
+      draftedWord: 'DRAFTED',
+      drafted_one: '{{formatted}} post',
+      drafted_other: '{{formatted}} posts',
+      notScheduled: 'not scheduled',
+      openPost: 'OPEN',
+      openPosts: 'OPEN ALL',
       platformsUpdated: 'Platforms updated',
       /** The server's words for what changed, e.g. "Threads". */
       platformsAdded: 'added {{what}}',
@@ -4361,6 +4405,17 @@ export const en = {
       },
       briefApplied: 'Brief updated and saved',
       briefNotApplied: 'Brief suggested but not applied',
+      /** enrichBrief, field by field (CON-484). */
+      briefWord: 'BRIEF',
+      briefRewritten: 'Messaging rewritten',
+      briefFields_one: '{{formatted}} field',
+      briefFields_other: '{{formatted}} fields',
+      briefField: {
+        description: 'Description',
+        targetPersona: 'Target persona',
+        keyMessages: 'Key messages',
+        toneGuidelines: 'Tone',
+      },
     },
   },
 
@@ -4789,6 +4844,8 @@ export const en = {
      */
     columnTitle: 'Title',
     columnStatus: 'Status',
+    /** Where a post written from general knowledge says so (CON-484). */
+    columnGrounding: 'Sources',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
     columnPublishDate: 'Publish date',
@@ -5794,7 +5851,7 @@ export const en = {
       heading: 'Sources',
       /** The rail section's title. Its capitals are the copy, as everywhere. */
       sectionTitle: 'SOURCES',
-      add: 'ADD SOURCE',
+      add: 'ADD A SOURCE',
       fromBank: 'Choose from content bank',
       upload: 'Upload files',
       webPage: 'Add a web page',
@@ -8066,6 +8123,17 @@ export const en = {
     page: {
       title: 'Assets',
       campaignTitle: '{{campaign}} Assets',
+      /** The ADD CONTENT menu (CON-484 moved it into the catalogue). */
+      add: {
+        button: 'ADD CONTENT',
+        note: 'Write a note',
+        upload: 'Upload file',
+        webPage: 'Add a web page',
+      },
+      /** The page the assistant opened for a source (CON-484). */
+      openedForSource:
+        'Opened by the assistant — the request waits until a file is read.',
+      back: 'BACK',
     },
 
     /**

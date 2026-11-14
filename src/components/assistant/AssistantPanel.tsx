@@ -32,6 +32,13 @@ import { UserMessage } from './UserMessage'
 import type { AssistantThread } from '@/types/assistant'
 
 /**
+ * How the server records a waiting request coming back once its source is
+ * read (CON-484) — its fixed wording, like the answer prefixes; change both
+ * ends together.
+ */
+const SOURCE_READY = /^Source ready: “(.*)”$/
+
+/**
  * The assistant, hosted in the right sidebar. It shows either the list of open
  * threads or one thread's conversation; a thread is started from its subject's
  * page but stays reachable — and keeps running — from anywhere.
@@ -299,6 +306,17 @@ function ThreadView({
         </ResolvedLine>
       )
     }
+    // A request that waited on a source, offered again once it is read
+    // (CON-484): the server records the moment as a turn of its own, which
+    // nobody typed, so it reads as a divider before the fresh offer.
+    const ready = SOURCE_READY.exec(turn.content)
+    if (ready)
+      return (
+        <ScreenMarker
+          key={turn.id}
+          text={t('assistant.proposal.sourceReady', { title: ready[1] })}
+        />
+      )
     const marker = markers.get(turn.id)
     return (
       <Fragment key={turn.id}>

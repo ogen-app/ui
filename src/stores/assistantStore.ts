@@ -17,6 +17,7 @@ import { beginLocalRun } from '@/lib/localRuns'
 import { buildViewContext, type ViewContext } from '@/lib/viewContext'
 import { useViewContextStore } from '@/stores/viewContextStore'
 import { useAssistantRemovalStore } from '@/stores/assistantRemovalStore'
+import { useAddSourceRequestStore } from '@/stores/addSourceRequestStore'
 import { campaignAssistantStateKey } from '@/hooks/useCampaignAssistantState'
 import { campaignKey } from '@/hooks/useCampaigns'
 import type { Campaign } from '@/types/campaigns'
@@ -182,16 +183,25 @@ type AssistantState = {
   clearPrefillRequest: () => void
   /** Load persisted history once per thread. */
   loadHistory: (threadId: string) => Promise<void>
+  /**
+   * Reads an open thread's history again (CON-484): the server offered
+   * something in it on its own — a request that waited on a source, offered
+   * again once the source is read. Not while a turn runs, which would
+   * replace what is streaming.
+   */
+  reloadHistory: (threadId: string) => Promise<void>
   /** Run one turn. No-op if the thread is already running. */
   send: (threadId: string, instruction: string) => Promise<void>
   /**
    * Runs an offer exactly as proposed, from its card (CON-446). `optionId`
-   * picks one of an offer's options.
+   * picks one of an offer's options, and `input` is the value that option
+   * asked for (CON-484).
    */
   confirmProposal: (
     threadId: string,
     proposalId: string,
     optionId?: string,
+    input?: string,
   ) => Promise<void>
   /** Withdraws an offer from its card. Nothing runs. */
   dismissProposal: (threadId: string, proposalId: string) => Promise<void>
@@ -282,6 +292,14 @@ export const useAssistantStore = create<AssistantState>()(
           } catch {
             before = undefined
           }
+          // The Assets page says the assistant opened it, with BACK (CON-484).
+          if (action.type === 'open_add_source' && before)
+            useAddSourceRequestStore.getState().mark({
+              campaignId: action.campaignId ?? null,
+              threadId,
+              turnId,
+              index,
+            })
           applied.push({
             action,
             before,
@@ -895,6 +913,13 @@ export const useAssistantStore = create<AssistantState>()(
           })
         },
 
+        reloadHistory: async (threadId) => {
+          const thread = get().threads[threadId]
+          if (!thread?.loaded || thread.status === 'running') return
+          patchThread(threadId, { loaded: false })
+          await get().loadHistory(threadId)
+        },
+
         loadHistory: async (threadId) => {
           const thread = get().threads[threadId]
           if (!thread || thread.loaded) return
@@ -990,7 +1015,7 @@ export const useAssistantStore = create<AssistantState>()(
           )
         },
 
-        confirmProposal: async (threadId, proposalId, optionId) => {
+        confirmProposal: async (threadId, proposalId, optionId, input) => {
           const thread = get().threads[threadId]
           if (!thread || thread.status === 'running') return
           // An offer behind a finding's fix has no card of its own in the
@@ -1004,7 +1029,13 @@ export const useAssistantStore = create<AssistantState>()(
             threadId,
             null,
             (onEvent, signal) =>
-              confirmProposalRequest(proposalId, optionId, onEvent, signal),
+              confirmProposalRequest(
+                proposalId,
+                optionId,
+                onEvent,
+                signal,
+                input,
+              ),
             (status, message, reason) =>
               // Gone, already answered, expired, or refused because what it
               // was offered on changed: the card stops offering. The
@@ -1013,26 +1044,33 @@ export const useAssistantStore = create<AssistantState>()(
               setProposal(
                 threadId,
                 proposalId,
-                reason === 'offer_expired'
-                  ? { status: 'expired' }
-                  : reason === 'offer_replaced'
-                    ? { status: 'stale' }
-                    : message.startsWith(CHANGED_SINCE)
-                      ? {
-                          status: 'stale',
-                          reasons: [message.slice(CHANGED_SINCE.length)],
-                        }
-                      : {
-                          status: 'closed',
-                          error:
-                            status === 404 || reason === 'offer_answered'
-                              ? i18next.t(
-                                  reason === 'offer_answered'
-                                    ? 'assistant.proposal.answeredElsewhere'
-                                    : 'assistant.proposal.gone',
-                                )
-                              : message,
-                        },
+                // An option picked without the value it asks for (CON-484):
+                // the offer stays open, and the card asks for it.
+                reason === 'input_required'
+                  ? {
+                      status: 'pending',
+                      error: i18next.t('assistant.proposal.inputRequired'),
+                    }
+                  : reason === 'offer_expired'
+                    ? { status: 'expired' }
+                    : reason === 'offer_replaced'
+                      ? { status: 'stale' }
+                      : message.startsWith(CHANGED_SINCE)
+                        ? {
+                            status: 'stale',
+                            reasons: [message.slice(CHANGED_SINCE.length)],
+                          }
+                        : {
+                            status: 'closed',
+                            error:
+                              status === 404 || reason === 'offer_answered'
+                                ? i18next.t(
+                                    reason === 'offer_answered'
+                                      ? 'assistant.proposal.answeredElsewhere'
+                                      : 'assistant.proposal.gone',
+                                  )
+                                : message,
+                          },
               ),
           )
           // Only a turn that answered ran the offer. One that failed before or
@@ -1105,6 +1143,8 @@ export const useAssistantStore = create<AssistantState>()(
           const applied = turn?.uiActions?.[index]
           if (!applied?.before || applied.undone || !uiApplier) return
           await uiApplier.restore(applied.before, applied.action)
+          if (applied.action.type === 'open_add_source')
+            useAddSourceRequestStore.getState().clear()
           patchTurn(threadId, turnId, (t) => ({
             ...t,
             uiActions: t.uiActions?.map((a, i) =>

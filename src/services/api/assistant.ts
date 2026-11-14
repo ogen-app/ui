@@ -922,6 +922,22 @@ function assetsResults(
   if (views) out.savedViews = views
   const campaign = campaignFromAssets(record(pack.campaign))
   if (campaign) out.campaign = campaign
+  const distill = record(pack.distill)
+  if (distill)
+    out.distill = {
+      queued: distill.queued === true,
+      grounding: parseGrounding(distill.grounding),
+    }
+  const page = record(pack.import)
+  if (page && str(page.assetId))
+    out.import = {
+      assetId: str(page.assetId),
+      title: str(page.title),
+      url: str(page.url),
+      status: str(page.status),
+      attached: page.attached === true,
+      attachError: optStr(page.attachError),
+    }
   return Object.keys(out).length > 0 ? out : undefined
 }
 
@@ -1370,8 +1386,12 @@ function repairResults(results: Record<string, unknown>): {
   out.deleted = changed(r.deletePosts)
   const revised = record(r.revisePost)
   if (revised && str(revised.postId)) {
+    const length = record(revised.length)
     out.revised = {
       postId: str(revised.postId),
+      length: length
+        ? { before: num(length.before), after: num(length.after) }
+        : undefined,
       campaignId: optStr(revised.campaignId),
       title: optStr(revised.title),
       voiceName: optStr(revised.voiceName),
@@ -1451,7 +1471,17 @@ function uiAction(raw: Record<string, unknown>): UIAction | null {
             reconnect: connect.reconnect === true,
           }
         : undefined,
+    via: raw.via === 'upload' || raw.via === 'page' ? raw.via : undefined,
   }
+}
+
+/** What an option asks for before it runs (CON-484), when it asks. */
+function optionInput(
+  input: Record<string, unknown> | null,
+): { kind: string; label: string } | undefined {
+  return input && str(input.kind)
+    ? { kind: str(input.kind), label: str(input.label) }
+    : undefined
 }
 
 /** Reads a proposal card; null for one without an id or a summary. */
@@ -1472,6 +1502,7 @@ function proposal(card: Record<string, unknown>): AssistantProposal | null {
             title: str(o.title),
             description: optStr(o.description),
             why: optStr(o.why),
+            input: optionInput(record(o.input)),
           }))
           .filter((o) => o.id && o.title)
       : [],
@@ -1514,10 +1545,12 @@ export function confirmProposal(
   optionId: string | undefined,
   onEvent: (event: AssistantStreamEvent) => void,
   signal?: AbortSignal,
+  /** The value an option asked for (CON-484): a page's link. */
+  input?: string,
 ): Promise<void> {
   return streamTurn(
     `/api/assistant/proposals/${encodeURIComponent(proposalId)}/confirm`,
-    optionId ? { optionId } : {},
+    { ...(optionId ? { optionId } : {}), ...(input ? { input } : {}) },
     onEvent,
     signal,
   )
@@ -1789,6 +1822,17 @@ function resultDetails(
       postCount: num(drafted.postCount),
       warnings: strings(drafted.warnings),
       grounding: parseGrounding(drafted.grounding),
+      posts: (Array.isArray(drafted.posts) ? drafted.posts : [])
+        .filter(isRecord)
+        .map((p) => ({
+          id: str(p.id),
+          title: str(p.title),
+          platformId: str(p.platformId),
+          platform: str(p.platform),
+          postType: str(p.postType),
+          date: optStr(p.date),
+        }))
+        .filter((p) => p.id),
     }
   }
 
@@ -1800,9 +1844,13 @@ function resultDetails(
       applied: brief.applied === true,
       undoId: optStr(brief.undoId),
       grounding: parseGrounding(brief.grounding),
+      fields: (Array.isArray(brief.fields) ? brief.fields : [])
+        .filter(isRecord)
+        .map((f) => ({ field: str(f.field), value: str(f.value) }))
+        .filter((f) => f.field),
     }
   } else if (typeof parsed.briefApplied === 'boolean') {
-    details.brief = { applied: parsed.briefApplied }
+    details.brief = { applied: parsed.briefApplied, fields: [] }
   }
 
   const dates = record(parsed.dates)

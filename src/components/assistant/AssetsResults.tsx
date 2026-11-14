@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { cn } from '@/lib/styles'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
@@ -17,11 +18,13 @@ import type {
   AssetsResults as Results,
   CampaignFromAssets,
   ComparedClaim,
+  PageImport,
   SavedViewList,
   ThreadSubject,
   UndoState,
 } from '@/types/assistant'
 import { AssetTypeBadge } from './AssetTypeBadge'
+import { useAsset } from '@/hooks/useContent'
 import {
   ResultBlock,
   ResultRow,
@@ -107,6 +110,10 @@ export function AssetsResults({
     results.campaign && (
       <CampaignCard t={t} campaign={results.campaign} undo={undoFor} />
     ),
+    results.import && <ImportCard t={t} page={results.import} />,
+    results.distill && (
+      <DistillCard t={t} distill={results.distill} campaignId={campaignId} />
+    ),
   ].filter(Boolean)
 
   if (blocks.length === 0) return null
@@ -116,6 +123,110 @@ export function AssetsResults({
         <Fragment key={i}>{block}</Fragment>
       ))}
     </div>
+  )
+}
+
+/** A page's link as the card names it: no scheme, no trailing slash. */
+function bareUrl(url: string): string {
+  return url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+}
+
+/**
+ * A page imported as a source (CON-484): IMPORTING while it is read, then
+ * what it is now — read live off the asset, which polls while it waits, so
+ * the card moves on without a reload. The request waiting on it comes back
+ * as an offer of its own once it is ready.
+ */
+function ImportCard({ t, page }: { t: TFunction; page: PageImport }) {
+  const live = useAsset(page.assetId).data
+  const status = live?.status ?? page.status
+  const reading = status === 'pending' || status === 'processing'
+  const failed = status === 'failed'
+  return (
+    <ResultBlock
+      status={
+        reading
+          ? t('assistant.assets.import.importing')
+          : t('assistant.assets.import.imported')
+      }
+      title={bareUrl(page.url)}
+      meta={reading ? t('assistant.assets.import.reading') : undefined}
+    >
+      <ResultRow className="flex items-baseline gap-3">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <Link
+            to="/assets/$assetId"
+            params={{ assetId: page.assetId }}
+            className="text-sm text-foreground hover:underline"
+          >
+            {live?.title || page.title || bareUrl(page.url)}
+          </Link>
+          <span className="text-[12.5px] text-tertiary-foreground">
+            {t('assistant.assets.import.webPage')}
+          </span>
+        </span>
+        <span
+          className={cn(
+            'shrink-0 text-[12.5px]',
+            reading || failed ? 'text-warning-ink' : 'text-tertiary-foreground',
+          )}
+        >
+          {failed
+            ? t('assistant.campaignState.sources.unreadable')
+            : reading
+              ? t('assistant.campaignState.sources.analysing')
+              : t('assistant.campaignState.sources.ready')}
+        </span>
+      </ResultRow>
+      {page.attachError && (
+        <ResultRow>
+          <p className="text-[12.5px] text-warning-ink">{page.attachError}</p>
+        </ResultRow>
+      )}
+    </ResultBlock>
+  )
+}
+
+/**
+ * distillMoreIdeas (CON-484): the run is queued, so what it will save isn't
+ * known yet (CON-504) — the card says so, opens Ideas, and names what the
+ * ideas are drawn from.
+ */
+function DistillCard({
+  t,
+  distill,
+  campaignId,
+}: {
+  t: TFunction
+  distill: NonNullable<Results['distill']>
+  campaignId?: string
+}) {
+  const open = campaignId ? (
+    <Link
+      to="/campaigns/$campaignId/ideas"
+      params={{ campaignId }}
+      className={TEXT_ACTION_CLASS}
+    >
+      {t('assistant.assets.distill.open')}
+    </Link>
+  ) : (
+    <Link to="/ideas" className={TEXT_ACTION_CLASS}>
+      {t('assistant.assets.distill.open')}
+    </Link>
+  )
+  return (
+    <ResultBlock
+      status={t('assistant.assets.distill.word')}
+      title={
+        distill.queued
+          ? t('assistant.assets.distill.queued')
+          : t('assistant.assets.distill.notQueued')
+      }
+      meta={distill.queued ? t('assistant.assets.distill.meta') : undefined}
+      action={distill.queued ? open : undefined}
+    >
+      {distill.grounding && <SourcesLine grounding={distill.grounding} />}
+    </ResultBlock>
   )
 }
 

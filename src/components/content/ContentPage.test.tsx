@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
+import { useAssistantStore } from '@/stores/assistantStore'
+import { useAddSourceRequestStore } from '@/stores/addSourceRequestStore'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { SidebarProvider } from '@/components/ui/sidebar'
 
@@ -118,7 +120,7 @@ describe('ContentPage', () => {
           campaign={null}
           search={{}}
           onSearchChange={() => {}}
-          addSource
+          addSource="source"
           onAddSourceOpened={opened}
         />
       </SidebarProvider>,
@@ -132,6 +134,46 @@ describe('ContentPage', () => {
     ).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(opened).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens the upload itself when the assistant names it (CON-484)', async () => {
+    given({ status: 'success', fetchStatus: 'idle', data: { pages: [] } })
+    await renderWithProviders(
+      <SidebarProvider>
+        <ContentPage
+          campaign={null}
+          search={{}}
+          onSearchChange={() => {}}
+          addSource="upload"
+        />
+      </SidebarProvider>,
+    )
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
+  })
+
+  it('says the assistant opened it, with BACK that takes the rail’s way back (CON-484)', async () => {
+    given({ status: 'success', fetchStatus: 'idle', data: { pages: [] } })
+    const undoUiAction = vi.fn(async () => {})
+    useAssistantStore.setState({ undoUiAction })
+    useAddSourceRequestStore.getState().mark({
+      campaignId: null,
+      threadId: 'workspace',
+      turnId: 't1',
+      index: 0,
+    })
+    await renderWithProviders(
+      <SidebarProvider>
+        <ContentPage campaign={null} search={{}} onSearchChange={() => {}} />
+      </SidebarProvider>,
+    )
+    expect(
+      screen.getByText(
+        'Opened by the assistant — the request waits until a file is read.',
+      ),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByText('BACK'))
+    expect(undoUiAction).toHaveBeenCalledWith('workspace', 't1', 0)
   })
 
   it('keeps ADD CONTENT closed otherwise', async () => {

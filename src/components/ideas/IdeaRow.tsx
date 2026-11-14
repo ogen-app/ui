@@ -177,14 +177,6 @@ export function IdeaRow({
             {summary}
           </p>
         )}
-        {/* Open, the source line goes and the bodies take over; the mark
-            stays, under the title, while the idea is being decided. */}
-        {expanded && (
-          <NotGroundedMark
-            mode={idea.groundingMode}
-            className="mt-1 self-start"
-          />
-        )}
         {!expanded && (
           <SourceLine
             idea={idea}
@@ -212,7 +204,10 @@ export function IdeaRow({
 
       {/* The verdict, and — hovered or focused, closed — the three answers in
           its place, so a row is answered without being opened. */}
-      <span className="flex h-6 items-center justify-end">
+      <span className="flex h-6 items-center justify-end gap-4">
+        {/* Written from general knowledge (CON-484): beside the answer it is
+            waiting on, open or closed, so it is read before the verdict. */}
+        <NotGroundedMark mode={idea.groundingMode} />
         <span
           className={cn(
             'flex',
@@ -380,7 +375,11 @@ function SourceLine({
   } else {
     bits.push(
       <span key="who" className="truncate">
-        {idea.authorName || t('ideas.card.someone')}
+        {/* Generated with no document behind it (CON-484): the assistant
+            suggested it, whoever's request it came from. */}
+        {isNotGrounded(idea.groundingMode)
+          ? t('ideas.card.byAssistant')
+          : idea.authorName || t('ideas.card.someone')}
       </span>,
       <span key="when" className="shrink-0">
         {formatDate(
@@ -406,8 +405,6 @@ function SourceLine({
         {t('ideas.lifecycle.used', counted(idea.postCount))}
       </span>,
     )
-  if (isNotGrounded(idea.groundingMode))
-    bits.push(<NotGroundedMark key="grounding" mode={idea.groundingMode} />)
   if (hasWokenUp(idea, now))
     // Why this one is back. Without it a postponed idea reappearing with the
     // undecided reads as the list having lost track of a decision.

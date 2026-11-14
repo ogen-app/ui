@@ -3,13 +3,23 @@ import { createFileRoute } from '@tanstack/react-router'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { ContentPage } from '@/components/content/ContentPage'
 import { parseAssetListSearch, type AssetListSearch } from '@/lib/assetFilter'
+import { parseAddSource, type AddSourceOpen } from '@/lib/assistantUiActions'
+
+type AssetsSearch = AssetListSearch & {
+  /** The assistant asking for a source (`open_add_source`, CON-484). */
+  add?: AddSourceOpen
+}
 
 export const Route = createFileRoute('/_authenticated/assets/')({
   component: Assets,
   // The list's filter — the same keys the Assets query takes, so the
   // address is the request and a link reopens the same list (CON-371). Per
-  // tab, never `/api/settings`.
-  validateSearch: parseAssetListSearch,
+  // tab, never `/api/settings`. `add` is the assistant's, as on a
+  // campaign's Assets: it opens the way in once and goes.
+  validateSearch: (raw: Record<string, unknown>): AssetsSearch => ({
+    ...parseAssetListSearch(raw),
+    ...(parseAddSource(raw.add) ? { add: parseAddSource(raw.add) } : {}),
+  }),
 })
 
 /**
@@ -37,8 +47,16 @@ export const Route = createFileRoute('/_authenticated/assets/')({
  * layout rather than anything anyone decided.
  */
 function Assets() {
-  const search = Route.useSearch()
+  const { add, ...search } = Route.useSearch()
   const navigate = Route.useNavigate()
+  const onAddSourceOpened = useCallback(
+    () =>
+      void navigate({
+        search: ({ add: _add, ...rest }: AssetsSearch) => rest,
+        replace: true,
+      }),
+    [navigate],
+  )
   // Replaced, not pushed: each token is not a page of history, and Back
   // should leave the list rather than undo it one filter at a time.
   const onSearchChange = useCallback(
@@ -55,6 +73,8 @@ function Assets() {
         campaign={null}
         search={search}
         onSearchChange={onSearchChange}
+        addSource={add}
+        onAddSourceOpened={onAddSourceOpened}
       />
     </PageContainer>
   )

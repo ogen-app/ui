@@ -21,11 +21,11 @@ describe('NotGroundedMark (CON-469)', () => {
     expect(screen.getByText('Not grounded')).toBeVisible()
   })
 
-  it('keeps the words for assistive tech and the pointer when compact', () => {
-    render(<NotGroundedMark mode="exploratory" compact />)
+  it('keeps its words on the calendar card, where touch has no tooltip (CON-484)', () => {
+    render(<NotGroundedMark mode="exploratory" caps />)
     const words = screen.getByText('Not grounded')
-    expect(words).toHaveClass('sr-only')
-    expect(words.parentElement).toHaveAttribute('title', 'Not grounded')
+    expect(words).toBeVisible()
+    expect(words).toHaveClass('uppercase')
   })
 
   it('is worded from the catalogue', async () => {

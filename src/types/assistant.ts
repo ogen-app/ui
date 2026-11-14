@@ -62,6 +62,14 @@ export type ReviewSeverity = 'high' | 'medium' | 'low'
 export type Grounding = {
   mode: 'grounded' | 'exploratory'
   sources: GroundingSource[]
+  /**
+   * Why exploratory output drew on nothing (CON-484): `no_sources` (nothing
+   * ready to draw on), `chosen` (the user went ahead without),
+   * `none_relevant` (sources existed, none was about it).
+   */
+  reason?: string
+  /** The server's English sentence for the reason, for one this build lacks. */
+  note?: string
 }
 
 /**
@@ -111,8 +119,16 @@ export type AssistantResultDetails = {
     postCount: number
     warnings: string[]
     grounding?: Grounding
+    /** One row per draft, in the order written (CON-484). */
+    posts: DraftedRow[]
   }
-  brief?: { applied: boolean; undoId?: string; grounding?: Grounding }
+  brief?: {
+    applied: boolean
+    undoId?: string
+    grounding?: Grounding
+    /** Each field the enrichment rewrote, with its new value (CON-484). */
+    fields: { field: string; value: string }[]
+  }
   dates?: {
     startDate: string
     endDate: string
@@ -181,6 +197,12 @@ export type AssistantProposal = {
     description?: string
     /** Why the recommended option is the one to pick (CON-482). */
     why?: string
+    /**
+     * A value the option needs before it can run (CON-484): a page's link
+     * for "Import a page". The card asks for it in place, and the confirm
+     * carries it.
+     */
+    input?: { kind: 'url' | string; label: string }
   }[]
   /** The option the card leads with, when the server marks one (CON-467). */
   recommended?: string
@@ -265,6 +287,24 @@ export type AssetsResults = {
   compare?: AssetComparison
   savedViews?: SavedViewList
   campaign?: CampaignFromAssets
+  /**
+   * distillMoreIdeas (CON-484): the run is queued, so its ideas don't exist
+   * yet when the turn ends (CON-504 asks for them); what it draws on does.
+   */
+  distill?: { queued: boolean; grounding?: Grounding }
+  /** importPage: the page being read into the bank (CON-484). */
+  import?: PageImport
+}
+
+/** A web page the assistant imported as a source (CON-484). */
+export type PageImport = {
+  assetId: string
+  title: string
+  url: string
+  /** The asset's status when the turn ended; the card reads it live. */
+  status: string
+  attached: boolean
+  attachError?: string
 }
 
 /** What a question about the assets searched, and where it found it. */
@@ -789,6 +829,8 @@ export type RepairResults = {
 
 export type PostRevised = {
   postId: string
+  /** Its length before and after, in characters (CON-484). */
+  length?: { before: number; after: number }
   /** Where it opens, and what it is called. */
   campaignId?: string
   title?: string
@@ -1600,6 +1642,16 @@ export type OfferOutcome = {
    * (CON-483): nothing was removed.
    */
   later?: { removed: string; until?: string }
+}
+
+/** A draft as its card lists it (CON-484); `date` is empty when undated. */
+export type DraftedRow = {
+  id: string
+  title: string
+  platformId: string
+  platform: string
+  postType: string
+  date?: string
 }
 
 /** A post a platform removal left where it was, flagged (CON-483). */

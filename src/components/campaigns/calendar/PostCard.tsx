@@ -33,7 +33,6 @@ import {
 } from './cardRungs'
 import { LockMark, isDateLocked } from './LockMark'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
-import { isNotGrounded } from '@/lib/grounding'
 import { STATUS_ACCENT_COLOR, STATUS_ICON, STATUS_TEXT_COLOR } from './status'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useCalendarSelection } from './calendarSelection'
@@ -303,10 +302,10 @@ function PostCardComponent({
   const locked = isDateLocked(post.status)
   // Any of these marks earns the row its place at a rung that would otherwise
   // drop it — see `cardRungs`. What it must not do is survive on the status
-  // glyph alone, which every card has. Not grounded is among them: it rides on
-  // this row, so a ladder that dropped the row would drop the mark with it.
-  const flag =
-    problem || locked || isNotGrounded(post.grounding_mode) || outside !== null
+  // glyph alone, which every card has. The off-campaign mark is among them:
+  // it rides on this row. Not grounded no longer does — it is a line of its
+  // own under the title (CON-484).
+  const flag = problem || locked || outside !== null
   // What the user allows, narrowed by what this post has and what the rung
   // can afford. The rung only ever subtracts.
   const showTime = fields.time && Boolean(time) && rung.time
@@ -511,10 +510,6 @@ function PostCardComponent({
             {/* The status reaches assistive tech either way — on a card that
                 doesn't spend a line on the word, this is the only place it is. */}
             {!showStatus && <span className="sr-only">{statusLabel}</span>}
-            {/* Written from general knowledge: the glyph only, after what the
-                post is and before what you can't do to it. A flag like the
-                warning and the lock, so this row survives every rung. */}
-            <NotGroundedMark mode={post.grounding_mode} compact />
             <OutsideCampaignMark outside={outside} compact />
             {/* `ml-auto` rather than `justify-between`: the row has a variable
                 number of things on the left and exactly one on the right, and
@@ -561,6 +556,11 @@ function PostCardComponent({
             {title}
           </div>
         )}
+
+        {/* Written from general knowledge (CON-484): the words on a line of
+            their own under the title, at every rung — a glyph explained only
+            by a tooltip is lost on touch. */}
+        <NotGroundedMark mode={post.grounding_mode} caps />
 
         {/* Row 3 — platform */}
         {fields.platform && (

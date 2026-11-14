@@ -127,8 +127,7 @@ describe('PostCard not-grounded mark (CON-469)', () => {
     platform.resolved = undefined
   })
 
-  it('keeps its row on the tightest rung, which drops the time', () => {
-    // A post with nothing else to flag, so the mark is all that keeps the row.
+  it('says it in words, on a line of its own, even on the tightest rung (CON-484)', () => {
     platform.resolved = { icon: () => null, color: 'currentColor' }
     const { getByText } = render(
       <PostCard
@@ -136,7 +135,11 @@ describe('PostCard not-grounded mark (CON-469)', () => {
         rung={minimal}
       />,
     )
-    expect(getByText('Not grounded')).toHaveClass('sr-only')
+    // No tooltip to explain a glyph on touch: the words are on the card.
+    const words = getByText('Not grounded')
+    expect(words).toBeVisible()
+    expect(words).not.toHaveClass('sr-only')
+    expect(words).toHaveClass('uppercase')
   })
 
   it('draws nothing for a post nobody generated', () => {

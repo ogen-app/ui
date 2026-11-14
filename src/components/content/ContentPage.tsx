@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { TextAction } from '@/components/assistant/blocks'
+import { useAddSourceRequestStore } from '@/stores/addSourceRequestStore'
+import { useAssistantStore } from '@/stores/assistantStore'
+import type { AddSourceOpen } from '@/lib/assistantUiActions'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
 import {
@@ -118,7 +122,7 @@ export function ContentPage({
   campaign,
   search,
   onSearchChange,
-  addSource = false,
+  addSource,
   onAddSourceOpened,
 }: {
   campaign: Campaign | null
@@ -126,12 +130,12 @@ export function ContentPage({
   search: AssetListSearch
   onSearchChange: (next: AssetListSearch) => void
   /**
-   * The assistant asked for a source (`open_add_source`, CON-474): open
-   * ADD CONTENT so the upload and the web page are in front of the user,
-   * then say so, so the route can drop the request from its address. It
-   * opens the menu and never an item: which way in is the user's choice.
+   * The assistant asked for a source (`open_add_source`, CON-474/484): open
+   * the way in it named — the upload or a page's import — or ADD CONTENT
+   * offering both, then say so, so the route can drop the request from its
+   * address. The file or the link is always the user's to give.
    */
-  addSource?: boolean
+  addSource?: AddSourceOpen
   onAddSourceOpened?: () => void
 }) {
   const { t } = useTranslation()
@@ -267,14 +271,33 @@ export function ContentPage({
   const uploadItems = useUploadStore((s) => s.items)
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [webPageModalOpen, setWebPageModalOpen] = useState(false)
-  const [addMenuOpen, setAddMenuOpen] = useState(addSource)
+  const [addMenuOpen, setAddMenuOpen] = useState(addSource === 'source')
   // Opened as the request arrives, during render: the page may already be
   // on screen when the assistant asks.
-  const [askedForSource, setAskedForSource] = useState(addSource)
+  const [askedForSource, setAskedForSource] = useState<
+    AddSourceOpen | undefined
+  >(undefined)
   if (addSource !== askedForSource) {
     setAskedForSource(addSource)
-    if (addSource) setAddMenuOpen(true)
+    if (addSource === 'source') setAddMenuOpen(true)
+    if (addSource === 'upload') setUploadModalOpen(true)
+    if (addSource === 'page') setWebPageModalOpen(true)
   }
+  // Opened by the assistant (CON-484): the page says so, with BACK, while
+  // the user is here and hasn't added anything yet.
+  const sourceRequest = useAddSourceRequestStore((s) =>
+    s.request && s.request.campaignId === (campaign?.id ?? null)
+      ? s.request
+      : null,
+  )
+  const clearSourceRequest = useAddSourceRequestStore((s) => s.clear)
+  const undoUiAction = useAssistantStore((s) => s.undoUiAction)
+  useEffect(() => () => clearSourceRequest(), [clearSourceRequest])
+  const uploadsBefore = useRef(uploadItems.length)
+  useEffect(() => {
+    if (uploadItems.length > uploadsBefore.current) clearSourceRequest()
+    uploadsBefore.current = uploadItems.length
+  }, [uploadItems.length, clearSourceRequest])
   useEffect(() => {
     if (addSource) onAddSourceOpened?.()
   }, [addSource, onAddSourceOpened])
@@ -425,6 +448,7 @@ export function ContentPage({
    * (CON-210 phase 1), and a second copy of the same page would be worse.
    */
   const handleWebPage = (asset: Asset) => {
+    clearSourceRequest()
     const alreadyHere = campaign
       ? campaign.asset_ids.includes(asset.id)
       : list.rows.some((a) => a.id === asset.id)
@@ -525,7 +549,7 @@ export function ContentPage({
                     loading={createAsset.isPending}
                     className="data-[state=open]:bg-primary-foreground data-[state=open]:text-primary"
                   >
-                    <span>ADD CONTENT</span>
+                    <span>{t('content.page.add.button')}</span>
                     <CaretDownIcon weight="bold" className="size-3" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -540,11 +564,11 @@ export function ContentPage({
                 >
                   <DropdownMenuItem size="lg" onClick={write}>
                     <FileTextIcon />
-                    <span>Write a note</span>
+                    <span>{t('content.page.add.note')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem size="lg" onClick={upload}>
                     <UploadSimpleIcon />
-                    <span>Upload file</span>
+                    <span>{t('content.page.add.upload')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     size="lg"
@@ -556,7 +580,7 @@ export function ContentPage({
                     }}
                   >
                     <GlobeSimpleIcon />
-                    <span>Add a web page</span>
+                    <span>{t('content.page.add.webPage')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -566,6 +590,24 @@ export function ContentPage({
           {/* Under the header, everything scrolls together: the sentence, the
               Group by line and the list, whose bands pin at the header's foot. */}
           <div className="px-3 lg:px-6">
+            {/* The assistant opened this page for a source (CON-484): it says
+                so, and BACK takes the rail's way back — the same UNDO. */}
+            {sourceRequest && (
+              <p className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-accent bg-accent/5 px-3 py-2 text-sm text-foreground">
+                {t('content.page.openedForSource')}
+                <TextAction
+                  onClick={() =>
+                    void undoUiAction(
+                      sourceRequest.threadId,
+                      sourceRequest.turnId,
+                      sourceRequest.index,
+                    )
+                  }
+                >
+                  {t('content.page.back')}
+                </TextAction>
+              </p>
+            )}
             {/* `awaiting`, not `isLoading` — see `lib/fetched`. This is the
                 branch the bug was in: a read that failed while the tab was in the
                 background parks the query as *pending but not fetching*, which
