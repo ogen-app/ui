@@ -56,7 +56,19 @@ pnpm lint          # eslint .            (--fix to repair what is mechanical)
 pnpm format        # prettier --write .  (format:check to only report)
 pnpm test          # vitest run
 pnpm knip          # unused files, exports and dependencies — a report, not a gate
+
+pnpm test:remote   # typecheck, lint, format:check and test on another Mac over SSH
+scripts/test-remote.sh test src/lib   # …or one package script, with its arguments
 ```
+
+**Run the checks remotely, not here.** vitest, tsc and eslint load this
+machine badly, so `scripts/test-remote.sh` rsyncs the working tree
+(uncommitted changes included, `.gitignore` respected) to `REMOTE_HOST`
+(default `mac2`) and runs them there; the remote keeps its own
+`node_modules`. A user-level Claude Code hook (`~/.claude/hooks/redirect-tests.sh`)
+refuses vitest, tsc, eslint and the pnpm scripts that run them in any repo
+that has that script, and names the remote command instead. Prettier stays
+local. Same arrangement as `make test-remote` in `ogen`.
 
 CI runs every one of those except `knip` on each PR into `develop`
 (`.github/workflows/ci.yml`). What each tool is for, and why some rules are
