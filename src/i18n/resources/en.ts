@@ -402,13 +402,23 @@ export const en = {
     /** Both halves of what the /workspaces page offers, in one row. */
     switchWorkspace: 'Create or switch',
     untitledCampaign: 'Untitled campaign',
-    /** The way out of a campaign, on the header caret and on the mark beside it. */
-    backToWorkspace: 'Back to workspace',
+    /**
+     * The campaign switcher above the page: the scope every place in the menu
+     * is narrowed to. "All campaigns" is the workspace.
+     */
+    scope: {
+      all: 'All campaigns',
+      switch: 'Switch campaign',
+    },
     /**
      * Heads the workspace's destinations where they appear inside the account
      * menu — level 1's way back to a module without leaving the campaign first.
      */
-    workspaceScope: 'Workspace',
+    workspaceMenu: 'Workspace menu',
+    yourWorkspaces: 'Your workspaces',
+    accountMenu: 'Account menu',
+    askOgen: 'Ask Ogen',
+    assistantFinished: 'The assistant has finished',
     /** A campaign with no start or end date, in the rail's window line. */
     campaignNoWindow: 'No dates set',
     /**

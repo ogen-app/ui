@@ -618,7 +618,7 @@
     font-feature-settings: 'zero' 0; /* Disable slashed zero */
   }
 
-  /* The display voice: the page title and the global menu (CON-390) — lining,
+  /* The display voice: the page title — lining,
      proportional figures. Plex Sans has no feature to answer either with: its
      figures are lining and tabular by default and it ships no proportional
      set, so today the pair states the intent rather than changing a glyph.

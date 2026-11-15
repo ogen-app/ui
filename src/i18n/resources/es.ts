@@ -326,8 +326,15 @@ export const es: Translation = {
     closeSidebar: 'Cerrar la barra lateral',
     switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
-    backToWorkspace: 'Volver al espacio de trabajo',
-    workspaceScope: 'Espacio de trabajo',
+    scope: {
+      all: 'Todas las campañas',
+      switch: 'Cambiar de campaña',
+    },
+    workspaceMenu: 'Menú del espacio de trabajo',
+    yourWorkspaces: 'Tus espacios de trabajo',
+    accountMenu: 'Menú de la cuenta',
+    askOgen: 'Preguntar a Ogen',
+    assistantFinished: 'El asistente ha terminado',
     campaignNoWindow: 'Sin fechas',
     campaign: {
       overview: 'Resumen',

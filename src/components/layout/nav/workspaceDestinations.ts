@@ -1,14 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import {
   AiIdeaIcon,
-  BellIcon,
   Calendar04Icon,
   ChartColumnIncreasingIcon,
   FolderLibraryIcon,
   InboxIcon,
-  PaletteIcon,
   PromotionIcon,
-  Settings01Icon,
 } from '@hugeicons/core-free-icons'
 import type { IconSvgElement } from '@hugeicons/react'
 import type { LinkProps } from '@tanstack/react-router'
@@ -130,51 +127,4 @@ export function useWorkspaceDestinations(): WorkspaceDestination[] {
   })
 
   return destinations
-}
-
-/**
- * Everything level 0 offers, for the menu behind the workspace mark at level 1.
- *
- * The modules above, then the utilities the footer draws — Foundation,
- * Activity and the workspace's own settings. Inside a campaign that footer is
- * showing *this campaign's* settings, so this menu is the only way back to the
- * workspace's; the other two are duplicated from rows that are still on
- * screen, and deliberately, because a menu called Workspace that holds some of
- * the workspace is worse than one that repeats itself. Read it as "the level
- * you came from, whole".
- *
- * Flags again read once, here, for the reason above: a feature that is off is
- * absent from the menu and the rail together or the two disagree.
- */
-export function useWorkspaceMenuEntries(): WorkspaceDestination[] {
-  const { t } = useTranslation()
-  const destinations = useWorkspaceDestinations()
-
-  const entries = [...destinations]
-
-  entries.push({
-    id: 'foundation',
-    label: t('nav.foundation'),
-    icon: PaletteIcon,
-    to: '/foundation',
-    isActive: (p) => p.startsWith('/foundation'),
-  })
-
-  entries.push({
-    id: 'activity',
-    label: t('nav.activity'),
-    icon: BellIcon,
-    to: '/activity',
-    isActive: (p) => p.startsWith('/activity'),
-  })
-
-  entries.push({
-    id: 'workspace-settings',
-    label: t('nav.workspaceSettings'),
-    icon: Settings01Icon,
-    to: '/workspace-settings',
-    isActive: (p) => p.startsWith('/workspace-settings'),
-  })
-
-  return entries
 }

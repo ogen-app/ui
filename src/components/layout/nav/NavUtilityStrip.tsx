@@ -54,7 +54,7 @@ export function NavUtilityStrip({
 
   if (level === 1 && campaignId) {
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0.5">
         {/* Plain, where level 0's row carries an unread count: the count is
             the workspace's, from an endpoint that takes no campaign, and a
             number here would be answering a different question than the row
@@ -81,20 +81,16 @@ export function NavUtilityStrip({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-0.5">
       <AppSidebarButtonMenu
         icon={<NavIcon icon={PaletteIcon} />}
         text={t('nav.foundation')}
         isActive={pathname.startsWith('/foundation')}
         to="/foundation"
       />
+      {/* No settings row here: the workspace's settings hang off the
+          workspace cell at the top of the rail (`WorkspaceCell`). */}
       <ActivitySidebarItem isActive={pathname.startsWith('/activity')} />
-      <AppSidebarButtonMenu
-        icon={gear}
-        text={t('nav.workspaceSettings')}
-        isActive={pathname.startsWith('/workspace-settings')}
-        to="/workspace-settings"
-      />
     </div>
   )
 }
