@@ -15,13 +15,13 @@ const buttonIconContext = { weight: 'bold' as const }
 
 const buttonVariants = cva(
   'relative inline-flex items-center cursor-pointer whitespace-nowrap shrink-0 outline-none ' +
-    'gap-2 rounded-md text-[13px]/4 font-medium select-none transition-all ' +
+    'gap-2 rounded-button text-[13px]/4 font-medium select-none transition-all ' +
     'disabled:pointer-events-none ' +
     // Icon sizing is owned by the `size` variant below (16px everywhere except
     // the 16px-tall xsIcon); an explicit `size-*` on the icon still wins.
     "[&_svg:not([class*='stroke-'])]:stroke-[2] [&_svg]:shrink-0 " +
     'focus-visible:inset-ring-[2px] focus-visible:inset-ring-ring aria-invalid:ring-destructive/20 aria-invalid:border-destructive ' +
-    '[&_[data-spinner-container]]:rounded-md',
+    '[&_[data-spinner-container]]:rounded-button',
   {
     variants: {
       variant: {
@@ -102,7 +102,7 @@ const buttonVariants = cva(
         menu:
           // The rail's row, as the prototype draws it: 36px, 8px in, grey
           // until pointed at or current, then the tertiary fill and ink.
-          'bg-transparent h-9 px-2 w-full gap-2.5 justify-start rounded-md text-secondary-foreground overflow-hidden ' +
+          'bg-transparent h-9 px-2 w-full gap-2.5 justify-start rounded-button text-secondary-foreground overflow-hidden ' +
           'hover:bg-tertiary hover:text-primary-foreground ' +
           // The chrome's one type rule: 14px, regular for anything you press,
           // in sentence case — the same voice as the page under it.

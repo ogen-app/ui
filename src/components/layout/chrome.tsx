@@ -18,7 +18,7 @@ import { cn } from '@/lib'
  * 36px height and a 24px leading slot, so their words start on one line.
  */
 export const CHROME_ROW =
-  'flex h-9 w-full min-w-0 items-center gap-2.5 rounded-md px-2 text-left text-sm ' +
+  'flex h-9 w-full min-w-0 items-center gap-2.5 rounded-button px-2 text-left text-sm ' +
   'text-secondary-foreground outline-none transition-colors ' +
   'hover:bg-tertiary hover:text-primary-foreground ' +
   'data-[state=open]:bg-tertiary data-[state=open]:text-primary-foreground ' +

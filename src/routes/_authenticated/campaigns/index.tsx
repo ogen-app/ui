@@ -107,12 +107,10 @@ function Campaigns() {
         {/* After both branches: a workspace whose only campaigns are archived
             still has to be able to reach them, and the empty state's `grow`
             leaves this sitting at the bottom of the screen where it belongs.
-            The inner column is `CampaignCard`'s own, so the drawer lines up
-            with the cards it continues rather than spanning the page. */}
+            It spans the page like the cards above it, so the drawer lines up
+            with the list it continues. */}
         <div className="px-3 lg:px-6 pt-2 pb-10">
-          <div className="w-full max-w-content mx-auto">
-            <ArchivedCampaigns defaultOpen={archived} />
-          </div>
+          <ArchivedCampaigns defaultOpen={archived} />
         </div>
       </div>
       <CreateCampaignDialog

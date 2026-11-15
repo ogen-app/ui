@@ -114,7 +114,7 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
       to="/campaigns/$campaignId"
       params={{ campaignId: campaign.id }}
       aria-label={`Open ${title}`}
-      className="group w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0 cursor-pointer transition-shadow duration-150 hover:shadow-lg"
+      className="group w-full rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0 cursor-pointer transition-shadow duration-150 hover:shadow-lg"
     >
       <div className="flex items-center gap-3 min-w-0">
         {/* 40px of mark against 40px of text — the two lines below set the

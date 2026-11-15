@@ -187,13 +187,12 @@
      than collapsed into `--font-sans` at the call sites: it is the seam where a
      second face would go back in, and there are 9 of them. */
   --font-grotesk: var(--font-sans);
-  /* The page title's size, and the one step above `text-2xl` the app uses.
-     Set Light (CON-390): a large light title over Medium headings over Regular
-     body gives contrast in both directions, where a bold title made the top
-     of the page and the content compete. 36px leading fits the header's 40px
-     row. Generates `text-display`. */
-  --text-display: 1.95rem;
-  --text-display--line-height: 2.25rem;
+  /* The page title's size. 24px and set SemiBold in the page header: under
+     the 56px chrome bar a large light title read as a second header competing
+     with it, so the title is now smaller and carries its weight instead.
+     32px leading sits inside the header's 40px row. Generates `text-display`. */
+  --text-display: 1.5rem;
+  --text-display--line-height: 2rem;
 
   /* Layout: the shared content-column width — the post rich-text editor and
      the settings cards read at the same measure. Generates `w-content` /
@@ -205,6 +204,10 @@
   --radius-md: calc(var(--radius) + 1px);
   --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 3px);
+  /* Every button's corner, whatever the variant: a step rounder than the
+     near-square cards and fields, so a pressable thing reads as one.
+     Generates `rounded-button`. */
+  --radius-button: 3px;
 
   /* Shadows */
   /* --shadow-sm: 0 1px 2px 0 rgb(60 40 0 / 0.05); */

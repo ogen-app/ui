@@ -31,8 +31,10 @@ type PageHeaderProps = {
 }
 
 /**
- * The one page-header primitive: a sticky 40px row with the shared fade-out
- * gradient, so content scrolls under it and dissolves. Every top bar
+ * The one page-header primitive: a sticky 40px row ruled off from the page by
+ * a hairline. Solid while it stays put, so content passes behind the rule
+ * rather than through it; the fading variant keeps its gradient and lets the
+ * rule go with the title. Every top bar
  * (workspace pages, post details, asset editor) composes this component —
  * don't hand-roll header chrome elsewhere.
  */
@@ -66,13 +68,11 @@ export function PageHeader({
     <div
       ref={rootRef}
       className={cn(
-        'sticky top-0 px-3 lg:px-6 pt-6 pb-4 shrink-0',
+        'sticky top-0 px-3 lg:px-6 pt-6 shrink-0',
         // The fading variant moves the gradient to its own layer (so it can
         // dissolve independently) and must not eat clicks once that layer is
         // gone — pointer events are re-enabled per button group below.
-        fadeOnScroll
-          ? 'pointer-events-none'
-          : 'bg-gradient-to-b from-background from-42% to-transparent',
+        fadeOnScroll ? 'pointer-events-none' : 'bg-background',
         className,
       )}
       style={{ zIndex: ZIndex.pageHeader }}
@@ -116,7 +116,7 @@ export function PageHeader({
           {title !== undefined && (
             <h1
               className={cn(
-                'type-display font-display text-display font-light text-primary-foreground truncate',
+                'type-display font-display text-display font-semibold tracking-tight text-primary-foreground truncate',
                 fadeOnScroll && 'transition-opacity duration-300',
                 faded && 'opacity-0',
               )}
@@ -147,6 +147,14 @@ export function PageHeader({
           </div>
         )}
       </div>
+      <div
+        aria-hidden
+        className={cn(
+          'relative mt-4 h-px bg-border',
+          fadeOnScroll && 'transition-opacity duration-300',
+          faded && 'opacity-0',
+        )}
+      />
     </div>
   )
 }

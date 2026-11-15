@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { SparkleIcon } from '@phosphor-icons/react'
 import { CampaignSwitcher } from '@/components/layout/CampaignSwitcher'
+import { Logo } from '@/components/Logo'
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
 import {
   selectAnyRunning,
@@ -30,8 +30,10 @@ export function TopBar() {
 
 /**
  * Opens the assistant in the column beside the page; pressing it while the
- * assistant shows closes it. A thread working elsewhere pulses the mark, and
- * one that finished while you were away leaves a dot until it is read.
+ * assistant shows closes it. Inverted, with Ogen's own mark: it is the one
+ * dark thing in the bar, because it is the one thing in it that does work.
+ * A thread working elsewhere draws the mark's loading stroke, and one that
+ * finished while you were away leaves a dot until it is read.
  */
 function AskOgen() {
   const { t } = useTranslation()
@@ -46,21 +48,17 @@ function AskOgen() {
       aria-pressed={on}
       onClick={() => toggle('assistant')}
       className={cn(
-        'relative flex h-9 items-center gap-2 rounded-md px-3 text-sm text-secondary-foreground outline-none transition-colors',
-        'hover:bg-tertiary hover:text-primary-foreground',
-        'aria-pressed:bg-quaternary aria-pressed:text-primary-foreground',
-        'focus-visible:inset-ring-2 focus-visible:inset-ring-ring',
+        'relative flex h-9 items-center gap-2 rounded-button bg-primary-foreground px-3 text-sm font-medium text-primary outline-none transition-colors',
+        'hover:bg-primary-foreground-elevated aria-pressed:bg-primary-foreground-elevated',
+        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-primary',
       )}
     >
-      <SparkleIcon
-        weight="fill"
-        className={cn('size-4 text-accent', busy && 'animate-pulse')}
-      />
+      <Logo variant="mark" loading={busy} className="size-5 shrink-0" />
       {t('nav.askOgen')}
       {unread && (
         <span
           aria-label={t('nav.assistantFinished')}
-          className="absolute right-1.5 top-1.5 size-2 rounded-full bg-accent ring-2 ring-primary"
+          className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-accent ring-2 ring-primary"
         />
       )}
     </button>
