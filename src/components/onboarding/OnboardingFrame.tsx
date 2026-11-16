@@ -114,7 +114,7 @@ export function OnboardingFrame({
         </Button>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1120px] flex-1 grid-cols-1 items-start gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 lg:px-6 lg:py-10">
+      <div className="mx-auto grid w-full max-w-[1120px] flex-1 grid-cols-1 items-start gap-4 px-4 py-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-6 lg:px-6 lg:py-10">
         <div className="order-2 flex min-w-0 flex-col gap-3 lg:order-1">
           {children}
         </div>

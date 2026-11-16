@@ -4,6 +4,7 @@ import {
   CircleHalfIcon,
 } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib'
 import type { OnboardingRole } from './flow'
 import { verdictOf, type Need, type NeedLevel } from './needs'
@@ -100,15 +101,7 @@ export function NeedsSheet({
       </div>
 
       {blank ? (
-        <div aria-hidden className="flex flex-col gap-4 px-5 py-5">
-          <span className="h-2 w-2/3 rounded-full bg-secondary" />
-          {needs.map((n) => (
-            <span key={n.id} className="flex items-center gap-3">
-              <span className="size-4 rounded-full bg-secondary" />
-              <span className="h-2 flex-1 rounded-full bg-secondary" />
-            </span>
-          ))}
-        </div>
+        <SheetSkeleton count={needs.length} />
       ) : (
         <>
           <div className="flex flex-col gap-2 px-5 pt-5 pb-4">
@@ -192,5 +185,68 @@ function NeedRow({ need, lit }: { need: Need; lit: boolean }) {
         )}
       </div>
     </li>
+  )
+}
+
+/** Label and hint widths per row, so the placeholder reads as six needs rather than a striped block. */
+const ROW_SHAPES = [
+  ['w-36', 'w-4/5'],
+  ['w-24', 'w-3/5'],
+  ['w-32', 'w-full'],
+  ['w-40', 'w-2/3'],
+  ['w-28', 'w-3/4'],
+  ['w-20', 'w-1/2'],
+] as const
+
+/**
+ * The first screen's sheet: the filled sheet's own layout — the heading and its
+ * count, the six-segment meter, the verdict, and a row per need with its mark,
+ * label, level and hint — drawn in placeholder bars, so nothing moves when it
+ * fills. It holds still: nothing is loading, there is just nothing known yet.
+ */
+function SheetSkeleton({ count }: { count: number }) {
+  const bar = 'animate-none rounded-full'
+  return (
+    <div aria-hidden>
+      <div className="flex flex-col gap-2 px-5 pt-5 pb-4">
+        <div className="flex h-5 items-center justify-between gap-3">
+          <Skeleton className={cn(bar, 'h-2.5 w-28')} />
+          <Skeleton className={cn(bar, 'h-2 w-14')} />
+        </div>
+        <div
+          className="grid gap-1"
+          style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
+        >
+          {Array.from({ length: count }, (_, i) => (
+            <span key={i} className="h-1.5 rounded-full bg-tertiary" />
+          ))}
+        </div>
+        <div className="flex h-5 items-center">
+          <Skeleton className={cn(bar, 'h-2 w-4/5')} />
+        </div>
+      </div>
+      <ul className="flex flex-col border-t border-quaternary">
+        {Array.from({ length: count }, (_, i) => {
+          const [label, hint] = ROW_SHAPES[i % ROW_SHAPES.length]
+          return (
+            <li
+              key={i}
+              className="flex gap-3 border-b border-quaternary px-5 py-3 last:border-b-0"
+            >
+              <Skeleton className="mt-0.5 size-4 shrink-0 animate-none rounded-full" />
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <div className="flex h-5 items-center justify-between gap-2">
+                  <Skeleton className={cn(bar, 'h-2.5', label)} />
+                  <Skeleton className={cn(bar, 'h-2 w-10')} />
+                </div>
+                <div className="flex h-4 items-center">
+                  <Skeleton className={cn(bar, 'h-1.5', hint)} />
+                </div>
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }
