@@ -1825,12 +1825,26 @@ export type PostRef = {
 
 /** A goal period's figures: "April: 14 of 20 planned". */
 export type GoalPeriod = {
-  /** The server's name for the period ("April", "next week"). */
+  /**
+   * The server's English name for it ("April") — read only when the data
+   * below is missing; it goes once every server sends that (CON-503/511).
+   */
   label: string
+  /** The goal's cadence; weeks count from the campaign's start. */
+  cadence?: 'week' | 'month'
+  /** Its place in the campaign, from 1. */
+  index?: number
+  /** Its days, `YYYY-MM-DD`, both included. */
+  start?: string
+  end?: string
   target: number
   planned: number
   left: number
 }
+
+/** A part of the campaign's state a reply can say it relied on (CON-503). */
+export type CampaignCite =
+  'goal' | 'period' | 'posts' | 'platforms' | 'sources' | 'calendar'
 
 /**
  * The campaign as a turn read it (CON-483): the goal and its current
@@ -1848,6 +1862,10 @@ export type CampaignState = {
     period?: GoalPeriod
   }
   calendar?: { total: number }
+  /** The campaign's posts; absent when the server couldn't count them. */
+  posts?: number
+  /** The platforms it targets, by the server's names. */
+  platforms?: { id: string; name: string }[]
   sources?: {
     wholeBank: boolean
     attached: number
@@ -1864,7 +1882,14 @@ export type CampaignState = {
 /** A starter that leads with the state's numbers (CON-483). */
 export type CampaignStarter = {
   kind: 'fill' | 'draft' | 'calendar' | 'sources'
-  /** The server's sentence, sent as the message on a click. */
+  /** The posts to fill or draft, the conflicts, the sources not ready. */
+  count?: number
+  /** A fill's goal period. */
+  period?: GoalPeriod
+  /**
+   * The server's English sentence — sent only when the starter can't be
+   * worded from its figures; it goes once every server sends them.
+   */
   instruction: string
 }
 
@@ -1872,6 +1897,11 @@ export type CampaignStarter = {
 export type CampaignStateRead = {
   state: CampaignState
   starters: CampaignStarter[]
+  /**
+   * The parts of the state the reply relied on, in its order (CON-503).
+   * Absent off a turn — the `/assistant-state` read has no reply.
+   */
+  cites?: CampaignCite[]
 }
 
 /** An item a run left undone. `title` is missing where the tool names none. */

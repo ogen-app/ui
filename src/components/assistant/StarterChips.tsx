@@ -33,12 +33,14 @@ import type { TFunction } from 'i18next'
 import {
   subjectCampaignId,
   type CampaignStarter,
+  type CampaignState,
   type CampaignStateRead,
   type ThreadSubject,
 } from '@/types/assistant'
 import { useCampaignAssistantState } from '@/hooks/useCampaignAssistantState'
 import type { ViewScreen } from '@/lib/viewContext'
 import { counted } from '@/lib/intl'
+import { periodName } from '@/lib/goalPeriod'
 import { useAssetsState } from '@/hooks/useContent'
 import type { AssetsState } from '@/services/api/content'
 import { useAssistantStore } from '@/stores/assistantStore'
@@ -423,10 +425,11 @@ const STATE_ICON: Record<CampaignStarter['kind'], Icon> = {
 }
 
 /**
- * The campaign's starters (CON-483), worded here from their kind and the
- * state's figures — "Fill April", "Draft 20 posts" — and sending the
- * server's instruction. A starter whose figure the state doesn't carry is
- * left out rather than worded without it.
+ * The campaign's starters (CON-483), worded here — the chip and the message it
+ * sends alike — from their kind and figures (CON-511): "Fill April", "Draft 20
+ * posts". The message is the user's, so it reads in their language too. A
+ * starter sent without its figures falls back to the state's, and to the
+ * server's English sentence; one with neither is left out.
  */
 function campaignStarterChips(
   t: TFunction,
@@ -434,36 +437,65 @@ function campaignStarterChips(
 ) {
   if (!read) return []
   const { state } = read
-  return read.starters.flatMap(({ kind, instruction }) => {
-    const label =
-      kind === 'fill' && state.goal?.period
-        ? t('assistant.campaignState.starter.fill', {
-            period: state.goal.period.label,
-          })
-        : kind === 'draft' && state.goal && state.goal.room > 0
-          ? t('assistant.campaignState.starter.draft', counted(state.goal.room))
-          : kind === 'calendar' && state.calendar && state.calendar.total > 0
-            ? t(
-                'assistant.campaignState.starter.calendar',
-                counted(state.calendar.total),
-              )
-            : kind === 'sources' && state.sources && state.sources.notReady > 0
-              ? t(
-                  'assistant.campaignState.starter.sources',
-                  counted(state.sources.notReady),
-                )
-              : null
-    return label
-      ? [
-          {
-            key: `state-${kind}`,
-            icon: STATE_ICON[kind],
-            label,
-            text: instruction,
-          },
-        ]
-      : []
+  return read.starters.flatMap((starter) => {
+    const words = starterWords(t, starter, state)
+    if (!words) return []
+    return [
+      {
+        key: `state-${starter.kind}`,
+        icon: STATE_ICON[starter.kind],
+        label: words.label,
+        text: words.says || starter.instruction,
+      },
+    ]
   })
+}
+
+/** A starter's chip and message, from its figures; null when it has none. */
+function starterWords(
+  t: TFunction,
+  starter: CampaignStarter,
+  state: CampaignState,
+): { label: string; says: string } | null {
+  switch (starter.kind) {
+    case 'fill': {
+      const period = starter.period ?? state.goal?.period
+      const count = starter.count ?? period?.left
+      if (!period || !count) return null
+      const name = periodName(period)
+      return {
+        label: t('assistant.campaignState.starter.fill', { period: name }),
+        says: t('assistant.campaignState.starterSays.fill', {
+          ...counted(count),
+          period: name,
+        }),
+      }
+    }
+    case 'draft': {
+      const count = starter.count ?? state.goal?.room
+      if (!count) return null
+      return {
+        label: t('assistant.campaignState.starter.draft', counted(count)),
+        says: t('assistant.campaignState.starterSays.draft', counted(count)),
+      }
+    }
+    case 'calendar': {
+      const count = starter.count ?? state.calendar?.total
+      if (!count) return null
+      return {
+        label: t('assistant.campaignState.starter.calendar', counted(count)),
+        says: t('assistant.campaignState.starterSays.calendar'),
+      }
+    }
+    case 'sources': {
+      const count = starter.count ?? state.sources?.notReady
+      if (!count) return null
+      return {
+        label: t('assistant.campaignState.starter.sources', counted(count)),
+        says: t('assistant.campaignState.starterSays.sources'),
+      }
+    }
+  }
 }
 
 const STARTERS: Record<ThreadSubject['kind'], Starter[]> = {

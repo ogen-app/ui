@@ -14,6 +14,7 @@ import { createStreamConnection } from '@/lib/streamConnection'
 import { streamAppEvents } from '@/services/api/events'
 import { toast } from '@/stores/toastStore'
 import { useAssistantStore } from '@/stores/assistantStore'
+import { noteFreshScore } from '@/stores/freshScoreStore'
 import {
   autoAssessmentEnded,
   autoAssessmentStarted,
@@ -221,7 +222,13 @@ function trackAutoAssessment(event: AppEvent): void {
     }
     // No toast for a failure: the server retries an automatic run once, and
     // the author asked for nothing.
-    case 'assessment.completed':
+    case 'assessment.completed': {
+      autoAssessmentEnded(subject.id)
+      // The score itself, for a card drawn before it existed (CON-511).
+      const pct = event.payload?.overallPct
+      if (typeof pct === 'number') noteFreshScore(subject.id, pct)
+      return
+    }
     case 'assessment.failed':
       autoAssessmentEnded(subject.id)
   }
