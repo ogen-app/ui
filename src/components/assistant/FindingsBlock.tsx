@@ -308,6 +308,8 @@ const OR_CLASS =
  *
  * `onAssist` is FIX WITH ASSISTANT (CON-495): the row's button when no fix
  * is an offer to run — beside a post to open, say — else the last "or …".
+ * `assistBusy` holds it while the post's thread is running a turn, which
+ * would refuse the message.
  */
 export function FixActions({
   threadId,
@@ -315,6 +317,7 @@ export function FixActions({
   fixes,
   proposals = [],
   onAssist,
+  assistBusy = false,
   disabled,
 }: {
   threadId: string
@@ -322,6 +325,7 @@ export function FixActions({
   fixes: RepairFix[]
   proposals?: AssistantProposal[]
   onAssist?: () => void
+  assistBusy?: boolean
   disabled: boolean
 }) {
   const { t } = useTranslation()
@@ -458,7 +462,7 @@ export function FixActions({
         variant="outline"
         size="sm"
         className={FIX_BUTTON_CLASS}
-        disabled={disabled}
+        disabled={disabled || assistBusy}
         onClick={onAssist}
       >
         {t('assistant.findings.assist')}
@@ -466,7 +470,7 @@ export function FixActions({
     ) : (
       <button
         type="button"
-        disabled={disabled}
+        disabled={disabled || assistBusy}
         onClick={onAssist}
         className={OR_CLASS}
       >

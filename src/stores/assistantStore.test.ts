@@ -1167,6 +1167,30 @@ describe('a finding’s fixes, answered (CON-495)', () => {
     })
   })
 
+  it('settles a fix on an ignored finding, for when it is restored', async () => {
+    const { settleHistory } = await import('./assistantStore')
+    const turns = [
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        content: '',
+        findings: {
+          ...findings,
+          findings: [],
+          dismissedFindings: findings.findings,
+        },
+      },
+    ]
+    settleHistory(
+      turns,
+      Date.now(),
+      new Map([['a1', [{ id: 'f1', status: 'confirmed' }]]]),
+    )
+    expect(turns[0]).toMatchObject({
+      proposals: [{ id: 'f1', status: 'confirmed' }],
+    })
+  })
+
   it('adds nothing for a fix still waiting', async () => {
     const { settleHistory } = await import('./assistantStore')
     const turns: {

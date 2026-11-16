@@ -660,6 +660,23 @@ describe('what CON-495 sends', () => {
     )
   })
 
+  it('holds FIX WITH ASSISTANT while the post’s thread is running', async () => {
+    useAssistantStore.setState({
+      threads: {
+        'post:p2': {
+          id: 'post:p2',
+          subject: { kind: 'post', postId: 'p2', campaignId: 'c1' },
+          status: 'running',
+        } as never,
+      },
+    })
+    await show({ review: quoted })
+    expect(
+      screen.getByText('FIX WITH ASSISTANT').closest('button')?.disabled,
+    ).toBe(true)
+    useAssistantStore.setState({ threads: {} })
+  })
+
   it('offers it last when a fix runs on its own', async () => {
     await show({ review })
     expect(screen.getByText('Rewrite it to follow the brief')).toBeTruthy()

@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 import { LockSimpleIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
+import { useShallow } from 'zustand/react/shallow'
 import type { TFunction } from 'i18next'
 import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
@@ -176,6 +177,16 @@ function ReviewCard({
   const campaignName = useAssistantStore(
     (s) => s.threads[threadId]?.campaignTitle || s.threads[threadId]?.title,
   )
+  // Post threads mid-turn: their send would refuse FIX WITH ASSISTANT.
+  const runningPosts = useAssistantStore(
+    useShallow((s) =>
+      Object.values(s.threads).flatMap((thread) =>
+        thread.status === 'running' && thread.subject.kind === 'post'
+          ? [thread.subject.postId]
+          : [],
+      ),
+    ),
+  )
   const { campaignId } = review
   // FIX WITH ASSISTANT (CON-495, board 7): the post's thread, bound in the
   // rail where the review is, asked about this finding by its key. Not a
@@ -281,6 +292,7 @@ function ReviewCard({
                 fixes={f.fixes}
                 proposals={proposals}
                 onAssist={f.kind === 'post' ? fixWithAssistant(f) : undefined}
+                assistBusy={!!f.postId && runningPosts.includes(f.postId)}
                 disabled={disabled}
               />
             </FindingRow>

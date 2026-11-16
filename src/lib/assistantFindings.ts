@@ -9,15 +9,18 @@ import type {
 /**
  * Every fix a turn's findings carry (CON-478): the calendar check's, the
  * reviews' and the brand check's. Each names its offer by `proposalId`, which
- * is how the row learns what became of it.
+ * is how the row learns what became of it. Ignored findings count too: one
+ * restored is drawn with its fixes again, and must read as fixed if it was.
  */
 export function turnFixes(turn: AssistantTurn): RepairFix[] {
   const r = turn.repair
   return [
     ...(turn.findings?.findings ?? []),
-    ...[r?.review, r?.briefReview, r?.postsReview].flatMap(
-      (review) => review?.findings ?? [],
-    ),
+    ...(turn.findings?.dismissedFindings ?? []),
+    ...[r?.review, r?.briefReview, r?.postsReview].flatMap((review) => [
+      ...(review?.findings ?? []),
+      ...(review?.dismissedFindings ?? []),
+    ]),
     ...(turn.foundation?.brandCheck?.findings ?? []),
   ].flatMap((f) => f.fixes)
 }
