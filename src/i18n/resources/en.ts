@@ -1938,17 +1938,63 @@ export const en = {
       /** Sent to the campaign's assistant: the fix, then the problem. */
       askFix: '{{fix}}: {{problem}}',
     },
-    /** The Needs attention card. */
-    attention: {
-      title: 'Needs attention',
+    /**
+     * The right-hand column's first card: what is already wrong or about to
+     * be — the client's alert and risk rules and the server's problems.
+     */
+    warnings: {
+      title: 'Warnings',
       /** Beside the title: "4 · 1 ignored". */
       countIgnored_one: '{{total}} · {{formatted}} ignored',
       countIgnored_other: '{{total}} · {{formatted}} ignored',
-      showMore_one: 'SHOW {{formatted}} MORE',
-      showMore_other: 'SHOW {{formatted}} MORE',
-      allSet: 'You’re all set',
-      allSetBody:
-        'Nothing is failing, overdue, or waiting on you right now. If something comes up, it’ll show up here.',
+      none: 'Nothing is failing, overdue or at risk.',
+    },
+    /** The right-hand column's second card: gaps with no clock on them. */
+    todo: {
+      title: 'To do',
+      none: 'Nothing is waiting on you.',
+      addPost: 'ADD POST',
+      generate: 'GENERATE WITH OGEN',
+      /** Written into the campaign's composer; the send is the user's. */
+      generateAsk: 'Generate a content plan for this campaign.',
+    },
+    /** The left-hand column: what the campaign is and where it stands. */
+    stats: {
+      notSet: 'Not set',
+      window: 'Window',
+      goal: 'Goal',
+      channels: 'Channels',
+      /** Under the window while the campaign runs. */
+      dayOf: 'Day {{day}} of {{total}}',
+      /** `when` is a relative time, "in 5 days". */
+      startsIn: 'Starts {{when}}',
+      /** `when` is a relative time, "3 days ago". */
+      ended: 'Ended {{when}}',
+      goalTotal_one: '{{formatted}} post',
+      goalTotal_other: '{{formatted}} posts',
+      goalRateWeek_one: '{{formatted}} a week',
+      goalRateWeek_other: '{{formatted}} a week',
+      goalRateMonth_one: '{{formatted}} a month',
+      goalRateMonth_other: '{{formatted}} a month',
+      goalPublished: '{{published}} published · {{scheduled}} scheduled',
+      channelPosts_one: '{{formatted}} post',
+      channelPosts_other: '{{formatted}} posts',
+      notConnected: 'Not connected',
+      inProgress: 'In progress',
+      readyToGo: 'Ready to go',
+      published: 'Published',
+      failed: 'Failed',
+      upNext: 'Up next',
+      nothingScheduled: 'Nothing scheduled yet.',
+      noPosts: 'No posts yet.',
+      untitledPost: 'Untitled post',
+      postsFailed:
+        'Couldn’t load this campaign’s posts — they’ll appear here once they’re reachable again.',
+      documents_one: '{{formatted}} document',
+      documents_other: '{{formatted}} documents',
+      noDocuments: 'No documents — this campaign writes from its brief alone.',
+      wholeBank: 'Draws on the whole content bank.',
+      documentsGone: 'None of its documents still exist.',
     },
   },
 

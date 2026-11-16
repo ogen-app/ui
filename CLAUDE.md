@@ -803,7 +803,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   store's `restoreFinding`) write it at once. The ignored ones sit behind
   "N ignored on this campaign · SHOW", each with RESTORE, and a review never
   says the brief and posts agree when its findings were only ignored. **The
-  Overview's Needs attention card leads with the server's problems**
+  Overview's Warnings card carries the server's problems**
   (`useCampaignProblems`, read off `GET /api/campaigns/:id/overview`), and
   drops the client rules they cover (`post-type-dropped`,
   `scheduled-outside-window`, and since CON-468's `platform_not_targeted`
@@ -848,8 +848,16 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   rest "or …" — sends `<fix>: <problem>` to the campaign's thread, never a raw
   key, which answers with that finding's fixes as offers; a fix that is only a
   post to open is a link, a problem with no fix offers IGNORE alone, and FIX
-  WITH ASSISTANT in the header asks for all of them. The server's problems are
-  never folded behind SHOW MORE; only the client's rules are capped.
+  WITH ASSISTANT in the header asks for all of them. Nothing on the Overview
+  is folded behind SHOW MORE.
+- **The campaign Overview is two columns: stats left, things to do right.**
+  The left holds figures only — Strategy (window, goal, channels), Posts,
+  Analytics, Assets — and never a call to action; the right holds the
+  Warnings card (the client's `alert`/`risk` rules and the server's problems)
+  and the To do card (`todo`/`info`), which never restates a figure. A new
+  rule picks its card by severity (`docs/attention-rules.md`). The columns
+  answer to the page's width through a container query, not the viewport,
+  and stack with the right column first.
 - **The analytics pack's results are cards, and every card cites its
   filters** (CON-463, drawn as CON-479 has them). `complete.results.analytics`
   holds each tool's last output, and every read is `{applied, data, summary}`:

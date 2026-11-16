@@ -198,6 +198,9 @@
      the settings cards read at the same measure. Generates `w-content` /
      `max-w-content`. */
   --container-content: 740px;
+  /* A two-column dashboard — the campaign Overview's stats beside its
+     warnings and to-dos. Generates `max-w-wide`. */
+  --container-wide: 1180px;
 
   /* Radius */
   --radius-sm: calc(var(--radius) + 0px);

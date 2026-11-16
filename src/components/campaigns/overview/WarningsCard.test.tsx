@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { useAssistantStore } from '@/stores/assistantStore'
 import type { CampaignProblems } from '@/services/api/campaignProblems'
-import { AttentionRail } from './AttentionRail'
+import { WarningsCard } from './WarningsCard'
 
 // The real settings store persists to localStorage, which this environment
 // lacks; the row only needs its `openRightPanel`.
@@ -87,7 +87,7 @@ const problems: CampaignProblems = {
 describe('the calendar’s problems on the Overview', () => {
   it('offers the fix itself, and asks the campaign’s assistant for it', async () => {
     await renderWithProviders(
-      <AttentionRail items={[]} problems={problems} campaignId="c1" />,
+      <WarningsCard items={[]} problems={problems} campaignId="c1" />,
     )
     fireEvent.click(screen.getByText('Convert to image post'))
     expect(openRightPanel).toHaveBeenCalledWith('assistant')
@@ -105,7 +105,7 @@ describe('the calendar’s problems on the Overview', () => {
 
   it('asks for every fix at once from the header', async () => {
     await renderWithProviders(
-      <AttentionRail items={[]} problems={problems} campaignId="c1" />,
+      <WarningsCard items={[]} problems={problems} campaignId="c1" />,
     )
     fireEvent.click(screen.getByText('FIX WITH ASSISTANT'))
     expect(send).toHaveBeenCalledWith('campaign:c1', 'Fix these with me.')
@@ -113,7 +113,7 @@ describe('the calendar’s problems on the Overview', () => {
 
   it('opens the post when that is the fix', async () => {
     await renderWithProviders(
-      <AttentionRail items={[]} problems={problems} campaignId="c1" />,
+      <WarningsCard items={[]} problems={problems} campaignId="c1" />,
     )
     expect(screen.getByText('Open the post').getAttribute('href')).toBe(
       '/campaigns/c1/posts/p2',
@@ -122,7 +122,7 @@ describe('the calendar’s problems on the Overview', () => {
 
   it('offers only IGNORE on a problem with no fix', async () => {
     await renderWithProviders(
-      <AttentionRail items={[]} problems={problems} campaignId="c1" />,
+      <WarningsCard items={[]} problems={problems} campaignId="c1" />,
     )
     const row = screen
       .getByText('LinkedIn is ahead: 4 a week against 2')
@@ -133,7 +133,7 @@ describe('the calendar’s problems on the Overview', () => {
 
   it('counts beside the title, ignores one, and restores from the list', async () => {
     await renderWithProviders(
-      <AttentionRail items={[]} problems={problems} campaignId="c1" />,
+      <WarningsCard items={[]} problems={problems} campaignId="c1" />,
     )
     expect(screen.getByText('3 · 1 ignored')).toBeTruthy()
     fireEvent.click(screen.getAllByText('IGNORE')[1])
@@ -145,12 +145,12 @@ describe('the calendar’s problems on the Overview', () => {
     expect(restoreFinding).toHaveBeenCalledWith('c1', 'quiet:c')
   })
 
-  it('never folds the server’s problems behind SHOW MORE', async () => {
+  it('never folds anything away', async () => {
     await renderWithProviders(
-      <AttentionRail
+      <WarningsCard
         items={Array.from({ length: 6 }, (_, i) => ({
           id: `rule-${i}`,
-          severity: 'todo' as const,
+          severity: 'risk' as const,
           label: `Rule ${i}`,
           actionLabel: 'Open',
           fix: 'posts' as const,
@@ -159,26 +159,29 @@ describe('the calendar’s problems on the Overview', () => {
         campaignId="c1"
       />,
     )
+    expect(screen.getByText('Rule 5')).toBeTruthy()
     expect(
       screen.getByText('LinkedIn is ahead: 4 a week against 2'),
     ).toBeTruthy()
-    expect(screen.getByText(/^SHOW \d+ MORE$/)).toBeTruthy()
+    expect(screen.queryByText(/^SHOW \d+ MORE$/)).toBeNull()
   })
 
-  it('is all clear only when neither the server nor the rules found anything', async () => {
+  it('says nothing is wrong only when neither the server nor the rules found anything', async () => {
     await renderWithProviders(
-      <AttentionRail
+      <WarningsCard
         items={[]}
         problems={{ problems: [], dismissed: 0, dismissedProblems: [] }}
         campaignId="c1"
       />,
     )
-    expect(screen.getByText('You’re all set')).toBeTruthy()
+    expect(
+      screen.getByText('Nothing is failing, overdue or at risk.'),
+    ).toBeTruthy()
   })
 
   it('keeps what is already wrong ahead of the server’s problems', async () => {
     await renderWithProviders(
-      <AttentionRail
+      <WarningsCard
         items={[
           {
             id: 'failed-posts',

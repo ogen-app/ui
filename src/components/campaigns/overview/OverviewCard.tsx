@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { CaretRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button.tsx'
 import { useCalendarPlace } from '@/hooks/usePostsPlace'
 import { cn } from '@/lib'
@@ -26,14 +25,13 @@ export type CardLink = {
 }
 
 /**
- * One module card on the Campaign Overview screen. Capped at the shared
- * content-column width and centred, so the screen reads as one column like
- * the Strategy and Settings pages rather than stretching to the viewport.
+ * One card on the Campaign Overview, and on the campaign's Analytics panel.
+ * Capped at the shared content-column width and centred — on the Overview it
+ * sits in a column narrower than that, so the cap only bites on Analytics.
  *
  * A card that has somewhere to go says so with a button, not with a header that
  * lights up: a tinted header row is a hit area you have to discover by sweeping
- * the card, and it competes with the card-wide hover the good-news form uses
- * (`CollapsedCard`). One rule across the screen — a header is never a control.
+ * the card. One rule across the screen — a header is never a control.
  */
 export function OverviewCard({
   section,
@@ -222,64 +220,4 @@ export function SectionLink({
         </Link>
       )
   }
-}
-
-/**
- * The short form of a module that's in good shape: nothing to do, so nothing to
- * act on — the whole card is the link, exactly as a campaign on the Campaigns
- * list is. The lift on hover is the affordance; there is no tint, because a
- * card that fills with grey reads as selected rather than as clickable.
- *
- * `aria-label` names the link "OPEN STRATEGY" instead of letting it read out as
- * its own contents — title, badge and summary line in one breath. The contents
- * are still there to browse; this is just the name.
- */
-export function CollapsedCard({
-  section,
-  target,
-  campaignId,
-  status,
-  children,
-}: CardLink & {
-  section: CampaignSectionId
-  /** Sits in the header beside the title — normally a `StatusBadge`. */
-  status?: ReactNode
-  /** The summary line: what this module currently holds. */
-  children: ReactNode
-}) {
-  const { t } = useTranslation()
-  const { icon: Glyph, tone, labelKey, openKey } = campaignSection(section)
-
-  return (
-    <SectionLink
-      target={target}
-      campaignId={campaignId}
-      className="group w-full max-w-content mx-auto rounded-md bg-primary px-5 py-4 flex flex-col gap-2 min-w-0 cursor-pointer transition-shadow duration-150 hover:shadow-lg"
-      label={t(openKey)}
-    >
-      <div className="flex items-center gap-3 min-w-0">
-        <CardGlyph>
-          <HugeiconsIcon
-            icon={Glyph}
-            size={20}
-            strokeWidth={1.5}
-            style={{ color: tone }}
-            aria-hidden
-          />
-        </CardGlyph>
-        <h2 className="font-display text-base font-medium shrink-0">
-          {t(labelKey)}
-        </h2>
-        {status}
-        <CaretRightIcon
-          className="ml-auto size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-          weight="bold"
-          aria-hidden
-        />
-      </div>
-      <div className="flex items-center gap-3 min-w-0 text-sm text-secondary-foreground">
-        {children}
-      </div>
-    </SectionLink>
-  )
 }
