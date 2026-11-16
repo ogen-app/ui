@@ -592,3 +592,176 @@ describe('in Spanish', () => {
     expect(screen.queryByText('CHECK AGAIN')).toBeNull()
   })
 })
+
+describe('what CON-495 sends', () => {
+  afterAll(async () => {
+    await i18next.changeLanguage('en')
+  })
+
+  it('says a fix read back from the server was fixed since, and where it moved', async () => {
+    await findings({
+      proposals: [
+        offer('pr3', 'confirmed', {
+          outcome: { text: 'Done', movedTo: { day: '2026-04-14' } },
+        }),
+      ],
+    })
+    expect(screen.getByText(/^Fixed since: moved to /)).toBeTruthy()
+    expect(screen.queryByText('Move to another slot')).toBeNull()
+  })
+
+  it('says fixed since with the fix when the work moved nothing', async () => {
+    await findings({
+      proposals: [offer('pr1', 'confirmed', { outcome: { text: 'Done' } })],
+    })
+    expect(screen.getByText('Fixed since: Convert to image post')).toBeTruthy()
+  })
+
+  const quoted = {
+    ...review,
+    findings: [
+      {
+        ...review.findings[0],
+        quote: 'Free parking for guests',
+        issue: 'The facts say parking is €25 a night.',
+        suggestion: undefined,
+        fixes: [{ kind: 'open_post', title: 'Open the post', postId: 'p2' }],
+      },
+    ],
+  }
+
+  it('leads a post finding with its words, and FIX WITH ASSISTANT when no fix runs', async () => {
+    await show({ review: quoted })
+    expect(screen.getByText('“Free parking for guests”')).toBeTruthy()
+    expect(
+      screen.getByText(
+        'In Late check-out. The facts say parking is €25 a night.',
+      ),
+    ).toBeTruthy()
+    expect(screen.getByText('or Open the post')).toBeTruthy()
+    fireEvent.click(screen.getByText('FIX WITH ASSISTANT'))
+    expect(send).toHaveBeenCalledWith(
+      'post:p2',
+      'Fix this finding from the review.',
+      {
+        kind: 'finding',
+        campaignId: 'c1',
+        key: 'post_drift:1',
+        finding: {
+          key: 'post_drift:1',
+          postId: 'p2',
+          title: 'Late check-out',
+          severity: 'high',
+          issue: 'The facts say parking is €25 a night.',
+          quote: 'Free parking for guests',
+          suggestion: undefined,
+        },
+      },
+    )
+  })
+
+  it('offers it last when a fix runs on its own', async () => {
+    await show({ review })
+    expect(screen.getByText('Rewrite it to follow the brief')).toBeTruthy()
+    expect(screen.getByText('or fix with assistant')).toBeTruthy()
+  })
+
+  it('strikes the lines a rewrite replaced', async () => {
+    await show({
+      revised: {
+        postId: 'p1',
+        revised: true,
+        versioned: true,
+        lines: [
+          {
+            before: ['Free parking for guests.'],
+            after: ['Parking on site, €25 a night.'],
+          },
+        ],
+      },
+    })
+    expect(
+      screen.getByText('Free parking for guests.').closest('del'),
+    ).toBeTruthy()
+    expect(
+      screen.getByText('Parking on site, €25 a night.').closest('ins'),
+    ).toBeTruthy()
+  })
+
+  const converted = (rules: unknown) => ({
+    converted: {
+      changed: 1,
+      withdrawing: 0,
+      skipped: [],
+      posts: [
+        {
+          postId: 'p1',
+          title: 'Spa reopening',
+          platform: 'instagram',
+          fromStatus: 'scheduled',
+          fromType: 'story',
+          toType: 'image-post',
+          kept: [],
+          scheduledAt: '2026-04-17T10:00:00Z',
+          rules,
+        },
+      ],
+    },
+  })
+
+  it('says a converted post passes its new type’s rules', async () => {
+    await show(converted({ passes: true }) as Results)
+    expect(screen.getByText(/^Passes the .* rules on /)).toBeTruthy()
+  })
+
+  it('names the rules a converted post still breaks', async () => {
+    await show(
+      converted({
+        passes: false,
+        broken: [{ rule: 'max_images', message: 'Needs one image' }],
+      }) as Results,
+    )
+    expect(screen.getByText('Still breaks: Needs one image')).toBeTruthy()
+  })
+
+  it('claims nothing when the media couldn’t be read', async () => {
+    await show(converted(undefined) as Results)
+    expect(screen.queryByText(/Passes|Still breaks/)).toBeNull()
+  })
+
+  it('names the idea same-idea posts share', async () => {
+    await renderWithProviders(
+      <FindingsBlock
+        threadId="campaign:c1"
+        turnId="t1"
+        findings={{
+          ...typeFinding,
+          findings: [
+            {
+              key: 'same_idea_close:x',
+              code: 'same_idea_close',
+              severity: 'info',
+              message: '3 posts from one idea in 2 days',
+              blocksPublishing: false,
+              postIds: [],
+              posts: [],
+              ideas: [{ id: 'i1', title: 'Breakfast on the terrace' }],
+              fixes: [],
+            },
+          ],
+        }}
+        disabled={false}
+      />,
+    )
+    expect(screen.getByText('All from “Breakfast on the terrace”')).toBeTruthy()
+  })
+
+  it('words them in Spanish', async () => {
+    await loadLocaleResources('es')
+    await i18next.changeLanguage('es')
+    await show({ review: quoted })
+    expect(screen.getByText('ARREGLAR CON EL ASISTENTE')).toBeTruthy()
+    expect(screen.getByText('«Free parking for guests»')).toBeTruthy()
+    expect(screen.queryByText('FIX WITH ASSISTANT')).toBeNull()
+  })
+})

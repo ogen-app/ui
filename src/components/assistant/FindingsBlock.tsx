@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { Button } from '@/components/ui/button'
+import { fixOffer, sharedIdeaLine } from '@/lib/assistantFindings'
 import { cn } from '@/lib/styles'
 import { counted, formatDate, formatList } from '@/lib/intl'
 import { useAssistantStore } from '@/stores/assistantStore'
@@ -95,7 +97,7 @@ export function FindingsBlock({
             n={i + 1}
             warn={finding.blocksPublishing}
             title={finding.message}
-            detail={findingDetail(finding)}
+            detail={findingDetail(t, finding)}
             onIgnore={
               finding.key && campaignId
                 ? () => void ignore(threadId, turnId, campaignId, finding.key)
@@ -136,19 +138,24 @@ export function FindingsBlock({
  * names when there are several of them — the titles, so "3 posts from one
  * idea" says which.
  */
-function findingDetail(finding: CalendarFindings['findings'][number]) {
+function findingDetail(
+  t: TFunction,
+  finding: CalendarFindings['findings'][number],
+) {
   const titles =
     finding.posts.length > 1
       ? formatList(finding.posts.map((p) => p.title).filter(Boolean))
       : ''
-  if (!finding.detail && !titles) return undefined
-  return (
-    <>
-      {finding.detail}
-      {finding.detail && titles && <br />}
-      {titles}
-    </>
+  const lines = [sharedIdeaLine(t, finding), finding.detail, titles].filter(
+    (line): line is string => Boolean(line),
   )
+  if (lines.length === 0) return undefined
+  return lines.map((line, i) => (
+    <Fragment key={i}>
+      {i > 0 && <br />}
+      {line}
+    </Fragment>
+  ))
 }
 
 /**
@@ -298,18 +305,23 @@ const OR_CLASS =
  * the row instead of running on the click, so nothing destructive is one
  * press. Once an offer is confirmed the row says it was fixed and offers
  * nothing more; one dismissed or expired drops out of the row.
+ *
+ * `onAssist` is FIX WITH ASSISTANT (CON-495): the row's button when no fix
+ * is an offer to run — beside a post to open, say — else the last "or …".
  */
 export function FixActions({
   threadId,
   campaignId,
   fixes,
   proposals = [],
+  onAssist,
   disabled,
 }: {
   threadId: string
   campaignId: string
   fixes: RepairFix[]
   proposals?: AssistantProposal[]
+  onAssist?: () => void
   disabled: boolean
 }) {
   const { t } = useTranslation()
@@ -323,14 +335,22 @@ export function FixActions({
     .find(({ offer }) => offer?.status === 'confirmed')
   if (done) {
     const chosen = done.offer?.options.find((o) => o.id === done.offer?.chosen)
+    const outcome = done.offer?.outcome
+    // Read back from the server (CON-495): fixed since the check, and where a
+    // move landed when the work moved one post.
+    const movedTo = outcome?.movedTo && movedDay(outcome.movedTo)
     return (
       <ResolvedLine>
-        {chosen
-          ? t('assistant.findings.fixedChose', {
-              fix: done.fix.title,
-              choice: chosen.title,
-            })
-          : t('assistant.findings.fixed', { fix: done.fix.title })}
+        {movedTo
+          ? t('assistant.findings.fixedSinceMoved', { when: movedTo })
+          : outcome
+            ? t('assistant.findings.fixedSince', { fix: done.fix.title })
+            : chosen
+              ? t('assistant.findings.fixedChose', {
+                  fix: done.fix.title,
+                  choice: chosen.title,
+                })
+              : t('assistant.findings.fixed', { fix: done.fix.title })}
       </ResolvedLine>
     )
   }
@@ -345,19 +365,14 @@ export function FixActions({
     return !status || status === 'pending'
   })
   const [first, ...rest] = live
-  if (!first) return null
+  const assistLeads = Boolean(onAssist) && !live.some((f) => f.proposalId)
+  if (!first && !onAssist) return null
 
   const openedFix = live.find((fix) => fix.proposalId === opened)
   if (openedFix?.proposalId) {
-    const offer: AssistantProposal = offerOf(openedFix) ?? {
-      id: openedFix.proposalId,
-      tool: openedFix.kind,
-      summary: openedFix.title,
-      options: openedFix.options ?? [],
-      recommended: openedFix.options?.find((o) => o.recommended)?.id,
-      card: openedFix.card,
-      status: 'pending',
-    }
+    const offer: AssistantProposal =
+      offerOf(openedFix) ??
+      fixOffer({ ...openedFix, proposalId: openedFix.proposalId })
     return (
       <div className="flex flex-col gap-2">
         <ProposalCard
@@ -437,12 +452,65 @@ export function FixActions({
     return null
   }
 
+  const assist = (primary: boolean) =>
+    primary ? (
+      <Button
+        variant="outline"
+        size="sm"
+        className={FIX_BUTTON_CLASS}
+        disabled={disabled}
+        onClick={onAssist}
+      >
+        {t('assistant.findings.assist')}
+      </Button>
+    ) : (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onAssist}
+        className={OR_CLASS}
+      >
+        {t('assistant.findings.orAssist')}
+      </button>
+    )
+
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {act(first, true)}
-      {rest.map((fix, j) => (
-        <span key={j}>{act(fix, false)}</span>
-      ))}
+      {assistLeads ? (
+        <>
+          {assist(true)}
+          {live.map((fix, j) => (
+            <span key={j}>{act(fix, false)}</span>
+          ))}
+        </>
+      ) : (
+        <>
+          {first && act(first, true)}
+          {rest.map((fix, j) => (
+            <span key={j}>{act(fix, false)}</span>
+          ))}
+          {onAssist && assist(false)}
+        </>
+      )}
     </div>
   )
+}
+
+/**
+ * Where a move landed: "Mon 14, 18:00" with the time it was given, else the
+ * day alone — read in UTC, as the server keeps the campaign's days.
+ */
+function movedDay(to: { day: string; at?: string }): string | null {
+  if (to.at)
+    return formatDate(to.at, {
+      weekday: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  return formatDate(`${to.day}T00:00:00Z`, {
+    weekday: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
 }

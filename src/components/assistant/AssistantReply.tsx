@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/react/shallow'
 import type { TFunction } from 'i18next'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
+import { turnFixes } from '@/lib/assistantFindings'
 import { ThinkingTimeline } from './ThinkingTimeline'
 import { hasResultCard, ResultCard } from './ResultCard'
 import { OfferOutcome } from './OfferOutcome'
@@ -18,6 +19,7 @@ import { WorkspaceResults } from './WorkspaceResults'
 import { IdeaReadOnly, IdeasResults, LiveDrafts } from './IdeasResults'
 import { FoundationResults } from './FoundationResults'
 import { RepairResults } from './RepairResults'
+import { LineDiff } from './LineDiff'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib'
 import {
@@ -86,6 +88,7 @@ export function AssistantReply({
     !turn.answered &&
     !turn.findings &&
     !turn.repair &&
+    !turn.postLines &&
     !turn.assets &&
     !turn.foundation &&
     !turn.analytics &&
@@ -192,6 +195,9 @@ export function AssistantReply({
           disabled={running}
         />
       )}
+
+      {/* The lines a post edit rewrote (CON-495). */}
+      {settled && turn.postLines && <LineDiff runs={turn.postLines} />}
 
       {/* What the assets pack's tools found (CON-460). */}
       {settled && turn.assets && subject && (
@@ -406,15 +412,10 @@ function ListBlock({
  * plan's own offer.
  */
 function offersDrawnInPlace(turn: AssistantTurn): Set<string> {
-  const ids = new Set<string>()
-  const add = (fixes: { proposalId?: string }[]) =>
-    fixes.forEach((f) => f.proposalId && ids.add(f.proposalId))
-  for (const f of turn.findings?.findings ?? []) add(f.fixes)
-  const r = turn.repair
-  for (const review of [r?.review, r?.briefReview, r?.postsReview])
-    for (const f of review?.findings ?? []) add(f.fixes)
-  if (r?.plan?.proposalId) ids.add(r.plan.proposalId)
-  for (const f of turn.foundation?.brandCheck?.findings ?? []) add(f.fixes)
+  const ids = new Set(
+    turnFixes(turn).flatMap((f) => (f.proposalId ? [f.proposalId] : [])),
+  )
+  if (turn.repair?.plan?.proposalId) ids.add(turn.repair.plan.proposalId)
   return ids
 }
 

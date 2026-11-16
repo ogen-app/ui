@@ -26,7 +26,9 @@ import {
   confirmProposal as confirmProposalRequest,
   dismissProposal as dismissProposalRequest,
   listThreadMessages,
+  offerState,
   parseHistoryResult,
+  proposalOutcome,
   streamAssistantTurn,
   undoAssistantAction,
   type AssistantStreamEvent,
@@ -35,6 +37,7 @@ import {
 } from '@/services/api/assistant'
 import { ApiError } from '@/services/api/errors'
 import type { AppliedUIAction, UIAction } from '@/lib/assistantUiActions'
+import { fixOffer, turnFixes } from '@/lib/assistantFindings'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { toast } from '@/stores/toastStore'
 import { i18next } from '@/i18n'
@@ -199,8 +202,16 @@ type AssistantState = {
    * replace what is streaming.
    */
   reloadHistory: (threadId: string) => Promise<void>
-  /** Run one turn. No-op if the thread is already running. */
-  send: (threadId: string, instruction: string) => Promise<void>
+  /**
+   * Run one turn. No-op if the thread is already running. `from` is what a
+   * post thread's message was sent from (CON-495): only the key goes out, and
+   * the user turn keeps the finding it names, for FROM THE REVIEW.
+   */
+  send: (
+    threadId: string,
+    instruction: string,
+    from?: NonNullable<ViewContext['from']>,
+  ) => Promise<void>
   /**
    * Runs an offer exactly as proposed, from its card (CON-446). `optionId`
    * picks one of an offer's options, and `input` is the value that option
@@ -361,6 +372,15 @@ export const useAssistantStore = create<AssistantState>()(
           return { threads: { ...s.threads, [id]: { ...thread, turns } } }
         })
 
+      /** Settles one offer to how the server says it stands (CON-495). */
+      const settleOffer = (id: string, offer: OfferState) =>
+        set((s) => {
+          const thread = s.threads[id]
+          if (!thread) return s
+          const turns = settleOfferIn(thread.turns, offer)
+          return { threads: { ...s.threads, [id]: { ...thread, turns } } }
+        })
+
       /** Replace the last turn of a thread — every stream event lands here. */
       const patchLastTurn = (
         id: string,
@@ -391,6 +411,7 @@ export const useAssistantStore = create<AssistantState>()(
           status: number | undefined,
           message: string,
           reason?: string,
+          offer?: OfferState,
         ) => void,
       ): Promise<TurnOutcome | null> => {
         const thread = get().threads[threadId]
@@ -755,7 +776,12 @@ export const useAssistantStore = create<AssistantState>()(
               break
 
             case 'error':
-              onStreamError?.(event.status, event.message, event.reason)
+              onStreamError?.(
+                event.status,
+                event.message,
+                event.reason,
+                event.offer,
+              )
               sawErrorEvent = true
               patchLastTurn(threadId, (t) => ({
                 ...t,
@@ -1004,7 +1030,7 @@ export const useAssistantStore = create<AssistantState>()(
           }
         },
 
-        send: async (threadId, instruction) => {
+        send: async (threadId, instruction, from) => {
           const thread = get().threads[threadId]
           const text = instruction.trim()
           if (!thread || !text || thread.status === 'running') return
@@ -1014,13 +1040,24 @@ export const useAssistantStore = create<AssistantState>()(
           // flush below, which can wait on a write while they move on. A
           // dismissed chip sends the screen alone, once.
           const view = useViewContextStore.getState()
-          const viewContext = buildViewContext(
+          const screen = buildViewContext(
             subject,
             view.location,
             view.page,
             view.dismissed,
           )
           if (view.dismissed) view.restore()
+          // The server finds the finding by its key; the words stay here.
+          const viewContext: ViewContext = from
+            ? {
+                ...screen,
+                from: {
+                  kind: from.kind,
+                  campaignId: from.campaignId,
+                  key: from.key,
+                },
+              }
+            : screen
 
           // The assistant writes the post or campaign server-side, so any
           // queued autosave must land first or it would overwrite the edit a
@@ -1034,7 +1071,7 @@ export const useAssistantStore = create<AssistantState>()(
               id: nextTurnId('user'),
               role: 'user',
               content: text,
-              view: viewContext,
+              view: from ? { ...viewContext, from } : viewContext,
             },
             (onEvent, signal) =>
               streamAssistantTurn(
@@ -1055,6 +1092,10 @@ export const useAssistantStore = create<AssistantState>()(
           if (found) setProposal(threadId, proposalId, { status: 'confirming' })
           const saveKey = saveKeyFor(thread.subject)
           if (saveKey) await flushPendingSave(saveKey)
+          // An offer answered elsewhere, or lapsed, comes back as it stands
+          // (CON-495): the card settles from it, and the reply that carried
+          // the refusal has nothing left to say.
+          let settledFrom: OfferState | undefined
           const outcome = await runTurn(
             threadId,
             null,
@@ -1066,7 +1107,15 @@ export const useAssistantStore = create<AssistantState>()(
                 signal,
                 input,
               ),
-            (status, message, reason) =>
+            (status, message, reason, offer) => {
+              if (
+                offer?.id === proposalId &&
+                (reason === 'offer_answered' || reason === 'offer_expired')
+              ) {
+                settledFrom = offer
+                settleOffer(threadId, offer)
+                return
+              }
               // Gone, already answered, expired, or refused because what it
               // was offered on changed: the card stops offering. The
               // conflict's `reason` says which (CON-482); a server before it
@@ -1101,8 +1150,23 @@ export const useAssistantStore = create<AssistantState>()(
                                   )
                                 : message,
                           },
-              ),
+              )
+            },
           )
+          if (settledFrom) {
+            const turns = get().threads[threadId]?.turns ?? []
+            const reply = turns[turns.length - 1]
+            if (reply?.role === 'assistant' && reply.failed)
+              set((s) => {
+                const current = s.threads[threadId]
+                if (!current) return s
+                const turns = current.turns.filter((t) => t.id !== reply.id)
+                return {
+                  threads: { ...s.threads, [threadId]: { ...current, turns } },
+                }
+              })
+            return
+          }
           // Only a turn that answered ran the offer. One that failed before or
           // during the stream, or was stopped, did not finish it — the card
           // says so rather than claim it was confirmed, and the reply below it
@@ -1155,6 +1219,14 @@ export const useAssistantStore = create<AssistantState>()(
           try {
             await dismissProposalRequest(proposalId)
           } catch (err) {
+            // Answered elsewhere or lapsed (CON-495): the body says how it
+            // stands, and the card settles to that rather than an error.
+            const offer =
+              err instanceof ApiError ? offerState(err.body?.offer) : undefined
+            if (offer?.id === proposalId) {
+              settleOffer(threadId, offer)
+              return
+            }
             if (!found) return
             setProposal(threadId, proposalId, {
               status: 'closed',
@@ -1378,6 +1450,7 @@ function turnFields(
   | 'foundation'
   | 'findings'
   | 'repair'
+  | 'postLines'
   | 'analytics'
   | 'workspace'
   | 'ideas'
@@ -1391,6 +1464,7 @@ function turnFields(
     foundation: result.foundation,
     findings: result.findings,
     repair: result.repair,
+    postLines: result.postLines,
     analytics: result.analytics,
     workspace: result.workspace,
     ideas: result.ideas,
@@ -1653,29 +1727,15 @@ export function settleHistory(
   )
   if (states.size > 0) {
     for (const turn of turns) {
+      // A finding's fix names an offer the turn needn't carry (CON-495): an
+      // answered one is added from the fix, so the row settles as a live one
+      // does. One still waiting needs nothing — a fix with no offer is live.
+      for (const offer of answeredFixOffers(turn, states))
+        turn.proposals = [...(turn.proposals ?? []), offer]
       if (!turn.proposals) continue
       turn.proposals = turn.proposals.map((p) => {
         const o = states.get(p.id)
-        if (!o) return p
-        const links = {
-          replaces: o.replaces ?? p.replaces,
-          retryOf: o.retry_of ?? p.retryOf,
-        }
-        if (o.status === 'pending')
-          return o.replaced_by
-            ? { ...p, ...links, status: 'stale', replacedBy: o.replaced_by }
-            : { ...p, ...links }
-        if (o.status === 'confirmed')
-          return {
-            ...p,
-            ...links,
-            status: 'confirmed',
-            chosen: o.chosen,
-            answeredAt: o.resolved_at,
-          }
-        if (o.status === 'dismissed' || o.status === 'expired')
-          return { ...p, ...links, status: o.status }
-        return { ...p, ...links }
+        return o ? offerFromState(p, o) : p
       })
     }
   }
@@ -1723,6 +1783,85 @@ export function settleHistory(
       return turn === lastAssistant ? p : { ...p, status: 'superseded' }
     })
   }
+}
+
+/** An offer settled to how the server says it stands now (CON-482/495). */
+function offerFromState(
+  p: AssistantProposal,
+  o: OfferState,
+): AssistantProposal {
+  const links = {
+    replaces: o.replaces ?? p.replaces,
+    retryOf: o.retry_of ?? p.retryOf,
+  }
+  if (o.status === 'pending')
+    return o.replaced_by
+      ? { ...p, ...links, status: 'stale', replacedBy: o.replaced_by }
+      : { ...p, ...links }
+  if (o.status === 'confirmed')
+    return {
+      ...p,
+      ...links,
+      status: 'confirmed',
+      chosen: o.chosen,
+      answeredAt: o.resolved_at,
+      outcome: proposalOutcome(o.outcome),
+    }
+  if (o.status === 'dismissed' || o.status === 'expired')
+    return { ...p, ...links, status: o.status }
+  return { ...p, ...links }
+}
+
+/** Whether an offer the server holds is no longer waiting on the user. */
+function isAnswered(o: OfferState): boolean {
+  return o.status !== 'pending' || Boolean(o.replaced_by)
+}
+
+/**
+ * The offers behind a turn's fixes that the server says were answered and the
+ * turn doesn't carry, each drawn from its fix — once, however many findings
+ * name it.
+ */
+function answeredFixOffers(
+  turn: AssistantTurn,
+  states: Map<string, OfferState>,
+): AssistantProposal[] {
+  const held = new Set(turn.proposals?.map((p) => p.id))
+  const out: AssistantProposal[] = []
+  for (const fix of turnFixes(turn)) {
+    const id = fix.proposalId
+    const o = id ? states.get(id) : undefined
+    if (!id || !o || held.has(id) || !isAnswered(o)) continue
+    held.add(id)
+    out.push(fixOffer({ ...fix, proposalId: id }))
+  }
+  return out
+}
+
+/**
+ * The thread's turns with one offer settled to how the server says it stands
+ * (CON-495) — a 409 on an offer answered elsewhere, or lapsed, names it. An
+ * offer behind a finding's fix that no turn carries joins the turn whose fix
+ * names it, so the row stops offering it.
+ */
+function settleOfferIn(turns: AssistantTurn[], o: OfferState): AssistantTurn[] {
+  if (turns.some((t) => t.proposals?.some((p) => p.id === o.id)))
+    return turns.map((t) =>
+      t.proposals?.some((p) => p.id === o.id)
+        ? {
+            ...t,
+            proposals: t.proposals.map((p) =>
+              p.id === o.id ? offerFromState(p, o) : p,
+            ),
+          }
+        : t,
+    )
+  return turns.map((t) => {
+    const fix = turnFixes(t).find((f) => f.proposalId === o.id)
+    if (!fix) return t
+    const offer = offerFromState(fixOffer({ ...fix, proposalId: o.id }), o)
+    return { ...t, proposals: [...(t.proposals ?? []), offer] }
+  })
 }
 
 /**

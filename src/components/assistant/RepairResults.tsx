@@ -15,6 +15,7 @@ import type {
   CalendarMoved,
   CalendarPlan,
   CampaignReview,
+  CampaignReviewFinding,
   ChangedPost,
   PostRevised,
   PostsChanged,
@@ -39,6 +40,7 @@ import {
 } from './FindingsBlock'
 import { useIsIgnored } from './useIsIgnored'
 import { ProposalCard } from './ProposalCard'
+import { LineDiff } from './LineDiff'
 import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
 
 /**
@@ -170,7 +172,39 @@ function ReviewCard({
   const { t } = useTranslation()
   const ignore = useAssistantStore((s) => s.ignoreFinding)
   const send = useAssistantStore((s) => s.send)
+  const adoptThread = useAssistantStore((s) => s.adoptThread)
+  const campaignName = useAssistantStore(
+    (s) => s.threads[threadId]?.campaignTitle || s.threads[threadId]?.title,
+  )
   const { campaignId } = review
+  // FIX WITH ASSISTANT (CON-495, board 7): the post's thread, bound in the
+  // rail where the review is, asked about this finding by its key. Not a
+  // navigation — the user stays on the screen they reviewed from.
+  const fixWithAssistant = (f: CampaignReviewFinding) => {
+    if (!f.postId || !f.key || !campaignId) return undefined
+    const { postId, key } = f
+    return () => {
+      const postThread = adoptThread(
+        { kind: 'post', postId, campaignId },
+        f.label ?? '',
+        campaignName ?? '',
+      )
+      void send(postThread, t('assistant.repair.review.fixPrompt'), {
+        kind: 'finding',
+        campaignId,
+        key,
+        finding: {
+          key,
+          postId,
+          title: f.label ?? '',
+          severity: f.severity,
+          issue: f.issue,
+          quote: f.quote,
+          suggestion: f.suggestion,
+        },
+      })
+    }
+  }
   const isIgnored = useIsIgnored(
     campaignId,
     ignored,
@@ -213,7 +247,13 @@ function ReviewCard({
               key={f.key || i}
               n={i + 1}
               warn={f.severity === 'high'}
-              title={f.issue}
+              // The post's own words lead when the finding is about some of
+              // them (CON-495); the issue then follows where they are.
+              title={
+                f.quote
+                  ? t('assistant.repair.review.quoted', { quote: f.quote })
+                  : f.issue
+              }
               detail={
                 [
                   f.label &&
@@ -222,6 +262,7 @@ function ReviewCard({
                       : t('assistant.repair.review.inBrief', {
                           aspect: f.label,
                         })),
+                  f.quote && f.issue,
                   f.suggestion,
                 ]
                   .filter(Boolean)
@@ -239,6 +280,7 @@ function ReviewCard({
                 campaignId={campaignId}
                 fixes={f.fixes}
                 proposals={proposals}
+                onAssist={f.kind === 'post' ? fixWithAssistant(f) : undefined}
                 disabled={disabled}
               />
             </FindingRow>
@@ -678,6 +720,23 @@ function ChangedCard({
       minute: '2-digit',
     })
 
+  // Whether it passes its new type's rules (CON-495). No answer — its media
+  // couldn't be read — says nothing rather than claim a pass.
+  const rulesLine = (post: ChangedPost) => {
+    if (!post.rules) return undefined
+    const platform =
+      resolve(post.platformId ?? post.platform ?? '')?.name ?? post.platform
+    const type = typeName(post, post.toType)
+    if (post.rules.passes)
+      return platform && type
+        ? t('assistant.repair.converted.passes', { platform, type })
+        : t('assistant.repair.converted.passesAny')
+    const broken = post.rules.broken.map((b) => b.message || b.rule)
+    return broken.length > 0
+      ? t('assistant.repair.converted.breaks', { rules: formatList(broken) })
+      : t('assistant.repair.converted.breaksAny')
+  }
+
   const rows = (post: ChangedPost) => {
     if (kind === 'converted') {
       return (
@@ -697,13 +756,19 @@ function ChangedCard({
               }
             />
           )}
-          {when(post.scheduledAt) && (
+          {when(post.scheduledAt) ? (
             <MovedRow
               title={t('assistant.repair.converted.still', {
                 when: when(post.scheduledAt),
               })}
-              sub={undefined}
+              sub={rulesLine(post)}
             />
+          ) : (
+            rulesLine(post) && (
+              <ResultRow className="text-[12.5px] text-secondary-foreground">
+                {rulesLine(post)}
+              </ResultRow>
+            )
           )}
         </>
       )
@@ -853,6 +918,7 @@ function RevisedCard({
           </Link>
         )}
       </ResultRow>
+      {revised.lines && <LineDiff runs={revised.lines} />}
       <UndoNote t={t} undoId={revised.undoId} undo={undo} />
       {revised.grounding && <SourcesLine grounding={revised.grounding} />}
     </ResultBlock>

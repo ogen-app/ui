@@ -3713,7 +3713,21 @@ export const en = {
       /** A finding whose fix ran; `choice` is the slot or option picked. */
       fixed: 'Fixed: {{fix}}',
       fixedChose: 'Fixed: {{fix}} · {{choice}}',
+      /**
+       * A fix the server says ran, read back on a reload (CON-495) — since
+       * the check; `when` is the day, or day and time, a move landed on.
+       */
+      fixedSince: 'Fixed since: {{fix}}',
+      fixedSinceMoved: 'Fixed since: moved to {{when}}',
       fixing: 'Fixing…',
+      /**
+       * A post finding's way to its post's thread (CON-495): the row's button
+       * when no fix runs on its own, else the last "or …".
+       */
+      assist: 'FIX WITH ASSISTANT',
+      orAssist: 'or fix with assistant',
+      /** The idea a same-idea finding's posts share (CON-495). */
+      fromIdea: 'All from “{{title}}”',
       /** Under a fix's offer opened in the row: back to the row's fixes. */
       back: 'BACK TO THE FIXES',
       /** When the check read the calendar: "Read Wed 12 Nov, 16:40." */
@@ -4322,6 +4336,15 @@ export const en = {
           media: 'media',
         },
         still: 'Still scheduled {{when}}',
+        /**
+         * Whether a converted post passes its new type's rules (CON-495):
+         * "Passes the Image post rules on Instagram". `rules` is the rules it
+         * still breaks, joined as a list.
+         */
+        passes: 'Passes the {{type}} rules on {{platform}}',
+        passesAny: 'Passes the new type’s rules',
+        breaks: 'Still breaks: {{rules}}',
+        breaksAny: 'Still breaks the new type’s rules',
       },
       unscheduled: {
         word: 'Unscheduled',
@@ -4354,6 +4377,15 @@ export const en = {
         title_one: '{{formatted}} post deleted',
         title_other: '{{formatted}} posts deleted',
       },
+      /**
+       * The lines an edit rewrote (CON-495): struck old over new. Only a
+       * screen reader hears these words.
+       */
+      lines: {
+        label: 'Lines changed',
+        removed: 'Removed: ',
+        added: 'Added: ',
+      },
       review: {
         word: 'Review',
         none: 'The brief and the posts agree',
@@ -4372,6 +4404,16 @@ export const en = {
         /** Under a finding: where it is. */
         inPost: 'In {{title}}.',
         inBrief: '{{aspect}}.',
+        /** A finding about some of a post's words leads with them (CON-495). */
+        quoted: '“{{quote}}”',
+        /**
+         * FIX WITH ASSISTANT's message to the post's thread (CON-495). The
+         * finding goes with it by key; the thread shows the finding instead.
+         */
+        fixPrompt: 'Fix this finding from the review.',
+        /** Over the finding a post thread was asked to fix. */
+        fromReview: 'From the review',
+        fromReviewQuoted: '“{{quote}}” — {{issue}}',
         from: {
           brief: 'Brief',
           posts: 'Posts',
