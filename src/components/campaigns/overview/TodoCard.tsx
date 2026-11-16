@@ -38,6 +38,7 @@ export function TodoCard({
   if (items.length === 0) {
     return (
       <OverviewCard
+        bare
         title={t('campaignOverview.todo.title')}
         icon={<CheckCircleIcon className="size-5 text-positive" aria-hidden />}
         className="gap-2"
@@ -51,6 +52,7 @@ export function TodoCard({
 
   return (
     <OverviewCard
+      bare
       title={t('campaignOverview.todo.title')}
       icon={
         <ListChecksIcon

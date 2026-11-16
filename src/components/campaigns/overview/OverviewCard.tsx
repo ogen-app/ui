@@ -41,6 +41,7 @@ export function OverviewCard({
   link,
   children,
   className,
+  bare = false,
 }: {
   /** Sets the card's title, glyph and open-button label from one table. */
   section?: CampaignSectionId
@@ -58,6 +59,11 @@ export function OverviewCard({
   link?: CardLink
   children?: ReactNode
   className?: string
+  /**
+   * The header and body without the card around them, for a section that
+   * shares a surface with others — the Overview's right-hand panel.
+   */
+  bare?: boolean
 }) {
   const { t } = useTranslation()
   const meta = section ? campaignSection(section) : undefined
@@ -67,7 +73,8 @@ export function OverviewCard({
   return (
     <section
       className={cn(
-        'w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0',
+        'flex flex-col gap-4 min-w-0',
+        !bare && 'w-full max-w-content mx-auto rounded-md bg-primary p-5',
         className,
       )}
     >

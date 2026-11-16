@@ -67,6 +67,7 @@ export function WarningsCard({
   if (total === 0) {
     return (
       <OverviewCard
+        bare
         title={t('campaignOverview.warnings.title')}
         icon={<CheckCircleIcon className="size-5 text-positive" aria-hidden />}
         className="gap-2"
@@ -101,6 +102,7 @@ export function WarningsCard({
 
   return (
     <OverviewCard
+      bare
       title={t('campaignOverview.warnings.title')}
       icon={<WarningIcon className="size-5 text-warning" aria-hidden />}
       status={

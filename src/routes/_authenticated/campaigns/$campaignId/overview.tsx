@@ -54,7 +54,7 @@ function CampaignOverviewScreen() {
             <Skeleton variant="surface" className="h-40 w-full" />
           </>
         }
-        actions={<Skeleton variant="surface" className="h-40 w-full" />}
+        actions={<Skeleton className="h-40 w-full" />}
       />
     )
   }
@@ -127,12 +127,13 @@ function CampaignOverviewScreen() {
               problems={problems ?? undefined}
               campaignId={campaignId}
             />
+            <hr className="border-border" />
             <TodoCard items={todos} campaignId={campaignId} />
           </>
         ) : (
           <>
-            <Skeleton variant="surface" className="h-28 w-full" />
-            <Skeleton variant="surface" className="h-40 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-32 w-full" />
           </>
         )
       }
@@ -141,17 +142,27 @@ function CampaignOverviewScreen() {
 }
 
 /**
- * The two columns. Measured against the space the page has rather than the
- * viewport — the right rail can take a third of the window — so they sit side
- * by side only where both fit, and stack (actions first) where they don't.
+ * The two columns, filling the height the page has. Side by side, each
+ * scrolls on its own and the page never does: the right one is one panel —
+ * warnings, then to-dos — running to the foot of the window, so what needs
+ * doing is never below the fold while the stats sit beside it.
+ *
+ * Measured against the space the page has rather than the viewport — the
+ * right rail can take a third of the window — so they sit side by side only
+ * where both fit. Where they don't they stack, actions first, and the whole
+ * page scrolls as one.
  */
 function Columns({ stats, actions }: { stats: ReactNode; actions: ReactNode }) {
   return (
-    <div className="@container w-full max-w-wide mx-auto pb-10">
-      <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @4xl:items-start">
-        <div className="@container flex min-w-0 flex-col gap-3">{stats}</div>
-        <div className="@container order-first flex min-w-0 flex-col gap-3 @4xl:order-none">
-          {actions}
+    <div className="@container mx-auto h-full w-full max-w-wide">
+      <div className="h-full overflow-y-auto pb-4 @4xl:overflow-hidden">
+        <div className="grid grid-cols-1 gap-3 @4xl:h-full @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @4xl:grid-rows-[minmax(0,1fr)]">
+          <div className="@container flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto">
+            {stats}
+          </div>
+          <div className="@container order-first flex min-w-0 flex-col gap-5 rounded-md bg-primary p-5 @4xl:order-none @4xl:min-h-0 @4xl:overflow-y-auto">
+            {actions}
+          </div>
         </div>
       </div>
     </div>
