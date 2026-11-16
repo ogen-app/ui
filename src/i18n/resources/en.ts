@@ -2067,6 +2067,24 @@ export const en = {
     /** Under its title (CON-485): what the panel is for. */
     notScheduledHint: 'Drag a post onto a day to schedule it.',
     /**
+     * The Not scheduled panel's two groups: posts with an account to publish
+     * as, and the ones the schedule gate would refuse for want of one —
+     * folded away by default, with each row's reason in amber.
+     */
+    readyToSchedule: 'Ready to schedule',
+    needsAccount: 'Needs an account',
+    needsAccountHint:
+      'No account to publish as yet. Set one on each post, or connect one in Settings.',
+    /** When every undated post is in the second group. */
+    noneReady: 'None of these can publish yet: each needs an account.',
+    /** A row's reason, worded as what to do about it. */
+    accountGap: {
+      noPlatform: 'Choose a platform',
+      noAccount: 'Connect an account',
+      chooseAccount: 'Choose an account',
+      accountGone: 'Account disconnected',
+    },
+    /**
      * On a draft just written in this tab (CON-470), at the panel's top —
      * an eyebrow in literal capitals, like the cards' status words.
      */

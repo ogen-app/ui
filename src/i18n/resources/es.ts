@@ -1613,6 +1613,24 @@ export const es: Translation = {
 
     notScheduled: 'Sin programar',
     notScheduledHint: 'Arrastra una publicación a un día para programarla.',
+    /**
+     * The Not scheduled panel's two groups: posts with an account to publish
+     * as, and the ones the schedule gate would refuse for want of one —
+     * folded away by default, with each row's reason in amber.
+     */
+    readyToSchedule: 'Listas para programar',
+    needsAccount: 'Necesitan una cuenta',
+    needsAccountHint:
+      'Todavía no tienen cuenta con la que publicar. Asigna una en cada publicación o conecta una en Ajustes.',
+    /** When every undated post is in the second group. */
+    noneReady: 'Ninguna puede publicarse todavía: todas necesitan una cuenta.',
+    /** A row's reason, worded as what to do about it. */
+    accountGap: {
+      noPlatform: 'Elige una plataforma',
+      noAccount: 'Conecta una cuenta',
+      chooseAccount: 'Elige una cuenta',
+      accountGone: 'Cuenta desconectada',
+    },
     justWritten: 'RECIÉN ESCRITA',
     fromIdeas_one: 'de {{formatted}} idea',
     fromIdeas_other: 'de {{formatted}} ideas',

@@ -9,6 +9,7 @@ import { OutsideCampaignMark } from '@/components/campaigns/OutsideCampaignMark'
 import { outsideCampaign } from '@/lib/campaignTarget'
 import type { CampaignPlatform } from '@/types/campaigns'
 import type { Post } from '@/types/posts'
+import type { AccountGap } from '@/lib/publishingAccount'
 
 /**
  * One post in the Not scheduled panel, as the CON-470 board draws it
@@ -22,12 +23,15 @@ export function UnscheduledRow({
   justWritten,
   showCampaign,
   targets,
+  gap = null,
 }: {
   post: Post
   justWritten: boolean
   /** On the workspace panel, whose post it is. */
   showCampaign: boolean
   targets?: readonly CampaignPlatform[]
+  /** Why it has no account to publish as, in the panel's second group. */
+  gap?: AccountGap | null
 }) {
   const { t } = useTranslation()
   const platform = usePlatformCatalog().resolve(post.platform_id)
@@ -74,6 +78,11 @@ export function UnscheduledRow({
         <span>{meta.join(' · ')}</span>
         <NotGroundedMark mode={post.grounding_mode} />
         <OutsideCampaignMark outside={outside} />
+        {gap && (
+          <span className="font-medium text-warning">
+            {t(`calendar.accountGap.${gap}`)}
+          </span>
+        )}
       </span>
     </Link>
   )

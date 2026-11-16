@@ -97,3 +97,26 @@ export function resolveForPlatform(
 export function accountLabel(account: PublisherAccount): string {
   return account.display_name || account.username
 }
+
+/**
+ * Why a post has no account to publish as, or `null` when it has one — the
+ * line between the Not scheduled panel's two groups.
+ *
+ * Every non-null answer is a post the schedule endpoint would refuse
+ * (`no_account_connected`, `account_selection_required`,
+ * `account_unavailable`), so it is worded as what to do about it rather than
+ * as an error. A post with no platform has no account by definition, and is
+ * named for the platform it lacks, which is the thing to fix first.
+ */
+export type AccountGap =
+  'noPlatform' | 'noAccount' | 'chooseAccount' | 'accountGone'
+
+export function accountGap(
+  platformId: string,
+  resolution: PublishingAccountResolution,
+): AccountGap | null {
+  if (!platformId) return 'noPlatform'
+  if (resolution.mismatched) return 'accountGone'
+  if (resolution.ambiguous) return 'chooseAccount'
+  return resolution.account ? null : 'noAccount'
+}
