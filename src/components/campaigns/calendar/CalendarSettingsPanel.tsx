@@ -48,8 +48,9 @@ const CARD_VIEWS = [
 ] as const
 
 /**
- * "Calendar Settings" content for the right sidebar. The sidebar is
- * non-blocking, so the calendar behind it reflects preference changes live.
+ * "Calendar Settings" content for the calendar's drawer. The drawer sits
+ * beside the grid rather than over it, so the calendar reflects preference
+ * changes live.
  *
  * The preferences themselves are the user's and are shared by every calendar
  * (`useCalendarSettings`), so this panel is the same panel wherever it is
@@ -221,7 +222,7 @@ export function CalendarSettingsPanel({
           a property of how they work, not something they come back to tune the
           way they tune what a card shows. Open by default it pushed the two
           card sections, the ones this panel is actually opened for, off the
-          bottom of the rail. Closed, it is a title they can find when they want
+          bottom of the drawer. Closed, it is a title they can find when they want
           it and a line of chrome when they don't. */}
       <Collapse
         title={t('calendar.daysVisibility')}

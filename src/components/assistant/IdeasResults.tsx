@@ -870,7 +870,7 @@ function WhenLabel({
  */
 function useShowUnscheduled() {
   const navigate = useNavigate()
-  const openPanel = useSettingsStore((s) => s.openRightPanel)
+  const openPanel = useSettingsStore((s) => s.openCalendarDrawer)
   return (campaignId: string) => {
     openPanel('notScheduled')
     void navigate({

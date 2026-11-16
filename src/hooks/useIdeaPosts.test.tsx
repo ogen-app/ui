@@ -27,8 +27,9 @@ vi.mock('@/services/api/ideaPosts', () => ({
 }))
 // The real store persists to localStorage; only the call matters here.
 vi.mock('@/stores/settingsStore', () => ({
-  useSettingsStore: (pick: (s: { openRightPanel: () => void }) => unknown) =>
-    pick({ openRightPanel: api.openPanel }),
+  useSettingsStore: (
+    pick: (s: { openCalendarDrawer: () => void }) => unknown,
+  ) => pick({ openCalendarDrawer: api.openPanel }),
 }))
 vi.mock('@tanstack/react-router', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tanstack/react-router')>()),

@@ -984,7 +984,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
 - **The right sidebar never stores which panel is open.** It persists one
   remembered choice per screen (`panelMemory` in `settingsStore`) and derives
   the rest: ask `selectActivePanel`, never `panelMemory` directly. A route makes
-  its panels reachable by calling `usePanelScope('post' | 'calendar', campaignId)`
+  its panels reachable by calling `usePanelScope('post')`
   — that is the *only* write navigation is allowed, and it's why routes no
   longer close their own panels on unmount. Never add such a cleanup effect
   back; it would save the side effects of navigating instead of the user's
@@ -992,7 +992,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   compile until they say which screen they belong to. The assistant is the
   rail's floor — open on first run, closing another panel reveals it rather
   than collapsing the rail, and navigating never closes it. See
-  `docs/technical-decisions.md#panel-memory`.
+  `docs/technical-decisions.md#panel-memory`. **The calendar's settings and
+  unscheduled posts are not rail panels**: they are the calendar's own drawer
+  (`CalendarDrawer`, `settingsStore.calendarDrawer`), rendered by the two
+  calendar pages beside the column and under the bar over the page, so opening
+  one never puts the assistant away and both can be open at once. One choice
+  for every calendar, so it is still open on the next grid.
 - **Explanatory copy goes in `<Explainer>`**, which the user can close for
   good (`settingsStore.dismissedNotes`, device-local — display noise doesn't
   belong in the workspace-wide `/api/settings`). The rule that makes it safe:

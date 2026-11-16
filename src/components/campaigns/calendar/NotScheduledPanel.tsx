@@ -39,8 +39,8 @@ export function NotScheduledPanel({
 }) {
   // The filter of the posts screen beside it (CON-486), read off the address
   // both screens keep it in: a post the grid hides for not matching is not
-  // offered here to be dragged onto it either. `strict: false` — the rail
-  // mounts this panel, not the route.
+  // offered here to be dragged onto it either. `strict: false` — the
+  // calendar's drawer mounts this panel, not the route.
   const search = useSearch({ strict: false })
   const filter = useMemo(
     () => postFilterFromSearch(parsePostListSearch(search)),
@@ -91,8 +91,8 @@ export function WorkspaceNotScheduledPanel({
 }
 
 /**
- * "Not Scheduled Posts" content for the right sidebar. The sidebar is
- * non-blocking, so posts can be dragged out onto the calendar days; dropping
+ * "Not Scheduled Posts" content for the calendar's drawer. The drawer sits
+ * beside the grid rather than over it, so posts can be dragged out onto the calendar days; dropping
  * a scheduled post onto the panel body unschedules it.
  */
 function NotScheduled({

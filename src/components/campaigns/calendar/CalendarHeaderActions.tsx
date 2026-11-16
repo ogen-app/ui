@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useCampaignPosts, useWorkspacePosts } from '@/hooks/usePosts'
 import type { Post } from '@/types/posts'
-import { usePanelScope } from '@/hooks/usePanelScope'
-import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
 
 /**
@@ -13,13 +12,7 @@ import { cn } from '@/lib'
  */
 export function CalendarHeaderActions({ campaignId }: { campaignId: string }) {
   const { data: posts, isPending } = useCampaignPosts(campaignId)
-  return (
-    <CalendarActions
-      campaignId={campaignId}
-      posts={posts}
-      isPending={isPending}
-    />
-  )
+  return <CalendarActions posts={posts} isPending={isPending} />
 }
 
 /**
@@ -37,37 +30,24 @@ export function WorkspaceCalendarHeaderActions() {
 
 /**
  * Header icon set for the calendar section: the not-scheduled counter and
- * settings. The panels themselves live in the right sidebar (shared with the
- * AI assistant — one at a time); these buttons only switch what it shows. The
- * active icon renders filled in the accent color.
+ * settings. The panels themselves live in the calendar's drawer beside the
+ * grid (`CalendarDrawer`), apart from the assistant's rail; these buttons only
+ * switch what it shows. The active icon renders filled in the accent color.
  *
  * The counter comes first because it is about the posts and settings is about
  * the view — the same order the rest of the app puts them in, work before
  * preferences, and it keeps the gear last where a gear is always looked for.
- *
- * This component exists exactly while the calendar does, so it is also where
- * the calendar declares its panel scope: leaving hides the calendar's panels
- * without forgetting which one was open, and coming back brings it straight
- * back up. The scope is `calendar` for both calendars, deliberately — one
- * remembered choice, so opening the settings panel in a campaign and then going
- * to the workspace grid finds it open there too. They are the same two panels
- * over the same preferences.
  */
 function CalendarActions({
-  campaignId,
   posts,
   isPending,
 }: {
-  /** Absent on the workspace calendar — the panels below cope. */
-  campaignId?: string
   posts: Post[] | undefined
   isPending: boolean
 }) {
-  usePanelScope('calendar', campaignId)
-
   const { t } = useTranslation()
-  const activePanel = useSettingsStore(selectActivePanel)
-  const toggle = useSettingsStore((s) => s.toggleRightPanel)
+  const activePanel = useSettingsStore((s) => s.calendarDrawer)
+  const toggle = useSettingsStore((s) => s.toggleCalendarDrawer)
   const unscheduledCount = (posts ?? []).filter((p) => !p.scheduled_at).length
   const hasUnscheduled = unscheduledCount > 0
 
