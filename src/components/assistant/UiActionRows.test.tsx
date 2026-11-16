@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { i18next, loadLocaleResources } from '@/i18n'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import type { AppliedUIAction } from '@/lib/assistantUiActions'
 import { UiActionRows } from './UiActionRows'
@@ -77,26 +78,51 @@ describe('a set_window row (CON-479)', () => {
     expect(screen.queryByText('Campaign')).toBeNull()
   })
 
-  it('folds into the navigate before it, with no before → after', async () => {
+  // Since CON-497 a navigate's `before` is the window the dashboard opened
+  // with — 28 days, every platform, the campaign in scope — and `changed` is
+  // only what moved from it (CON-507).
+  const opened = (changes: Partial<AppliedUIAction['action']> = {}) =>
+    setWindow({
+      window: { preset: '90d', platforms: [], campaignId: 'c1' },
+      before: { preset: '28d', platforms: [], campaignId: 'c1' },
+      changed: ['period'],
+      ...changes,
+    })
+
+  it('folds into the navigate before it, and shows what moved from where it opened', async () => {
     await show([
       {
         before: '/ideas',
         action: { type: 'navigate', screen: 'analytics' },
       },
-      setWindow({
-        window: { preset: '90d', platforms: [], campaignId: 'c1' },
-      }),
+      opened(),
     ])
-    expect(
-      screen.getByText(
-        'Opened Analytics · Last 90 days · All platforms · Spring reopening',
-      ),
-    ).toBeTruthy()
+    expect(screen.getByText('Opened Analytics · Last 90 days')).toBeTruthy()
     expect(screen.getAllByText('BACK')).toHaveLength(1)
-    expect(screen.queryByText('Last 28 days')).toBeNull()
+    expect(screen.getByText('Last 28 days').tagName).toBe('S')
+    expect(screen.getByText('Period')).toBeTruthy()
+    // The campaign was in scope already, so it isn't named as a change.
+    expect(screen.queryByText('Campaign')).toBeNull()
   })
 
-  it('keeps a navigate elsewhere and the window as two rows', async () => {
+  it('names only the campaign when only the campaign moved', async () => {
+    await show([
+      {
+        before: '/ideas',
+        action: { type: 'navigate', screen: 'analytics' },
+      },
+      opened({
+        window: { preset: '28d', platforms: [], campaignId: 'c1' },
+        before: { preset: '28d', platforms: [] },
+        changed: ['campaign'],
+      }),
+    ])
+    expect(screen.getByText('Opened Analytics · Spring reopening')).toBeTruthy()
+    expect(screen.getByText('All campaigns').tagName).toBe('S')
+    expect(screen.queryByText('Period')).toBeNull()
+  })
+
+  it('keeps a navigate elsewhere and the window as two rows, with what changed', async () => {
     await show([
       { before: '/ideas', action: { type: 'navigate', screen: 'assets' } },
       setWindow(),
@@ -105,6 +131,26 @@ describe('a set_window row (CON-479)', () => {
     expect(
       screen.getByText('Analytics set to Mar 1 – Mar 31 · Instagram'),
     ).toBeTruthy()
+    expect(screen.getByText('Last 28 days').tagName).toBe('S')
+  })
+
+  it('words the change after a navigate in Spanish', async () => {
+    await loadLocaleResources('es')
+    await i18next.changeLanguage('es')
+    try {
+      await show([
+        {
+          before: '/ideas',
+          action: { type: 'navigate', screen: 'analytics' },
+        },
+        opened(),
+      ])
+      expect(screen.getByText('Periodo')).toBeTruthy()
+      expect(screen.queryByText('Period')).toBeNull()
+      expect(screen.queryByText('Last 28 days')).toBeNull()
+    } finally {
+      await i18next.changeLanguage('en')
+    }
   })
 
   it('names the dates a preset the picker lacks lands as', async () => {
