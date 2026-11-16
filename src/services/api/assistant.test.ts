@@ -1614,7 +1614,7 @@ describe('an offer answered from its card (CON-467)', () => {
     })
     // A kind this build doesn't know is left out.
     expect(r.campaignState?.starters).toEqual([
-      { kind: 'fill', instruction: 'Draft 6…' },
+      { kind: 'fill', label: 'Fill April', instruction: 'Draft 6…' },
     ])
   })
 

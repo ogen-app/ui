@@ -2166,6 +2166,7 @@ export function campaignStateRead(
         {
           kind,
           instruction: str(x.instruction),
+          ...(str(x.label) ? { label: str(x.label) } : {}),
           ...(typeof x.count === 'number' ? { count: x.count } : {}),
           ...(period ? { period } : {}),
         },

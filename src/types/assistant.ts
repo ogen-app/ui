@@ -1887,9 +1887,10 @@ export type CampaignStarter = {
   /** A fill's goal period. */
   period?: GoalPeriod
   /**
-   * The server's English sentence — sent only when the starter can't be
-   * worded from its figures; it goes once every server sends them.
+   * The server's English chip and sentence — used only when the starter can't
+   * be worded from its figures; they go once every server sends them.
    */
+  label?: string
   instruction: string
 }
 

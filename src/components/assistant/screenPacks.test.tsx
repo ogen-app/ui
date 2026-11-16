@@ -95,6 +95,38 @@ describe('starters follow the screen', () => {
     campaignState.data = null
   })
 
+  it('keeps a starter with no figures on the server’s own words (CON-511)', () => {
+    campaignState.data = {
+      state: {},
+      starters: [
+        { kind: 'draft', label: 'Draft two posts', instruction: 'Draft two.' },
+        { kind: 'calendar', instruction: 'Fix them.' },
+      ],
+    }
+    useAssistantStore.setState({
+      activeThreadId: 'campaign:c1',
+      threads: {
+        'campaign:c1': {
+          id: 'campaign:c1',
+          subject: { kind: 'campaign', campaignId: 'c1' },
+          turns: [],
+          status: 'idle',
+        },
+      } as never,
+    })
+    useViewContextStore.setState({ location: { screen: 'campaign.calendar' } })
+    const onPick = vi.fn()
+    render(
+      <StarterChips kind="campaign" onPick={onPick} placement="footer" />,
+      { wrapper: QueryWrapper },
+    )
+    fireEvent.click(screen.getByText('Draft two posts'))
+    expect(onPick).toHaveBeenCalledWith('Draft two.')
+    // No figures and no chip of its own: nothing to offer.
+    expect(screen.queryByText('Fix them.')).toBeNull()
+    campaignState.data = null
+  })
+
   it('offers a screen’s own verbs', () => {
     useViewContextStore.setState({ location: { screen: 'campaign.calendar' } })
     render(<StarterChips kind="campaign" onPick={() => {}} />, {
