@@ -81,20 +81,6 @@ export function AssistantReply({
   })
   const showCard = settled && hasResultCard(turn.details)
   const campaignId = subject ? subjectCampaignId(subject) : undefined
-  // A turn that changed nothing — an answer, a push-back, an offer still
-  // waiting — is the one that cites what it read (CON-483).
-  const quiet =
-    !hasResultCard(turn.details) &&
-    !turn.answered &&
-    !turn.findings &&
-    !turn.repair &&
-    !turn.postLines &&
-    !turn.assets &&
-    !turn.foundation &&
-    !turn.analytics &&
-    !turn.workspace &&
-    !turn.ideas &&
-    !turn.uiActions?.length
   const drawnElsewhere = offersDrawnInPlace(turn)
   // A retry's run, summed with the run it retried (CON-482): the first run's
   // total, found through the offer this turn answered and its `retryOf`.
@@ -306,16 +292,20 @@ export function AssistantReply({
             />
           ))}
 
-      {/* What a reply that changed nothing leaned on (CON-483): the
-          campaign's sources when some aren't ready, and one quiet line
-          citing the figures. */}
-      {settled && quiet && turn.campaignState && (
+      {/* What the reply says it relied on (CON-511): the campaign's sources
+          when it cites them, and one quiet line citing the figures. */}
+      {settled && turn.campaignState?.cites && (
         <>
-          <SourcesCard
+          {turn.campaignState.cites.includes('sources') && (
+            <SourcesCard
+              state={turn.campaignState.state}
+              campaignId={campaignId}
+            />
+          )}
+          <StateCitation
             state={turn.campaignState.state}
-            campaignId={campaignId}
+            cites={turn.campaignState.cites}
           />
-          <StateCitation state={turn.campaignState.state} />
         </>
       )}
 

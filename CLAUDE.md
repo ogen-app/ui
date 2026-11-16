@@ -821,13 +821,16 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   carries what it read** (`state`, `starters`; also
   `GET /api/campaigns/:id/assistant-state` through
   `useCampaignAssistantState`, re-read when a campaign turn completes): a
-  reply that changed nothing cites it in one quiet line ("Read from the
-  campaign · April 14 of 20 · 2 conflicts · 4 of 8 sources ready"), with a
-  SOURCES card when some of the campaign's sources aren't ready, and a
-  campaign's screens lead ON THIS SCREEN with its starters, worded here from
-  their kind and figures and sending the server's instruction. Which figures
-  a reply actually used, the period as data and a drafted post's score wait
-  on CON-503. The Overview runs no
+  reply cites the parts it says it relied on (`cites`, CON-511) in one quiet
+  line ("Read from the campaign · April 14 of 20 · 2 conflicts · 4 of 8
+  sources ready"), in its order, with a SOURCES card when it cites the
+  sources, and a campaign's screens lead ON THIS SCREEN with its starters,
+  worded here — chip and message alike, in the user's language — from their
+  kind, `count` and `period`; the server's English `label` and
+  `instruction` are only a fallback. A period is named from its data
+  (`lib/goalPeriod`): a month as the month, a week by its days. A draft the
+  REPLACED card lists without a score takes it when `assessment.completed`
+  lands (`stores/freshScoreStore`). The Overview runs no
   assistant, so each of a problem's fixes — the first a bordered button, the
   rest "or …" — sends `<fix>: <problem>` to the campaign's thread, never a raw
   key, which answers with that finding's fixes as offers; a fix that is only a

@@ -3594,6 +3594,13 @@ export const en = {
       conflicts_one: '{{formatted}} conflict',
       conflicts_other: '{{formatted}} conflicts',
       sourcesReady: '{{ready}} of {{attached}} sources ready',
+      /** The parts a reply can cite (CON-511): the goal as its rate. */
+      goalWeek_one: '{{formatted}} a week',
+      goalWeek_other: '{{formatted}} a week',
+      goalMonth_one: '{{formatted}} a month',
+      goalMonth_other: '{{formatted}} a month',
+      posts_one: '{{formatted}} post',
+      posts_other: '{{formatted}} posts',
       sources: {
         word: 'SOURCES',
         title: '{{ready}} of {{attached}} ready',
@@ -3610,6 +3617,21 @@ export const en = {
         calendar_other: 'Fix {{formatted}} calendar problems',
         sources_one: '{{formatted}} source not ready',
         sources_other: '{{formatted}} sources not ready',
+      },
+      /**
+       * What a starter sends as the user's message (CON-511), in the user's
+       * language — the same request the server's English one makes.
+       */
+      starterSays: {
+        fill_one:
+          'Draft {{formatted}} post for {{period}}, the slot left in this goal period.',
+        fill_other:
+          'Draft {{formatted}} posts for {{period}}, the slots left in this goal period.',
+        draft_one: 'Draft {{formatted}} post to reach the campaign’s goal.',
+        draft_other: 'Draft {{formatted}} posts to reach the campaign’s goal.',
+        calendar: 'Review the campaign’s calendar problems and fix them.',
+        sources:
+          'Which of the campaign’s sources aren’t ready to write from, and why?',
       },
     },
 

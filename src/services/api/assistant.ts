@@ -59,6 +59,7 @@ import type {
   Touched,
   ProposalDetails,
   StepDetail,
+  CampaignCite,
   CampaignState,
   CampaignStateRead,
   GoalPeriod,
@@ -2064,16 +2065,44 @@ function postRefs(value: unknown): PostRef[] {
     .filter((p) => p.id)
 }
 
+const DAY = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * A goal period (CON-503): its cadence, place and days as data, which is what
+ * the rail words it from; the English `label` for a server before that.
+ */
 function goalPeriod(value: unknown): GoalPeriod | undefined {
   const p = record(value)
-  if (!p || !str(p.label)) return undefined
+  if (!p) return undefined
+  const cadence =
+    p.cadence === 'week' || p.cadence === 'month' ? p.cadence : undefined
+  const start = DAY.test(str(p.start)) ? str(p.start) : undefined
+  const end = DAY.test(str(p.end)) ? str(p.end) : undefined
+  if (!str(p.label) && !(cadence && start && end)) return undefined
   return {
     label: str(p.label),
+    ...(cadence && start && end
+      ? {
+          cadence,
+          start,
+          end,
+          ...(typeof p.index === 'number' ? { index: p.index } : {}),
+        }
+      : {}),
     target: num(p.target),
     planned: num(p.planned),
     left: num(p.left),
   }
 }
+
+const CITES = [
+  'goal',
+  'period',
+  'posts',
+  'platforms',
+  'sources',
+  'calendar',
+] as const
 
 const SOURCE_STATUSES = ['ready', 'analysing', 'unreadable'] as const
 const STARTER_KINDS = ['fill', 'draft', 'calendar', 'sources'] as const
@@ -2103,6 +2132,13 @@ export function campaignStateRead(
   }
   const calendar = record(raw.calendar)
   if (calendar) state.calendar = { total: num(calendar.total) }
+  if (typeof raw.posts === 'number' && raw.postsUnknown !== true)
+    state.posts = raw.posts
+  if (Array.isArray(raw.platforms))
+    state.platforms = raw.platforms
+      .filter(isRecord)
+      .map((p) => ({ id: str(p.id), name: str(p.name) }))
+      .filter((p) => p.id && p.name)
   const sources = record(raw.sources)
   if (sources) {
     state.sources = {
@@ -2124,10 +2160,28 @@ export function campaignStateRead(
     .filter(isRecord)
     .flatMap((x) => {
       const kind = STARTER_KINDS.find((k) => k === x.kind)
-      const instruction = str(x.instruction)
-      return kind && instruction ? [{ kind, instruction }] : []
+      if (!kind) return []
+      const period = goalPeriod(x.period)
+      return [
+        {
+          kind,
+          instruction: str(x.instruction),
+          ...(typeof x.count === 'number' ? { count: x.count } : {}),
+          ...(period ? { period } : {}),
+        },
+      ]
     })
-  return { state, starters }
+  // What the reply relied on (CON-503): known parts, once each, in order.
+  const cites = Array.isArray(parsed.cites)
+    ? [
+        ...new Set(
+          parsed.cites.filter((c): c is CampaignCite =>
+            CITES.includes(c as CampaignCite),
+          ),
+        ),
+      ]
+    : undefined
+  return { state, starters, ...(cites ? { cites } : {}) }
 }
 
 function touched(value: unknown): Touched[] {

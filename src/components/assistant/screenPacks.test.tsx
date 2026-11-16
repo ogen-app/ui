@@ -36,8 +36,26 @@ describe('starters follow the screen', () => {
         },
       },
       starters: [
-        { kind: 'fill', instruction: 'Draft 3 posts for next week.' },
-        { kind: 'draft', instruction: 'Draft 20 posts to reach the goal.' },
+        {
+          kind: 'fill',
+          count: 3,
+          period: {
+            label: 'next week',
+            cadence: 'week',
+            index: 2,
+            start: '2026-04-13',
+            end: '2026-04-19',
+            target: 5,
+            planned: 2,
+            left: 3,
+          },
+          instruction: 'Draft 3 posts for next week.',
+        },
+        {
+          kind: 'draft',
+          count: 20,
+          instruction: 'Draft 20 posts to reach the goal.',
+        },
       ],
     }
     useAssistantStore.setState({
@@ -58,9 +76,22 @@ describe('starters follow the screen', () => {
       { wrapper: QueryWrapper },
     )
     const chips = screen.getAllByRole('button').map((b) => b.textContent)
-    expect(chips.slice(0, 2)).toEqual(['Fill next week', 'Draft 20 posts'])
-    fireEvent.click(screen.getByText('Fill next week'))
-    expect(onPick).toHaveBeenCalledWith('Draft 3 posts for next week.')
+    // Worded from the starter's own figures (CON-511): the week by its days,
+    // and the message in the user's language rather than the server's.
+    expect(chips.slice(0, 2)).toEqual([
+      expect.stringMatching(/^Fill Apr 13\s?–\s?19$/),
+      'Draft 20 posts',
+    ])
+    fireEvent.click(screen.getByText(/^Fill Apr 13/))
+    expect(onPick).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^Draft 3 posts for Apr 13\s?–\s?19, the slots left in this goal period\.$/,
+      ),
+    )
+    fireEvent.click(screen.getByText('Draft 20 posts'))
+    expect(onPick).toHaveBeenLastCalledWith(
+      'Draft 20 posts to reach the campaign’s goal.',
+    )
     campaignState.data = null
   })
 

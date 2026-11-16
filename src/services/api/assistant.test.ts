@@ -1618,6 +1618,55 @@ describe('an offer answered from its card (CON-467)', () => {
     ])
   })
 
+  it('reads the period as data, the starters’ figures, the cites and posts and platforms (CON-511)', () => {
+    const period = {
+      label: 'April',
+      cadence: 'month',
+      index: 2,
+      start: '2026-04-01',
+      end: '2026-04-30',
+      target: 20,
+      planned: 14,
+      left: 6,
+    }
+    const r = parseHistoryResult(
+      JSON.stringify({
+        explanation: 'April is 14 of 20.',
+        action: 'answered',
+        results: {
+          campaign: {
+            action: 'answered',
+            state: {
+              goal: {
+                cadence: 'month',
+                perPeriod: 20,
+                target: 60,
+                planned: 34,
+                room: 26,
+                period,
+              },
+              posts: 34,
+              platforms: [{ id: 'p1', name: 'Instagram', postTypes: [] }],
+            },
+            starters: [
+              { kind: 'fill', count: 6, period, label: 'x', instruction: 'y' },
+            ],
+            cites: ['goal', 'brief', 'period', 'goal'],
+          },
+        },
+      }),
+      'campaign',
+    )
+    expect(r.campaignState?.state.goal?.period).toEqual(period)
+    expect(r.campaignState?.state.posts).toBe(34)
+    expect(r.campaignState?.state.platforms).toEqual([
+      { id: 'p1', name: 'Instagram' },
+    ])
+    expect(r.campaignState?.starters[0]).toMatchObject({ count: 6, period })
+    // Known parts, once each, in the reply's order.
+    expect(r.campaignState?.cites).toEqual(['goal', 'period'])
+  })
+
   it('reads an offer’s details, and none when the card has nothing', () => {
     const r = parseHistoryResult(
       JSON.stringify({

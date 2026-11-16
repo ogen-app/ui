@@ -21,6 +21,8 @@ import {
 } from './blocks'
 import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
 import { useLapsed } from './useLapsed'
+import { useFreshScore } from '@/stores/freshScoreStore'
+import { periodName } from '@/lib/goalPeriod'
 
 /** Rows the not-done list shows before it sums up the rest. */
 const LIST_ROWS = 8
@@ -260,7 +262,7 @@ function ReplacedCard({
       meta={
         period
           ? t('assistant.answered.replaced.period', {
-              period: period.label,
+              period: periodName(period),
               planned: formatNumber(period.planned),
             })
           : undefined
@@ -291,6 +293,39 @@ function KeptRow({ t, kept }: { t: TFunction; kept: number }) {
   )
 }
 
+/**
+ * One post of a swap: its title, then its platform and fit. A draft written
+ * just now has no score in the result; it is scored about 30 seconds later,
+ * and the row takes the score when `assessment.completed` brings it
+ * (CON-511). A failed scoring leaves the row as it is.
+ */
+function SwapRow({
+  t,
+  post,
+}: {
+  t: TFunction
+  post: NonNullable<Outcome['replaced']>['removed'][number]
+}) {
+  const fresh = useFreshScore(post.id)
+  const score = post.fitPct ?? fresh
+  return (
+    <ResultRow className="flex flex-col gap-0.5">
+      <span className="text-sm text-foreground">{post.title}</span>
+      <span className="text-[12.5px] text-tertiary-foreground">
+        {[
+          post.platform,
+          score !== undefined &&
+            t('assistant.answered.replaced.fit', {
+              score: formatNumber(score),
+            }),
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+      </span>
+    </ResultRow>
+  )
+}
+
 /** One side of a swap: a group label, the first posts, "and N more". */
 function SwapList({
   t,
@@ -312,20 +347,7 @@ function SwapList({
         {label}
       </p>
       {shown.map((post) => (
-        <ResultRow key={post.id} className="flex flex-col gap-0.5">
-          <span className="text-sm text-foreground">{post.title}</span>
-          <span className="text-[12.5px] text-tertiary-foreground">
-            {[
-              post.platform,
-              post.fitPct !== undefined &&
-                t('assistant.answered.replaced.fit', {
-                  score: formatNumber(post.fitPct),
-                }),
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </span>
-        </ResultRow>
+        <SwapRow key={post.id} t={t} post={post} />
       ))}
       {more > 0 && (
         <p className="pt-2.5 text-[12.5px] text-tertiary-foreground">

@@ -2983,6 +2983,12 @@ export const es: Translation = {
       conflicts_one: '{{formatted}} conflicto',
       conflicts_other: '{{formatted}} conflictos',
       sourcesReady: '{{ready}} de {{attached}} fuentes listas',
+      goalWeek_one: '{{formatted}} por semana',
+      goalWeek_other: '{{formatted}} por semana',
+      goalMonth_one: '{{formatted}} al mes',
+      goalMonth_other: '{{formatted}} al mes',
+      posts_one: '{{formatted}} publicación',
+      posts_other: '{{formatted}} publicaciones',
       sources: {
         word: 'FUENTES',
         title: '{{ready}} de {{attached}} listas',
@@ -2999,6 +3005,20 @@ export const es: Translation = {
         calendar_other: 'Arreglar {{formatted}} problemas del calendario',
         sources_one: '{{formatted}} fuente sin preparar',
         sources_other: '{{formatted}} fuentes sin preparar',
+      },
+      starterSays: {
+        fill_one:
+          'Redacta {{formatted}} publicación para {{period}}, el hueco que queda en este período del objetivo.',
+        fill_other:
+          'Redacta {{formatted}} publicaciones para {{period}}, los huecos que quedan en este período del objetivo.',
+        draft_one:
+          'Redacta {{formatted}} publicación para alcanzar el objetivo de la campaña.',
+        draft_other:
+          'Redacta {{formatted}} publicaciones para alcanzar el objetivo de la campaña.',
+        calendar:
+          'Revisa los problemas del calendario de la campaña y arréglalos.',
+        sources:
+          '¿Qué fuentes de la campaña no están listas para escribir con ellas, y por qué?',
       },
     },
 
