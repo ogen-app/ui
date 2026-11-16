@@ -12,6 +12,7 @@ import { passagePlace } from '@/lib/assetPlace'
 import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import { cn } from '@/lib/styles'
+import { IDEA_IDS_MAX } from '@/lib/ideaFilter'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
@@ -19,6 +20,7 @@ import type { PostStatus } from '@/types/posts'
 import type {
   CompiledPost,
   DateFrom,
+  AssistantTurn,
   DraftedIdeaPost,
   IdeaBrief,
   IdeaPlanBrief,
@@ -205,27 +207,34 @@ function dayLabel(day: string): string {
 }
 
 /**
- * An idea on the Ideas list, opened (`?idea=`, CON-481): its campaign's
- * list, or the workspace's, on the pile that holds it.
+ * Ideas on the Ideas list, exactly (CON-510): `ids=` names them, so the list
+ * holds them whatever page they would be on — and a single one is opened too
+ * (`idea=`). On their campaign's list when they share one, else the
+ * workspace's, on the pile that holds most of them; the tabs count the rest
+ * under `ids`.
  */
-function IdeaLink({
-  idea,
+function IdeasLink({
+  ideas,
   className,
   children,
 }: {
-  idea: IdeaBrief
+  ideas: IdeaBrief[]
   className?: string
   children: ReactNode
 }) {
-  const pile = pileOf(idea)
+  const named = ideas.slice(0, IDEA_IDS_MAX)
+  const pile = commonPile(named)
+  const campaigns = new Set(named.map((i) => i.campaignId ?? ''))
+  const campaignId = campaigns.size === 1 ? named[0]?.campaignId : undefined
   const search = {
-    idea: idea.id,
+    ids: named.map((i) => i.id).join(','),
+    ...(named.length === 1 ? { idea: named[0].id } : {}),
     ...(pile === 'waiting' ? {} : { pile }),
   }
-  return idea.campaignId ? (
+  return campaignId ? (
     <Link
       to="/campaigns/$campaignId/ideas"
-      params={{ campaignId: idea.campaignId }}
+      params={{ campaignId }}
       search={search as never}
       className={className}
     >
@@ -235,6 +244,31 @@ function IdeaLink({
     <Link to="/ideas" search={search as never} className={className}>
       {children}
     </Link>
+  )
+}
+
+/** The pile most of these sit in; the first one's on a tie. */
+function commonPile(ideas: IdeaBrief[]): Pile {
+  const counts = new Map<Pile, number>()
+  for (const idea of ideas) {
+    const pile = pileOf(idea)
+    counts.set(pile, (counts.get(pile) ?? 0) + 1)
+  }
+  let best: Pile = ideas[0] ? pileOf(ideas[0]) : 'waiting'
+  for (const [pile, n] of counts) if (n > (counts.get(best) ?? 0)) best = pile
+  return best
+}
+
+/** OPEN ALL under a card's list of ideas: exactly those, on the Ideas list. */
+function OpenAllIdeas({ ideas }: { ideas: IdeaBrief[] }) {
+  const { t } = useTranslation()
+  if (ideas.length < 2) return null
+  return (
+    <p className="pt-2.5">
+      <IdeasLink ideas={ideas} className={TEXT_ACTION_CLASS}>
+        {t('assistant.ideas.openAll')}
+      </IdeasLink>
+    </p>
   )
 }
 
@@ -278,12 +312,12 @@ function IdeaLine({
         className="size-3.5 shrink-0 translate-y-0.5 text-tertiary-foreground"
       />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <IdeaLink
-          idea={idea}
+        <IdeasLink
+          ideas={[idea]}
           className="text-sm text-foreground hover:underline"
         >
           {idea.title || t('assistant.ideas.untitled')}
-        </IdeaLink>
+        </IdeasLink>
         {detail && (
           <span className="text-[12.5px] text-tertiary-foreground">
             {detail}
@@ -386,6 +420,11 @@ function FoundCard({
         />
       ))}
       <More count={more} />
+      {/* Without the filter it ran (a reloaded thread), the ideas it named
+          open exactly, when it named them all (CON-510). */}
+      {filter === undefined && found.ideas.length >= found.total && (
+        <OpenAllIdeas ideas={found.ideas} />
+      )}
     </ResultBlock>
   )
 }
@@ -435,6 +474,7 @@ function TriageCard({
         />
       ))}
       <More count={triage.ideas.length - shown.length} />
+      <OpenAllIdeas ideas={triage.ideas} />
       <Problems t={t} change={triage} />
       <UndoNote
         t={t}
@@ -490,6 +530,7 @@ function ChangedCard({
         <IdeaLine key={idea.id} idea={idea} />
       ))}
       <More count={ideas.length - shown.length} />
+      <OpenAllIdeas ideas={ideas} />
       <Problems t={t} change={change} />
       <UndoNote t={t} undoId={change.undoId} undo={undo} />
     </ResultBlock>
@@ -606,9 +647,18 @@ function CompiledCard({
                 counted(c.builtFrom.length),
               )}
             </span>
-            <span className="text-[12.5px] text-tertiary-foreground">
+            {/* The ideas it was made into a post from, opened exactly
+                (CON-510). Their verdicts aren't sent, so the list lands on
+                the desk and its tabs count the rest. */}
+            <IdeasLink
+              ideas={c.builtFrom.map((i) => ({
+                ...i,
+                campaignId: c.campaignId,
+              }))}
+              className="text-[12.5px] text-tertiary-foreground hover:text-foreground hover:underline"
+            >
               {c.builtFrom.map((i) => i.title).join(' · ')}
-            </span>
+            </IdeasLink>
           </span>
           <UndoAction t={t} undoId={c.undoId} undo={undo} />
         </ResultRow>
@@ -694,27 +744,48 @@ function DraftCard({
 
 /**
  * The drafts while they are being written (CON-481): each finished one as a
- * card, then the next as a placeholder. The turn's summary replaces them.
+ * card, then the next as a placeholder — named by the idea it is written
+ * from and where it goes, once the server says (CON-510): "What the water
+ * does in March · LinkedIn". "Draft 3 of 4" only until then.
  */
 export function LiveDrafts({
   drafts,
 }: {
-  drafts: { posts: DraftedIdeaPost[]; done: number; total: number }
+  drafts: NonNullable<AssistantTurn['liveDrafts']>
 }) {
   const { t } = useTranslation()
+  const { resolve } = usePlatformCatalog()
   const writing = Math.max(drafts.done, drafts.posts.length)
+  const next = drafts.next
+  const nextTitle = next
+    ? t(
+        resolve(next.platformId)
+          ? 'assistant.ideas.drafted.writingIdeaOn'
+          : 'assistant.ideas.drafted.writingIdea',
+        {
+          // A together post draws on every idea it names.
+          ideas: formatList(
+            next.ideas.map((i) => i.title || t('assistant.ideas.untitled')),
+          ),
+          platform: resolve(next.platformId)?.name ?? '',
+        },
+      )
+    : undefined
   return (
     <div className="flex flex-col gap-5">
       {drafts.posts.map((p) => (
         <DraftCard key={p.postId} draft={p} />
       ))}
-      {drafts.total > writing && (
+      {(next || drafts.total > writing) && (
         <ResultBlock
           status={t('assistant.ideas.drafted.writing')}
-          title={t('assistant.ideas.drafted.writingNth', {
-            n: formatNumber(writing + 1),
-            total: formatNumber(drafts.total),
-          })}
+          title={
+            nextTitle ??
+            t('assistant.ideas.drafted.writingNth', {
+              n: formatNumber(writing + 1),
+              total: formatNumber(drafts.total),
+            })
+          }
         >
           <div className="flex flex-col gap-2 py-2.5" aria-hidden>
             <Skeleton className="h-2.5 w-3/5" />
@@ -1374,6 +1445,7 @@ function MergedCard({ merged }: { merged: NonNullable<Results['merged']> }) {
           detail={t('assistant.ideas.merged.removed', counted(g.deleted))}
         />
       ))}
+      <OpenAllIdeas ideas={merged.groups.map((g) => g.idea)} />
       {merged.stopped && (
         <ResultRow className="text-[12.5px] text-warning-ink">
           {t('assistant.ideas.stopped')}

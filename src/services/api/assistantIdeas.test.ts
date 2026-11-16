@@ -356,3 +356,33 @@ describe('draftedPost', () => {
     expect(r?.idea?.lens).toEqual({ campaignId: 'c1', campaignName: 'Spring' })
   })
 })
+
+describe('ideaDraftStarted (CON-510)', () => {
+  it('reads the ideas and platform of the post about to be written', async () => {
+    const { ideaDraftStarted } = await import('./assistantIdeas')
+    expect(
+      ideaDraftStarted({
+        ideas: [
+          { ideaId: 'i1', title: 'The pool' },
+          { ideaId: 'i2', title: 'Breakfast first' },
+        ],
+        platformId: 'instagram',
+        postType: 'carousel',
+        count: 1,
+        done: 2,
+        total: 4,
+      }),
+    ).toEqual({
+      ideas: [
+        { ideaId: 'i1', title: 'The pool' },
+        { ideaId: 'i2', title: 'Breakfast first' },
+      ],
+      platformId: 'instagram',
+      postType: 'carousel',
+      count: 1,
+      done: 2,
+      total: 4,
+    })
+    expect(ideaDraftStarted({ ideas: [], platformId: 'x' })).toBeNull()
+  })
+})

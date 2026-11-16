@@ -58,6 +58,13 @@ import type { GroundingMode } from '@/types/posts'
  * Every one of these is optional here, so against an API that predates CON-389
  * the card degrades to what it has rather than breaking.
  *
+ * Since CON-500 (ogen#328) the list takes `ids=<id,id,…>` and `ids_not`,
+ * at most 200 between them (400 `invalid_filter` past it; an unknown id
+ * matches nothing). It is a filter like any other — the piles, facets,
+ * totals and `ids_only` count under it — and part of the address, so a
+ * smart group keeps it. An assistant card opens exactly its ideas with it
+ * (CON-510); `ids_not` is not asked for yet.
+ *
  * `campaign_id` filters rather than scopes — the same rows, narrowed. The
  * campaign's Ideas page is this module with the filter on, and an idea moved
  * onto a campaign keeps its verdict and its history rather than becoming a new

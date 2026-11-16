@@ -918,9 +918,14 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   assistant made it, and says "changed since" and how to delete it by hand
   after). A delete and a merge have none. Piles are named as the Ideas list
   names them, and a `later` idea past its `remindAt` is on the desk. **Every
-  idea row opens its idea**: `?idea=<id>` on the Ideas pages, with its pile,
-  opens it once it is on the page and then leaves the address — there is no
-  read of one idea by id, so one past the first page stays closed (CON-500).
+  idea row opens exactly its idea** (CON-510): `ids=<id>&idea=<id>` on the
+  Ideas pages, with its pile, so the list holds just it and opens it, then
+  leaves `idea` out of the address. A card naming several ideas (FOUND
+  reloaded, verdicts, moves, merges, a compile's ideas) has OPEN ALL, `ids=`
+  with each of them, on their campaign's list when they share one and on the
+  pile most of them are in. `ids` is a filter like any other — counted,
+  saved with a smart group — and a clause you only remove ("limited to these
+  6", `FieldKind` `fixed`).
   FOUND's SHOW ON SCREEN puts the `findIdeas` filter on the list through
   `runUiAction`, so it is a screen change with BACK. Bulk verdicts name
   their pile, day and ideas; edits are before → after per field; compiles
@@ -932,7 +937,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   with its date and its own campaign, so a workspace thread's drafts reach
   that campaign's lists too (`streamedElsewhere`) — and an `idea_draft` the
   rail draws as a card while the turn runs, "Writing 4 drafts · 2 done", until
-  the summary replaces them. **An idea open on the list is the turn's
+  the summary replaces them; the one being written is named from
+  `idea_draft_started` (CON-510) — "What the water does in March · LinkedIn",
+  every idea of a together post — and "Draft 3 of 4" only before it says. **An idea open on the list is the turn's
   focus** (`ViewPage.focus`), which is what "this one" means, with its own
   starters; questions about a set need two ticked. `getIdea`'s fit is drawn
   by the Ideas list's own `FitSection`, compact in the rail. **An idea knows

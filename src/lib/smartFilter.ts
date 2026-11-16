@@ -16,8 +16,10 @@ import type { IconSvgElement } from '@hugeicons/react'
  * - `substrings`: typed text, comma-separated, any of them ("with “q4” in the title").
  * - `search`: one typed phrase, no operator ("mentioning “wax”").
  * - `date`: presets, or a custom range or day.
+ * - `fixed`: a set the page was opened with ("these 6 ideas", CON-510) —
+ *   never offered to add, and its clause only removed, never edited.
  */
-export type FieldKind = 'choice' | 'substrings' | 'search' | 'date'
+export type FieldKind = 'choice' | 'substrings' | 'search' | 'date' | 'fixed'
 
 /**
  * One token of the filter: a field, whether it is left out, and the values —
@@ -80,6 +82,8 @@ export type ValueOption = {
 export type Clause = {
   key: string
   values: Record<string, string>
+  /** A number the sentence is plural on ("these 6 ideas"); words keep `formatted`. */
+  count?: number
 }
 
 /**

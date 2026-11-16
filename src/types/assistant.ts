@@ -1490,6 +1490,22 @@ export type IdeasResults = {
   }
 }
 
+/**
+ * The post `draftIdeas` is about to write (`idea_draft_started`, CON-500):
+ * the ideas it draws on — several for a together post — and where it goes.
+ * Sent for a post the writer then fails on too.
+ */
+export type IdeaDraftStarted = {
+  ideas: { ideaId: string; title: string }[]
+  platformId: string
+  postType?: string
+  /** Posts this job writes; almost always 1. */
+  count: number
+  /** Posts written before this one, and the run's whole. */
+  done: number
+  total: number
+}
+
 /** A draft written from ideas: the result's rows and each streamed event. */
 export type DraftedIdeaPost = {
   postId: string
@@ -1603,7 +1619,13 @@ export type AssistantTurn = {
    * Drafts from ideas as they are written (CON-481): drawn in the rail while
    * the turn runs, replaced by the summary card when it completes.
    */
-  liveDrafts?: { posts: DraftedIdeaPost[]; done: number; total: number }
+  liveDrafts?: {
+    posts: DraftedIdeaPost[]
+    done: number
+    total: number
+    /** The one being written now, once the server has said (CON-510). */
+    next?: IdeaDraftStarted
+  }
   /**
    * Refusals the server named with a code (CON-481) — `idea_read_only` —
    * which the reply draws as a card of its own.

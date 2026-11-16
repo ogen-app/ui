@@ -1091,6 +1091,8 @@ export const es: Translation = {
         created_not_preset: 'añadidas <v>{{values}}</v>',
         text: 'que mencionan <v>«{{values}}»</v>',
         used: '<v>{{values}}</v>',
+        ids_one: 'limitadas a <v>esta</v>',
+        ids_other: 'limitadas a <v>estas {{formatted}}</v>',
       },
       origin: {
         asset_analysis: 'de documentos',
@@ -3496,6 +3498,7 @@ export const es: Translation = {
     ideas: {
       untitled: 'Idea sin título',
       open: 'ABRIR',
+      openAll: 'ABRIR TODAS',
       noDate: 'sin fecha',
       backOn: 'vuelve el {{day}}',
       more_one: 'y {{formatted}} más',
@@ -3551,6 +3554,8 @@ export const es: Translation = {
         one: 'Borrador',
         writing: 'Redactando',
         writingNth: 'Borrador {{n}} de {{total}}',
+        writingIdeaOn: '{{ideas}} · {{platform}}',
+        writingIdea: '{{ideas}}',
         title_one: '{{formatted}} publicación',
         title_other: '{{formatted}} publicaciones',
         fromIdeas_one: '{{drafts}} a partir de {{formatted}} idea',
