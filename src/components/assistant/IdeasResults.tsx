@@ -443,6 +443,9 @@ function FoundCard({
  * left-out value after the kept ones and never worded as kept. Several values
  * of one field read as either, as the server matches any of them.
  */
+/** Where a clause's titles go, until its markup is stripped. */
+const TITLES = '\uE000'
+
 function foundClauses(t: TFunction, named: FoundNamed): string {
   const fields = [
     ['source_asset', 'source_asset_not', named.sourceAssets],
@@ -456,10 +459,15 @@ function foundClauses(t: TFunction, named: FoundNamed): string {
         .filter((v) => !!v.excluded === excluded)
         .map((v) => v.title)
       if (titles.length === 0) continue
+      // The markup is stripped from the sentence before the titles go in, so
+      // a title holding angle brackets ("Budget <draft>") is kept whole; a
+      // callback, so a `$` in one stays literal.
       const words = t(`ideas.sentence.clause.${excluded ? left : kept}`, {
-        values: formatList(titles, 'disjunction'),
-      })
-      clauses.push(words.replace(/<\/?\w+>/g, ''))
+        values: TITLES,
+      }).replace(/<\/?\w+>/g, '')
+      clauses.push(
+        words.replace(TITLES, () => formatList(titles, 'disjunction')),
+      )
     }
   }
   return formatList(clauses, 'unit')
