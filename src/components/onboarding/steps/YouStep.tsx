@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { OnboardingRole } from '../flow'
-import { DISABLED_ACCENT, StepCard, StepFooter } from '../OnboardingFrame'
+import {
+  DISABLED_ACCENT,
+  LABEL_TEXT,
+  StepCard,
+  StepFooter,
+} from '../OnboardingFrame'
 
 /**
  * Who the workspace is for. One question, and each answer says what it
@@ -66,8 +71,8 @@ export function YouStep({
       </div>
 
       {role && (
-        <div className="flex max-w-md flex-col gap-2">
-          <Label htmlFor={nameId}>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={nameId} className={LABEL_TEXT}>
             {t(
               role === 'own'
                 ? 'onboarding.you.nameOwn'
@@ -83,7 +88,7 @@ export function YouStep({
               if (e.key === 'Enter') onNext()
             }}
           />
-          <p className="text-xs leading-4 text-tertiary-foreground">
+          <p className="text-sm leading-5 text-secondary-foreground">
             {t('onboarding.you.nameHint')}
           </p>
         </div>

@@ -160,6 +160,17 @@ export function StepCard({
 }
 
 /**
+ * Onboarding's text comes in two tones and, below the title, one size: the
+ * words a person reads first (labels, names, card titles) in the foreground,
+ * and everything that explains them — the lead, a card's body, a hint, a
+ * status — in `secondary-foreground`. A third grey for hints and a fourth for
+ * input labels made every screen read as several kinds of small print.
+ */
+export const LABEL_TEXT =
+  'text-sm leading-5 font-medium text-primary-foreground'
+export const HINT_TEXT = 'text-sm leading-5 text-secondary-foreground'
+
+/**
  * The `accent` variant has no disabled look of its own, so a step's way on
  * would read as ready while it waits on an answer. Onboarding's buttons carry
  * `neutral`'s disabled face instead.
@@ -180,9 +191,7 @@ export function StepFooter({
   const { t } = useTranslation()
   return (
     <div className="flex flex-col gap-3 border-t border-quaternary pt-5">
-      {note && (
-        <p className="text-sm leading-5 text-tertiary-foreground">{note}</p>
-      )}
+      {note && <p className={HINT_TEXT}>{note}</p>}
       <div className="flex items-center justify-between gap-3">
         {onBack ? (
           <Button variant="ghost" onClick={onBack}>

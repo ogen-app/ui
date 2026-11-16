@@ -54,7 +54,7 @@ export function PlanningStep({
           next={
             <div className="flex items-center gap-3">
               {written > 0 && (
-                <span className="text-sm text-tertiary-foreground tabular-nums">
+                <span className="text-sm text-secondary-foreground tabular-nums">
                   {t('onboarding.planning.drafted', counted(written))}
                 </span>
               )}
@@ -100,7 +100,7 @@ export function PlanningStep({
               <span
                 className={cn(
                   state === 'next'
-                    ? 'text-tertiary-foreground'
+                    ? 'text-secondary-foreground'
                     : 'text-primary-foreground',
                   state === 'now' && 'font-medium',
                 )}
@@ -131,7 +131,7 @@ function PostRow({ post }: { post: PlannedPost }) {
 
   return (
     <li className="page-content-motion flex items-center gap-3 border-b border-quaternary py-3">
-      <span className="w-20 shrink-0 text-xs text-tertiary-foreground tabular-nums">
+      <span className="w-24 shrink-0 text-sm text-secondary-foreground tabular-nums">
         {formatDate(`${post.date}T12:00:00`, {
           weekday: 'short',
           day: 'numeric',
@@ -149,18 +149,18 @@ function PostRow({ post }: { post: PlannedPost }) {
       <span
         className={cn(
           'min-w-0 flex-1 truncate text-sm',
-          post.writing && 'text-tertiary-foreground',
+          post.writing && 'text-secondary-foreground',
         )}
       >
         {post.title}
       </span>
       {post.writing ? (
-        <span className="flex shrink-0 items-center gap-2 text-xs text-tertiary-foreground">
+        <span className="flex shrink-0 items-center gap-2 text-sm text-secondary-foreground">
           <Spinner tone="onSurface" className="w-4" />
           {t('onboarding.planning.writing')}
         </span>
       ) : (
-        <span className="shrink-0 text-xs text-tertiary-foreground">
+        <span className="shrink-0 text-sm text-secondary-foreground">
           {type?.label}
         </span>
       )}

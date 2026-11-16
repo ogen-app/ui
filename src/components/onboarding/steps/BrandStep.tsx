@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { keptTally } from '@/lib/brandDistill'
 import { useDistillReview } from '@/stores/brandDistillStore'
 import type { DistillRun } from '@/types/brandDistill'
-import { StepCard, StepFooter } from '../OnboardingFrame'
+import { LABEL_TEXT, StepCard, StepFooter } from '../OnboardingFrame'
 
 /**
  * The brand, read from what was given — the brand read's own screens, not a
@@ -94,7 +94,7 @@ function ReviewFooter({
       next={
         <div className="flex items-center gap-3">
           {tally && (
-            <span className="text-sm text-tertiary-foreground tabular-nums">
+            <span className="text-sm text-secondary-foreground tabular-nums">
               {t('onboarding.brand.kept', tally)}
             </span>
           )}
@@ -124,9 +124,11 @@ function NameField({
 
   return (
     <div className="flex max-w-md flex-col gap-2">
-      <Label htmlFor={id}>{t('onboarding.brand.nameLabel')}</Label>
+      <Label htmlFor={id} className={LABEL_TEXT}>
+        {t('onboarding.brand.nameLabel')}
+      </Label>
       <Input id={id} value={name} onChange={(e) => onName(e.target.value)} />
-      <p className="text-xs leading-4 text-tertiary-foreground">
+      <p className="text-sm leading-5 text-secondary-foreground">
         {nameFrom
           ? t('onboarding.brand.namedFrom', { source: nameFrom })
           : t('onboarding.brand.namedByYou')}

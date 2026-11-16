@@ -9,7 +9,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib'
 import { counted } from '@/lib/intl'
 import type { PlatformInfo } from '@/lib/platformDictionary'
-import { DISABLED_ACCENT, StepCard, StepFooter } from '../OnboardingFrame'
+import {
+  DISABLED_ACCENT,
+  LABEL_TEXT,
+  StepCard,
+  StepFooter,
+} from '../OnboardingFrame'
 
 /**
  * The first campaign's brief — the fields a marketer writes anyway, in the
@@ -127,7 +132,7 @@ export function CampaignStep({
           />
         </Field>
         <div className="flex flex-col gap-2 md:col-span-2">
-          <span className="text-sm leading-5 font-medium">
+          <span className={LABEL_TEXT}>
             {t('onboarding.campaign.platforms')}
           </span>
           <div className="flex flex-wrap gap-2">
@@ -175,7 +180,7 @@ export function CampaignStep({
             onChange={(e) => set({ perWeek: Number(e.target.value) || 0 })}
           />
           {weeks > 0 && brief.perWeek > 0 && (
-            <p className="text-xs leading-4 text-tertiary-foreground">
+            <p className="text-sm leading-5 text-secondary-foreground">
               {t('onboarding.campaign.total', {
                 ...counted(weeks * brief.perWeek),
                 weeks: t('onboarding.campaign.weeks', counted(weeks)),
@@ -201,7 +206,9 @@ function Field({
 }) {
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className={LABEL_TEXT}>
+        {label}
+      </Label>
       {children}
     </div>
   )

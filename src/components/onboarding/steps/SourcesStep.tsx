@@ -18,7 +18,12 @@ import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib'
 import { counted } from '@/lib/intl'
-import { DISABLED_ACCENT, StepCard, StepFooter } from '../OnboardingFrame'
+import {
+  DISABLED_ACCENT,
+  LABEL_TEXT,
+  StepCard,
+  StepFooter,
+} from '../OnboardingFrame'
 
 /**
  * One thing Ogen will read. A document is uploaded the moment it is chosen
@@ -186,7 +191,7 @@ export function SourcesStep({
               <span className="min-w-0 flex-1 truncate text-sm font-medium">
                 {t('onboarding.sources.questions.title')}
               </span>
-              <span className="text-xs text-tertiary-foreground">
+              <span className="text-sm text-secondary-foreground">
                 {t('onboarding.sources.answered', counted(answered))}
               </span>
             </li>
@@ -210,7 +215,9 @@ function WebsiteEditor({ onAdd }: { onAdd: (url: string) => void }) {
   }
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>{t('onboarding.sources.websiteLabel')}</Label>
+      <Label htmlFor={id} className={LABEL_TEXT}>
+        {t('onboarding.sources.websiteLabel')}
+      </Label>
       <div className="flex gap-2">
         <Input
           id={id}
@@ -244,7 +251,7 @@ function QuestionField({
   const id = useId()
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id} className="text-sm leading-5 font-medium">
+      <Label htmlFor={id} className={LABEL_TEXT}>
         {question.text}
       </Label>
       <Textarea
@@ -283,12 +290,12 @@ function SourceRow({
         {title}
       </span>
       {source.kind === 'document' && source.uploading ? (
-        <span className="flex items-center gap-2 text-xs text-tertiary-foreground">
+        <span className="flex items-center gap-2 text-sm text-secondary-foreground">
           <Spinner tone="onSurface" className="w-4" />
           {t('onboarding.sources.uploading')}
         </span>
       ) : (
-        <span className="text-xs text-tertiary-foreground">
+        <span className="text-sm text-secondary-foreground">
           {source.kind === 'document' && source.pages
             ? t('onboarding.sources.pages', counted(source.pages))
             : t('onboarding.sources.ready')}

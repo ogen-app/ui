@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import type { PlatformInfo } from '@/lib/platformDictionary'
 import type { OnboardingRole } from '../flow'
-import { StepCard, StepFooter } from '../OnboardingFrame'
+import { LABEL_TEXT, StepCard, StepFooter } from '../OnboardingFrame'
 
 export type ConnectedAccount = { platform: string; handle: string }
 
@@ -83,9 +83,9 @@ export function AccountsStep({
                 />
               </span>
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="text-sm leading-5 font-medium">{p.name}</span>
+                <span className={LABEL_TEXT}>{p.name}</span>
                 {account && (
-                  <span className="truncate text-xs leading-4 text-tertiary-foreground">
+                  <span className="truncate text-sm leading-5 text-secondary-foreground">
                     {account.handle}
                   </span>
                 )}
