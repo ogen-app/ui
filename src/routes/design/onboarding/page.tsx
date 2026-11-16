@@ -17,15 +17,6 @@ import {
 } from '@/components/onboarding/steps/AccountsStep'
 import { BrandStep } from '@/components/onboarding/steps/BrandStep'
 import {
-  CampaignStep,
-  type OnboardingBrief,
-} from '@/components/onboarding/steps/CampaignStep'
-import {
-  PLAN_STEPS,
-  PlanningStep,
-  type PlannedPost,
-} from '@/components/onboarding/steps/PlanningStep'
-import {
   ANSWERS_ID,
   SourcesStep,
   type OnboardingSource,
@@ -33,14 +24,11 @@ import {
 } from '@/components/onboarding/steps/SourcesStep'
 import { YouStep } from '@/components/onboarding/steps/YouStep'
 import { cn } from '@/lib'
-import { PLATFORMS, getPlatformByZernioId } from '@/lib/platformDictionary'
+import { PLATFORMS } from '@/lib/platformDictionary'
 import type { DistillRun } from '@/types/brandDistill'
 import {
-  BRIEF,
-  CAMPAIGN_TYPES,
   CLIENT,
   FILES,
-  PLANNED,
   PROPOSAL,
   STARTER_QUESTIONS,
   baseRun,
@@ -71,8 +59,8 @@ const at = (s: OnboardingStep) => ONBOARDING_STEPS.indexOf(s)
 
 /**
  * TEMPORARY design harness — the onboarding screens, built from the app's own
- * components, run from fixtures with no API. The read, the connects and the
- * plan are timers standing in for their streams.
+ * components, run from fixtures with no API. The reads and the connects are
+ * timers standing in for their streams.
  *
  * `?step=` opens a screen directly; `?tools` shows the moderator's bar.
  */
@@ -101,24 +89,8 @@ export function OnboardingPreview() {
       ? { ...baseRun(runSources(false)), status: 'ready', proposal: PROPOSAL }
       : null,
   )
-  const [connected, setConnected] = useState<ConnectedAccount[]>(
-    at(initial) > at('accounts')
-      ? [
-          { platform: 'instagram', handle: HANDLES.instagram },
-          { platform: 'facebook', handle: HANDLES.facebook },
-        ]
-      : [],
-  )
+  const [connected, setConnected] = useState<ConnectedAccount[]>([])
   const [connecting, setConnecting] = useState<string | null>(null)
-  const [brief, setBrief] = useState<OnboardingBrief>({
-    ...BRIEF,
-    platforms: at(initial) > at('accounts') ? ['instagram', 'facebook'] : [],
-  })
-  const [plan, setPlan] = useState<{
-    stepIndex: number
-    posts: PlannedPost[]
-    done: boolean
-  }>({ stepIndex: 0, posts: [], done: false })
 
   const timers = useRef<number[]>([])
   const later = (ms: number, fn: () => void) => {
@@ -234,47 +206,12 @@ export function OnboardingPreview() {
     })
   }
 
-  // ---- The plan: steps, then posts streaming in. ---------------------------
-  const startPlan = () => {
-    setPlan({ stepIndex: 0, posts: [], done: false })
-    go('planning')
-    PLAN_STEPS.forEach((_, i) =>
-      later(1100 * i, () => setPlan((p) => ({ ...p, stepIndex: i }))),
-    )
-    const posts = PLANNED.filter((p) => brief.platforms.includes(p.platform))
-    const shown = posts.length > 0 ? posts : PLANNED
-    const start = 1100 * (PLAN_STEPS.length - 1)
-    shown.forEach((post, i) => {
-      later(start + 900 * i, () =>
-        setPlan((p) => ({
-          ...p,
-          posts: [...p.posts, { ...post, writing: true }],
-        })),
-      )
-      later(start + 900 * i + 1300, () =>
-        setPlan((p) => ({
-          ...p,
-          posts: p.posts.map((x) =>
-            x.id === post.id ? { ...x, writing: false } : x,
-          ),
-        })),
-      )
-    })
-    later(start + 900 * shown.length + 1400, () =>
-      setPlan((p) => ({ ...p, done: true })),
-    )
-  }
-
   const proposal = run?.status === 'ready' ? run.proposal : null
   const needs = needsFrom({ proposal, connected: connected.length })
   const shownName =
     name.trim() || (role === 'own' ? 'your business' : 'your client')
   const site = sources.find((s) => s.kind === 'website')
   const readSite = site && run?.status === 'ready'
-
-  const connectedPlatforms = connected
-    .map((c) => getPlatformByZernioId(c.platform))
-    .filter((p) => p !== undefined)
 
   return (
     <>
@@ -363,35 +300,9 @@ export function OnboardingPreview() {
             connecting={connecting}
             onConnect={connect}
             onBack={() => go('brand')}
-            onNext={() => {
-              if (brief.platforms.length === 0)
-                setBrief((b) => ({
-                  ...b,
-                  platforms: connected.map((c) => c.platform),
-                }))
-              go('campaign')
-            }}
-          />
-        )}
-        {step === 'campaign' && (
-          <CampaignStep
-            brief={brief}
-            types={CAMPAIGN_TYPES}
-            platforms={
-              connectedPlatforms.length > 0 ? connectedPlatforms : OFFERED
-            }
-            onChange={setBrief}
-            onBack={() => go('accounts')}
-            onPlan={startPlan}
-          />
-        )}
-        {step === 'planning' && (
-          <PlanningStep
-            campaign={brief.name}
-            stepIndex={plan.stepIndex}
-            posts={plan.posts}
-            done={plan.done}
-            onOpen={() => void navigate({ to: '/' })}
+            // Setup ends here: the first campaign is made from the Campaigns
+            // list's empty state, through the same dialog as every other.
+            onFinish={() => void navigate({ to: '/campaigns' })}
           />
         )}
       </OnboardingFrame>

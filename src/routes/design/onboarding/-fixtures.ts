@@ -8,8 +8,6 @@ import type {
   DistillRun,
   DistillSource,
 } from '@/types/brandDistill'
-import type { OnboardingBrief } from '@/components/onboarding/steps/CampaignStep'
-import type { PlannedPost } from '@/components/onboarding/steps/PlanningStep'
 import type { StarterQuestion } from '@/components/onboarding/steps/SourcesStep'
 
 export const CLIENT = {
@@ -244,65 +242,3 @@ export const PROPOSAL: NonNullable<DistillRun['proposal']> = {
   },
   dropped: { ungrounded: 2, duplicate: 1, limit: 0 },
 }
-
-export const CAMPAIGN_TYPES = [
-  { id: 'seasonal', name: 'Seasonal' },
-  { id: 'launch', name: 'Launch' },
-  { id: 'event', name: 'Event' },
-  { id: 'always-on', name: 'Always on' },
-]
-
-export const BRIEF: OnboardingBrief = {
-  name: 'Winter on the lake',
-  typeId: 'seasonal',
-  goal: 'Fill midweek nights from January to March with couples from Zurich and abroad: the lido sauna, the Lindenstube’s winter menu, and the quiet.',
-  start: '2027-01-04',
-  end: '2027-03-28',
-  platforms: [],
-  perWeek: 3,
-}
-
-export const PLANNED: PlannedPost[] = [
-  {
-    id: 'p1',
-    platform: 'instagram',
-    date: '2027-01-04',
-    postType: 'image-post',
-    title: 'The lake at seven, in January',
-  },
-  {
-    id: 'p2',
-    platform: 'facebook',
-    date: '2027-01-06',
-    postType: 'text-post',
-    title: 'Midweek winter nights: what is included',
-  },
-  {
-    id: 'p3',
-    platform: 'instagram',
-    date: '2027-01-08',
-    postType: 'carousel',
-    title: 'The Lindenstube’s winter menu, course by course',
-  },
-  {
-    id: 'p4',
-    platform: 'instagram',
-    date: '2027-01-11',
-    postType: 'reel',
-    title: 'The sauna on the lido, before breakfast',
-  },
-  {
-    id: 'p5',
-    platform: 'facebook',
-    date: '2027-01-13',
-    postType: 'image-post',
-    title: 'Marta’s Sunday Zopf',
-  },
-  {
-    id: 'p6',
-    platform: 'instagram',
-    date: '2027-01-15',
-    postType: 'image-post',
-    title: 'Room 14, and the view from the bed',
-  },
-]

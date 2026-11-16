@@ -15,7 +15,9 @@ export type ConnectedAccount = { platform: string; handle: string }
  * button is the person's to press.
  *
  * Nothing here is required: a freelancer often doesn't hold the client's
- * logins yet, and the step says where to connect them later.
+ * logins yet, and the step says where to connect them later. It is the last
+ * step — finishing lands on the Campaigns list, whose empty state makes the
+ * first campaign the ordinary way.
  */
 export function AccountsStep({
   name,
@@ -25,7 +27,7 @@ export function AccountsStep({
   connecting,
   onConnect,
   onBack,
-  onNext,
+  onFinish,
 }: {
   name: string
   role: OnboardingRole | null
@@ -36,7 +38,8 @@ export function AccountsStep({
   connecting?: string | null
   onConnect: (platform: string) => void
   onBack: () => void
-  onNext: () => void
+  /** Setup's last step: on to the Campaigns list, to make the first one. */
+  onFinish: () => void
 }) {
   const { t } = useTranslation()
 
@@ -55,10 +58,10 @@ export function AccountsStep({
           next={
             <Button
               variant={connected.length > 0 ? 'accent' : 'outline'}
-              onClick={onNext}
+              onClick={onFinish}
             >
               {connected.length > 0
-                ? t('onboarding.continue')
+                ? t('onboarding.accounts.finish')
                 : t('onboarding.accounts.none')}
             </Button>
           }
