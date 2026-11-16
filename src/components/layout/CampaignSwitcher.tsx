@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { CaretUpDownIcon } from '@phosphor-icons/react'
 import {
@@ -16,30 +16,35 @@ import { useFeatureFlag } from '@/config/featureFlags'
 import { identityColorVar } from '@/lib/identity'
 import { cn } from '@/lib'
 import { formatDateRange, formatNumber } from '@/lib/intl'
-import { navLevelOf } from '@/lib/navLevel'
-import { scopeTarget } from '@/lib/campaignScope'
+import { useCampaignScope } from '@/hooks/useCampaignScope'
+import { scopeLink } from '@/lib/campaignScope'
+import { useCampaignScopeStore } from '@/stores/campaignScopeStore'
 import type { Campaign } from '@/types/campaigns'
 
 /**
  * The scope above the page: all campaigns, or one.
  *
- * It replaces the rail's second level. Choosing a campaign narrows the place
- * you are on rather than taking you somewhere else (`lib/campaignScope`), so
- * the menu stays one menu and the campaign is a filter over it.
+ * A filter, not a place: choosing a campaign narrows the page you are on and
+ * leaves the menu as it is (`lib/campaignScope`). On a page no campaign
+ * narrows — Foundation, Profile — it changes the filter and stays put, so the
+ * next row you open comes back filtered.
  */
 export function CampaignSwitcher() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
   const workspaceCalendar = useFeatureFlag('workspace-calendar')
-  const { campaignId } = navLevelOf(pathname)
+  const { where, scope: campaignId } = useCampaignScope()
+  const remember = useCampaignScopeStore((state) => state.setCampaignId)
   const { data: campaigns = [] } = useCampaigns()
   // Read on its own as well as from the list: an archived campaign is not in
   // the list, and its pages still need a name above them.
   const { data: current } = useCampaign(campaignId ?? '')
 
-  const go = (target: string | null) =>
-    navigate({ href: scopeTarget(pathname, target, { workspaceCalendar }) })
+  const go = (target: string | null) => {
+    remember(target)
+    const link = scopeLink(where, target, { workspaceCalendar })
+    if (link) void navigate(link)
+  }
 
   const name = (campaign: Campaign) =>
     campaign.name.trim() || t('nav.untitledCampaign')

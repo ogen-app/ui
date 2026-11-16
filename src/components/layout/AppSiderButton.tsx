@@ -19,6 +19,7 @@ type AppSidebarButtonMenuProps = {
    */
   to?: LinkProps['to']
   params?: LinkProps['params']
+  search?: LinkProps['search']
   onClick?: () => void
   className?: string
   /**
@@ -47,6 +48,7 @@ export function AppSidebarButtonMenu({
   isActive,
   to,
   params,
+  search,
   onClick,
   className,
   counts = [],
@@ -144,7 +146,7 @@ export function AppSidebarButtonMenu({
           className,
         )}
       >
-        <Link to={to} params={params} onClick={onClick}>
+        <Link to={to} params={params} search={search} onClick={onClick}>
           {content}
         </Link>
       </Button>

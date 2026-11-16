@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { useLocation } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { XIcon } from '@phosphor-icons/react'
 import {
@@ -11,34 +10,25 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar.tsx'
 import { Button } from '@/components/ui/button'
-import { CampaignLevel } from '@/components/layout/nav/CampaignLevel'
 import { NavAccount } from '@/components/layout/nav/NavAccount'
+import { NavPlaces } from '@/components/layout/nav/NavPlaces'
 import { WorkspaceCell } from '@/components/layout/nav/WorkspaceCell'
-import { NavUtilityStrip } from '@/components/layout/nav/NavUtilityStrip'
-import { WorkspaceLevel } from '@/components/layout/nav/WorkspaceLevel'
-import { LiveStatus } from '@/components/layout/LiveStatus'
-import { navLevelOf } from '@/lib/navLevel'
 
 /**
  * The app's navigation rail — one menu.
  *
- * Which campaign the menu is narrowed to is chosen above the page
- * (`CampaignSwitcher`), not by drilling into a second level here: inside a
- * campaign the rows are its sections, outside it the workspace's places, and
- * the switch keeps you on the same kind of place (`lib/campaignScope`). The
- * scope is read off the URL (`lib/navLevel`) and held nowhere.
+ * Which campaign the menu is filtered to is chosen above the page
+ * (`CampaignSwitcher`). The rows never change with it — only where they lead
+ * (`NavPlaces`, `lib/campaignScope`).
  *
  * The bands, top to bottom: the workspace (`WorkspaceCell`), the menu with
- * the utilities at its foot (`NavUtilityStrip`), and who you are
+ * its utilities at the foot, and who you are
  * (`NavAccount`). The top and bottom bands are 56px, the bar's height.
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, isMobile, toggleSidebar } = useSidebar()
   const { t } = useTranslation()
-  const { pathname } = useLocation()
   const isCollapsed = isMobile ? false : state === 'collapsed'
-
-  const { level, campaignId } = navLevelOf(pathname)
 
   return (
     <>
@@ -72,20 +62,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           )}
         </SidebarHeader>
 
-        {/* One menu. Its rows follow the campaign scope chosen above the
-            page (`CampaignSwitcher`) — a campaign's sections, or the
-            workspace's places — and nothing slides: the scope is a filter
-            over the same list, not a level you drill into. */}
+        {/* One menu, the same rows at every scope: the campaign chosen
+            above the page (`CampaignSwitcher`) filters where they lead and
+            never which there are (`lib/campaignScope`). */}
         <SidebarContent className="gap-0">
-          {level === 1 && campaignId ? (
-            <CampaignLevel campaignId={campaignId} />
-          ) : (
-            <WorkspaceLevel />
-          )}
-          <div className="flex flex-col gap-0.5 px-3 pb-3">
-            <LiveStatus isCollapsed={isCollapsed} />
-            <NavUtilityStrip level={level} campaignId={campaignId} />
-          </div>
+          <NavPlaces isCollapsed={isCollapsed} />
         </SidebarContent>
 
         {/* You, mirroring the workspace at the top: the same row, the same

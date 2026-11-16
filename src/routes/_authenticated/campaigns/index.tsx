@@ -13,6 +13,7 @@ import { CampaignCard } from '@/components/campaigns/CampaignCard.tsx'
 import { CreateCampaignDialog } from '@/components/campaigns/CreateCampaignDialog.tsx'
 import { useCampaigns } from '@/hooks/useCampaigns.ts'
 import { awaiting } from '@/lib/fetched'
+import { isPickPlace, type PickPlace } from '@/lib/campaignScope'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
 
@@ -23,20 +24,28 @@ import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
  * the campaign that just left this list can be seen arriving in the pile below
  * it instead of appearing to have been deleted. Still in the address rather
  * than in state because it is a place you can send someone to.
+ *
+ * `?pick=<place>` is the same list asking for a campaign: a row with no
+ * all-campaigns page (Posts, Strategy, the Calendar while the workspace's is
+ * off) opens it when no campaign is chosen, and each card then leads to that
+ * place in its campaign (`lib/campaignScope`). The archive is left out — an
+ * archived campaign is not one you can filter to.
  */
-type CampaignsSearch = { archived?: boolean }
+type CampaignsSearch = { archived?: boolean; pick?: PickPlace }
 
 export const Route = createFileRoute('/_authenticated/campaigns/')({
   component: Campaigns,
-  validateSearch: (search: Record<string, unknown>): CampaignsSearch =>
-    search.archived === true || search.archived === 'true'
+  validateSearch: (search: Record<string, unknown>): CampaignsSearch => ({
+    ...(search.archived === true || search.archived === 'true'
       ? { archived: true }
-      : {},
+      : {}),
+    ...(isPickPlace(search.pick) ? { pick: search.pick } : {}),
+  }),
 })
 
 function Campaigns() {
   const { t } = useTranslation()
-  const { archived = false } = Route.useSearch()
+  const { archived = false, pick } = Route.useSearch()
   const query = useCampaigns()
   const { data: campaigns, isError } = query
   const [creating, setCreating] = useState(false)
@@ -74,7 +83,7 @@ function Campaigns() {
     <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="h-0 grow overflow-y-auto flex flex-col">
         <PageHeader
-          title={t('campaigns.title')}
+          title={pick ? t(`nav.campaign.${pick}`) : t('campaigns.title')}
           actions={
             <Button onClick={create} size="lg">
               <PlusIcon className="size-4" />
@@ -82,11 +91,16 @@ function Campaigns() {
             </Button>
           }
         />
+        {pick && hasCampaigns && (
+          <p className="px-3 lg:px-6 pt-4 text-sm text-secondary-foreground">
+            {t(`campaigns.pick.${pick}`)}
+          </p>
+        )}
         {hasCampaigns ? (
           <ul className="flex flex-col gap-3 px-3 lg:px-6 pt-4">
             {campaigns!.map((campaign) => (
               <li key={campaign.id}>
-                <CampaignCard campaign={campaign} />
+                <CampaignCard campaign={campaign} place={pick} />
               </li>
             ))}
           </ul>
@@ -109,9 +123,11 @@ function Campaigns() {
             leaves this sitting at the bottom of the screen where it belongs.
             It spans the page like the cards above it, so the drawer lines up
             with the list it continues. */}
-        <div className="px-3 lg:px-6 pt-2 pb-10">
-          <ArchivedCampaigns defaultOpen={archived} />
-        </div>
+        {!pick && (
+          <div className="px-3 lg:px-6 pt-2 pb-10">
+            <ArchivedCampaigns defaultOpen={archived} />
+          </div>
+        )}
       </div>
       <CreateCampaignDialog
         open={creating}

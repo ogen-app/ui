@@ -6723,6 +6723,14 @@ export const es: Translation = {
   },
 
   campaigns: {
+    pick: {
+      posts:
+        'Las publicaciones pertenecen a una campaña. Elige una para ver sus publicaciones.',
+      calendar:
+        'Cada campaña tiene su propio calendario. Elige una para abrirlo.',
+      strategy:
+        'La estrategia se define por campaña. Elige una para abrir su estrategia.',
+    },
     bulk: {
       selected_one: '{{formatted}} seleccionada',
       selected_other: '{{formatted}} seleccionadas',
