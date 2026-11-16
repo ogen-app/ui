@@ -92,7 +92,7 @@ function PostPage() {
   // is. Inside the editor it would drop for as long as the document takes to
   // arrive — the rail would fall back to the assistant and animate its width
   // twice on the way to a post nobody had opened before.
-  usePanelScope('post', campaignId)
+  usePanelScope('post')
   const {
     doc,
     changeDoc,

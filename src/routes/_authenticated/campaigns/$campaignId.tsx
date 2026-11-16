@@ -6,6 +6,7 @@ import { PageLoader } from '@/components/page-primitives/PageLoader.tsx'
 import { PageError } from '@/components/page-primitives/PageError.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { CalendarHeaderActions } from '@/components/campaigns/calendar/CalendarHeaderActions.tsx'
+import { CalendarDrawer } from '@/components/campaigns/calendar/CalendarDrawer'
 import {
   SettingsSaveBar,
   SettingsSaveProvider,
@@ -186,9 +187,12 @@ function CampaignShell() {
     )
   }
 
+  // The calendar's drawer sits beside the whole column, header included, so
+  // it runs from the bar over the page to the bottom and the header's icons
+  // stay with the grid they are about.
   return (
-    <PageContainer variant={'fullFlex'}>
-      <div className={'flex-1 min-h-0 flex flex-col'}>
+    <PageContainer variant={'fullFlex'} className={'flex-row'}>
+      <div className={'flex-1 min-w-0 min-h-0 flex flex-col'}>
         <PageHeader
           title={title}
           actions={
@@ -206,6 +210,7 @@ function CampaignShell() {
           <Outlet />
         </div>
       </div>
+      {section === 'Calendar' && <CalendarDrawer campaignId={campaignId} />}
     </PageContainer>
   )
 }

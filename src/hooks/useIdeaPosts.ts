@@ -124,7 +124,7 @@ export function useDraftIdeas() {
   const qc = useQueryClient()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const openPanel = useSettingsStore((s) => s.openRightPanel)
+  const openPanel = useSettingsStore((s) => s.openCalendarDrawer)
   const remember = useJustWrittenStore((s) => s.add)
   const { names } = useCampaignNames()
   return useMutation({

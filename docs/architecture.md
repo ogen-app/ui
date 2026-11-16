@@ -195,7 +195,11 @@ removed along with the right rail.
 right edge, showing one panel at a time. Every panel stays mounted and
 cross-fades, so the assistant keeps streaming while something else is on top of
 it. Panels that need the route's own data (the post editor's four) are rendered
-by the route and portalled into a layer here; the rest render in place.
+by the route and portalled into a layer here; the assistant renders in place.
+The calendar's settings and unscheduled posts are **not** rail panels: they are
+the calendar's own drawer (`campaigns/calendar/CalendarDrawer.tsx`), rendered
+by the two calendar pages beside the column and under the bar over the page,
+so they never take the assistant's place.
 `page-primitives/RailPanel.tsx` is the standard panel chrome
 (title/close/actions/footer).
 
