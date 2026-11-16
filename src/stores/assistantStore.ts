@@ -622,6 +622,7 @@ export const useAssistantStore = create<AssistantState>()(
                     done: Math.max(live.done, event.next.done),
                     total: Math.max(live.total, event.next.total),
                     next: event.next,
+                    ended: false,
                   },
                 }
               })
@@ -650,6 +651,7 @@ export const useAssistantStore = create<AssistantState>()(
                     total: Math.max(live.total, event.total),
                     // Written: the next one waits for its own event.
                     next: undefined,
+                    ended: false,
                   },
                 }
               })
@@ -688,6 +690,19 @@ export const useAssistantStore = create<AssistantState>()(
                       }
                     : s,
                 ),
+                // The drafts tool finished, done or failed: nothing is being
+                // written any more, so the placeholder goes (CON-510).
+                ...(t.liveDrafts &&
+                (t.steps ?? []).find((s) => s.ref === event.ref)?.tool ===
+                  'draftIdeas'
+                  ? {
+                      liveDrafts: {
+                        ...t.liveDrafts,
+                        next: undefined,
+                        ended: true,
+                      },
+                    }
+                  : {}),
                 // A refusal with a code gets a card of its own (CON-481).
                 ...(event.code
                   ? {

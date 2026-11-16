@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { i18next, loadLocaleResources } from '@/i18n'
 import type { IdeaBody, IdeaListPageBody } from '@/services/api/ideas'
+import type { IdeaListSearch } from '@/lib/ideaFilter'
 import { IdeasQuerySurface } from './IdeasQuerySurface'
 
 const api = vi.hoisted(() => ({
@@ -620,6 +622,46 @@ describe('an idea the address names (CON-481)', () => {
     )
     await waitFor(() => expect(onSearchChange).toHaveBeenCalledWith({}))
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
+  })
+
+  it('closes one left open when a different set of ideas is asked for (CON-510)', async () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    api.queryIdeas.mockImplementation(async (params: Record<string, string>) =>
+      page(
+        params.ids === 'b'
+          ? { ideas: [idea('b', { group_key: 'none' })], total: 1 }
+          : { ideas: [idea('a', { group_key: 'none' })], total: 1 },
+      ),
+    )
+    function Harness() {
+      const [search, setSearch] = useState<IdeaListSearch>({
+        ids: 'a',
+        idea: 'a',
+      })
+      return (
+        <>
+          <button type="button" onClick={() => setSearch({ ids: 'b' })}>
+            next set
+          </button>
+          <IdeasQuerySurface
+            campaignId={null}
+            search={search}
+            onSearchChange={setSearch}
+          />
+        </>
+      )
+    }
+    await renderWithProviders(<Harness />)
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-idea-id="a"]')?.getAttribute('data-open'),
+      ).toBe('true'),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'next set' }))
+    await screen.findByText('Idea b')
+    await waitFor(() =>
+      expect(document.querySelector('[data-idea-id="a"]')).toBeNull(),
+    )
   })
 
   it('lets go of one the page doesn’t hold', async () => {

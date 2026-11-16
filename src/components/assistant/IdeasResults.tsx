@@ -776,7 +776,7 @@ export function LiveDrafts({
       {drafts.posts.map((p) => (
         <DraftCard key={p.postId} draft={p} />
       ))}
-      {(next || drafts.total > writing) && (
+      {!drafts.ended && (next || drafts.total > writing) && (
         <ResultBlock
           status={t('assistant.ideas.drafted.writing')}
           title={

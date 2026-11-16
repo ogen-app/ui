@@ -1625,6 +1625,11 @@ export type AssistantTurn = {
     total: number
     /** The one being written now, once the server has said (CON-510). */
     next?: IdeaDraftStarted
+    /**
+     * The drafts tool finished — done, or failed part way — so nothing is
+     * being written, whatever the count says.
+     */
+    ended?: boolean
   }
   /**
    * Refusals the server named with a code (CON-481) — `idea_read_only` —

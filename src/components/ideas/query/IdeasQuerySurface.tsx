@@ -182,6 +182,14 @@ export function IdeasQuerySurface({
   })
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  // A different set of exact ideas (`ids`, CON-510) is a different list: an
+  // idea left open from the last one would be kept on screen below, so it
+  // closes. A verdict within the same set keeps it, as before.
+  const [idsShown, setIdsShown] = useState(search.ids)
+  if (idsShown !== search.ids) {
+    setIdsShown(search.ids)
+    if (expandedId !== null && expandedId !== search.idea) setExpandedId(null)
+  }
   /**
    * The rows on screen: the server's, plus the open idea if an answer just
    * moved it out of this pile. It leaves when it is closed, never from under
