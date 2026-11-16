@@ -9000,7 +9000,7 @@ export const en = {
     },
     sources: {
       title: 'What can Ogen read about {{name}}?',
-      lead: 'Ogen learns how they sound from what already exists. Add whatever you have; none of it is required.',
+      lead: 'Ogen learns how they sound from what already exists. Add whatever you have; each one is read as soon as it is added, and none of it is required.',
       website: {
         title: 'Website',
         body: 'Ogen reads up to 30 of its pages.',
@@ -9027,13 +9027,24 @@ export const en = {
       pages_one: '{{formatted}} page',
       pages_other: '{{formatted}} pages',
       uploading: 'Uploading',
-      ready: 'Ready to read',
+      reading: 'Reading, about a minute',
+      done: 'Read',
+      stopped: 'Stopped',
+      retry: 'Read again',
       answered_one: '{{formatted}} answer',
       answered_other: '{{formatted}} answers',
-      read: 'Read them',
+      continue: 'Continue',
+      readingHint:
+        'Each takes about a minute. You can wait here, or add more while you do.',
       readHint:
-        'Reading takes two or three minutes. Nothing goes into the brand until you review it.',
+        'Next you see what Ogen took from them. Nothing goes into the brand until you review it.',
       later: 'Do this later',
+      stop: {
+        title: 'Ogen is still reading',
+        body: 'If you go on now, Ogen stops reading and the sheet on the right is not filled in from what you added. You can read it again from Foundation later.',
+        keep: 'Keep reading',
+        go: 'Go on anyway',
+      },
     },
     brand: {
       readingTitle: 'Reading what you gave',

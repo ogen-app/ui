@@ -2,6 +2,7 @@ import { useId, useState, type ReactNode } from 'react'
 import {
   ArrowRightIcon,
   ChatCircleTextIcon,
+  CheckIcon,
   FileDocIcon,
   FilePdfIcon,
   FileTextIcon,
@@ -15,9 +16,11 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ModalContainer } from '@/components/ui/modal'
 import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { counted } from '@/lib/intl'
+import { cn } from '@/lib/styles'
 import {
   DISABLED_ACCENT,
   HINT_TEXT,
@@ -27,11 +30,18 @@ import {
 } from '../OnboardingFrame'
 
 /**
- * One thing Ogen will read. A document is uploaded the moment it is chosen
- * (`purpose=brand_source`), so by the time the read starts it is an asset id;
- * the website and the answers are sent with the read itself.
+ * Where one thing Ogen was given stands. A document is `uploading` first;
+ * everything is `reading` from the moment it is added, for about a minute,
+ * and `stopped` only if the person went on before it finished.
  */
-export type OnboardingSource =
+export type SourceStatus = 'uploading' | 'reading' | 'read' | 'stopped'
+
+/**
+ * One thing Ogen reads. A document is uploaded the moment it is chosen
+ * (`purpose=brand_source`) and read once it lands; the website is read the
+ * moment its address is added.
+ */
+export type SourceInput =
   | { kind: 'website'; id: string; url: string }
   | {
       kind: 'document'
@@ -40,8 +50,15 @@ export type OnboardingSource =
       /** The asset type — `PDF`, `DOC`, `MD`. */
       type: string
       pages?: number
-      uploading?: boolean
     }
+
+export type OnboardingSource = SourceInput & { status: SourceStatus }
+
+/** The id `onRetry` takes for the answers, which are not a source. */
+export const ANSWERS_ID = 'answers'
+
+const busy = (status: SourceStatus | null) =>
+  status === 'uploading' || status === 'reading'
 
 export type StarterQuestion = { id: string; text: string }
 
@@ -64,21 +81,28 @@ const KIND_ICON = {
  * the screen is about what has been given rather than what hasn't. A website
  * and the answers come once each; documents can keep coming.
  *
- * Nothing is read until the person says so: a read counts against the month's
- * allowance, so it is one read over everything, started on the way out. With
- * nothing added the way on is "Do this later", never a disabled button.
+ * Each one is read the moment it is added, because a read takes about a
+ * minute and nobody should sit through that after deciding to go on. While it
+ * runs its card keeps an indeterminate line moving along its foot — a minute
+ * of a still screen reads as stuck. The person may go on before it finishes,
+ * but is asked first: going on stops the read, and the sheet on the right is
+ * not filled in from it. With nothing added the way on is "Do this later",
+ * never a disabled button.
  */
 export function SourcesStep({
   name,
   sources,
   questions,
   answers,
+  answersStatus,
   onAdd,
   onRemove,
+  onRetry,
   onChooseFiles,
   onAnswers,
   onBack,
   onRead,
+  onStop,
   onLater,
 }: {
   /** Who is being read — the client's name, or how the sheet names them. */
@@ -86,24 +110,43 @@ export function SourcesStep({
   sources: OnboardingSource[]
   questions: StarterQuestion[]
   answers: Record<string, string>
-  onAdd: (source: OnboardingSource) => void
+  /** How the answers' read stands; `null` while there are none. */
+  answersStatus: SourceStatus | null
+  /** Starts reading what was added; the caller sets its status. */
+  onAdd: (source: SourceInput) => void
   onRemove: (id: string) => void
+  /** Reads a stopped source again — `ANSWERS_ID` for the answers. */
+  onRetry: (id: string) => void
   onChooseFiles: () => void
   /** Replaces the answers; `{}` takes them back. */
   onAnswers: (answers: Record<string, string>) => void
   onBack: () => void
+  /** On to the review, once nothing is still being read. */
   onRead: () => void
+  /** On while something is still being read — stops it. Asked first. */
+  onStop: () => void
   /** On without a read; the brand is read later from Foundation. */
   onLater: () => void
 }) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState<Kind | null>(null)
+  const [asking, setAsking] = useState(false)
 
   const answered = Object.values(answers).filter((a) => a.trim()).length
   const hasWebsite = sources.some((s) => s.kind === 'website')
   const hasDocs = sources.some((s) => s.kind === 'document')
   const given = sources.length > 0 || answered > 0
-  const uploading = sources.some((s) => s.kind === 'document' && s.uploading)
+  const statuses = [
+    ...sources.map((s) => s.status),
+    ...(answered > 0 ? [answersStatus] : []),
+  ]
+  const reading = statuses.some(busy)
+  const anyRead = statuses.includes('read')
+  const onContinue = reading
+    ? () => setAsking(true)
+    : anyRead
+      ? onRead
+      : onLater
 
   const open: Kind[] = (
     [
@@ -121,16 +164,19 @@ export function SourcesStep({
       footer={
         <StepFooter
           onBack={onBack}
-          note={given ? t('onboarding.sources.readHint') : undefined}
+          note={
+            !given
+              ? undefined
+              : reading
+                ? t('onboarding.sources.readingHint')
+                : anyRead
+                  ? t('onboarding.sources.readHint')
+                  : undefined
+          }
           next={
             given ? (
-              <Button
-                variant="accent"
-                className={DISABLED_ACCENT}
-                disabled={uploading}
-                onClick={onRead}
-              >
-                {t('onboarding.sources.read')}
+              <Button variant="accent" onClick={onContinue}>
+                {t('onboarding.sources.continue')}
               </Button>
             ) : (
               <Button variant="ghost" onClick={onLater}>
@@ -143,20 +189,23 @@ export function SourcesStep({
     >
       <div className="flex flex-col gap-3">
         {given && (
-          <ul className="flex flex-col border-t border-quaternary">
+          <ul className="flex flex-col gap-2">
             {sources.map((source) => (
               <SourceRow
                 key={source.id}
                 source={source}
                 onRemove={() => onRemove(source.id)}
+                onRetry={() => onRetry(source.id)}
               />
             ))}
-            {answered > 0 && (
+            {answered > 0 && answersStatus && (
               <AddedRow
                 icon={ChatCircleTextIcon}
                 title={t('onboarding.sources.questions.title')}
-                status={t('onboarding.sources.answered', counted(answered))}
+                status={answersStatus}
+                detail={t('onboarding.sources.answered', counted(answered))}
                 onRemove={() => onAnswers({})}
+                onRetry={() => onRetry(ANSWERS_ID)}
               />
             )}
           </ul>
@@ -235,6 +284,31 @@ export function SourcesStep({
           )
         )}
       </div>
+
+      <ModalContainer
+        isOpen={asking}
+        onClose={() => setAsking(false)}
+        title={t('onboarding.sources.stop.title')}
+        size="small"
+      >
+        <div className="flex flex-col gap-4">
+          <p className={HINT_TEXT}>{t('onboarding.sources.stop.body')}</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setAsking(false)}>
+              {t('onboarding.sources.stop.keep')}
+            </Button>
+            <Button
+              variant="accent"
+              onClick={() => {
+                setAsking(false)
+                onStop()
+              }}
+            >
+              {t('onboarding.sources.stop.go')}
+            </Button>
+          </div>
+        </div>
+      </ModalContainer>
     </StepCard>
   )
 }
@@ -411,70 +485,96 @@ const DOC_ICON: Record<string, typeof FileTextIcon> = {
 function SourceRow({
   source,
   onRemove,
+  onRetry,
 }: {
   source: OnboardingSource
   onRemove: () => void
+  onRetry: () => void
 }) {
   const { t } = useTranslation()
-  if (source.kind === 'website')
-    return (
-      <AddedRow
-        icon={GlobeIcon}
-        title={source.url}
-        status={t('onboarding.sources.ready')}
-        onRemove={onRemove}
-      />
-    )
+  const doc = source.kind === 'document'
   return (
     <AddedRow
-      icon={DOC_ICON[source.type] ?? FileTextIcon}
-      title={source.name}
-      status={
-        source.uploading ? (
-          <span className="flex items-center gap-2">
-            <Spinner tone="onSurface" className="w-4" />
-            {t('onboarding.sources.uploading')}
-          </span>
-        ) : source.pages ? (
-          t('onboarding.sources.pages', counted(source.pages))
-        ) : (
-          t('onboarding.sources.ready')
-        )
+      icon={doc ? (DOC_ICON[source.type] ?? FileTextIcon) : GlobeIcon}
+      title={doc ? source.name : source.url}
+      status={source.status}
+      detail={
+        doc && source.pages
+          ? t('onboarding.sources.pages', counted(source.pages))
+          : undefined
       }
       onRemove={onRemove}
+      onRetry={onRetry}
     />
   )
 }
 
+/**
+ * Something added, as a card that stays put while it is read. A read takes
+ * about a minute, so the card says so and keeps a line moving along its foot:
+ * the movement is the only proof, a minute in, that nothing has stuck.
+ */
 function AddedRow({
   icon: Icon,
   title,
   status,
+  detail,
   onRemove,
+  onRetry,
 }: {
   icon: typeof GlobeIcon
   title: string
-  status: ReactNode
+  status: SourceStatus
+  /** What was read — pages, answers — shown once it has been. */
+  detail?: string
   onRemove: () => void
+  onRetry: () => void
 }) {
   const { t } = useTranslation()
   return (
-    <li className="flex items-center gap-3 border-b border-quaternary py-3">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary">
-        <Icon aria-hidden className="size-4" />
-      </span>
-      <span className="min-w-0 flex-1 truncate text-sm leading-5 font-medium">
-        {title}
-      </span>
-      <span className={HINT_TEXT}>{status}</span>
-      <Button
-        variant="ghost"
-        size="smIcon"
-        aria-label={t('onboarding.sources.remove', { name: title })}
-        onClick={onRemove}
-      >
-        <XIcon />
-      </Button>
+    <li className="animate-in fade-in slide-in-from-bottom-1 relative overflow-hidden rounded-md border border-quaternary duration-200">
+      <div className="flex items-center gap-3 py-2.5 pr-2 pl-3">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary">
+          <Icon aria-hidden className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm leading-5 font-medium">
+          {title}
+        </span>
+        <span
+          className={cn(HINT_TEXT, 'flex shrink-0 items-center gap-1.5')}
+          aria-live="polite"
+        >
+          {status === 'read' && (
+            <CheckIcon
+              aria-hidden
+              weight="bold"
+              className="size-3.5 text-accent"
+            />
+          )}
+          {status === 'read'
+            ? (detail ?? t('onboarding.sources.done'))
+            : t(`onboarding.sources.${status}`)}
+        </span>
+        {status === 'stopped' && (
+          <Button variant="ghost" size="sm" onClick={onRetry}>
+            {t('onboarding.sources.retry')}
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="smIcon"
+          aria-label={t('onboarding.sources.remove', { name: title })}
+          onClick={onRemove}
+        >
+          <XIcon />
+        </Button>
+      </div>
+      {busy(status) && (
+        <Spinner
+          tone="onSurface"
+          className="absolute inset-x-0 bottom-0 w-full bg-accent/15 before:animate-[spinner-line_1.8s_ease-in-out_infinite] before:bg-accent"
+        />
+      )}
     </li>
   )
 }
