@@ -868,9 +868,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   already holds only what the page counted, and a marker is history), and one
   the assistant set (`counted`) only by the platforms the page counts, its
   period as it lands (`offeredPeriod`). A set_window row names only what
-  `changed`, offers BACK, and shows before → after unless a navigate in the
-  same turn led there (CON-497) — a navigate to the same route and its window
-  are one row; the scope bar tints what the assistant
+  `changed`, offers BACK, and shows before → after — after a navigate too,
+  where `before` is the window the dashboard opened with (CON-497/507); a
+  navigate to the same route and its window are one row, worded and drawn by
+  what moved from that opening window; the scope bar tints what the assistant
   changed (`stores/analyticsHighlightStore`) until the user's next touch. A
   set_window whose dates are only the period on screen resolved keeps the
   period a preset, and a preset the picker doesn't offer lands as its dates.
