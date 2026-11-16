@@ -7,6 +7,7 @@ import { parseAssetsState } from './content'
 import { analyticsResults, trailSteps } from './assistantAnalytics'
 import { workspaceResults } from './assistantWorkspace'
 import { draftedPost, ideasResults } from './assistantIdeas'
+import { seriesRhythm } from './series'
 import { readSSEStream } from '@/lib/sse'
 import { humanizeStep } from '@/lib/assistantTools'
 import type { ViewContext, ViewEntityKind, ViewScreen } from '@/lib/viewContext'
@@ -903,11 +904,9 @@ function brandRead(raw: Record<string, unknown>): BrandRead {
   }
 }
 
+/** The series' own parser (CON-496), with `every` and `weekday`. */
 function rhythm(value: unknown): SeriesRhythm | undefined {
-  const r = record(value)
-  if (!r || (r.per !== 'week' && r.per !== 'month') || num(r.times) < 1)
-    return undefined
-  return { times: num(r.times), per: r.per }
+  return seriesRhythm(value) ?? undefined
 }
 
 function seriesBrief(raw: Record<string, unknown>): SeriesBrief | null {

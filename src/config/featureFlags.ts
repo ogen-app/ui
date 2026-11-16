@@ -252,47 +252,6 @@ const FEATURE_FLAGS = {
   'help-center': false,
 
   /**
-   * Series — the recurring things a workspace makes, and what each campaign
-   * runs of them (CON-264).
-   *
-   * A series is a **standing instruction**: a name, and how one is built. "This
-   * day in finance history", "Weekly news digest". It is re-read every time it
-   * produces a post and never finished, which is what makes it Foundation
-   * material rather than an idea — an idea is inventory and gets spent.
-   *
-   * The word people arrive with is *content pillar*, and it means at least four
-   * incompatible things (broad themes, mix ratios, recurring segments, message
-   * pillars). This models the third, because it is the only one a generator can
-   * act on and the only one analytics can group by. A theme collapses into it —
-   * "People who made an impact" is a series with a person-shaped slot — so one
-   * object covers both readings without a second table.
-   *
-   * **The definition is the workspace's, the run is the campaign's.**
-   * `/foundation/series` is the library; a campaign picks from it and gives each
-   * a rhythm on its **Strategy** page (`CampaignSeriesCard`), which is where all
-   * the work happens. A campaign may also define one locally and promote it once
-   * it proves it recurs, so the library fills from use instead of being seeded
-   * with four generic nouns at onboarding.
-   *
-   * That card was a band on the campaign's Foundation page until CON-305, when
-   * the documents became their own module and took the page with them. The mix
-   * is still derived and never typed: rhythms are set per series, the share is
-   * computed against `postGoalTotal`, and the sentence stating it is printed
-   * once, under the post goal. There is deliberately no percentage picker — a
-   * mix you type is a plan you break in week two, and a mix you derive is a
-   * fact.
-   *
-   * **Waiting on** a workspace-scoped `brand_series` table, `series_ids` plus a
-   * per-series rhythm on the campaign — **attached and detached, never
-   * restated**, for the reason CON-233 gives about `asset_ids` — a nullable
-   * `series_id` on the post, and analytics grouped by it, which is the "for
-   * insights" half of the ticket. Everything above the stub in
-   * `services/api/series.stub.ts` is written against the signatures those will
-   * have.
-   */
-  series: false,
-
-  /**
    * Content formats — how-to, explainer, listicle, digest (CON-264).
    *
    * **A vocabulary, not a library.** A fixed table in `lib/contentFormats.ts`

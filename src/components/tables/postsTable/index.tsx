@@ -21,6 +21,7 @@ import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import { OutsideCampaignMark } from '@/components/campaigns/OutsideCampaignMark'
 import { outsideCampaign } from '@/lib/campaignTarget'
 import { useCampaign } from '@/hooks/useCampaigns'
+import { SeriesMark } from '@/components/series/SeriesMark'
 
 type PostRow = Post & Record<string, unknown>
 
@@ -266,6 +267,20 @@ function PostsTableComponent({
           ),
       },
       {
+        id: 'series',
+        // By id, which keeps a series' posts together; none sorts last.
+        accessorFn: (row) => row.series_id ?? undefined,
+        sortUndefined: 'last',
+        header: t('postsTable.columnSeries'),
+        size: 160,
+        minSize: 110,
+        cell: (_value, row) => (
+          <div className="flex h-[34px] items-center border-b-2 border-background px-3 text-sm text-secondary-foreground">
+            <SeriesMark seriesId={row.series_id} />
+          </div>
+        ),
+      },
+      {
         id: 'scheduled_at',
         // `null` becomes `undefined` so `sortUndefined` can take it: an
         // unscheduled post belongs at the bottom in both directions, not at
@@ -339,6 +354,8 @@ function PostsTableComponent({
     ],
   )
 
+  const withSeries = data.some((post) => post.series_id)
+
   const activeColumns = useMemo(
     () => [
       ...(selectable ? ['select'] : []),
@@ -347,11 +364,14 @@ function PostsTableComponent({
       'status',
       'platform',
       ...(formats ? ['format'] : []),
+      // Only where some post was made for a series (CON-496): a column empty
+      // on every row is noise on a campaign that runs none.
+      ...(withSeries ? ['series'] : []),
       'scheduled_at',
       'relative_time',
       'actions',
     ],
-    [selectable, formats],
+    [selectable, formats, withSeries],
   )
 
   return (

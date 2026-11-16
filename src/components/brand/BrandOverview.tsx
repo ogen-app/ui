@@ -22,7 +22,7 @@ import { cn } from '@/lib'
 import type { Fetched } from '@/lib/fetched'
 import { isFeatureEnabled } from '@/config/featureFlags'
 import { seriesMetaLine } from '@/components/series/format'
-import type { ContentSeries } from '@/components/series/types'
+import type { ContentSeries } from '@/types/series'
 import {
   brandSectionCopy,
   SHOWN_BRAND_SECTIONS,

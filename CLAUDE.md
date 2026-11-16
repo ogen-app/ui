@@ -758,8 +758,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   against each finding's own campaign, since one check can span several. A
   distill card reads its run live (`useDistillRun`), because the turn's copy
   is a snapshot; a failure with no sentence is worded as the read's own screen
-  words its code. Series cards link to the campaign that runs them, never to
-  the series screen behind its flag. The brand tools touch `voice`, `audience`,
+  words its code. Series cards link to the campaign that runs them, where the
+  rhythm is set. The brand tools touch `voice`, `audience`,
   `guardrails`, `series` and `brand_distill`, which `refreshTouched` maps onto
   the brand, series and readings keys — a kind it doesn't map refreshes
   nothing. A voice's rules are worded by the library's own `rulesLine`.
@@ -1615,9 +1615,9 @@ Content Bank, and click-to-create on a calendar day. Neither has a control to
 hang an explanation on, and the server's own refusal already arrives as a
 sentence (CON-295).
 
-**Series and content formats are two flags, and the split is the design**
-(CON-264; both off — `content-formats` is backed since CON-329 and waits only
-on its live re-test). The word people arrive with
+**Series and content formats are two features, and the split is the design**
+(CON-264). Series are live and unflagged since CON-508; `content-formats` is
+still a flag, off, backed since CON-329 and waiting only on its live re-test. The word people arrive with
 is *content pillar*, which means at least four different things; what is modelled
 is the **recurring named segment with a recipe** — the only reading a generator
 can act on and the only one analytics can group by. A broad theme collapses into
@@ -1652,12 +1652,19 @@ and nothing warns about a post without one. A post's format is
 restated by `postToPayload` like the first comment, a 400 for `""` or an unknown
 slug, and inside CON-251's lock — so the picker is disabled on a submitted post.
 
-**Series are waiting on** a `brand_series` table; `series_ids` plus a per-series rhythm on
-the campaign, **attached and detached rather than restated** for the reason
-CON-233 gives about `asset_ids`; a nullable `series_id` on the post; and
-analytics grouped by series and by format. Until then series live in
-`services/api/series.ts` (a stub in the shape the endpoints will have), **per
-browser**, which is what the flag is holding. One move stays
+**Series are backed by the API** (CON-496/508): `/api/series` for the library
+and each campaign's own, and a campaign's runs **attached, detached and
+re-rhythmed one at a time, never restated**, for the reason CON-233 gives about
+`asset_ids`. `services/api/series.ts` maps the wire onto `types/series`. A
+rhythm is `{times, per, every?, weekday?}` — a day only at once a week — and
+**what a run claims is the server's `seriesplan.Days`, ported** into
+`lib/seriesPlan` (`seriesDays`): weeks are 7-day spans from the campaign's
+start, months calendar months, `every` counts from the first period, a
+weekday's part-week without that day gets nothing, and an undated campaign
+claims nothing. No endpoint returns a claim, so when the two disagree the port
+is the bug. Ideas and posts carry `series_id` (`SeriesMark`), which the post
+PUT reads presence-aware and `postToPayload` leaves out; idea slots wait on it
+(CON-512). Analytics by series is still to come. One move stays
 deliberately open (CON-305 decision 1): series could be its own module at both
 levels, `/series` and `/campaigns/:id/series`, which is what documents just did
 and what the nav rule would prefer over a level-1 card with no level-0 row.

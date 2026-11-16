@@ -4,7 +4,6 @@ import { ArrowUpRightIcon, RepeatIcon, XIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { TextSelect } from '@/components/ui/text-select'
-import { useFeatureFlag } from '@/config/featureFlags'
 import {
   useAttachSeries,
   useCampaignSeries,
@@ -13,6 +12,7 @@ import {
   useSeriesLibrary,
   useSetSeriesRhythm,
 } from '@/hooks/useSeries'
+import { counted } from '@/lib/intl'
 import { rhythmClaim } from '@/lib/seriesPlan'
 import type { Campaign } from '@/types/campaigns'
 import { supplyLine } from './format'
@@ -58,10 +58,10 @@ import { RhythmPicker } from './RhythmPicker'
 export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const enabled = useFeatureFlag('series')
 
   const { data: library } = useSeriesLibrary()
   const { data: campaignSeries } = useCampaignSeries(campaign.id)
+  const dated = Boolean(campaign.start_date && campaign.end_date)
   const attach = useAttachSeries(campaign.id)
   const detach = useDetachSeries(campaign.id)
   const setRhythm = useSetSeriesRhythm(campaign.id)
@@ -71,7 +71,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
   // rule, and the same one line of code, as `CampaignBrandCard` above it: a
   // card that appears a beat later pushes the rest of the page down under
   // somebody who is already reading it.
-  if (!enabled || !library || !campaignSeries) return null
+  if (!library || !campaignSeries) return null
 
   const runs = campaignSeries.runs
   const byId = new Map(library.map((entry) => [entry.id, entry]))
@@ -142,11 +142,15 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
 
                 {/* The arithmetic, per row, so the share printed under the
                     post goal is never just asserted. Occasional claims nothing
-                    and says so rather than showing a zero. */}
+                    and says so rather than showing a zero; without dates
+                    nothing is placed yet, and the line under the goal says
+                    why, so the row states no count (CON-496). */}
                 <span className="w-28 shrink-0 text-right text-sm text-secondary-foreground">
-                  {run.rhythm
-                    ? t('series.campaign.claim', { count: claim })
-                    : t('series.campaign.claimsNone')}
+                  {!run.rhythm
+                    ? t('series.campaign.claimsNone')
+                    : dated
+                      ? t('series.campaign.claim', counted(claim))
+                      : null}
                 </span>
 
                 {local ? (

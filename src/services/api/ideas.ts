@@ -138,6 +138,8 @@ export type IdeaBody = {
   angle?: string | null
   rationale?: string | null
   sources?: string[] | null
+  /** The series a content plan wrote it for (CON-496). */
+  series_id?: string | null
   /** The group a grouped list lists it under (CON-389). */
   group_key?: string
   /**
@@ -214,6 +216,7 @@ export function ideaFromWire(body: IdeaBody): Idea {
     angle: body.angle ?? undefined,
     rationale: body.rationale ?? undefined,
     sources: body.sources ?? undefined,
+    seriesId: body.series_id ?? null,
     groupKey: body.group_key,
     fitScore: body.fit_score ?? undefined,
     fitBreakdown: body.fit_breakdown ?? undefined,

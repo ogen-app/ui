@@ -3,8 +3,7 @@ import type {
   CampaignSeries,
   ContentSeries,
   SeriesRhythm,
-} from '@/components/series/types'
-import { useFeatureFlag } from '@/config/featureFlags'
+} from '@/types/series'
 import {
   attachSeries,
   deleteSeries,
@@ -24,14 +23,6 @@ import {
  * an attach replace the campaign's row set without re-fetching a library that
  * has not changed — and it is the same separation the post editor and the post
  * list keep (`["post", id]` vs `["campaigns", id, "posts"]`).
- *
- * **The flag is the default `enabled`, not a call-site obligation.** A
- * campaign's Strategy page renders whether or not this feature exists, so an
- * unconditional query here would open a request on an ordinary screen for a
- * card that cannot be shown — the cost `useHelpTopicMap` describes, which
- * fixtures hide until the day the real read is swapped in. Reading the flag
- * inside and letting a caller override it gets that safety without asking eight
- * call sites to remember.
  */
 
 export const SERIES_KEY = ['series'] as const
@@ -40,11 +31,10 @@ export const campaignSeriesKey = (campaignId: string) =>
 
 /** Every series the workspace can see, both scopes. Callers filter. */
 export function useSeriesLibrary({ enabled }: { enabled?: boolean } = {}) {
-  const flagged = useFeatureFlag('series')
   return useQuery<ContentSeries[]>({
     queryKey: SERIES_KEY,
     queryFn: listSeries,
-    enabled: enabled ?? flagged,
+    enabled: enabled ?? true,
   })
 }
 
@@ -53,11 +43,10 @@ export function useCampaignSeries(
   campaignId: string,
   { enabled }: { enabled?: boolean } = {},
 ) {
-  const flagged = useFeatureFlag('series')
   return useQuery<CampaignSeries>({
     queryKey: campaignSeriesKey(campaignId),
     queryFn: () => getCampaignSeries(campaignId),
-    enabled: enabled ?? flagged,
+    enabled: (enabled ?? true) && Boolean(campaignId),
   })
 }
 
