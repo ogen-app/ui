@@ -456,6 +456,62 @@ describe('compile and draft', () => {
   })
 })
 
+describe('FOUND names what its search was about (CON-509)', () => {
+  const found = (named: NonNullable<Results['found']>['named']) =>
+    show({
+      found: {
+        total: 6,
+        ideas: [{ id: 'i1', title: 'The pool', campaignId: 'c1' }],
+        named,
+      },
+    })
+
+  it('words a kept document as the Ideas list does', async () => {
+    await found({ sourceAssets: [{ id: 'a1', title: 'Brochure' }] })
+    expect(screen.getByText('6 ideas from Brochure')).toBeTruthy()
+  })
+
+  it('never words a left-out document as kept', async () => {
+    await found({
+      sourceAssets: [{ id: 'a1', title: 'Brochure', excluded: true }],
+    })
+    expect(screen.getByText('6 ideas not from Brochure')).toBeTruthy()
+    expect(screen.queryByText('6 ideas from Brochure')).toBeNull()
+  })
+
+  it('names the document, the campaign and the author, in the list’s order', async () => {
+    await found({
+      authors: [{ id: 'u1', title: 'Ana' }],
+      campaigns: [{ id: 'c1', title: 'Spring reopening' }],
+      sourceAssets: [
+        { id: 'a1', title: 'Brochure' },
+        { id: 'a2', title: 'Menu' },
+      ],
+    })
+    expect(
+      screen.getByText(
+        '6 ideas from Brochure or Menu, in Spring reopening, written by Ana',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('keeps the count alone when the search named none of them', async () => {
+    await found(undefined)
+    expect(screen.getByText('6 ideas')).toBeTruthy()
+  })
+
+  it('words it in Spanish', async () => {
+    await loadLocaleResources('es')
+    await i18next.changeLanguage('es')
+    try {
+      await found({ sourceAssets: [{ id: 'a1', title: 'Folleto' }] })
+      expect(screen.getByText('6 ideas de Folleto')).toBeTruthy()
+    } finally {
+      await i18next.changeLanguage('en')
+    }
+  })
+})
+
 describe('reads', () => {
   it('heads why it fits with the score and the campaign, the breakdown first', async () => {
     await show({
@@ -483,6 +539,22 @@ describe('reads', () => {
     expect(screen.getByText('OPEN').getAttribute('href')).toBe(
       '/campaigns/c1/assets/a1?lens=c1',
     )
+  })
+
+  it('leads its source row with the asset’s mark, and none untyped (CON-509)', async () => {
+    const read = (type?: string) =>
+      show({
+        idea: {
+          idea: { id: 'i1', title: 'The pool cut into the rock' },
+          sourceAsset: { id: 'a1', title: 'Villa Aurora brochure', type },
+          posts: [],
+        },
+      })
+    const { unmount } = await read('PDF')
+    expect(screen.getByRole('img', { name: 'PDF' })).toBeTruthy()
+    unmount()
+    await read(undefined)
+    expect(screen.queryByRole('img')).toBeNull()
   })
 
   it('names the page an idea came from, and opens the asset there (CON-487)', async () => {

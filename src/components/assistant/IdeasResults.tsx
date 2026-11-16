@@ -12,6 +12,7 @@ import { passagePlace } from '@/lib/assetPlace'
 import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import { cn } from '@/lib/styles'
+import { AssetTypeBadge } from './AssetTypeBadge'
 import { IDEA_IDS_MAX } from '@/lib/ideaFilter'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -20,6 +21,7 @@ import type { PostStatus } from '@/types/posts'
 import type {
   CompiledPost,
   DateFrom,
+  FoundNamed,
   AssistantTurn,
   DraftedIdeaPost,
   IdeaBrief,
@@ -377,7 +379,12 @@ function FoundCard({
       title={
         found.total === 0
           ? t('assistant.ideas.found.none')
-          : t('assistant.ideas.found.title', counted(found.total))
+          : found.named
+            ? t('assistant.ideas.found.titleNamed', {
+                ...counted(found.total),
+                clauses: foundClauses(t, found.named),
+              })
+            : t('assistant.ideas.found.title', counted(found.total))
       }
       meta={
         found.pileTotal !== undefined && pile
@@ -427,6 +434,35 @@ function FoundCard({
       )}
     </ResultBlock>
   )
+}
+
+/**
+ * What a found filter named, in the Ideas list's own clauses (CON-509): "from
+ * Brochure", "not from Brochure", "in Spring reopening", "written by Ana" —
+ * the sentences `FilterSentence` prints for the same filter, in its order, a
+ * left-out value after the kept ones and never worded as kept. Several values
+ * of one field read as either, as the server matches any of them.
+ */
+function foundClauses(t: TFunction, named: FoundNamed): string {
+  const fields = [
+    ['source_asset', 'source_asset_not', named.sourceAssets],
+    ['campaign_id', 'campaign_id_not', named.campaigns],
+    ['author', 'author_not', named.authors],
+  ] as const
+  const clauses: string[] = []
+  for (const [kept, left, values] of fields) {
+    for (const excluded of [false, true]) {
+      const titles = (values ?? [])
+        .filter((v) => !!v.excluded === excluded)
+        .map((v) => v.title)
+      if (titles.length === 0) continue
+      const words = t(`ideas.sentence.clause.${excluded ? left : kept}`, {
+        values: formatList(titles, 'disjunction'),
+      })
+      clauses.push(words.replace(/<\/?\w+>/g, ''))
+    }
+  }
+  return formatList(clauses, 'unit')
 }
 
 /**
@@ -1035,6 +1071,16 @@ function IdeaCard({
       )}
       {asset && (
         <ResultRow className="flex items-baseline gap-3">
+          {/* What kind of document it is, as the offer's source rows show it
+              (CON-509) — only for a typed asset: an untyped one would draw
+              the note's mark and claim to be a note. */}
+          {asset.type && (
+            <AssetTypeBadge
+              type={asset.type}
+              size={18}
+              className="translate-y-1 self-start"
+            />
+          )}
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="text-sm text-foreground">
               {t('assistant.ideas.idea.from')}

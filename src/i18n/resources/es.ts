@@ -3510,6 +3510,8 @@ export const es: Translation = {
         word: 'Encontradas',
         title_one: '{{formatted}} idea',
         title_other: '{{formatted}} ideas',
+        titleNamed_one: '{{formatted}} idea {{clauses}}',
+        titleNamed_other: '{{formatted}} ideas {{clauses}}',
         none: 'Ninguna idea coincide',
         ofPile: 'de {{total}} · {{pile}}',
         show: 'MOSTRAR EN PANTALLA',
