@@ -428,8 +428,8 @@ const STATE_ICON: Record<CampaignStarter['kind'], Icon> = {
  * The campaign's starters (CON-483), worded here — the chip and the message it
  * sends alike — from their kind and figures (CON-511): "Fill April", "Draft 20
  * posts". The message is the user's, so it reads in their language too. A
- * starter sent without its figures falls back to the state's, and to the
- * server's English sentence; one with neither is left out.
+ * starter sent without its figures falls back to the state's, and then to
+ * the server's English chip and sentence; one with none of them is left out.
  */
 function campaignStarterChips(
   t: TFunction,
@@ -438,14 +438,19 @@ function campaignStarterChips(
   if (!read) return []
   const { state } = read
   return read.starters.flatMap((starter) => {
-    const words = starterWords(t, starter, state)
-    if (!words) return []
+    // Without its figures, the server's own words still make a chip; with
+    // neither, there is nothing to offer.
+    const words = starterWords(t, starter, state) ?? {
+      label: starter.label ?? '',
+      says: starter.instruction,
+    }
+    if (!words.label || !words.says) return []
     return [
       {
         key: `state-${starter.kind}`,
         icon: STATE_ICON[starter.kind],
         label: words.label,
-        text: words.says || starter.instruction,
+        text: words.says,
       },
     ]
   })
