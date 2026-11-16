@@ -1,9 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { InboxIcon, PaletteIcon } from '@hugeicons/core-free-icons'
-import type { IconSvgElement } from '@hugeicons/react'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { LiveStatus } from '@/components/layout/LiveStatus'
 import { NavIcon } from '@/components/layout/nav/NavIcon'
+import { placeGlyph } from '@/components/layout/nav/placeGlyph'
 import { TasksSidebarItem } from '@/components/tasks/TasksSidebarItem'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaignScope } from '@/hooks/useCampaignScope'
@@ -54,7 +53,7 @@ export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
       workspaceCalendar,
       soleCampaignId,
     })
-    const icon = iconOf(place)
+    const { icon, tone } = placeGlyph(place)
     const label =
       place === 'foundation'
         ? t('nav.foundation')
@@ -78,7 +77,7 @@ export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
     return (
       <AppSidebarButtonMenu
         key={place}
-        icon={<NavIcon icon={icon} />}
+        icon={<NavIcon icon={icon} tone={tone} />}
         text={label}
         isActive={where.place === place}
         to={link.to}
@@ -104,10 +103,4 @@ export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
       </div>
     </>
   )
-}
-
-function iconOf(place: PlaceId): IconSvgElement {
-  if (place === 'foundation') return PaletteIcon
-  if (place === 'inbox') return InboxIcon
-  return campaignSection(place).icon
 }

@@ -105,11 +105,6 @@ function Campaigns() {
             </Button>
           }
         />
-        {pick && hasCampaigns && (
-          <p className="px-3 lg:px-6 pt-4 text-sm text-secondary-foreground">
-            {t(`campaigns.pick.${pick}`)}
-          </p>
-        )}
         {hasCampaigns ? (
           <ul className="flex flex-col gap-3 px-3 lg:px-6 pt-4">
             {campaigns!.map((campaign) => (

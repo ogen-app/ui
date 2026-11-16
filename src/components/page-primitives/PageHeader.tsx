@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ListIcon } from '@phosphor-icons/react'
+import { useRouterState } from '@tanstack/react-router'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
+import { placeGlyph } from '@/components/layout/nav/placeGlyph'
+import { whereOf } from '@/lib/campaignScope'
 import { useSidebar } from '@/components/ui/sidebar'
 import { ZIndex } from '@/config/zIndex'
 import { cn } from '@/lib'
@@ -32,11 +36,18 @@ type PageHeaderProps = {
 
 /**
  * The one page-header primitive: a sticky 40px row ruled off from the page by
- * a hairline. Solid while it stays put, so content passes behind the rule
- * rather than through it; the fading variant keeps its gradient and lets the
- * rule go with the title. Every top bar
- * (workspace pages, post details, asset editor) composes this component —
- * don't hand-roll header chrome elsewhere.
+ * a hairline, with 16px above the row and 16px below it, so an action on the
+ * right sits centred between the two. Solid while it stays put, so content
+ * passes behind the rule rather than through it; the fading variant keeps its
+ * gradient and lets the rule go with the title. Every top bar (workspace
+ * pages, post details, asset editor) composes this component — don't
+ * hand-roll header chrome elsewhere.
+ *
+ * A page with no back control is a module's own page, and its title leads with
+ * that module's glyph in its hue — the rail row's, read off the address
+ * (`whereOf`), so the header and the highlighted row name the same place. A
+ * page with a back control was opened from a module, and leads with the way
+ * back instead.
  */
 export function PageHeader({
   title,
@@ -63,12 +74,20 @@ export function PageHeader({
   }, [fadeOnScroll])
 
   const faded = fadeOnScroll && scrolled
+  const place = useRouterState({
+    select: (s) =>
+      whereOf(
+        s.location.pathname,
+        (s.location.search as { pick?: unknown }).pick,
+      ).place,
+  })
+  const glyph = !back && place ? placeGlyph(place) : null
 
   return (
     <div
       ref={rootRef}
       className={cn(
-        'sticky top-0 px-3 lg:px-6 pt-6 shrink-0',
+        'sticky top-0 px-3 lg:px-6 pt-4 shrink-0',
         // The fading variant moves the gradient to its own layer (so it can
         // dissolve independently) and must not eat clicks once that layer is
         // gone — pointer events are re-enabled per button group below.
@@ -113,6 +132,17 @@ export function PageHeader({
             ) : (
               back
             ))}
+          {glyph && (
+            <span
+              className={cn(
+                'flex shrink-0',
+                fadeOnScroll && 'transition-opacity duration-300',
+                faded && 'opacity-0',
+              )}
+            >
+              <NavIcon icon={glyph.icon} tone={glyph.tone} size={22} />
+            </span>
+          )}
           {title !== undefined && (
             <h1
               className={cn(

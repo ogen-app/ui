@@ -8135,15 +8135,6 @@ export const en = {
   },
 
   campaigns: {
-    /**
-     * Above the campaign cards when a row with no all-campaigns page asked
-     * for one (`?pick=`). One sentence per row.
-     */
-    pick: {
-      calendar: 'Each campaign keeps its own calendar. Choose one to open it.',
-      strategy:
-        'Strategy is set per campaign. Choose one to open its strategy.',
-    },
     /** The posts list's and calendar's selection bar (CON-482). */
     bulk: {
       selected_one: '{{formatted}} selected',
