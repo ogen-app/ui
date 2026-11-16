@@ -495,6 +495,11 @@ describe('FOUND names what its search was about (CON-509)', () => {
     ).toBeTruthy()
   })
 
+  it('keeps a title’s own angle brackets and dollar signs', async () => {
+    await found({ sourceAssets: [{ id: 'a1', title: 'Budget <draft> $1' }] })
+    expect(screen.getByText('6 ideas from Budget <draft> $1')).toBeTruthy()
+  })
+
   it('keeps the count alone when the search named none of them', async () => {
     await found(undefined)
     expect(screen.getByText('6 ideas')).toBeTruthy()
