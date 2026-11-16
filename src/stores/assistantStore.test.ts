@@ -360,6 +360,34 @@ describe('assistantStore', () => {
     expect(after).toBeUndefined()
   })
 
+  it('stops writing when the drafts tool finishes, though a post failed (CON-510)', async () => {
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+    stream.events = [
+      { type: 'tool_call', name: 'draftIdeas', ref: 'r1' },
+      {
+        type: 'idea_draft_started',
+        next: {
+          ideas: [{ ideaId: 'i1', title: 'A pool' }],
+          platformId: 'instagram',
+          count: 1,
+          done: 0,
+          total: 2,
+        },
+      },
+      { type: 'tool_result', ref: 'r1', ok: false },
+    ]
+    let live: unknown
+    const off = useAssistantStore.subscribe((s) => {
+      const turns = s.threads[id]?.turns ?? []
+      live = turns[turns.length - 1]?.liveDrafts ?? live
+    })
+    await useAssistantStore.getState().send(id, 'Draft them')
+    off()
+    expect(live).toMatchObject({ ended: true, next: undefined })
+  })
+
   it('keeps a refusal’s code on the turn, for its card (CON-481)', async () => {
     const id = useAssistantStore
       .getState()

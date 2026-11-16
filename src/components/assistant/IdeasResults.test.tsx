@@ -424,6 +424,21 @@ describe('compile and draft', () => {
     expect(screen.queryByText('Draft 3 of 4')).toBeNull()
   })
 
+  it('draws no placeholder once the drafts tool has finished, done or failed', async () => {
+    await renderWithProviders(
+      <LiveDrafts
+        drafts={{
+          done: 2,
+          total: 4,
+          posts: [],
+          ended: true,
+        }}
+      />,
+    )
+    expect(screen.queryByText('Draft 3 of 4')).toBeNull()
+    expect(screen.queryByText('Writing')).toBeNull()
+  })
+
   it('names every idea a together post draws on', async () => {
     await renderWithProviders(
       <LiveDrafts
