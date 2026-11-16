@@ -927,7 +927,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   saved with a smart group — and a clause you only remove ("limited to these
   6", `FieldKind` `fixed`).
   FOUND's SHOW ON SCREEN puts the `findIdeas` filter on the list through
-  `runUiAction`, so it is a screen change with BACK. Bulk verdicts name
+  `runUiAction`, so it is a screen change with BACK; its headline names what
+  the search named (`named`, CON-509) in the Ideas list's own clauses — "6
+  ideas from Brochure", a left-out value "not from" — and an idea's source
+  row leads with its asset's type mark, none when untyped. Bulk verdicts name
   their pile, day and ideas; edits are before → after per field; compiles
   show their theses and the ideas they were built from; in common is a theme,
   an angle, the lens and sources with counts, and where they split in amber.

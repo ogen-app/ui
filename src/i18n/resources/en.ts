@@ -4181,6 +4181,12 @@ export const en = {
         word: 'Found',
         title_one: '{{formatted}} idea',
         title_other: '{{formatted}} ideas',
+        /**
+         * What the search named, in the Ideas list's own clauses (CON-509):
+         * "6 ideas from Brochure, in Spring reopening".
+         */
+        titleNamed_one: '{{formatted}} idea {{clauses}}',
+        titleNamed_other: '{{formatted}} ideas {{clauses}}',
         none: 'No ideas match',
         /** The pile the filter named, counted whole: "of 14 · On the desk". */
         ofPile: 'of {{total}} · {{pile}}',

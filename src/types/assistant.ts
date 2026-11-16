@@ -1350,6 +1350,23 @@ export type CompiledPost = {
  */
 export type DateFrom = 'asked' | 'plan'
 
+/** One value a found filter named: a document, a campaign or a member. */
+export type FoundNamedValue = {
+  id: string
+  title: string
+  /** An asset's stored type, for a document. */
+  type?: string
+  /** Named as left out (`<key>_not`). */
+  excluded?: boolean
+}
+
+/** What a `findIdeas` filter named (CON-509). */
+export type FoundNamed = {
+  sourceAssets?: FoundNamedValue[]
+  campaigns?: FoundNamedValue[]
+  authors?: FoundNamedValue[]
+}
+
 export type IdeaBrief = {
   id: string
   title: string
@@ -1398,6 +1415,12 @@ export type IdeasResults = {
     total: number
     /** The pile the filter named, counted with no other filter (CON-481). */
     pileTotal?: number
+    /**
+     * What the filter named, by name (CON-501/509): each list in the filter's
+     * order, kept values first, a `<key>_not` value `excluded`. Absent when it
+     * names none of these.
+     */
+    named?: FoundNamed
   }
   /** `setIdeaVerdict`. */
   decided?: { idea: IdeaBrief; undoId?: string }
@@ -1450,7 +1473,13 @@ export type IdeasResults = {
       caps: string[]
     }
     /** With the passage the idea came from, where the server knows it. */
-    sourceAsset?: { id: string; title: string; passage?: AssetPassage }
+    sourceAsset?: {
+      id: string
+      title: string
+      /** Its stored type — `PDF`, `URL`, `AUDIO`… (CON-501); absent untyped. */
+      type?: string
+      passage?: AssetPassage
+    }
     analysisGist?: string
     /** The lens the analysis it came from read in; none is the workspace's. */
     lens?: { campaignId?: string; campaignName?: string }
