@@ -18,7 +18,7 @@ import { cn } from '@/lib'
 export function TopBar() {
   const { isMobile } = useSidebar()
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-primary pl-4 pr-3">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-primary pl-4 pr-6">
       {isMobile && <SidebarTrigger />}
       <CampaignSwitcher />
       <div className="ml-auto flex shrink-0 items-center gap-1">
