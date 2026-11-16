@@ -102,10 +102,13 @@ import {
  * way they always have, and the three routes that read a brand off what the
  * workspace already has are offered once, in a band, by `WholeBrandOffer`.
  */
+/** A screen given no series has none to show. */
+const READY_NONE: Fetched<ContentSeries[]> = { status: 'ready', data: [] }
+
 export function BrandOverview({
   brand,
   facts = [],
-  series = [],
+  series = READY_NONE,
   stance,
   onOpen,
 }: {
@@ -116,16 +119,15 @@ export function BrandOverview({
    * from `useBrand`, so the route owns the query and this screen stays a
    * rendering of what it is given.
    *
-   * A plain list rather than a `Fetched`, for the reason `facts` below is one:
-   * it is read out of `localStorage` until the table exists, so it cannot be in
-   * flight and cannot fail. It becomes a `Fetched` on the day it becomes a
-   * fetch — see the `series` flag.
+   * A `Fetched`, because it is its own request (`GET /api/series`): its card
+   * waits or apologises on its own while the rest of the hub draws, rather
+   * than passing a list still in flight off as an empty library.
    *
    * **Workspace-scoped entries only.** A series defined inside a campaign is
    * bounded by it and is not the workspace's yet; listing one here would report
    * a library that nobody else can pick from. The route filters.
    */
-  series?: ContentSeries[]
+  series?: Fetched<ContentSeries[]>
   /**
    * The ledger, already assembled — `useFacts`. Passed in rather than fetched
    * here for the reason the rest of this screen takes `brand`: the statements
@@ -159,10 +161,18 @@ export function BrandOverview({
    */
   const contents = (section: BrandSectionInfo): Fetched<SectionContents> => {
     if (brand.status !== 'ready') return brand
+    if (section.id === 'series' && series.status !== 'ready') return series
     return {
       status: 'ready',
       data: {
-        rows: sectionRows(t, section.id, brand.data, facts, series, stance),
+        rows: sectionRows(
+          t,
+          section.id,
+          brand.data,
+          facts,
+          series.status === 'ready' ? series.data : [],
+          stance,
+        ),
       },
     }
   }

@@ -135,6 +135,10 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
                   variant="inline"
                   className="w-auto"
                   value={run.rhythm}
+                  // Each change builds on the rhythm the server last
+                  // answered with, so a second one before that answer would
+                  // drop the first — the picker waits for it.
+                  disabled={setRhythm.isPending}
                   onChange={(rhythm) =>
                     setRhythm.mutate({ seriesId: run.seriesId, rhythm })
                   }
