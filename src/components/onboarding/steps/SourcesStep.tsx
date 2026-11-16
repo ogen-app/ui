@@ -10,13 +10,13 @@ import {
   PlusIcon,
   StackIcon,
   UploadSimpleIcon,
+  WarningIcon,
   XIcon,
 } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ModalContainer } from '@/components/ui/modal'
 import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { counted } from '@/lib/intl'
@@ -85,7 +85,7 @@ const KIND_ICON = {
  * minute and nobody should sit through that after deciding to go on. While it
  * runs its card keeps an indeterminate line moving along its foot — a minute
  * of a still screen reads as stuck. The person may go on before it finishes,
- * but is asked first: going on stops the read, and the sheet on the right is
+ * but is asked first, in the footer rather than a dialog: going on stops the read, and the sheet on the right is
  * not filled in from it. With nothing added the way on is "Do this later",
  * never a disabled button.
  */
@@ -147,6 +147,10 @@ export function SourcesStep({
     : anyRead
       ? onRead
       : onLater
+  // Asking only holds while something is still being read: a read finishing
+  // under the question answers it, and the next add starts unasked.
+  if (asking && !reading) setAsking(false)
+  const confirming = asking && reading
 
   const open: Kind[] = (
     [
@@ -165,16 +169,32 @@ export function SourcesStep({
         <StepFooter
           onBack={onBack}
           note={
-            !given
-              ? undefined
-              : reading
-                ? t('onboarding.sources.readingHint')
-                : anyRead
-                  ? t('onboarding.sources.readHint')
-                  : undefined
+            confirming ? (
+              <span className="flex items-start gap-2 text-primary-foreground">
+                <WarningIcon
+                  aria-hidden
+                  weight="fill"
+                  className="mt-0.5 size-4 shrink-0 text-warning-ink"
+                />
+                {t('onboarding.sources.stop.body')}
+              </span>
+            ) : !given ? undefined : reading ? (
+              t('onboarding.sources.readingHint')
+            ) : anyRead ? (
+              t('onboarding.sources.readHint')
+            ) : undefined
           }
           next={
-            given ? (
+            confirming ? (
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setAsking(false)}>
+                  {t('onboarding.sources.stop.keep')}
+                </Button>
+                <Button variant="accent" onClick={onStop}>
+                  {t('onboarding.sources.stop.go')}
+                </Button>
+              </div>
+            ) : given ? (
               <Button variant="accent" onClick={onContinue}>
                 {t('onboarding.sources.continue')}
               </Button>
@@ -284,31 +304,6 @@ export function SourcesStep({
           )
         )}
       </div>
-
-      <ModalContainer
-        isOpen={asking}
-        onClose={() => setAsking(false)}
-        title={t('onboarding.sources.stop.title')}
-        size="small"
-      >
-        <div className="flex flex-col gap-4">
-          <p className={HINT_TEXT}>{t('onboarding.sources.stop.body')}</p>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setAsking(false)}>
-              {t('onboarding.sources.stop.keep')}
-            </Button>
-            <Button
-              variant="accent"
-              onClick={() => {
-                setAsking(false)
-                onStop()
-              }}
-            >
-              {t('onboarding.sources.stop.go')}
-            </Button>
-          </div>
-        </div>
-      </ModalContainer>
     </StepCard>
   )
 }

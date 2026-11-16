@@ -9040,8 +9040,7 @@ export const en = {
         'Next you see what Ogen took from them. Nothing goes into the brand until you review it.',
       later: 'Do this later',
       stop: {
-        title: 'Ogen is still reading',
-        body: 'If you go on now, Ogen stops reading and the sheet on the right is not filled in from what you added. You can read it again from Foundation later.',
+        body: 'Ogen is still reading. Going on now stops it, and the sheet on the right is not filled in from what you added. You can read it again from Foundation later.',
         keep: 'Keep reading',
         go: 'Go on anyway',
       },
