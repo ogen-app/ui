@@ -59,6 +59,10 @@ const COPY = {
   list: {
     title: 'calendar.empty.listTitle',
     subtitle: 'calendar.empty.listSubtitle',
+    noAdd: {
+      title: 'calendar.empty.workspaceListTitle',
+      subtitle: 'calendar.empty.workspaceListSubtitle',
+    },
   },
   panel: {
     title: 'calendar.empty.panelTitle',

@@ -51,7 +51,7 @@ import {
  * stays in the text colour so they read as the same kind of destination.
  *
  * `utility` is which band the row belongs to — the level itself, or the footer
- * under it (`NavUtilityStrip`). It is a property of the section rather than a
+ * under it (`NavPlaces`). It is a property of the section rather than a
  * list held next to the nav, so a section cannot be in the rail and the footer
  * at once, or in neither.
  */

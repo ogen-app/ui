@@ -15,13 +15,13 @@ const buttonIconContext = { weight: 'bold' as const }
 
 const buttonVariants = cva(
   'relative inline-flex items-center cursor-pointer whitespace-nowrap shrink-0 outline-none ' +
-    'gap-2 rounded-md text-[13px]/4 font-medium select-none transition-all ' +
+    'gap-2 rounded-button text-[13px]/4 font-medium select-none transition-all ' +
     'disabled:pointer-events-none ' +
     // Icon sizing is owned by the `size` variant below (16px everywhere except
     // the 16px-tall xsIcon); an explicit `size-*` on the icon still wins.
     "[&_svg:not([class*='stroke-'])]:stroke-[2] [&_svg]:shrink-0 " +
     'focus-visible:inset-ring-[2px] focus-visible:inset-ring-ring aria-invalid:ring-destructive/20 aria-invalid:border-destructive ' +
-    '[&_[data-spinner-container]]:rounded-md',
+    '[&_[data-spinner-container]]:rounded-button',
   {
     variants: {
       variant: {
@@ -100,13 +100,19 @@ const buttonVariants = cva(
 
         container: '',
         menu:
-          'bg-transparent h-8 px-1.5 w-full gap-3 justify-start hover:bg-sidebar-secondary text-sidebar-primary-foreground hover:text-sidebar-primary-foreground overflow-hidden ' +
-          'font-grotesk text-sm/6 font-medium uppercase whitespace-nowrap ' +
-          'data-[active=true]:bg-sidebar-secondary data-[active=true]:text-sidebar-primary-foreground ' +
+          // The rail's row, as the prototype draws it: 36px, 8px in, grey
+          // until pointed at or current, then the tertiary fill and ink.
+          'bg-transparent h-9 px-2 w-full gap-2.5 justify-start rounded-button text-secondary-foreground overflow-hidden ' +
+          'hover:bg-tertiary hover:text-primary-foreground ' +
+          // The chrome's one type rule: 14px, regular for anything you press,
+          // in sentence case — the same voice as the page under it.
+          'text-sm/6 font-normal whitespace-nowrap ' +
+          'data-[active=true]:bg-tertiary data-[active=true]:text-primary-foreground ' +
+          // Collapsed, the row is 36px square and the 24px slot sits centred.
+          'group-data-[collapsible=icon]:px-1.5 ' +
           // The text container keeps a static width so labels never reflow while
           // the sidebar collapses — the button just clips them via overflow-hidden.
-          '[&>div]:w-[232px] [&>div]:flex-none [&>div]:flex [&>div]:items-center [&>div]:gap-2.5 ' +
-          'lg:h-10 lg:px-2.5',
+          '[&>div]:w-[200px] [&>div]:flex-none [&>div]:flex [&>div]:items-center [&>div]:gap-2.5',
       },
 
       size: {

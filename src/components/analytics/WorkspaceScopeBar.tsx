@@ -66,7 +66,10 @@ export function WorkspaceScopeBar({
    * (CON-463) or a link. Shown as the period until a span is picked.
    */
   range?: { from: string; to: string }
-  /** The campaigns the dashboard can be narrowed to; none hides the picker. */
+  /**
+   * The campaigns the dashboard can be narrowed to. Fewer than two hides the
+   * picker: every post is in a campaign, so with one the workspace *is* it.
+   */
   campaigns?: { id: string; name: string }[]
   /** The campaign it is narrowed to; absent for the whole workspace. */
   campaignId?: string
@@ -194,7 +197,7 @@ export function WorkspaceScopeBar({
         {/* Also shown with no list to pick from — still loading, or a
             workspace without campaigns — while a link has narrowed it, so
             the filter can be seen and cleared. */}
-        {onCampaignChange && (campaigns.length > 0 || campaignId) && (
+        {onCampaignChange && (campaigns.length > 1 || campaignId) && (
           <Picker
             label={t('analytics.scopeBar.campaign')}
             value={campaignLabel}

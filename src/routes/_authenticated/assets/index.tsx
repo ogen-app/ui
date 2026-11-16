@@ -39,7 +39,7 @@ export const Route = createFileRoute('/_authenticated/assets/')({
  * So it is a level-0 destination now, above Campaigns — the material comes
  * before the work made from it, which is the order the rail already uses for
  * Ideas. Its campaign-scoped twin is `/campaigns/:id/assets`, and the pairing
- * is what the two levels are teaching (see `workspaceDestinations`).
+ * is the campaign filter's to choose (see `lib/campaignScope`).
  *
  * **No flag.** Nothing here is new: the same `ContentPage` against the same
  * endpoints, reached by a shorter path. It also stops the bank disappearing

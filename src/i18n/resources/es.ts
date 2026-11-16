@@ -326,8 +326,16 @@ export const es: Translation = {
     closeSidebar: 'Cerrar la barra lateral',
     switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
-    backToWorkspace: 'Volver al espacio de trabajo',
-    workspaceScope: 'Espacio de trabajo',
+    scope: {
+      all: 'Todas las campañas',
+      switch: 'Cambiar de campaña',
+      newCampaign: 'Nueva campaña',
+    },
+    workspaceMenu: 'Menú del espacio de trabajo',
+    yourWorkspaces: 'Tus espacios de trabajo',
+    accountMenu: 'Menú de la cuenta',
+    askOgen: 'Preguntar a Ogen',
+    assistantFinished: 'El asistente ha terminado',
     campaignNoWindow: 'Sin fechas',
     campaign: {
       overview: 'Resumen',
@@ -1631,6 +1639,9 @@ export const es: Translation = {
         'Las publicaciones se escriben dentro de una campaña. Programa una y aparecerá aquí, sea cual sea la campaña a la que pertenezca.',
       workspacePanelSubtitle:
         'Las publicaciones sin fecha esperan aquí — arrastra una al calendario para darle una.',
+      workspaceListTitle: 'Aún no hay publicaciones',
+      workspaceListSubtitle:
+        'Las publicaciones se escriben dentro de una campaña. Añade una allí y aparecerá aquí, sea cual sea la campaña a la que pertenezca.',
     },
   },
 
@@ -4212,6 +4223,7 @@ export const es: Translation = {
     columnGrounding: 'Fuentes',
     columnPlatform: 'Plataforma',
     columnFormat: 'Formato',
+    columnCampaign: 'Campaña',
     columnPublishDate: 'Fecha de publicación',
     columnWhen: 'Cuándo',
 
