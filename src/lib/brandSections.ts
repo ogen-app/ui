@@ -10,7 +10,6 @@ import {
 } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import type { BrandConsumer } from '@/components/brand/types'
-import { isFeatureEnabled } from '@/config/featureFlags'
 
 /**
  * Brand's sections, as the app names and marks them.
@@ -49,7 +48,7 @@ import { isFeatureEnabled } from '@/config/featureFlags'
  * so they are their own level-0 module at `/assets`, with a campaign-scoped
  * twin, and this table is back to the things a brand is made of.
  *
- * **Four of the seven are offered today** — see `shown`, and read the rest of
+ * **Five of the seven are offered today** — see `shown`, and read the rest of
  * this file as describing the module rather than the current menu.
  */
 export type BrandSectionId =
@@ -150,13 +149,10 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     id: 'series',
     icon: RepeatIcon,
     tone: 'var(--brand-series)',
-    // Nothing reads a series yet — no generator takes one, and analytics cannot
-    // group by a column that does not exist. `[]` is the honest answer and the
-    // reason the flag is off: this section is a filing cabinet until the plan
-    // and the numbers consult it, which is exactly what CON-226 §9 says is
-    // worse than no section at all.
-    readBy: [],
-    shown: isFeatureEnabled('series'),
+    // The content plan reserves each run's slots and writes its ideas to the
+    // series (CON-496). Analytics doesn't group by it yet.
+    readBy: ['plan'],
+    shown: true,
   },
   {
     id: 'look',

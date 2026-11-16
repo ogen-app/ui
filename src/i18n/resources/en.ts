@@ -1441,9 +1441,29 @@ export const en = {
     rhythm: {
       occasional: 'Occasional',
       perWeek_one: 'Once a week',
-      perWeek_other: '{{count}} times a week',
+      perWeek_other: '{{formatted}} times a week',
       perMonth_one: 'Once a month',
-      perMonth_other: '{{count}} times a month',
+      perMonth_other: '{{formatted}} times a month',
+      /**
+       * A rhythm that skips periods or names its day (CON-496). `every` is
+       * always 2 or more; `day` is the weekday's name, from `Intl`.
+       */
+      perWeeksEvery_one: 'Once every {{every}} weeks',
+      perWeeksEvery_other: '{{formatted}} times every {{every}} weeks',
+      perMonthsEvery_one: 'Once every {{every}} months',
+      perMonthsEvery_other: '{{formatted}} times every {{every}} months',
+      everyDay: 'Every {{day}}',
+      everyWeeksOn_one: 'Every week on {{day}}',
+      everyWeeksOn_other: 'Every {{formatted}} weeks on {{day}}',
+      /** The picker's second and third selects: how often, and which day. */
+      everyWeekOption_one: 'every week',
+      everyWeekOption_other: 'every {{formatted}} weeks',
+      everyMonthOption_one: 'every month',
+      everyMonthOption_other: 'every {{formatted}} months',
+      anyDay: 'on any day',
+      onDay: 'on {{day}}',
+      everyLabel: 'How often',
+      dayLabel: 'Which day',
     },
     supply: {
       selfOption: 'It supplies its own subject',
@@ -1452,13 +1472,16 @@ export const en = {
       ideaLine: 'Waits for an idea',
     },
     usage: '{{drafts}} in draft, {{published}} published',
+    /** The tooltip on an idea's or a post's series (CON-496). */
+    mark: 'Made for the series “{{name}}”',
     plan: {
       noGoal:
         'This campaign has no post goal, so there is nothing to measure these against.',
       ok: '{{total}} posts planned · {{claimed}} from series · {{open}} open',
       over: '{{total}} posts planned and the series claim {{claimed}} — {{over}} more than the campaign is set to make.',
+      /** Without dates the plan places no series, so they claim nothing yet. */
       undated:
-        '{{total}} posts a period · {{claimed}} from series. Set the campaign dates to plan the whole run.',
+        '{{total}} posts a period. Set the campaign dates and the series claim their slots.',
     },
     campaign: {
       title: 'Series',
@@ -1477,8 +1500,8 @@ export const en = {
       promoteHint:
         'Move this into the workspace library so other campaigns can run it too.',
       remove: 'Stop running {{name}}',
-      claim_one: '{{count}} post',
-      claim_other: '{{count}} posts',
+      claim_one: '{{formatted}} post',
+      claim_other: '{{formatted}} posts',
       claimsNone: 'no fixed slots',
     },
     detail: {
@@ -1994,6 +2017,8 @@ export const en = {
     statusColourAlways:
       "The status colour down the card's left edge is always shown.",
     notAPublishingDay: 'Not a publishing day',
+    /** Off the publishing days, but a weekly series lands on it (CON-496). */
+    seriesDay: 'A series posts on this day',
     showDay: 'Show {{day}}',
 
     /**
@@ -3462,10 +3487,6 @@ export const en = {
       },
       rhythm: {
         occasional: 'Now and then',
-        week_one: 'Once a week',
-        week_other: '{{formatted}} times a week',
-        month_one: 'Once a month',
-        month_other: '{{formatted}} times a month',
       },
       run: {
         running: '{{series}} runs in {{campaign}}',
@@ -4979,6 +5000,7 @@ export const en = {
     columnGrounding: 'Sources',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
+    columnSeries: 'Series',
     columnPublishDate: 'Publish date',
     columnWhen: 'When',
 

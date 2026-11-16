@@ -3,6 +3,7 @@ import type { ViewContext } from '@/lib/viewContext'
 import type { AppliedUIAction } from '@/lib/assistantUiActions'
 import type { AnalyticsOverview, PerformersBoard } from '@/types/analytics'
 import type { AssetsState } from '@/services/api/content'
+import type { SeriesRhythm } from './series'
 
 /**
  * What an assistant thread is attached to — its scope (CON-450). One thread
@@ -586,7 +587,8 @@ export type DistillSaved = {
   skipped: string[]
 }
 
-export type SeriesRhythm = { times: number; per: 'week' | 'month' }
+/** A run's rhythm, as `/api/series` has it (CON-496). */
+export type { SeriesRhythm }
 
 export type SeriesBrief = {
   id: string

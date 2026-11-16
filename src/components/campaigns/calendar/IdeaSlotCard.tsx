@@ -5,6 +5,7 @@ import { IdeaPostForm } from '@/components/ideas/IdeaPostForm'
 import { useCompileIdeas, useDraftIdeas } from '@/hooks/useIdeaPosts'
 import { cn } from '@/lib/styles'
 import type { IdeaSlot } from '@/services/api/ideaPosts'
+import { SeriesMark } from '@/components/series/SeriesMark'
 
 /** The slot's fixed height, which the week's ladder reserves per slot. */
 export const IDEA_SLOT_HEIGHT = 52
@@ -76,6 +77,13 @@ export function IdeaSlotCard({
           <span className="min-w-0 truncate font-normal tracking-normal">
             · {slot.campaign_name}
           </span>
+        )}
+        {/* Its series (CON-496), once the slots read carries it (CON-512). */}
+        {slot.series_id && (
+          <SeriesMark
+            seriesId={slot.series_id}
+            className="font-normal tracking-normal"
+          />
         )}
       </p>
       <p className="line-clamp-2 text-xs/4 text-secondary-foreground">

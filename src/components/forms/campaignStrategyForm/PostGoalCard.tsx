@@ -15,7 +15,6 @@ import {
 } from '@/lib/postGoal'
 import type { StrategyFormValues } from './schema'
 import { useTranslation } from 'react-i18next'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaignSeries } from '@/hooks/useSeries'
 import { seriesPlan } from '@/lib/seriesPlan'
 import { planLine } from '@/components/series/format'
@@ -45,10 +44,9 @@ function SeriesShareLine({
   endDate: string | null
 }) {
   const { t } = useTranslation()
-  const enabled = useFeatureFlag('series')
   const { data } = useCampaignSeries(campaignId)
 
-  if (!enabled || !data || data.runs.length === 0) return null
+  if (!data || data.runs.length === 0) return null
 
   const plan = seriesPlan({
     postsPerPeriod,

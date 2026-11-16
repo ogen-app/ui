@@ -1,6 +1,4 @@
-import type { ReactNode } from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, renderHook, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import {
   afterAll,
   afterEach,
@@ -15,20 +13,11 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import * as api from '@/services/api/series'
 import { seriesPlan } from '@/lib/seriesPlan'
 import { planLine, rhythmLine, supplyLine } from './format'
-import type { ContentSeries } from './types'
+import type { ContentSeries } from '@/types/series'
 import type { Campaign } from '@/types/campaigns'
 
 /**
- * Two things about Series that an ordinary English test cannot tell you.
- *
- * **That the flag is free.** With `series` off the feature must not merely
- * render nothing — it must not *ask* for anything. The card sits on the
- * campaign's Strategy page, which is an ordinary screen people open all day, so
- * an unconditional query there would open a request for a card that cannot be
- * shown. Today the stub answers from `localStorage` and the cost is
- * invisible; it appears on the day the real endpoint is swapped in, which is
- * the worst moment to discover it. Same guard, and the same reasoning, as
- * `HelpTrigger`'s.
+ * What an ordinary English test cannot tell you about Series.
  *
  * **That the screens are actually converted.** In English a literal in a
  * component and a catalogue entry are the same string, so only rendering in
@@ -45,56 +34,13 @@ vi.mock('@/config/featureFlags', async (importOriginal) => {
 })
 
 const { useFeatureFlag } = await import('@/config/featureFlags')
-const { useCampaignSeries, useSeriesLibrary } =
-  await import('@/hooks/useSeries')
 const { SeriesSection } = await import('./SeriesSection')
 const { CampaignSeriesCard } = await import('./CampaignSeriesCard')
-
-function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: 0 } },
-  })
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
-}
+const { RhythmPicker } = await import('./RhythmPicker')
 
 afterEach(() => {
   vi.restoreAllMocks()
   vi.mocked(useFeatureFlag).mockReturnValue(false)
-})
-
-describe('with the flag off', () => {
-  it('asks the library for nothing', async () => {
-    const list = vi.spyOn(api, 'listSeries')
-
-    const { result } = renderHook(() => useSeriesLibrary(), { wrapper })
-
-    expect(list).not.toHaveBeenCalled()
-    // Not merely "no data" — the query never runs, so nothing is pending
-    // either. A screen branching on `isPending` must not sit on a spinner for
-    // a feature that is switched off.
-    expect(result.current.fetchStatus).toBe('idle')
-  })
-
-  it("asks a campaign's page for nothing", () => {
-    const get = vi.spyOn(api, 'getCampaignSeries')
-
-    renderHook(() => useCampaignSeries('c1'), { wrapper })
-
-    expect(get).not.toHaveBeenCalled()
-  })
-
-  it('still runs when a caller overrides the default', async () => {
-    // The override exists so a harness and these tests can exercise the query
-    // without switching the build's flag. If it stopped working the guard
-    // above would be untestable, and an untested guard is the one that rots.
-    vi.spyOn(api, 'listSeries').mockResolvedValue([])
-
-    const { result } = renderHook(() => useSeriesLibrary({ enabled: true }), {
-      wrapper,
-    })
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-  })
 })
 
 const DIGEST: ContentSeries = {
@@ -159,6 +105,36 @@ describe('in Spanish', () => {
       '3 veces al mes',
     )
     expect(supplyLine(i18next.t, 'idea')).toBe('Espera una idea')
+  })
+
+  it('words a rhythm that skips weeks and names its day (CON-496)', () => {
+    expect(
+      rhythmLine(i18next.t, {
+        times: 1,
+        per: 'week',
+        every: 2,
+        weekday: 'tuesday',
+      }),
+    ).toBe('Cada 2 semanas, el martes')
+    expect(
+      rhythmLine(i18next.t, { times: 1, per: 'week', weekday: 'tuesday' }),
+    ).toBe('Cada martes')
+    expect(rhythmLine(i18next.t, { times: 2, per: 'month', every: 3 })).toBe(
+      '2 veces cada 3 meses',
+    )
+  })
+
+  it('offers how often and which day beside the rate', async () => {
+    await renderWithProviders(
+      <RhythmPicker
+        value={{ times: 1, per: 'week', every: 2, weekday: 'tuesday' }}
+        onChange={() => {}}
+      />,
+    )
+    expect(screen.getByText('Una vez por semana')).toBeInTheDocument()
+    expect(screen.getByText('cada 2 semanas')).toBeInTheDocument()
+    expect(screen.getByText('el martes')).toBeInTheDocument()
+    expect(screen.queryByText('every 2 weeks')).not.toBeInTheDocument()
   })
 
   /**

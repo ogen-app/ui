@@ -1209,9 +1209,24 @@ export const es: Translation = {
     rhythm: {
       occasional: 'Ocasional',
       perWeek_one: 'Una vez por semana',
-      perWeek_other: '{{count}} veces por semana',
+      perWeek_other: '{{formatted}} veces por semana',
       perMonth_one: 'Una vez al mes',
-      perMonth_other: '{{count}} veces al mes',
+      perMonth_other: '{{formatted}} veces al mes',
+      perWeeksEvery_one: 'Una vez cada {{every}} semanas',
+      perWeeksEvery_other: '{{formatted}} veces cada {{every}} semanas',
+      perMonthsEvery_one: 'Una vez cada {{every}} meses',
+      perMonthsEvery_other: '{{formatted}} veces cada {{every}} meses',
+      everyDay: 'Cada {{day}}',
+      everyWeeksOn_one: 'Cada semana, el {{day}}',
+      everyWeeksOn_other: 'Cada {{formatted}} semanas, el {{day}}',
+      everyWeekOption_one: 'cada semana',
+      everyWeekOption_other: 'cada {{formatted}} semanas',
+      everyMonthOption_one: 'cada mes',
+      everyMonthOption_other: 'cada {{formatted}} meses',
+      anyDay: 'cualquier día',
+      onDay: 'el {{day}}',
+      everyLabel: 'Cada cuánto',
+      dayLabel: 'Qué día',
     },
     supply: {
       selfOption: 'Aporta su propio tema',
@@ -1220,13 +1235,14 @@ export const es: Translation = {
       ideaLine: 'Espera una idea',
     },
     usage: '{{drafts}} en borrador, {{published}} publicadas',
+    mark: 'Hecha para la serie «{{name}}»',
     plan: {
       noGoal:
         'Esta campaña no tiene objetivo de publicaciones, así que no hay nada con lo que comparar estas series.',
       ok: '{{total}} publicaciones previstas · {{claimed}} de series · {{open}} libres',
       over: '{{total}} publicaciones previstas y las series reclaman {{claimed}}: {{over}} más de las que la campaña tiene previstas.',
       undated:
-        '{{total}} publicaciones por período · {{claimed}} de series. Define las fechas de la campaña para planificar todo el recorrido.',
+        '{{total}} publicaciones por período. Define las fechas de la campaña y las series reservarán sus huecos.',
     },
     campaign: {
       title: 'Series',
@@ -1240,8 +1256,8 @@ export const es: Translation = {
       promoteHint:
         'Lleva esta serie a la biblioteca del espacio de trabajo para que otras campañas también puedan ejecutarla.',
       remove: 'Dejar de ejecutar {{name}}',
-      claim_one: '{{count}} publicación',
-      claim_other: '{{count}} publicaciones',
+      claim_one: '{{formatted}} publicación',
+      claim_other: '{{formatted}} publicaciones',
       claimsNone: 'sin huecos fijos',
     },
     detail: {
@@ -1574,6 +1590,7 @@ export const es: Translation = {
     statusColourAlways:
       'El color de estado del borde izquierdo de la tarjeta siempre se muestra.',
     notAPublishingDay: 'No es un día de publicación',
+    seriesDay: 'Una serie publica este día',
     showDay: 'Mostrar {{day}}',
 
     field: {
@@ -2878,10 +2895,6 @@ export const es: Translation = {
       },
       rhythm: {
         occasional: 'De vez en cuando',
-        week_one: 'Una vez por semana',
-        week_other: '{{formatted}} veces por semana',
-        month_one: 'Una vez al mes',
-        month_other: '{{formatted}} veces al mes',
       },
       run: {
         running: '{{series}} se publica en {{campaign}}',
@@ -4230,6 +4243,7 @@ export const es: Translation = {
     columnGrounding: 'Fuentes',
     columnPlatform: 'Plataforma',
     columnFormat: 'Formato',
+    columnSeries: 'Serie',
     columnPublishDate: 'Fecha de publicación',
     columnWhen: 'Cuándo',
 

@@ -55,7 +55,7 @@ export function normalizeGoalCadence(
  * shift is short one hour's worth of day, and local midnight east of UTC
  * lands `getUTCMonth` in the previous month.
  */
-function calendarParts(
+export function calendarParts(
   value: string,
 ): { y: number; m: number; d: number } | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)

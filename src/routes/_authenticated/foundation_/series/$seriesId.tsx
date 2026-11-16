@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { PageError } from '@/components/page-primitives/PageError'
@@ -12,7 +12,6 @@ import {
   blankSeries,
   seriesFromStarter,
 } from '@/components/series/starters'
-import { isFeatureEnabled } from '@/config/featureFlags'
 import {
   useDeleteSeries,
   useSaveSeries,
@@ -30,20 +29,10 @@ import { toast } from '@/stores/toastStore'
  *
  * Escaped from the Foundation layout (`foundation_`) because `/foundation/series`
  * is a leaf and a leaf cannot have children. The URL is identical either way.
- * **The flag is re-checked here**, because escaping the layout escapes its
- * `beforeLoad` too.
- *
- * Saving writes through `useSeries`, which reaches a stub rather than an
- * endpoint. That distinction is invisible from here, which is the whole point
- * of putting the fake at the service: when the table lands, this file does not
- * change.
  */
 export const Route = createFileRoute(
   '/_authenticated/foundation_/series/$seriesId',
 )({
-  beforeLoad: () => {
-    if (!isFeatureEnabled('series')) throw redirect({ to: '/campaigns' })
-  },
   /** Which starter this was forked from. Absent rather than `undefined`. */
   validateSearch: (search: Record<string, unknown>): { from?: string } =>
     typeof search.from === 'string' ? { from: search.from } : {},

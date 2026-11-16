@@ -2,15 +2,9 @@ import type { ContentFormatId } from '@/lib/contentFormats'
 import type { GoalCadence } from '@/lib/postGoal'
 
 /**
- * The Series module's shapes (CON-264).
- *
- * Beside the components rather than in `src/types/`, for the reason
- * `components/brand/types.ts` gives about itself: a type in `src/types/` is a
- * claim about what the server sends, and none of this is that yet. When the
- * table lands, these move — and the move is the honest signal that they have
- * become a wire format.
- *
- * Nothing outside the `series` flag may read any of it.
+ * The Series module's shapes (CON-264), as the client holds them —
+ * `services/api/series.ts` maps the server's (`/api/series`, a campaign's
+ * `/series` runs) onto these and back.
  *
  * ## What a series is
  *
@@ -49,7 +43,40 @@ import type { GoalCadence } from '@/lib/postGoal'
 export type SeriesRhythm = {
   times: number
   per: GoalCadence
+  /**
+   * Runs in one period out of every `every` (CON-496): 2 is every other
+   * week. Counted from the campaign's first period. Absent means every one.
+   */
+  every?: number
+  /**
+   * The day a once-a-week series lands on (CON-496) — only with `times: 1`
+   * and `per: 'week'`. Absent, the period's posts are spread evenly over it.
+   */
+  weekday?: SeriesWeekday
 }
+
+/** A series' weekday, as the server names it. */
+export type SeriesWeekday =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday'
+
+export const SERIES_WEEKDAYS: SeriesWeekday[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+]
+
+/** The most periods a series can skip between runs: once every 12. */
+export const MAX_RHYTHM_EVERY = 12
 
 /**
  * Where a series gets the thing it is about.
@@ -125,13 +152,12 @@ export type ContentSeries = {
   recipe: string
   supply: SeriesSupply
   /**
-   * The shape its posts take, when `content-formats` is on — a series pins one
-   * and the posts it produces inherit it, because a digest that arrived as a
-   * hot take would not be the digest any more.
+   * The shape its posts take — a series pins one and the posts it produces
+   * inherit it (`content_format`, CON-496), because a digest that arrived as
+   * a hot take would not be the digest any more.
    *
-   * Nullable, and read through `normalizeContentFormat`: with the formats flag
-   * off this is simply never set, and a series carrying one from a build that
-   * had it on still loads.
+   * Nullable, and read through `normalizeContentFormat`, so a slug this build
+   * doesn't know loads as none.
    */
   formatId: ContentFormatId | null
   /**
