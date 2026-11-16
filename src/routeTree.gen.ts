@@ -47,6 +47,7 @@ import { Route as AuthLogoutIndexRouteImport } from './routes/auth/logout/index'
 import { Route as AuthRegisterIndexRouteImport } from './routes/auth/register/index'
 import { Route as AuthResetIndexRouteImport } from './routes/auth/reset/index'
 import { Route as AuthSecureAccountIndexRouteImport } from './routes/auth/secure-account/index'
+import { Route as DesignOnboardingIndexRouteImport } from './routes/design/onboarding/index'
 import { Route as AuthenticatedCalendarAnchorViewRouteImport } from './routes/_authenticated/calendar/$anchor/$view'
 import { Route as AuthenticatedCampaignsCampaignIdIndexRouteImport } from './routes/_authenticated/campaigns/$campaignId/index'
 import { Route as AuthenticatedCampaignsCampaignIdActivityRouteImport } from './routes/_authenticated/campaigns/$campaignId/activity'
@@ -277,6 +278,11 @@ const AuthSecureAccountIndexRoute = AuthSecureAccountIndexRouteImport.update({
   path: '/auth/secure-account/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DesignOnboardingIndexRoute = DesignOnboardingIndexRouteImport.update({
+  id: '/design/onboarding/',
+  path: '/design/onboarding/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCalendarAnchorViewRoute =
   AuthenticatedCalendarAnchorViewRouteImport.update({
     id: '/calendar/$anchor/$view',
@@ -441,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
   '/auth/secure-account/': typeof AuthSecureAccountIndexRoute
+  '/design/onboarding/': typeof DesignOnboardingIndexRoute
   '/calendar/$anchor/$view': typeof AuthenticatedCalendarAnchorViewRoute
   '/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
@@ -498,6 +505,7 @@ export interface FileRoutesByTo {
   '/auth/register': typeof AuthRegisterIndexRoute
   '/auth/reset': typeof AuthResetIndexRoute
   '/auth/secure-account': typeof AuthSecureAccountIndexRoute
+  '/design/onboarding': typeof DesignOnboardingIndexRoute
   '/calendar/$anchor/$view': typeof AuthenticatedCalendarAnchorViewRoute
   '/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
@@ -560,6 +568,7 @@ export interface FileRoutesById {
   '/auth/register/': typeof AuthRegisterIndexRoute
   '/auth/reset/': typeof AuthResetIndexRoute
   '/auth/secure-account/': typeof AuthSecureAccountIndexRoute
+  '/design/onboarding/': typeof DesignOnboardingIndexRoute
   '/_authenticated/calendar/$anchor/$view': typeof AuthenticatedCalendarAnchorViewRoute
   '/_authenticated/campaigns/$campaignId/activity': typeof AuthenticatedCampaignsCampaignIdActivityRoute
   '/_authenticated/campaigns/$campaignId/analytics': typeof AuthenticatedCampaignsCampaignIdAnalyticsRoute
@@ -622,6 +631,7 @@ export interface FileRouteTypes {
     | '/auth/register/'
     | '/auth/reset/'
     | '/auth/secure-account/'
+    | '/design/onboarding/'
     | '/calendar/$anchor/$view'
     | '/campaigns/$campaignId/activity'
     | '/campaigns/$campaignId/analytics'
@@ -679,6 +689,7 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset'
     | '/auth/secure-account'
+    | '/design/onboarding'
     | '/calendar/$anchor/$view'
     | '/campaigns/$campaignId/activity'
     | '/campaigns/$campaignId/analytics'
@@ -740,6 +751,7 @@ export interface FileRouteTypes {
     | '/auth/register/'
     | '/auth/reset/'
     | '/auth/secure-account/'
+    | '/design/onboarding/'
     | '/_authenticated/calendar/$anchor/$view'
     | '/_authenticated/campaigns/$campaignId/activity'
     | '/_authenticated/campaigns/$campaignId/analytics'
@@ -778,6 +790,7 @@ export interface RootRouteChildren {
   AuthRegisterIndexRoute: typeof AuthRegisterIndexRoute
   AuthResetIndexRoute: typeof AuthResetIndexRoute
   AuthSecureAccountIndexRoute: typeof AuthSecureAccountIndexRoute
+  DesignOnboardingIndexRoute: typeof DesignOnboardingIndexRoute
   AuthRegisterGoogleIndexRoute: typeof AuthRegisterGoogleIndexRoute
   IntegrationsFigmaConnectIndexRoute: typeof IntegrationsFigmaConnectIndexRoute
 }
@@ -1048,6 +1061,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/secure-account'
       fullPath: '/auth/secure-account/'
       preLoaderRoute: typeof AuthSecureAccountIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design/onboarding/': {
+      id: '/design/onboarding/'
+      path: '/design/onboarding'
+      fullPath: '/design/onboarding/'
+      preLoaderRoute: typeof DesignOnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/calendar/$anchor/$view': {
@@ -1370,6 +1390,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRegisterIndexRoute: AuthRegisterIndexRoute,
   AuthResetIndexRoute: AuthResetIndexRoute,
   AuthSecureAccountIndexRoute: AuthSecureAccountIndexRoute,
+  DesignOnboardingIndexRoute: DesignOnboardingIndexRoute,
   AuthRegisterGoogleIndexRoute: AuthRegisterGoogleIndexRoute,
   IntegrationsFigmaConnectIndexRoute: IntegrationsFigmaConnectIndexRoute,
 }
