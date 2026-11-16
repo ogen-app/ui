@@ -1097,3 +1097,176 @@ describe('drafts the assistant writes (CON-485)', () => {
     expect([...useJustWrittenStore.getState().ids]).toEqual(['p1'])
   })
 })
+
+describe('a finding’s fixes, answered (CON-495)', () => {
+  const fix = {
+    kind: 'move_post',
+    title: 'Move to another slot',
+    postId: 'p1',
+    postIds: [],
+    proposalId: 'f1',
+  }
+  const findings = {
+    campaignId: 'c1',
+    dismissed: 0,
+    dismissedFindings: [],
+    findings: [
+      {
+        key: 'k1',
+        code: 'off_day',
+        severity: 'warning' as const,
+        message: 'Late check-out is scheduled on Sunday',
+        blocksPublishing: false,
+        postIds: ['p1'],
+        posts: [],
+        fixes: [fix],
+      },
+    ],
+  }
+
+  it('settles a fix’s offer the turn doesn’t carry, with where the move landed', async () => {
+    const { settleHistory } = await import('./assistantStore')
+    const turns = [
+      { id: 'a1', role: 'assistant' as const, content: '', findings },
+    ]
+    settleHistory(
+      turns,
+      Date.now(),
+      new Map([
+        [
+          'a1',
+          [
+            {
+              id: 'f1',
+              status: 'confirmed',
+              resolved_at: '2026-11-14T10:00:00Z',
+              outcome: {
+                text: 'Done: Move “Late check-out” to Mon 14',
+                made: 1,
+                total: 1,
+                result: {
+                  moves: [
+                    { postId: 'p1', from: '2026-04-19', to: '2026-04-14' },
+                  ],
+                },
+              },
+            },
+          ],
+        ],
+      ]),
+    )
+    expect(turns[0]).toMatchObject({
+      proposals: [
+        {
+          id: 'f1',
+          summary: 'Move to another slot',
+          status: 'confirmed',
+          outcome: { movedTo: { day: '2026-04-14' } },
+        },
+      ],
+    })
+  })
+
+  it('adds nothing for a fix still waiting', async () => {
+    const { settleHistory } = await import('./assistantStore')
+    const turns: {
+      id: string
+      role: 'assistant'
+      content: string
+      findings: typeof findings
+      proposals?: unknown[]
+    }[] = [{ id: 'a1', role: 'assistant', content: '', findings }]
+    settleHistory(
+      turns as never,
+      Date.now(),
+      new Map([['a1', [{ id: 'f1', status: 'pending' }]]]),
+    )
+    expect(turns[0].proposals).toBeUndefined()
+  })
+
+  function threadWithFinding() {
+    useAssistantStore.setState({
+      threads: {
+        'campaign:c1': {
+          id: 'campaign:c1',
+          subject: { kind: 'campaign', campaignId: 'c1' },
+          title: '',
+          campaignTitle: '',
+          turns: [{ id: 'a1', role: 'assistant', content: '', findings }],
+          status: 'idle',
+          loaded: true,
+          streamedPosts: [],
+        } as never,
+      },
+    })
+  }
+
+  it('settles from a confirm’s conflict and drops the reply that carried it', async () => {
+    threadWithFinding()
+    stream.events = [
+      {
+        type: 'error',
+        message: 'That offer was already answered.',
+        status: 409,
+        reason: 'offer_answered',
+        offer: { id: 'f1', status: 'confirmed', outcome: { text: 'Done' } },
+      },
+    ]
+    await useAssistantStore.getState().confirmProposal('campaign:c1', 'f1')
+    const turns = useAssistantStore.getState().threads['campaign:c1'].turns
+    expect(turns).toHaveLength(1)
+    expect(turns[0].proposals?.[0]).toMatchObject({
+      id: 'f1',
+      status: 'confirmed',
+    })
+  })
+
+  it('settles from a dismissal’s conflict instead of an error', async () => {
+    threadWithFinding()
+    const { ApiError } = await import('@/services/api/errors')
+    api.dismiss.mockRejectedValueOnce(
+      new ApiError(409, 'already answered', 'offer_expired', {
+        error: 'offer_expired',
+        reason: 'offer_expired',
+        offer: { id: 'f1', status: 'expired' },
+      }),
+    )
+    await useAssistantStore.getState().dismissProposal('campaign:c1', 'f1')
+    expect(lastTurn('campaign:c1').proposals?.[0]).toMatchObject({
+      id: 'f1',
+      status: 'expired',
+    })
+  })
+})
+
+describe('a post thread asked to fix a review finding (CON-495)', () => {
+  it('sends the finding’s key alone and keeps the finding on the user turn', async () => {
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'post', postId: 'p1', campaignId: 'c1' }, '', '')
+    stream.events = [{ type: 'complete', result: result() }]
+    const finding = {
+      key: 'k1',
+      postId: 'p1',
+      title: 'Late check-out',
+      issue: 'The facts say parking is €25 a night.',
+      quote: 'Free parking for guests',
+    }
+    await useAssistantStore.getState().send(id, 'Fix this', {
+      kind: 'finding',
+      campaignId: 'c1',
+      key: 'k1',
+      finding,
+    })
+    const body = stream.body as { viewContext: { from?: unknown } }
+    expect(body.viewContext.from).toEqual({
+      kind: 'finding',
+      campaignId: 'c1',
+      key: 'k1',
+    })
+    const user = useAssistantStore
+      .getState()
+      .threads[id].turns.find((t) => t.role === 'user')
+    expect(user?.view?.from?.finding).toEqual(finding)
+  })
+})

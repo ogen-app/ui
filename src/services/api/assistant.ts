@@ -38,7 +38,10 @@ import type {
   CalendarFinding,
   CalendarMove,
   CampaignReview,
+  ChangedPost,
+  LineRun,
   PostsChanged,
+  ProposalOutcome,
   RepairFix,
   RepairResults,
   CampaignFromAssets,
@@ -92,6 +95,60 @@ export type OfferState = {
   replaces?: string
   retry_of?: string
   replaced_by?: string
+  /**
+   * A confirmed offer's answer (CON-495): the server's sentence, how much it
+   * made, and what the work returned — the moves, for a move.
+   */
+  outcome?: { text?: string; made?: number; total?: number; result?: unknown }
+}
+
+/**
+ * An offer as a conflict names it (CON-495): a 409 on an answered or lapsed
+ * offer carries it, shaped like a thread message's offers. Null when the body
+ * has none this build can read.
+ */
+export function offerState(raw: unknown): OfferState | undefined {
+  const o = record(raw)
+  if (!o || !str(o.id) || !str(o.status)) return undefined
+  return {
+    id: str(o.id),
+    status: str(o.status),
+    chosen: optStr(o.chosen),
+    expires_at: optStr(o.expires_at),
+    resolved_at: optStr(o.resolved_at),
+    replaces: optStr(o.replaces),
+    retry_of: optStr(o.retry_of),
+    replaced_by: optStr(o.replaced_by),
+    outcome: record(o.outcome) ?? undefined,
+  }
+}
+
+/**
+ * What a confirmed offer did (CON-495), read off its stored outcome. The work's
+ * own result is read for the one thing a fixed finding names: the day a single
+ * move landed on — `applyCalendarMoves`' moves, or a move's own `to`.
+ */
+export function proposalOutcome(
+  raw: OfferState['outcome'],
+): ProposalOutcome | undefined {
+  const o = record(raw)
+  if (!o) return undefined
+  const result = record(o.result)
+  const moves = Array.isArray(result?.moves)
+    ? result.moves.filter(isRecord)
+    : result && str(result.to)
+      ? [result]
+      : []
+  const [move] = moves
+  return {
+    text: str(o.text),
+    made: typeof o.made === 'number' ? o.made : undefined,
+    total: typeof o.total === 'number' ? o.total : undefined,
+    movedTo:
+      moves.length === 1 && move && str(move.to)
+        ? { day: str(move.to), at: optStr(move.toAt) }
+        : undefined,
+  }
 }
 
 /**
@@ -106,6 +163,8 @@ export type AssistantTurnResult = {
   details: AssistantResultDetails
   /** Post-pack results. */
   saveVersion: boolean
+  /** The lines a post edit rewrote (CON-495). */
+  postLines?: LineRun[]
   versionNote?: string
   /** A clone the post pack created (CON-59). */
   clonePostId?: string
@@ -196,7 +255,14 @@ export type AssistantStreamEvent =
    * `reason` names a conflict drawn its own way (CON-482): `offer_expired`,
    * `offer_answered`, `offer_replaced`.
    */
-  | { type: 'error'; message: string; status?: number; reason?: string }
+  | {
+      type: 'error'
+      message: string
+      status?: number
+      reason?: string
+      /** The offer as it stands, on an answered or lapsed one (CON-495). */
+      offer?: OfferState
+    }
   /** Namespaced sub-flow progress, annotating the running tool step. */
   | { type: 'progress'; step: string }
 
@@ -398,6 +464,7 @@ function turnResult(parsed: Record<string, unknown>): AssistantTurnResult {
     result.versionNote = optStr(post.versionNote)
     const clone = record(post.cloneResult)
     result.clonePostId = optStr(clone?.newPostId)
+    result.postLines = lineRuns(post.lines)
   }
 
   result.touched = touched(parsed.touched)
@@ -1203,8 +1270,55 @@ export function calendarFindingList(
         date: optStr(p.date),
       }))
       .filter((p) => p.id),
+    ideas: findingIdeas(f.ideas),
     fixes: repairFixes(f.fixes, campaignId),
   }))
+}
+
+/** The ideas a same-idea finding's posts share (CON-495); absent for none. */
+export function findingIdeas(value: unknown): CalendarFinding['ideas'] {
+  const ideas = (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .map((i) => ({ id: str(i.id), title: str(i.title) }))
+    .filter((i) => i.id)
+  return ideas.length > 0 ? ideas : undefined
+}
+
+/**
+ * The runs of lines an edit rewrote (CON-495), as `results.post` and
+ * `revisePost` send them. A run with nothing on either side is dropped.
+ */
+export function lineRuns(value: unknown): LineRun[] | undefined {
+  const runs = (Array.isArray(value) ? value : [])
+    .filter(isRecord)
+    .map((r) => ({ before: lineList(r.before), after: lineList(r.after) }))
+    .filter((r) => r.before.length > 0 || r.after.length > 0)
+  return runs.length > 0 ? runs : undefined
+}
+
+// Blank lines are `""` and count, so not `strings`, which keeps them too but
+// says nothing about why.
+function lineList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((l): l is string => typeof l === 'string')
+    : []
+}
+
+/**
+ * Whether a converted post passes its new type's rules (CON-495). Absent —
+ * the media couldn't be read — stays absent, never a pass.
+ */
+function typeRules(value: unknown): ChangedPost['rules'] {
+  const r = record(value)
+  if (!r || typeof r.passes !== 'boolean') return undefined
+  if (r.passes) return { passes: true }
+  return {
+    passes: false,
+    broken: (Array.isArray(r.broken) ? r.broken : [])
+      .filter(isRecord)
+      .map((b) => ({ rule: str(b.rule), message: str(b.message) }))
+      .filter((b) => b.message || b.rule),
+  }
 }
 
 /**
@@ -1263,6 +1377,7 @@ function campaignReview(
             : optStr(f.title),
         postId: optStr(f.postId),
         issue: str(f.issue),
+        quote: optStr(f.quote),
         suggestion: optStr(f.suggestion),
         fixes: repairFixes(f.fixes, campaignId),
       }))
@@ -1376,6 +1491,7 @@ function repairResults(results: Record<string, unknown>): {
           fromType: optStr(p.fromType),
           toType: optStr(p.toType),
           kept: strings(p.kept),
+          rules: typeRules(p.rules),
         }))
         .filter((p) => p.postId),
       undoId: optStr(c.undoId),
@@ -1399,6 +1515,7 @@ function repairResults(results: Record<string, unknown>): {
       revised: revised.revised === true,
       versioned: revised.versioned === true,
       grounding: parseGrounding(revised.grounding),
+      lines: lineRuns(revised.lines),
     }
   }
 
@@ -1732,6 +1849,7 @@ async function streamTurn(
               : 'The assistant failed',
           status: typeof parsed.code === 'number' ? parsed.code : undefined,
           reason: optStr(parsed.reason),
+          offer: offerState(parsed.offer),
         })
         return
       default:

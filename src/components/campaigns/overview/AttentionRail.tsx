@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button.tsx'
 import { IgnoredList } from '@/components/assistant/FindingsBlock'
+import { sharedIdeaLine } from '@/lib/assistantFindings'
 import { campaignProblemsKey } from '@/hooks/useCampaignProblems'
 import { counted, formatNumber } from '@/lib/intl'
 import { cn } from '@/lib/styles'
@@ -221,6 +222,8 @@ function ProblemRow({
   })
 
   const [first, ...others] = problem.fixes
+  // The idea a same-idea problem's posts share (CON-495).
+  const idea = sharedIdeaLine(t, problem)
   const fix = (f: CalendarFinding['fixes'][number], primary: boolean) => {
     const label = primary
       ? f.title
@@ -264,6 +267,11 @@ function ProblemRow({
       label={
         <span className="flex min-w-0 flex-col gap-2 py-1">
           <span title={problem.message}>{problem.message}</span>
+          {idea && (
+            <span className="-mt-1 text-[12.5px] text-secondary-foreground">
+              {idea}
+            </span>
+          )}
           {first && (
             <span className="flex flex-wrap items-center gap-3">
               {fix(first, true)}

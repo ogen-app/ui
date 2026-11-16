@@ -1,4 +1,4 @@
-import type { ThreadSubject } from '@/types/assistant'
+import type { ReviewFindingRef, ThreadSubject } from '@/types/assistant'
 
 /**
  * What the user is looking at, sent with every assistant turn (CON-450, D3).
@@ -36,6 +36,18 @@ export type ViewContext = {
     campaignId?: string
   }
   visible?: { kind: ViewEntityKind; ids: string[] }
+  /**
+   * What a post thread's first message was sent from (CON-495): a review
+   * finding, named by its key alone — the server finds it in the campaign's
+   * latest review. The stored turn comes back with `finding`, which is what
+   * FROM THE REVIEW quotes; the client never sends it.
+   */
+  from?: {
+    kind: 'finding'
+    campaignId: string
+    key: string
+    finding?: ReviewFindingRef
+  }
 }
 
 export type ViewScope =
@@ -307,4 +319,24 @@ export function sameFilter(a: string, b: string): boolean {
       .sort()
       .join('&')
   return norm(a) === norm(b)
+}
+
+/** The finding a stored user turn names, when it is whole enough to quote. */
+export function reviewFindingOf(view: unknown): ReviewFindingRef | undefined {
+  if (!view || typeof view !== 'object') return undefined
+  const from = (view as { from?: { finding?: Partial<ReviewFindingRef> } }).from
+  const f = from?.finding
+  if (!f || typeof f.issue !== 'string' || !f.issue) return undefined
+  return {
+    key: typeof f.key === 'string' ? f.key : '',
+    postId: typeof f.postId === 'string' ? f.postId : '',
+    title: typeof f.title === 'string' ? f.title : '',
+    severity: f.severity,
+    issue: f.issue,
+    quote: typeof f.quote === 'string' && f.quote ? f.quote : undefined,
+    suggestion:
+      typeof f.suggestion === 'string' && f.suggestion
+        ? f.suggestion
+        : undefined,
+  }
 }

@@ -1,4 +1,5 @@
 import type { CalendarFinding } from '@/types/assistant'
+import { findingIdeas } from './assistant'
 import { apiJson, apiVoid } from './http'
 import { isRecord } from './json'
 
@@ -58,6 +59,7 @@ function problemList(value: unknown): CalendarFinding[] {
           date: text(post.date) || undefined,
         }))
         .filter((post) => post.id),
+      ideas: findingIdeas(p.ideas),
       // No offers here: the Overview doesn't run the assistant, so a fix is
       // what to ask it for, or a post to open.
       fixes: (Array.isArray(p.fixes) ? p.fixes : [])

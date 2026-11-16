@@ -228,6 +228,23 @@ export type AssistantProposal = {
    * the summary and CONFIRM.
    */
   card?: ProposalDetails
+  /**
+   * What a confirmed offer did, as the server recorded it (CON-495): read
+   * back on a reload, and on a 409 that names the offer as it stands.
+   */
+  outcome?: ProposalOutcome
+}
+
+/**
+ * A confirmed offer's answer (CON-495). `text` is the server's sentence, kept
+ * for a kind this build can't word; `movedTo` is the day a move landed on,
+ * when the work moved one post — what "Fixed since: moved to Mon 14" names.
+ */
+export type ProposalOutcome = {
+  text: string
+  made?: number
+  total?: number
+  movedTo?: { day: string; at?: string }
 }
 
 export type ProposalDetails = {
@@ -689,6 +706,11 @@ export type CalendarFinding = {
   postIds: string[]
   /** The posts by title and day, when the server names them. */
   posts: { id: string; title: string; date?: string }[]
+  /**
+   * The ideas the posts share (`same_idea_close`, CON-495). A deleted idea's
+   * title is empty.
+   */
+  ideas?: { id: string; title: string }[]
   fixes: RepairFix[]
 }
 
@@ -716,9 +738,32 @@ export type CampaignReviewFinding = {
   label?: string
   postId?: string
   issue: string
+  /** The post's exact words the issue is about; absent for the whole post (CON-495). */
+  quote?: string
   suggestion?: string
   fixes: RepairFix[]
 }
+
+/**
+ * A review finding a post thread was asked to fix (CON-495), as the user
+ * turn's view context stores it: what FROM THE REVIEW quotes.
+ */
+export type ReviewFindingRef = {
+  key: string
+  postId: string
+  title: string
+  severity?: ReviewSeverity
+  issue: string
+  quote?: string
+  suggestion?: string
+}
+
+/**
+ * Lines an edit rewrote (CON-495): each run is the lines it replaced and the
+ * lines that replaced them. `before` is empty for lines added, `after` for
+ * lines removed, and a blank line is `""`.
+ */
+export type LineRun = { before: string[]; after: string[] }
 
 /**
  * The campaign's brief and posts reviewed against each other — by
@@ -790,6 +835,13 @@ export type ChangedPost = {
   fromType?: string
   toType?: string
   kept: string[]
+  /**
+   * Whether a conversion passes its new type's rules (CON-495); absent when
+   * its media couldn't be read, which claims nothing.
+   */
+  rules?:
+    | { passes: true }
+    | { passes: false; broken: { rule: string; message: string }[] }
 }
 
 /** What a repair fix did to posts: converted, unscheduled or deleted. */
@@ -841,6 +893,8 @@ export type PostRevised = {
   versioned: boolean
   /** The post's own; absent when it never was known. */
   grounding?: Grounding
+  /** The lines it rewrote (CON-495). */
+  lines?: LineRun[]
 }
 
 /**
@@ -1531,6 +1585,8 @@ export type AssistantTurn = {
   ignored?: string[]
   /** What the repair tools did this turn (CON-462). */
   repair?: RepairResults
+  /** The lines a post edit rewrote (`results.post.lines`, CON-495). */
+  postLines?: LineRun[]
   /** What the assets pack's tools found this turn (CON-460). */
   assets?: AssetsResults
   /** What the brand tools did this turn (CON-461). */
