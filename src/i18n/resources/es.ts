@@ -329,6 +329,7 @@ export const es: Translation = {
     scope: {
       all: 'Todas las campañas',
       switch: 'Cambiar de campaña',
+      newCampaign: 'Nueva campaña',
     },
     workspaceMenu: 'Menú del espacio de trabajo',
     yourWorkspaces: 'Tus espacios de trabajo',

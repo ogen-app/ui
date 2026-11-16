@@ -11,7 +11,12 @@ import { useCampaignScopeStore } from '@/stores/campaignScopeStore'
  * filter on a page that carries none (`lib/campaignScope`). A remembered id
  * counts only while it is one of the workspace's active campaigns.
  */
-export function useCampaignScope(): { where: Where; scope: string | null } {
+export function useCampaignScope(): {
+  where: Where
+  scope: string | null
+  /** The workspace's campaign when it has exactly one (`placeLink`). */
+  soleCampaignId: string | null
+} {
   const pathname = useLocation({ select: (location) => location.pathname })
   const pick = useLocation({
     select: (location) => (location.search as { pick?: unknown }).pick,
@@ -30,7 +35,10 @@ export function useCampaignScope(): { where: Where; scope: string | null } {
     }
   }, [where.scope, remembered, setRemembered])
 
-  if (where.scope !== undefined) return { where, scope: where.scope }
+  const soleCampaignId = campaigns?.length === 1 ? campaigns[0].id : null
+  if (where.scope !== undefined) {
+    return { where, scope: where.scope, soleCampaignId }
+  }
   const valid = campaigns?.some((campaign) => campaign.id === remembered)
-  return { where, scope: valid ? remembered : null }
+  return { where, scope: valid ? remembered : null, soleCampaignId }
 }

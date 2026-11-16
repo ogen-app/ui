@@ -70,6 +70,17 @@ describe('placeLink', () => {
     expect(placeLink('calendar', null, on)).toEqual({ to: '/calendar' })
   })
 
+  it('asks nothing of a workspace with one campaign', () => {
+    const sole = { workspaceCalendar: true, soleCampaignId: 'c1' }
+    expect(placeLink('posts', null, sole)).toEqual({
+      to: '/campaigns/$campaignId/list',
+      params: { campaignId: 'c1' },
+    })
+    // A place with an all-campaigns page keeps it.
+    expect(placeLink('ideas', null, sole)).toEqual({ to: '/ideas' })
+    expect(placeLink('calendar', null, sole)).toEqual({ to: '/calendar' })
+  })
+
   it('leaves the workspace-only rows unfiltered', () => {
     expect(placeLink('foundation', 'c1', off)).toEqual({ to: '/foundation' })
   })

@@ -217,22 +217,14 @@ const FEATURE_FLAGS = {
    * `useWorkspacePosts` is a third reader of a list that was already being
    * kept in step, not a new contract.
    *
-   * What it is waiting on now is **a range**. The endpoint takes no
-   * parameters, so the grid pulls every post in the workspace — bodies,
-   * campaigns, platforms and assets — however few weeks are on screen. That is
-   * the same cost the auto-publish allowlist already pays, and fine at
-   * today's scale; on a workspace with thousands of posts it is a calendar
-   * that opens slowly, which is worse than one that isn't offered. So the flag
-   * stays off until either `?from=&to=` lands (filed in
-   * `docs/open-questions.md`) or the feature is tried against a real workspace
-   * and judged fast enough — rule 4, deliberately, rather than flipping
-   * because the screen renders.
-   *
-   * Turning it on is one word here. Everything else is built: the route, the
-   * nav row, the panels and the place memory all read this flag already, and
-   * `?ff=workspace-calendar` exercises it on staging without a deploy.
+   * **On** (2026-11-16): with the campaign a filter over one fixed menu,
+   * Calendar under "All campaigns" has to be a calendar rather than a request
+   * to pick one. What it still lacks is **a range** — the endpoint takes no
+   * parameters, so the grid pulls every post in the workspace however few
+   * weeks are on screen (`docs/open-questions.md` P4). Fine at today's scale;
+   * the first large workspace is the test of whether it stays that way.
    */
-  'workspace-calendar': false,
+  'workspace-calendar': true,
 
   /**
    * The contextual help centre (CON-173) — the drawer, its triggers and the

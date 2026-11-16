@@ -1400,7 +1400,10 @@ longer cuts through a markup run. Both halves were the ask; neither is
 normalised on this side. The flag came out on 2026-09-18. See
 `docs/technical-decisions.md#thread-sequence`.
 
-**The workspace calendar is built and flagged off** (`workspace-calendar`). It
+**The workspace calendar is on** (`workspace-calendar`, switched on 2026-11-16
+so Calendar under "All campaigns" is a calendar rather than a request to pick
+one; the paragraph's last sentences are why it was off, and the range is still
+what it lacks). It
 is the campaign's calendar with the filter taken off, and deliberately the same
 components: both grids, the card, the rung ladder and the toolbar take the
 campaign as an argument, and `null` is what says there isn't one. Three things

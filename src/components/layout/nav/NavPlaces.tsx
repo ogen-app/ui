@@ -43,14 +43,17 @@ const BAND: PlaceId[] = ['foundation', 'activity', 'settings']
  */
 export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
   const { t } = useTranslation()
-  const { where, scope } = useCampaignScope()
+  const { where, scope, soleCampaignId } = useCampaignScope()
   const workspaceCalendar = useFeatureFlag('workspace-calendar')
   const inboxEnabled = useFeatureFlag('tasks')
   const undecided = useUndecidedIdeaCount()
   const unread = useNotificationUnreadCount()
 
   const row = (place: PlaceId) => {
-    const link = placeLink(place, scope, { workspaceCalendar })
+    const link = placeLink(place, scope, {
+      workspaceCalendar,
+      soleCampaignId,
+    })
     const icon = iconOf(place)
     const label =
       place === 'foundation'

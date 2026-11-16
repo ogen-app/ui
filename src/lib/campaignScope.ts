@@ -18,6 +18,8 @@ import type { LinkProps } from '@tanstack/react-router'
  *   calendar is off): there is nothing to show for all campaigns at once, so
  *   with no campaign chosen the row opens the campaign cards and asks for one
  *   (`/campaigns?pick=<place>`). Picking a card lands on that place, filtered.
+ *   A workspace with exactly one campaign has nothing to choose between, so
+ *   there the row goes straight to that campaign (`soleCampaignId`).
  * - **Workspace only** — Foundation (and the Inbox): the workspace's own
  *   material, which no campaign narrows. These pages carry no scope at all,
  *   so the filter you had chosen is kept while you are on them, and the next
@@ -142,17 +144,30 @@ const WORKSPACE_TO = {
   settings: '/workspace-settings',
 } satisfies Partial<Record<PlaceId, LinkProps['to']>>
 
+export type PlaceLinkOptions = {
+  workspaceCalendar: boolean
+  /**
+   * The workspace's campaign when it has exactly one, else `null`. A
+   * campaign-only place then opens it rather than asking which.
+   */
+  soleCampaignId?: string | null
+}
+
 /** Where a row goes under a filter: one campaign's id, or `null` for all. */
 export function placeLink(
   place: PlaceId,
   campaignId: string | null,
-  { workspaceCalendar }: { workspaceCalendar: boolean },
+  { workspaceCalendar, soleCampaignId = null }: PlaceLinkOptions,
 ): PlaceLink {
   if (place === 'foundation') return { to: '/foundation' }
   if (place === 'inbox') return { to: '/tasks' }
   if (campaignId) return { to: CAMPAIGN_TO[place], params: { campaignId } }
   if (place === 'calendar' && workspaceCalendar) return { to: '/calendar' }
-  if (isPickPlace(place)) return { to: '/campaigns', search: { pick: place } }
+  if (isPickPlace(place)) {
+    return soleCampaignId
+      ? { to: CAMPAIGN_TO[place], params: { campaignId: soleCampaignId } }
+      : { to: '/campaigns', search: { pick: place } }
+  }
   return { to: WORKSPACE_TO[place] }
 }
 
@@ -164,7 +179,7 @@ export function placeLink(
 export function scopeLink(
   where: Where,
   target: string | null,
-  options: { workspaceCalendar: boolean },
+  options: PlaceLinkOptions,
 ): PlaceLink | null {
   if (where.scope === undefined || where.place === null) return null
   return placeLink(where.place, target, options)

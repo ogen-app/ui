@@ -409,6 +409,7 @@ export const en = {
     scope: {
       all: 'All campaigns',
       switch: 'Switch campaign',
+      newCampaign: 'New campaign',
     },
     /**
      * Heads the workspace's destinations where they appear inside the account

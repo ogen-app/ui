@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button.tsx'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
@@ -11,9 +11,10 @@ import { PlusIcon } from '@phosphor-icons/react'
 import { ArchivedCampaigns } from '@/components/campaigns/ArchivedCampaigns.tsx'
 import { CampaignCard } from '@/components/campaigns/CampaignCard.tsx'
 import { CreateCampaignDialog } from '@/components/campaigns/CreateCampaignDialog.tsx'
-import { useCampaigns } from '@/hooks/useCampaigns.ts'
+import { campaignsQuery, useCampaigns } from '@/hooks/useCampaigns.ts'
 import { awaiting } from '@/lib/fetched'
-import { isPickPlace, type PickPlace } from '@/lib/campaignScope'
+import { queryClient } from '@/lib/queryClient'
+import { isPickPlace, placeLink, type PickPlace } from '@/lib/campaignScope'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
 
@@ -29,7 +30,9 @@ import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
  * all-campaigns page (Posts, Strategy, the Calendar while the workspace's is
  * off) opens it when no campaign is chosen, and each card then leads to that
  * place in its campaign (`lib/campaignScope`). The archive is left out — an
- * archived campaign is not one you can filter to.
+ * archived campaign is not one you can filter to. With exactly one campaign
+ * there is nothing to pick, so the address goes straight to that place in it
+ * — the rail already links there, and this catches every other way in.
  */
 type CampaignsSearch = { archived?: boolean; pick?: PickPlace }
 
@@ -41,6 +44,17 @@ export const Route = createFileRoute('/_authenticated/campaigns/')({
       : {}),
     ...(isPickPlace(search.pick) ? { pick: search.pick } : {}),
   }),
+  beforeLoad: async ({ search }) => {
+    if (!search.pick) return
+    const campaigns = await queryClient
+      .ensureQueryData(campaignsQuery)
+      .catch(() => null)
+    if (campaigns?.length !== 1) return
+    const link = placeLink(search.pick, campaigns[0].id, {
+      workspaceCalendar: false,
+    })
+    throw redirect({ to: link.to, params: link.params, replace: true })
+  },
 })
 
 function Campaigns() {
