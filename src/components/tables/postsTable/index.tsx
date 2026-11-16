@@ -26,7 +26,13 @@ type PostRow = Post & Record<string, unknown>
 
 type PostsTableProps = {
   posts: Post[]
-  campaignId: string
+  /**
+   * The campaign the rows belong to, or `null` on the workspace's list, where
+   * they come from every campaign. That null adds a Campaign column and makes
+   * each row answer to its own campaign — the link to the post, and what it is
+   * checked against for being outside its campaign's platforms.
+   */
+  campaignId: string | null
   onDelete: (id: string) => void
   emptyStateMessage?: string
   emptyStateActionLabel?: string
@@ -115,7 +121,8 @@ function PostsTableComponent({
   const locale = i18n.language
   const formats = useFeatureFlag('content-formats')
   // What the campaign targets, so a post left outside it is marked (CON-483).
-  const targets = useCampaign(campaignId).data?.target_platforms
+  // On the workspace's list each row carries its own campaign instead.
+  const targets = useCampaign(campaignId ?? '').data?.target_platforms
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
   // Against the rows on screen, not against the whole selection: the header
@@ -179,13 +186,31 @@ function PostsTableComponent({
           return (
             <Link
               to="/campaigns/$campaignId/posts/$postId"
-              params={{ campaignId, postId: row.id }}
+              params={{ campaignId: row.campaign_id, postId: row.id }}
               className="block h-[34px] border-b-2 border-background px-3 leading-8 hover:underline"
             >
               <TextCell value={displayTitle} />
             </Link>
           )
         },
+      },
+      {
+        // Only on the workspace's list (see `activeColumns`). The name leads to
+        // that campaign's own list: the same posts with the filter applied.
+        id: 'campaign',
+        accessorFn: (row) => row.campaign?.name ?? '',
+        header: t('postsTable.columnCampaign'),
+        size: 200,
+        minSize: 140,
+        cell: (_value, row) => (
+          <Link
+            to="/campaigns/$campaignId/list"
+            params={{ campaignId: row.campaign_id }}
+            className="block h-[34px] border-b-2 border-background px-3 leading-8 hover:underline"
+          >
+            <TextCell value={row.campaign?.name ?? ''} />
+          </Link>
+        ),
       },
       {
         // A post written from general knowledge says so in a column of its
@@ -217,7 +242,12 @@ function PostsTableComponent({
               value={postStatusLabel(t, row.status)}
               className="min-w-0 truncate"
             />
-            <OutsideCampaignMark outside={outsideCampaign(row, targets)} />
+            <OutsideCampaignMark
+              outside={outsideCampaign(
+                row,
+                campaignId ? targets : row.campaign?.target_platforms,
+              )}
+            />
           </div>
         ),
       },
@@ -343,6 +373,7 @@ function PostsTableComponent({
     () => [
       ...(selectable ? ['select'] : []),
       'title',
+      ...(campaignId ? [] : ['campaign']),
       'grounding',
       'status',
       'platform',
@@ -351,7 +382,7 @@ function PostsTableComponent({
       'relative_time',
       'actions',
     ],
-    [selectable, formats],
+    [selectable, formats, campaignId],
   )
 
   return (

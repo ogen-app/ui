@@ -27,7 +27,7 @@ import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
  * than in state because it is a place you can send someone to.
  *
  * `?pick=<place>` is the same list asking for a campaign: a row with no
- * all-campaigns page (Posts, Strategy, the Calendar while the workspace's is
+ * all-campaigns page (Strategy, the Calendar while the workspace's is
  * off) opens it when no campaign is chosen, and each card then leads to that
  * place in its campaign (`lib/campaignScope`). The archive is left out — an
  * archived campaign is not one you can filter to. With exactly one campaign

@@ -100,10 +100,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   the pointer. Where each row goes under each filter is one table,
   `lib/campaignScope` (`placeLink`), and every place is one of three kinds:
   **filtered** (a page for all campaigns and a page for one — Overview, Ideas,
-  Assets, Calendar, Analytics, Activity, Settings), **campaign only** (Posts,
-  Strategy: with no campaign chosen the row opens the campaign cards at
+  Assets, Posts, Calendar, Analytics, Activity, Settings), **campaign only**
+  (Strategy: with no campaign chosen the row opens the campaign cards at
   `/campaigns?pick=<place>`, and a workspace with exactly one campaign goes
-  straight to it), and **workspace only** (Foundation, the Inbox: voices,
+  straight to it — as Posts does, since `/posts` would be that campaign's list
+  without ADD POST), and **workspace only** (Foundation, the Inbox: voices,
   audiences and guardrails are the workspace's, and what a campaign has of them
   is a *pointer*, chosen on its Strategy page through `CampaignBrandCard`).
   Switching campaign keeps you on the same place (`scopeLink`). The address is

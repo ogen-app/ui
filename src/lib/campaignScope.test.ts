@@ -23,6 +23,7 @@ describe('whereOf', () => {
 
   it('reads a workspace route as all campaigns', () => {
     expect(whereOf('/ideas')).toEqual({ place: 'ideas', scope: null })
+    expect(whereOf('/posts')).toEqual({ place: 'posts', scope: null })
     expect(whereOf('/workspace-settings')).toEqual({
       place: 'settings',
       scope: null,
@@ -31,8 +32,13 @@ describe('whereOf', () => {
   })
 
   it('reads the campaigns list asking for a campaign as the asking place', () => {
+    expect(whereOf('/campaigns', 'strategy')).toEqual({
+      place: 'strategy',
+      scope: null,
+    })
+    // Posts has a page of its own for all campaigns, so it never asks.
     expect(whereOf('/campaigns', 'posts')).toEqual({
-      place: 'posts',
+      place: 'overview',
       scope: null,
     })
     expect(whereOf('/campaigns', 'nonsense')).toEqual({
@@ -56,6 +62,7 @@ describe('placeLink', () => {
       to: '/campaigns/$campaignId/list',
       params: { campaignId: 'c1' },
     })
+    expect(placeLink('posts', null, off)).toEqual({ to: '/posts' })
   })
 
   it('asks for a campaign where there is no all-campaigns page', () => {
@@ -88,7 +95,7 @@ describe('placeLink', () => {
 
 describe('scopeLink', () => {
   it('keeps the place and changes the filter', () => {
-    expect(scopeLink(whereOf('/campaigns', 'posts'), 'c1', off)).toEqual({
+    expect(scopeLink(whereOf('/posts'), 'c1', off)).toEqual({
       to: '/campaigns/$campaignId/list',
       params: { campaignId: 'c1' },
     })

@@ -1639,6 +1639,9 @@ export const es: Translation = {
         'Las publicaciones se escriben dentro de una campaña. Programa una y aparecerá aquí, sea cual sea la campaña a la que pertenezca.',
       workspacePanelSubtitle:
         'Las publicaciones sin fecha esperan aquí — arrastra una al calendario para darle una.',
+      workspaceListTitle: 'Aún no hay publicaciones',
+      workspaceListSubtitle:
+        'Las publicaciones se escriben dentro de una campaña. Añade una allí y aparecerá aquí, sea cual sea la campaña a la que pertenezca.',
     },
   },
 
@@ -4220,6 +4223,7 @@ export const es: Translation = {
     columnGrounding: 'Fuentes',
     columnPlatform: 'Plataforma',
     columnFormat: 'Formato',
+    columnCampaign: 'Campaña',
     columnPublishDate: 'Fecha de publicación',
     columnWhen: 'Cuándo',
 
@@ -6725,8 +6729,6 @@ export const es: Translation = {
 
   campaigns: {
     pick: {
-      posts:
-        'Las publicaciones pertenecen a una campaña. Elige una para ver sus publicaciones.',
       calendar:
         'Cada campaña tiene su propio calendario. Elige una para abrirlo.',
       strategy:

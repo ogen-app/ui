@@ -2118,6 +2118,10 @@ export const en = {
         'Posts are written inside a campaign. Schedule one and it will show up here, whichever campaign it belongs to.',
       workspacePanelSubtitle:
         'Posts without a date wait here — drag one onto the calendar to give it one.',
+      /** The workspace's posts list, which has no ADD POST either. */
+      workspaceListTitle: 'No posts yet',
+      workspaceListSubtitle:
+        'Posts are written inside a campaign. Add one there and it will show up here, whichever campaign it belongs to.',
     },
   },
 
@@ -4948,6 +4952,8 @@ export const en = {
     columnGrounding: 'Sources',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
+    /** Only on the workspace's list, where the rows come from every campaign. */
+    columnCampaign: 'Campaign',
     columnPublishDate: 'Publish date',
     columnWhen: 'When',
 
@@ -8134,7 +8140,6 @@ export const en = {
      * for one (`?pick=`). One sentence per row.
      */
     pick: {
-      posts: 'Posts belong to a campaign. Choose one to see its posts.',
       calendar: 'Each campaign keeps its own calendar. Choose one to open it.',
       strategy:
         'Strategy is set per campaign. Choose one to open its strategy.',
