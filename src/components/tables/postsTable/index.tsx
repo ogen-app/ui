@@ -354,7 +354,8 @@ function PostsTableComponent({
     ],
   )
 
-  const withSeries = data.some((post) => post.series_id)
+  const seriesOn = useFeatureFlag('series')
+  const withSeries = seriesOn && data.some((post) => post.series_id)
 
   const activeColumns = useMemo(
     () => [

@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowUpRightIcon, RepeatIcon, XIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { SettingsCard } from '@/components/settings/SettingsCard'
 import { TextSelect } from '@/components/ui/text-select'
 import {
@@ -58,6 +59,7 @@ import { RhythmPicker } from './RhythmPicker'
 export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const enabled = useFeatureFlag('series')
 
   const { data: library } = useSeriesLibrary()
   const { data: campaignSeries } = useCampaignSeries(campaign.id)
@@ -71,7 +73,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
   // rule, and the same one line of code, as `CampaignBrandCard` above it: a
   // card that appears a beat later pushes the rest of the page down under
   // somebody who is already reading it.
-  if (!library || !campaignSeries) return null
+  if (!enabled || !library || !campaignSeries) return null
 
   const runs = campaignSeries.runs
   const byId = new Map(library.map((entry) => [entry.id, entry]))

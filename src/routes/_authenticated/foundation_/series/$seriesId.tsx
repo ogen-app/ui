@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { isFeatureEnabled } from '@/config/featureFlags'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { PageError } from '@/components/page-primitives/PageError'
@@ -33,6 +34,10 @@ import { toast } from '@/stores/toastStore'
 export const Route = createFileRoute(
   '/_authenticated/foundation_/series/$seriesId',
 )({
+  // Escaping the layout escapes its checks too, so the flag is read here.
+  beforeLoad: () => {
+    if (!isFeatureEnabled('series')) throw redirect({ to: '/campaigns' })
+  },
   /** Which starter this was forked from. Absent rather than `undefined`. */
   validateSearch: (search: Record<string, unknown>): { from?: string } =>
     typeof search.from === 'string' ? { from: search.from } : {},

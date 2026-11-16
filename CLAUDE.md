@@ -1615,9 +1615,9 @@ Content Bank, and click-to-create on a calendar day. Neither has a control to
 hang an explanation on, and the server's own refusal already arrives as a
 sentence (CON-295).
 
-**Series and content formats are two features, and the split is the design**
-(CON-264). Series are live and unflagged since CON-508; `content-formats` is
-still a flag, off, backed since CON-329 and waiting only on its live re-test. The word people arrive with
+**Series and content formats are two flags, and the split is the design**
+(CON-264; both off, and both backed — `series` since CON-496/508 and
+`content-formats` since CON-329 — each waiting only on its live re-test). The word people arrive with
 is *content pillar*, which means at least four different things; what is modelled
 is the **recurring named segment with a recipe** — the only reading a generator
 can act on and the only one analytics can group by. A broad theme collapses into
@@ -1664,7 +1664,9 @@ weekday's part-week without that day gets nothing, and an undated campaign
 claims nothing. No endpoint returns a claim, so when the two disagree the port
 is the bug. Ideas and posts carry `series_id` (`SeriesMark`), which the post
 PUT reads presence-aware and `postToPayload` leaves out; idea slots wait on it
-(CON-512). Analytics by series is still to come. One move stays
+(CON-512). Analytics by series is still to come. All of it — the marks, the
+posts table's Series column and the calendar settings' series day included —
+stays behind the `series` flag until the live pass. One move stays
 deliberately open (CON-305 decision 1): series could be its own module at both
 levels, `/series` and `/campaigns/:id/series`, which is what documents just did
 and what the nav rule would prefer over a level-1 card with no level-0 row.

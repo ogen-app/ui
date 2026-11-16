@@ -15,7 +15,7 @@ import { buildFlagValue, FLAG_IDS, isFeatureEnabled } from './featureFlags'
  * half is a build-time fold, asserted by the build rather than here: see
  * `docs/technical-decisions.md#staging-flag-overrides`.
  */
-const KNOWN = ['tasks', 'help-center', 'content-formats']
+const KNOWN = ['tasks', 'help-center', 'series']
 
 /**
  * Forcing a flag *off* is only testable against a flag the build has on, and
@@ -80,12 +80,12 @@ describe('the resolver', () => {
 
 describe('?ff=', () => {
   it('forces the names it lists and strips itself from the address bar', () => {
-    visit('/campaigns?ff=tasks,-content-formats')
+    visit('/campaigns?ff=tasks,-series')
     bootstrapFlagOverrides(KNOWN)
 
     expect(readFlagOverrides()).toEqual({
       tasks: true,
-      'content-formats': false,
+      series: false,
     })
     expect(window.location.search).toBe('')
   })
