@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, renderHook, screen, waitFor } from '@testing-library/react'
 import {
   afterAll,
   afterEach,
@@ -17,7 +19,13 @@ import type { ContentSeries } from '@/types/series'
 import type { Campaign } from '@/types/campaigns'
 
 /**
- * What an ordinary English test cannot tell you about Series.
+ * Two things about Series that an ordinary English test cannot tell you.
+ *
+ * **That the flag is free.** With `series` off the feature must not merely
+ * render nothing — it must not *ask* for anything. The card sits on the
+ * campaign's Strategy page and the series' marks on the idea and post lists,
+ * ordinary screens people open all day, so an unconditional query there would
+ * open a request for something that cannot be shown.
  *
  * **That the screens are actually converted.** In English a literal in a
  * component and a catalogue entry are the same string, so only rendering in
@@ -34,13 +42,65 @@ vi.mock('@/config/featureFlags', async (importOriginal) => {
 })
 
 const { useFeatureFlag } = await import('@/config/featureFlags')
+const { useCampaignSeries, useSeriesLibrary } =
+  await import('@/hooks/useSeries')
 const { SeriesSection } = await import('./SeriesSection')
+const { SeriesMark } = await import('./SeriesMark')
 const { CampaignSeriesCard } = await import('./CampaignSeriesCard')
 const { RhythmPicker } = await import('./RhythmPicker')
+
+function wrapper({ children }: { children: ReactNode }) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  })
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
+}
 
 afterEach(() => {
   vi.restoreAllMocks()
   vi.mocked(useFeatureFlag).mockReturnValue(false)
+})
+
+describe('with the flag off', () => {
+  it('names no series on an idea or a post, and asks for nothing (CON-508)', () => {
+    const list = vi.spyOn(api, 'listSeries')
+    const { container } = render(<SeriesMark seriesId="s1" />, { wrapper })
+    expect(container).toBeEmptyDOMElement()
+    expect(list).not.toHaveBeenCalled()
+  })
+
+  it('asks the library for nothing', async () => {
+    const list = vi.spyOn(api, 'listSeries')
+
+    const { result } = renderHook(() => useSeriesLibrary(), { wrapper })
+
+    expect(list).not.toHaveBeenCalled()
+    // Not merely "no data" — the query never runs, so nothing is pending
+    // either. A screen branching on `isPending` must not sit on a spinner for
+    // a feature that is switched off.
+    expect(result.current.fetchStatus).toBe('idle')
+  })
+
+  it("asks a campaign's page for nothing", () => {
+    const get = vi.spyOn(api, 'getCampaignSeries')
+
+    renderHook(() => useCampaignSeries('c1'), { wrapper })
+
+    expect(get).not.toHaveBeenCalled()
+  })
+
+  it('still runs when a caller overrides the default', async () => {
+    // The override exists so a harness and these tests can exercise the query
+    // without switching the build's flag. If it stopped working the guard
+    // above would be untestable, and an untested guard is the one that rots.
+    vi.spyOn(api, 'listSeries').mockResolvedValue([])
+
+    const { result } = renderHook(() => useSeriesLibrary({ enabled: true }), {
+      wrapper,
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  })
 })
 
 const DIGEST: ContentSeries = {

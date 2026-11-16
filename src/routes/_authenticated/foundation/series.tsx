@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { isFeatureEnabled } from '@/config/featureFlags'
 import { SeriesDetail } from '@/components/series/SeriesDetail'
 import { SeriesSection } from '@/components/series/SeriesSection'
 
@@ -20,6 +21,11 @@ import { SeriesSection } from '@/components/series/SeriesSection'
  * is why the section takes three callbacks and not three flows.
  */
 export const Route = createFileRoute('/_authenticated/foundation/series')({
+  // The section is offered apart from the module it sits in (`shown` in
+  // `lib/brandSections`), so the flag is checked here too.
+  beforeLoad: () => {
+    if (!isFeatureEnabled('series')) throw redirect({ to: '/foundation' })
+  },
   component: SeriesPage,
 })
 

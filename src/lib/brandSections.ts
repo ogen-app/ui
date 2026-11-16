@@ -10,6 +10,7 @@ import {
 } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import type { BrandConsumer } from '@/components/brand/types'
+import { isFeatureEnabled } from '@/config/featureFlags'
 
 /**
  * Brand's sections, as the app names and marks them.
@@ -48,7 +49,7 @@ import type { BrandConsumer } from '@/components/brand/types'
  * so they are their own level-0 module at `/assets`, with a campaign-scoped
  * twin, and this table is back to the things a brand is made of.
  *
- * **Five of the seven are offered today** — see `shown`, and read the rest of
+ * **Four of the seven are offered today** — see `shown`, and read the rest of
  * this file as describing the module rather than the current menu.
  */
 export type BrandSectionId =
@@ -150,9 +151,10 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     icon: RepeatIcon,
     tone: 'var(--brand-series)',
     // The content plan reserves each run's slots and writes its ideas to the
-    // series (CON-496). Analytics doesn't group by it yet.
+    // series (CON-496). Analytics doesn't group by it yet. Offered once the
+    // `series` flag is on.
     readBy: ['plan'],
-    shown: true,
+    shown: isFeatureEnabled('series'),
   },
   {
     id: 'look',
