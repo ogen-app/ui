@@ -85,21 +85,24 @@ export function OnboardingFrame({
                       i > furthest && 'cursor-default',
                     )}
                   >
-                    {done ? (
-                      <CheckIcon
-                        aria-hidden
-                        weight="bold"
-                        className="size-3.5 text-accent"
-                      />
-                    ) : (
-                      <span
-                        aria-hidden
-                        className={cn(
-                          'size-1.5 rounded-full',
-                          here ? 'bg-accent' : 'bg-quaternary',
-                        )}
-                      />
-                    )}
+                    <span
+                      aria-hidden
+                      className="flex size-3.5 shrink-0 items-center justify-center"
+                    >
+                      {done ? (
+                        <CheckIcon
+                          weight="bold"
+                          className="size-3.5 text-accent"
+                        />
+                      ) : (
+                        <span
+                          className={cn(
+                            'size-1.5 rounded-full',
+                            here ? 'bg-accent' : 'bg-quaternary',
+                          )}
+                        />
+                      )}
+                    </span>
                     <span className={cn(!here && 'hidden md:inline')}>
                       {label}
                     </span>
