@@ -114,13 +114,11 @@ export function OnboardingFrame({
         </Button>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1120px] flex-1 grid-cols-1 items-start gap-4 px-4 py-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-6 lg:px-6 lg:py-10">
+      <div className="mx-auto grid w-full max-w-[1120px] flex-1 grid-cols-1 items-start gap-4 lg:content-start lg:items-stretch px-4 py-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-6 lg:px-6 lg:py-10">
         <div className="order-2 flex min-w-0 flex-col gap-3 lg:order-1">
           {children}
         </div>
-        <aside className="order-1 lg:sticky lg:top-10 lg:order-2">
-          {sheet}
-        </aside>
+        <aside className="order-1 flex flex-col lg:order-2">{sheet}</aside>
       </div>
     </PageContainer>
   )
@@ -128,7 +126,9 @@ export function OnboardingFrame({
 
 /**
  * One step's card: the title, a line saying why it is asked, the work, and the
- * way on. A step that needs more than one card passes the rest as `after`.
+ * way on. A step that needs more than one card renders more beside it.
+ * The last card in the column grows to the sheet's height, with the way on
+ * kept at its foot, so the two columns end on one line.
  */
 export function StepCard({
   title,
@@ -142,7 +142,7 @@ export function StepCard({
   footer?: ReactNode
 }) {
   return (
-    <section className="flex flex-col gap-6 bg-primary px-5 py-6 lg:px-8 lg:py-8">
+    <section className="flex flex-col gap-6 bg-primary px-5 py-6 last:flex-1 lg:px-8 lg:py-8">
       <div className="flex flex-col gap-2">
         <h1 className="font-display text-2xl leading-8 font-medium tracking-tight text-balance">
           {title}
@@ -154,7 +154,7 @@ export function StepCard({
         )}
       </div>
       {children}
-      {footer}
+      {footer && <div className="mt-auto">{footer}</div>}
     </section>
   )
 }
