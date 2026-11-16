@@ -90,29 +90,45 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   component.
 - **Trailing-underscore route segments** (`$campaignId_`, `foundation_`)
   deliberately escape the parent layout to render fullscreen.
-- **The nav is two levels of one menu, and every row at level 1 answers to a
-  row at level 0** — `layout/nav/workspaceDestinations.ts` is the workspace's
-  list, `lib/campaignSections.ts` is the same list narrowed, and a module added
-  to one without the other is the asymmetry a user reads as a bug in their own
-  memory. Two deliberate exceptions, both stated on those tables: **Strategy**
-  has no workspace twin (a campaign commits to a window and a rate; a workspace
-  commits to nothing), and **Foundation** has no campaign twin (voices,
+- **The nav is one menu, and the campaign is a filter over it.** The rail's
+  rows never change: Overview, Strategy, Ideas, Assets, Posts, Calendar,
+  Analytics, then Foundation, Activity and Settings at its foot, in that order
+  at every scope (`layout/nav/NavPlaces`). The campaign is chosen above the
+  page, in `CampaignSwitcher` on the top bar, and changes **where a row leads,
+  never which rows there are** — the rail used to be two menus, the
+  workspace's and a campaign's, and moving between them rewrote the list under
+  the pointer. Where each row goes under each filter is one table,
+  `lib/campaignScope` (`placeLink`), and every place is one of three kinds:
+  **filtered** (a page for all campaigns and a page for one — Overview, Ideas,
+  Assets, Calendar, Analytics, Activity, Settings), **campaign only** (Posts,
+  Strategy: with no campaign chosen the row opens the campaign cards at
+  `/campaigns?pick=<place>`, and a workspace with exactly one campaign goes
+  straight to it), and **workspace only** (Foundation, the Inbox: voices,
   audiences and guardrails are the workspace's, and what a campaign has of them
   is a *pointer*, chosen on its Strategy page through `CampaignBrandCard`).
+  Switching campaign keeps you on the same place (`scopeLink`). The address is
+  the filter wherever it has one; on a workspace-only page the last choice is
+  kept per tab (`stores/campaignScopeStore`, `sessionStorage` for the reason
+  the active workspace is) so the next filtered row comes back filtered — read
+  it through `useCampaignScope`, which drops an id that is no longer an active
+  campaign here. A module is a new `PlaceId`, a row in `NavPlaces` and its
+  links in `campaignScope`; a route the table doesn't know shows no row active.
+  A row's figure (Ideas' undecided count, Activity's unread) is the
+  workspace's, so it shows only while no campaign is chosen.
 - **Posts is a list and the Calendar is a calendar — they are two
   destinations, not three views of one.** The toolbar's switch was WEEK /
   MONTH / LIST, which said the table is a way of looking at a week; it is not,
   it has no range at all. So the segmented control offers the two
   granularities and appears only on the calendar, the list keeps the half of
   the toolbar that is about the posts (how many, and ADD POST), and both
-  screens can create one. Moving between them is the rail's two rows. The
+  screens can create one. Moving between them is two rows of the rail. The
   memory still records which of the two you were last on, because the post
   editor's back arrow has to land where you came from
   (`lib/postsPlace`) — `PostsPlace.view` keeps `'list'` for exactly that, and
   `granularity` is what the entry points naming *the calendar* read.
 
 - **Documents are Assets, and Assets is a module rather than a section of
-  Foundation.** `/assets` at level 0, `/campaigns/:id/assets` at level 1, one
+  Foundation.** `/assets` for all campaigns, `/campaigns/:id/assets` for one, one
   `ContentPage` behind both (`campaign === null` is the workspace bank). It was
   `/content-bank`, then Foundation's `sources` section, and the move back out
   is the same observation twice: every other thing in Foundation is written
@@ -1170,16 +1186,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   Top-right: **views only** — anything that opens or switches a representation,
   never anything that changes the document. Top-centre (`PageHeader`'s `center`
   slot): passive status, in practice just `SaveStatus`, non-interactive by
-  rule. Bottom-centre: the commit, on `PageActionBar`. Bottom-right: the
-  assistant trigger. Bottom-left stays empty. A bar belongs to **editor**
-  screens only (post, asset, brief, settings) — a list has creation, not
+  rule. Bottom-centre: the commit, on `PageActionBar`. The assistant is not a
+  corner of the page: it opens from Ask Ogen at the far end of the top bar
+  (`TopBar`), which belongs to the app rather than the page — the floating
+  bottom-right trigger is gone. Bottom-left and bottom-right stay empty. A bar
+  belongs to **editor** screens only (post, asset, brief, settings) — a list has creation, not
   commit, so `ADD CAMPAIGN` stays top-right. The bar must anchor to the
   *content column*, not the scroller (it would scroll away) and not the
   viewport (it would drift off the column when the right rail opens); pages
-  using one leave `PAGE_ACTION_BAR_INSET` at the bottom of their content. `h-12`
-  and `bottom-4` are shared with the assistant trigger so the bottom edge is one
-  line; the trigger's `right-4` against the 24px content gutter is the one
-  deliberate break-out.
+  using one leave `PAGE_ACTION_BAR_INSET` at the bottom of their content.
 - **A control that doesn't govern the whole page doesn't go in the corner.**
   The top-right rule above says what *may* sit there, not that every view
   switch must. Analytics' period sits in a scope bar above the cards
@@ -1235,9 +1250,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   deleting is final and reachable only from an opened row. The four counts
   always sum to the list, so a woken idea is undecided and **not** also later.
   **The rail's Ideas row draws the undecided count and never the backlog's
-  size** (`IdeasSidebarItem`, level 0 only): the pile is meant to be long, so a
-  total would only ever climb, and the figure worth acting on is the one that
-  falls as people answer.
+  size** (`NavPlaces`, only while no campaign is chosen): the pile is meant
+  to be long, so a total would only ever climb, and the figure worth acting on
+  is the one that falls as people answer.
   **The screen is one column wide throughout**, first run included: an empty
   state that was full-bleed while the list replacing it was narrow moved the
   page sideways under the person who filed the first idea. One component serves
@@ -1256,8 +1271,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   ⌘B still works), `]` (the right rail), `o` (the assistant, composer
   focused), `?` (the sheet) and `g` then a letter; `/` stays with the filter
   sentence. Where a letter goes is `lib/shortcuts.ts`, and inside a campaign
-  `g i/a/n/s` go to the campaign's own sections, which is the nav rule's two
-  levels again. `]` hides the rail rather than closing its panel
+  `g i/a/n/s` go to the campaign's own sections, which is the nav's campaign
+  filter again. `]` hides the rail rather than closing its panel
   (`settingsStore.rightRailHidden`), so the panel memory survives and `]`
   again brings back what was showing. `shouldIgnoreAppShortcut` allows Alt and
   AltGr on `[`, `]` and `?`, because those keys need them on German and
@@ -1661,11 +1676,12 @@ CON-233 gives about `asset_ids`; a nullable `series_id` on the post; and
 analytics grouped by series and by format. Until then series live in
 `services/api/series.ts` (a stub in the shape the endpoints will have), **per
 browser**, which is what the flag is holding. One move stays
-deliberately open (CON-305 decision 1): series could be its own module at both
-levels, `/series` and `/campaigns/:id/series`, which is what documents just did
-and what the nav rule would prefer over a level-1 card with no level-0 row.
-`CampaignSeriesCard` takes a campaign and nothing else, so making that move is a
-re-parent plus two nav rows rather than a rewrite.
+deliberately open (CON-305 decision 1): series could be its own module,
+`/series` and `/campaigns/:id/series` — a filtered place in the one menu, which
+is what documents just did and what the nav rule would prefer over a card on
+Strategy. `CampaignSeriesCard` takes a campaign and nothing else, so making
+that move is a re-parent plus one place in `lib/campaignScope` rather than a
+rewrite.
 
 **Being refused is the half that is live, and it is not behind the flag**
 (CON-295). The server enforces whether or not this client asks first: it answers
