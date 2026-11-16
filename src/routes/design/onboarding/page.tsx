@@ -26,8 +26,10 @@ import {
   type PlannedPost,
 } from '@/components/onboarding/steps/PlanningStep'
 import {
+  ANSWERS_ID,
   SourcesStep,
   type OnboardingSource,
+  type SourceStatus,
 } from '@/components/onboarding/steps/SourcesStep'
 import { YouStep } from '@/components/onboarding/steps/YouStep'
 import { cn } from '@/lib'
@@ -62,6 +64,9 @@ const LIT: Partial<Record<OnboardingStep, NeedId[]>> = {
   accounts: ['channels'],
 }
 
+/** How long one source takes to read — about a minute, as the copy says. */
+const READ_MS = 60_000
+
 const at = (s: OnboardingStep) => ONBOARDING_STEPS.indexOf(s)
 
 /**
@@ -85,9 +90,12 @@ export function OnboardingPreview() {
   const [name, setName] = useState(jumped ? CLIENT.name : '')
   const [nameFrom, setNameFrom] = useState<string | null>(null)
   const [sources, setSources] = useState<OnboardingSource[]>(
-    jumped ? [{ kind: 'website', id: 'web', url: CLIENT.site }] : [],
+    jumped
+      ? [{ kind: 'website', id: 'web', url: CLIENT.site, status: 'read' }]
+      : [],
   )
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [answersStatus, setAnswersStatus] = useState<SourceStatus | null>(null)
   const [run, setRun] = useState<DistillRun | null>(
     at(initial) > at('sources')
       ? { ...baseRun(runSources(false)), status: 'ready', proposal: PROPOSAL }
@@ -116,7 +124,15 @@ export function OnboardingPreview() {
   const later = (ms: number, fn: () => void) => {
     timers.current.push(window.setTimeout(fn, ms))
   }
-  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+  // One timer per thing being read, so a remove or a stop can cancel it.
+  const reads = useRef(new Map<string, number>())
+  useEffect(
+    () => () => {
+      timers.current.forEach(clearTimeout)
+      reads.current.forEach(clearTimeout)
+    },
+    [],
+  )
 
   const go = (next: OnboardingStep) => {
     setStep(next)
@@ -126,57 +142,79 @@ export function OnboardingPreview() {
     window.scrollTo({ top: 0 })
   }
 
-  // ---- The read: sources tick over, then reading, composing, ready. -------
+  // ---- Reading: each source from the moment it is added, ~a minute. -----
+  const setStatus = (id: string, status: SourceStatus) =>
+    id === ANSWERS_ID
+      ? setAnswersStatus(status)
+      : setSources((all) =>
+          all.map((s) => (s.id === id ? { ...s, status } : s)),
+        )
+  const cancelRead = (id: string) => {
+    clearTimeout(reads.current.get(id))
+    reads.current.delete(id)
+  }
+  const beginRead = (id: string) => {
+    cancelRead(id)
+    setStatus(id, 'reading')
+    reads.current.set(
+      id,
+      window.setTimeout(() => {
+        reads.current.delete(id)
+        setStatus(id, 'read')
+      }, READ_MS),
+    )
+  }
+  const finishReads = () => {
+    reads.current.forEach((timer, id) => {
+      clearTimeout(timer)
+      setStatus(id, 'read')
+    })
+    reads.current.clear()
+  }
+  const stopReads = () => {
+    reads.current.forEach((timer, id) => {
+      clearTimeout(timer)
+      setStatus(id, 'stopped')
+    })
+    reads.current.clear()
+    setSources((all) =>
+      all.map((s) =>
+        s.status === 'uploading' ? { ...s, status: 'stopped' } : s,
+      ),
+    )
+    go('accounts')
+  }
+
+  // ---- The review: everything is read, so only the composing is left. ----
   const startRead = () => {
-    const withDocs = sources.some((s) => s.kind === 'document')
-    const list = runSources(withDocs)
-    const first = baseRun(list)
-    setRun(first)
+    const withDocs = sources.some(
+      (s) => s.kind === 'document' && s.status === 'read',
+    )
+    const list = runSources(withDocs).map((s) => ({
+      ...s,
+      status: 'ready' as const,
+    }))
+    setRun({ ...baseRun(list), status: 'composing' })
     if (!name.trim()) {
       setName(CLIENT.name)
       setNameFrom(CLIENT.site)
     }
     go('brand')
-    list.forEach((_, i) => {
-      later(700 * (i + 1), () =>
-        setRun((r) =>
-          r
-            ? {
-                ...r,
-                sources: r.sources.map((s, j) =>
-                  j === i ? { ...s, status: 'ready' } : s,
-                ),
-              }
-            : r,
-        ),
-      )
-    })
-    const read = 700 * (list.length + 1)
-    later(read, () => setRun((r) => (r ? { ...r, status: 'reading' } : r)))
-    later(read + 1800, () =>
-      setRun((r) => (r ? { ...r, status: 'composing' } : r)),
-    )
-    later(read + 3600, () =>
+    later(2400, () =>
       setRun((r) => (r ? { ...r, status: 'ready', proposal: PROPOSAL } : r)),
     )
   }
 
-  // ---- Documents: one file per click, uploading for a beat. ---------------
+  // ---- Documents: one file per click, uploading for a beat, then read. ----
   const chooseFile = () => {
     const taken = sources.filter((s) => s.kind === 'document').length
     const file = FILES[taken % FILES.length]
     const id = `doc-${taken}`
     setSources((s) => [
       ...s,
-      { kind: 'document', id, ...file, uploading: true },
+      { kind: 'document', id, ...file, status: 'uploading' },
     ])
-    later(1400, () =>
-      setSources((s) =>
-        s.map((x) =>
-          x.id === id && x.kind === 'document' ? { ...x, uploading: false } : x,
-        ),
-      ),
-    )
+    later(1400, () => beginRead(id))
   }
 
   // ---- Connect: the round trip, faked. -----------------------------------
@@ -277,15 +315,29 @@ export function OnboardingPreview() {
             sources={sources}
             questions={STARTER_QUESTIONS}
             answers={answers}
-            onAdd={(s) => setSources((all) => [...all, s])}
-            onRemove={(id) =>
+            answersStatus={answersStatus}
+            onAdd={(s) => {
+              setSources((all) => [...all, { ...s, status: 'reading' }])
+              beginRead(s.id)
+            }}
+            onRemove={(id) => {
+              cancelRead(id)
               setSources((all) => all.filter((s) => s.id !== id))
-            }
+            }}
+            onRetry={beginRead}
             onChooseFiles={chooseFile}
-            onAnswers={setAnswers}
+            onAnswers={(a) => {
+              setAnswers(a)
+              if (Object.values(a).some((x) => x.trim())) beginRead(ANSWERS_ID)
+              else {
+                cancelRead(ANSWERS_ID)
+                setAnswersStatus(null)
+              }
+            }}
             onLater={() => go('accounts')}
             onBack={() => go('you')}
             onRead={startRead}
+            onStop={stopReads}
           />
         )}
         {step === 'brand' && run && (
@@ -363,6 +415,15 @@ export function OnboardingPreview() {
               {s}
             </a>
           ))}
+          {step === 'sources' && (
+            <button
+              type="button"
+              onClick={finishReads}
+              className="ml-1 rounded-full px-2.5 py-1 transition-colors hover:bg-primary/15"
+            >
+              finish reads
+            </button>
+          )}
         </div>
       )}
     </>
