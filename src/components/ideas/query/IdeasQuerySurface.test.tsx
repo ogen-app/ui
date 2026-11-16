@@ -485,6 +485,23 @@ describe('the filter as a sentence', () => {
     expect(within(panel).queryByText('Before')).toBeNull()
   })
 
+  it('words exactly these ideas, asks for them, and lets the clause go (CON-510)', async () => {
+    await renderSurface({ ids: 'a,b', fit: 'high' })
+    await screen.findByText('Idea a')
+    expect(sentence()).toHaveTextContent(
+      'Showing ideas limited to these 2, with a high fit',
+    )
+    expect(api.queryIdeas.mock.calls[0][0]).toMatchObject({ ids: 'a,b' })
+    // Its words open nothing; its × drops it.
+    expect(
+      screen.queryByRole('button', { name: 'Change: limited to these 2' }),
+    ).toBeNull()
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Remove: limited to these 2' }),
+    )
+    expect(onSearchChange).toHaveBeenLastCalledWith({ fit: 'high' })
+  })
+
   it('removes a clause with its ×', async () => {
     await renderSurface({ fit: 'high', kind: 'pdf' })
     await screen.findByText('Idea a')

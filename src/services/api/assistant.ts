@@ -6,7 +6,7 @@ import { isRecord } from './json'
 import { parseAssetsState } from './content'
 import { analyticsResults, trailSteps } from './assistantAnalytics'
 import { workspaceResults } from './assistantWorkspace'
-import { draftedPost, ideasResults } from './assistantIdeas'
+import { draftedPost, ideaDraftStarted, ideasResults } from './assistantIdeas'
 import { seriesRhythm } from './series'
 import { readSSEStream } from '@/lib/sse'
 import { humanizeStep } from '@/lib/assistantTools'
@@ -54,6 +54,7 @@ import type {
   ReviewSeverity,
   StreamedPost,
   DraftedIdeaPost,
+  IdeaDraftStarted,
   ThreadSubject,
   Touched,
   ProposalDetails,
@@ -229,6 +230,8 @@ export type AssistantStreamEvent =
   | { type: 'post_generated'; post: StreamedPost }
   /** A draft written from ideas (CON-481), with how many of the planned. */
   | { type: 'idea_draft'; draft: DraftedIdeaPost; done: number; total: number }
+  /** The post `draftIdeas` is about to write (CON-500/510). */
+  | { type: 'idea_draft_started'; next: IdeaDraftStarted }
   /** The assistant cloned the post into a new, already-persisted one (CON-59). */
   | { type: 'clone_complete'; newPostId: string }
   /** A calendar check's findings, each with its fixes (CON-454). */
@@ -1794,6 +1797,13 @@ async function streamTurn(
       case 'draft_post_post': {
         const post = streamedPost(parsed)
         if (post) onEvent({ type: 'post_generated', post })
+        return
+      }
+      // Before each post draftIdeas writes, what it is about to write
+      // (CON-500): the rail's placeholder names it.
+      case 'idea_draft_started': {
+        const next = ideaDraftStarted(parsed)
+        if (next) onEvent({ type: 'idea_draft_started', next })
         return
       }
       // The ideas pack's draftIdeas sends each draft as it is saved

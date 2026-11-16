@@ -108,9 +108,12 @@ describe('triage', () => {
     expect(screen.getByText('of 14 · On the desk')).toBeTruthy()
     expect(screen.getByText('fit 82')).toBeTruthy()
     expect(screen.getByText('and 11 more')).toBeTruthy()
+    // Exactly that idea, opened (CON-510).
     expect(screen.getByText('The pool').getAttribute('href')).toBe(
-      '/campaigns/c1/ideas?idea=i1',
+      '/campaigns/c1/ideas?ids=i1&idea=i1',
     )
+    // SHOW ON SCREEN can run, so there is no OPEN ALL beside it.
+    expect(screen.queryByText('OPEN ALL')).toBeNull()
     fireEvent.click(screen.getByText('SHOW ON SCREEN'))
     expect(runUiAction).toHaveBeenCalledWith('campaign:c1', 't1', {
       type: 'set_filter',
@@ -174,6 +177,26 @@ describe('triage', () => {
     expect(screen.getByText('2 groups merged')).toBeTruthy()
     expect(screen.getByText('4 ideas → 2')).toBeTruthy()
     expect(screen.queryByText('UNDO')).toBeNull()
+    // The survivors, exactly, on the workspace's list (CON-510).
+    expect(screen.getByText('OPEN ALL').getAttribute('href')).toBe(
+      '/ideas?ids=i1%2Ci2',
+    )
+  })
+
+  it('opens a reloaded FOUND’s ideas exactly, on the pile most of them are in', async () => {
+    await show({
+      found: {
+        total: 3,
+        ideas: [
+          { id: 'i1', title: 'One', verdict: 'later', campaignId: 'c1' },
+          { id: 'i2', title: 'Two', verdict: 'yes', campaignId: 'c1' },
+          { id: 'i3', title: 'Three', verdict: 'yes', campaignId: 'c1' },
+        ],
+      },
+    })
+    expect(screen.getByText('OPEN ALL').getAttribute('href')).toBe(
+      '/campaigns/c1/ideas?ids=i1%2Ci2%2Ci3&pile=yes',
+    )
   })
 })
 
@@ -374,6 +397,47 @@ describe('compile and draft', () => {
       ),
     ).toBeTruthy()
     expect(screen.getByText('Draft 2 of 3')).toBeTruthy()
+  })
+
+  const next = (ideas: string[], platformId = 'linkedin') => ({
+    ideas: ideas.map((title, i) => ({ ideaId: `i${i}`, title })),
+    platformId,
+    count: 1,
+    done: 2,
+    total: 4,
+  })
+
+  it('names the idea it is writing next and where it goes (CON-510)', async () => {
+    await renderWithProviders(
+      <LiveDrafts
+        drafts={{
+          done: 2,
+          total: 4,
+          posts: [],
+          next: next(['What the water does in March']),
+        }}
+      />,
+    )
+    expect(
+      screen.getByText('What the water does in March · LinkedIn'),
+    ).toBeTruthy()
+    expect(screen.queryByText('Draft 3 of 4')).toBeNull()
+  })
+
+  it('names every idea a together post draws on', async () => {
+    await renderWithProviders(
+      <LiveDrafts
+        drafts={{
+          done: 2,
+          total: 4,
+          posts: [],
+          next: next(['The pool', 'Breakfast first'], 'instagram'),
+        }}
+      />,
+    )
+    expect(
+      screen.getByText('The pool and Breakfast first · Instagram'),
+    ).toBeTruthy()
   })
 })
 

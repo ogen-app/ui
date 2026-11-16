@@ -207,10 +207,11 @@ export function IdeasQuerySurface({
 
   // An idea the address names (`?idea=`, CON-481) — a result card's row —
   // opens once it is on the page, its band unfolded; the address then lets
-  // it go, because what is open is the reader's from there on. Not yet on
-  // the page, the list reads on, a page at a time, up to `ARRIVAL_PAGES`:
-  // there is no read of one idea by id. Past that, or once the list has no
-  // more, it is let go closed.
+  // it go, because what is open is the reader's from there on. A card's row
+  // sends `ids=` with it (CON-510), so the list holds just that idea and it
+  // is on the first page. A link from before that may name one further down:
+  // the list reads on, a page at a time, up to `ARRIVAL_PAGES`, and past
+  // that, or once the list has no more, it is let go closed.
   const named = search.idea
   const [opened, setOpened] = useState<string | undefined>(undefined)
   // Each arrival is its own: following the same link again opens it again.

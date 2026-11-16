@@ -1311,6 +1311,9 @@ export const en = {
         created_not_preset: 'added <v>{{values}}</v>',
         text: 'mentioning <v>“{{values}}”</v>',
         used: '<v>{{values}}</v>',
+        /** Exactly the ideas an assistant card named (CON-510). */
+        ids_one: 'limited to <v>this one</v>',
+        ids_other: 'limited to <v>these {{formatted}}</v>',
       },
       origin: {
         asset_analysis: 'from documents',
@@ -4165,6 +4168,8 @@ export const en = {
     ideas: {
       untitled: 'Untitled idea',
       open: 'OPEN',
+      /** Exactly a card's ideas, on the Ideas list (CON-510). */
+      openAll: 'OPEN ALL',
       noDate: 'no date',
       backOn: 'back on {{day}}',
       more_one: 'and {{formatted}} more',
@@ -4221,6 +4226,9 @@ export const en = {
         one: 'Draft',
         writing: 'Writing',
         writingNth: 'Draft {{n}} of {{total}}',
+        /** The post being written (CON-510): its idea, or ideas, and platform. */
+        writingIdeaOn: '{{ideas}} · {{platform}}',
+        writingIdea: '{{ideas}}',
         title_one: '{{formatted}} post',
         title_other: '{{formatted}} posts',
         fromIdeas_one: '{{drafts}} from {{formatted}} idea',

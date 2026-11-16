@@ -3,6 +3,7 @@ import type {
   DraftedIdeaPost,
   Grounding,
   IdeaBrief,
+  IdeaDraftStarted,
   IdeaPlanBrief,
   IdeasChanged,
   IdeasResults,
@@ -102,6 +103,28 @@ export function ideasResults(
     if (out[key] === undefined) delete out[key]
   }
   return Object.keys(out).length > 0 ? out : undefined
+}
+
+/**
+ * One `idea_draft_started` event (CON-500): the post about to be written.
+ * Null for one that names no idea.
+ */
+export function ideaDraftStarted(
+  raw: Record<string, unknown>,
+): IdeaDraftStarted | null {
+  const ideas = list(raw.ideas)
+    .map((i) => ({ ideaId: str(i.ideaId), title: str(i.title) }))
+    .filter((i) => i.ideaId)
+  if (ideas.length === 0) return null
+  const n = (v: unknown) => (typeof v === 'number' && v >= 0 ? v : 0)
+  return {
+    ideas,
+    platformId: str(raw.platformId),
+    postType: optStr(raw.postType),
+    count: n(raw.count) || 1,
+    done: n(raw.done),
+    total: n(raw.total),
+  }
 }
 
 /**

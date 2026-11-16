@@ -226,6 +226,8 @@ export function FilterSentence<F, Field extends string>({
       clause={vocab.clause(token)}
       plain={vocab.tokenText(token)}
       open={opened?.field === token.field && opened.negated === token.negated}
+      // A fixed set has nothing to change, only to drop (CON-510).
+      fixed={model.kindOf(token.field) === 'fixed'}
       onOpen={() => {
         setAdding(false)
         setOpened((o) =>
@@ -396,12 +398,17 @@ function Chosen({ open, children }: { open: boolean; children?: ReactNode }) {
   )
 }
 
-/** One clause: its words open its panel, its × (on hover) removes it. */
+/**
+ * One clause: its words open its panel, its × (on hover) removes it. A fixed
+ * clause's words open nothing — there is no panel for a set the page was
+ * opened with — so they are plain words beside the ×.
+ */
 function ClauseButton({
   id,
   clause,
   plain,
   open,
+  fixed = false,
   onOpen,
   onRemove,
 }: {
@@ -409,24 +416,31 @@ function ClauseButton({
   clause: Clause
   plain: string
   open: boolean
+  fixed?: boolean
   onOpen: () => void
   onRemove: () => void
 }) {
   const { t } = useTranslation()
   return (
     <span data-clause={id} className="group/cl">
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-expanded={open}
-        aria-label={t('sentence.change', { clause: plain })}
-        className={cn(
-          '-mx-0.5 cursor-pointer rounded-xs px-0.5 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent',
-          open && 'bg-secondary',
-        )}
-      >
-        <ClauseWords clause={clause} open={open} />
-      </button>
+      {fixed ? (
+        <span>
+          <ClauseWords clause={clause} open={false} />
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-expanded={open}
+          aria-label={t('sentence.change', { clause: plain })}
+          className={cn(
+            '-mx-0.5 cursor-pointer rounded-xs px-0.5 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent',
+            open && 'bg-secondary',
+          )}
+        >
+          <ClauseWords clause={clause} open={open} />
+        </button>
+      )}
       <button
         type="button"
         onClick={onRemove}
@@ -457,6 +471,7 @@ function ClauseWords({
       // `Trans` resolves.
       i18nKey={clause.key as 'ideas.sentence.clause.origin'}
       values={clause.values}
+      count={clause.count}
       components={{
         v: bold ? (
           <b className="font-medium text-foreground" />
@@ -573,7 +588,10 @@ function AddDetail<F, Field extends string>({
         })
     }
     const starters: AddItem<Field>[] = vocab.fields
-      .filter((field) => model.kindOf(field) !== 'search')
+      .filter((field) => {
+        const kind = model.kindOf(field)
+        return kind !== 'search' && kind !== 'fixed'
+      })
       .filter(
         (field) => !q || vocab.starter(field).toLocaleLowerCase().includes(q),
       )

@@ -309,6 +309,57 @@ describe('assistantStore', () => {
     ).toBe(3)
   })
 
+  it('keeps what it is writing next, and lets it go once written (CON-510)', async () => {
+    const id = useAssistantStore
+      .getState()
+      .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+    const next = {
+      ideas: [{ ideaId: 'i1', title: 'A pool' }],
+      platformId: 'instagram',
+      count: 1,
+      done: 0,
+      total: 2,
+    }
+    stream.events = [
+      { type: 'tool_call', name: 'draftIdeas', ref: 'r1' },
+      { type: 'idea_draft_started', next },
+    ]
+    const seen: unknown[] = []
+    const unsubscribe = useAssistantStore.subscribe((s) => {
+      const turns = s.threads[id]?.turns ?? []
+      const live = turns[turns.length - 1]?.liveDrafts
+      if (live) seen.push(live.next)
+    })
+    await useAssistantStore.getState().send(id, 'Draft them')
+    unsubscribe()
+    expect(seen).toContainEqual(next)
+
+    stream.events = [
+      { type: 'idea_draft_started', next },
+      {
+        type: 'idea_draft',
+        draft: {
+          postId: 'p1',
+          title: 'A pool',
+          platformId: 'instagram',
+          ideaIds: ['i1'],
+          grounding: { mode: 'exploratory', sources: [] },
+        },
+        done: 1,
+        total: 2,
+      },
+    ]
+    let after: unknown = 'unset'
+    const off = useAssistantStore.subscribe((s) => {
+      const turns = s.threads[id]?.turns ?? []
+      const live = turns[turns.length - 1]?.liveDrafts
+      if (live?.posts.length) after = live.next
+    })
+    await useAssistantStore.getState().send(id, 'Again')
+    off()
+    expect(after).toBeUndefined()
+  })
+
   it('keeps a refusal’s code on the turn, for its card (CON-481)', async () => {
     const id = useAssistantStore
       .getState()

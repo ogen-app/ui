@@ -611,6 +611,22 @@ export const useAssistantStore = create<AssistantState>()(
               break
             }
 
+            case 'idea_draft_started':
+              // What is being written now (CON-510), for the placeholder.
+              patchLastTurn(threadId, (t) => {
+                const live = t.liveDrafts ?? { posts: [], done: 0, total: 0 }
+                return {
+                  ...t,
+                  liveDrafts: {
+                    ...live,
+                    done: Math.max(live.done, event.next.done),
+                    total: Math.max(live.total, event.next.total),
+                    next: event.next,
+                  },
+                }
+              })
+              break
+
             case 'idea_draft':
               // Drawn in the rail as it is written (CON-481), and the step
               // counts it against the plan: "Writing 4 drafts · 2 done".
@@ -632,6 +648,8 @@ export const useAssistantStore = create<AssistantState>()(
                     ],
                     done: Math.max(live.done, event.done),
                     total: Math.max(live.total, event.total),
+                    // Written: the next one waits for its own event.
+                    next: undefined,
                   },
                 }
               })
