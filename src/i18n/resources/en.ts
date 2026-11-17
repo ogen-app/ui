@@ -4397,6 +4397,8 @@ export const en = {
         toCampaign: 'Now in {{to}}, the campaign’s voice',
         /** The campaign's voice, unnamed. */
         campaign: 'Now in the campaign’s voice',
+        /** A voice of its own the result didn't name. */
+        ownUnnamed: 'Now in a voice of its own',
         copyKept:
           'The copy stays as it is; checks and rewrites read it in this voice',
         open: 'OPEN',

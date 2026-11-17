@@ -3710,6 +3710,7 @@ export const es: Translation = {
         to: 'Ahora con la voz {{to}}',
         toCampaign: 'Ahora con la voz {{to}}, la de la campaña',
         campaign: 'Ahora con la voz de la campaña',
+        ownUnnamed: 'Ahora con una voz propia',
         copyKept:
           'El texto se queda como está; las revisiones y reescrituras lo leen con esta voz',
         open: 'ABRIR',

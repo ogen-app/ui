@@ -992,7 +992,12 @@ function VoiceChangedCard({
 /** "Formal → Plain, the campaign’s voice", with whichever names it has. */
 function voiceLine(t: TFunction, change: PostVoiceChanged): string {
   const { from, to, own } = change
-  if (!to) return t('assistant.repair.voiceChanged.campaign')
+  // Only an inherited voice is the campaign's; an own one left unnamed says
+  // no more than that it is its own.
+  if (!to)
+    return own
+      ? t('assistant.repair.voiceChanged.ownUnnamed')
+      : t('assistant.repair.voiceChanged.campaign')
   if (!from)
     return own
       ? t('assistant.repair.voiceChanged.to', { to: to.name })

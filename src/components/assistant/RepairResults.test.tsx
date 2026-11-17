@@ -598,6 +598,12 @@ describe('a post given another voice (CON-505)', () => {
     expect(screen.queryByText('OPEN')).toBeNull()
   })
 
+  it('never calls an unnamed voice of its own the campaign’s', async () => {
+    await show({ voiceChanged: { postId: 'p1', own: true } })
+    expect(screen.getByText('Now in a voice of its own')).toBeTruthy()
+    expect(screen.queryByText(/the campaign’s voice/)).toBeNull()
+  })
+
   it('stops offering the post once undone', async () => {
     await show({ voiceChanged: change }, { undoStates: { u1: 'undone' } })
     expect(screen.queryByText('OPEN')).toBeNull()
