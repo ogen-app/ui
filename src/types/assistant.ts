@@ -879,6 +879,27 @@ export type RepairResults = {
   deleted?: PostsChanged
   /** `revisePost`: one post rewritten, kept as a version. */
   revised?: PostRevised
+  /** `setPostVoice`: the voice one post is read in, its copy untouched. */
+  voiceChanged?: PostVoiceChanged
+}
+
+/** A voice as a result names it. */
+export type VoiceRef = { id: string; name: string }
+
+/**
+ * One post given another voice (`setPostVoice`, CON-494): the brand check's
+ * "use the campaign's voice" fix. The copy stays as it is; checks and
+ * rewrites read it in the new voice from here on.
+ */
+export type PostVoiceChanged = {
+  postId: string
+  campaignId?: string
+  title?: string
+  from?: VoiceRef
+  to?: VoiceRef
+  /** False when the post now reads in its campaign's voice. */
+  own: boolean
+  undoId?: string
 }
 
 export type PostRevised = {

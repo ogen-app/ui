@@ -1694,8 +1694,14 @@ function undoTouches(
   if (kind === 'brand_guardrails') return [{ kind: 'guardrails' }]
   if (kind === 'series' || kind === 'campaign_series')
     return [{ kind: 'series' }, { kind: 'campaign' }]
-  // Posts converted, or given their dates back: the post lists and editors.
-  if (kind === 'post_schedules' || kind === 'post_types')
+  // Posts converted, given their dates back, rewritten or given another
+  // voice: the post lists and editors, so the voice picker moves back too.
+  if (
+    kind === 'post_schedules' ||
+    kind === 'post_types' ||
+    kind === 'post_rewritten' ||
+    kind === 'post_voice'
+  )
     return [{ kind: 'post' }]
   if (kind === 'campaign_assets' || kind === 'campaign_created')
     return [{ kind: 'asset' }, { kind: 'campaign' }]

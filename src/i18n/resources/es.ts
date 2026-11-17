@@ -2039,6 +2039,10 @@ export const es: Translation = {
         running: 'Reescribiendo la publicación',
         done: 'Reescrita la publicación',
       },
+      setPostVoice: {
+        running: 'Cambiando la voz de la publicación',
+        done: 'Cambiada la voz de la publicación',
+      },
       listSavedViews: {
         running: 'Buscando los grupos inteligentes',
         done: 'Encontrados los grupos inteligentes',
@@ -3697,6 +3701,18 @@ export const es: Translation = {
         versioned: 'La anterior sigue en las versiones de la publicación',
         unversioned:
           'No se pudo guardar la reescritura como versión, así que el historial de la publicación no tiene copia de ella',
+      },
+      voiceChanged: {
+        word: 'VOZ CAMBIADA',
+        title: 'Voz de la publicación cambiada',
+        fromTo: '{{from}} → {{to}}',
+        fromToCampaign: '{{from}} → {{to}}, la voz de la campaña',
+        to: 'Ahora con la voz {{to}}',
+        toCampaign: 'Ahora con la voz {{to}}, la de la campaña',
+        campaign: 'Ahora con la voz de la campaña',
+        copyKept:
+          'El texto se queda como está; las revisiones y reescrituras lo leen con esta voz',
+        open: 'ABRIR',
       },
       converted: {
         word: 'Convertidas',

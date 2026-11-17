@@ -558,6 +558,52 @@ describe('a rewritten post (CON-474)', () => {
   })
 })
 
+describe('a post given another voice (CON-505)', () => {
+  const change = {
+    postId: 'p1',
+    campaignId: 'c1',
+    title: 'Chef’s table',
+    from: { id: 'v1', name: 'Formal' },
+    to: { id: 'v2', name: 'Plain' },
+    own: false,
+    undoId: 'u1',
+  }
+
+  it('names the post and both voices, says the copy is kept, with OPEN and UNDO', async () => {
+    await show({ voiceChanged: change })
+    expect(screen.getByText('VOICE CHANGED')).toBeTruthy()
+    expect(screen.getByText('Chef’s table')).toBeTruthy()
+    expect(
+      screen.getByText('Formal → Plain, the campaign’s voice'),
+    ).toBeTruthy()
+    expect(screen.getByText(/The copy stays as it is/)).toBeTruthy()
+    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+      '/campaigns/c1/posts/p1',
+    )
+    fireEvent.click(screen.getByText('UNDO'))
+    expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u1')
+  })
+
+  it('says only the voices it has, and no UNDO without an id', async () => {
+    await show({
+      voiceChanged: {
+        postId: 'p1',
+        to: { id: 'v3', name: 'Warm host' },
+        own: true,
+      },
+    })
+    expect(screen.getByText('Post voice changed')).toBeTruthy()
+    expect(screen.getByText('Now in Warm host')).toBeTruthy()
+    expect(screen.queryByText('UNDO')).toBeNull()
+    expect(screen.queryByText('OPEN')).toBeNull()
+  })
+
+  it('stops offering the post once undone', async () => {
+    await show({ voiceChanged: change }, { undoStates: { u1: 'undone' } })
+    expect(screen.queryByText('OPEN')).toBeNull()
+  })
+})
+
 describe('in Spanish', () => {
   afterAll(async () => {
     await i18next.changeLanguage('en')
@@ -581,6 +627,25 @@ describe('in Spanish', () => {
     await show({ revised: { postId: 'p1', revised: true, versioned: true } })
     expect(screen.getByText('Publicación reescrita')).toBeTruthy()
     expect(screen.queryByText('Post rewritten')).toBeNull()
+  })
+
+  it('words a post given another voice', async () => {
+    await loadLocaleResources('es')
+    await i18next.changeLanguage('es')
+    await show({
+      voiceChanged: {
+        postId: 'p1',
+        from: { id: 'v1', name: 'Formal' },
+        to: { id: 'v2', name: 'Plain' },
+        own: false,
+      },
+    })
+    expect(screen.getByText('VOZ CAMBIADA')).toBeTruthy()
+    expect(
+      screen.getByText('Formal → Plain, la voz de la campaña'),
+    ).toBeTruthy()
+    expect(screen.queryByText('VOICE CHANGED')).toBeNull()
+    expect(screen.queryByText(/the campaign’s voice/)).toBeNull()
   })
 
   it('words the findings’ headline and footer', async () => {

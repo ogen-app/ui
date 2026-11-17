@@ -2587,6 +2587,10 @@ export const en = {
         running: 'Rewriting the post',
         done: 'Rewrote the post',
       },
+      setPostVoice: {
+        running: 'Changing the post’s voice',
+        done: 'Changed the post’s voice',
+      },
       listSavedViews: {
         running: 'Looking up the smart groups',
         done: 'Looked up the smart groups',
@@ -4380,6 +4384,22 @@ export const en = {
         versioned: 'The old one stays in the post’s versions',
         unversioned:
           'Saving the rewrite as a version failed, so the post’s history has no copy of it',
+      },
+      /** One post given another voice (`setPostVoice`, CON-494). */
+      voiceChanged: {
+        word: 'VOICE CHANGED',
+        title: 'Post voice changed',
+        /** "Formal → Plain". */
+        fromTo: '{{from}} → {{to}}',
+        fromToCampaign: '{{from}} → {{to}}, the campaign’s voice',
+        /** No voice it had to name. */
+        to: 'Now in {{to}}',
+        toCampaign: 'Now in {{to}}, the campaign’s voice',
+        /** The campaign's voice, unnamed. */
+        campaign: 'Now in the campaign’s voice',
+        copyKept:
+          'The copy stays as it is; checks and rewrites read it in this voice',
+        open: 'OPEN',
       },
       converted: {
         word: 'Converted',
