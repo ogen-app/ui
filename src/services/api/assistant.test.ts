@@ -912,6 +912,41 @@ describe('the repair pack’s results (CON-462)', () => {
     ).toBeUndefined()
   })
 
+  it('reads a post given its campaign’s voice (CON-505)', () => {
+    const { repair } = read({
+      repair: {
+        setPostVoice: {
+          postId: 'p1',
+          campaignId: 'c1',
+          title: 'Chef’s table',
+          from: { id: 'v1', name: 'Formal' },
+          to: { id: 'v2', name: 'Plain' },
+          own: false,
+          undoId: 'u1',
+          note: 'the copy stays as it is; it can be undone',
+        },
+      },
+    })
+    expect(repair?.voiceChanged).toEqual({
+      postId: 'p1',
+      campaignId: 'c1',
+      title: 'Chef’s table',
+      from: { id: 'v1', name: 'Formal' },
+      to: { id: 'v2', name: 'Plain' },
+      own: false,
+      undoId: 'u1',
+    })
+    // A voice with no name names nothing, and a result with no post is dropped.
+    expect(
+      read({
+        repair: { setPostVoice: { postId: 'p1', own: true, to: { id: 'v2' } } },
+      }).repair?.voiceChanged,
+    ).toEqual({ postId: 'p1', own: true })
+    expect(
+      read({ repair: { setPostVoice: { own: true } } }).repair,
+    ).toBeUndefined()
+  })
+
   it('replays a recorded calendar check as the turn’s findings', () => {
     const result = read({
       repair: {

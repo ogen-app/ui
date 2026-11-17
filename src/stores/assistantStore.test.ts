@@ -655,6 +655,22 @@ describe('assistantStore', () => {
       ])
     })
 
+    it.each(['post_voice', 'post_rewritten'])(
+      'refreshes the post a %s undo put back (CON-505)',
+      async (kind) => {
+        const id = useAssistantStore
+          .getState()
+          .openThread({ kind: 'campaign', campaignId: 'c1' }, '', '')
+        stream.events = [{ type: 'complete', result: result() }]
+        await useAssistantStore.getState().send(id, 'Use Plain')
+        api.undo.mockResolvedValueOnce({ undone: true, kind, entityId: 'p1' })
+        await useAssistantStore.getState().undo(id, lastTurn(id).id, 'u1')
+        expect(refreshTouched).toHaveBeenLastCalledWith(expect.anything(), [
+          { kind: 'post' },
+        ])
+      },
+    )
+
     it('says so when the change moved on since', async () => {
       const id = useAssistantStore
         .getState()

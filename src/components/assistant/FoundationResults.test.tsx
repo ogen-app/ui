@@ -7,8 +7,10 @@ import { useAssistantStore } from '@/stores/assistantStore'
 import { useViewContextStore } from '@/stores/viewContextStore'
 import type { ViewContext } from '@/lib/viewContext'
 import type {
+  BrandFinding,
   BrandRead,
   FoundationResults as Results,
+  RepairFix,
   UndoState,
 } from '@/types/assistant'
 import { FoundationResults } from './FoundationResults'
@@ -538,6 +540,91 @@ describe('a brand check', () => {
     ).toBeTruthy()
     expect(screen.getByText('Checked against')).toBeTruthy()
     expect(screen.getByText('Warm host voice, Guardrails')).toBeTruthy()
+  })
+
+  it('keeps the server’s fix order, and asks before a delete or a voice change (CON-505)', async () => {
+    const finding = (
+      key: string,
+      fixes: RepairFix[],
+      changes: Partial<BrandFinding> = {},
+    ): BrandFinding => ({
+      key,
+      postId: key,
+      title: key,
+      rule: 'banned_word',
+      severity: 'high',
+      issue: `Issue ${key}`,
+      campaignId: 'c1',
+      fixes: [
+        ...fixes,
+        { kind: 'open_post', title: 'Open the post', postId: key },
+      ],
+      ...changes,
+    })
+    await show({
+      brandCheck: {
+        ...check,
+        findings: [
+          // Scheduled: no rewrite, so the calendar leads.
+          finding('scheduled', [
+            {
+              kind: 'unschedule',
+              title: 'Take it off the calendar',
+              proposalId: 'un1',
+            },
+          ]),
+          finding('fresh', [
+            { kind: 'revise_post', title: 'Rewrite it', proposalId: 'rw1' },
+            {
+              kind: 'delete',
+              title: 'Delete it',
+              proposalId: 'del1',
+              card: { verb: 'DELETE', rows: [], sources: [] },
+            },
+          ]),
+          finding(
+            'own-voice',
+            [
+              { kind: 'revise_post', title: 'Rewrite it', proposalId: 'rw2' },
+              {
+                kind: 'use_voice',
+                title: 'Use Plain, the campaign’s voice',
+                proposalId: 'v1',
+                card: {
+                  verb: 'Use Plain',
+                  rows: [
+                    {
+                      kind: 'post',
+                      value: 'own-voice',
+                      note: 'Formal → Plain',
+                    },
+                  ],
+                  sources: [],
+                  footnote: 'The copy stays as it is.',
+                },
+              },
+            ],
+            { rule: 'voice', severity: 'medium' },
+          ),
+        ],
+      },
+    })
+    // The first fix is the button, in the order the server sent.
+    expect(
+      screen.getByRole('button', { name: 'Take it off the calendar' }),
+    ).toBeTruthy()
+    expect(screen.getAllByText('or Open the post')).toHaveLength(3)
+    // A delete opens its card rather than running.
+    fireEvent.click(screen.getByText('or Delete it'))
+    expect(confirmProposal).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'DELETE' })).toBeTruthy()
+    // So does the campaign's voice, with what it changes.
+    fireEvent.click(screen.getByText('or Use Plain, the campaign’s voice'))
+    expect(confirmProposal).not.toHaveBeenCalled()
+    expect(screen.getByText('Formal → Plain')).toBeTruthy()
+    expect(screen.getByText('The copy stays as it is.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Use Plain' }))
+    expect(confirmProposal).toHaveBeenCalledWith('workspace', 'v1')
   })
 
   it('draws an ignored finding as one line', async () => {

@@ -19,6 +19,7 @@ import type {
   CampaignReviewFinding,
   ChangedPost,
   PostRevised,
+  PostVoiceChanged,
   PostsChanged,
   RepairResults as Results,
   UndoState,
@@ -106,6 +107,12 @@ export function RepairResults({
     [
       'revised',
       r.revised && <RevisedCard t={t} revised={r.revised} undo={undoFor} />,
+    ],
+    [
+      'voiceChanged',
+      r.voiceChanged && (
+        <VoiceChangedCard t={t} change={r.voiceChanged} undo={undoFor} />
+      ),
     ],
     [
       'converted',
@@ -935,4 +942,68 @@ function RevisedCard({
       {revised.grounding && <SourcesLine grounding={revised.grounding} />}
     </ResultBlock>
   )
+}
+
+/**
+ * One post given another voice (`setPostVoice`, CON-494): the post by name,
+ * the voice it left and the one it reads in now, that its copy is untouched,
+ * OPEN and UNDO — drawn like the rewrite it stands in for.
+ */
+function VoiceChangedCard({
+  t,
+  change,
+  undo,
+}: {
+  t: TFunction
+  change: PostVoiceChanged
+  undo: ResultUndo
+}) {
+  const undone = change.undoId && undo.states[change.undoId] === 'undone'
+  return (
+    <ResultBlock
+      status={t('assistant.repair.voiceChanged.word')}
+      title={change.title || t('assistant.repair.voiceChanged.title')}
+      action={<UndoAction t={t} undoId={change.undoId} undo={undo} />}
+    >
+      <ResultRow className="flex items-baseline gap-3">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-sm text-foreground">
+            {voiceLine(t, change)}
+          </span>
+          <span className="text-[12.5px] text-secondary-foreground">
+            {t('assistant.repair.voiceChanged.copyKept')}
+          </span>
+        </span>
+        {change.campaignId && !undone && (
+          <Link
+            to="/campaigns/$campaignId/posts/$postId"
+            params={{ campaignId: change.campaignId, postId: change.postId }}
+            className={`shrink-0 ${TEXT_ACTION_CLASS}`}
+          >
+            {t('assistant.repair.voiceChanged.open')}
+          </Link>
+        )}
+      </ResultRow>
+      <UndoNote t={t} undoId={change.undoId} undo={undo} />
+    </ResultBlock>
+  )
+}
+
+/** "Formal → Plain, the campaign’s voice", with whichever names it has. */
+function voiceLine(t: TFunction, change: PostVoiceChanged): string {
+  const { from, to, own } = change
+  if (!to) return t('assistant.repair.voiceChanged.campaign')
+  if (!from)
+    return own
+      ? t('assistant.repair.voiceChanged.to', { to: to.name })
+      : t('assistant.repair.voiceChanged.toCampaign', { to: to.name })
+  return own
+    ? t('assistant.repair.voiceChanged.fromTo', {
+        from: from.name,
+        to: to.name,
+      })
+    : t('assistant.repair.voiceChanged.fromToCampaign', {
+        from: from.name,
+        to: to.name,
+      })
 }

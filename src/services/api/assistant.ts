@@ -45,6 +45,7 @@ import type {
   ProposalOutcome,
   RepairFix,
   RepairResults,
+  VoiceRef,
   CampaignFromAssets,
   ComparedClaim,
   SavedViewList,
@@ -1521,6 +1522,20 @@ function repairResults(results: Record<string, unknown>): {
       lines: lineRuns(revised.lines),
     }
   }
+  // The server's `note` is English prose; the card words the same fact from
+  // the catalogue.
+  const voice = record(r.setPostVoice)
+  if (voice && str(voice.postId)) {
+    out.voiceChanged = {
+      postId: str(voice.postId),
+      campaignId: optStr(voice.campaignId),
+      title: optStr(voice.title),
+      from: voiceRef(voice.from),
+      to: voiceRef(voice.to),
+      own: voice.own === true,
+      undoId: optStr(voice.undoId),
+    }
+  }
 
   const check = record(r.checkCalendar)
   const any = Object.values(out).some((v) => v !== undefined)
@@ -2247,6 +2262,14 @@ function str(value: unknown): string {
 
 function optStr(value: unknown): string | undefined {
   return typeof value === 'string' && value ? value : undefined
+}
+
+/** A voice named by id and name; one missing either names nothing. */
+function voiceRef(value: unknown): VoiceRef | undefined {
+  const v = record(value)
+  const id = optStr(v?.id)
+  const name = optStr(v?.name)
+  return id && name ? { id, name } : undefined
 }
 
 function num(value: unknown): number {
