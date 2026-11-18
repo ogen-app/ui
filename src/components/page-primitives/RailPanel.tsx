@@ -8,6 +8,7 @@ import {
 import { XIcon } from '@phosphor-icons/react'
 import { ZIndex } from '@/config/zIndex.ts'
 import { SurfaceFader } from '@/components/page-primitives/SurfaceFader'
+import { CHROME_BAR_H } from '@/components/layout/chrome'
 import { cn } from '@/lib'
 
 type RailPanelProps = {
@@ -60,6 +61,12 @@ type RailPanelProps = {
    * painted behind the footer for the rest of the ramp to work on.
    */
   footerFade?: number
+  /**
+   * The header is the frame's 56px band (`CHROME_BAR_H`), its content centred
+   * in it, so its rule runs on from the bar over the page as one line. For a
+   * panel that stands beside that bar, from the top of the window.
+   */
+  bar?: boolean
 }
 
 export function RailPanel({
@@ -78,6 +85,7 @@ export function RailPanel({
   titleLabel,
   footerSolid,
   footerFade = 32,
+  bar = false,
 }: RailPanelProps) {
   const footerRef = useRef<HTMLDivElement>(null)
   // The footer overlays the scroll rather than sitting beside it, so the body
@@ -102,10 +110,18 @@ export function RailPanel({
         {/* The header is an opaque band ruled off across the panel's whole
             width: the body scrolls under a line, not into a fade. */}
         <div
-          className="sticky top-0 shrink-0 flex flex-col bg-primary border-b border-border"
+          className={cn(
+            'sticky top-0 shrink-0 flex flex-col bg-primary border-b border-border',
+            bar && [CHROME_BAR_H, 'justify-center'],
+          )}
           style={{ zIndex: ZIndex.pageHeader }}
         >
-          <div className="relative pt-6 px-3 lg:px-6 flex flex-col gap-0">
+          <div
+            className={cn(
+              'relative px-3 lg:px-6 flex flex-col gap-0',
+              !bar && 'pt-6',
+            )}
+          >
             <div className="flex items-stretch justify-between gap-3">
               {/* The whole block is the affordance when it has somewhere to go
                   — mark, title, adornment and, where there is a mark, the
@@ -126,8 +142,14 @@ export function RailPanel({
               </TitleBlock>
               {/* Fixed to the title's own line height rather than centred on
                   the block: with a two-line header, centring drops the close
-                  button half a line and it stops reading as the panel's. */}
-              <div className="flex h-7 shrink-0 items-center gap-2">
+                  button half a line and it stops reading as the panel's. In
+                  the bar it centres like everything else in the band. */}
+              <div
+                className={cn(
+                  'flex h-7 shrink-0 items-center gap-2',
+                  bar && 'self-center',
+                )}
+              >
                 {actions}
                 {onClose && (
                   <button
@@ -149,7 +171,7 @@ export function RailPanel({
             {!leading && subheader}
           </div>
           {/* Where the header stops, above its line. */}
-          <div className="h-3 shrink-0" aria-hidden />
+          {!bar && <div className="h-3 shrink-0" aria-hidden />}
         </div>
         <div
           className={cn(

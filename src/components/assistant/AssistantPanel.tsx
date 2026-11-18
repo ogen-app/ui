@@ -134,6 +134,7 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
     <RailPanel
       title={t('assistant.panel.title')}
       onClose={onClose}
+      bar
       className="h-full"
       bodyClassName="flex-1 gap-6"
       scrollRef={scrollRef}
