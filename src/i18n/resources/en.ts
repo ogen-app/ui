@@ -1311,6 +1311,9 @@ export const en = {
         created_not_preset: 'added <v>{{values}}</v>',
         text: 'mentioning <v>“{{values}}”</v>',
         used: '<v>{{values}}</v>',
+        /** Exactly the ideas an assistant card named (CON-510). */
+        ids_one: 'limited to <v>this one</v>',
+        ids_other: 'limited to <v>these {{formatted}}</v>',
       },
       origin: {
         asset_analysis: 'from documents',
@@ -1441,9 +1444,29 @@ export const en = {
     rhythm: {
       occasional: 'Occasional',
       perWeek_one: 'Once a week',
-      perWeek_other: '{{count}} times a week',
+      perWeek_other: '{{formatted}} times a week',
       perMonth_one: 'Once a month',
-      perMonth_other: '{{count}} times a month',
+      perMonth_other: '{{formatted}} times a month',
+      /**
+       * A rhythm that skips periods or names its day (CON-496). `every` is
+       * always 2 or more; `day` is the weekday's name, from `Intl`.
+       */
+      perWeeksEvery_one: 'Once every {{every}} weeks',
+      perWeeksEvery_other: '{{formatted}} times every {{every}} weeks',
+      perMonthsEvery_one: 'Once every {{every}} months',
+      perMonthsEvery_other: '{{formatted}} times every {{every}} months',
+      everyDay: 'Every {{day}}',
+      everyWeeksOn_one: 'Every week on {{day}}',
+      everyWeeksOn_other: 'Every {{formatted}} weeks on {{day}}',
+      /** The picker's second and third selects: how often, and which day. */
+      everyWeekOption_one: 'every week',
+      everyWeekOption_other: 'every {{formatted}} weeks',
+      everyMonthOption_one: 'every month',
+      everyMonthOption_other: 'every {{formatted}} months',
+      anyDay: 'on any day',
+      onDay: 'on {{day}}',
+      everyLabel: 'How often',
+      dayLabel: 'Which day',
     },
     supply: {
       selfOption: 'It supplies its own subject',
@@ -1452,13 +1475,16 @@ export const en = {
       ideaLine: 'Waits for an idea',
     },
     usage: '{{drafts}} in draft, {{published}} published',
+    /** The tooltip on an idea's or a post's series (CON-496). */
+    mark: 'Made for the series “{{name}}”',
     plan: {
       noGoal:
         'This campaign has no post goal, so there is nothing to measure these against.',
       ok: '{{total}} posts planned · {{claimed}} from series · {{open}} open',
       over: '{{total}} posts planned and the series claim {{claimed}} — {{over}} more than the campaign is set to make.',
+      /** Without dates the plan places no series, so they claim nothing yet. */
       undated:
-        '{{total}} posts a period · {{claimed}} from series. Set the campaign dates to plan the whole run.',
+        '{{total}} posts a period. Set the campaign dates and the series claim their slots.',
     },
     campaign: {
       title: 'Series',
@@ -1477,8 +1503,8 @@ export const en = {
       promoteHint:
         'Move this into the workspace library so other campaigns can run it too.',
       remove: 'Stop running {{name}}',
-      claim_one: '{{count}} post',
-      claim_other: '{{count}} posts',
+      claim_one: '{{formatted}} post',
+      claim_other: '{{formatted}} posts',
       claimsNone: 'no fixed slots',
     },
     detail: {
@@ -1994,6 +2020,8 @@ export const en = {
     statusColourAlways:
       "The status colour down the card's left edge is always shown.",
     notAPublishingDay: 'Not a publishing day',
+    /** Off the publishing days, but a weekly series lands on it (CON-496). */
+    seriesDay: 'A series posts on this day',
     showDay: 'Show {{day}}',
 
     /**
@@ -2558,6 +2586,10 @@ export const en = {
       revisePost: {
         running: 'Rewriting the post',
         done: 'Rewrote the post',
+      },
+      setPostVoice: {
+        running: 'Changing the post’s voice',
+        done: 'Changed the post’s voice',
       },
       listSavedViews: {
         running: 'Looking up the smart groups',
@@ -3462,10 +3494,6 @@ export const en = {
       },
       rhythm: {
         occasional: 'Now and then',
-        week_one: 'Once a week',
-        week_other: '{{formatted}} times a week',
-        month_one: 'Once a month',
-        month_other: '{{formatted}} times a month',
       },
       run: {
         running: '{{series}} runs in {{campaign}}',
@@ -3570,6 +3598,13 @@ export const en = {
       conflicts_one: '{{formatted}} conflict',
       conflicts_other: '{{formatted}} conflicts',
       sourcesReady: '{{ready}} of {{attached}} sources ready',
+      /** The parts a reply can cite (CON-511): the goal as its rate. */
+      goalWeek_one: '{{formatted}} a week',
+      goalWeek_other: '{{formatted}} a week',
+      goalMonth_one: '{{formatted}} a month',
+      goalMonth_other: '{{formatted}} a month',
+      posts_one: '{{formatted}} post',
+      posts_other: '{{formatted}} posts',
       sources: {
         word: 'SOURCES',
         title: '{{ready}} of {{attached}} ready',
@@ -3586,6 +3621,21 @@ export const en = {
         calendar_other: 'Fix {{formatted}} calendar problems',
         sources_one: '{{formatted}} source not ready',
         sources_other: '{{formatted}} sources not ready',
+      },
+      /**
+       * What a starter sends as the user's message (CON-511), in the user's
+       * language — the same request the server's English one makes.
+       */
+      starterSays: {
+        fill_one:
+          'Draft {{formatted}} post for {{period}}, the slot left in this goal period.',
+        fill_other:
+          'Draft {{formatted}} posts for {{period}}, the slots left in this goal period.',
+        draft_one: 'Draft {{formatted}} post to reach the campaign’s goal.',
+        draft_other: 'Draft {{formatted}} posts to reach the campaign’s goal.',
+        calendar: 'Review the campaign’s calendar problems and fix them.',
+        sources:
+          'Which of the campaign’s sources aren’t ready to write from, and why?',
       },
     },
 
@@ -3713,7 +3763,21 @@ export const en = {
       /** A finding whose fix ran; `choice` is the slot or option picked. */
       fixed: 'Fixed: {{fix}}',
       fixedChose: 'Fixed: {{fix}} · {{choice}}',
+      /**
+       * A fix the server says ran, read back on a reload (CON-495) — since
+       * the check; `when` is the day, or day and time, a move landed on.
+       */
+      fixedSince: 'Fixed since: {{fix}}',
+      fixedSinceMoved: 'Fixed since: moved to {{when}}',
       fixing: 'Fixing…',
+      /**
+       * A post finding's way to its post's thread (CON-495): the row's button
+       * when no fix runs on its own, else the last "or …".
+       */
+      assist: 'FIX WITH ASSISTANT',
+      orAssist: 'or fix with assistant',
+      /** The idea a same-idea finding's posts share (CON-495). */
+      fromIdea: 'All from “{{title}}”',
       /** Under a fix's offer opened in the row: back to the row's fixes. */
       back: 'BACK TO THE FIXES',
       /** When the check read the calendar: "Read Wed 12 Nov, 16:40." */
@@ -4130,6 +4194,8 @@ export const en = {
     ideas: {
       untitled: 'Untitled idea',
       open: 'OPEN',
+      /** Exactly a card's ideas, on the Ideas list (CON-510). */
+      openAll: 'OPEN ALL',
       noDate: 'no date',
       backOn: 'back on {{day}}',
       more_one: 'and {{formatted}} more',
@@ -4141,6 +4207,12 @@ export const en = {
         word: 'Found',
         title_one: '{{formatted}} idea',
         title_other: '{{formatted}} ideas',
+        /**
+         * What the search named, in the Ideas list's own clauses (CON-509):
+         * "6 ideas from Brochure, in Spring reopening".
+         */
+        titleNamed_one: '{{formatted}} idea {{clauses}}',
+        titleNamed_other: '{{formatted}} ideas {{clauses}}',
         none: 'No ideas match',
         /** The pile the filter named, counted whole: "of 14 · On the desk". */
         ofPile: 'of {{total}} · {{pile}}',
@@ -4186,6 +4258,9 @@ export const en = {
         one: 'Draft',
         writing: 'Writing',
         writingNth: 'Draft {{n}} of {{total}}',
+        /** The post being written (CON-510): its idea, or ideas, and platform. */
+        writingIdeaOn: '{{ideas}} · {{platform}}',
+        writingIdea: '{{ideas}}',
         title_one: '{{formatted}} post',
         title_other: '{{formatted}} posts',
         fromIdeas_one: '{{drafts}} from {{formatted}} idea',
@@ -4310,6 +4385,24 @@ export const en = {
         unversioned:
           'Saving the rewrite as a version failed, so the post’s history has no copy of it',
       },
+      /** One post given another voice (`setPostVoice`, CON-494). */
+      voiceChanged: {
+        word: 'VOICE CHANGED',
+        title: 'Post voice changed',
+        /** "Formal → Plain". */
+        fromTo: '{{from}} → {{to}}',
+        fromToCampaign: '{{from}} → {{to}}, the campaign’s voice',
+        /** No voice it had to name. */
+        to: 'Now in {{to}}',
+        toCampaign: 'Now in {{to}}, the campaign’s voice',
+        /** The campaign's voice, unnamed. */
+        campaign: 'Now in the campaign’s voice',
+        /** A voice of its own the result didn't name. */
+        ownUnnamed: 'Now in a voice of its own',
+        copyKept:
+          'The copy stays as it is; checks and rewrites read it in this voice',
+        open: 'OPEN',
+      },
       converted: {
         word: 'Converted',
         title_one: '{{formatted}} post changed type',
@@ -4322,6 +4415,15 @@ export const en = {
           media: 'media',
         },
         still: 'Still scheduled {{when}}',
+        /**
+         * Whether a converted post passes its new type's rules (CON-495):
+         * "Passes the Image post rules on Instagram". `rules` is the rules it
+         * still breaks, joined as a list.
+         */
+        passes: 'Passes the {{type}} rules on {{platform}}',
+        passesAny: 'Passes the new type’s rules',
+        breaks: 'Still breaks: {{rules}}',
+        breaksAny: 'Still breaks the new type’s rules',
       },
       unscheduled: {
         word: 'Unscheduled',
@@ -4354,6 +4456,15 @@ export const en = {
         title_one: '{{formatted}} post deleted',
         title_other: '{{formatted}} posts deleted',
       },
+      /**
+       * The lines an edit rewrote (CON-495): struck old over new. Only a
+       * screen reader hears these words.
+       */
+      lines: {
+        label: 'Lines changed',
+        removed: 'Removed: ',
+        added: 'Added: ',
+      },
       review: {
         word: 'Review',
         none: 'The brief and the posts agree',
@@ -4372,6 +4483,16 @@ export const en = {
         /** Under a finding: where it is. */
         inPost: 'In {{title}}.',
         inBrief: '{{aspect}}.',
+        /** A finding about some of a post's words leads with them (CON-495). */
+        quoted: '“{{quote}}”',
+        /**
+         * FIX WITH ASSISTANT's message to the post's thread (CON-495). The
+         * finding goes with it by key; the thread shows the finding instead.
+         */
+        fixPrompt: 'Fix this finding from the review.',
+        /** Over the finding a post thread was asked to fix. */
+        fromReview: 'From the review',
+        fromReviewQuoted: '“{{quote}}” — {{issue}}',
         from: {
           brief: 'Brief',
           posts: 'Posts',
@@ -4937,6 +5058,7 @@ export const en = {
     columnGrounding: 'Sources',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
+    columnSeries: 'Series',
     columnPublishDate: 'Publish date',
     columnWhen: 'When',
 

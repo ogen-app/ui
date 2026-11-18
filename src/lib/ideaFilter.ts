@@ -28,6 +28,7 @@ import type { FieldKind, FilterModel, SmartToken } from '@/lib/smartFilter'
 
 /** The fields of the filter bar, in the order a row reads. */
 export const IDEA_FILTER_FIELDS = [
+  'ids',
   'text',
   'origin',
   'source_asset',
@@ -104,6 +105,12 @@ const GROUPINGS = [...IDEA_GROUPS, 'none'] as const
 /** The longest `text` the server takes. */
 export const IDEA_TEXT_MAX = 200
 
+/**
+ * The most ideas `ids` may name (CON-500): the server answers 400 past it, so
+ * a link naming more is cut here rather than refused there.
+ */
+export const IDEA_IDS_MAX = 200
+
 export type IdeaFilter = Record<IdeaChoiceField, ValueFilter> & {
   /** A preset or a `YYYY-MM-DD` day; inclusive. */
   createdAfter: string | null
@@ -111,6 +118,11 @@ export type IdeaFilter = Record<IdeaChoiceField, ValueFilter> & {
   createdBefore: string | null
   /** In the title or the note. */
   text: string
+  /**
+   * Exactly these ideas (CON-500/510): what an assistant card shows, opened
+   * here whatever page they would be on. A clause you remove, never edit.
+   */
+  ids: string[]
 }
 
 export const EMPTY_IDEA_FILTER: IdeaFilter = {
@@ -125,6 +137,7 @@ export const EMPTY_IDEA_FILTER: IdeaFilter = {
   createdAfter: null,
   createdBefore: null,
   text: '',
+  ids: [],
 }
 
 /** The Ideas page's search params — the endpoint's own names, comma-joined. */
@@ -136,6 +149,7 @@ export type IdeaListSearch = Partial<
     | 'created_after'
     | 'created_before'
     | 'text'
+    | 'ids'
     | 'pile'
     | 'sort'
     | 'group'
@@ -227,6 +241,8 @@ export function parseIdeaListSearch(
   }
   const text = raw.text === undefined ? '' : String(raw.text).trim()
   if (text) out.text = text.slice(0, IDEA_TEXT_MAX)
+  const ids = [...new Set(splitValues(raw.ids))].slice(0, IDEA_IDS_MAX)
+  if (ids.length) out.ids = ids.join(',')
   const pile = oneOf(raw.pile, IDEA_PILES)
   if (pile && pile !== 'waiting') out.pile = pile
   const sort = oneOf(raw.sort, IDEA_SORTS)
@@ -258,6 +274,7 @@ export function ideaFilterFromSearch(search: IdeaListSearch): IdeaFilter {
     createdAfter: search.created ?? search.created_after ?? null,
     createdBefore: search.created_before ?? null,
     text: search.text ?? '',
+    ids: splitValues(search.ids),
   }
 }
 
@@ -274,6 +291,7 @@ export function searchFromIdeaFilter(filter: IdeaFilter): IdeaListSearch {
   }
   if (filter.createdBefore) out.created_before = filter.createdBefore
   if (filter.text) out.text = filter.text
+  if (filter.ids.length) out.ids = filter.ids.join(',')
   return out
 }
 
@@ -315,6 +333,11 @@ export function ideaTokensOf(filter: IdeaFilter): IdeaToken[] {
     if (field === 'text') {
       if (filter.text)
         tokens.push({ field, negated: false, values: [filter.text] })
+      continue
+    }
+    if (field === 'ids') {
+      if (filter.ids.length)
+        tokens.push({ field, negated: false, values: filter.ids })
       continue
     }
     const { any, not } = filter[field]
@@ -365,6 +388,10 @@ export function withIdeaToken(
     next.text = values[0] ?? ''
     return next
   }
+  if (field === 'ids') {
+    next.ids = [...values]
+    return next
+  }
   next[field] = negated
     ? { ...next[field], not: [...values] }
     : { ...next[field], any: [...values] }
@@ -389,6 +416,10 @@ export function withoutIdeaToken(
     next.text = ''
     return next
   }
+  if (field === 'ids') {
+    next.ids = []
+    return next
+  }
   next[field] = negated
     ? { ...next[field], not: [] }
     : { ...next[field], any: [] }
@@ -396,6 +427,7 @@ export function withoutIdeaToken(
 }
 
 function kindOf(field: IdeaFilterField): FieldKind {
+  if (field === 'ids') return 'fixed'
   if (field === 'text') return 'search'
   if (field === 'created') return 'date'
   return 'choice'
@@ -452,6 +484,7 @@ export function toIdeaRequestParams(
       ? dayOf(boundStart(filter.createdBefore, ctx.now))
       : filter.createdBefore
   if (filter.text) out.text = filter.text
+  if (filter.ids.length) out.ids = filter.ids.join(',')
   if (ctx.scopeCampaign) out.scope_campaign = ctx.scopeCampaign
   out.pile = ctx.pile
   out.sort = ctx.sort

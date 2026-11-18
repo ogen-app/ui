@@ -49,6 +49,7 @@ import { sourceFacts } from './card/sourceFacts'
 import { VerdictControls, type Decide } from './VerdictControls'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import { isNotGrounded } from '@/lib/grounding'
+import { SeriesMark } from '@/components/series/SeriesMark'
 
 /**
  * One idea on the Ideas page, as the CON-387 card (CON-388): the same row the
@@ -420,6 +421,9 @@ function SourceLine({
         {campaign}
       </span>,
     )
+  if (idea.seriesId)
+    // The series a content plan wrote it for (CON-496).
+    bits.push(<SeriesMark key="series" seriesId={idea.seriesId} />)
   if (idea.postCount)
     // What it fed (CON-470) — a fact beside the verdict, never a verdict.
     bits.push(

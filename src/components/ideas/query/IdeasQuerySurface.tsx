@@ -182,6 +182,14 @@ export function IdeasQuerySurface({
   })
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  // A different set of exact ideas (`ids`, CON-510) is a different list: an
+  // idea left open from the last one would be kept on screen below, so it
+  // closes. A verdict within the same set keeps it, as before.
+  const [idsShown, setIdsShown] = useState(search.ids)
+  if (idsShown !== search.ids) {
+    setIdsShown(search.ids)
+    if (expandedId !== null && expandedId !== search.idea) setExpandedId(null)
+  }
   /**
    * The rows on screen: the server's, plus the open idea if an answer just
    * moved it out of this pile. It leaves when it is closed, never from under
@@ -207,10 +215,11 @@ export function IdeasQuerySurface({
 
   // An idea the address names (`?idea=`, CON-481) — a result card's row —
   // opens once it is on the page, its band unfolded; the address then lets
-  // it go, because what is open is the reader's from there on. Not yet on
-  // the page, the list reads on, a page at a time, up to `ARRIVAL_PAGES`:
-  // there is no read of one idea by id. Past that, or once the list has no
-  // more, it is let go closed.
+  // it go, because what is open is the reader's from there on. A card's row
+  // sends `ids=` with it (CON-510), so the list holds just that idea and it
+  // is on the first page. A link from before that may name one further down:
+  // the list reads on, a page at a time, up to `ARRIVAL_PAGES`, and past
+  // that, or once the list has no more, it is let go closed.
   const named = search.idea
   const [opened, setOpened] = useState<string | undefined>(undefined)
   // Each arrival is its own: following the same link again opens it again.

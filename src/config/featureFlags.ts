@@ -282,13 +282,13 @@ const FEATURE_FLAGS = {
    * mix you type is a plan you break in week two, and a mix you derive is a
    * fact.
    *
-   * **Waiting on** a workspace-scoped `brand_series` table, `series_ids` plus a
-   * per-series rhythm on the campaign — **attached and detached, never
-   * restated**, for the reason CON-233 gives about `asset_ids` — a nullable
-   * `series_id` on the post, and analytics grouped by it, which is the "for
-   * insights" half of the ticket. Everything above the stub in
-   * `services/api/series.stub.ts` is written against the signatures those will
-   * have.
+   * **Backed by the API** since CON-496: `/api/series`, a campaign's runs
+   * attached, detached and re-rhythmed one at a time, `series_id` on ideas and
+   * posts — wired in CON-508, with the claims ported from `seriesplan.Days`.
+   * **Waiting on** the live pass against it (create, promote, attach, every 2
+   * weeks on Tuesday, a plan whose series ideas land on Tuesdays), then this
+   * flag goes. Still owed by the API: `series_id` on idea slots (CON-512) and
+   * analytics grouped by series.
    */
   series: false,
 

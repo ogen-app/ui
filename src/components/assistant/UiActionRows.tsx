@@ -73,13 +73,12 @@ export function UiActionRows({
           action.type === 'open_connect' ||
           action.type === 'open_add_source' ||
           action.type === 'set_window'
-        // Before → after only for a window changed where it stood: after a
-        // navigate, `before` is the window of a screen nobody was looking at
-        // (CON-497).
-        const showChange =
-          action.type === 'set_window' &&
-          !folded &&
-          previous?.action.type !== 'navigate'
+        // Before → after for every window it set (CON-507). After a navigate,
+        // `before` is the window the dashboard opened with — the default
+        // period and the campaign in scope — and `changed` what moved from it
+        // (CON-497), so a navigate folded into its window shows them too.
+        const change =
+          folded ?? (action.type === 'set_window' ? applied : undefined)
         return (
           <ResultBlock
             key={index}
@@ -95,7 +94,12 @@ export function UiActionRows({
               folded?.action.window
                 ? t('assistant.uiAction.navigateWindow', {
                     screen: screenName(t, action.screen),
-                    window: words.line(windowOf(folded.action)),
+                    // Only what moved from the window it opened on, as a
+                    // window set where it stood is worded.
+                    window: words.line(
+                      windowOf(folded.action),
+                      changedControls(folded.action),
+                    ),
                   })
                 : actionTitle(
                     t,
@@ -123,7 +127,7 @@ export function UiActionRows({
               ) : undefined
             }
           >
-            {showChange && <WindowChange action={action} />}
+            {change && <WindowChange action={change.action} />}
             {action.type === 'open_connect' && action.connect && (
               <p className="pt-2.5 text-[12.5px] text-secondary-foreground">
                 {!action.connect.reconnect && inCampaign

@@ -1091,6 +1091,8 @@ export const es: Translation = {
         created_not_preset: 'añadidas <v>{{values}}</v>',
         text: 'que mencionan <v>«{{values}}»</v>',
         used: '<v>{{values}}</v>',
+        ids_one: 'limitadas a <v>esta</v>',
+        ids_other: 'limitadas a <v>estas {{formatted}}</v>',
       },
       origin: {
         asset_analysis: 'de documentos',
@@ -1209,9 +1211,24 @@ export const es: Translation = {
     rhythm: {
       occasional: 'Ocasional',
       perWeek_one: 'Una vez por semana',
-      perWeek_other: '{{count}} veces por semana',
+      perWeek_other: '{{formatted}} veces por semana',
       perMonth_one: 'Una vez al mes',
-      perMonth_other: '{{count}} veces al mes',
+      perMonth_other: '{{formatted}} veces al mes',
+      perWeeksEvery_one: 'Una vez cada {{every}} semanas',
+      perWeeksEvery_other: '{{formatted}} veces cada {{every}} semanas',
+      perMonthsEvery_one: 'Una vez cada {{every}} meses',
+      perMonthsEvery_other: '{{formatted}} veces cada {{every}} meses',
+      everyDay: 'Cada {{day}}',
+      everyWeeksOn_one: 'Cada semana, el {{day}}',
+      everyWeeksOn_other: 'Cada {{formatted}} semanas, el {{day}}',
+      everyWeekOption_one: 'cada semana',
+      everyWeekOption_other: 'cada {{formatted}} semanas',
+      everyMonthOption_one: 'cada mes',
+      everyMonthOption_other: 'cada {{formatted}} meses',
+      anyDay: 'cualquier día',
+      onDay: 'el {{day}}',
+      everyLabel: 'Cada cuánto',
+      dayLabel: 'Qué día',
     },
     supply: {
       selfOption: 'Aporta su propio tema',
@@ -1220,13 +1237,14 @@ export const es: Translation = {
       ideaLine: 'Espera una idea',
     },
     usage: '{{drafts}} en borrador, {{published}} publicadas',
+    mark: 'Hecha para la serie «{{name}}»',
     plan: {
       noGoal:
         'Esta campaña no tiene objetivo de publicaciones, así que no hay nada con lo que comparar estas series.',
       ok: '{{total}} publicaciones previstas · {{claimed}} de series · {{open}} libres',
       over: '{{total}} publicaciones previstas y las series reclaman {{claimed}}: {{over}} más de las que la campaña tiene previstas.',
       undated:
-        '{{total}} publicaciones por período · {{claimed}} de series. Define las fechas de la campaña para planificar todo el recorrido.',
+        '{{total}} publicaciones por período. Define las fechas de la campaña y las series reservarán sus huecos.',
     },
     campaign: {
       title: 'Series',
@@ -1240,8 +1258,8 @@ export const es: Translation = {
       promoteHint:
         'Lleva esta serie a la biblioteca del espacio de trabajo para que otras campañas también puedan ejecutarla.',
       remove: 'Dejar de ejecutar {{name}}',
-      claim_one: '{{count}} publicación',
-      claim_other: '{{count}} publicaciones',
+      claim_one: '{{formatted}} publicación',
+      claim_other: '{{formatted}} publicaciones',
       claimsNone: 'sin huecos fijos',
     },
     detail: {
@@ -1574,6 +1592,7 @@ export const es: Translation = {
     statusColourAlways:
       'El color de estado del borde izquierdo de la tarjeta siempre se muestra.',
     notAPublishingDay: 'No es un día de publicación',
+    seriesDay: 'Una serie publica este día',
     showDay: 'Mostrar {{day}}',
 
     field: {
@@ -2019,6 +2038,10 @@ export const es: Translation = {
       revisePost: {
         running: 'Reescribiendo la publicación',
         done: 'Reescrita la publicación',
+      },
+      setPostVoice: {
+        running: 'Cambiando la voz de la publicación',
+        done: 'Cambiada la voz de la publicación',
       },
       listSavedViews: {
         running: 'Buscando los grupos inteligentes',
@@ -2878,10 +2901,6 @@ export const es: Translation = {
       },
       rhythm: {
         occasional: 'De vez en cuando',
-        week_one: 'Una vez por semana',
-        week_other: '{{formatted}} veces por semana',
-        month_one: 'Una vez al mes',
-        month_other: '{{formatted}} veces al mes',
       },
       run: {
         running: '{{series}} se publica en {{campaign}}',
@@ -2968,6 +2987,12 @@ export const es: Translation = {
       conflicts_one: '{{formatted}} conflicto',
       conflicts_other: '{{formatted}} conflictos',
       sourcesReady: '{{ready}} de {{attached}} fuentes listas',
+      goalWeek_one: '{{formatted}} por semana',
+      goalWeek_other: '{{formatted}} por semana',
+      goalMonth_one: '{{formatted}} al mes',
+      goalMonth_other: '{{formatted}} al mes',
+      posts_one: '{{formatted}} publicación',
+      posts_other: '{{formatted}} publicaciones',
       sources: {
         word: 'FUENTES',
         title: '{{ready}} de {{attached}} listas',
@@ -2984,6 +3009,20 @@ export const es: Translation = {
         calendar_other: 'Arreglar {{formatted}} problemas del calendario',
         sources_one: '{{formatted}} fuente sin preparar',
         sources_other: '{{formatted}} fuentes sin preparar',
+      },
+      starterSays: {
+        fill_one:
+          'Redacta {{formatted}} publicación para {{period}}, el hueco que queda en este período del objetivo.',
+        fill_other:
+          'Redacta {{formatted}} publicaciones para {{period}}, los huecos que quedan en este período del objetivo.',
+        draft_one:
+          'Redacta {{formatted}} publicación para alcanzar el objetivo de la campaña.',
+        draft_other:
+          'Redacta {{formatted}} publicaciones para alcanzar el objetivo de la campaña.',
+        calendar:
+          'Revisa los problemas del calendario de la campaña y arréglalos.',
+        sources:
+          '¿Qué fuentes de la campaña no están listas para escribir con ellas, y por qué?',
       },
     },
 
@@ -3084,7 +3123,12 @@ export const es: Translation = {
       restoreFailed: 'No se pudo recuperar. Inténtalo de nuevo.',
       fixed: 'Arreglado: {{fix}}',
       fixedChose: 'Arreglado: {{fix}} · {{choice}}',
+      fixedSince: 'Arreglado desde entonces: {{fix}}',
+      fixedSinceMoved: 'Arreglado desde entonces: movido al {{when}}',
       fixing: 'Arreglando…',
+      assist: 'ARREGLAR CON EL ASISTENTE',
+      orAssist: 'o arréglalo con el asistente',
+      fromIdea: 'Todo de «{{title}}»',
       back: 'VOLVER A LOS ARREGLOS',
       readAt: 'Leído el {{when}}.',
       checkAgain: 'REVISAR DE NUEVO',
@@ -3478,6 +3522,7 @@ export const es: Translation = {
     ideas: {
       untitled: 'Idea sin título',
       open: 'ABRIR',
+      openAll: 'ABRIR TODAS',
       noDate: 'sin fecha',
       backOn: 'vuelve el {{day}}',
       more_one: 'y {{formatted}} más',
@@ -3489,6 +3534,8 @@ export const es: Translation = {
         word: 'Encontradas',
         title_one: '{{formatted}} idea',
         title_other: '{{formatted}} ideas',
+        titleNamed_one: '{{formatted}} idea {{clauses}}',
+        titleNamed_other: '{{formatted}} ideas {{clauses}}',
         none: 'Ninguna idea coincide',
         ofPile: 'de {{total}} · {{pile}}',
         show: 'MOSTRAR EN PANTALLA',
@@ -3533,6 +3580,8 @@ export const es: Translation = {
         one: 'Borrador',
         writing: 'Redactando',
         writingNth: 'Borrador {{n}} de {{total}}',
+        writingIdeaOn: '{{ideas}} · {{platform}}',
+        writingIdea: '{{ideas}}',
         title_one: '{{formatted}} publicación',
         title_other: '{{formatted}} publicaciones',
         fromIdeas_one: '{{drafts}} a partir de {{formatted}} idea',
@@ -3653,6 +3702,19 @@ export const es: Translation = {
         unversioned:
           'No se pudo guardar la reescritura como versión, así que el historial de la publicación no tiene copia de ella',
       },
+      voiceChanged: {
+        word: 'VOZ CAMBIADA',
+        title: 'Voz de la publicación cambiada',
+        fromTo: '{{from}} → {{to}}',
+        fromToCampaign: '{{from}} → {{to}}, la voz de la campaña',
+        to: 'Ahora con la voz {{to}}',
+        toCampaign: 'Ahora con la voz {{to}}, la de la campaña',
+        campaign: 'Ahora con la voz de la campaña',
+        ownUnnamed: 'Ahora con una voz propia',
+        copyKept:
+          'El texto se queda como está; las revisiones y reescrituras lo leen con esta voz',
+        open: 'ABRIR',
+      },
       converted: {
         word: 'Convertidas',
         title_one: '{{formatted}} publicación cambió de tipo',
@@ -3664,6 +3726,10 @@ export const es: Translation = {
           media: 'los archivos',
         },
         still: 'Sigue programada el {{when}}',
+        passes: 'Cumple las reglas de {{type}} en {{platform}}',
+        passesAny: 'Cumple las reglas del nuevo tipo',
+        breaks: 'Aún incumple: {{rules}}',
+        breaksAny: 'Aún incumple las reglas del nuevo tipo',
       },
       unscheduled: {
         word: 'Desprogramada',
@@ -3694,6 +3760,11 @@ export const es: Translation = {
         title_one: '{{formatted}} publicación eliminada',
         title_other: '{{formatted}} publicaciones eliminadas',
       },
+      lines: {
+        label: 'Líneas cambiadas',
+        removed: 'Eliminado: ',
+        added: 'Añadido: ',
+      },
       review: {
         word: 'Revisión',
         none: 'El brief y las publicaciones coinciden',
@@ -3709,6 +3780,10 @@ export const es: Translation = {
         noneOpen_other: 'Nada pendiente · {{formatted}} ignorados',
         inPost: 'En {{title}}.',
         inBrief: '{{aspect}}.',
+        quoted: '«{{quote}}»',
+        fixPrompt: 'Arregla este hallazgo de la revisión.',
+        fromReview: 'De la revisión',
+        fromReviewQuoted: '«{{quote}}» — {{issue}}',
         from: {
           brief: 'Brief',
           posts: 'Publicaciones',
@@ -4212,6 +4287,7 @@ export const es: Translation = {
     columnGrounding: 'Fuentes',
     columnPlatform: 'Plataforma',
     columnFormat: 'Formato',
+    columnSeries: 'Serie',
     columnPublishDate: 'Fecha de publicación',
     columnWhen: 'Cuándo',
 

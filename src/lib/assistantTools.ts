@@ -84,6 +84,7 @@ const SIMPLE_TOOLS = new Set([
   'stopSeries',
   'checkBrand',
   'revisePost',
+  'setPostVoice',
   'addFact',
   'updateFact',
   'removeFact',

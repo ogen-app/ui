@@ -758,8 +758,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   against each finding's own campaign, since one check can span several. A
   distill card reads its run live (`useDistillRun`), because the turn's copy
   is a snapshot; a failure with no sentence is worded as the read's own screen
-  words its code. Series cards link to the campaign that runs them, never to
-  the series screen behind its flag. The brand tools touch `voice`, `audience`,
+  words its code. Series cards link to the campaign that runs them, where the
+  rhythm is set. The brand tools touch `voice`, `audience`,
   `guardrails`, `series` and `brand_distill`, which `refreshTouched` maps onto
   the brand, series and readings keys — a kind it doesn't map refreshes
   nothing. A voice's rules are worded by the library's own `rulesLine`.
@@ -821,13 +821,16 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   carries what it read** (`state`, `starters`; also
   `GET /api/campaigns/:id/assistant-state` through
   `useCampaignAssistantState`, re-read when a campaign turn completes): a
-  reply that changed nothing cites it in one quiet line ("Read from the
-  campaign · April 14 of 20 · 2 conflicts · 4 of 8 sources ready"), with a
-  SOURCES card when some of the campaign's sources aren't ready, and a
-  campaign's screens lead ON THIS SCREEN with its starters, worded here from
-  their kind and figures and sending the server's instruction. Which figures
-  a reply actually used, the period as data and a drafted post's score wait
-  on CON-503. The Overview runs no
+  reply cites the parts it says it relied on (`cites`, CON-511) in one quiet
+  line ("Read from the campaign · April 14 of 20 · 2 conflicts · 4 of 8
+  sources ready"), in its order, with a SOURCES card when it cites the
+  sources, and a campaign's screens lead ON THIS SCREEN with its starters,
+  worded here — chip and message alike, in the user's language — from their
+  kind, `count` and `period`; the server's English `label` and
+  `instruction` are only a fallback. A period is named from its data
+  (`lib/goalPeriod`): a month as the month, a week by its days. A draft the
+  REPLACED card lists without a score takes it when `assessment.completed`
+  lands (`stores/freshScoreStore`). The Overview runs no
   assistant, so each of a problem's fixes — the first a bordered button, the
   rest "or …" — sends `<fix>: <problem>` to the campaign's thread, never a raw
   key, which answers with that finding's fixes as offers; a fix that is only a
@@ -868,9 +871,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   already holds only what the page counted, and a marker is history), and one
   the assistant set (`counted`) only by the platforms the page counts, its
   period as it lands (`offeredPeriod`). A set_window row names only what
-  `changed`, offers BACK, and shows before → after unless a navigate in the
-  same turn led there (CON-497) — a navigate to the same route and its window
-  are one row; the scope bar tints what the assistant
+  `changed`, offers BACK, and shows before → after — after a navigate too,
+  where `before` is the window the dashboard opened with (CON-497/507); a
+  navigate to the same route and its window are one row, worded and drawn by
+  what moved from that opening window; the scope bar tints what the assistant
   changed (`stores/analyticsHighlightStore`) until the user's next touch. A
   set_window whose dates are only the period on screen resolved keeps the
   period a preset, and a preset the picker doesn't offer lands as its dates.
@@ -917,11 +921,19 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   assistant made it, and says "changed since" and how to delete it by hand
   after). A delete and a merge have none. Piles are named as the Ideas list
   names them, and a `later` idea past its `remindAt` is on the desk. **Every
-  idea row opens its idea**: `?idea=<id>` on the Ideas pages, with its pile,
-  opens it once it is on the page and then leaves the address — there is no
-  read of one idea by id, so one past the first page stays closed (CON-500).
+  idea row opens exactly its idea** (CON-510): `ids=<id>&idea=<id>` on the
+  Ideas pages, with its pile, so the list holds just it and opens it, then
+  leaves `idea` out of the address. A card naming several ideas (FOUND
+  reloaded, verdicts, moves, merges, a compile's ideas) has OPEN ALL, `ids=`
+  with each of them, on their campaign's list when they share one and on the
+  pile most of them are in. `ids` is a filter like any other — counted,
+  saved with a smart group — and a clause you only remove ("limited to these
+  6", `FieldKind` `fixed`).
   FOUND's SHOW ON SCREEN puts the `findIdeas` filter on the list through
-  `runUiAction`, so it is a screen change with BACK. Bulk verdicts name
+  `runUiAction`, so it is a screen change with BACK; its headline names what
+  the search named (`named`, CON-509) in the Ideas list's own clauses — "6
+  ideas from Brochure", a left-out value "not from" — and an idea's source
+  row leads with its asset's type mark, none when untyped. Bulk verdicts name
   their pile, day and ideas; edits are before → after per field; compiles
   show their theses and the ideas they were built from; in common is a theme,
   an angle, the lens and sources with counts, and where they split in amber.
@@ -931,7 +943,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   with its date and its own campaign, so a workspace thread's drafts reach
   that campaign's lists too (`streamedElsewhere`) — and an `idea_draft` the
   rail draws as a card while the turn runs, "Writing 4 drafts · 2 done", until
-  the summary replaces them. **An idea open on the list is the turn's
+  the summary replaces them; the one being written is named from
+  `idea_draft_started` (CON-510) — "What the water does in March · LinkedIn",
+  every idea of a together post — and "Draft 3 of 4" only before it says. **An idea open on the list is the turn's
   focus** (`ViewPage.focus`), which is what "this one" means, with its own
   starters; questions about a set need two ticked. `getIdea`'s fit is drawn
   by the Ideas list's own `FitSection`, compact in the rail. **An idea knows
@@ -1616,8 +1630,8 @@ hang an explanation on, and the server's own refusal already arrives as a
 sentence (CON-295).
 
 **Series and content formats are two flags, and the split is the design**
-(CON-264; both off — `content-formats` is backed since CON-329 and waits only
-on its live re-test). The word people arrive with
+(CON-264; both off, and both backed — `series` since CON-496/508 and
+`content-formats` since CON-329 — each waiting only on its live re-test). The word people arrive with
 is *content pillar*, which means at least four different things; what is modelled
 is the **recurring named segment with a recipe** — the only reading a generator
 can act on and the only one analytics can group by. A broad theme collapses into
@@ -1652,12 +1666,21 @@ and nothing warns about a post without one. A post's format is
 restated by `postToPayload` like the first comment, a 400 for `""` or an unknown
 slug, and inside CON-251's lock — so the picker is disabled on a submitted post.
 
-**Series are waiting on** a `brand_series` table; `series_ids` plus a per-series rhythm on
-the campaign, **attached and detached rather than restated** for the reason
-CON-233 gives about `asset_ids`; a nullable `series_id` on the post; and
-analytics grouped by series and by format. Until then series live in
-`services/api/series.ts` (a stub in the shape the endpoints will have), **per
-browser**, which is what the flag is holding. One move stays
+**Series are backed by the API** (CON-496/508): `/api/series` for the library
+and each campaign's own, and a campaign's runs **attached, detached and
+re-rhythmed one at a time, never restated**, for the reason CON-233 gives about
+`asset_ids`. `services/api/series.ts` maps the wire onto `types/series`. A
+rhythm is `{times, per, every?, weekday?}` — a day only at once a week — and
+**what a run claims is the server's `seriesplan.Days`, ported** into
+`lib/seriesPlan` (`seriesDays`): weeks are 7-day spans from the campaign's
+start, months calendar months, `every` counts from the first period, a
+weekday's part-week without that day gets nothing, and an undated campaign
+claims nothing. No endpoint returns a claim, so when the two disagree the port
+is the bug. Ideas and posts carry `series_id` (`SeriesMark`), which the post
+PUT reads presence-aware and `postToPayload` leaves out; idea slots wait on it
+(CON-512). Analytics by series is still to come. All of it — the marks, the
+posts table's Series column and the calendar settings' series day included —
+stays behind the `series` flag until the live pass. One move stays
 deliberately open (CON-305 decision 1): series could be its own module at both
 levels, `/series` and `/campaigns/:id/series`, which is what documents just did
 and what the nav rule would prefer over a level-1 card with no level-0 row.

@@ -25,6 +25,8 @@ export type IdeaSlot = {
   platform_post_type: string | null
   phase_id: string | null
   verdict: 'yes' | 'later' | null
+  /** The series a plan wrote it for — once the slots read sends it (CON-512). */
+  series_id?: string | null
 }
 
 /** An idea a post was built from. */
