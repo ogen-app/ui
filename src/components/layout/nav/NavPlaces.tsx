@@ -22,8 +22,11 @@ const MAIN: PlaceId[] = [
   'analytics',
 ]
 
-/** Around the work rather than the work, at the rail's foot. */
-const BAND: PlaceId[] = ['foundation', 'activity', 'settings']
+/**
+ * Around the work rather than the work, at the rail's foot. Foundation sat
+ * here until it became Strategy for all campaigns (`lib/campaignScope`).
+ */
+const BAND: PlaceId[] = ['activity', 'settings']
 
 /**
  * The menu — one list, the same at every scope.
@@ -55,11 +58,7 @@ export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
     })
     const { icon, tone } = placeGlyph(place)
     const label =
-      place === 'foundation'
-        ? t('nav.foundation')
-        : place === 'inbox'
-          ? t('nav.inbox')
-          : t(campaignSection(place).labelKey)
+      place === 'inbox' ? t('nav.inbox') : t(campaignSection(place).labelKey)
     const counts =
       scope !== null
         ? []

@@ -795,7 +795,7 @@ export const en = {
     goHint: 'Press g, then the letter.',
     anywhere: 'Anywhere',
     inCampaign: 'In this campaign',
-    campaignNote: 'Strategy, Posts and Calendar have keys inside a campaign.',
+    campaignNote: 'Posts and Calendar have keys inside a campaign.',
     thisCampaign: 'this campaign’s',
     foot: '<k1>?</k1> or <k2>esc</k2> to close',
     /** A two-key shortcut, as a screen reader says it. */
@@ -805,7 +805,6 @@ export const en = {
       assets: '<k>A</k>ssets',
       campaigns: '<k>C</k>ampaigns',
       analytics: 'A<k>n</k>alytics',
-      foundation: '<k>F</k>oundation',
       workspaceSettings: 'Workspace <k>s</k>ettings',
       settings: '<k>S</k>ettings',
       strategy: 'S<k>t</k>rategy',
@@ -7030,11 +7029,6 @@ export const en = {
         'This workspace has no voices or audiences yet. They are written once and every campaign draws on them.',
       emptyShort: 'This workspace has no voices or audiences yet.',
       openBrand: 'Open Foundation',
-      alsoApplies:
-        'The workspace’s guardrails also apply to every post here, whichever voice writes it. They are not chosen per campaign and cannot be overridden.',
-      alsoAppliesEmpty:
-        'The workspace has stated no guardrails, so nothing is off limits — any voice here may promise anything, in any words.',
-      seeEverything: 'See everything this campaign writes from',
       saveError: 'Unable to save the campaign voice',
     },
 
@@ -8177,6 +8171,34 @@ export const en = {
        */
       removedByAssistant: '{{what}} removed by the assistant',
       undoInThread: 'UNDO is in the thread',
+      /**
+       * Strategy for all campaigns: every campaign on one time axis, with
+       * what each commits to and the voice it writes in.
+       */
+      timeline: {
+        title: 'Campaigns',
+        empty:
+          'No campaigns yet. Each one you add is drawn here against the others, by its dates.',
+        undated: 'No dates set',
+        barLabel: '{{name}}, {{window}}',
+        windowAndRate: '{{window}} · {{rate}}',
+        perWeek_one: '{{formatted}} post a week',
+        perWeek_other: '{{formatted}} posts a week',
+        perMonth_one: '{{formatted}} post a month',
+        perMonth_other: '{{formatted}} posts a month',
+        noRate: 'No post goal',
+        noPlatforms: 'No platforms',
+        noVoice: 'No voice',
+        defaultVoice: '{{voice}} (default)',
+      },
+      /**
+       * Strategy for one campaign: the workspace material it is written
+       * under and cannot change from here.
+       */
+      fromWorkspace: {
+        title: 'From the workspace',
+        body: 'The voice, audience and series this campaign writes in are chosen here. The guardrails and facts apply to every campaign, so they are edited for all campaigns at once.',
+      },
     },
     /**
      * The campaign's type on Strategy (CON-166). It locks once a post is

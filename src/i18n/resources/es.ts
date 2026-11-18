@@ -645,7 +645,7 @@ export const es: Translation = {
     anywhere: 'En cualquier lugar',
     inCampaign: 'En esta campaña',
     campaignNote:
-      'Estrategia, Publicaciones y Calendario tienen teclas dentro de una campaña.',
+      'Publicaciones y Calendario tienen teclas dentro de una campaña.',
     thisCampaign: 'de esta campaña',
     foot: '<k1>?</k1> o <k2>esc</k2> para cerrar',
     sequence: '{{first}}, luego {{second}}',
@@ -654,7 +654,6 @@ export const es: Translation = {
       assets: 'Recursos',
       campaigns: '<k>C</k>ampañas',
       analytics: 'A<k>n</k>alíticas',
-      foundation: '<k>F</k>undamentos',
       workspaceSettings: 'Ajuste<k>s</k> del espacio',
       settings: 'Ajuste<k>s</k>',
       strategy: 'Es<k>t</k>rategia',
@@ -5754,11 +5753,6 @@ export const es: Translation = {
         'Este espacio de trabajo aún no tiene voces ni audiencias. Se escriben una vez y todas las campañas se basan en ellas.',
       emptyShort: 'Este espacio de trabajo aún no tiene voces ni audiencias.',
       openBrand: 'Abrir Fundamentos',
-      alsoApplies:
-        'Los límites del espacio de trabajo también se aplican a todas las publicaciones de aquí, sea quien sea la voz que escriba. No se eligen por campaña y no se pueden anular.',
-      alsoAppliesEmpty:
-        'El espacio de trabajo no ha indicado ningún límite, así que nada está descartado: cualquier voz de aquí puede prometer lo que sea, con las palabras que sea.',
-      seeEverything: 'Ver todo aquello a partir de lo que escribe esta campaña',
       saveError: 'No se pudo guardar la voz de la campaña',
     },
 
@@ -6763,6 +6757,26 @@ export const es: Translation = {
       spend: 'Presupuesto e idioma',
       removedByAssistant: '{{what}} quitado por el asistente',
       undoInThread: 'DESHACER está en la conversación',
+      timeline: {
+        title: 'Campañas',
+        empty:
+          'Todavía no hay campañas. Cada una que añadas se dibuja aquí junto a las demás, según sus fechas.',
+        undated: 'Sin fechas',
+        barLabel: '{{name}}, {{window}}',
+        windowAndRate: '{{window}} · {{rate}}',
+        perWeek_one: '{{formatted}} publicación a la semana',
+        perWeek_other: '{{formatted}} publicaciones a la semana',
+        perMonth_one: '{{formatted}} publicación al mes',
+        perMonth_other: '{{formatted}} publicaciones al mes',
+        noRate: 'Sin objetivo de publicaciones',
+        noPlatforms: 'Sin plataformas',
+        noVoice: 'Sin voz',
+        defaultVoice: '{{voice}} (predeterminada)',
+      },
+      fromWorkspace: {
+        title: 'Del espacio de trabajo',
+        body: 'La voz, la audiencia y las series en las que escribe esta campaña se eligen aquí. Los límites y los datos se aplican a todas las campañas, así que se editan para todas a la vez.',
+      },
     },
     type: {
       label: 'Tipo de campaña',

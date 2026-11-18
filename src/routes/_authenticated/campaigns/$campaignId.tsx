@@ -48,7 +48,22 @@ const DOCUMENT_SECTIONS: readonly string[] = [
   'Activity',
 ]
 
+/**
+ * The save context wraps every shell, not only the Strategy and Settings one
+ * that draws its bar. The shell is chosen from the address, and the address
+ * changes a render before the router lets go of the outgoing section — so on
+ * the way out of Strategy the form rendered once inside another shell, found
+ * no provider and threw into the error boundary.
+ */
 function CampaignLayout() {
+  return (
+    <SettingsSaveProvider>
+      <CampaignShell />
+    </SettingsSaveProvider>
+  )
+}
+
+function CampaignShell() {
   const { campaignId } = Route.useParams()
   const query = useCampaign(campaignId)
   const { data: campaign, isError } = query
@@ -113,26 +128,24 @@ function CampaignLayout() {
   if (section === 'Strategy' || section === 'Settings') {
     return (
       <PageContainer variant={'fullFlex'}>
-        <SettingsSaveProvider>
-          <div className={'relative h-0 grow flex flex-col'}>
-            <div className={'h-0 grow overflow-y-auto flex flex-col'}>
-              <PageHeader title={title} fadeOnScroll />
-              {/* pt-4 is the shared 16px breath between a page header and its
+        <div className={'relative h-0 grow flex flex-col'}>
+          <div className={'h-0 grow overflow-y-auto flex flex-col'}>
+            <PageHeader title={title} fadeOnScroll />
+            {/* pt-4 is the shared 16px breath between a page header and its
                   first card — see the same value on Overview and Workspace
                   Settings. */}
-              <div
-                key={section}
-                className={cn(
-                  'page-content-motion px-3 lg:px-6 pt-4',
-                  PAGE_ACTION_BAR_INSET,
-                )}
-              >
-                <Outlet />
-              </div>
+            <div
+              key={section}
+              className={cn(
+                'page-content-motion px-3 lg:px-6 pt-4',
+                PAGE_ACTION_BAR_INSET,
+              )}
+            >
+              <Outlet />
             </div>
-            <SettingsSaveBar />
           </div>
-        </SettingsSaveProvider>
+          <SettingsSaveBar />
+        </div>
       </PageContainer>
     )
   }

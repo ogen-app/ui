@@ -201,6 +201,61 @@ export function BrandOverview({
 }
 
 /**
+ * Some of the hub's cards, on their own — what a campaign's Strategy shows of
+ * the Foundation it is written under (the guardrails and the facts).
+ *
+ * The same cards rather than a summary of them, so a rule reads the same
+ * wherever it is read. They are read-only where they are shown: opening one
+ * goes to the workspace's section, which is where it is edited for every
+ * campaign at once.
+ */
+export function BrandSectionCards({
+  sections,
+  brand,
+  facts = [],
+  stance,
+  onOpen,
+}: {
+  sections: BrandSectionId[]
+  brand: Fetched<BrandData>
+  facts?: BrandFact[]
+  stance?: GuardrailsStance
+  onOpen?: (id: BrandSectionId) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      {SHOWN_BRAND_SECTIONS.filter((section) =>
+        sections.includes(section.id),
+      ).map((section) => (
+        <SectionCard
+          key={section.id}
+          section={section}
+          contents={
+            brand.status !== 'ready'
+              ? brand
+              : {
+                  status: 'ready',
+                  data: {
+                    rows: sectionRows(
+                      t,
+                      section.id,
+                      brand.data,
+                      facts,
+                      [],
+                      stance,
+                    ),
+                  },
+                }
+          }
+          onOpen={onOpen}
+        />
+      ))}
+    </>
+  )
+}
+
+/**
  * The card the screen opens with, and the only one on it that goes nowhere.
  *
  * Every other card here is a door, and a screen made entirely of doors never

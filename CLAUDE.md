@@ -92,21 +92,29 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   deliberately escape the parent layout to render fullscreen.
 - **The nav is one menu, and the campaign is a filter over it.** The rail's
   rows never change: Overview, Strategy, Ideas, Assets, Posts, Calendar,
-  Analytics, then Foundation, Activity and Settings at its foot, in that order
+  Analytics, then Activity and Settings at its foot, in that order
   at every scope (`layout/nav/NavPlaces`). The campaign is chosen above the
   page, in `CampaignSwitcher` on the top bar, and changes **where a row leads,
   never which rows there are** — the rail used to be two menus, the
   workspace's and a campaign's, and moving between them rewrote the list under
   the pointer. Where each row goes under each filter is one table,
   `lib/campaignScope` (`placeLink`), and every place is one of three kinds:
-  **filtered** (a page for all campaigns and a page for one — Overview, Ideas,
-  Assets, Posts, Calendar, Analytics, Activity, Settings), **campaign only**
-  (Strategy: with no campaign chosen the row opens the campaign cards at
+  **filtered** (a page for all campaigns and a page for one — Overview,
+  Strategy, Ideas, Assets, Posts, Analytics, Activity, Settings, and Calendar
+  while the workspace calendar is on), **campaign only** (Calendar while it is
+  off: with no campaign chosen the row opens the campaign cards at
   `/campaigns?pick=<place>`, and a workspace with exactly one campaign goes
   straight to it — as Posts does, since `/posts` would be that campaign's list
-  without ADD POST), and **workspace only** (Foundation, the Inbox: voices,
-  audiences and guardrails are the workspace's, and what a campaign has of them
-  is a *pointer*, chosen on its Strategy page through `CampaignBrandCard`).
+  without ADD POST), and **workspace only** (the Inbox).
+  **Strategy for all campaigns is the Foundation** (`/foundation/*`): the
+  campaigns on one timeline (`strategy/CampaignTimeline` — a plan, not a
+  status list; the Overview's cards already report progress), then the hub.
+  A campaign's Strategy is what it commits to, then what it takes from the
+  Foundation (`strategy/FromTheWorkspace`): the voice, audience and series it
+  *chooses*, and the guardrails and facts it only *reads*, as the hub's own
+  cards opening the workspace's section — they apply to every campaign, so an
+  edit belongs where it visibly does. There is no Foundation row and no `g f`;
+  `g t` is Strategy at both levels.
   Switching campaign keeps you on the same place (`scopeLink`). The address is
   the filter wherever it has one; on a workspace-only page the last choice is
   kept per tab (`stores/campaignScopeStore`, `sessionStorage` for the reason
