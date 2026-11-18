@@ -119,37 +119,38 @@ export function CampaignOverview({
     )
   }
 
-  // The time cards are one column, beside the list; the list is held on
-  // screen while they are read. With none, the list takes the row.
-  const time = timeCards(model, campaignId, now)
+  // The progress card and the time cards are one column, beside the list;
+  // the list is held on screen while they are read. With none, the list takes
+  // the row. Once the campaign is over the results say how it went, so the
+  // progress card goes.
+  const column = [
+    model.band && model.stage !== 'ended' && (
+      <Band
+        key="band"
+        stage={model.stage}
+        band={model.band}
+        campaignId={campaignId}
+        now={now}
+      />
+    ),
+    ...timeCards(model, campaignId, now),
+  ].filter(Boolean)
   return (
     <div className="pb-10">
       <PageGrid>
-        {/* Not while planning, for now: the first week and the list carry
-            that stage on their own. */}
-        {model.band && model.stage !== 'planning' && (
-          <GridCell span="full">
-            <Band
-              stage={model.stage}
-              band={model.band}
-              campaignId={campaignId}
-              now={now}
-            />
-          </GridCell>
-        )}
-        {time.length > 0 && (
+        {column.length > 0 && (
           <GridCell span="wide">
             {/* Each card keeps its height; the last takes what the list
                 leaves, so the column ends with it. */}
-            <div className="flex flex-col gap-4 *:last:flex-1">{time}</div>
+            <div className="flex flex-col gap-4 *:last:flex-1">{column}</div>
           </GridCell>
         )}
-        <GridCell span={time.length > 0 ? 'narrow' : 'full'}>
+        <GridCell span={column.length > 0 ? 'narrow' : 'full'}>
           <NeedsList
             model={model}
             campaignId={campaignId}
             handlers={handlers}
-            pinned={time.length > 0}
+            pinned={column.length > 0}
           />
         </GridCell>
       </PageGrid>
@@ -300,6 +301,11 @@ function Band({
             total: formatNumber(band.days),
           })
 
+  // Today's phase; before the start, the one it opens with.
+  const phase =
+    band.phases.find((p) => p.current) ??
+    (band.startsIn != null ? band.phases[0] : undefined)
+
   return (
     <section className={cn(SURFACE, 'flex flex-col gap-4 p-6')}>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -315,36 +321,59 @@ function Band({
             i18n.language,
           )}
         </span>
-        {stage !== 'ended' && (
-          <span className="flex min-w-0 items-baseline gap-2 text-sm @2xl:ml-auto">
-            <span className="text-tertiary-foreground">
-              {t('campaignOverview.band.next')}
-            </span>
-            {band.next ? (
-              <Link
-                to="/campaigns/$campaignId/posts/$postId"
-                params={{ campaignId, postId: band.next.id }}
-                className="flex min-w-0 items-center gap-1.5 hover:underline"
-              >
-                <PlatformMark platform={band.next.platform} />
-                <span className="truncate">
-                  {formatTitle(
-                    band.next.title ?? '',
-                    t('campaignOverview.stats.untitledPost'),
-                  )}
-                </span>
-                <span className="shrink-0 text-secondary-foreground">
-                  {relativeTime(band.next.at, now, i18n.language)}
-                </span>
-              </Link>
-            ) : (
-              <span className="text-secondary-foreground">
-                {t('campaignOverview.band.nothingNext')}
-              </span>
-            )}
-          </span>
-        )}
       </div>
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
+        {phase && (
+          <>
+            <dt className="text-tertiary-foreground">
+              {t('campaignOverview.band.phase')}
+            </dt>
+            <dd className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+              <span>{phase.name}</span>
+              <span className="text-secondary-foreground">
+                {phase.day != null
+                  ? t('campaignOverview.band.phaseDay', {
+                      day: formatNumber(phase.day),
+                      total: formatNumber(phase.days),
+                    })
+                  : formatDateRange(
+                      phase.start,
+                      phase.end,
+                      { month: 'short', day: 'numeric' },
+                      i18n.language,
+                    )}
+              </span>
+            </dd>
+          </>
+        )}
+        <dt className="text-tertiary-foreground">
+          {t('campaignOverview.band.next')}
+        </dt>
+        <dd className="flex min-w-0 items-baseline">
+          {band.next ? (
+            <Link
+              to="/campaigns/$campaignId/posts/$postId"
+              params={{ campaignId, postId: band.next.id }}
+              className="flex min-w-0 items-center gap-1.5 hover:underline"
+            >
+              <PlatformMark platform={band.next.platform} />
+              <span className="truncate">
+                {formatTitle(
+                  band.next.title ?? '',
+                  t('campaignOverview.stats.untitledPost'),
+                )}
+              </span>
+              <span className="shrink-0 text-secondary-foreground">
+                {relativeTime(band.next.at, now, i18n.language)}
+              </span>
+            </Link>
+          ) : (
+            <span className="text-secondary-foreground">
+              {t('campaignOverview.band.nothingNext')}
+            </span>
+          )}
+        </dd>
+      </dl>
       <GoalBar band={band} />
     </section>
   )
@@ -786,13 +815,15 @@ function NeedsList({
         }
         aside={
           askable && (
-            <button
-              type="button"
-              className={TEXT_ACTION}
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
               onClick={handlers.askAll}
             >
-              {t('campaignOverview.problems.fixAll')}
-            </button>
+              <Logo variant="mark" />
+              <span>{t('campaignOverview.problems.fixAll')}</span>
+            </Button>
           )
         }
         campaignId={campaignId}
@@ -832,9 +863,6 @@ function NeedsList({
     </div>
   )
 }
-
-const TEXT_ACTION =
-  'cursor-pointer text-xs font-semibold tracking-[0.06em] text-foreground hover:text-secondary-foreground'
 
 /**
  * A warning is a row like the setup card's steps, in the same grammar: the

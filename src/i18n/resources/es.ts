@@ -1561,7 +1561,7 @@ export const es: Translation = {
     problems: {
       ignore: 'IGNORAR',
       ignoreFailed: 'No se pudo ignorar ese problema. Inténtalo de nuevo.',
-      fixAll: 'ARREGLAR CON EL ASISTENTE',
+      fixAll: 'ARREGLAR CON OGEN',
       askAll: 'Arreglemos esto juntos.',
       askFix: '{{fix}}: {{problem}}',
     },
@@ -1586,6 +1586,8 @@ export const es: Translation = {
     },
     band: {
       next: 'Siguiente',
+      phase: 'Fase',
+      phaseDay: 'Día {{day}} de {{total}}',
       nothingNext: 'Nada programado',
       published: '{{published}} de {{total}} publicadas',
       scheduled_one: '{{formatted}} programada',

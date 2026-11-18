@@ -1947,7 +1947,7 @@ export const en = {
       ignore: 'IGNORE',
       ignoreFailed: 'Couldn’t ignore that problem. Try again.',
       /** The card's header: every problem, to the campaign's assistant. */
-      fixAll: 'FIX WITH ASSISTANT',
+      fixAll: 'FIX WITH OGEN',
       askAll: 'Fix these with me.',
       /** Sent to the campaign's assistant: the fix, then the problem. */
       askFix: '{{fix}}: {{problem}}',
@@ -1981,6 +1981,9 @@ export const en = {
     band: {
       next: 'Next',
       nothingNext: 'Nothing scheduled',
+      /** The campaign type's phase today; before the start, the first. */
+      phase: 'Phase',
+      phaseDay: 'Day {{day}} of {{total}}',
       published: '{{published}} of {{total}} published',
       scheduled_one: '{{formatted}} scheduled',
       scheduled_other: '{{formatted}} scheduled',

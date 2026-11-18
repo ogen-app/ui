@@ -103,6 +103,9 @@ export type OverviewPhase = {
   start: Date
   end: Date
   current: boolean
+  /** 1-based, while it is the current phase; null otherwise. */
+  day: number | null
+  days: number
 }
 
 /** The band across the top: where the campaign is in its own time. */
@@ -364,11 +367,14 @@ export function overviewModel(input: OverviewInput): OverviewModel {
       .map((p) => {
         const ps = dayOf(p.start_date!)
         const pe = dayOf(p.end_date!)
+        const current = today >= ps && today <= pe
         return {
           name: p.name,
           start: ps,
           end: pe,
-          current: today >= ps && today <= pe,
+          current,
+          day: current ? daysBetween(ps, today) + 1 : null,
+          days: daysBetween(ps, pe) + 1,
         }
       }),
     goal:
