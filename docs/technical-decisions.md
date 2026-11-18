@@ -248,7 +248,7 @@ Calendar Settings' *Show cards as image previews* switch was **hidden behind
 `calendar-card-images`** while no card could draw a picture: it was on by
 default and inert, which is the worst of the three states it could be in — a
 switch already *on* says the pictures are missing for some other reason. The
-flag is on since the re-test and waits to be deleted.
+flag was turned on after the re-test and deleted on 2026-11-18.
 
 **Where.** `components/campaigns/calendar/PostCard.tsx`,
 `lib/postValidation.ts` (`hasVisibleProblem`).
