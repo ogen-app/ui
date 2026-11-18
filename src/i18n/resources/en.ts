@@ -9061,6 +9061,8 @@ export const en = {
       togetherHint:
         'Continue reads all of it together, in a minute or two. Nothing goes into the brand until you review it.',
       later: 'Do this later',
+      tryAgain: 'Try again',
+      withoutRead: 'Continue without reading',
       stop: {
         body: 'Ogen is still reading. Going on now stops it, and the sheet on the right is not filled in from what you added. You can read it again from Foundation later.',
         keep: 'Keep reading',

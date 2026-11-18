@@ -352,6 +352,7 @@ function Sources({
   })
 
   const upload = (file: File) => {
+    setError(undefined)
     const id = `doc-${crypto.randomUUID()}`
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
     setSources((all) => [
@@ -456,15 +457,22 @@ function Sources({
         readsOnAdd={false}
         starting={start.isPending}
         error={error}
-        onAdd={(s: SourceInput) =>
+        onAdd={(s: SourceInput) => {
+          setError(undefined)
           setSources((all) => [...all, { ...s, status: 'queued' }])
-        }
+        }}
         // The upload stays in Assets, tagged as a brand source; removing it
         // here only leaves it out of the read.
-        onRemove={(id) => setSources((all) => all.filter((s) => s.id !== id))}
+        onRemove={(id) => {
+          setError(undefined)
+          setSources((all) => all.filter((s) => s.id !== id))
+        }}
         onRetry={() => undefined}
         onChooseFiles={() => fileInput.current?.click()}
-        onAnswers={setAnswers}
+        onAnswers={(a) => {
+          setError(undefined)
+          setAnswers(a)
+        }}
         onBack={onBack}
         onRead={read}
         onStop={read}

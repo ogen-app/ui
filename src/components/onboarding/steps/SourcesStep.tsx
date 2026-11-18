@@ -231,6 +231,18 @@ export function SourcesStep({
                   {t('onboarding.sources.stop.go')}
                 </Button>
               </div>
+            ) : error ? (
+              // The read could not start — no scraper, the read switched off,
+              // a server that did not answer. Setup must not end there: the
+              // brand can be read from Foundation later.
+              <div className="flex gap-2">
+                <Button variant="ghost" loading={starting} onClick={onContinue}>
+                  {t('onboarding.sources.tryAgain')}
+                </Button>
+                <Button variant="accent" onClick={onLater}>
+                  {t('onboarding.sources.withoutRead')}
+                </Button>
+              </div>
             ) : given ? (
               <Button variant="accent" loading={starting} onClick={onContinue}>
                 {t('onboarding.sources.continue')}
