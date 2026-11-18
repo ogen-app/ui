@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib'
 import type { OnboardingRole } from './flow'
+import { SURFACE, SURFACE_HEAD } from './OnboardingFrame'
 import { verdictOf, type Need, type NeedLevel } from './needs'
 
 const LEVEL_ICON = {
@@ -73,9 +74,9 @@ export function NeedsSheet({
   const enough = needs.filter((n) => n.level === 'enough').length
 
   return (
-    <section className="flex flex-1 flex-col bg-primary">
+    <section className={cn(SURFACE, 'flex flex-1 flex-col')}>
       <div className="flex flex-col lg:sticky lg:top-10">
-        <div className="flex items-center gap-3 border-b border-quaternary px-5 py-4">
+        <div className={cn(SURFACE_HEAD, 'gap-3 px-5')}>
           <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-secondary">
             {favicon ? (
               <img src={favicon} alt="" className="size-6" />

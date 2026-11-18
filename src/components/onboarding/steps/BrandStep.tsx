@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { isRunOpen, keptTally } from '@/lib/brandDistill'
 import { useDistillReview } from '@/stores/brandDistillStore'
 import type { DistillRun } from '@/types/brandDistill'
-import { LABEL_TEXT, StepCard, StepFooter } from '../OnboardingFrame'
+import { LABEL_TEXT, StepCard, StepFooter, SURFACE } from '../OnboardingFrame'
 
 /**
  * The brand, read from what was given — the brand read's own screens, not a
@@ -104,7 +104,7 @@ export function BrandStep({
         />
       </StepCard>
       <ReviewScreen run={run} proposal={run.proposal} brand={undefined} />
-      <section className="bg-primary px-5 pb-6 lg:px-8">
+      <section className={`${SURFACE} px-5 py-5 lg:px-8`}>
         <ReviewFooter
           run={run}
           onBack={onBack}
@@ -136,6 +136,7 @@ function ReviewFooter({
 
   return (
     <StepFooter
+      ruled={false}
       onBack={onBack}
       note={error}
       next={

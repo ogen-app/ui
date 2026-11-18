@@ -128,8 +128,21 @@ export function OnboardingFrame({
 }
 
 /**
- * One step's card: the title, a line saying why it is asked, the work, and the
- * way on. A step that needs more than one card renders more beside it.
+ * A surface on the grey page — a step's card or the sheet — edged with the
+ * top bar's hairline.
+ */
+export const SURFACE = 'border border-quaternary bg-primary'
+
+/**
+ * A surface's heading bar. One height for both columns, so a one-line step
+ * title and the sheet's name sit on the same rule across the page.
+ */
+export const SURFACE_HEAD =
+  'flex min-h-18 shrink-0 items-center border-b border-quaternary py-4'
+
+/**
+ * One step's card: the title in its own bar, then a line saying why it is
+ * asked, the work, and the way on. A step that needs more than one card renders more beside it.
  * The last card in the column grows to the sheet's height, with the way on
  * kept at its foot, so the two columns end on one line.
  */
@@ -145,19 +158,23 @@ export function StepCard({
   footer?: ReactNode
 }) {
   return (
-    <section className="flex flex-col gap-6 bg-primary px-5 py-6 last:flex-1 lg:px-8 lg:py-8">
-      <div className="flex flex-col gap-2">
+    <section className={cn(SURFACE, 'flex flex-col last:flex-1')}>
+      <div className={cn(SURFACE_HEAD, 'px-5 lg:px-8')}>
         <h1 className="font-display text-2xl leading-8 font-medium tracking-tight text-balance">
           {title}
         </h1>
-        {lead && (
-          <p className="max-w-[60ch] text-sm leading-5 text-secondary-foreground">
-            {lead}
-          </p>
-        )}
       </div>
-      {children}
-      {footer && <div className="mt-auto">{footer}</div>}
+      {(lead || children || footer) && (
+        <div className="flex flex-1 flex-col gap-6 px-5 py-6 lg:px-8 lg:py-8">
+          {lead && (
+            <p className="max-w-[60ch] text-sm leading-5 text-secondary-foreground">
+              {lead}
+            </p>
+          )}
+          {children}
+          {footer && <div className="mt-auto">{footer}</div>}
+        </div>
+      )}
     </section>
   )
 }
@@ -186,14 +203,22 @@ export function StepFooter({
   onBack,
   next,
   note,
+  ruled = true,
 }: {
   onBack?: () => void
   next: ReactNode
   note?: ReactNode
+  /** Off when the footer is a surface of its own, whose edge is the rule. */
+  ruled?: boolean
 }) {
   const { t } = useTranslation()
   return (
-    <div className="flex flex-col gap-3 border-t border-quaternary pt-5">
+    <div
+      className={cn(
+        'flex flex-col gap-3',
+        ruled && 'border-t border-quaternary pt-5',
+      )}
+    >
       {note && <p className={HINT_TEXT}>{note}</p>}
       <div className="flex items-center justify-between gap-3">
         {onBack ? (
