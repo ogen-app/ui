@@ -1226,15 +1226,40 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (740px) against the page's left gutter, under the header's title — never
   `mx-auto`. `PageActionBar` centres itself on that column, not on the page.
   Full-screen flows outside the app frame (auth, `/plans`, checkout) are the
-  exception. **A page in two columns is `PageColumns`**
-  (`page-primitives`): the main column stretches, the `aside` keeps a preset
-  width beside it and goes under it when the page is too narrow, and inside
-  both the content takes the column's full width — the component sets
-  `--container-content` to 100%, which is why that token lives in a plain
-  `@theme` block rather than the inline one. Each column spaces its own
-  cards, so pass the cards, not a wrapper; `masonry` flows the main column's
-  cards into as many columns as fit. Strategy for all campaigns is the first
-  user.
+  exception.
+- **A page that is more than one column of cards uses one of two layouts**
+  (`page-primitives`), never a hand-rolled grid. Both switch on the page's own
+  width (a container query, because the right rail takes its width out of the
+  page), share the 16px gap and the 60rem switch, and set
+  `--container-content` to 100% inside, so a card's `max-w-content` means its
+  column — which is why that token lives in a plain `@theme` block rather than
+  the inline one.
+  - **`PageColumns` — main content and a side column.** The main column
+    stretches; the `aside` keeps a preset width beside it and goes under it,
+    full width, when the page is too narrow. Each column spaces its own cards,
+    so pass the cards, not a wrapper. `masonry` flows the main column's cards
+    into as many columns as fit — only for peer cards with no order (the
+    Foundation hub), because masonry reads down each column first. It carries
+    the page's gutters. Strategy for all campaigns.
+  - **`PageGrid` — a dashboard.** Cards in rows, each in a `GridCell` asking
+    for a named share: `full`, `wide` (⅔), `half`, `narrow` (⅓) of a six-track
+    grid from 60rem; from 40rem every share short of `full` is a half, so a
+    wide + narrow row becomes two halves before it stacks; under 40rem, one
+    column. A card that doesn't fit starts the next row. **Source order is
+    reading order at every width**, so write the cards in order of
+    importance — the narrow stack follows from it — and never reach for
+    `grid-auto-flow: dense` or masonry here, both of which move cards out of
+    it. Rows are one height by default (`rows="stretch"`, content at the top);
+    `rows="start"` keeps each card's own height and leaves the gap. **A
+    dashboard card bounds what it shows** — the next few, the top few with
+    "+2 like this", SHOW MORE — and links to the whole list, or one long card
+    stretches every card beside it. Its header is `OverviewCard`'s: glyph,
+    title, count or status, then one chevron or one action on the right. A
+    cell whose card renders nothing is not drawn. No gutters, so it nests in
+    a `PageColumns` column. The campaign Overview.
+  - **Neither is "fully fluid"** (cards choosing their own widths and
+    wrapping like words): the rows would be whatever the window makes them.
+    Wrapping by width is for tiles inside a card (`StatTile`), not for a page.
 - **Screen corners have fixed jobs — top is about the object, bottom is about
   the work** (CON-178). Top-left: where you are and how you get back.
   Top-right: **views only** — anything that opens or switches a representation,

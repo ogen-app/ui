@@ -26,10 +26,10 @@ export type CardLink = {
 }
 
 /**
- * One module card on the Campaign Overview screen. Capped at the shared
- * content-column width and set against the left edge, so the screen reads as
- * one column like the Strategy and Settings pages rather than stretching to
- * the viewport.
+ * One module card on the Campaign Overview screen, and the shape of a
+ * dashboard card anywhere: glyph, title, status, then the way in on the right.
+ * Capped at the shared content-column width on its own; in a `PageGrid` cell
+ * it takes the cell, height included.
  *
  * A card that has somewhere to go says so with a button, not with a header that
  * lights up: a tinted header row is a hit area you have to discover by sweeping
