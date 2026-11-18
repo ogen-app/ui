@@ -45,6 +45,7 @@ import type {
   OverviewTarget,
   SetupStep,
 } from '@/lib/campaignOverview'
+import { RECENT_DAYS } from '@/lib/campaignOverview'
 import {
   counted,
   formatDate,
@@ -294,91 +295,115 @@ export function ProgressCard({
             day: formatNumber(band.day),
             total: formatNumber(band.days),
           })
-  // Today's phase; before the start, the one it opens with.
-  const phase =
-    band.phases.find((p) => p.current) ??
-    (band.startsIn != null ? band.phases[0] : undefined)
+  // Only today's phase; none before the start, between phases or after.
+  const phase = band.phases.find((p) => p.current)
 
   return (
     <section className={cn(SURFACE, 'flex flex-col gap-4 p-6')}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 className="font-display text-xl font-medium tracking-tight">
-          {t(`campaignOverview.stage.${stage}`)}
-        </h2>
-        <span className="text-sm">{where}</span>
-      </div>
-      <div className="flex flex-col gap-1 text-sm">
-        <p>
-          {formatDateRange(
-            band.start,
-            band.end,
-            { month: 'short', day: 'numeric', year: 'numeric' },
-            i18n.language,
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-display text-xl font-medium tracking-tight">
+            {t(`campaignOverview.stage.${stage}`)}
+          </h2>
+          {phase?.day != null && (
+            <p className="text-sm">
+              {t('campaignOverview.band.phaseNow', {
+                name: phase.name,
+                day: formatNumber(phase.day),
+                total: formatNumber(phase.days),
+              })}
+            </p>
           )}
-        </p>
-        {phase && (
-          <p>
-            {phase.day != null
-              ? t('campaignOverview.band.phaseNow', {
-                  name: phase.name,
-                  day: formatNumber(phase.day),
-                  total: formatNumber(phase.days),
-                })
-              : t('campaignOverview.band.phaseFirst', {
-                  name: phase.name,
-                  range: formatDateRange(
-                    phase.start,
-                    phase.end,
-                    { month: 'short', day: 'numeric' },
-                    i18n.language,
-                  ),
-                })}
-          </p>
-        )}
+        </div>
+        <div className="ml-auto flex flex-col items-end gap-1 text-right text-sm">
+          <span>{where}</span>
+          <span>
+            {formatDateRange(
+              band.start,
+              band.end,
+              { month: 'short', day: 'numeric', year: 'numeric' },
+              i18n.language,
+            )}
+          </span>
+        </div>
       </div>
-      <GoalBar band={band} />
+      <PostsBar band={band} />
     </section>
   )
 }
 
-/** Published against the goal, scheduled stacked after it. */
-function GoalBar({ band }: { band: OverviewBand }) {
-  const { t } = useTranslation()
-  const { goal, published, scheduled } = band
+/**
+ * The posts against the goal, scheduled stacked after the published. With no
+ * goal — the common case — the last 30 days' published against the next 30
+ * days' scheduled, so the bar is the proportion done; an empty grey track
+ * when there is neither. The pace sits under its right end.
+ */
+function PostsBar({ band }: { band: OverviewBand }) {
+  const { t, i18n } = useTranslation()
+  const { goal, pace } = band
+  const { published, scheduled } = goal != null ? band : band.recent
+  // With a goal, scheduled only fills what the published leave of it.
+  const track = goal ?? published + scheduled
+  const shown =
+    goal != null
+      ? Math.min(scheduled, Math.max(0, goal - published))
+      : scheduled
   const of = (n: number) =>
-    `${Math.min(100, (n / Math.max(1, goal ?? 1)) * 100)}%`
+    `${track > 0 ? Math.min(100, (n / track) * 100) : 0}%`
+  const days = formatNumber(RECENT_DAYS)
   return (
     <div className="flex flex-col gap-2">
-      {goal != null && (
-        <div className="flex h-1.5 overflow-hidden rounded-full bg-secondary">
-          <div className="bg-positive" style={{ width: of(published) }} />
-          {/* Only the part of the goal the published posts leave. */}
-          <div
-            className="bg-positive/35"
-            style={{
-              width: of(Math.min(scheduled, Math.max(0, goal - published))),
-            }}
-          />
+      <div className="flex h-1.5 overflow-hidden rounded-full bg-secondary">
+        <div className="bg-positive" style={{ width: of(published) }} />
+        <div className="bg-positive/35" style={{ width: of(shown) }} />
+      </div>
+      {(published > 0 || scheduled > 0 || goal != null || pace) && (
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {(published > 0 || goal != null) && (
+              <span className="flex items-center gap-1.5">
+                <Dot className="bg-positive" />
+                {goal != null
+                  ? t('campaignOverview.band.published', {
+                      published: formatNumber(published),
+                      total: formatNumber(goal),
+                    })
+                  : t('campaignOverview.band.publishedRecent', {
+                      ...counted(published),
+                      days,
+                    })}
+              </span>
+            )}
+            {scheduled > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Dot className="bg-positive/35" />
+                {goal != null
+                  ? t('campaignOverview.band.scheduled', counted(scheduled))
+                  : t('campaignOverview.band.scheduledRecent', {
+                      ...counted(scheduled),
+                      days,
+                    })}
+              </span>
+            )}
+          </p>
+          {pace && (
+            <span className="ml-auto">
+              {t(
+                pace.planned
+                  ? 'campaignOverview.band.pacePlanned'
+                  : 'campaignOverview.band.pace',
+                {
+                  value: formatNumber(
+                    pace.perWeek,
+                    { maximumFractionDigits: 1 },
+                    i18n.language,
+                  ),
+                },
+              )}
+            </span>
+          )}
         </div>
       )}
-      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span className="flex items-center gap-1.5">
-          <Dot className="bg-positive" />
-          {goal != null
-            ? t('campaignOverview.band.published', {
-                published: formatNumber(published),
-                total: formatNumber(goal),
-              })
-            : t('campaignOverview.band.publishedCount', counted(published))}
-        </span>
-        {scheduled > 0 && (
-          <span className="flex items-center gap-1.5">
-            <Dot className="bg-positive/35" />
-            {t('campaignOverview.band.scheduled', counted(scheduled))}
-          </span>
-        )}
-        {goal == null && <span>{t('campaignOverview.band.noGoal')}</span>}
-      </p>
     </div>
   )
 }

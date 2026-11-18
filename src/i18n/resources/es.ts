@@ -1586,13 +1586,16 @@ export const es: Translation = {
     },
     band: {
       phaseNow: 'Fase {{name}}, día {{day}} de {{total}}',
-      phaseFirst: 'Empieza con la fase {{name}}, {{range}}',
       published: '{{published}} de {{total}} publicadas',
-      publishedCount_one: '{{formatted}} publicada',
-      publishedCount_other: '{{formatted}} publicadas',
       scheduled_one: '{{formatted}} programada',
       scheduled_other: '{{formatted}} programadas',
-      noGoal: 'No hay objetivo de publicaciones.',
+      publishedRecent_one: '{{formatted}} publicada, últimos {{days}} días',
+      publishedRecent_other: '{{formatted}} publicadas, últimos {{days}} días',
+      scheduledRecent_one: '{{formatted}} programada, próximos {{days}} días',
+      scheduledRecent_other:
+        '{{formatted}} programadas, próximos {{days}} días',
+      pace: '{{value}} a la semana',
+      pacePlanned: '{{value}} a la semana previstas',
     },
     week: {
       this: 'Esta semana',

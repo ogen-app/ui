@@ -1981,15 +1981,19 @@ export const en = {
     band: {
       /** The campaign type's phase today. */
       phaseNow: '{{name}} phase, day {{day}} of {{total}}',
-      /** Before the start: the phase it opens with, and its days. */
-      phaseFirst: 'Opens with the {{name}} phase, {{range}}',
+      /** Against the goal over the whole campaign. */
       published: '{{published}} of {{total}} published',
-      /** With no goal set, only the count. */
-      publishedCount_one: '{{formatted}} published',
-      publishedCount_other: '{{formatted}} published',
       scheduled_one: '{{formatted}} scheduled',
       scheduled_other: '{{formatted}} scheduled',
-      noGoal: 'No post goal set.',
+      /** With no goal: the last and the next `days` days. */
+      publishedRecent_one: '{{formatted}} published, last {{days}} days',
+      publishedRecent_other: '{{formatted}} published, last {{days}} days',
+      scheduledRecent_one: '{{formatted}} scheduled, next {{days}} days',
+      scheduledRecent_other: '{{formatted}} scheduled, next {{days}} days',
+      /** Published posts a week since the start. */
+      pace: '{{value}} a week',
+      /** Before the start: scheduled posts a week. */
+      pacePlanned: '{{value}} a week planned',
     },
     week: {
       this: 'This week',

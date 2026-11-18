@@ -138,9 +138,11 @@ that move is a re-parent plus one place in `lib/campaignScope` rather than a
 rewrite.
 
 - **The campaign Overview is its time cards, with one list beside them.** The
-  wide column holds the progress card from planning to closing — the stage,
-  the day of the campaign, the current phase, and what is published and
-  scheduled against the goal — then what goes out (this week; the first week
+  wide column holds the progress card from planning to closing — the stage
+  and today's phase on the left, the day and the dates on the right, then a
+  bar of published against scheduled (the last and next 30 days; the whole
+  campaign against its goal when one is set, which is the lesser case) with
+  the pace under its end — then what goes out (this week; the first week
   while planning; the results once it is over) and the last seven days. The
   narrow column is the one list of what wants the user, the server's problems
   and the client's rules together, held on screen while the time cards are

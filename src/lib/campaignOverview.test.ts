@@ -4,6 +4,7 @@ import type { CalendarFinding } from '@/types/assistant'
 import type { Campaign } from '@/types/campaigns'
 import {
   overviewModel,
+  overviewPace,
   overviewStage,
   type OverviewInput,
   type OverviewPost,
@@ -138,6 +139,60 @@ describe('overviewModel', () => {
     expect(m.band).toMatchObject({ goal: 24, published: 1, scheduled: 1 })
   })
 
+  it('counts the last 30 days published and the next 30 scheduled', () => {
+    // Now is Nov 1, noon.
+    const m = overviewModel(
+      input({
+        posts: [
+          post({
+            id: 'old',
+            status: 'published',
+            published_at: '2026-10-01T09:00:00Z',
+          }),
+          post({
+            id: 'new',
+            status: 'published',
+            published_at: '2026-10-20T09:00:00Z',
+          }),
+          post({
+            id: 'soon',
+            status: 'scheduled',
+            scheduled_at: '2026-11-20T09:00:00Z',
+          }),
+          post({
+            id: 'later',
+            status: 'scheduled',
+            scheduled_at: '2026-12-20T09:00:00Z',
+          }),
+        ],
+      }),
+    )
+    expect(m.band?.recent).toEqual({ published: 1, scheduled: 1 })
+    expect(m.band).toMatchObject({ published: 2, scheduled: 2 })
+  })
+
+  it('plans the pace before the start from the scheduled posts', () => {
+    const m = overviewModel(
+      input({
+        now: day(9, 20),
+        posts: [
+          post({
+            id: 'a',
+            status: 'scheduled',
+            scheduled_at: '2026-10-02T09:00:00Z',
+          }),
+          post({
+            id: 'b',
+            status: 'scheduled',
+            scheduled_at: '2026-10-14T09:00:00Z',
+          }),
+        ],
+      }),
+    )
+    // Two over Oct 1–14, two weeks.
+    expect(m.band?.pace).toEqual({ perWeek: 1, planned: true })
+  })
+
   it('lists one week, Monday first', () => {
     const m = overviewModel(input({ now: day(11, 4) })) // a Wednesday
     expect(m.week?.kind).toBe('this')
@@ -224,5 +279,51 @@ describe('overviewModel', () => {
 
   it('shows nothing to do until the posts have been read', () => {
     expect(overviewModel(input({ posts: null })).needs).toBeNull()
+  })
+})
+
+describe('overviewPace', () => {
+  it('is published a week once started', () => {
+    expect(
+      overviewPace({
+        published: 6,
+        scheduled: 0,
+        elapsedDays: 14,
+        plannedDays: 1,
+      }),
+    ).toEqual({ perWeek: 3, planned: false })
+  })
+
+  it('never reads fewer than a week', () => {
+    expect(
+      overviewPace({
+        published: 2,
+        scheduled: 0,
+        elapsedDays: 2,
+        plannedDays: 1,
+      }),
+    ).toEqual({ perWeek: 2, planned: false })
+  })
+
+  it('has none in the first week with nothing published', () => {
+    expect(
+      overviewPace({
+        published: 0,
+        scheduled: 4,
+        elapsedDays: 3,
+        plannedDays: 1,
+      }),
+    ).toBeNull()
+  })
+
+  it('has none before the start with nothing scheduled', () => {
+    expect(
+      overviewPace({
+        published: 0,
+        scheduled: 0,
+        elapsedDays: null,
+        plannedDays: 1,
+      }),
+    ).toBeNull()
   })
 })

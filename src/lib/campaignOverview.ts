@@ -127,7 +127,23 @@ export type OverviewBand = {
   scheduled: number
   /** The goal over the whole campaign; null when none is set. */
   goal: number | null
+  /** Posts a week — see `overviewPace`. */
+  pace: OverviewPace | null
+  /**
+   * What the bar shows with no goal: published in the last `RECENT_DAYS`
+   * against scheduled for the next `RECENT_DAYS`.
+   */
+  recent: { published: number; scheduled: number }
 }
+
+/** The no-goal bar's reach either side of today. */
+export const RECENT_DAYS = 30
+
+/**
+ * How fast the campaign goes out: published posts a week once it has
+ * started, or, before it, what is scheduled a week over the days it covers.
+ */
+export type OverviewPace = { perWeek: number; planned: boolean }
 
 /** One row of the right column. */
 export type NeedsRow = {
@@ -273,6 +289,33 @@ export function overviewStage(campaign: Campaign, now: Date): OverviewStage {
   return 'running'
 }
 
+/**
+ * Posts a week. Once started: published over the days gone, never fewer than
+ * a week's, so day 2 doesn't read as a rate. Before the start: scheduled over
+ * the days from the start to the last scheduled post. Null with nothing to
+ * measure — before the start with nothing scheduled, or in the first week
+ * with nothing published.
+ */
+export function overviewPace(input: {
+  published: number
+  scheduled: number
+  /** Days since the start, today included; null before the start. */
+  elapsedDays: number | null
+  /** Days from the start to the last scheduled post, both included. */
+  plannedDays: number
+}): OverviewPace | null {
+  const { published, scheduled, elapsedDays, plannedDays } = input
+  if (elapsedDays == null) {
+    if (scheduled === 0) return null
+    return {
+      perWeek: (scheduled * 7) / Math.max(7, plannedDays),
+      planned: true,
+    }
+  }
+  if (published === 0 && elapsedDays < 7) return null
+  return { perWeek: (published * 7) / Math.max(7, elapsedDays), planned: false }
+}
+
 export function overviewModel(input: OverviewInput): OverviewModel {
   const { campaign, posts, now } = input
   const stage = overviewStage(campaign, now)
@@ -346,6 +389,25 @@ export function overviewModel(input: OverviewInput): OverviewModel {
     campaign.start_date,
     campaign.end_date,
   )
+  const lastScheduled = all
+    .filter((p) => SCHEDULED.includes(p.status) && p.scheduled_at)
+    .reduce<Date>((last, p) => {
+      const at = startOfDay(new Date(p.scheduled_at!))
+      return at > last ? at : last
+    }, start)
+  const recentFrom = now.getTime() - RECENT_DAYS * DAY_MS
+  const recentTo = now.getTime() + RECENT_DAYS * DAY_MS
+  const recent = {
+    published: all.filter(
+      (p) =>
+        p.status === 'published' && Date.parse(whenOf(p) ?? '') >= recentFrom,
+    ).length,
+    scheduled: all.filter(
+      (p) =>
+        SCHEDULED.includes(p.status) &&
+        Date.parse(p.scheduled_at ?? '') <= recentTo,
+    ).length,
+  }
   const band: OverviewBand = {
     start,
     end,
@@ -372,6 +434,13 @@ export function overviewModel(input: OverviewInput): OverviewModel {
     published,
     scheduled,
     goal: goal.kind === 'ok' ? goal.total : null,
+    pace: overviewPace({
+      published,
+      scheduled,
+      elapsedDays: sinceStart < 0 ? null : Math.min(days, sinceStart + 1),
+      plannedDays: daysBetween(start, lastScheduled) + 1,
+    }),
+    recent,
   }
 
   const weekFrom = (from: Date): OverviewDay[] =>
