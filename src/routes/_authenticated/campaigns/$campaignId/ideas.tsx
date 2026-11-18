@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { useCampaign } from '@/hooks/useCampaigns'
 import { IdeasSurface } from '@/components/ideas/IdeasSurface'
 import { parseIdeaListSearch, type IdeaListSearch } from '@/lib/ideaFilter'
 
@@ -16,7 +15,7 @@ import { parseIdeaListSearch, type IdeaListSearch } from '@/lib/ideaFilter'
  *
  * It owns its whole page, header included, as Assets does: the layout hands
  * the section over, and the header is titled the way the layout titles every
- * section — the campaign's name, then the section's.
+ * section — by the section's name, with the campaign as the header's scope.
  */
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/ideas',
@@ -28,8 +27,6 @@ export const Route = createFileRoute(
 function CampaignIdeasView() {
   const { t } = useTranslation()
   const { campaignId } = Route.useParams()
-  // The layout has the campaign in hand already, so this is a cache read.
-  const { data: campaign } = useCampaign(campaignId)
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const onSearchChange = useCallback(
@@ -39,9 +36,7 @@ function CampaignIdeasView() {
   return (
     <IdeasSurface
       campaignId={campaignId}
-      heading={t('ideas.page.campaignTitle', {
-        campaign: campaign?.name.trim() || t('ideas.page.untitledCampaign'),
-      })}
+      heading={t('nav.ideas')}
       search={search}
       onSearchChange={onSearchChange}
     />

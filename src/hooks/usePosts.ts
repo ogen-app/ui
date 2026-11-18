@@ -9,10 +9,11 @@ import {
   listPosts,
   updatePost,
 } from '@/services/api/posts'
-import { invalidateCampaignPosts } from '@/lib/postCache'
+import { invalidateCampaignPosts, invalidatePostLists } from '@/lib/postCache'
 import { atDefaultTime } from '@/lib/postSchedule'
 import { PRESIGN_REFRESH_MS } from '@/lib/presignedUrls'
 import {
+  CAMPAIGN_SUMMARIES_KEY,
   campaignPostsKey,
   filteredCampaignPostsKey,
   WORKSPACE_POSTS_KEY,
@@ -361,7 +362,12 @@ export function useUpdatePost(campaignId: string | null) {
   })
 }
 
-export function useDeletePost(campaignId: string) {
+/**
+ * `null` is the workspace's list, whose rows come from every campaign: the
+ * deleted post's campaign isn't known here, so every post list is marked
+ * stale instead of one campaign's.
+ */
+export function useDeletePost(campaignId: string | null) {
   const qc = useQueryClient()
   return useMutation({
     // Keeps the wording `DeletePostDialog` used to supply itself: the server's
@@ -370,7 +376,12 @@ export function useDeletePost(campaignId: string) {
     meta: { errorTitle: 'Unable to delete post' },
     mutationFn: (id: string) => deletePost(id),
     onSuccess: () => {
-      invalidateCampaignPosts(qc, campaignId)
+      if (campaignId) {
+        invalidateCampaignPosts(qc, campaignId)
+      } else {
+        invalidatePostLists(qc)
+        void qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
+      }
       // An idea's post count, its used filter and its MADE INTO list all
       // counted this post (CON-485) — from the dialog and the bulk bar alike,
       // which deletes through this mutation one post at a time.

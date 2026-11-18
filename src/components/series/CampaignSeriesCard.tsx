@@ -1,9 +1,10 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowUpRightIcon, RepeatIcon, XIcon } from '@phosphor-icons/react'
+import { ArrowUpRightIcon, XIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { SettingsCard } from '@/components/settings/SettingsCard'
+import { BrandSectionGlyph } from '@/components/brand/BrandSectionGlyph'
 import { TextSelect } from '@/components/ui/text-select'
 import {
   useAttachSeries,
@@ -90,7 +91,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
     <SettingsCard
       title={
         <>
-          <RepeatIcon className="size-5 text-tertiary-foreground" />
+          <BrandSectionGlyph id="series" />
           {t('series.campaign.title')}
         </>
       }

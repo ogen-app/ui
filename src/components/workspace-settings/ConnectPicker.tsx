@@ -288,7 +288,6 @@ function PickerFrame({
     <PageContainer variant="fullFlex">
       <div className="flex h-0 grow flex-col overflow-y-auto">
         <PageHeader
-          fadeOnScroll
           back={
             <Button
               variant="headerIcon"

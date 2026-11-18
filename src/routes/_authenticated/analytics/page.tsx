@@ -172,7 +172,7 @@ export function AnalyticsPage() {
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="h-0 grow overflow-y-auto flex flex-col">
-        <PageHeader title={t('analytics.surface.title')} />
+        <PageHeader title={t('analytics.surface.title')} scrollAway />
         {/*
           What happened, then which posts did it, then what holds whatever the
           period. The order is the order the questions arrive in: the overview's

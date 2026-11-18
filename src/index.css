@@ -132,6 +132,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Layout: the shared content-column width — the post rich-text editor and
+   the settings cards read at the same measure. Generates `w-content` /
+   `max-w-content`. Outside the inline theme on purpose, so the utilities
+   read the variable rather than a copy of 740px: `PageColumns` sets it to
+   100% inside its columns, where the column is the measure. */
+@theme {
+  --container-content: 740px;
+}
+
 @theme inline {
   --white: oklch(1 0 0);
   /* Ink, cooled to agree with the ramp. A neutral black on cool greys reads
@@ -187,24 +196,22 @@
      than collapsed into `--font-sans` at the call sites: it is the seam where a
      second face would go back in, and there are 9 of them. */
   --font-grotesk: var(--font-sans);
-  /* The page title's size, and the one step above `text-2xl` the app uses.
-     Set Light (CON-390): a large light title over Medium headings over Regular
-     body gives contrast in both directions, where a bold title made the top
-     of the page and the content compete. 36px leading fits the header's 40px
-     row. Generates `text-display`. */
-  --text-display: 1.95rem;
-  --text-display--line-height: 2.25rem;
-
-  /* Layout: the shared content-column width — the post rich-text editor and
-     the settings cards read at the same measure. Generates `w-content` /
-     `max-w-content`. */
-  --container-content: 740px;
+  /* The page title's size. 24px and set SemiBold in the page header: under
+     the 56px chrome bar a large light title read as a second header competing
+     with it, so the title is now smaller and carries its weight instead.
+     32px leading sits inside the header's 40px row. Generates `text-display`. */
+  --text-display: 1.5rem;
+  --text-display--line-height: 2rem;
 
   /* Radius */
   --radius-sm: calc(var(--radius) + 0px);
   --radius-md: calc(var(--radius) + 1px);
   --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 3px);
+  /* Every button's corner, whatever the variant: a step rounder than the
+     near-square cards and fields, so a pressable thing reads as one.
+     Generates `rounded-button`. */
+  --radius-button: 3px;
 
   /* Shadows */
   /* --shadow-sm: 0 1px 2px 0 rgb(60 40 0 / 0.05); */
@@ -618,7 +625,7 @@
     font-feature-settings: 'zero' 0; /* Disable slashed zero */
   }
 
-  /* The display voice: the page title and the global menu (CON-390) — lining,
+  /* The display voice: the page title — lining,
      proportional figures. Plex Sans has no feature to answer either with: its
      figures are lining and tabular by default and it ships no proportional
      set, so today the pair states the intent rather than changing a glyph.

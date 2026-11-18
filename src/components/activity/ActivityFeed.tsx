@@ -166,7 +166,7 @@ export function ActivityFeed() {
   return (
     <PageContainer variant="fullFlex">
       <div className="h-0 grow overflow-y-auto flex flex-col">
-        <PageHeader title={t('activity.title')} />
+        <PageHeader title={t('activity.title')} scrollAway />
 
         {/* A source failed while another answered. Above the cards and above
             the empty state, because the empty state is where the silence lies
@@ -177,7 +177,7 @@ export function ActivityFeed() {
             {degraded.map((source) => (
               <p
                 key={source}
-                className="w-full max-w-content mx-auto px-1 text-xs text-warning"
+                className="w-full max-w-content px-1 text-xs text-warning"
               >
                 {t(`activity.unavailable.${source}`)}
               </p>
@@ -216,7 +216,7 @@ export function ActivityFeed() {
             {isTruncated && (
               <p
                 ref={endRef}
-                className="w-full max-w-content mx-auto px-1 text-xs text-tertiary-foreground"
+                className="w-full max-w-content px-1 text-xs text-tertiary-foreground"
               >
                 {t('activity.truncated', {
                   entries: NOTIFICATION_PAGE_SIZE,
@@ -300,7 +300,7 @@ function DayCard({
   const dayLabel = useDayLabel()
 
   return (
-    <article className="w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0">
+    <article className="w-full max-w-content rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0">
       {/* The day is the card's whole title. No second line: what happened is
           the sections' job, and a summary above them would say it twice. */}
       <h2 className="font-display text-base/6 font-medium truncate">

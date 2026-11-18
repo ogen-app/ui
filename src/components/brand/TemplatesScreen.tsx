@@ -57,7 +57,7 @@ export function TemplatesScreen({
   if (templates.length === 0) {
     return (
       <div className="h-full overflow-y-auto pb-10">
-        <div className="mx-auto w-full max-w-content">
+        <div className="w-full max-w-content">
           <Gap
             what={t('brand.templates.gapScreen')}
             offers={[

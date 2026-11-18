@@ -35,7 +35,7 @@ export type Hotkey =
   | '/'
 
 /** The second key of "g then a letter" (CON-394): where it goes. */
-export type GoKey = 'i' | 'a' | 'c' | 'n' | 'f' | 's' | 't' | 'p' | 'r'
+export type GoKey = 'i' | 'a' | 'c' | 'n' | 's' | 't' | 'p' | 'r'
 
 /**
  * What a screen binds. An **absent or undefined** handler is not the same as a

@@ -402,13 +402,25 @@ export const en = {
     /** Both halves of what the /workspaces page offers, in one row. */
     switchWorkspace: 'Create or switch',
     untitledCampaign: 'Untitled campaign',
-    /** The way out of a campaign, on the header caret and on the mark beside it. */
-    backToWorkspace: 'Back to workspace',
+    /**
+     * The campaign switcher above the page: the scope every place in the menu
+     * is narrowed to. "All campaigns" is the workspace.
+     */
+    /** The bar's "Strategy › Voice" once a page's header has scrolled away. */
+    scope: {
+      all: 'All campaigns',
+      switch: 'Switch campaign',
+      newCampaign: 'New campaign',
+    },
     /**
      * Heads the workspace's destinations where they appear inside the account
      * menu — level 1's way back to a module without leaving the campaign first.
      */
-    workspaceScope: 'Workspace',
+    workspaceMenu: 'Workspace menu',
+    yourWorkspaces: 'Your workspaces',
+    accountMenu: 'Account menu',
+    askOgen: 'Ask Ogen',
+    assistantFinished: 'The assistant has finished',
     /** A campaign with no start or end date, in the rail's window line. */
     campaignNoWindow: 'No dates set',
     /**
@@ -784,7 +796,7 @@ export const en = {
     goHint: 'Press g, then the letter.',
     anywhere: 'Anywhere',
     inCampaign: 'In this campaign',
-    campaignNote: 'Strategy, Posts and Calendar have keys inside a campaign.',
+    campaignNote: 'Posts and Calendar have keys inside a campaign.',
     thisCampaign: 'this campaign’s',
     foot: '<k1>?</k1> or <k2>esc</k2> to close',
     /** A two-key shortcut, as a screen reader says it. */
@@ -794,7 +806,6 @@ export const en = {
       assets: '<k>A</k>ssets',
       campaigns: '<k>C</k>ampaigns',
       analytics: 'A<k>n</k>alytics',
-      foundation: '<k>F</k>oundation',
       workspaceSettings: 'Workspace <k>s</k>ettings',
       settings: '<k>S</k>ettings',
       strategy: 'S<k>t</k>rategy',
@@ -1412,10 +1423,6 @@ export const en = {
       },
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
-    },
-    page: {
-      campaignTitle: '{{campaign}} Ideas',
-      untitledCampaign: 'Untitled campaign',
     },
     loadFailed: 'Unable to load ideas',
     saveFailed: 'Could not save that. Your ideas are unchanged.',
@@ -2087,6 +2094,24 @@ export const en = {
     /** Under its title (CON-485): what the panel is for. */
     notScheduledHint: 'Drag a post onto a day to schedule it.',
     /**
+     * The Not scheduled panel's two groups: posts with an account to publish
+     * as, and the ones the schedule gate would refuse for want of one —
+     * folded away by default, with each row's reason in amber.
+     */
+    readyToSchedule: 'Ready to schedule',
+    needsAccount: 'Needs an account',
+    needsAccountHint:
+      'No account to publish as yet. Set one on each post, or connect one in Settings.',
+    /** When every undated post is in the second group. */
+    noneReady: 'None of these can publish yet: each needs an account.',
+    /** A row's reason, worded as what to do about it. */
+    accountGap: {
+      noPlatform: 'Choose a platform',
+      noAccount: 'Connect an account',
+      chooseAccount: 'Choose an account',
+      accountGone: 'Account disconnected',
+    },
+    /**
      * On a draft just written in this tab (CON-470), at the panel's top —
      * an eyebrow in literal capitals, like the cards' status words.
      */
@@ -2135,6 +2160,10 @@ export const en = {
         'Posts are written inside a campaign. Schedule one and it will show up here, whichever campaign it belongs to.',
       workspacePanelSubtitle:
         'Posts without a date wait here — drag one onto the calendar to give it one.',
+      /** The workspace's posts list, which has no ADD POST either. */
+      workspaceListTitle: 'No posts yet',
+      workspaceListSubtitle:
+        'Posts are written inside a campaign. Add one there and it will show up here, whichever campaign it belongs to.',
     },
   },
 
@@ -5058,6 +5087,8 @@ export const en = {
     columnGrounding: 'Sources',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
+    /** Only on the workspace's list, where the rows come from every campaign. */
+    columnCampaign: 'Campaign',
     columnSeries: 'Series',
     columnPublishDate: 'Publish date',
     columnWhen: 'When',
@@ -7135,11 +7166,6 @@ export const en = {
         'This workspace has no voices or audiences yet. They are written once and every campaign draws on them.',
       emptyShort: 'This workspace has no voices or audiences yet.',
       openBrand: 'Open Foundation',
-      alsoApplies:
-        'The workspace’s guardrails also apply to every post here, whichever voice writes it. They are not chosen per campaign and cannot be overridden.',
-      alsoAppliesEmpty:
-        'The workspace has stated no guardrails, so nothing is off limits — any voice here may promise anything, in any words.',
-      seeEverything: 'See everything this campaign writes from',
       saveError: 'Unable to save the campaign voice',
     },
 
@@ -7679,10 +7705,6 @@ export const en = {
        * count and nothing it cannot see — the facts card comes and goes with
        * its flag, and the line stays true either way.
        */
-      intro: {
-        title: 'What the app writes from',
-        body: 'The voices it writes in, who it is written to, and what it may never claim. Written once for the workspace, and every campaign and every post inherits it.',
-      },
       /**
        * The honesty rule at index length. The section's own screen says it in a
        * sentence (`shell.readByNothing`); five sentences down one page is the
@@ -8256,7 +8278,6 @@ export const en = {
       deleted_one: '{{formatted}} post deleted',
       deleted_other: '{{formatted}} posts deleted',
     },
-    title: 'Campaigns',
     add: 'ADD CAMPAIGN',
     error: 'Failed to load campaigns',
     untitled: 'this campaign',
@@ -8282,6 +8303,25 @@ export const en = {
        */
       removedByAssistant: '{{what}} removed by the assistant',
       undoInThread: 'UNDO is in the thread',
+      /**
+       * Strategy for all campaigns: every campaign on one time axis, with
+       * what each commits to and the voice it writes in.
+       */
+      timeline: {
+        empty:
+          'No campaigns yet. Each one you add is drawn here against the others, by its dates.',
+        undated: 'No dates set',
+        barLabel: '{{name}}, {{window}}',
+        windowAndRate: '{{window}} · {{rate}}',
+        perWeek_one: '{{formatted}} post a week',
+        perWeek_other: '{{formatted}} posts a week',
+        perMonth_one: '{{formatted}} post a month',
+        perMonth_other: '{{formatted}} posts a month',
+        noRate: 'No post goal',
+        noPlatforms: 'No platforms',
+        noVoice: 'No voice',
+        defaultVoice: '{{voice}} (default)',
+      },
     },
     /**
      * The campaign's type on Strategy (CON-166). It locks once a post is
@@ -8378,7 +8418,6 @@ export const en = {
      */
     page: {
       title: 'Assets',
-      campaignTitle: '{{campaign}} Assets',
       /** The ADD CONTENT menu (CON-484 moved it into the catalogue). */
       add: {
         button: 'ADD CONTENT',

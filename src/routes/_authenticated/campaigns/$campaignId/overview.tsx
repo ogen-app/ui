@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { GridCell, PageGrid } from '@/components/page-primitives/PageGrid'
 import { AnalyticsModule } from '@/components/campaigns/overview/AnalyticsModule.tsx'
 import { StrategyModule } from '@/components/campaigns/overview/StrategyModule.tsx'
 import { DocumentsModule } from '@/components/campaigns/overview/DocumentsModule.tsx'
@@ -49,23 +50,21 @@ function CampaignOverviewScreen() {
   // darken and then lighten again as the real cards landed.
   if (!campaign) {
     return (
-      <div className="flex flex-col gap-3 pb-10">
-        <Skeleton
-          variant="surface"
-          className="h-40 w-full max-w-content mx-auto"
-        />
-        <Skeleton
-          variant="surface"
-          className="h-64 w-full max-w-content mx-auto"
-        />
-        <Skeleton
-          variant="surface"
-          className="h-32 w-full max-w-content mx-auto"
-        />
-        <Skeleton
-          variant="surface"
-          className="h-14 w-full max-w-content mx-auto"
-        />
+      <div className="pb-10">
+        <PageGrid>
+          <GridCell span="wide">
+            <Skeleton variant="surface" className="h-64" />
+          </GridCell>
+          <GridCell span="narrow">
+            <Skeleton variant="surface" className="h-64" />
+          </GridCell>
+          <GridCell span="half">
+            <Skeleton variant="surface" className="h-32" />
+          </GridCell>
+          <GridCell span="half">
+            <Skeleton variant="surface" className="h-32" />
+          </GridCell>
+        </PageGrid>
       </div>
     )
   }
@@ -128,55 +127,60 @@ function CampaignOverviewScreen() {
       )
     : []
 
-  // The cards run in the sidebar's order — posts, analytics, brief, assets,
-  // settings — because they are the same six sections, and a screen that
-  // ordered them by urgency taught a second sequence for the same list. The
-  // brief used to float above Content while it was unfinished; what made that
-  // safe to drop is the rail above, which is where "your brief is empty"
-  // belongs anyway. Attention is the exception because it is not a section:
-  // it is the summary of all of them, so it sits above the set.
+  // A dashboard (`PageGrid`), read in order of importance. First row: the
+  // posts — what is going out — beside what needs attention before it can,
+  // the two things this screen is opened for. Then what the posts earned,
+  // across the page, then the brief and the assets, the two sections set up
+  // once and revisited rarely. On a narrow page that order is the stack.
   return (
-    <div className="flex flex-col gap-3 pb-10">
-      {/* Never the all-clear before the posts have been counted — "You're all
-          set" off an empty list is the one wrong thing this screen could say.
-          `railPosts` is what enforces that: it is null until one of the two
-          sources has actually answered, and an answered source that lists no
-          posts is a count of zero, not an absence of one. */}
-      {railPosts ? (
-        <AttentionRail
-          items={items}
-          problems={problems ?? undefined}
-          campaignId={campaignId}
-        />
-      ) : postsFailed ? null : (
-        <Skeleton
-          variant="surface"
-          className="h-40 w-full max-w-content mx-auto"
-        />
-      )}
-      {/* The failure strip stands in for Content, and for the rail too when the
-          summaries can't cover it — so it names neither module. A posts fetch
-          that failed while the summaries are in hand still leaves the rail
-          standing above it. */}
-      {postsFailed ? (
-        <p className="w-full max-w-content mx-auto text-sm text-tertiary-foreground">
-          Couldn’t load this campaign’s posts — they’ll appear here once they’re
-          reachable again.
-        </p>
-      ) : postsPending ? (
-        <Skeleton
-          variant="surface"
-          className="h-64 w-full max-w-content mx-auto"
-        />
-      ) : (
-        <ContentModule campaign={campaign} posts={posts} />
-      )}
-      {/* Directly under Content: the same posts, seen by what they earned
-          rather than by where they are in the pipeline. The card reads its own
-          flag and renders nothing while `campaign-analytics` is off. */}
-      <AnalyticsModule campaignId={campaignId} />
-      <StrategyModule campaign={campaign} platformViews={platformViews} />
-      <DocumentsModule campaign={campaign} />
+    <div className="pb-10">
+      <PageGrid>
+        <GridCell span="wide">
+          {/* The failure strip stands in for Content, and for the rail too
+              when the summaries can't cover it — so it names neither module.
+              A posts fetch that failed while the summaries are in hand still
+              leaves the rail standing beside it. */}
+          {postsFailed ? (
+            <p className="text-sm text-tertiary-foreground">
+              Couldn’t load this campaign’s posts — they’ll appear here once
+              they’re reachable again.
+            </p>
+          ) : postsPending ? (
+            <Skeleton variant="surface" className="h-64" />
+          ) : (
+            <ContentModule campaign={campaign} posts={posts} />
+          )}
+        </GridCell>
+        <GridCell span="narrow">
+          {/* Never the all-clear before the posts have been counted — "You're
+              all set" off an empty list is the one wrong thing this screen
+              could say. `railPosts` is what enforces that: it is null until
+              one of the two sources has actually answered, and an answered
+              source that lists no posts is a count of zero, not an absence
+              of one. */}
+          {railPosts ? (
+            <AttentionRail
+              items={items}
+              problems={problems ?? undefined}
+              campaignId={campaignId}
+            />
+          ) : postsFailed ? null : (
+            <Skeleton variant="surface" className="h-64" />
+          )}
+        </GridCell>
+        {/* The same posts, seen by what they earned rather than by where they
+            are in the pipeline. The card reads its own flag and renders
+            nothing while `campaign-analytics` is off, which leaves no cell. */}
+        <GridCell span="full">
+          <AnalyticsModule campaignId={campaignId} />
+        </GridCell>
+        <GridCell span="half">
+          <StrategyModule campaign={campaign} platformViews={platformViews} />
+        </GridCell>
+        <GridCell span="half">
+          <DocumentsModule campaign={campaign} />
+        </GridCell>
+      </PageGrid>
     </div>
   )
 }
