@@ -138,6 +138,11 @@ export type NeedsRow = {
   todo: StageTodo | null
   /** "+3 like this" — a server problem standing for its siblings. */
   more: number
+  /**
+   * The idea a same-idea problem's posts all came from (CON-495), worded by
+   * the screen under the label. Server problems only.
+   */
+  idea?: string
   action: NeedsAction | null
   /** A server problem's key, for IGNORE in its menu. */
   ignoreKey: string | null
@@ -554,6 +559,7 @@ function needsRows(input: OverviewInput, extra: NeedsRow[]): NeedsRow[] | null {
       label: first.message,
       todo: null,
       more: group.length - 1,
+      idea: first.ideas?.[0]?.title,
       action: primary ? fixAction(primary) : null,
       // A group can only be ignored one finding at a time; the menu ignores
       // the one it shows.

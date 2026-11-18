@@ -1,9 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { InboxIcon, PaletteIcon } from '@hugeicons/core-free-icons'
-import type { IconSvgElement } from '@hugeicons/react'
 import { AppSidebarButtonMenu } from '@/components/layout/AppSiderButton'
 import { LiveStatus } from '@/components/layout/LiveStatus'
 import { NavIcon } from '@/components/layout/nav/NavIcon'
+import { placeGlyph } from '@/components/layout/nav/placeGlyph'
 import { TasksSidebarItem } from '@/components/tasks/TasksSidebarItem'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaignScope } from '@/hooks/useCampaignScope'
@@ -23,8 +22,11 @@ const MAIN: PlaceId[] = [
   'analytics',
 ]
 
-/** Around the work rather than the work, at the rail's foot. */
-const BAND: PlaceId[] = ['foundation', 'activity', 'settings']
+/**
+ * Around the work rather than the work, at the rail's foot. Foundation sat
+ * here until it became Strategy for all campaigns (`lib/campaignScope`).
+ */
+const BAND: PlaceId[] = ['activity', 'settings']
 
 /**
  * The menu — one list, the same at every scope.
@@ -54,13 +56,9 @@ export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
       workspaceCalendar,
       soleCampaignId,
     })
-    const icon = iconOf(place)
+    const { icon, tone } = placeGlyph(place)
     const label =
-      place === 'foundation'
-        ? t('nav.foundation')
-        : place === 'inbox'
-          ? t('nav.inbox')
-          : t(campaignSection(place).labelKey)
+      place === 'inbox' ? t('nav.inbox') : t(campaignSection(place).labelKey)
     const counts =
       scope !== null
         ? []
@@ -78,7 +76,7 @@ export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
     return (
       <AppSidebarButtonMenu
         key={place}
-        icon={<NavIcon icon={icon} />}
+        icon={<NavIcon icon={icon} tone={tone} />}
         text={label}
         isActive={where.place === place}
         to={link.to}
@@ -104,10 +102,4 @@ export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
       </div>
     </>
   )
-}
-
-function iconOf(place: PlaceId): IconSvgElement {
-  if (place === 'foundation') return PaletteIcon
-  if (place === 'inbox') return InboxIcon
-  return campaignSection(place).icon
 }

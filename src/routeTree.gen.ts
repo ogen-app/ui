@@ -39,6 +39,7 @@ import { Route as AuthenticatedFoundationSeriesRouteImport } from './routes/_aut
 import { Route as AuthenticatedFoundationTemplatesRouteImport } from './routes/_authenticated/foundation/templates'
 import { Route as AuthenticatedFoundationVoicesRouteImport } from './routes/_authenticated/foundation/voices'
 import { Route as AuthenticatedIdeasIndexRouteImport } from './routes/_authenticated/ideas/index'
+import { Route as AuthenticatedPostsIndexRouteImport } from './routes/_authenticated/posts/index'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
 import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './routes/_authenticated/workspace-settings/index'
 import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
@@ -233,6 +234,11 @@ const AuthenticatedFoundationVoicesRoute =
 const AuthenticatedIdeasIndexRoute = AuthenticatedIdeasIndexRouteImport.update({
   id: '/ideas/',
   path: '/ideas/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPostsIndexRoute = AuthenticatedPostsIndexRouteImport.update({
+  id: '/posts/',
+  path: '/posts/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProfileIndexRoute =
@@ -433,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/foundation/': typeof AuthenticatedFoundationIndexRoute
   '/ideas/': typeof AuthenticatedIdeasIndexRoute
+  '/posts/': typeof AuthenticatedPostsIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot/': typeof AuthForgotIndexRoute
@@ -490,6 +497,7 @@ export interface FileRoutesByTo {
   '/campaigns': typeof AuthenticatedCampaignsIndexRoute
   '/foundation': typeof AuthenticatedFoundationIndexRoute
   '/ideas': typeof AuthenticatedIdeasIndexRoute
+  '/posts': typeof AuthenticatedPostsIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot': typeof AuthForgotIndexRoute
@@ -552,6 +560,7 @@ export interface FileRoutesById {
   '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/_authenticated/foundation/': typeof AuthenticatedFoundationIndexRoute
   '/_authenticated/ideas/': typeof AuthenticatedIdeasIndexRoute
+  '/_authenticated/posts/': typeof AuthenticatedPostsIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
   '/_authenticated/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot/': typeof AuthForgotIndexRoute
@@ -614,6 +623,7 @@ export interface FileRouteTypes {
     | '/campaigns/'
     | '/foundation/'
     | '/ideas/'
+    | '/posts/'
     | '/profile/'
     | '/workspace-settings/'
     | '/auth/forgot/'
@@ -671,6 +681,7 @@ export interface FileRouteTypes {
     | '/campaigns'
     | '/foundation'
     | '/ideas'
+    | '/posts'
     | '/profile'
     | '/workspace-settings'
     | '/auth/forgot'
@@ -732,6 +743,7 @@ export interface FileRouteTypes {
     | '/_authenticated/campaigns/'
     | '/_authenticated/foundation/'
     | '/_authenticated/ideas/'
+    | '/_authenticated/posts/'
     | '/_authenticated/profile/'
     | '/_authenticated/workspace-settings/'
     | '/auth/forgot/'
@@ -992,6 +1004,13 @@ declare module '@tanstack/react-router' {
       path: '/ideas'
       fullPath: '/ideas/'
       preLoaderRoute: typeof AuthenticatedIdeasIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/posts/': {
+      id: '/_authenticated/posts/'
+      path: '/posts'
+      fullPath: '/posts/'
+      preLoaderRoute: typeof AuthenticatedPostsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/profile/': {
@@ -1309,6 +1328,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCalendarIndexRoute: typeof AuthenticatedCalendarIndexRoute
   AuthenticatedCampaignsIndexRoute: typeof AuthenticatedCampaignsIndexRoute
   AuthenticatedIdeasIndexRoute: typeof AuthenticatedIdeasIndexRoute
+  AuthenticatedPostsIndexRoute: typeof AuthenticatedPostsIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
   AuthenticatedWorkspaceSettingsIndexRoute: typeof AuthenticatedWorkspaceSettingsIndexRoute
   AuthenticatedCalendarAnchorViewRoute: typeof AuthenticatedCalendarAnchorViewRoute
@@ -1333,6 +1353,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCalendarIndexRoute: AuthenticatedCalendarIndexRoute,
   AuthenticatedCampaignsIndexRoute: AuthenticatedCampaignsIndexRoute,
   AuthenticatedIdeasIndexRoute: AuthenticatedIdeasIndexRoute,
+  AuthenticatedPostsIndexRoute: AuthenticatedPostsIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
   AuthenticatedWorkspaceSettingsIndexRoute:
     AuthenticatedWorkspaceSettingsIndexRoute,

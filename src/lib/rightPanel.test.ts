@@ -27,30 +27,20 @@ describe('resolveActivePanel', () => {
     // gives you an empty 480px column.
     const m = memory({ scoped: { post: 'postQuality' } })
     expect(resolveActivePanel(m, null)).toBeNull()
-    expect(resolveActivePanel(m, 'calendar')).toBeNull()
   })
 
   it('falls back to the assistant, which every screen can show', () => {
     const m = memory({ assistantOpen: true, scoped: { post: 'postQuality' } })
     expect(resolveActivePanel(m, null)).toBe('assistant')
-    expect(resolveActivePanel(m, 'calendar')).toBe('assistant')
     // Still covered on the screen that owns it.
     expect(resolveActivePanel(m, 'post')).toBe('postQuality')
-  })
-
-  it('keeps each screen’s choice apart', () => {
-    const m = memory({
-      scoped: { post: 'postPreview', calendar: 'notScheduled' },
-    })
-    expect(resolveActivePanel(m, 'post')).toBe('postPreview')
-    expect(resolveActivePanel(m, 'calendar')).toBe('notScheduled')
   })
 })
 
 describe('openPanel', () => {
   it('files a panel under its own screen, whatever screen you opened it from', () => {
-    const m = openPanel(EMPTY_PANEL_MEMORY, 'notScheduled', 'post')
-    expect(m.scoped).toEqual({ calendar: 'notScheduled' })
+    const m = openPanel(EMPTY_PANEL_MEMORY, 'postQuality', null)
+    expect(m.scoped).toEqual({ post: 'postQuality' })
   })
 
   it('clears the covering panel when the assistant is opened', () => {
@@ -64,13 +54,13 @@ describe('openPanel', () => {
     expect(resolveActivePanel(m, 'post')).toBe('assistant')
   })
 
-  it('leaves the other screen’s choice alone when the assistant is opened', () => {
+  it('leaves the post screen’s choice alone when the assistant is opened elsewhere', () => {
     const m = openPanel(
-      memory({ scoped: { post: 'postQuality', calendar: 'notScheduled' } }),
+      memory({ scoped: { post: 'postQuality' } }),
       'assistant',
-      'post',
+      null,
     )
-    expect(m.scoped).toEqual({ calendar: 'notScheduled' })
+    expect(m.scoped).toEqual({ post: 'postQuality' })
   })
 })
 
@@ -89,18 +79,18 @@ describe('closePanel', () => {
   })
 
   it('does nothing when nothing is showing', () => {
-    const m = memory({ scoped: { calendar: 'notScheduled' } })
-    expect(closePanel(m, 'post')).toEqual(m)
+    const m = memory({ scoped: { post: 'postQuality' } })
+    expect(closePanel(m, null)).toEqual(m)
   })
 
   it('closes what is on screen, not what is remembered elsewhere', () => {
-    // Assistant showing on the post screen; the calendar's choice is not the
+    // Assistant showing off the post screen; the post's choice is not the
     // one under the X, and must survive.
     const m = closePanel(
-      memory({ assistantOpen: true, scoped: { calendar: 'notScheduled' } }),
-      'post',
+      memory({ assistantOpen: true, scoped: { post: 'postQuality' } }),
+      null,
     )
-    expect(m.scoped).toEqual({ calendar: 'notScheduled' })
+    expect(m.scoped).toEqual({ post: 'postQuality' })
     expect(m.assistantOpen).toBe(false)
   })
 })
@@ -128,9 +118,9 @@ describe('togglePanel', () => {
     const m = togglePanel(
       memory({ assistantOpen: true, scoped: { post: 'postQuality' } }),
       'assistant',
-      'calendar',
+      null,
     )
-    expect(resolveActivePanel(m, 'calendar')).toBeNull()
+    expect(resolveActivePanel(m, null)).toBeNull()
     expect(resolveActivePanel(m, 'post')).toBe('postQuality')
   })
 })
@@ -146,9 +136,19 @@ describe('sanitizePanelMemory', () => {
     // nothing renders — the failure the whole model exists to prevent.
     const m = sanitizePanelMemory({
       assistantOpen: false,
-      scoped: { post: 'postVibes', calendar: 'notScheduled' },
+      scoped: { post: 'postVibes' },
     })
-    expect(m.scoped).toEqual({ calendar: 'notScheduled' })
+    expect(m.scoped).toEqual({})
+  })
+
+  it('forgets the calendar panels the rail used to host', () => {
+    // They are the calendar's own drawer now (`calendarDrawer`), so last
+    // week's `calendar` entry must not survive into a scope that is gone.
+    const m = sanitizePanelMemory({
+      assistantOpen: true,
+      scoped: { post: 'postPreview', calendar: 'notScheduled' },
+    })
+    expect(m.scoped).toEqual({ post: 'postPreview' })
   })
 
   it('drops a panel filed under a screen that does not own it', () => {

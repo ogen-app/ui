@@ -27,7 +27,7 @@ import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
  * than in state because it is a place you can send someone to.
  *
  * `?pick=<place>` is the same list asking for a campaign: a row with no
- * all-campaigns page (Posts, Strategy, the Calendar while the workspace's is
+ * all-campaigns page (Strategy, the Calendar while the workspace's is
  * off) opens it when no campaign is chosen, and each card then leads to that
  * place in its campaign (`lib/campaignScope`). The archive is left out — an
  * archived campaign is not one you can filter to. With exactly one campaign
@@ -90,14 +90,14 @@ function Campaigns() {
   }
 
   // One scroll container owning the sticky header, the same shell as Overview
-  // and Settings — cards pass under the header's gradient instead of stopping
-  // at it. The header itself does not fade: this is the list you steer from,
-  // so "Campaigns" and ADD CAMPAIGN stay legible however far you scroll.
+  // and Settings. No large title: this is the list you steer from, so its
+  // name and ADD CAMPAIGN stay in the header however far you scroll. It is the
+  // Overview row with no campaign chosen, and is titled as the rail names it.
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="h-0 grow overflow-y-auto flex flex-col">
         <PageHeader
-          title={pick ? t(`nav.campaign.${pick}`) : t('campaigns.title')}
+          title={pick ? t(`nav.campaign.${pick}`) : t('nav.campaign.overview')}
           actions={
             <Button onClick={create} size="lg">
               <PlusIcon className="size-4" />
@@ -105,11 +105,6 @@ function Campaigns() {
             </Button>
           }
         />
-        {pick && hasCampaigns && (
-          <p className="px-3 lg:px-6 pt-4 text-sm text-secondary-foreground">
-            {t(`campaigns.pick.${pick}`)}
-          </p>
-        )}
         {hasCampaigns ? (
           <ul className="flex flex-col gap-3 px-3 lg:px-6 pt-4">
             {campaigns!.map((campaign) => (

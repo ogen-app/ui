@@ -110,7 +110,7 @@ function WorkspaceSettings() {
             can anchor to the column without scrolling away with the cards. */}
         <div className="relative flex h-0 grow flex-col">
           <div className="h-0 grow overflow-y-auto flex flex-col">
-            <PageHeader title={t('workspaceSettings.title')} fadeOnScroll />
+            <PageHeader title={t('workspaceSettings.title')} scrollAway />
             <div
               className={cn(
                 'flex flex-col gap-8 px-3 lg:px-6 pt-4',

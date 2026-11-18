@@ -15,7 +15,7 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import * as api from '@/services/api/series'
 import { seriesPlan } from '@/lib/seriesPlan'
 import { planLine, rhythmLine, supplyLine } from './format'
-import type { ContentSeries } from './types'
+import type { ContentSeries } from '@/types/series'
 import type { Campaign } from '@/types/campaigns'
 
 /**
@@ -23,12 +23,9 @@ import type { Campaign } from '@/types/campaigns'
  *
  * **That the flag is free.** With `series` off the feature must not merely
  * render nothing — it must not *ask* for anything. The card sits on the
- * campaign's Strategy page, which is an ordinary screen people open all day, so
- * an unconditional query there would open a request for a card that cannot be
- * shown. Today the stub answers from `localStorage` and the cost is
- * invisible; it appears on the day the real endpoint is swapped in, which is
- * the worst moment to discover it. Same guard, and the same reasoning, as
- * `HelpTrigger`'s.
+ * campaign's Strategy page and the series' marks on the idea and post lists,
+ * ordinary screens people open all day, so an unconditional query there would
+ * open a request for something that cannot be shown.
  *
  * **That the screens are actually converted.** In English a literal in a
  * component and a catalogue entry are the same string, so only rendering in
@@ -48,7 +45,9 @@ const { useFeatureFlag } = await import('@/config/featureFlags')
 const { useCampaignSeries, useSeriesLibrary } =
   await import('@/hooks/useSeries')
 const { SeriesSection } = await import('./SeriesSection')
+const { SeriesMark } = await import('./SeriesMark')
 const { CampaignSeriesCard } = await import('./CampaignSeriesCard')
+const { RhythmPicker } = await import('./RhythmPicker')
 
 function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({
@@ -63,6 +62,13 @@ afterEach(() => {
 })
 
 describe('with the flag off', () => {
+  it('names no series on an idea or a post, and asks for nothing (CON-508)', () => {
+    const list = vi.spyOn(api, 'listSeries')
+    const { container } = render(<SeriesMark seriesId="s1" />, { wrapper })
+    expect(container).toBeEmptyDOMElement()
+    expect(list).not.toHaveBeenCalled()
+  })
+
   it('asks the library for nothing', async () => {
     const list = vi.spyOn(api, 'listSeries')
 
@@ -159,6 +165,36 @@ describe('in Spanish', () => {
       '3 veces al mes',
     )
     expect(supplyLine(i18next.t, 'idea')).toBe('Espera una idea')
+  })
+
+  it('words a rhythm that skips weeks and names its day (CON-496)', () => {
+    expect(
+      rhythmLine(i18next.t, {
+        times: 1,
+        per: 'week',
+        every: 2,
+        weekday: 'tuesday',
+      }),
+    ).toBe('Cada 2 semanas, el martes')
+    expect(
+      rhythmLine(i18next.t, { times: 1, per: 'week', weekday: 'tuesday' }),
+    ).toBe('Cada martes')
+    expect(rhythmLine(i18next.t, { times: 2, per: 'month', every: 3 })).toBe(
+      '2 veces cada 3 meses',
+    )
+  })
+
+  it('offers how often and which day beside the rate', async () => {
+    await renderWithProviders(
+      <RhythmPicker
+        value={{ times: 1, per: 'week', every: 2, weekday: 'tuesday' }}
+        onChange={() => {}}
+      />,
+    )
+    expect(screen.getByText('Una vez por semana')).toBeInTheDocument()
+    expect(screen.getByText('cada 2 semanas')).toBeInTheDocument()
+    expect(screen.getByText('el martes')).toBeInTheDocument()
+    expect(screen.queryByText('every 2 weeks')).not.toBeInTheDocument()
   })
 
   /**

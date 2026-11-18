@@ -115,19 +115,22 @@ const buttonVariants = cva(
           '[&>div]:w-[200px] [&>div]:flex-none [&>div]:flex [&>div]:items-center [&>div]:gap-2.5',
       },
 
+      // Heights are fixed and `items-center` centres the row, so the padding is
+      // horizontal only. The sizes used to carry 3px more on top than below —
+      // an optical nudge for the face before CON-390 — which under Plex Sans
+      // put every label and icon 1.4px low.
       size: {
-        default:
-          "h-10 pt-[11px] pb-2 px-4 [&_svg:not([class*='size-'])]:size-4",
+        default: "h-10 px-4 [&_svg:not([class*='size-'])]:size-4",
         defaultIcon:
           "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
         xsIcon: "h-4 p-0 justify-center [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 pt-[11px] pb-2 px-3 [&_svg:not([class*='size-'])]:size-4",
+        sm: "h-8 px-3 [&_svg:not([class*='size-'])]:size-4",
         smIcon:
           "h-8 p-0 w-8 justify-center [&_svg:not([class*='size-'])]:size-4",
-        lg: "h-10 pt-[13px] pb-3 px-4 [&_svg:not([class*='size-'])]:size-4",
+        lg: "h-10 px-4 [&_svg:not([class*='size-'])]:size-4",
         lgIcon:
           "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
-        xl: "h-11 pt-[17px] pb-4 px-6 [&_svg:not([class*='size-'])]:size-4",
+        xl: "h-11 px-6 [&_svg:not([class*='size-'])]:size-4",
         xlIcon:
           "h-11 p-0 w-11 justify-center [&_svg:not([class*='size-'])]:size-4",
         excluded: '',

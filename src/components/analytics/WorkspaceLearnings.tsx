@@ -71,7 +71,7 @@ export function WorkspaceLearningsView({
   const { view, isPending, isError, isUnavailable, isEmpty } = result
 
   if (isPending) {
-    return <Skeleton className="h-96 w-full max-w-content mx-auto" />
+    return <Skeleton className="h-96 w-full max-w-content" />
   }
 
   if (isUnavailable) {

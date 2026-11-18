@@ -13,7 +13,9 @@ import {
 
 // Echoes the key and its count, so the rules can be read without a catalogue.
 const t = ((key: string, opts?: { count?: number }) =>
-  opts?.count === undefined ? key : `${key}:${opts.count}`) as TFunction
+  opts?.count === undefined
+    ? key
+    : `${key}:${opts.count}`) as unknown as TFunction
 
 const file = (name: string, mime = 'application/octet-stream') => ({
   id: 'f',
@@ -182,7 +184,7 @@ describe('rowState', () => {
 describe('rowDates', () => {
   const now = new Date('2026-10-13T12:00:00Z')
   const echo = ((key: string, opts?: { when?: string }) =>
-    `${key}(${opts?.when ?? ''})`) as TFunction
+    `${key}(${opts?.when ?? ''})`) as unknown as TFunction
 
   it('says when it was added, and separately when the source was published', () => {
     const { added, published } = rowDates(

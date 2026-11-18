@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import { i18next, loadLocaleResources } from '@/i18n'
 import { renderWithProviders } from '@/test/renderWithProviders'
@@ -196,6 +196,34 @@ describe('the budget guard', () => {
     expect(screen.queryByText('UNDO')).toBeNull()
   })
 
+  it('shows a draft’s fit once its scoring lands, and nothing on a failure (CON-511)', async () => {
+    const { noteFreshScore, useFreshScoreStore } =
+      await import('@/stores/freshScoreStore')
+    useFreshScoreStore.setState({ scores: {} })
+    await renderWithProviders(
+      <OfferOutcome
+        threadId="campaign:c1"
+        turnId="t1"
+        undoStates={{}}
+        disabled={false}
+        outcome={{
+          reoffered: false,
+          notMade: [],
+          replaced: {
+            deleted: 1,
+            kept: 0,
+            draftedCount: 1,
+            drafted: [{ id: 'n1', title: 'A pool', platform: 'Instagram' }],
+            removed: [{ id: 'o1', title: 'Old', platform: 'LinkedIn' }],
+          },
+        }}
+      />,
+    )
+    expect(screen.getByText('Instagram')).toBeTruthy()
+    act(() => noteFreshScore('n1', 82))
+    expect(screen.getByText('Instagram · fit 82')).toBeTruthy()
+  })
+
   it('keeps what it drafted, and the drafting’s warnings, when it deleted nothing', async () => {
     await renderWithProviders(
       <OfferOutcome
@@ -336,9 +364,23 @@ const state: CampaignState = {
     planned: 34,
     room: 26,
     unknown: false,
-    period: { label: 'April', target: 20, planned: 14, left: 6 },
+    period: {
+      label: 'April',
+      cadence: 'month',
+      index: 2,
+      start: '2026-04-01',
+      end: '2026-04-30',
+      target: 20,
+      planned: 14,
+      left: 6,
+    },
   },
   calendar: { total: 2 },
+  posts: 34,
+  platforms: [
+    { id: 'p1', name: 'Instagram' },
+    { id: 'p2', name: 'LinkedIn' },
+  ],
   sources: {
     wholeBank: false,
     attached: 8,
@@ -352,17 +394,59 @@ const state: CampaignState = {
 }
 
 describe('what it knows', () => {
-  it('cites the figures a reply leaned on in one line', () => {
-    render(<StateCitation state={state} />)
+  it('cites the parts the reply relied on, in its order (CON-511)', () => {
+    render(
+      <StateCitation
+        state={state}
+        cites={['period', 'calendar', 'sources', 'goal', 'posts', 'platforms']}
+      />,
+    )
     expect(screen.getByText('Read from the campaign')).toBeTruthy()
     expect(
-      screen.getByText('April 14 of 20 · 2 conflicts · 4 of 8 sources ready'),
+      screen.getByText(
+        'April 14 of 20 · 2 conflicts · 4 of 8 sources ready · 20 a month · 34 posts · Instagram and LinkedIn',
+      ),
     ).toBeTruthy()
   })
 
-  it('says nothing with nothing to cite', () => {
-    const { container } = render(<StateCitation state={{}} />)
+  it('cites only what was relied on', () => {
+    render(<StateCitation state={state} cites={['calendar']} />)
+    expect(screen.getByText('2 conflicts')).toBeTruthy()
+    expect(screen.queryByText(/April/)).toBeNull()
+  })
+
+  it('names a week by its days', () => {
+    render(
+      <StateCitation
+        state={{
+          goal: {
+            ...state.goal!,
+            cadence: 'week',
+            period: {
+              label: 'this week',
+              cadence: 'week',
+              index: 3,
+              start: '2026-04-13',
+              end: '2026-04-19',
+              target: 5,
+              planned: 4,
+              left: 1,
+            },
+          },
+        }}
+        cites={['period']}
+      />,
+    )
+    expect(screen.getByText(/^Apr 13\s?–\s?19 4 of 5$/)).toBeTruthy()
+  })
+
+  it('says nothing with nothing cited, or nothing it can say', () => {
+    const { container } = render(<StateCitation state={state} cites={[]} />)
     expect(container.textContent).toBe('')
+    const { container: none } = render(
+      <StateCitation state={{}} cites={['goal', 'sources']} />,
+    )
+    expect(none.textContent).toBe('')
   })
 
   it('lists the sources and how each stands, with OPEN ASSETS', async () => {
@@ -472,12 +556,14 @@ describe('in Spanish', () => {
             },
           }}
         />
-        <StateCitation state={state} />
+        <StateCitation state={state} cites={['period']} />
       </>,
     )
     expect(screen.getByText('Facebook ya no está en la campaña')).toBeTruthy()
     expect(screen.getByText('sin publicaciones')).toBeTruthy()
     expect(screen.getByText('Leído de la campaña')).toBeTruthy()
+    // The period in Spanish, from its data rather than the English label.
+    expect(screen.getByText('abril 14 de 20')).toBeTruthy()
     expect(screen.queryByText('Facebook is off the campaign')).toBeNull()
   })
 })

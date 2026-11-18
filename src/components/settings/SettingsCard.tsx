@@ -7,7 +7,8 @@ import { cn } from '@/lib'
  * the card, so it reads as one solid block rather than a floating title over
  * a detached panel. Shared by Workspace Settings and Campaign Settings.
  * Capped at the shared content-column width (same as the post editor) and
- * centered.
+ * set against the column's left edge, under the header's title — the app has
+ * no centred columns.
  */
 export function SettingsCard({
   title,
@@ -26,7 +27,7 @@ export function SettingsCard({
   return (
     <section
       className={cn(
-        'w-full max-w-content mx-auto bg-primary px-6 py-6 flex flex-col gap-5 min-w-0',
+        'w-full max-w-content bg-primary px-6 py-6 flex flex-col gap-5 min-w-0',
         className,
       )}
     >

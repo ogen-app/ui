@@ -1,10 +1,5 @@
 import type { ReactNode } from 'react'
 import { AssistantPanel } from '@/components/assistant/AssistantPanel'
-import { CalendarSettingsPanel } from '@/components/campaigns/calendar/CalendarSettingsPanel'
-import {
-  NotScheduledPanel,
-  WorkspaceNotScheduledPanel,
-} from '@/components/campaigns/calendar/NotScheduledPanel'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
 
@@ -66,9 +61,10 @@ function PanelLayer({
 
 /**
  * The app's right sidebar: a single slide-in container hosting the AI assistant
- * and the panels belonging to whichever screen is open (calendar settings,
- * not-scheduled posts, the post editor's four). One panel shows at a time and
- * the container stays open while they swap. The assistant opens from Ask Ogen
+ * and the post editor's four panels. One panel shows at a time and the
+ * container stays open while they swap. The calendar's settings and
+ * unscheduled posts are not here: they are the calendar's own drawer
+ * (`CalendarDrawer`), so opening one never puts the assistant away. The assistant opens from Ask Ogen
  * in the bar over the page (`TopBar`).
  *
  * What shows is *derived*, never stored: the settings store remembers one
@@ -79,8 +75,6 @@ function PanelLayer({
  */
 export function RightSidebar() {
   const activePanel = useSettingsStore(selectActivePanel)
-  const campaignId = useSettingsStore((s) => s.campaignId)
-  const scope = useSettingsStore((s) => s.scope)
   const close = useSettingsStore((s) => s.closeRightPanel)
 
   const isOpen = activePanel !== null
@@ -101,44 +95,6 @@ export function RightSidebar() {
             <PanelLayer active={assistantActive}>
               <AssistantPanel onClose={close} />
             </PanelLayer>
-            {/* The calendar's two panels, in the version the calendar
-                underneath calls for. They are the same two panels over the same
-                preferences either way; what differs is whose posts the
-                not-scheduled list holds, and whether the day rows can name a
-                campaign's publishing days.
-
-                The two branches are gated differently on purpose. The
-                campaign's stays mounted on `campaignId` alone, which outlives
-                the scope, so leaving the calendar fades the panel out rather
-                than making it vanish mid-transition. The workspace's is gated
-                on the scope, because the alternative — mounting wherever no
-                campaign has been visited — would pull the whole workspace's
-                posts on app boot for a panel nobody has opened. While the
-                workspace calendar is on screen the route is already running
-                that query, so the panel's own read costs nothing. */}
-            {campaignId && (
-              <>
-                <PanelLayer active={activePanel === 'calendarSettings'}>
-                  <CalendarSettingsPanel
-                    campaignId={campaignId}
-                    onClose={close}
-                  />
-                </PanelLayer>
-                <PanelLayer active={activePanel === 'notScheduled'}>
-                  <NotScheduledPanel campaignId={campaignId} onClose={close} />
-                </PanelLayer>
-              </>
-            )}
-            {campaignId === null && scope === 'calendar' && (
-              <>
-                <PanelLayer active={activePanel === 'calendarSettings'}>
-                  <CalendarSettingsPanel onClose={close} />
-                </PanelLayer>
-                <PanelLayer active={activePanel === 'notScheduled'}>
-                  <WorkspaceNotScheduledPanel onClose={close} />
-                </PanelLayer>
-              </>
-            )}
             <PanelLayer active={activePanel === 'postSettings'}>
               <div id={POST_SETTINGS_PORTAL_ID} className="h-full" />
             </PanelLayer>

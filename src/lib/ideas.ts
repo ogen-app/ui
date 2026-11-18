@@ -102,6 +102,11 @@ export type Idea = {
   angle?: string
   rationale?: string
   sources?: string[]
+  /**
+   * The series a content plan wrote it for (CON-496), `null` for any other.
+   * Only the plan sets it; a post made from it carries it on.
+   */
+  seriesId?: string | null
   /** The group a grouped list lists it under; absent when ungrouped. */
   groupKey?: string
   /** How well it fits the reading it came from, 10–100 (CON-385). */

@@ -216,7 +216,7 @@ function TaskRow({
     .join(' · ')
 
   return (
-    <article className="w-full max-w-content mx-auto rounded-md bg-primary px-4 py-3 min-w-0">
+    <article className="w-full max-w-content rounded-md bg-primary px-4 py-3 min-w-0">
       <div className="flex items-center gap-3 min-w-0">
         {/* The app's checkbox, not one drawn here: finishing a task is the same
             gesture as every other tick in the product. The slot is a fixed 16px

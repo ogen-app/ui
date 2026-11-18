@@ -400,7 +400,10 @@ export function restorePost(
  * CON-251 lock lets a scheduled post restate the values it already holds.
  *
  * `content_format` (CON-329) is the same arrangement for the same reasons:
- * presence-aware, no endpoint of its own, inside the lock, and restated.
+ * presence-aware, no endpoint of its own, inside the lock, and restated. *
+ * `series_id` (CON-496) is presence-aware too, but omitted: the plan and the
+ * compile set it, nothing on the screen changes it, and restating it would let
+ * a save built on an older read put back a series since cleared.
  */
 export function postToPayload(post: Post): PostPayload {
   return {

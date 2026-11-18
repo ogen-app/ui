@@ -46,7 +46,7 @@ export function ReadingScreen({ run }: { run: DistillRun }) {
 
   return (
     <>
-      <section className="mx-auto flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6">
+      <section className="flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6">
         <Checklist run={run} />
         {run.sources.length > 0 && (
           <ul className="flex flex-col border-t border-quaternary">
@@ -64,7 +64,7 @@ export function ReadingScreen({ run }: { run: DistillRun }) {
         </p>
       </section>
       {route === 'website' && (
-        <aside className="mx-auto flex w-full max-w-content items-start gap-3 bg-primary px-6 py-5">
+        <aside className="flex w-full max-w-content items-start gap-3 bg-primary px-6 py-5">
           <InfoIcon
             aria-hidden
             className="mt-0.5 size-4 shrink-0 text-tertiary-foreground"

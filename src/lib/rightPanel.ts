@@ -8,18 +8,20 @@
 
 /** A panel that belongs to one screen and can only render while you are on it. */
 export type ScopedPanel =
-  | 'calendarSettings'
-  | 'notScheduled'
-  | 'postSettings'
-  | 'postPreview'
-  | 'postQuality'
-  | 'postVersions'
+  'postSettings' | 'postPreview' | 'postQuality' | 'postVersions'
 
 /** Content shown in the right sidebar. Only one panel is on screen at a time. */
 export type RightPanel = 'assistant' | ScopedPanel
 
-/** The screen a scoped panel needs underneath it in order to render. */
-export type PanelScope = 'calendar' | 'post'
+/**
+ * The screen a scoped panel needs underneath it in order to render.
+ *
+ * Only the post editor hosts panels in the rail. The calendar's two — its
+ * settings and its unscheduled posts — are a drawer of the calendar's own
+ * (`CalendarDrawer`), beside the grid and under the bar over the page, so they
+ * never take the assistant's place.
+ */
+export type PanelScope = 'post'
 
 /**
  * Which screen each scoped panel belongs to.
@@ -29,8 +31,6 @@ export type PanelScope = 'calendar' | 'post'
  * never be shown.
  */
 export const PANEL_SCOPE: Record<ScopedPanel, PanelScope> = {
-  calendarSettings: 'calendar',
-  notScheduled: 'calendar',
   postSettings: 'post',
   postPreview: 'post',
   postQuality: 'post',
@@ -50,7 +50,7 @@ const SCOPED_PANELS = Object.keys(PANEL_SCOPE) as ScopedPanel[]
  */
 export type PanelMemory = {
   /**
-   * The assistant is the rail's floor rather than a seventh panel: every other
+   * The assistant is the rail's floor rather than one more panel: every other
    * panel is an overlay on top of it, and closing an overlay drops back here
    * instead of collapsing the rail. It is also the only panel available on
    * every screen, which makes it the fallback that keeps the rule total.
@@ -180,7 +180,8 @@ export function sanitizePanelMemory(value: unknown): PanelMemory {
     for (const [scope, panel] of Object.entries(raw.scoped)) {
       // The panel has to be one we know *and* has to claim the scope it was
       // filed under, so a hand-edited or half-migrated blob can't park a post
-      // panel on the calendar.
+      // panel on another screen — or keep the calendar's old entry, from
+      // before its panels became a drawer of its own.
       if (
         SCOPED_PANELS.includes(panel as ScopedPanel) &&
         PANEL_SCOPE[panel as ScopedPanel] === scope

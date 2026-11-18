@@ -9,9 +9,11 @@ import {
 } from '@/stores/assistantStore'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
+import { usePageCrumbStore } from '@/stores/pageCrumbStore'
 
 /**
  * The bar over the page: which part of the work — the campaign — on the left,
+ * then, once a document's own header has scrolled away, its title,
  * and at its far end Ogen. 56px, the workspace cell's height, so the two
  * rules under them are one line across the frame.
  */
@@ -21,10 +23,31 @@ export function TopBar() {
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-primary pl-4 pr-6">
       {isMobile && <SidebarTrigger />}
       <CampaignSwitcher />
+      <PageCrumbTrail />
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <AskOgen />
       </div>
     </header>
+  )
+}
+
+/**
+ * A document's title once its own header has scrolled away
+ * (`pageCrumbStore`), and the way back up to it. Only the title — the bar
+ * does not follow which card is being read.
+ */
+function PageCrumbTrail() {
+  const crumb = usePageCrumbStore((s) => s.crumb)
+  if (!crumb) return null
+
+  return (
+    <button
+      type="button"
+      onClick={crumb.toTop}
+      className="min-w-0 truncate rounded-button px-1 text-sm font-medium text-primary-foreground outline-none animate-in fade-in-0 duration-200 hover:text-secondary-foreground focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {crumb.title}
+    </button>
   )
 }
 

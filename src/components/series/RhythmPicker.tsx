@@ -1,7 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import { TextSelect } from '@/components/ui/text-select'
-import { rhythmLine } from './format'
-import type { SeriesRhythm } from './types'
+import { counted } from '@/lib/intl'
+import { takesWeekday } from '@/lib/seriesPlan'
+import {
+  MAX_RHYTHM_EVERY,
+  SERIES_WEEKDAYS,
+  type SeriesRhythm,
+  type SeriesWeekday,
+} from '@/types/series'
+import { rhythmLine, weekdayName } from './format'
 
 /**
  * How often a series runs, as one control (CON-264).
@@ -10,6 +17,11 @@ import type { SeriesRhythm } from './types'
  * side in every row of a list is a lot of furniture for an answer that is
  * "weekly" nine times out of ten, and it invites the typo the model's ceiling
  * exists to absorb. The presets cover what people actually pick.
+ *
+ * Beside the rate, two smaller selects once there is one (CON-496): how often
+ * it skips — every week, every 2 weeks — and, at once a week, which day it
+ * lands on. They stay out of the way until they mean something, so the
+ * ordinary answer is still one control.
  *
  * The model is still `{times, per}` and not an enum, because the *arithmetic*
  * has to take any number: a rhythm set through the API later, or by a build
@@ -36,6 +48,7 @@ const PRESETS: SeriesRhythm[] = [
 
 /** `2-week`. Parsed back in `fromKey`; never stored, never sent anywhere. */
 function toKey(rhythm: SeriesRhythm | null): string {
+  // The rate only: how often it skips and its day are the other two selects.
   return rhythm && rhythm.times > 0
     ? `${rhythm.times}-${rhythm.per}`
     : OCCASIONAL
@@ -82,15 +95,81 @@ export function RhythmPicker({
     })),
   ]
 
+  // A new rate keeps how often it skips, and its day only while it is still
+  // once a week — the one rate a day can go with.
+  const changeRate = (next: SeriesRhythm | null) => {
+    if (!next || !value) return onChange(next)
+    const kept: SeriesRhythm = { ...next }
+    if (value.every && value.per === next.per) kept.every = value.every
+    if (value.weekday && takesWeekday(next)) kept.weekday = value.weekday
+    onChange(kept)
+  }
+
+  const every = value?.every && value.every > 1 ? value.every : 1
+  const everyKey =
+    value?.per === 'month' ? 'everyMonthOption' : 'everyWeekOption'
+
   return (
-    <TextSelect
-      id={id}
-      className={className}
-      variant={variant}
-      value={current}
-      elements={elements}
-      disabled={disabled}
-      onValueChange={(next) => onChange(fromKey(next))}
-    />
+    <span className="inline-flex flex-wrap items-center gap-x-2">
+      <TextSelect
+        id={id}
+        className={className}
+        variant={variant}
+        value={current}
+        elements={elements}
+        disabled={disabled}
+        onValueChange={(next) => changeRate(fromKey(next))}
+      />
+      {value && (
+        <TextSelect
+          className={className}
+          variant={variant}
+          ariaLabel={t('series.rhythm.everyLabel')}
+          value={String(every)}
+          elements={EVERY.map((n) => ({
+            id: String(n),
+            displayValue: t(`series.rhythm.${everyKey}`, counted(n)),
+          }))}
+          disabled={disabled}
+          onValueChange={(next) => {
+            const n = Number(next)
+            const { every: _every, ...rest } = value
+            onChange(n > 1 ? { ...rest, every: n } : rest)
+          }}
+        />
+      )}
+      {value && takesWeekday(value) && (
+        <TextSelect
+          className={className}
+          variant={variant}
+          ariaLabel={t('series.rhythm.dayLabel')}
+          value={value.weekday ?? ANY_DAY}
+          elements={[
+            { id: ANY_DAY, displayValue: t('series.rhythm.anyDay') },
+            ...SERIES_WEEKDAYS.map((day) => ({
+              id: day,
+              displayValue: t('series.rhythm.onDay', {
+                day: weekdayName(day),
+              }),
+            })),
+          ]}
+          disabled={disabled}
+          onValueChange={(next) => {
+            const { weekday: _weekday, ...rest } = value
+            onChange(
+              next === ANY_DAY
+                ? rest
+                : { ...rest, weekday: next as SeriesWeekday },
+            )
+          }}
+        />
+      )}
+    </span>
   )
 }
+
+/** Every period, up to once in twelve — the server's ceiling. */
+const EVERY = Array.from({ length: MAX_RHYTHM_EVERY }, (_, i) => i + 1)
+
+/** No day: the period's posts spread over it. */
+const ANY_DAY = 'any'

@@ -6,24 +6,34 @@ import type { LinkProps } from '@tanstack/react-router'
  * The rail is one list and it never changes: the same rows in the same order
  * whichever campaign is chosen above the page. The campaign is a **filter**
  * over the place you are on — Ideas is the workspace's ideas, or one
- * campaign's; Posts is one campaign's posts — so choosing a campaign changes
+ * campaign's; Posts is every campaign's posts, or one campaign's — so choosing a campaign changes
  * what the page shows and never what the menu offers.
  *
  * Three kinds of place follow from that:
  *
- * - **Filtered** — Overview, Ideas, Assets, Analytics, Activity, Settings
- *   (and Calendar while the workspace calendar is on): a page for all
- *   campaigns and a page for one, and the filter picks between them.
- * - **Campaign only** — Posts, Strategy (and Calendar while the workspace
- *   calendar is off): there is nothing to show for all campaigns at once, so
- *   with no campaign chosen the row opens the campaign cards and asks for one
+ * - **Filtered** — Overview, Strategy, Ideas, Assets, Posts, Analytics,
+ *   Activity, Settings (and Calendar while the workspace calendar is on): a
+ *   page for all campaigns and a page for one, and the filter picks between
+ *   them.
+ * - **Campaign only** — Calendar while the workspace calendar is off: there
+ *   is nothing to show for all campaigns at once, so with no campaign chosen
+ *   the row opens the campaign cards and asks for one
  *   (`/campaigns?pick=<place>`). Picking a card lands on that place, filtered.
  *   A workspace with exactly one campaign has nothing to choose between, so
- *   there the row goes straight to that campaign (`soleCampaignId`).
- * - **Workspace only** — Foundation (and the Inbox): the workspace's own
- *   material, which no campaign narrows. These pages carry no scope at all,
- *   so the filter you had chosen is kept while you are on them, and the next
- *   filtered row you open comes back filtered.
+ *   there the row goes straight to that campaign (`soleCampaignId`) — and so
+ *   does Posts, whose all-campaigns list would be the same rows without ADD
+ *   POST.
+ * - **Workspace only** — the Inbox: no campaign narrows it. It carries no
+ *   scope at all, so the filter you had chosen is kept while you are on it,
+ *   and the next filtered row you open comes back filtered.
+ *
+ * Strategy used to be the second kind and Foundation the third, and they were
+ * one subject seen from the two levels: for all campaigns, Strategy is the
+ * workspace's Foundation — voices, audiences, guardrails, facts, series — with
+ * the campaigns laid out on one timeline; for one campaign it is that
+ * campaign's window, rate and channels, with what it uses of the Foundation
+ * chosen or read beside them. So the Foundation pages (`/foundation/*`) are
+ * Strategy for all campaigns, and the rail has no Foundation row.
  */
 export type PlaceId =
   | 'inbox'
@@ -34,12 +44,11 @@ export type PlaceId =
   | 'posts'
   | 'calendar'
   | 'analytics'
-  | 'foundation'
   | 'activity'
   | 'settings'
 
 /** The places with no all-campaigns page, which ask for a campaign instead. */
-export const PICK_PLACES = ['posts', 'calendar', 'strategy'] as const
+export const PICK_PLACES = ['calendar'] as const
 export type PickPlace = (typeof PICK_PLACES)[number]
 
 export function isPickPlace(value: unknown): value is PickPlace {
@@ -78,8 +87,11 @@ const CAMPAIGN_SECTION: Record<string, PlaceId> = {
 
 /** A workspace route's place, by its first segment. */
 const WORKSPACE_PLACE: Record<string, PlaceId> = {
+  // The Foundation's pages are Strategy for all campaigns.
+  foundation: 'strategy',
   ideas: 'ideas',
   assets: 'assets',
+  posts: 'posts',
   calendar: 'calendar',
   analytics: 'analytics',
   activity: 'activity',
@@ -88,7 +100,6 @@ const WORKSPACE_PLACE: Record<string, PlaceId> = {
 
 /** The places no campaign narrows, by their first segment. */
 const UNSCOPED_PLACE: Record<string, PlaceId> = {
-  foundation: 'foundation',
   tasks: 'inbox',
 }
 
@@ -133,12 +144,14 @@ const CAMPAIGN_TO = {
   analytics: '/campaigns/$campaignId/analytics',
   activity: '/campaigns/$campaignId/activity',
   settings: '/campaigns/$campaignId/settings',
-} satisfies Record<Exclude<PlaceId, 'inbox' | 'foundation'>, LinkProps['to']>
+} satisfies Record<Exclude<PlaceId, 'inbox'>, LinkProps['to']>
 
 const WORKSPACE_TO = {
   overview: '/campaigns',
+  strategy: '/foundation',
   ideas: '/ideas',
   assets: '/assets',
+  posts: '/posts',
   analytics: '/analytics',
   activity: '/activity',
   settings: '/workspace-settings',
@@ -159,15 +172,15 @@ export function placeLink(
   campaignId: string | null,
   { workspaceCalendar, soleCampaignId = null }: PlaceLinkOptions,
 ): PlaceLink {
-  if (place === 'foundation') return { to: '/foundation' }
   if (place === 'inbox') return { to: '/tasks' }
   if (campaignId) return { to: CAMPAIGN_TO[place], params: { campaignId } }
   if (place === 'calendar' && workspaceCalendar) return { to: '/calendar' }
-  if (isPickPlace(place)) {
-    return soleCampaignId
-      ? { to: CAMPAIGN_TO[place], params: { campaignId: soleCampaignId } }
-      : { to: '/campaigns', search: { pick: place } }
+  // With one campaign, Posts for all campaigns would be that campaign's
+  // posts without the ADD POST its own list has, so it opens that list.
+  if (soleCampaignId && (isPickPlace(place) || place === 'posts')) {
+    return { to: CAMPAIGN_TO[place], params: { campaignId: soleCampaignId } }
   }
+  if (isPickPlace(place)) return { to: '/campaigns', search: { pick: place } }
   return { to: WORKSPACE_TO[place] }
 }
 

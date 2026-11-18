@@ -23,6 +23,7 @@ describe('whereOf', () => {
 
   it('reads a workspace route as all campaigns', () => {
     expect(whereOf('/ideas')).toEqual({ place: 'ideas', scope: null })
+    expect(whereOf('/posts')).toEqual({ place: 'posts', scope: null })
     expect(whereOf('/workspace-settings')).toEqual({
       place: 'settings',
       scope: null,
@@ -30,9 +31,31 @@ describe('whereOf', () => {
     expect(whereOf('/campaigns')).toEqual({ place: 'overview', scope: null })
   })
 
+  it('reads the Foundation as Strategy for all campaigns', () => {
+    expect(whereOf('/foundation')).toEqual({ place: 'strategy', scope: null })
+    expect(whereOf('/foundation/voices/v1')).toEqual({
+      place: 'strategy',
+      scope: null,
+    })
+    expect(whereOf('/campaigns/c1/strategy')).toEqual({
+      place: 'strategy',
+      scope: 'c1',
+    })
+  })
+
   it('reads the campaigns list asking for a campaign as the asking place', () => {
+    expect(whereOf('/campaigns', 'calendar')).toEqual({
+      place: 'calendar',
+      scope: null,
+    })
+    // Strategy has a page of its own for all campaigns now, so it never asks.
+    expect(whereOf('/campaigns', 'strategy')).toEqual({
+      place: 'overview',
+      scope: null,
+    })
+    // Posts has a page of its own for all campaigns, so it never asks.
     expect(whereOf('/campaigns', 'posts')).toEqual({
-      place: 'posts',
+      place: 'overview',
       scope: null,
     })
     expect(whereOf('/campaigns', 'nonsense')).toEqual({
@@ -42,10 +65,7 @@ describe('whereOf', () => {
   })
 
   it('gives a page no campaign narrows no scope', () => {
-    expect(whereOf('/foundation/voices')).toEqual({
-      place: 'foundation',
-      scope: undefined,
-    })
+    expect(whereOf('/tasks')).toEqual({ place: 'inbox', scope: undefined })
     expect(whereOf('/profile')).toEqual({ place: null, scope: undefined })
   })
 })
@@ -56,13 +76,22 @@ describe('placeLink', () => {
       to: '/campaigns/$campaignId/list',
       params: { campaignId: 'c1' },
     })
+    expect(placeLink('posts', null, off)).toEqual({ to: '/posts' })
+  })
+
+  it('leads Strategy for all campaigns to the Foundation', () => {
+    expect(placeLink('strategy', null, off)).toEqual({ to: '/foundation' })
+    expect(placeLink('strategy', 'c1', off)).toEqual({
+      to: '/campaigns/$campaignId/strategy',
+      params: { campaignId: 'c1' },
+    })
+    // The Foundation is the workspace's however many campaigns it has.
+    expect(
+      placeLink('strategy', null, { ...off, soleCampaignId: 'c1' }),
+    ).toEqual({ to: '/foundation' })
   })
 
   it('asks for a campaign where there is no all-campaigns page', () => {
-    expect(placeLink('strategy', null, off)).toEqual({
-      to: '/campaigns',
-      search: { pick: 'strategy' },
-    })
     expect(placeLink('calendar', null, off)).toEqual({
       to: '/campaigns',
       search: { pick: 'calendar' },
@@ -82,13 +111,13 @@ describe('placeLink', () => {
   })
 
   it('leaves the workspace-only rows unfiltered', () => {
-    expect(placeLink('foundation', 'c1', off)).toEqual({ to: '/foundation' })
+    expect(placeLink('inbox', 'c1', off)).toEqual({ to: '/tasks' })
   })
 })
 
 describe('scopeLink', () => {
   it('keeps the place and changes the filter', () => {
-    expect(scopeLink(whereOf('/campaigns', 'posts'), 'c1', off)).toEqual({
+    expect(scopeLink(whereOf('/posts'), 'c1', off)).toEqual({
       to: '/campaigns/$campaignId/list',
       params: { campaignId: 'c1' },
     })
@@ -97,7 +126,17 @@ describe('scopeLink', () => {
     })
   })
 
+  it('moves between the Foundation and a campaign’s strategy', () => {
+    expect(scopeLink(whereOf('/foundation/facts'), 'c1', off)).toEqual({
+      to: '/campaigns/$campaignId/strategy',
+      params: { campaignId: 'c1' },
+    })
+    expect(scopeLink(whereOf('/campaigns/c1/strategy'), null, off)).toEqual({
+      to: '/foundation',
+    })
+  })
+
   it('stays put on a page no campaign narrows', () => {
-    expect(scopeLink(whereOf('/foundation'), 'c1', off)).toBeNull()
+    expect(scopeLink(whereOf('/tasks'), 'c1', off)).toBeNull()
   })
 })

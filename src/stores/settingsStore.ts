@@ -19,6 +19,7 @@ import {
   type PanelScope,
   type RightPanel,
 } from '@/lib/rightPanel'
+import { isCalendarDrawer, type CalendarDrawer } from '@/lib/calendarDrawer'
 import {
   rememberVisit,
   sanitizePostsPlaces,
@@ -49,6 +50,18 @@ export type LocalSettings = {
    * action shows the rail again.
    */
   rightRailHidden: boolean
+
+  /**
+   * Which of the calendar's two panels is open in its drawer, or `null`. One
+   * choice for every calendar, the workspace's and each campaign's, so it is
+   * still open on the next grid you go to — they are the same two panels over
+   * the same preferences.
+   *
+   * Not part of `panelMemory`: the drawer is the calendar's own, beside the
+   * grid and under the bar over the page, so it never takes the assistant's
+   * place and both can be open at once.
+   */
+  calendarDrawer: CalendarDrawer | null
 
   // Modal/Dialog State
   lastOpenedModals: Record<string, string> // modal ID -> last opened timestamp
@@ -106,18 +119,6 @@ export type LocalSettings = {
  */
 type PanelContext = {
   scope: PanelScope | null
-  /**
-   * The campaign you are in, for the panels that are about one, or `null` where
-   * the screen under the sidebar has none — the workspace calendar, whose
-   * panels are about every campaign at once.
-   *
-   * Sticky across the scope *clearing* only: it survives an unmount so a panel
-   * can fade out instead of vanishing mid-transition. A screen that claims the
-   * scope always answers, `null` included — inheriting the last campaign would
-   * have the workspace calendar's not-scheduled panel list one campaign's
-   * strays under a grid showing all of them.
-   */
-  campaignId: string | null
 }
 
 type SettingsState = LocalSettings &
@@ -131,7 +132,7 @@ type SettingsState = LocalSettings &
      * and unmount only — it never touches `panelMemory`, which is what keeps
      * navigating around from rewriting the user's choices.
      */
-    setPanelScope: (scope: PanelScope | null, campaignId?: string) => void
+    setPanelScope: (scope: PanelScope | null) => void
 
     /** Show the panel, or close it if it is the one already showing. */
     toggleRightPanel: (panel: RightPanel) => void
@@ -144,6 +145,12 @@ type SettingsState = LocalSettings &
      * or the assistant, the rail's floor, when it was showing nothing.
      */
     toggleRightRail: () => void
+
+    /** Open the calendar's drawer on this panel, or close it if it is showing. */
+    toggleCalendarDrawer: (panel: CalendarDrawer) => void
+    /** Open the calendar's drawer on this panel — for buttons that mean "open". */
+    openCalendarDrawer: (panel: CalendarDrawer) => void
+    closeCalendarDrawer: () => void
 
     recordModalOpened: (modalId: string) => void
 
@@ -177,6 +184,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   sidebarCollapsed: false,
   panelMemory: DEFAULT_PANEL_MEMORY,
   rightRailHidden: false,
+  calendarDrawer: null,
   lastOpenedModals: {},
   dismissedNotes: [],
   postsPlace: {},
@@ -185,7 +193,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   assetSort: null,
 }
 
-const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null, campaignId: null }
+const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null }
 
 /**
  * The panel on screen right now — the remembered choice for this screen, or the
@@ -226,16 +234,8 @@ export const useSettingsStore = create<SettingsState>()(
 
         // Right sidebar. The screen context is session state; the choices are
         // the persisted part, and only the three panel actions write them.
-        setPanelScope: (scope, campaignId) => {
-          set((state) => ({
-            scope,
-            // Kept only while nothing is claiming the scope, so the panel that
-            // is fading out still has its campaign — see
-            // `PanelContext.campaignId`. A screen that *is* claiming it
-            // replaces the answer outright, `undefined` included.
-            campaignId:
-              scope === null ? state.campaignId : (campaignId ?? null),
-          }))
+        setPanelScope: (scope) => {
+          set({ scope })
         },
 
         // A panel action on a hidden rail acts on what the user can see: the
@@ -291,6 +291,16 @@ export const useSettingsStore = create<SettingsState>()(
             }
           })
         },
+
+        toggleCalendarDrawer: (panel) => {
+          set((state) => ({
+            calendarDrawer: state.calendarDrawer === panel ? null : panel,
+          }))
+        },
+
+        openCalendarDrawer: (panel) => set({ calendarDrawer: panel }),
+
+        closeCalendarDrawer: () => set({ calendarDrawer: null }),
 
         // Modal tracking actions
         recordModalOpened: (modalId) => {
@@ -349,6 +359,7 @@ export const useSettingsStore = create<SettingsState>()(
           sidebarCollapsed: state.sidebarCollapsed,
           panelMemory: state.panelMemory,
           rightRailHidden: state.rightRailHidden,
+          calendarDrawer: state.calendarDrawer,
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
           postsPlace: state.postsPlace,
@@ -356,7 +367,7 @@ export const useSettingsStore = create<SettingsState>()(
           assetGrouping: state.assetGrouping,
           assetSort: state.assetSort,
           // Don't persist
-          // scope, campaignId — where you are, not what you chose
+          // scope — where you are, not what you chose
         }),
         // Rehydration is the one place a panel id — or a remembered calendar
         // anchor — arrives from outside this build, so it is the one place that
@@ -368,6 +379,9 @@ export const useSettingsStore = create<SettingsState>()(
             ...saved,
             panelMemory: sanitizePanelMemory(saved.panelMemory),
             rightRailHidden: saved.rightRailHidden === true,
+            calendarDrawer: isCalendarDrawer(saved.calendarDrawer)
+              ? saved.calendarDrawer
+              : null,
             postsPlace: sanitizePostsPlaces(saved.postsPlace),
             collapsedAssetBands: Array.isArray(saved.collapsedAssetBands)
               ? saved.collapsedAssetBands.filter(

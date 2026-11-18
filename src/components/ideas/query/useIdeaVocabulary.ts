@@ -199,6 +199,13 @@ export function useIdeaVocabulary({
         return key('created', { values: sentenceValue(field, values[0]) })
       }
       if (field === 'text') return key('text', { values: values[0] ?? '' })
+      // Exactly the ideas a card named (CON-510): "limited to these 6".
+      if (field === 'ids')
+        return {
+          key: 'ideas.sentence.clause.ids',
+          values: { formatted: formatNumber(values.length, {}, locale) },
+          count: values.length,
+        }
       if (field === 'used') {
         // Two values, each the other's complement: "not used" is "unused",
         // so a negated clause reads as the value it leaves.
@@ -232,9 +239,12 @@ export function useIdeaVocabulary({
   /** The clause as plain words — for screen readers and the empty state. */
   const tokenText = useCallback(
     (token: IdeaToken) => {
-      const { key, values } = clause(token)
+      const { key, values, count } = clause(token)
       // One key of a known family; the union is wider than `t` resolves.
-      const words = (t as (k: string, o: object) => string)(key, values)
+      const words = (t as (k: string, o: object) => string)(key, {
+        ...values,
+        ...(count === undefined ? {} : { count }),
+      })
       return words.replace(/<\/?\w+>/g, '')
     },
     [t, clause],
@@ -248,7 +258,7 @@ export function useIdeaVocabulary({
    */
   const options = useCallback(
     (field: IdeaFilterField, negated: boolean): ValueOption[] => {
-      if (field === 'text') return []
+      if (field === 'text' || field === 'ids') return []
       const list = negated ? null : facets[field]
       const counts = list ? new Map(list.map((f) => [f.value, f.count])) : null
       const count = (value: string) =>
@@ -366,15 +376,21 @@ export function useIdeaVocabulary({
     [facets, valueLabel, sources, campaignNames, t],
   )
 
+  // `ids` has no panel and is never offered as a starter (`fixed`), so it
+  // asks nothing and starts nothing.
   const question = useCallback(
-    (field: IdeaFilterField) => t(`ideas.sentence.question.${field}`),
+    (field: IdeaFilterField) =>
+      field === 'ids' ? '' : t(`ideas.sentence.question.${field}`),
     [t],
   )
   const switchLabels = useCallback(
     (field: IdeaFilterField): [string, string] | null =>
       // Origin's two values are each other's complement, and so are used's;
       // text has no "not".
-      field === 'origin' || field === 'used' || field === 'text'
+      field === 'origin' ||
+      field === 'used' ||
+      field === 'text' ||
+      field === 'ids'
         ? null
         : [
             t(`ideas.sentence.include.${field}`),
@@ -395,7 +411,9 @@ export function useIdeaVocabulary({
   )
   const starter = useCallback(
     (field: IdeaFilterField) =>
-      field === 'text' ? '' : t(`ideas.sentence.starter.${field}`),
+      field === 'text' || field === 'ids'
+        ? ''
+        : t(`ideas.sentence.starter.${field}`),
     [t],
   )
   const starterHint = useCallback(

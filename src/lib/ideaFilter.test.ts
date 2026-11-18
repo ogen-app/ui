@@ -180,6 +180,42 @@ describe('smart group queries', () => {
   })
 })
 
+describe('exactly these ideas (CON-510)', () => {
+  it('reads ids off the address once each, up to the cap', () => {
+    const many = Array.from({ length: 205 }, (_, i) => `i${i}`)
+    expect(parseIdeaListSearch({ ids: 'a,b,a' }).ids).toBe('a,b')
+    expect(
+      parseIdeaListSearch({ ids: many.join(',') }).ids?.split(','),
+    ).toHaveLength(200)
+  })
+
+  it('asks for them, and is a clause you can only drop', async () => {
+    const { IDEA_FILTER_MODEL } = await import('./ideaFilter')
+    const filter = ideaFilterFromSearch({ ids: 'a,b' })
+    expect(filter.ids).toEqual(['a', 'b'])
+    expect(searchFromIdeaFilter(filter).ids).toBe('a,b')
+    expect(
+      toIdeaRequestParams(filter, {
+        scopeCampaign: null,
+        pile: 'waiting',
+        sort: 'waiting',
+        group: 'none',
+        now: new Date('2026-11-16T12:00:00Z'),
+        timeZone: 'UTC',
+      }).ids,
+    ).toBe('a,b')
+    const [token] = IDEA_FILTER_MODEL.tokensOf(filter)
+    expect(token).toEqual({ field: 'ids', negated: false, values: ['a', 'b'] })
+    expect(IDEA_FILTER_MODEL.kindOf('ids')).toBe('fixed')
+    expect(IDEA_FILTER_MODEL.withoutToken(filter, token).ids).toEqual([])
+  })
+
+  it('is kept by a smart group', async () => {
+    const { ideaViewQuery } = await import('./ideaFilter')
+    expect(ideaViewQuery({ ids: 'b,a', group: 'none' })).toBe('ids=a,b')
+  })
+})
+
 describe('an idea to open (CON-481)', () => {
   it('is read from the address and never saved with a smart group', async () => {
     const { ideaViewQuery } = await import('./ideaFilter')

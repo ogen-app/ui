@@ -128,19 +128,23 @@ export function PageActionBar({
   return (
     <div
       // `pointer-events-none` on the full-width track so it never eats a click
-      // meant for the page underneath; the bar itself takes them back.
+      // meant for the page underneath; the bar itself takes them back. The
+      // track has the page's gutter and the column's width, so the bar is
+      // centred on the cards it acts on — which sit against the left edge.
       className={cn(
-        'pointer-events-none absolute inset-x-0 bottom-4 flex justify-center',
+        'pointer-events-none absolute inset-x-0 bottom-4 px-3 lg:px-6',
         className,
       )}
       style={{ zIndex: ZIndex.pageActionBar }}
     >
-      <BarSurface
-        blocker={blocker}
-        status={status ?? null}
-        contentKey={contentKey}
-        items={items}
-      />
+      <div className="flex w-full max-w-content justify-center">
+        <BarSurface
+          blocker={blocker}
+          status={status ?? null}
+          contentKey={contentKey}
+          items={items}
+        />
+      </div>
     </div>
   )
 }

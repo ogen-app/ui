@@ -986,8 +986,15 @@ function NeedsRowView({
     <span className="flex min-w-0 items-baseline gap-2 py-2 whitespace-normal">
       {/* Two lines before it gives up: a problem's sentence is the whole of
           what it says, and the column is narrow. */}
-      <span className="line-clamp-2" title={label}>
-        {label}
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="line-clamp-2" title={label}>
+          {label}
+        </span>
+        {row.idea && (
+          <span className="text-xs text-secondary-foreground">
+            {t('assistant.findings.fromIdea', { title: row.idea })}
+          </span>
+        )}
       </span>
       {row.more > 0 && (
         <span className="shrink-0 text-xs text-tertiary-foreground">

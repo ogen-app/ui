@@ -1,10 +1,12 @@
 import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
 import { PageLoader } from '@/components/page-primitives/PageLoader.tsx'
 import { PageError } from '@/components/page-primitives/PageError.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { CalendarHeaderActions } from '@/components/campaigns/calendar/CalendarHeaderActions.tsx'
+import { CalendarDrawer } from '@/components/campaigns/calendar/CalendarDrawer'
 import {
   SettingsSaveBar,
   SettingsSaveProvider,
@@ -14,26 +16,31 @@ import { cn } from '@/lib'
 import { useCampaign } from '@/hooks/useCampaigns.ts'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore.ts'
 import { awaiting } from '@/lib/fetched'
+import { campaignSection, type CampaignSectionId } from '@/lib/campaignSections'
 
 export const Route = createFileRoute('/_authenticated/campaigns/$campaignId')({
   component: CampaignLayout,
 })
 
-// Section slug (from the URL) → title suffix. The header title and its icon
-// set depend on the selected secondary-nav element.
+// Section slug (from the URL) → the section it is. The shell depends on it,
+// and the header names it — the campaign itself is the header's scope.
 const SECTIONS = [
   // `/list` is the Posts row's route — the table is where posts are worked on,
   // and the calendar is the row beside it. The title says Posts because the
   // rail does; nothing outside the URL calls this a list.
-  { slug: '/list', label: 'Posts' },
-  { slug: '/strategy', label: 'Strategy' },
-  { slug: '/ideas', label: 'Ideas' },
-  { slug: '/assets', label: 'Assets' },
-  { slug: '/activity', label: 'Activity' },
-  { slug: '/settings', label: 'Settings' },
-  { slug: '/overview', label: 'Overview' },
-  { slug: '/analytics', label: 'Analytics' },
-] as const
+  { slug: '/list', label: 'Posts', id: 'posts' },
+  { slug: '/strategy', label: 'Strategy', id: 'strategy' },
+  { slug: '/ideas', label: 'Ideas', id: 'ideas' },
+  { slug: '/assets', label: 'Assets', id: 'assets' },
+  { slug: '/activity', label: 'Activity', id: 'activity' },
+  { slug: '/settings', label: 'Settings', id: 'settings' },
+  { slug: '/overview', label: 'Overview', id: 'overview' },
+  { slug: '/analytics', label: 'Analytics', id: 'analytics' },
+] as const satisfies readonly {
+  slug: string
+  label: string
+  id: CampaignSectionId
+}[]
 
 /**
  * Sections that read as a document: one scroll container, fading header.
@@ -44,14 +51,31 @@ const SECTIONS = [
  */
 const DOCUMENT_SECTIONS: readonly string[] = ['Analytics', 'Activity']
 
+/**
+ * The save context wraps every shell, not only the Strategy and Settings one
+ * that draws its bar. The shell is chosen from the address, and the address
+ * changes a render before the router lets go of the outgoing section — so on
+ * the way out of Strategy the form rendered once inside another shell, found
+ * no provider and threw into the error boundary.
+ */
 function CampaignLayout() {
+  return (
+    <SettingsSaveProvider>
+      <CampaignShell />
+    </SettingsSaveProvider>
+  )
+}
+
+function CampaignShell() {
+  const { t } = useTranslation()
   const { campaignId } = Route.useParams()
   const query = useCampaign(campaignId)
   const { data: campaign, isError } = query
 
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const section =
-    SECTIONS.find((s) => pathname.includes(s.slug))?.label ?? 'Calendar'
+  const found = SECTIONS.find((s) => pathname.includes(s.slug))
+  const section = found?.label ?? 'Calendar'
+  const title = t(campaignSection(found?.id ?? 'calendar').labelKey)
 
   // Being in a campaign is what makes its assistant thread available (CON-112);
   // post pages escape this layout, so they get their own thread instead. The
@@ -92,9 +116,6 @@ function CampaignLayout() {
     )
   }
 
-  const displayName = campaign.name.trim()
-  const title = `${displayName === '' ? 'Untitled campaign' : displayName} ${section}`
-
   // Each shell fades its section in (`page-content-motion`), keyed by the
   // section so the fade replays on the way from one to the next rather than
   // once per campaign. Sections are a swap of the whole column — several
@@ -104,31 +125,29 @@ function CampaignLayout() {
   //
   // Strategy and Settings edit inline and commit through the bottom save bar,
   // so they get the settings-page shell: one scroll container owning the
-  // sticky header, whose title fades out on scroll, inside a positioned
+  // header, which scrolls away into the bar above, inside a positioned
   // wrapper the bar can anchor to without scrolling away with the cards.
   if (section === 'Strategy' || section === 'Settings') {
     return (
       <PageContainer variant={'fullFlex'}>
-        <SettingsSaveProvider>
-          <div className={'relative h-0 grow flex flex-col'}>
-            <div className={'h-0 grow overflow-y-auto flex flex-col'}>
-              <PageHeader title={title} fadeOnScroll />
-              {/* pt-4 is the shared 16px breath between a page header and its
+        <div className={'relative h-0 grow flex flex-col'}>
+          <div className={'h-0 grow overflow-y-auto flex flex-col'}>
+            <PageHeader title={title} scrollAway />
+            {/* pt-4 is the shared 16px breath between a page header and its
                   first card — see the same value on Overview and Workspace
                   Settings. */}
-              <div
-                key={section}
-                className={cn(
-                  'page-content-motion px-3 lg:px-6 pt-4',
-                  PAGE_ACTION_BAR_INSET,
-                )}
-              >
-                <Outlet />
-              </div>
+            <div
+              key={section}
+              className={cn(
+                'page-content-motion px-3 lg:px-6 pt-4',
+                PAGE_ACTION_BAR_INSET,
+              )}
+            >
+              <Outlet />
             </div>
-            <SettingsSaveBar />
           </div>
-        </SettingsSaveProvider>
+          <SettingsSaveBar />
+        </div>
       </PageContainer>
     )
   }
@@ -171,7 +190,7 @@ function CampaignLayout() {
     return (
       <PageContainer variant={'fullFlex'}>
         <div className={'h-0 grow overflow-y-auto flex flex-col'}>
-          <PageHeader title={title} fadeOnScroll />
+          <PageHeader title={title} scrollAway />
           <div
             key={section}
             className={'page-content-motion px-3 lg:px-6 pt-4'}
@@ -183,9 +202,12 @@ function CampaignLayout() {
     )
   }
 
+  // The calendar's drawer sits beside the whole column, header included, so
+  // it runs from the bar over the page to the bottom and the header's icons
+  // stay with the grid they are about.
   return (
-    <PageContainer variant={'fullFlex'}>
-      <div className={'flex-1 min-h-0 flex flex-col'}>
+    <PageContainer variant={'fullFlex'} className={'flex-row'}>
+      <div className={'flex-1 min-w-0 min-h-0 flex flex-col'}>
         <PageHeader
           title={title}
           actions={
@@ -203,6 +225,7 @@ function CampaignLayout() {
           <Outlet />
         </div>
       </div>
+      {section === 'Calendar' && <CalendarDrawer campaignId={campaignId} />}
     </PageContainer>
   )
 }

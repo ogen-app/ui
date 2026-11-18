@@ -76,7 +76,7 @@ function ProfilePage() {
             can anchor to the column without scrolling away with the cards. */}
         <div className="relative flex h-0 grow flex-col">
           <div className="flex h-0 grow flex-col overflow-y-auto">
-            <PageHeader title={t('profile.title')} fadeOnScroll />
+            <PageHeader title={t('profile.title')} scrollAway />
             <div
               className={cn(
                 'flex flex-col gap-8 px-3 pt-4 lg:px-6',

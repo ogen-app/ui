@@ -406,6 +406,7 @@ export const en = {
      * The campaign switcher above the page: the scope every place in the menu
      * is narrowed to. "All campaigns" is the workspace.
      */
+    /** The bar's "Strategy › Voice" once a page's header has scrolled away. */
     scope: {
       all: 'All campaigns',
       switch: 'Switch campaign',
@@ -795,7 +796,7 @@ export const en = {
     goHint: 'Press g, then the letter.',
     anywhere: 'Anywhere',
     inCampaign: 'In this campaign',
-    campaignNote: 'Strategy, Posts and Calendar have keys inside a campaign.',
+    campaignNote: 'Posts and Calendar have keys inside a campaign.',
     thisCampaign: 'this campaign’s',
     foot: '<k1>?</k1> or <k2>esc</k2> to close',
     /** A two-key shortcut, as a screen reader says it. */
@@ -805,7 +806,6 @@ export const en = {
       assets: '<k>A</k>ssets',
       campaigns: '<k>C</k>ampaigns',
       analytics: 'A<k>n</k>alytics',
-      foundation: '<k>F</k>oundation',
       workspaceSettings: 'Workspace <k>s</k>ettings',
       settings: '<k>S</k>ettings',
       strategy: 'S<k>t</k>rategy',
@@ -1322,6 +1322,9 @@ export const en = {
         created_not_preset: 'added <v>{{values}}</v>',
         text: 'mentioning <v>“{{values}}”</v>',
         used: '<v>{{values}}</v>',
+        /** Exactly the ideas an assistant card named (CON-510). */
+        ids_one: 'limited to <v>this one</v>',
+        ids_other: 'limited to <v>these {{formatted}}</v>',
       },
       origin: {
         asset_analysis: 'from documents',
@@ -1421,10 +1424,6 @@ export const en = {
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
     },
-    page: {
-      campaignTitle: '{{campaign}} Ideas',
-      untitledCampaign: 'Untitled campaign',
-    },
     loadFailed: 'Unable to load ideas',
     saveFailed: 'Could not save that. Your ideas are unchanged.',
   },
@@ -1452,9 +1451,29 @@ export const en = {
     rhythm: {
       occasional: 'Occasional',
       perWeek_one: 'Once a week',
-      perWeek_other: '{{count}} times a week',
+      perWeek_other: '{{formatted}} times a week',
       perMonth_one: 'Once a month',
-      perMonth_other: '{{count}} times a month',
+      perMonth_other: '{{formatted}} times a month',
+      /**
+       * A rhythm that skips periods or names its day (CON-496). `every` is
+       * always 2 or more; `day` is the weekday's name, from `Intl`.
+       */
+      perWeeksEvery_one: 'Once every {{every}} weeks',
+      perWeeksEvery_other: '{{formatted}} times every {{every}} weeks',
+      perMonthsEvery_one: 'Once every {{every}} months',
+      perMonthsEvery_other: '{{formatted}} times every {{every}} months',
+      everyDay: 'Every {{day}}',
+      everyWeeksOn_one: 'Every week on {{day}}',
+      everyWeeksOn_other: 'Every {{formatted}} weeks on {{day}}',
+      /** The picker's second and third selects: how often, and which day. */
+      everyWeekOption_one: 'every week',
+      everyWeekOption_other: 'every {{formatted}} weeks',
+      everyMonthOption_one: 'every month',
+      everyMonthOption_other: 'every {{formatted}} months',
+      anyDay: 'on any day',
+      onDay: 'on {{day}}',
+      everyLabel: 'How often',
+      dayLabel: 'Which day',
     },
     supply: {
       selfOption: 'It supplies its own subject',
@@ -1463,13 +1482,16 @@ export const en = {
       ideaLine: 'Waits for an idea',
     },
     usage: '{{drafts}} in draft, {{published}} published',
+    /** The tooltip on an idea's or a post's series (CON-496). */
+    mark: 'Made for the series “{{name}}”',
     plan: {
       noGoal:
         'This campaign has no post goal, so there is nothing to measure these against.',
       ok: '{{total}} posts planned · {{claimed}} from series · {{open}} open',
       over: '{{total}} posts planned and the series claim {{claimed}} — {{over}} more than the campaign is set to make.',
+      /** Without dates the plan places no series, so they claim nothing yet. */
       undated:
-        '{{total}} posts a period · {{claimed}} from series. Set the campaign dates to plan the whole run.',
+        '{{total}} posts a period. Set the campaign dates and the series claim their slots.',
     },
     campaign: {
       title: 'Series',
@@ -1488,8 +1510,8 @@ export const en = {
       promoteHint:
         'Move this into the workspace library so other campaigns can run it too.',
       remove: 'Stop running {{name}}',
-      claim_one: '{{count}} post',
-      claim_other: '{{count}} posts',
+      claim_one: '{{formatted}} post',
+      claim_other: '{{formatted}} posts',
       claimsNone: 'no fixed slots',
     },
     detail: {
@@ -2114,6 +2136,8 @@ export const en = {
     statusColourAlways:
       "The status colour down the card's left edge is always shown.",
     notAPublishingDay: 'Not a publishing day',
+    /** Off the publishing days, but a weekly series lands on it (CON-496). */
+    seriesDay: 'A series posts on this day',
     showDay: 'Show {{day}}',
 
     /**
@@ -2179,6 +2203,24 @@ export const en = {
     /** Under its title (CON-485): what the panel is for. */
     notScheduledHint: 'Drag a post onto a day to schedule it.',
     /**
+     * The Not scheduled panel's two groups: posts with an account to publish
+     * as, and the ones the schedule gate would refuse for want of one —
+     * folded away by default, with each row's reason in amber.
+     */
+    readyToSchedule: 'Ready to schedule',
+    needsAccount: 'Needs an account',
+    needsAccountHint:
+      'No account to publish as yet. Set one on each post, or connect one in Settings.',
+    /** When every undated post is in the second group. */
+    noneReady: 'None of these can publish yet: each needs an account.',
+    /** A row's reason, worded as what to do about it. */
+    accountGap: {
+      noPlatform: 'Choose a platform',
+      noAccount: 'Connect an account',
+      chooseAccount: 'Choose an account',
+      accountGone: 'Account disconnected',
+    },
+    /**
      * On a draft just written in this tab (CON-470), at the panel's top —
      * an eyebrow in literal capitals, like the cards' status words.
      */
@@ -2227,6 +2269,10 @@ export const en = {
         'Posts are written inside a campaign. Schedule one and it will show up here, whichever campaign it belongs to.',
       workspacePanelSubtitle:
         'Posts without a date wait here — drag one onto the calendar to give it one.',
+      /** The workspace's posts list, which has no ADD POST either. */
+      workspaceListTitle: 'No posts yet',
+      workspaceListSubtitle:
+        'Posts are written inside a campaign. Add one there and it will show up here, whichever campaign it belongs to.',
     },
   },
 
@@ -2678,6 +2724,10 @@ export const en = {
       revisePost: {
         running: 'Rewriting the post',
         done: 'Rewrote the post',
+      },
+      setPostVoice: {
+        running: 'Changing the post’s voice',
+        done: 'Changed the post’s voice',
       },
       listSavedViews: {
         running: 'Looking up the smart groups',
@@ -3582,10 +3632,6 @@ export const en = {
       },
       rhythm: {
         occasional: 'Now and then',
-        week_one: 'Once a week',
-        week_other: '{{formatted}} times a week',
-        month_one: 'Once a month',
-        month_other: '{{formatted}} times a month',
       },
       run: {
         running: '{{series}} runs in {{campaign}}',
@@ -3690,6 +3736,13 @@ export const en = {
       conflicts_one: '{{formatted}} conflict',
       conflicts_other: '{{formatted}} conflicts',
       sourcesReady: '{{ready}} of {{attached}} sources ready',
+      /** The parts a reply can cite (CON-511): the goal as its rate. */
+      goalWeek_one: '{{formatted}} a week',
+      goalWeek_other: '{{formatted}} a week',
+      goalMonth_one: '{{formatted}} a month',
+      goalMonth_other: '{{formatted}} a month',
+      posts_one: '{{formatted}} post',
+      posts_other: '{{formatted}} posts',
       sources: {
         word: 'SOURCES',
         title: '{{ready}} of {{attached}} ready',
@@ -3706,6 +3759,21 @@ export const en = {
         calendar_other: 'Fix {{formatted}} calendar problems',
         sources_one: '{{formatted}} source not ready',
         sources_other: '{{formatted}} sources not ready',
+      },
+      /**
+       * What a starter sends as the user's message (CON-511), in the user's
+       * language — the same request the server's English one makes.
+       */
+      starterSays: {
+        fill_one:
+          'Draft {{formatted}} post for {{period}}, the slot left in this goal period.',
+        fill_other:
+          'Draft {{formatted}} posts for {{period}}, the slots left in this goal period.',
+        draft_one: 'Draft {{formatted}} post to reach the campaign’s goal.',
+        draft_other: 'Draft {{formatted}} posts to reach the campaign’s goal.',
+        calendar: 'Review the campaign’s calendar problems and fix them.',
+        sources:
+          'Which of the campaign’s sources aren’t ready to write from, and why?',
       },
     },
 
@@ -3832,7 +3900,21 @@ export const en = {
       /** A finding whose fix ran; `choice` is the slot or option picked. */
       fixed: 'Fixed: {{fix}}',
       fixedChose: 'Fixed: {{fix}} · {{choice}}',
+      /**
+       * A fix the server says ran, read back on a reload (CON-495) — since
+       * the check; `when` is the day, or day and time, a move landed on.
+       */
+      fixedSince: 'Fixed since: {{fix}}',
+      fixedSinceMoved: 'Fixed since: moved to {{when}}',
       fixing: 'Fixing…',
+      /**
+       * A post finding's way to its post's thread (CON-495): the row's button
+       * when no fix runs on its own, else the last "or …".
+       */
+      assist: 'FIX WITH ASSISTANT',
+      orAssist: 'or fix with assistant',
+      /** The idea a same-idea finding's posts share (CON-495). */
+      fromIdea: 'All from “{{title}}”',
       /** Under a fix's offer opened in the row: back to the row's fixes. */
       back: 'BACK TO THE FIXES',
       /** When the check read the calendar: "Read Wed 12 Nov, 16:40." */
@@ -4249,6 +4331,8 @@ export const en = {
     ideas: {
       untitled: 'Untitled idea',
       open: 'OPEN',
+      /** Exactly a card's ideas, on the Ideas list (CON-510). */
+      openAll: 'OPEN ALL',
       noDate: 'no date',
       backOn: 'back on {{day}}',
       more_one: 'and {{formatted}} more',
@@ -4260,6 +4344,12 @@ export const en = {
         word: 'Found',
         title_one: '{{formatted}} idea',
         title_other: '{{formatted}} ideas',
+        /**
+         * What the search named, in the Ideas list's own clauses (CON-509):
+         * "6 ideas from Brochure, in Spring reopening".
+         */
+        titleNamed_one: '{{formatted}} idea {{clauses}}',
+        titleNamed_other: '{{formatted}} ideas {{clauses}}',
         none: 'No ideas match',
         /** The pile the filter named, counted whole: "of 14 · On the desk". */
         ofPile: 'of {{total}} · {{pile}}',
@@ -4305,6 +4395,9 @@ export const en = {
         one: 'Draft',
         writing: 'Writing',
         writingNth: 'Draft {{n}} of {{total}}',
+        /** The post being written (CON-510): its idea, or ideas, and platform. */
+        writingIdeaOn: '{{ideas}} · {{platform}}',
+        writingIdea: '{{ideas}}',
         title_one: '{{formatted}} post',
         title_other: '{{formatted}} posts',
         fromIdeas_one: '{{drafts}} from {{formatted}} idea',
@@ -4429,6 +4522,24 @@ export const en = {
         unversioned:
           'Saving the rewrite as a version failed, so the post’s history has no copy of it',
       },
+      /** One post given another voice (`setPostVoice`, CON-494). */
+      voiceChanged: {
+        word: 'VOICE CHANGED',
+        title: 'Post voice changed',
+        /** "Formal → Plain". */
+        fromTo: '{{from}} → {{to}}',
+        fromToCampaign: '{{from}} → {{to}}, the campaign’s voice',
+        /** No voice it had to name. */
+        to: 'Now in {{to}}',
+        toCampaign: 'Now in {{to}}, the campaign’s voice',
+        /** The campaign's voice, unnamed. */
+        campaign: 'Now in the campaign’s voice',
+        /** A voice of its own the result didn't name. */
+        ownUnnamed: 'Now in a voice of its own',
+        copyKept:
+          'The copy stays as it is; checks and rewrites read it in this voice',
+        open: 'OPEN',
+      },
       converted: {
         word: 'Converted',
         title_one: '{{formatted}} post changed type',
@@ -4441,6 +4552,15 @@ export const en = {
           media: 'media',
         },
         still: 'Still scheduled {{when}}',
+        /**
+         * Whether a converted post passes its new type's rules (CON-495):
+         * "Passes the Image post rules on Instagram". `rules` is the rules it
+         * still breaks, joined as a list.
+         */
+        passes: 'Passes the {{type}} rules on {{platform}}',
+        passesAny: 'Passes the new type’s rules',
+        breaks: 'Still breaks: {{rules}}',
+        breaksAny: 'Still breaks the new type’s rules',
       },
       unscheduled: {
         word: 'Unscheduled',
@@ -4473,6 +4593,15 @@ export const en = {
         title_one: '{{formatted}} post deleted',
         title_other: '{{formatted}} posts deleted',
       },
+      /**
+       * The lines an edit rewrote (CON-495): struck old over new. Only a
+       * screen reader hears these words.
+       */
+      lines: {
+        label: 'Lines changed',
+        removed: 'Removed: ',
+        added: 'Added: ',
+      },
       review: {
         word: 'Review',
         none: 'The brief and the posts agree',
@@ -4491,6 +4620,16 @@ export const en = {
         /** Under a finding: where it is. */
         inPost: 'In {{title}}.',
         inBrief: '{{aspect}}.',
+        /** A finding about some of a post's words leads with them (CON-495). */
+        quoted: '“{{quote}}”',
+        /**
+         * FIX WITH ASSISTANT's message to the post's thread (CON-495). The
+         * finding goes with it by key; the thread shows the finding instead.
+         */
+        fixPrompt: 'Fix this finding from the review.',
+        /** Over the finding a post thread was asked to fix. */
+        fromReview: 'From the review',
+        fromReviewQuoted: '“{{quote}}” — {{issue}}',
         from: {
           brief: 'Brief',
           posts: 'Posts',
@@ -5056,6 +5195,9 @@ export const en = {
     columnGrounding: 'Sources',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
+    /** Only on the workspace's list, where the rows come from every campaign. */
+    columnCampaign: 'Campaign',
+    columnSeries: 'Series',
     columnPublishDate: 'Publish date',
     columnWhen: 'When',
 
@@ -7132,11 +7274,6 @@ export const en = {
         'This workspace has no voices or audiences yet. They are written once and every campaign draws on them.',
       emptyShort: 'This workspace has no voices or audiences yet.',
       openBrand: 'Open Foundation',
-      alsoApplies:
-        'The workspace’s guardrails also apply to every post here, whichever voice writes it. They are not chosen per campaign and cannot be overridden.',
-      alsoAppliesEmpty:
-        'The workspace has stated no guardrails, so nothing is off limits — any voice here may promise anything, in any words.',
-      seeEverything: 'See everything this campaign writes from',
       saveError: 'Unable to save the campaign voice',
     },
 
@@ -7676,10 +7813,6 @@ export const en = {
        * count and nothing it cannot see — the facts card comes and goes with
        * its flag, and the line stays true either way.
        */
-      intro: {
-        title: 'What the app writes from',
-        body: 'The voices it writes in, who it is written to, and what it may never claim. Written once for the workspace, and every campaign and every post inherits it.',
-      },
       /**
        * The honesty rule at index length. The section's own screen says it in a
        * sentence (`shell.readByNothing`); five sentences down one page is the
@@ -8237,16 +8370,6 @@ export const en = {
   },
 
   campaigns: {
-    /**
-     * Above the campaign cards when a row with no all-campaigns page asked
-     * for one (`?pick=`). One sentence per row.
-     */
-    pick: {
-      posts: 'Posts belong to a campaign. Choose one to see its posts.',
-      calendar: 'Each campaign keeps its own calendar. Choose one to open it.',
-      strategy:
-        'Strategy is set per campaign. Choose one to open its strategy.',
-    },
     /** The posts list's and calendar's selection bar (CON-482). */
     bulk: {
       selected_one: '{{formatted}} selected',
@@ -8263,7 +8386,6 @@ export const en = {
       deleted_one: '{{formatted}} post deleted',
       deleted_other: '{{formatted}} posts deleted',
     },
-    title: 'Campaigns',
     add: 'ADD CAMPAIGN',
     error: 'Failed to load campaigns',
     untitled: 'this campaign',
@@ -8289,6 +8411,25 @@ export const en = {
        */
       removedByAssistant: '{{what}} removed by the assistant',
       undoInThread: 'UNDO is in the thread',
+      /**
+       * Strategy for all campaigns: every campaign on one time axis, with
+       * what each commits to and the voice it writes in.
+       */
+      timeline: {
+        empty:
+          'No campaigns yet. Each one you add is drawn here against the others, by its dates.',
+        undated: 'No dates set',
+        barLabel: '{{name}}, {{window}}',
+        windowAndRate: '{{window}} · {{rate}}',
+        perWeek_one: '{{formatted}} post a week',
+        perWeek_other: '{{formatted}} posts a week',
+        perMonth_one: '{{formatted}} post a month',
+        perMonth_other: '{{formatted}} posts a month',
+        noRate: 'No post goal',
+        noPlatforms: 'No platforms',
+        noVoice: 'No voice',
+        defaultVoice: '{{voice}} (default)',
+      },
     },
     /**
      * The campaign's type on Strategy (CON-166). It locks once a post is
@@ -8385,7 +8526,6 @@ export const en = {
      */
     page: {
       title: 'Assets',
-      campaignTitle: '{{campaign}} Assets',
       /** The ADD CONTENT menu (CON-484 moved it into the catalogue). */
       add: {
         button: 'ADD CONTENT',
