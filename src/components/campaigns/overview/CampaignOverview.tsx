@@ -74,7 +74,7 @@ export type OverviewHandlers = {
 /**
  * The campaign's front page, drawn from `overviewModel`, as a dashboard
  * (`PageGrid`) read in order of importance. Across the top, the band: where
- * the campaign is in its own time. Then the row the screen is opened for —
+ * the campaign is in its own time (off while planning, for now). Then the row the screen is opened for —
  * what goes out (this week; the first week while planning; the results once
  * it is over) beside the one list of what wants the user — and under them
  * the rest of the figures, the last seven days. On a narrow page that order
@@ -122,7 +122,9 @@ export function CampaignOverview({
   return (
     <div className="pb-10">
       <PageGrid>
-        {model.band && (
+        {/* Not while planning, for now: the first week and the list carry
+            that stage on their own. */}
+        {model.band && model.stage !== 'planning' && (
           <GridCell span="full">
             <Band
               stage={model.stage}
