@@ -3884,6 +3884,7 @@ export const en = {
       blocking_one: '{{formatted}} blocks publishing',
       blocking_other: '{{formatted}} block publishing',
       none: 'Nothing wrong with the calendar.',
+      or: 'or {{fix}}',
       dismissed_one: '{{formatted}} dismissed finding left out.',
       dismissed_other: '{{formatted}} dismissed findings left out.',
       ignore: 'IGNORE',

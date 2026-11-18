@@ -3230,6 +3230,7 @@ export const es: Translation = {
       blocking_one: '{{formatted}} impide publicar',
       blocking_other: '{{formatted}} impiden publicar',
       none: 'No hay nada mal en el calendario.',
+      or: 'o {{fix}}',
       dismissed_one: 'Se ha omitido {{formatted}} hallazgo descartado.',
       dismissed_other: 'Se han omitido {{formatted}} hallazgos descartados.',
       ignore: 'IGNORAR',

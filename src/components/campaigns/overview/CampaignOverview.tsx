@@ -15,6 +15,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Logo } from '@/components/Logo'
 import { IgnoredList } from '@/components/assistant/FindingsBlock'
@@ -982,9 +983,7 @@ function runAction(action: NeedsAction, handlers: OverviewHandlers) {
   // `section` and `post` are links, rendered as links by the caller.
 }
 
-type T = ReturnType<typeof useTranslation>['t']
-
-function stageTodoLabel(t: T, todo: NeedsRow['todo']): string {
+function stageTodoLabel(t: TFunction, todo: NeedsRow['todo']): string {
   switch (todo?.kind) {
     case 'first-post':
       return t('campaignOverview.needs.firstPost')
