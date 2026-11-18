@@ -10,32 +10,6 @@ import { ZIndex } from '@/config/zIndex.ts'
 import { SurfaceFader } from '@/components/page-primitives/SurfaceFader'
 import { cn } from '@/lib'
 
-/**
- * Solid panel from the ramp's own top edge down, so the heading never sits on
- * anything but the surface itself.
- */
-const HEADER_SOLID = 36
-
-/** The ramp below it: colour and blur both from full to nothing across this. */
-const HEADER_FADE = 48
-
-/**
- * How far above the panel's top edge the whole ramp is hung.
- *
- * The ramp is for the body passing *under* the header. At rest there is nothing
- * under it yet, so any part of it still live where the body begins is a wash
- * over the first line of a panel nobody has scrolled — which read as the fade
- * being half-applied to the content rather than to anything behind it. Lifting
- * it clears the tail off that line; the body's own `pt-2` below opens the rest
- * of the gap, and the two together are what the first line needs to arrive
- * clean.
- *
- * Only the tail is really moving. The lift comes off the solid run as well, but
- * that run has 24px of header padding above the title to give up before it
- * reaches type.
- */
-const HEADER_LIFT = 8
-
 type RailPanelProps = {
   title: string
   onClose?: () => void
@@ -73,7 +47,7 @@ type RailPanelProps = {
   titleLabel?: string
   /**
    * Solid panel from the bottom edge up, in px — set it to the middle of the
-   * footer's last row, the way the header's is the middle of the title's line.
+   * footer's last row.
    *
    * Only worth setting when that row's height is known. Left off, the ramp falls
    * back to covering the footer's whole box and overhanging it by `footerFade`,
@@ -86,13 +60,6 @@ type RailPanelProps = {
    * painted behind the footer for the rest of the ramp to work on.
    */
   footerFade?: number
-  /**
-   * How the header meets the body scrolling under it. `fade` dissolves it
-   * through a blurred ramp, with no edge to see; `solid` is an opaque band
-   * ruled off by a line across the panel's whole width — the calendar
-   * drawer's, and the direction the rest are moving in.
-   */
-  header?: 'fade' | 'solid'
 }
 
 export function RailPanel({
@@ -111,9 +78,7 @@ export function RailPanel({
   titleLabel,
   footerSolid,
   footerFade = 32,
-  header = 'fade',
 }: RailPanelProps) {
-  const solidHeader = header === 'solid'
   const footerRef = useRef<HTMLDivElement>(null)
   // The footer overlays the scroll rather than sitting beside it, so the body
   // needs to be told how much room to leave at the end. Measured, because the
@@ -134,28 +99,12 @@ export function RailPanel({
     // scroller — it has to stay put while the thread runs underneath it.
     <div className={cn('relative h-full flex flex-col', className)}>
       <div ref={scrollRef} className="h-0 grow overflow-y-auto flex flex-col">
-        {/* One ramp for the whole header, not a solid block with a fade tacked
-            under it — so the header has no bottom edge to see. It is sized in
-            its own right rather than to the block, because what it has to clear
-            is the type: solid to the middle of the title, then out. */}
+        {/* The header is an opaque band ruled off across the panel's whole
+            width: the body scrolls under a line, not into a fade. */}
         <div
-          className={cn(
-            'sticky top-0 shrink-0 flex flex-col',
-            solidHeader && 'bg-primary border-b border-border',
-          )}
+          className="sticky top-0 shrink-0 flex flex-col bg-primary border-b border-border"
           style={{ zIndex: ZIndex.pageHeader }}
         >
-          {!solidHeader && (
-            <SurfaceFader
-              edge="top"
-              solid={`${HEADER_SOLID}px`}
-              fade={HEADER_FADE}
-              style={{
-                top: -HEADER_LIFT,
-                height: HEADER_SOLID + HEADER_FADE,
-              }}
-            />
-          )}
           <div className="relative pt-6 px-3 lg:px-6 flex flex-col gap-0">
             <div className="flex items-stretch justify-between gap-3">
               {/* The whole block is the affordance when it has somewhere to go
@@ -199,17 +148,12 @@ export function RailPanel({
                 the title ends. */}
             {!leading && subheader}
           </div>
-          {/* Where the header stops. The body's own `pt-2` sits under this. */}
+          {/* Where the header stops, above its line. */}
           <div className="h-3 shrink-0" aria-hidden />
         </div>
         <div
           className={cn(
-            // `pt-2` is the other half of `HEADER_LIFT`: it starts the body
-            // clear of the ramp's tail, so the first line is never washed by a
-            // fade that has nothing behind it yet. Under a ruled header the
-            // gap is the line's to open instead.
-            'px-3 lg:px-6 flex flex-col gap-4',
-            solidHeader ? 'pt-4' : 'pt-2',
+            'px-3 lg:px-6 pt-4 flex flex-col gap-4',
             // With a footer the room at the end is the spacer's job — it has to
             // match the footer exactly, or the last line either hides under it
             // or stops short of it.
@@ -233,7 +177,7 @@ export function RailPanel({
           className="absolute inset-x-0 bottom-0 px-3 lg:px-6 pb-6"
           style={{ zIndex: ZIndex.pageHeader }}
         >
-          {/* The header's ramp, mirrored off the bottom edge. `footerSolid` is
+          {/* A ramp off the bottom edge. `footerSolid` is
               measured from that edge, so it is set to reach the middle of
               whatever row the footer ends with — the composer, a button — and
               the ramp climbs from there, up through the top of that row and out

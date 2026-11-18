@@ -220,7 +220,6 @@ function NotScheduled({
 
   return (
     <RailPanel
-      header="solid"
       title={t('calendar.notScheduled')}
       // How many wait, muted beside the title, and what to do with them.
       titleAdornment={
