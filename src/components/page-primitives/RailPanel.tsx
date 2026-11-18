@@ -21,14 +21,9 @@ type RailPanelProps = {
   bodyClassName?: string
   /** The panel's scroll container — for panels that drive it (chat autoscroll). */
   scrollRef?: Ref<HTMLDivElement>
-  /** A second row inside the sticky header (context bar, breadcrumb). */
-  subheader?: ReactNode
   /**
-   * A mark to the left of the title, as tall as the title and `subheader`
-   * together — the panel's own square, the way the rail's trigger is the
-   * assistant's. Setting it moves `subheader` into the block beside the mark,
-   * so the two lines read as one heading rather than as a row with a caption
-   * under it.
+   * A mark to the left of the title — the panel's own square, the way the
+   * rail's trigger is the assistant's.
    *
    * It sits inside the title's button when `onTitleClick` is set, so it must
    * not be interactive itself. To answer the hover it can style off
@@ -61,12 +56,6 @@ type RailPanelProps = {
    * painted behind the footer for the rest of the ramp to work on.
    */
   footerFade?: number
-  /**
-   * The header is the frame's 56px band (`CHROME_BAR_H`), its content centred
-   * in it, so its rule runs on from the bar over the page as one line. For a
-   * panel that stands beside that bar, from the top of the window.
-   */
-  bar?: boolean
 }
 
 export function RailPanel({
@@ -78,14 +67,12 @@ export function RailPanel({
   className,
   bodyClassName,
   scrollRef,
-  subheader,
   leading,
   titleAdornment,
   onTitleClick,
   titleLabel,
   footerSolid,
   footerFade = 32,
-  bar = false,
 }: RailPanelProps) {
   const footerRef = useRef<HTMLDivElement>(null)
   // The footer overlays the scroll rather than sitting beside it, so the body
@@ -107,71 +94,44 @@ export function RailPanel({
     // scroller — it has to stay put while the thread runs underneath it.
     <div className={cn('relative h-full flex flex-col', className)}>
       <div ref={scrollRef} className="h-0 grow overflow-y-auto flex flex-col">
-        {/* The header is an opaque band ruled off across the panel's whole
-            width: the body scrolls under a line, not into a fade. */}
+        {/* The header is the frame's 56px band (`CHROME_BAR_H`), opaque and
+            ruled off across the panel's whole width, so its line runs on from
+            the bar over the page and the body scrolls under a line, not into
+            a fade. One line only: anything a panel says under its title is
+            the body's first row. */}
         <div
           className={cn(
-            'sticky top-0 shrink-0 flex flex-col bg-primary border-b border-border',
-            bar && [CHROME_BAR_H, 'justify-center'],
+            'sticky top-0 shrink-0 flex items-center justify-between gap-3 bg-primary border-b border-border px-3 lg:px-6',
+            CHROME_BAR_H,
           )}
           style={{ zIndex: ZIndex.pageHeader }}
         >
-          <div
-            className={cn(
-              'relative px-3 lg:px-6 flex flex-col gap-0',
-              !bar && 'pt-6',
-            )}
+          {/* The whole block is the affordance when it has somewhere to go —
+              mark, title and adornment. They describe one thing, so they are
+              one target rather than a link with decoration around it. */}
+          <TitleBlock
+            onClick={onTitleClick}
+            label={titleLabel}
+            leading={leading}
           >
-            <div className="flex items-stretch justify-between gap-3">
-              {/* The whole block is the affordance when it has somewhere to go
-                  — mark, title, adornment and, where there is a mark, the
-                  second line too. They describe one thing, so they are one
-                  target rather than a link with decoration around it. */}
-              <TitleBlock
-                onClick={onTitleClick}
-                label={titleLabel}
-                leading={leading}
+            <h2 className="shrink-0 text-lg font-medium font-display tracking-tight text-foreground">
+              {title}
+            </h2>
+            {titleAdornment}
+          </TitleBlock>
+          <div className="flex shrink-0 items-center gap-2">
+            {actions}
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="flex items-center justify-center size-6 text-secondary-foreground hover:text-foreground cursor-pointer"
               >
-                <div className="flex min-w-0 items-baseline gap-2">
-                  <h2 className="shrink-0 text-lg font-medium font-display tracking-tight text-foreground">
-                    {title}
-                  </h2>
-                  {titleAdornment}
-                </div>
-                {leading && subheader}
-              </TitleBlock>
-              {/* Fixed to the title's own line height rather than centred on
-                  the block: with a two-line header, centring drops the close
-                  button half a line and it stops reading as the panel's. In
-                  the bar it centres like everything else in the band. */}
-              <div
-                className={cn(
-                  'flex h-7 shrink-0 items-center gap-2',
-                  bar && 'self-center',
-                )}
-              >
-                {actions}
-                {onClose && (
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    aria-label="Close"
-                    className="flex items-center justify-center size-6 text-secondary-foreground hover:text-foreground cursor-pointer"
-                  >
-                    <XIcon className="size-5" />
-                  </button>
-                )}
-              </div>
-            </div>
-            {/* Without a mark the second line is the header's own full-width
-                row and runs under the actions, which is what a breadcrumb or a
-                metadata line wants. A mark makes the header a block, and the
-                line belongs inside it — indented to the title, ending where
-                the title ends. */}
-            {!leading && subheader}
+                <XIcon className="size-5" />
+              </button>
+            )}
           </div>
-          {/* Where the header stops, above its line. */}
-          {!bar && <div className="h-3 shrink-0" aria-hidden />}
         </div>
         <div
           className={cn(
@@ -239,13 +199,11 @@ function TitleBlock({
   leading?: ReactNode
   children: ReactNode
 }) {
-  const className = 'flex min-w-0 flex-1 items-stretch gap-3 text-left'
+  const className = 'flex min-w-0 flex-1 items-center gap-3 text-left'
   const inner = (
     <>
       {leading}
-      <div className="flex min-w-0 flex-1 flex-col justify-center">
-        {children}
-      </div>
+      <div className="flex min-w-0 flex-1 items-baseline gap-2">{children}</div>
     </>
   )
   if (!onClick) return <div className={className}>{inner}</div>

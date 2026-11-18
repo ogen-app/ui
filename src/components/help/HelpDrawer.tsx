@@ -141,14 +141,12 @@ export function HelpDrawer() {
             title={article?.title ?? t('help.title')}
             onClose={close}
             className="min-h-0 flex-1"
-            subheader={
-              <Trail
-                previousKey={previousKey}
-                category={article?.category.title}
-                onBack={back}
-              />
-            }
           >
+            <Trail
+              previousKey={previousKey}
+              category={article?.category.title}
+              onBack={back}
+            />
             {loadingArticle ? (
               <div className="flex justify-center py-8">
                 <Spinner />

@@ -1679,8 +1679,8 @@ export const es: Translation = {
   },
 
   assistant: {
-    activeThreads_one: '{{formatted}} conversación activa',
-    activeThreads_other: '{{formatted}} conversaciones activas',
+    threadCount_one: '{{formatted}} conversación',
+    threadCount_other: '{{formatted}} conversaciones',
     pendingThreads_one: '{{formatted}} pendiente',
     pendingThreads_other: '{{formatted}} pendientes',
 
