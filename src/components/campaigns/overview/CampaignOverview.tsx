@@ -52,7 +52,6 @@ import {
   formatRelative,
 } from '@/lib/intl'
 import { getPlatformByZernioId } from '@/lib/platformDictionary'
-import { relativeTime } from '@/lib/relativeTime'
 import { SectionLink } from './OverviewCard.tsx'
 
 /**
@@ -125,13 +124,7 @@ export function CampaignOverview({
   // progress card goes.
   const column = [
     model.band && model.stage !== 'ended' && (
-      <Band
-        key="band"
-        stage={model.stage}
-        band={model.band}
-        campaignId={campaignId}
-        now={now}
-      />
+      <ProgressCard key="band" stage={model.stage} band={model.band} />
     ),
     ...timeCards(model, campaignId, now),
   ].filter(Boolean)
@@ -267,24 +260,24 @@ function Glyph({ icon, tone }: { icon: IconSvgElement; tone?: string }) {
   )
 }
 
-// --- The band ---------------------------------------------------------------
+// --- The progress card -----------------------------------------------------
 
 /**
- * Where we are: the stage and the day, the window, what goes out next, and
- * the goal as a bar. Everything here is a glance; the goal's arithmetic is on
- * Strategy and the next post's neighbours are on the calendar. (The window as
- * a line with its phases is off for now.)
+ * Where the campaign is in its own time: the stage and the day, the window,
+ * today's phase, and the goal as a bar. Everything here is a glance; the
+ * goal's arithmetic is on Strategy. What goes out next is the week card's,
+ * so it is not repeated here. Two type styles: the title, and one size of
+ * text at full strength — the bar's colours are carried by its legend's
+ * dots, not by fading the words.
+ *
+ * Exported for the design harness's specimens.
  */
-function Band({
+export function ProgressCard({
   stage,
   band,
-  campaignId,
-  now,
 }: {
   stage: OverviewModel['stage']
   band: OverviewBand
-  campaignId: string
-  now: Date
 }) {
   const { t, i18n } = useTranslation()
   const where =
@@ -300,7 +293,6 @@ function Band({
             day: formatNumber(band.day),
             total: formatNumber(band.days),
           })
-
   // Today's phase; before the start, the one it opens with.
   const phase =
     band.phases.find((p) => p.current) ??
@@ -308,72 +300,41 @@ function Band({
 
   return (
     <section className={cn(SURFACE, 'flex flex-col gap-4 p-6')}>
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <span className="font-display text-xl font-medium tracking-tight">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 className="font-display text-xl font-medium tracking-tight">
           {t(`campaignOverview.stage.${stage}`)}
-        </span>
-        <span className="text-sm text-secondary-foreground">{where}</span>
-        <span className="text-sm text-tertiary-foreground">
+        </h2>
+        <span className="text-sm">{where}</span>
+      </div>
+      <div className="flex flex-col gap-1 text-sm">
+        <p>
           {formatDateRange(
             band.start,
             band.end,
             { month: 'short', day: 'numeric', year: 'numeric' },
             i18n.language,
           )}
-        </span>
-      </div>
-      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
+        </p>
         {phase && (
-          <>
-            <dt className="text-tertiary-foreground">
-              {t('campaignOverview.band.phase')}
-            </dt>
-            <dd className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-              <span>{phase.name}</span>
-              <span className="text-secondary-foreground">
-                {phase.day != null
-                  ? t('campaignOverview.band.phaseDay', {
-                      day: formatNumber(phase.day),
-                      total: formatNumber(phase.days),
-                    })
-                  : formatDateRange(
-                      phase.start,
-                      phase.end,
-                      { month: 'short', day: 'numeric' },
-                      i18n.language,
-                    )}
-              </span>
-            </dd>
-          </>
+          <p>
+            {phase.day != null
+              ? t('campaignOverview.band.phaseNow', {
+                  name: phase.name,
+                  day: formatNumber(phase.day),
+                  total: formatNumber(phase.days),
+                })
+              : t('campaignOverview.band.phaseFirst', {
+                  name: phase.name,
+                  range: formatDateRange(
+                    phase.start,
+                    phase.end,
+                    { month: 'short', day: 'numeric' },
+                    i18n.language,
+                  ),
+                })}
+          </p>
         )}
-        <dt className="text-tertiary-foreground">
-          {t('campaignOverview.band.next')}
-        </dt>
-        <dd className="flex min-w-0 items-baseline">
-          {band.next ? (
-            <Link
-              to="/campaigns/$campaignId/posts/$postId"
-              params={{ campaignId, postId: band.next.id }}
-              className="flex min-w-0 items-center gap-1.5 hover:underline"
-            >
-              <PlatformMark platform={band.next.platform} />
-              <span className="truncate">
-                {formatTitle(
-                  band.next.title ?? '',
-                  t('campaignOverview.stats.untitledPost'),
-                )}
-              </span>
-              <span className="shrink-0 text-secondary-foreground">
-                {relativeTime(band.next.at, now, i18n.language)}
-              </span>
-            </Link>
-          ) : (
-            <span className="text-secondary-foreground">
-              {t('campaignOverview.band.nothingNext')}
-            </span>
-          )}
-        </dd>
-      </dl>
+      </div>
       <GoalBar band={band} />
     </section>
   )
@@ -382,35 +343,51 @@ function Band({
 /** Published against the goal, scheduled stacked after it. */
 function GoalBar({ band }: { band: OverviewBand }) {
   const { t } = useTranslation()
-  if (!band.goal) {
-    return (
-      <p className="text-sm text-tertiary-foreground">
-        {t('campaignOverview.band.noGoal')}
-      </p>
-    )
-  }
-  const { total, published, scheduled } = band.goal
-  const of = (n: number) => `${Math.min(100, (n / Math.max(1, total)) * 100)}%`
+  const { goal, published, scheduled } = band
+  const of = (n: number) =>
+    `${Math.min(100, (n / Math.max(1, goal ?? 1)) * 100)}%`
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex h-1.5 overflow-hidden rounded-full bg-secondary">
-        <div className="bg-positive" style={{ width: of(published) }} />
-        <div className="bg-positive/35" style={{ width: of(scheduled) }} />
-      </div>
-      <p className="flex flex-wrap gap-x-3 text-sm">
-        <span>
-          {t('campaignOverview.band.published', {
-            published: formatNumber(published),
-            total: formatNumber(total),
-          })}
+    <div className="flex flex-col gap-2">
+      {goal != null && (
+        <div className="flex h-1.5 overflow-hidden rounded-full bg-secondary">
+          <div className="bg-positive" style={{ width: of(published) }} />
+          {/* Only the part of the goal the published posts leave. */}
+          <div
+            className="bg-positive/35"
+            style={{
+              width: of(Math.min(scheduled, Math.max(0, goal - published))),
+            }}
+          />
+        </div>
+      )}
+      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        <span className="flex items-center gap-1.5">
+          <Dot className="bg-positive" />
+          {goal != null
+            ? t('campaignOverview.band.published', {
+                published: formatNumber(published),
+                total: formatNumber(goal),
+              })
+            : t('campaignOverview.band.publishedCount', counted(published))}
         </span>
         {scheduled > 0 && (
-          <span className="text-secondary-foreground">
+          <span className="flex items-center gap-1.5">
+            <Dot className="bg-positive/35" />
             {t('campaignOverview.band.scheduled', counted(scheduled))}
           </span>
         )}
+        {goal == null && <span>{t('campaignOverview.band.noGoal')}</span>}
       </p>
     </div>
+  )
+}
+
+function Dot({ className }: { className: string }) {
+  return (
+    <span
+      className={cn('size-2 shrink-0 rounded-full', className)}
+      aria-hidden
+    />
   )
 }
 

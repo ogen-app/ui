@@ -135,8 +135,7 @@ describe('overviewModel', () => {
       }),
     )
     // 12 a month over October and November.
-    expect(m.band?.goal).toEqual({ total: 24, published: 1, scheduled: 1 })
-    expect(m.band?.next?.id).toBe('b')
+    expect(m.band).toMatchObject({ goal: 24, published: 1, scheduled: 1 })
   })
 
   it('lists one week, Monday first', () => {

@@ -1977,14 +1977,16 @@ export const en = {
       closing: 'Closing',
       ended: 'Ended',
     },
-    /** The band across the top: where the campaign is in its own time. */
+    /** The progress card: where the campaign is in its own time. */
     band: {
-      next: 'Next',
-      nothingNext: 'Nothing scheduled',
-      /** The campaign type's phase today; before the start, the first. */
-      phase: 'Phase',
-      phaseDay: 'Day {{day}} of {{total}}',
+      /** The campaign type's phase today. */
+      phaseNow: '{{name}} phase, day {{day}} of {{total}}',
+      /** Before the start: the phase it opens with, and its days. */
+      phaseFirst: 'Opens with the {{name}} phase, {{range}}',
       published: '{{published}} of {{total}} published',
+      /** With no goal set, only the count. */
+      publishedCount_one: '{{formatted}} published',
+      publishedCount_other: '{{formatted}} published',
       scheduled_one: '{{formatted}} scheduled',
       scheduled_other: '{{formatted}} scheduled',
       noGoal: 'No post goal set.',

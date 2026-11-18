@@ -122,10 +122,11 @@ export type OverviewBand = {
   /** 0…1 — where today's marker sits on the timeline. */
   todayAt: number
   phases: OverviewPhase[]
-  /** Null when the campaign has no goal set. */
-  goal: { total: number; published: number; scheduled: number } | null
-  /** The next post due out, scheduled or waiting on a person. */
-  next: OverviewPostRow | null
+  published: number
+  /** Scheduled, by Ogen or to publish by hand. */
+  scheduled: number
+  /** The goal over the whole campaign; null when none is set. */
+  goal: number | null
 }
 
 /** One row of the right column. */
@@ -345,15 +346,6 @@ export function overviewModel(input: OverviewInput): OverviewModel {
     campaign.start_date,
     campaign.end_date,
   )
-  const next = all
-    .filter(
-      (p) =>
-        SCHEDULED.includes(p.status) &&
-        p.scheduled_at &&
-        Date.parse(p.scheduled_at) >= now.getTime(),
-    )
-    .sort((a, b) => a.scheduled_at!.localeCompare(b.scheduled_at!))[0]
-
   const band: OverviewBand = {
     start,
     end,
@@ -377,9 +369,9 @@ export function overviewModel(input: OverviewInput): OverviewModel {
           days: daysBetween(ps, pe) + 1,
         }
       }),
-    goal:
-      goal.kind === 'ok' ? { total: goal.total, published, scheduled } : null,
-    next: next ? row(next) : null,
+    published,
+    scheduled,
+    goal: goal.kind === 'ok' ? goal.total : null,
   }
 
   const weekFrom = (from: Date): OverviewDay[] =>
