@@ -165,7 +165,9 @@ function NeedRow({ need, lit }: { need: Need; lit: boolean }) {
     <li
       className={cn(
         'flex gap-3 border-b border-quaternary px-5 py-3 last:border-b-0 transition-colors',
-        lit && 'bg-secondary',
+        // A missing need stays white even while its step is filling it: a
+        // tinted row with nothing in it reads as disabled, not as current.
+        lit && need.level !== 'missing' && 'bg-secondary',
       )}
     >
       <Icon
