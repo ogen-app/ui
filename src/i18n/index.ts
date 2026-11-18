@@ -26,6 +26,10 @@ void i18next.use(initReactI18next).init({
     // an apostrophe in an interpolated workspace name into `&#39;`.
     escapeValue: false,
   },
+  // A few entries are '' on purpose (a metric with no hint, a criterion with
+  // no suffix). Since i18next 27 an empty value falls back like a missing one
+  // and would render its key, so keep '' meaning "nothing to say".
+  returnEmptyString: true,
 })
 
 /**
@@ -67,5 +71,7 @@ declare module 'i18next' {
   interface CustomTypeOptions {
     defaultNS: 'translation'
     resources: { translation: Translation }
+    // Matches `returnEmptyString` in init: a '' entry is typed as a string.
+    returnEmptyString: true
   }
 }
