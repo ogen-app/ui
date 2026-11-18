@@ -1,4 +1,5 @@
-import type { ReactElement, ReactNode } from 'react'
+import { useEffect, useRef } from 'react'
+import type { ReactElement, ReactNode, RefObject } from 'react'
 import {
   CaretRightIcon,
   CheckCircleIcon,
@@ -30,6 +31,7 @@ import { LineItem, type LineItemIndicator } from '@/components/ui/line-item'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { cn, formatTitle } from '@/lib'
 import { campaignSection } from '@/lib/campaignSections'
+import { findScrollParent } from '@/lib/scrollParent'
 import type {
   NeedsAction,
   NeedsRow,
@@ -74,11 +76,11 @@ export type OverviewHandlers = {
 /**
  * The campaign's front page, drawn from `overviewModel`, as a dashboard
  * (`PageGrid`) read in order of importance. Across the top, the band: where
- * the campaign is in its own time (off while planning, for now). Then the row the screen is opened for —
- * what goes out (this week; the first week while planning; the results once
- * it is over) beside the one list of what wants the user — and under them
- * the rest of the figures, the last seven days. On a narrow page that order
- * is the stack.
+ * the campaign is in its own time (off while planning, for now). Under it,
+ * two columns: the time cards — what goes out (this week; the first week
+ * while planning; the results once it is over), then the last seven days —
+ * and beside them the one list of what wants the user, held on screen while
+ * they are read. On a narrow page that order is the stack, the list last.
  *
  * The rule for anything added here: a figure goes in a time card, a thing to
  * do goes in the list, and anything that takes more than a glance to read
@@ -117,8 +119,9 @@ export function CampaignOverview({
     )
   }
 
-  // The first time card shares the list's row; any after it get a row each.
-  const [lead, ...rest] = timeCards(model, campaignId, now)
+  // The time cards are one column, beside the list; the list is held on
+  // screen while they are read. With none, the list takes the row.
+  const time = timeCards(model, campaignId, now)
   return (
     <div className="pb-10">
       <PageGrid>
@@ -134,19 +137,21 @@ export function CampaignOverview({
             />
           </GridCell>
         )}
-        {lead && <GridCell span="wide">{lead}</GridCell>}
-        <GridCell span={lead ? 'narrow' : 'full'}>
+        {time.length > 0 && (
+          <GridCell span="wide">
+            {/* Each card keeps its height; the last takes what the list
+                leaves, so the column ends with it. */}
+            <div className="flex flex-col gap-4 *:last:flex-1">{time}</div>
+          </GridCell>
+        )}
+        <GridCell span={time.length > 0 ? 'narrow' : 'full'}>
           <NeedsList
             model={model}
             campaignId={campaignId}
             handlers={handlers}
+            pinned={time.length > 0}
           />
         </GridCell>
-        {rest.map((card) => (
-          <GridCell key={card.key} span="full">
-            {card}
-          </GridCell>
-        ))}
       </PageGrid>
     </div>
   )
@@ -703,77 +708,128 @@ const MARK: Record<NeedsRow['mark'], LineItemIndicator> = {
 }
 
 /**
+ * Sets `--scroll-viewport` on the element to the visible height of the area
+ * it scrolls in (the window's when nothing else scrolls), re-read whenever
+ * that area changes size.
+ */
+function useScrollViewport(ref: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const scroller = findScrollParent(el)
+    const apply = () =>
+      el.style.setProperty(
+        '--scroll-viewport',
+        `${scroller?.clientHeight ?? window.innerHeight}px`,
+      )
+    apply()
+    const observer =
+      scroller && typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(apply)
+        : null
+    if (scroller) observer?.observe(scroller)
+    window.addEventListener('resize', apply)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', apply)
+      el.style.removeProperty('--scroll-viewport')
+    }
+  }, [ref])
+}
+
+/**
  * Everything that wants the user, in one list, worst first. A problem's
  * other fixes and IGNORE are in the row's menu: the row says what is wrong
  * and offers the likeliest fix, and the alternatives are a click further for
  * the few who want them.
+ *
+ * `pinned` — beside the time card — keeps it on screen while that card is
+ * read, 16px under the top of the scroll area, as tall as its rows up to the
+ * height of the screen; past that the rows scroll inside it, under a header
+ * that stays. Nothing is folded away: every problem is still in the list.
+ * Stacked, it is an ordinary card.
  */
 function NeedsList({
   model,
   campaignId,
   handlers,
+  pinned = false,
 }: {
   model: OverviewModel
   campaignId: string
   handlers: OverviewHandlers
+  pinned?: boolean
 }) {
   const { t } = useTranslation()
+  const frameRef = useRef<HTMLDivElement>(null)
+  useScrollViewport(frameRef)
   const rows = model.needs
   const askable = rows?.some((r) => r.action?.kind === 'ask') ?? false
   return (
-    <Card
-      glyph={<Glyph icon={Alert02Icon} tone="var(--nav-overview)" />}
-      title={
-        <>
-          {t(`campaignOverview.needs.${model.needsTitle}`)}
-          {rows && rows.length > 0 && (
-            <span className="ml-2 font-sans text-sm font-normal text-tertiary-foreground tabular-nums">
-              {formatNumber(rows.length)}
-            </span>
-          )}
-        </>
-      }
-      aside={
-        askable && (
-          <button
-            type="button"
-            className={TEXT_ACTION}
-            onClick={handlers.askAll}
-          >
-            {t('campaignOverview.problems.fixAll')}
-          </button>
-        )
-      }
-      campaignId={campaignId}
-    >
-      {rows === null ? (
-        <>
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </>
-      ) : rows.length === 0 ? (
-        <p className="flex items-center gap-2 text-sm text-secondary-foreground">
-          <CheckIcon className="size-4 text-positive" aria-hidden />
-          {t('campaignOverview.needs.none')}
-        </p>
-      ) : (
-        <ul className="flex flex-col">
-          {rows.map((row) => (
-            <li key={row.id} className={DIVIDED}>
-              <NeedsRowView
-                row={row}
-                campaignId={campaignId}
-                handlers={handlers}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-      <IgnoredList
+    <div ref={frameRef} className="flex flex-col">
+      <Card
+        className={cn(
+          'flex-1',
+          pinned &&
+            '@min-[40rem]:sticky @min-[40rem]:top-4 @min-[40rem]:max-h-[calc(var(--scroll-viewport,100svh)-2rem)] @min-[40rem]:flex-none @min-[40rem]:overflow-hidden',
+        )}
+        glyph={<Glyph icon={Alert02Icon} tone="var(--nav-overview)" />}
+        title={
+          <>
+            {t(`campaignOverview.needs.${model.needsTitle}`)}
+            {rows && rows.length > 0 && (
+              <span className="ml-2 font-sans text-sm font-normal text-tertiary-foreground tabular-nums">
+                {formatNumber(rows.length)}
+              </span>
+            )}
+          </>
+        }
+        aside={
+          askable && (
+            <button
+              type="button"
+              className={TEXT_ACTION}
+              onClick={handlers.askAll}
+            >
+              {t('campaignOverview.problems.fixAll')}
+            </button>
+          )
+        }
         campaignId={campaignId}
-        items={model.ignored.map((p) => ({ key: p.key, title: p.message }))}
-      />
-    </Card>
+      >
+        {/* The rows scroll under the header once the card is as tall as the
+          screen; edge to edge, so the bar sits on the card's border. */}
+        <div className="-mx-6 -mb-6 flex min-h-0 flex-col gap-4 overflow-y-auto px-6 pb-6">
+          {rows === null ? (
+            <>
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </>
+          ) : rows.length === 0 ? (
+            <p className="flex items-center gap-2 text-sm text-secondary-foreground">
+              <CheckIcon className="size-4 text-positive" aria-hidden />
+              {t('campaignOverview.needs.none')}
+            </p>
+          ) : (
+            <ul className="flex flex-col">
+              {rows.map((row) => (
+                <li key={row.id} className={DIVIDED}>
+                  <NeedsRowView
+                    row={row}
+                    campaignId={campaignId}
+                    handlers={handlers}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+          <IgnoredList
+            campaignId={campaignId}
+            items={model.ignored.map((p) => ({ key: p.key, title: p.message }))}
+          />
+        </div>
+      </Card>
+    </div>
   )
 }
 
