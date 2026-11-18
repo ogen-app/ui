@@ -862,13 +862,13 @@ function missingSectionNames(t: TFunction, data: BrandData): string[] {
 }
 
 /**
- * The stack, and **not a scroller**. The page owns the scrolling so that the
- * header can sit inside it and the cards can dissolve under its gradient
- * instead of being cut off by it — see `BrandDetail`. A component that scrolls
- * itself cannot be put under a sticky header, which is why this one stopped.
+ * The cards, and nothing around them: the column they are put in spaces them
+ * (`PageColumns` — a stack, or masonry), so they reach it as its own children.
+ * **Not a scroller** either: the page owns the scrolling so that the header
+ * can sit inside it — see `BrandDetail`.
  */
 function Wrapper({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-4">{children}</div>
+  return <>{children}</>
 }
 
 function OverviewSkeleton() {

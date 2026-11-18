@@ -1226,7 +1226,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   (740px) against the page's left gutter, under the header's title — never
   `mx-auto`. `PageActionBar` centres itself on that column, not on the page.
   Full-screen flows outside the app frame (auth, `/plans`, checkout) are the
-  exception.
+  exception. **A page in two columns is `PageColumns`**
+  (`page-primitives`): the main column stretches, the `aside` keeps a preset
+  width beside it and goes under it when the page is too narrow, and inside
+  both the content takes the column's full width — the component sets
+  `--container-content` to 100%, which is why that token lives in a plain
+  `@theme` block rather than the inline one. Each column spaces its own
+  cards, so pass the cards, not a wrapper; `masonry` flows the main column's
+  cards into as many columns as fit. Strategy for all campaigns is the first
+  user.
 - **Screen corners have fixed jobs — top is about the object, bottom is about
   the work** (CON-178). Top-left: where you are and how you get back.
   Top-right: **views only** — anything that opens or switches a representation,

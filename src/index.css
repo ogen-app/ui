@@ -132,6 +132,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Layout: the shared content-column width — the post rich-text editor and
+   the settings cards read at the same measure. Generates `w-content` /
+   `max-w-content`. Outside the inline theme on purpose, so the utilities
+   read the variable rather than a copy of 740px: `PageColumns` sets it to
+   100% inside its columns, where the column is the measure. */
+@theme {
+  --container-content: 740px;
+}
+
 @theme inline {
   --white: oklch(1 0 0);
   /* Ink, cooled to agree with the ramp. A neutral black on cool greys reads
@@ -193,11 +202,6 @@
      32px leading sits inside the header's 40px row. Generates `text-display`. */
   --text-display: 1.5rem;
   --text-display--line-height: 2rem;
-
-  /* Layout: the shared content-column width — the post rich-text editor and
-     the settings cards read at the same measure. Generates `w-content` /
-     `max-w-content`. */
-  --container-content: 740px;
 
   /* Radius */
   --radius-sm: calc(var(--radius) + 0px);

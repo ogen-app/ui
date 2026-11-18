@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { PageColumns } from '@/components/page-primitives/PageColumns'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { BrandOverview } from '@/components/brand/BrandOverview'
 import { BrandPage } from '@/components/brand/detail'
@@ -20,12 +21,9 @@ import { fetched } from '@/lib/fetched'
  * and one only for the workspace, and they were one subject seen from the two
  * levels (`lib/campaignScope`). So this page is the Strategy row with no
  * campaign chosen, and a campaign's Strategy page is the same row narrowed.
- * The timeline sits beside the hub because it is one card and the hub is eight.
- * When the page narrows, the hub's column gives way first; once the two no
- * longer fit (a narrow window, or the right rail open) the timeline goes under
- * the hub at the column's width. That follows the page's own width (a
- * container query), not the window's, because the rail takes its width out of
- * the page.
+ * The timeline sits beside the hub (`PageColumns`' second column) because it
+ * is one card and the hub is eight; it goes under the hub only when the page
+ * is too narrow for both.
  *
  * Not a tab any more: it is what the sidebar points at, what the five sections
  * lead back to, and the only place that answers *what is in my brand* in one
@@ -68,33 +66,23 @@ function BrandOverviewPage() {
           scrollHideDelay={350}
         >
           <PageHeader title={t('nav.campaign.strategy')} scrollAway />
-          {/* The Foundation is the page's column and gives way; the
-              campaigns keep a fixed width beside it, and go under it — as
-              wide as the column — once the two no longer fit. */}
-          <div className="@container px-3 pb-10 pt-4 lg:px-6">
-            <div className="flex flex-col gap-4 @min-[60rem]:flex-row @min-[60rem]:items-start @min-[60rem]:gap-6">
-              <div className="w-full min-w-0 max-w-content @min-[60rem]:flex-1">
-                <BrandOverview
-                  brand={fetched(brand)}
-                  facts={facts}
-                  // The library only — a campaign's own series is bounded by it and
-                  // is not something another campaign can pick up, so listing one
-                  // on the workspace hub would overstate what is there.
-                  series={fetched({
-                    data: series.data?.filter(
-                      (entry) => entry.scope.kind === 'workspace',
-                    ),
-                    isError: series.isError,
-                  })}
-                  stance={stance}
-                  onOpen={(id) => navigate({ to: `/foundation/${id}` })}
-                />
-              </div>
-              <div className="w-full max-w-content @min-[60rem]:w-[28rem] @min-[60rem]:shrink-0">
-                <CampaignTimeline />
-              </div>
-            </div>
-          </div>
+          <PageColumns aside={<CampaignTimeline />}>
+            <BrandOverview
+              brand={fetched(brand)}
+              facts={facts}
+              // The library only — a campaign's own series is bounded by it and
+              // is not something another campaign can pick up, so listing one
+              // on the workspace hub would overstate what is there.
+              series={fetched({
+                data: series.data?.filter(
+                  (entry) => entry.scope.kind === 'workspace',
+                ),
+                isError: series.isError,
+              })}
+              stance={stance}
+              onOpen={(id) => navigate({ to: `/foundation/${id}` })}
+            />
+          </PageColumns>
         </ScrollArea>
       </div>
     </BrandPage>
