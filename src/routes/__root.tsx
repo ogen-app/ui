@@ -51,6 +51,13 @@ async function probe<T>(
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ location }) => {
+    // TEMPORARY — design harnesses render from fixtures with no session and no
+    // API. This exemption is why `routes/design/` may never sit on `develop`.
+    // See CLAUDE.md.
+    if (location.pathname.startsWith('/design')) {
+      return { auth: { isAuthenticated: false } }
+    }
+
     // `/invite` is public for the same reason the auth routes are, and one
     // step further: the person following an emailed invitation has no account
     // to have a session with — accepting the token is what creates it (CON-26).
