@@ -140,10 +140,10 @@ function SurfaceSkeleton() {
     <Wrapper>
       {/* The scope bar's own height, so the cards don't jump up the page when
           the marks arrive. */}
-      <Skeleton className="h-[4.5rem] w-full max-w-content mx-auto" />
-      <Skeleton className="h-72 w-full max-w-content mx-auto" />
-      <Skeleton className="h-56 w-full max-w-content mx-auto" />
-      <Skeleton className="h-48 w-full max-w-content mx-auto" />
+      <Skeleton className="h-[4.5rem] w-full max-w-content" />
+      <Skeleton className="h-72 w-full max-w-content" />
+      <Skeleton className="h-56 w-full max-w-content" />
+      <Skeleton className="h-48 w-full max-w-content" />
     </Wrapper>
   )
 }

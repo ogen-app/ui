@@ -50,7 +50,7 @@ export function WorkspaceOverviewView({
   const { t } = useTranslation()
 
   if (isPending) {
-    return <Skeleton className="h-96 w-full max-w-content mx-auto" />
+    return <Skeleton className="h-96 w-full max-w-content" />
   }
 
   if (isUnavailable) {

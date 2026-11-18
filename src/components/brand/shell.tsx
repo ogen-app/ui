@@ -85,7 +85,7 @@ export function BrandSection({
   return (
     <section
       className={cn(
-        'flex w-full max-w-content mx-auto flex-col gap-4',
+        'flex w-full max-w-content flex-col gap-4',
         !isPage && 'rounded-lg bg-primary p-5',
         className,
       )}
@@ -325,7 +325,7 @@ export function WholeBrandOffer({
  * the column under you, and so does the editor a level below that: opening an
  * entry would move the column the entry was just sitting on.
  */
-export const COLUMN = 'mx-auto w-full max-w-content'
+export const COLUMN = 'w-full max-w-content'
 
 /**
  * A library section rendered as its own screen: a stack of full-width entries

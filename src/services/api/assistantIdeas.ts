@@ -2,7 +2,10 @@ import type {
   CompiledPost,
   DraftedIdeaPost,
   Grounding,
+  FoundNamed,
+  FoundNamedValue,
   IdeaBrief,
+  IdeaDraftStarted,
   IdeaPlanBrief,
   IdeasChanged,
   IdeasResults,
@@ -39,6 +42,7 @@ export function ideasResults(
           total: num(found.total),
           pileTotal:
             typeof found.pileTotal === 'number' ? found.pileTotal : undefined,
+          named: foundNamed(found.named),
         }
       : undefined,
     decided:
@@ -102,6 +106,57 @@ export function ideasResults(
     if (out[key] === undefined) delete out[key]
   }
   return Object.keys(out).length > 0 ? out : undefined
+}
+
+/**
+ * What a found filter named (CON-509): documents, campaigns and members by
+ * name, in the filter's order. Absent when it named none — and a list with no
+ * readable value is left out rather than kept empty.
+ */
+function foundNamed(value: unknown): FoundNamed | undefined {
+  const n = record(value)
+  if (!n) return undefined
+  const values = (raw: unknown): FoundNamedValue[] | undefined => {
+    const out = list(raw)
+      .map((v) => ({
+        id: str(v.id),
+        title: str(v.title),
+        ...(optStr(v.type) ? { type: optStr(v.type) } : {}),
+        ...(v.excluded === true ? { excluded: true } : {}),
+      }))
+      .filter((v) => v.id && v.title)
+    return out.length > 0 ? out : undefined
+  }
+  const named: FoundNamed = {
+    sourceAssets: values(n.sourceAssets),
+    campaigns: values(n.campaigns),
+    authors: values(n.authors),
+  }
+  for (const key of Object.keys(named) as (keyof FoundNamed)[])
+    if (!named[key]) delete named[key]
+  return Object.keys(named).length > 0 ? named : undefined
+}
+
+/**
+ * One `idea_draft_started` event (CON-500): the post about to be written.
+ * Null for one that names no idea.
+ */
+export function ideaDraftStarted(
+  raw: Record<string, unknown>,
+): IdeaDraftStarted | null {
+  const ideas = list(raw.ideas)
+    .map((i) => ({ ideaId: str(i.ideaId), title: str(i.title) }))
+    .filter((i) => i.ideaId)
+  if (ideas.length === 0) return null
+  const n = (v: unknown) => (typeof v === 'number' && v >= 0 ? v : 0)
+  return {
+    ideas,
+    platformId: str(raw.platformId),
+    postType: optStr(raw.postType),
+    count: n(raw.count) || 1,
+    done: n(raw.done),
+    total: n(raw.total),
+  }
 }
 
 /**
@@ -294,6 +349,7 @@ function idea(raw: unknown): IdeasResults['idea'] {
         ? {
             id: str(asset.id),
             title: str(asset.title),
+            type: optStr(asset.type),
             ...withPassage(asset),
           }
         : undefined,

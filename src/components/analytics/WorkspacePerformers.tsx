@@ -59,7 +59,7 @@ export function WorkspacePerformersView({
   const { view, isPending, isError, isUnavailable, isEmpty } = result
 
   if (isPending) {
-    return <Skeleton className="h-80 w-full max-w-content mx-auto" />
+    return <Skeleton className="h-80 w-full max-w-content" />
   }
 
   if (isUnavailable) {

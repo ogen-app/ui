@@ -51,7 +51,7 @@ export function FailedRun({ run }: { run: DistillRun }) {
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-content flex-col gap-4 bg-primary px-6 py-6">
+    <section className="flex w-full max-w-content flex-col gap-4 bg-primary px-6 py-6">
       <header className="flex flex-col gap-2">
         <h2 className="flex items-center gap-2 font-display text-lg font-medium leading-6 tracking-tight">
           <WarningIcon aria-hidden className="size-5 shrink-0 text-warning" />
@@ -188,7 +188,7 @@ export function ClosedRun({ run }: { run: DistillRun }) {
       : null
 
   return (
-    <section className="mx-auto flex w-full max-w-content flex-col gap-3 bg-primary px-6 py-6">
+    <section className="flex w-full max-w-content flex-col gap-3 bg-primary px-6 py-6">
       <h2 className="flex items-center gap-2 font-display text-lg font-medium leading-6 tracking-tight">
         {committed && (
           <CheckCircleIcon

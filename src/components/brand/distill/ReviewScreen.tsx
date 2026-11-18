@@ -277,7 +277,7 @@ function Summary({
   const questions = proposal.questions.length
 
   return (
-    <section className="mx-auto flex w-full max-w-content flex-col gap-3 bg-primary px-6 py-6">
+    <section className="flex w-full max-w-content flex-col gap-3 bg-primary px-6 py-6">
       <p className="text-base leading-6">
         {parts.length > 0
           ? t('brand.distill.summary.proposes', { from, what })

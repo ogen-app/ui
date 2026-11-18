@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { PostsToolbar } from '@/components/campaigns/PostsToolbar'
 import { WorkspaceCalendarHeaderActions } from '@/components/campaigns/calendar/CalendarHeaderActions'
+import { CalendarDrawer } from '@/components/campaigns/calendar/CalendarDrawer'
 import { MonthlyCalendar } from '@/components/campaigns/calendar/MonthlyCalendar'
 import { WeeklyCalendar } from '@/components/campaigns/calendar/WeeklyCalendar'
 import {
@@ -129,8 +130,8 @@ function WorkspaceCalendarView() {
   })
 
   return (
-    <PageContainer variant="fullFlex">
-      <div className="flex-1 min-h-0 flex flex-col">
+    <PageContainer variant="fullFlex" className="flex-row">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col">
         <PageHeader
           title={t('nav.calendar')}
           actions={<WorkspaceCalendarHeaderActions />}
@@ -158,6 +159,7 @@ function WorkspaceCalendarView() {
           </div>
         </div>
       </div>
+      <CalendarDrawer />
     </PageContainer>
   )
 }

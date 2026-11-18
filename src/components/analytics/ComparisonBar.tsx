@@ -55,7 +55,7 @@ export function ComparisonBar({
   return (
     <div
       className={cn(
-        'flex w-full max-w-content mx-auto flex-wrap items-center gap-x-3 gap-y-2',
+        'flex w-full max-w-content flex-wrap items-center gap-x-3 gap-y-2',
         className,
       )}
     >

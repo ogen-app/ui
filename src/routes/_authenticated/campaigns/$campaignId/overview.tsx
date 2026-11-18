@@ -50,22 +50,10 @@ function CampaignOverviewScreen() {
   if (!campaign) {
     return (
       <div className="flex flex-col gap-3 pb-10">
-        <Skeleton
-          variant="surface"
-          className="h-40 w-full max-w-content mx-auto"
-        />
-        <Skeleton
-          variant="surface"
-          className="h-64 w-full max-w-content mx-auto"
-        />
-        <Skeleton
-          variant="surface"
-          className="h-32 w-full max-w-content mx-auto"
-        />
-        <Skeleton
-          variant="surface"
-          className="h-14 w-full max-w-content mx-auto"
-        />
+        <Skeleton variant="surface" className="h-40 w-full max-w-content" />
+        <Skeleton variant="surface" className="h-64 w-full max-w-content" />
+        <Skeleton variant="surface" className="h-32 w-full max-w-content" />
+        <Skeleton variant="surface" className="h-14 w-full max-w-content" />
       </div>
     )
   }
@@ -149,25 +137,19 @@ function CampaignOverviewScreen() {
           campaignId={campaignId}
         />
       ) : postsFailed ? null : (
-        <Skeleton
-          variant="surface"
-          className="h-40 w-full max-w-content mx-auto"
-        />
+        <Skeleton variant="surface" className="h-40 w-full max-w-content" />
       )}
       {/* The failure strip stands in for Content, and for the rail too when the
           summaries can't cover it — so it names neither module. A posts fetch
           that failed while the summaries are in hand still leaves the rail
           standing above it. */}
       {postsFailed ? (
-        <p className="w-full max-w-content mx-auto text-sm text-tertiary-foreground">
+        <p className="w-full max-w-content text-sm text-tertiary-foreground">
           Couldn’t load this campaign’s posts — they’ll appear here once they’re
           reachable again.
         </p>
       ) : postsPending ? (
-        <Skeleton
-          variant="surface"
-          className="h-64 w-full max-w-content mx-auto"
-        />
+        <Skeleton variant="surface" className="h-64 w-full max-w-content" />
       ) : (
         <ContentModule campaign={campaign} posts={posts} />
       )}

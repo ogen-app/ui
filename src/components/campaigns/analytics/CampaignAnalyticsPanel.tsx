@@ -98,14 +98,8 @@ export function CampaignAnalyticsView({
         // Both stand for `OverviewCard`s, so they are drawn in the card's own
         // white rather than in grey — see `ui/skeleton`.
         <>
-          <Skeleton
-            variant="surface"
-            className="h-40 w-full max-w-content mx-auto"
-          />
-          <Skeleton
-            variant="surface"
-            className="h-64 w-full max-w-content mx-auto"
-          />
+          <Skeleton variant="surface" className="h-40 w-full max-w-content" />
+          <Skeleton variant="surface" className="h-64 w-full max-w-content" />
         </>
       ) : isUnavailable ? (
         <OverviewCard title="Engagement">

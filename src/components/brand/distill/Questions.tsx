@@ -104,7 +104,7 @@ export function GapQuestions({
   return (
     <section
       id="gap-questions"
-      className="relative mx-auto flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6"
+      className="relative flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6"
     >
       <Button
         variant="ghost"

@@ -15,10 +15,10 @@ import {
 } from '@/lib/postGoal'
 import type { StrategyFormValues } from './schema'
 import { useTranslation } from 'react-i18next'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaignSeries } from '@/hooks/useSeries'
 import { seriesPlan } from '@/lib/seriesPlan'
 import { planLine } from '@/components/series/format'
+import { useFeatureFlag } from '@/config/featureFlags'
 
 /**
  * What the campaign's series already claim of its goal (CON-264).

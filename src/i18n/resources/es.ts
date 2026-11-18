@@ -326,6 +326,7 @@ export const es: Translation = {
     closeSidebar: 'Cerrar la barra lateral',
     switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
+    /** The bar's "Strategy › Voice" once a page's header has scrolled away. */
     scope: {
       all: 'Todas las campañas',
       switch: 'Cambiar de campaña',
@@ -645,7 +646,7 @@ export const es: Translation = {
     anywhere: 'En cualquier lugar',
     inCampaign: 'En esta campaña',
     campaignNote:
-      'Estrategia, Publicaciones y Calendario tienen teclas dentro de una campaña.',
+      'Publicaciones y Calendario tienen teclas dentro de una campaña.',
     thisCampaign: 'de esta campaña',
     foot: '<k1>?</k1> o <k2>esc</k2> para cerrar',
     sequence: '{{first}}, luego {{second}}',
@@ -654,7 +655,6 @@ export const es: Translation = {
       assets: 'Recursos',
       campaigns: '<k>C</k>ampañas',
       analytics: 'A<k>n</k>alíticas',
-      foundation: '<k>F</k>undamentos',
       workspaceSettings: 'Ajuste<k>s</k> del espacio',
       settings: 'Ajuste<k>s</k>',
       strategy: 'Es<k>t</k>rategia',
@@ -1099,6 +1099,8 @@ export const es: Translation = {
         created_not_preset: 'añadidas <v>{{values}}</v>',
         text: 'que mencionan <v>«{{values}}»</v>',
         used: '<v>{{values}}</v>',
+        ids_one: 'limitadas a <v>esta</v>',
+        ids_other: 'limitadas a <v>estas {{formatted}}</v>',
       },
       origin: {
         asset_analysis: 'de documentos',
@@ -1195,10 +1197,6 @@ export const es: Translation = {
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
     },
-    page: {
-      campaignTitle: 'Ideas de {{campaign}}',
-      untitledCampaign: 'Campaña sin título',
-    },
     loadFailed: 'No se pudieron cargar las ideas',
     saveFailed: 'No se pudo guardar. Tus ideas no han cambiado.',
   },
@@ -1217,9 +1215,24 @@ export const es: Translation = {
     rhythm: {
       occasional: 'Ocasional',
       perWeek_one: 'Una vez por semana',
-      perWeek_other: '{{count}} veces por semana',
+      perWeek_other: '{{formatted}} veces por semana',
       perMonth_one: 'Una vez al mes',
-      perMonth_other: '{{count}} veces al mes',
+      perMonth_other: '{{formatted}} veces al mes',
+      perWeeksEvery_one: 'Una vez cada {{every}} semanas',
+      perWeeksEvery_other: '{{formatted}} veces cada {{every}} semanas',
+      perMonthsEvery_one: 'Una vez cada {{every}} meses',
+      perMonthsEvery_other: '{{formatted}} veces cada {{every}} meses',
+      everyDay: 'Cada {{day}}',
+      everyWeeksOn_one: 'Cada semana, el {{day}}',
+      everyWeeksOn_other: 'Cada {{formatted}} semanas, el {{day}}',
+      everyWeekOption_one: 'cada semana',
+      everyWeekOption_other: 'cada {{formatted}} semanas',
+      everyMonthOption_one: 'cada mes',
+      everyMonthOption_other: 'cada {{formatted}} meses',
+      anyDay: 'cualquier día',
+      onDay: 'el {{day}}',
+      everyLabel: 'Cada cuánto',
+      dayLabel: 'Qué día',
     },
     supply: {
       selfOption: 'Aporta su propio tema',
@@ -1228,13 +1241,14 @@ export const es: Translation = {
       ideaLine: 'Espera una idea',
     },
     usage: '{{drafts}} en borrador, {{published}} publicadas',
+    mark: 'Hecha para la serie «{{name}}»',
     plan: {
       noGoal:
         'Esta campaña no tiene objetivo de publicaciones, así que no hay nada con lo que comparar estas series.',
       ok: '{{total}} publicaciones previstas · {{claimed}} de series · {{open}} libres',
       over: '{{total}} publicaciones previstas y las series reclaman {{claimed}}: {{over}} más de las que la campaña tiene previstas.',
       undated:
-        '{{total}} publicaciones por período · {{claimed}} de series. Define las fechas de la campaña para planificar todo el recorrido.',
+        '{{total}} publicaciones por período. Define las fechas de la campaña y las series reservarán sus huecos.',
     },
     campaign: {
       title: 'Series',
@@ -1248,8 +1262,8 @@ export const es: Translation = {
       promoteHint:
         'Lleva esta serie a la biblioteca del espacio de trabajo para que otras campañas también puedan ejecutarla.',
       remove: 'Dejar de ejecutar {{name}}',
-      claim_one: '{{count}} publicación',
-      claim_other: '{{count}} publicaciones',
+      claim_one: '{{formatted}} publicación',
+      claim_other: '{{formatted}} publicaciones',
       claimsNone: 'sin huecos fijos',
     },
     detail: {
@@ -1582,6 +1596,7 @@ export const es: Translation = {
     statusColourAlways:
       'El color de estado del borde izquierdo de la tarjeta siempre se muestra.',
     notAPublishingDay: 'No es un día de publicación',
+    seriesDay: 'Una serie publica este día',
     showDay: 'Mostrar {{day}}',
 
     field: {
@@ -1616,6 +1631,24 @@ export const es: Translation = {
 
     notScheduled: 'Sin programar',
     notScheduledHint: 'Arrastra una publicación a un día para programarla.',
+    /**
+     * The Not scheduled panel's two groups: posts with an account to publish
+     * as, and the ones the schedule gate would refuse for want of one —
+     * folded away by default, with each row's reason in amber.
+     */
+    readyToSchedule: 'Listas para programar',
+    needsAccount: 'Necesitan una cuenta',
+    needsAccountHint:
+      'Todavía no tienen cuenta con la que publicar. Asigna una en cada publicación o conecta una en Ajustes.',
+    /** When every undated post is in the second group. */
+    noneReady: 'Ninguna puede publicarse todavía: todas necesitan una cuenta.',
+    /** A row's reason, worded as what to do about it. */
+    accountGap: {
+      noPlatform: 'Elige una plataforma',
+      noAccount: 'Conecta una cuenta',
+      chooseAccount: 'Elige una cuenta',
+      accountGone: 'Cuenta desconectada',
+    },
     justWritten: 'RECIÉN ESCRITA',
     fromIdeas_one: 'de {{formatted}} idea',
     fromIdeas_other: 'de {{formatted}} ideas',
@@ -2030,6 +2063,10 @@ export const es: Translation = {
       revisePost: {
         running: 'Reescribiendo la publicación',
         done: 'Reescrita la publicación',
+      },
+      setPostVoice: {
+        running: 'Cambiando la voz de la publicación',
+        done: 'Cambiada la voz de la publicación',
       },
       listSavedViews: {
         running: 'Buscando los grupos inteligentes',
@@ -2889,10 +2926,6 @@ export const es: Translation = {
       },
       rhythm: {
         occasional: 'De vez en cuando',
-        week_one: 'Una vez por semana',
-        week_other: '{{formatted}} veces por semana',
-        month_one: 'Una vez al mes',
-        month_other: '{{formatted}} veces al mes',
       },
       run: {
         running: '{{series}} se publica en {{campaign}}',
@@ -2979,6 +3012,12 @@ export const es: Translation = {
       conflicts_one: '{{formatted}} conflicto',
       conflicts_other: '{{formatted}} conflictos',
       sourcesReady: '{{ready}} de {{attached}} fuentes listas',
+      goalWeek_one: '{{formatted}} por semana',
+      goalWeek_other: '{{formatted}} por semana',
+      goalMonth_one: '{{formatted}} al mes',
+      goalMonth_other: '{{formatted}} al mes',
+      posts_one: '{{formatted}} publicación',
+      posts_other: '{{formatted}} publicaciones',
       sources: {
         word: 'FUENTES',
         title: '{{ready}} de {{attached}} listas',
@@ -2995,6 +3034,20 @@ export const es: Translation = {
         calendar_other: 'Arreglar {{formatted}} problemas del calendario',
         sources_one: '{{formatted}} fuente sin preparar',
         sources_other: '{{formatted}} fuentes sin preparar',
+      },
+      starterSays: {
+        fill_one:
+          'Redacta {{formatted}} publicación para {{period}}, el hueco que queda en este período del objetivo.',
+        fill_other:
+          'Redacta {{formatted}} publicaciones para {{period}}, los huecos que quedan en este período del objetivo.',
+        draft_one:
+          'Redacta {{formatted}} publicación para alcanzar el objetivo de la campaña.',
+        draft_other:
+          'Redacta {{formatted}} publicaciones para alcanzar el objetivo de la campaña.',
+        calendar:
+          'Revisa los problemas del calendario de la campaña y arréglalos.',
+        sources:
+          '¿Qué fuentes de la campaña no están listas para escribir con ellas, y por qué?',
       },
     },
 
@@ -3095,7 +3148,12 @@ export const es: Translation = {
       restoreFailed: 'No se pudo recuperar. Inténtalo de nuevo.',
       fixed: 'Arreglado: {{fix}}',
       fixedChose: 'Arreglado: {{fix}} · {{choice}}',
+      fixedSince: 'Arreglado desde entonces: {{fix}}',
+      fixedSinceMoved: 'Arreglado desde entonces: movido al {{when}}',
       fixing: 'Arreglando…',
+      assist: 'ARREGLAR CON EL ASISTENTE',
+      orAssist: 'o arréglalo con el asistente',
+      fromIdea: 'Todo de «{{title}}»',
       back: 'VOLVER A LOS ARREGLOS',
       readAt: 'Leído el {{when}}.',
       checkAgain: 'REVISAR DE NUEVO',
@@ -3489,6 +3547,7 @@ export const es: Translation = {
     ideas: {
       untitled: 'Idea sin título',
       open: 'ABRIR',
+      openAll: 'ABRIR TODAS',
       noDate: 'sin fecha',
       backOn: 'vuelve el {{day}}',
       more_one: 'y {{formatted}} más',
@@ -3500,6 +3559,8 @@ export const es: Translation = {
         word: 'Encontradas',
         title_one: '{{formatted}} idea',
         title_other: '{{formatted}} ideas',
+        titleNamed_one: '{{formatted}} idea {{clauses}}',
+        titleNamed_other: '{{formatted}} ideas {{clauses}}',
         none: 'Ninguna idea coincide',
         ofPile: 'de {{total}} · {{pile}}',
         show: 'MOSTRAR EN PANTALLA',
@@ -3544,6 +3605,8 @@ export const es: Translation = {
         one: 'Borrador',
         writing: 'Redactando',
         writingNth: 'Borrador {{n}} de {{total}}',
+        writingIdeaOn: '{{ideas}} · {{platform}}',
+        writingIdea: '{{ideas}}',
         title_one: '{{formatted}} publicación',
         title_other: '{{formatted}} publicaciones',
         fromIdeas_one: '{{drafts}} a partir de {{formatted}} idea',
@@ -3664,6 +3727,19 @@ export const es: Translation = {
         unversioned:
           'No se pudo guardar la reescritura como versión, así que el historial de la publicación no tiene copia de ella',
       },
+      voiceChanged: {
+        word: 'VOZ CAMBIADA',
+        title: 'Voz de la publicación cambiada',
+        fromTo: '{{from}} → {{to}}',
+        fromToCampaign: '{{from}} → {{to}}, la voz de la campaña',
+        to: 'Ahora con la voz {{to}}',
+        toCampaign: 'Ahora con la voz {{to}}, la de la campaña',
+        campaign: 'Ahora con la voz de la campaña',
+        ownUnnamed: 'Ahora con una voz propia',
+        copyKept:
+          'El texto se queda como está; las revisiones y reescrituras lo leen con esta voz',
+        open: 'ABRIR',
+      },
       converted: {
         word: 'Convertidas',
         title_one: '{{formatted}} publicación cambió de tipo',
@@ -3675,6 +3751,10 @@ export const es: Translation = {
           media: 'los archivos',
         },
         still: 'Sigue programada el {{when}}',
+        passes: 'Cumple las reglas de {{type}} en {{platform}}',
+        passesAny: 'Cumple las reglas del nuevo tipo',
+        breaks: 'Aún incumple: {{rules}}',
+        breaksAny: 'Aún incumple las reglas del nuevo tipo',
       },
       unscheduled: {
         word: 'Desprogramada',
@@ -3705,6 +3785,11 @@ export const es: Translation = {
         title_one: '{{formatted}} publicación eliminada',
         title_other: '{{formatted}} publicaciones eliminadas',
       },
+      lines: {
+        label: 'Líneas cambiadas',
+        removed: 'Eliminado: ',
+        added: 'Añadido: ',
+      },
       review: {
         word: 'Revisión',
         none: 'El brief y las publicaciones coinciden',
@@ -3720,6 +3805,10 @@ export const es: Translation = {
         noneOpen_other: 'Nada pendiente · {{formatted}} ignorados',
         inPost: 'En {{title}}.',
         inBrief: '{{aspect}}.',
+        quoted: '«{{quote}}»',
+        fixPrompt: 'Arregla este hallazgo de la revisión.',
+        fromReview: 'De la revisión',
+        fromReviewQuoted: '«{{quote}}» — {{issue}}',
         from: {
           brief: 'Brief',
           posts: 'Publicaciones',
@@ -4224,6 +4313,7 @@ export const es: Translation = {
     columnPlatform: 'Plataforma',
     columnFormat: 'Formato',
     columnCampaign: 'Campaña',
+    columnSeries: 'Serie',
     columnPublishDate: 'Fecha de publicación',
     columnWhen: 'Cuándo',
 
@@ -5754,11 +5844,6 @@ export const es: Translation = {
         'Este espacio de trabajo aún no tiene voces ni audiencias. Se escriben una vez y todas las campañas se basan en ellas.',
       emptyShort: 'Este espacio de trabajo aún no tiene voces ni audiencias.',
       openBrand: 'Abrir Fundamentos',
-      alsoApplies:
-        'Los límites del espacio de trabajo también se aplican a todas las publicaciones de aquí, sea quien sea la voz que escriba. No se eligen por campaña y no se pueden anular.',
-      alsoAppliesEmpty:
-        'El espacio de trabajo no ha indicado ningún límite, así que nada está descartado: cualquier voz de aquí puede prometer lo que sea, con las palabras que sea.',
-      seeEverything: 'Ver todo aquello a partir de lo que escribe esta campaña',
       saveError: 'No se pudo guardar la voz de la campaña',
     },
 
@@ -6246,10 +6331,6 @@ export const es: Translation = {
     },
 
     overview: {
-      intro: {
-        title: 'A partir de qué escribe la app',
-        body: 'Las voces con las que escribe, a quién se dirige y lo que nunca puede afirmar. Se escribe una vez para el espacio de trabajo, y cada campaña y cada publicación lo heredan.',
-      },
       nothingReads: 'Todavía nada lee esto',
       unreadable: 'No se ha podido cargar lo que hay aquí.',
       stated: '{{count}} indicados',
@@ -6744,7 +6825,6 @@ export const es: Translation = {
       deleted_one: '{{formatted}} publicación eliminada',
       deleted_other: '{{formatted}} publicaciones eliminadas',
     },
-    title: 'Campañas',
     add: 'AÑADIR CAMPAÑA',
     error: 'No se pudieron cargar las campañas',
     untitled: 'esta campaña',
@@ -6763,6 +6843,21 @@ export const es: Translation = {
       spend: 'Presupuesto e idioma',
       removedByAssistant: '{{what}} quitado por el asistente',
       undoInThread: 'DESHACER está en la conversación',
+      timeline: {
+        empty:
+          'Todavía no hay campañas. Cada una que añadas se dibuja aquí junto a las demás, según sus fechas.',
+        undated: 'Sin fechas',
+        barLabel: '{{name}}, {{window}}',
+        windowAndRate: '{{window}} · {{rate}}',
+        perWeek_one: '{{formatted}} publicación a la semana',
+        perWeek_other: '{{formatted}} publicaciones a la semana',
+        perMonth_one: '{{formatted}} publicación al mes',
+        perMonth_other: '{{formatted}} publicaciones al mes',
+        noRate: 'Sin objetivo de publicaciones',
+        noPlatforms: 'Sin plataformas',
+        noVoice: 'Sin voz',
+        defaultVoice: '{{voice}} (predeterminada)',
+      },
     },
     type: {
       label: 'Tipo de campaña',
@@ -6838,7 +6933,6 @@ export const es: Translation = {
     },
     page: {
       title: 'Recursos',
-      campaignTitle: 'Recursos de {{campaign}}',
       add: {
         button: 'AÑADIR CONTENIDO',
         note: 'Escribir una nota',

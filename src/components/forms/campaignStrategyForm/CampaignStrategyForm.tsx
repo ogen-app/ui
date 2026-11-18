@@ -59,6 +59,7 @@ import { PostGoalCard } from './PostGoalCard'
 import { SchedulingCard } from './SchedulingCard'
 import { CampaignBrandCard } from '@/components/brand/CampaignBrandCard'
 import { CampaignSeriesCard } from '@/components/series/CampaignSeriesCard'
+import { FromTheWorkspace } from '@/components/strategy/FromTheWorkspace'
 import {
   strategyDefaultValues,
   strategySchema,
@@ -293,246 +294,258 @@ export function CampaignStrategyForm({ campaign }: Props) {
         <fieldset
           disabled={assistantRunning}
           className={cn(
-            'flex flex-col gap-8 pb-10 transition-opacity',
+            'flex flex-col gap-10 pb-10 transition-opacity',
             assistantRunning && 'opacity-60',
           )}
         >
-          {/* What the campaign says, first: every card under it is a
+          {/* Two groups, set apart by space alone: this campaign's own
+              commitments, then the Foundation as it has it. */}
+          <div className="flex flex-col gap-4">
+            {/* What the campaign says, first: every card under it is a
               constraint on how much of it goes out and where, and reads as
               bookkeeping without the claim it is serving. */}
-          <MessagingCard campaign={campaign} />
+            <MessagingCard campaign={campaign} />
 
-          <SettingsCard title={t('campaigns.strategy.commitment')}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-              <FormField
-                control={form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start date</FormLabel>
-                    <DatePicker value={field.value} onChange={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End date</FormLabel>
-                    <DatePicker value={field.value} onChange={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {/* The type used to own a card at the top of the page, which put
+            <SettingsCard title={t('campaigns.strategy.commitment')}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+                <FormField
+                  control={form.control}
+                  name="start_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start date</FormLabel>
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="end_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End date</FormLabel>
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* The type used to own a card at the top of the page, which put
                 the campaign's least changeable decision above its name. It
                 belongs with the rest of what the campaign *is* — stated, not
                 offered, because it picks the phase plan every post is written
                 against and switching it mid-campaign is something the product
                 means to restrict. */}
-              <FormField
-                control={form.control}
-                name="campaign_type_id"
-                render={({ field }) => (
-                  <FormItem className="lg:col-span-2">
-                    <FormLabel>{t('campaigns.type.label')}</FormLabel>
-                    {changingType ? (
-                      <div className="flex flex-col gap-3">
-                        <CampaignTypePicker
-                          types={types ?? []}
-                          value={field.value}
-                          onChange={(id) => {
-                            field.onChange(id)
-                            setChangingType(false)
-                          }}
-                          disabled={typesLoading}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="self-start"
-                          onClick={() => setChangingType(false)}
-                        >
-                          {t('campaigns.type.cancel')}
-                        </Button>
-                      </div>
-                    ) : (
-                      <CampaignTypeCard
-                        type={
-                          typeById(types, field.value) ?? campaign.campaign_type
-                        }
-                        action={
+                <FormField
+                  control={form.control}
+                  name="campaign_type_id"
+                  render={({ field }) => (
+                    <FormItem className="lg:col-span-2">
+                      <FormLabel>{t('campaigns.type.label')}</FormLabel>
+                      {changingType ? (
+                        <div className="flex flex-col gap-3">
+                          <CampaignTypePicker
+                            types={types ?? []}
+                            value={field.value}
+                            onChange={(id) => {
+                              field.onChange(id)
+                              setChangingType(false)
+                            }}
+                            disabled={typesLoading}
+                          />
                           <Button
                             type="button"
                             variant="ghost"
-                            size="sm"
-                            disabled={typesLoading || typeLocked}
-                            onClick={() => setChangingType(true)}
+                            className="self-start"
+                            onClick={() => setChangingType(false)}
                           >
-                            {t('campaigns.type.change')}
+                            {t('campaigns.type.cancel')}
                           </Button>
-                        }
-                      />
-                    )}
-                    {typeLocked && (
-                      <p className="text-sm text-secondary-foreground">
-                        {phasedPosts
-                          ? t('campaigns.type.locked', { count: phasedPosts })
-                          : t('campaigns.type.lockedUncounted')}
-                      </p>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </SettingsCard>
+                        </div>
+                      ) : (
+                        <CampaignTypeCard
+                          type={
+                            typeById(types, field.value) ??
+                            campaign.campaign_type
+                          }
+                          action={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              disabled={typesLoading || typeLocked}
+                              onClick={() => setChangingType(true)}
+                            >
+                              {t('campaigns.type.change')}
+                            </Button>
+                          }
+                        />
+                      )}
+                      {typeLocked && (
+                        <p className="text-sm text-secondary-foreground">
+                          {phasedPosts
+                            ? t('campaigns.type.locked', { count: phasedPosts })
+                            : t('campaigns.type.lockedUncounted')}
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </SettingsCard>
 
-          {/* Straight after the window and the type, because it is both of
+            {/* Straight after the window and the type, because it is both of
               them at once: the type's phases laid over the campaign's dates. */}
-          <CampaignPhasesCard
-            campaignId={campaign.id}
-            pending={phasesPending}
-          />
+            <CampaignPhasesCard
+              campaignId={campaign.id}
+              pending={phasesPending}
+            />
 
-          {/* How much the campaign should produce, then when it goes out. The
+            {/* How much the campaign should produce, then when it goes out. The
             post target used to sit in Advanced next to budget and language,
             where it read as trivia rather than as the rate the assistant plans
             against. */}
-          <PostGoalCard campaignId={campaign.id} />
+            <PostGoalCard campaignId={campaign.id} />
 
-          <SchedulingCard />
+            <SchedulingCard />
 
-          {/* The same control the messaging card's fields defer to, from the
-              same file: with Brand on, persona and tone are chosen here rather
-              than written above. */}
-          <CampaignBrandCard campaignId={campaign.id} />
-
-          {/* Under the brand card because it answers the next question in the
-              same sentence: what this campaign is written in, then what it
-              writes again and again. It was a band on the campaign's Foundation
-              page until that page became Assets (CON-305). Draws nothing with
-              the `series` flag off. */}
-          <CampaignSeriesCard campaign={campaign} />
-
-          <SettingsCard
-            title={
-              <>
-                <span className="truncate">
-                  {accountsEnabled
-                    ? 'Accounts & Post Types'
-                    : 'Platforms & Post Types'}
-                </span>
-                {/* After the heading, not before it: the dot comes and goes, and
+            <SettingsCard
+              title={
+                <>
+                  <span className="truncate">
+                    {accountsEnabled
+                      ? 'Accounts & Post Types'
+                      : 'Platforms & Post Types'}
+                  </span>
+                  {/* After the heading, not before it: the dot comes and goes, and
                   leading it would shift the title sideways as platforms are
                   added. Same warning tone as the summary line inside. */}
-                {noPlatforms && (
-                  <span
-                    className="size-2 shrink-0 rounded-full bg-warning"
-                    role="img"
-                    aria-label={
-                      accountsEnabled
-                        ? 'No accounts selected'
-                        : 'No platforms selected'
-                    }
-                  />
-                )}
-              </>
-            }
-          >
-            {removal && (
-              <p className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-accent bg-accent/5 px-3 py-2 text-sm text-foreground">
-                {t('campaigns.strategy.removedByAssistant', {
-                  what: removal.removed,
-                })}
-                <span className="text-[12.5px] text-secondary-foreground">
-                  {t('campaigns.strategy.undoInThread')}
-                </span>
-              </p>
-            )}
-            {accountsEnabled ? (
-              // Outside the form field: the account choice is stored beside the
-              // campaign rather than on it, and it writes `target_platforms`
-              // itself through `commitPlatforms`.
-              <AccountsControl
-                campaignId={campaign.id}
-                targetPlatforms={campaign.target_platforms}
-                onCommitPlatforms={commitPlatforms}
-              />
-            ) : (
-              <FormField
-                control={form.control}
-                name="target_platforms"
-                render={({ field }) => (
-                  <FormItem>
-                    <PlatformsControl
-                      value={field.value}
-                      onChange={field.onChange}
-                      onCommitPlatforms={commitPlatforms}
-                      before={removal?.before}
+                  {noPlatforms && (
+                    <span
+                      className="size-2 shrink-0 rounded-full bg-warning"
+                      role="img"
+                      aria-label={
+                        accountsEnabled
+                          ? 'No accounts selected'
+                          : 'No platforms selected'
+                      }
                     />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </SettingsCard>
+                  )}
+                </>
+              }
+            >
+              {removal && (
+                <p className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-accent bg-accent/5 px-3 py-2 text-sm text-foreground">
+                  {t('campaigns.strategy.removedByAssistant', {
+                    what: removal.removed,
+                  })}
+                  <span className="text-[12.5px] text-secondary-foreground">
+                    {t('campaigns.strategy.undoInThread')}
+                  </span>
+                </p>
+              )}
+              {accountsEnabled ? (
+                // Outside the form field: the account choice is stored beside the
+                // campaign rather than on it, and it writes `target_platforms`
+                // itself through `commitPlatforms`.
+                <AccountsControl
+                  campaignId={campaign.id}
+                  targetPlatforms={campaign.target_platforms}
+                  onCommitPlatforms={commitPlatforms}
+                />
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="target_platforms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <PlatformsControl
+                        value={field.value}
+                        onChange={field.onChange}
+                        onCommitPlatforms={commitPlatforms}
+                        before={removal?.before}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </SettingsCard>
 
-          {/* What it costs and what language it speaks: commitments too, and
+            {/* What it costs and what language it speaks: commitments too, and
               the reason they are last rather than on the settings page —
               budget is a spend the campaign is planned against, not a property
               of the record like its name. */}
-          <SettingsCard title={t('campaigns.strategy.spend')}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-              <FormField
-                control={form.control}
-                name="budget"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Budget</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        placeholder="e.g. 5000"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="currency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Currency</FormLabel>
-                    <FormControl>
-                      <Input placeholder="USD" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Language</FormLabel>
-                    <FormControl>
-                      <Input placeholder="en" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </SettingsCard>
+            <SettingsCard title={t('campaigns.strategy.spend')}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+                <FormField
+                  control={form.control}
+                  name="budget"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Budget</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="e.g. 5000"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="currency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Currency</FormLabel>
+                      <FormControl>
+                        <Input placeholder="USD" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Language</FormLabel>
+                      <FormControl>
+                        <Input placeholder="en" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </SettingsCard>
+          </div>
+
+          {/* Last, because it is the half of Strategy this campaign shares
+              with every other: the Foundation, which Strategy is for all
+              campaigns. What it chooses from it first, then what it reads. */}
+          <FromTheWorkspace>
+            {/* The same control the messaging card's fields defer to: with
+                Brand on, persona and tone are chosen here rather than written
+                above. */}
+            <CampaignBrandCard campaignId={campaign.id} />
+            {/* What this campaign is written in, then what it writes again and
+                again. Draws nothing with the `series` flag off. */}
+            <CampaignSeriesCard campaign={campaign} />
+          </FromTheWorkspace>
         </fieldset>
       </form>
     </Form>

@@ -92,7 +92,7 @@ function PostPage() {
   // is. Inside the editor it would drop for as long as the document takes to
   // arrive — the rail would fall back to the assistant and animate its width
   // twice on the way to a post nobody had opened before.
-  usePanelScope('post', campaignId)
+  usePanelScope('post')
   const {
     doc,
     changeDoc,
@@ -837,7 +837,7 @@ function PostEditorSurface({
           />
           <div
             className={cn(
-              'flex flex-col items-center gap-3 relative z-0',
+              'flex flex-col items-start gap-3 relative z-0 px-3 lg:px-6',
               PAGE_ACTION_BAR_INSET,
             )}
           >

@@ -150,12 +150,10 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
     id: 'series',
     icon: RepeatIcon,
     tone: 'var(--brand-series)',
-    // Nothing reads a series yet — no generator takes one, and analytics cannot
-    // group by a column that does not exist. `[]` is the honest answer and the
-    // reason the flag is off: this section is a filing cabinet until the plan
-    // and the numbers consult it, which is exactly what CON-226 §9 says is
-    // worse than no section at all.
-    readBy: [],
+    // The content plan reserves each run's slots and writes its ideas to the
+    // series (CON-496). Analytics doesn't group by it yet. Offered once the
+    // `series` flag is on.
+    readBy: ['plan'],
     shown: isFeatureEnabled('series'),
   },
   {

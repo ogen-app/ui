@@ -2,49 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { EMPTY_PANEL_MEMORY } from '@/lib/rightPanel'
 import { selectActivePanel, useSettingsStore } from './settingsStore'
 
-/**
- * The panel context — which screen is under the right sidebar, and which
- * campaign it is about.
- *
- * The campaign is deliberately sticky, so a panel fades out with its data
- * instead of vanishing mid-transition when the screen unmounts. What that
- * stickiness must *not* survive is the next screen: the workspace calendar
- * claims the same `calendar` scope with no campaign at all, and inheriting the
- * last one would have its not-scheduled panel list one campaign's strays under
- * a grid showing every campaign's.
- */
-beforeEach(() => {
-  useSettingsStore.setState({ scope: null, campaignId: null })
-})
-
-describe('setPanelScope', () => {
-  const set = useSettingsStore.getState().setPanelScope
-
-  it('keeps the campaign while nothing is claiming the scope', () => {
-    set('calendar', 'c-1')
-    set(null)
-    expect(useSettingsStore.getState()).toMatchObject({
-      scope: null,
-      campaignId: 'c-1',
-    })
-  })
-
-  it('clears the campaign when a screen claims the scope without one', () => {
-    set('calendar', 'c-1')
-    set('calendar')
-    expect(useSettingsStore.getState()).toMatchObject({
-      scope: 'calendar',
-      campaignId: null,
-    })
-  })
-
-  it('replaces it when the next screen names a different campaign', () => {
-    set('calendar', 'c-1')
-    set('post', 'c-2')
-    expect(useSettingsStore.getState().campaignId).toBe('c-2')
-  })
-})
-
 describe('toggleRightRail', () => {
   beforeEach(() => {
     useSettingsStore.setState({
@@ -62,13 +19,13 @@ describe('toggleRightRail', () => {
   })
 
   it('hides an open rail and brings back what it showed', () => {
-    useSettingsStore.setState({ scope: 'calendar' })
-    useSettingsStore.getState().openRightPanel('calendarSettings')
+    useSettingsStore.setState({ scope: 'post' })
+    useSettingsStore.getState().openRightPanel('postQuality')
     toggle()
     expect(active()).toBeNull()
     expect(useSettingsStore.getState().rightRailHidden).toBe(true)
     toggle()
-    expect(active()).toBe('calendarSettings')
+    expect(active()).toBe('postQuality')
   })
 
   it('shows the rail again when a panel is opened while hidden', () => {
@@ -84,5 +41,45 @@ describe('toggleRightRail', () => {
     useSettingsStore.getState().closeRightPanel()
     toggle()
     expect(active()).toBe('assistant')
+  })
+})
+
+describe('the calendar drawer', () => {
+  beforeEach(() => {
+    useSettingsStore.setState({
+      scope: null,
+      rightRailHidden: false,
+      panelMemory: { assistantOpen: true, scoped: {} },
+      calendarDrawer: null,
+    })
+  })
+  const drawer = () => useSettingsStore.getState().calendarDrawer
+
+  it('opens beside the assistant rather than in its place', () => {
+    useSettingsStore.getState().toggleCalendarDrawer('notScheduled')
+    expect(drawer()).toBe('notScheduled')
+    expect(selectActivePanel(useSettingsStore.getState())).toBe('assistant')
+  })
+
+  it('switches panels, and closes on the one already showing', () => {
+    const { toggleCalendarDrawer } = useSettingsStore.getState()
+    toggleCalendarDrawer('notScheduled')
+    toggleCalendarDrawer('calendarSettings')
+    expect(drawer()).toBe('calendarSettings')
+    toggleCalendarDrawer('calendarSettings')
+    expect(drawer()).toBeNull()
+  })
+
+  it('stays open when asked to open what is showing', () => {
+    useSettingsStore.getState().openCalendarDrawer('notScheduled')
+    useSettingsStore.getState().openCalendarDrawer('notScheduled')
+    expect(drawer()).toBe('notScheduled')
+  })
+
+  it('is left alone by the rail', () => {
+    useSettingsStore.getState().openCalendarDrawer('notScheduled')
+    useSettingsStore.getState().closeRightPanel()
+    useSettingsStore.getState().toggleRightRail()
+    expect(drawer()).toBe('notScheduled')
   })
 })

@@ -90,14 +90,14 @@ function Campaigns() {
   }
 
   // One scroll container owning the sticky header, the same shell as Overview
-  // and Settings — cards pass under the header's gradient instead of stopping
-  // at it. The header itself does not fade: this is the list you steer from,
-  // so "Campaigns" and ADD CAMPAIGN stay legible however far you scroll.
+  // and Settings. No large title: this is the list you steer from, so its
+  // name and ADD CAMPAIGN stay in the header however far you scroll. It is the
+  // Overview row with no campaign chosen, and is titled as the rail names it.
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="h-0 grow overflow-y-auto flex flex-col">
         <PageHeader
-          title={pick ? t(`nav.campaign.${pick}`) : t('campaigns.title')}
+          title={pick ? t(`nav.campaign.${pick}`) : t('nav.campaign.overview')}
           actions={
             <Button onClick={create} size="lg">
               <PlusIcon className="size-4" />

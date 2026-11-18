@@ -29,14 +29,14 @@ import {
  * with no workspace counterpart, or a module up there with nothing down here,
  * is the thing to notice and fix rather than to add.
  *
- * Strategy is the one deliberate exception: a campaign commits to a window, a
- * rate and a spend, and a workspace commits to nothing, so there is no row it
- * could narrow from. The exception in the other direction is Foundation, which
- * is level 0's and has no row here: a campaign does not keep voices or
- * guardrails of its own, it points at the workspace's, and that pointing is a
- * card on Strategy (`CampaignBrandCard`). The row that used to sit here was
- * this campaign's documents wearing Foundation's name, and they are Assets
- * now.
+ * Strategy narrows from the workspace's Foundation: for all campaigns it is
+ * the voices, audiences, guardrails, facts and series every campaign writes
+ * under, with the campaigns on one timeline; for one campaign it is what that
+ * campaign commits to — a window, a rate, channels, a spend — with what it
+ * takes from the Foundation chosen or read beside it. They used to be the two
+ * exceptions to the rule above, Strategy with no workspace row and Foundation
+ * with no campaign row, and the pair of them was one place seen from both
+ * levels.
  *
  * Labels are catalogue keys rather than strings — `t` is only available inside
  * a component, and a constant built at import time would freeze whichever
