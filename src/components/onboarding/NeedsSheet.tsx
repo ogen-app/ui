@@ -41,9 +41,11 @@ const SEGMENT_TONE: Record<NeedLevel, string> = {
  * `blank` is the first screen's sheet: nothing is known yet, so it holds only
  * the name as it is typed, over grey bars where the needs will go.
  *
- * On a wide screen the sheet runs the full height of the step beside it, and
- * what it says stays in view while a long step scrolls — held below the
- * sticky progress bar, at the page's own top gap.
+ * On a wide screen the whole sheet, edge and all, stays in view while a long
+ * step scrolls, 16px below the sticky progress bar. It is as tall as what it
+ * says and no taller — a sheet stretched to a long step and pinned inside its
+ * own edge left an empty band above the name once the page moved. A short step
+ * grows to the sheet's height instead, so the columns still end on one line.
  */
 export function NeedsSheet({
   name,
@@ -75,8 +77,8 @@ export function NeedsSheet({
   const enough = needs.filter((n) => n.level === 'enough').length
 
   return (
-    <section className={cn(SURFACE, 'flex flex-1 flex-col')}>
-      <div className="flex flex-col lg:sticky lg:top-24">
+    <section className={cn(SURFACE, 'flex flex-col lg:sticky lg:top-18')}>
+      <div className="flex flex-col">
         <div className={cn(SURFACE_HEAD, 'gap-3 px-5')}>
           <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-secondary">
             {favicon ? (
