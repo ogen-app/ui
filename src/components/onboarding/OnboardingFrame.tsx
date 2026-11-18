@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Logo } from '@/components/Logo'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { Button } from '@/components/ui/button'
+import { ZIndex } from '@/config/zIndex'
 import { cn } from '@/lib'
 import {
   ONBOARDING_STAGES,
@@ -50,7 +51,10 @@ export function OnboardingFrame({
     // so a long step overflowed it and the grey page ended mid-scroll. Setup
     // grows with its step instead.
     <PageContainer variant="fullscreen" className="h-auto bg-secondary">
-      <header className="flex h-14 shrink-0 items-center gap-4 border-b border-quaternary bg-primary px-4 lg:px-6">
+      <header
+        className="sticky top-0 flex h-14 shrink-0 items-center gap-4 border-b border-quaternary bg-primary px-4 lg:px-6"
+        style={{ zIndex: ZIndex.pageHeader }}
+      >
         <Logo className="size-7 shrink-0" />
         <nav aria-label={t('onboarding.progress')} className="min-w-0 flex-1">
           <ol className="flex items-center gap-1 overflow-x-auto">

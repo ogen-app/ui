@@ -42,7 +42,8 @@ const SEGMENT_TONE: Record<NeedLevel, string> = {
  * the name as it is typed, over grey bars where the needs will go.
  *
  * On a wide screen the sheet runs the full height of the step beside it, and
- * what it says stays in view while a long step scrolls.
+ * what it says stays in view while a long step scrolls — held below the
+ * sticky progress bar, at the page's own top gap.
  */
 export function NeedsSheet({
   name,
@@ -75,7 +76,7 @@ export function NeedsSheet({
 
   return (
     <section className={cn(SURFACE, 'flex flex-1 flex-col')}>
-      <div className="flex flex-col lg:sticky lg:top-10">
+      <div className="flex flex-col lg:sticky lg:top-24">
         <div className={cn(SURFACE_HEAD, 'gap-3 px-5')}>
           <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-secondary">
             {favicon ? (
