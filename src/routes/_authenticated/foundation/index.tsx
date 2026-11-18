@@ -66,7 +66,7 @@ function BrandOverviewPage() {
           scrollHideDelay={350}
         >
           <PageHeader title={t('nav.campaign.strategy')} scrollAway />
-          <PageColumns aside={<CampaignTimeline />}>
+          <PageColumns aside={<CampaignTimeline />} stickyAside>
             <BrandOverview
               brand={fetched(brand)}
               facts={facts}

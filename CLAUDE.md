@@ -1239,8 +1239,13 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
     full width, when the page is too narrow. Each column spaces its own cards,
     so pass the cards, not a wrapper. `masonry` flows the main column's cards
     into as many columns as fit — only for peer cards with no order (the
-    Foundation hub), because masonry reads down each column first. It carries
-    the page's gutters. Strategy for all campaigns.
+    Foundation hub), because masonry reads down each column first.
+    `stickyAside` keeps the side column on screen while the main one is read
+    — under a `scrollAway` header only, since it pins 16px from the top — and
+    one taller than the screen is never cut off or given its own scroll: it
+    rides up until its foot shows, by the asset page's rule
+    (`useStickyColumns`). It carries the page's gutters. Strategy for all
+    campaigns, with its timeline sticky.
   - **`PageGrid` — a dashboard.** Cards in rows, each in a `GridCell` asking
     for a named share: `full`, `wide` (⅔), `half`, `narrow` (⅓) of a six-track
     grid from 60rem; from 40rem every share short of `full` is a half, so a
