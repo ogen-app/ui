@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import {
   CaretRightIcon,
+  CheckCircleIcon,
   CheckIcon,
   CircleDashedIcon,
   DotsThreeIcon,
@@ -1142,11 +1143,13 @@ function TargetLink({
 
 /**
  * A campaign with no dates has no time to place it in, so the left column is
- * the three things that make one, drawn as Brand's rows are: a tick, the
- * step, what it is for. Every open step offers the same pair under it — do it
- * yourself, or ask Ogen — and only the first one still open is drawn dark,
- * because that is the next thing to do. Steps already done keep their row and
- * lose their buttons, so the card reads as progress.
+ * the three things that make one, numbered because they are done in order.
+ * Each step is a row like any other on the page: the whole row goes where the
+ * step is done (Strategy for the dates and the channels, the posts for the
+ * first post), with the caret saying so. Under an open step sits the same
+ * pair — do it yourself, or ask Ogen — and only the first step still open is
+ * drawn dark, because that is the next thing to do. Steps already done are
+ * ticked and struck rather than hidden, so the card reads as progress.
  */
 function SetupCard({
   steps,
@@ -1165,43 +1168,75 @@ function SetupCard({
       title={t('campaignOverview.setup.title')}
       campaignId={campaignId}
     >
-      <ul className="flex flex-col gap-2">
-        {steps.map((step) => (
-          <li key={step.id}>
+      <ol className="flex flex-col">
+        {steps.map((step, i) => (
+          <li key={step.id} className={DIVIDED}>
             <LineItem
+              asChild
               variant="entry"
-              indicator={{ kind: 'task', done: step.done }}
-              label={t(`campaignOverview.setup.${step.id}.title`)}
+              indicator={{
+                kind: 'custom',
+                node: <StepMark n={i + 1} done={step.done} />,
+              }}
+              label={
+                <span
+                  className={cn(
+                    step.done && 'text-secondary-foreground line-through',
+                  )}
+                >
+                  {t(`campaignOverview.setup.${step.id}.title`)}
+                </span>
+              }
               details={
                 <span className="text-secondary-foreground">
                   {t(`campaignOverview.setup.${step.id}.detail`)}
                 </span>
               }
-              meta={
-                !step.done && (
-                  <span className="mt-2 flex flex-wrap gap-2">
-                    <SetupAction
-                      step={step.id}
-                      primary={step.id === next}
-                      campaignId={campaignId}
-                      handlers={handlers}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlers.withOgen(step.id)}
-                    >
-                      <SparkleIcon />
-                      <span>{t('campaignOverview.setup.askOgen')}</span>
-                    </Button>
-                  </span>
-                )
-              }
-            />
+            >
+              <TargetLink
+                target={step.id === 'posts' ? 'posts' : 'strategy'}
+                campaignId={campaignId}
+              />
+            </LineItem>
+            {/* Outside the row's link — a button can't sit inside one — and
+                set in to the label's 28px. */}
+            {!step.done && (
+              <span className="flex flex-wrap gap-2 pb-3 pl-7">
+                <SetupAction
+                  step={step.id}
+                  primary={step.id === next}
+                  campaignId={campaignId}
+                  handlers={handlers}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlers.withOgen(step.id)}
+                >
+                  <SparkleIcon />
+                  <span>{t('campaignOverview.setup.askOgen')}</span>
+                </Button>
+              </span>
+            )}
           </li>
         ))}
-      </ul>
+      </ol>
     </Card>
+  )
+}
+
+/** A hairline between rows, none above the first. */
+const DIVIDED = 'border-t border-border first:border-t-0'
+
+/** A step's number in a ring, or the tick once it is done — 16px, the row's slot. */
+function StepMark({ n, done }: { n: number; done: boolean }) {
+  if (done) {
+    return <CheckCircleIcon weight="fill" className="size-4 text-positive" />
+  }
+  return (
+    <span className="flex size-4 items-center justify-center rounded-full border border-border text-[10px] leading-none font-semibold text-secondary-foreground tabular-nums">
+      {formatNumber(n)}
+    </span>
   )
 }
 
@@ -1268,7 +1303,7 @@ function LearnCard({
     >
       <ul className="flex flex-col">
         {points.map((p) => (
-          <li key={p}>
+          <li key={p} className={DIVIDED}>
             <LineItem
               variant="entry"
               indicator={{ kind: 'notification', tone: 'neutral' }}
