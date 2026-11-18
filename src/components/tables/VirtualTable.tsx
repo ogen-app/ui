@@ -130,7 +130,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
             // far has an empty header string.
             <div
               className={cn(
-                'inline-flex h-8 w-full items-center px-3 pt-[11px] pb-2',
+                'inline-flex h-8 w-full items-center px-3',
                 'text-xs font-normal text-tertiary-foreground',
                 alignment === 'right' && 'justify-end text-right',
                 alignment === 'center' && 'justify-center text-center',
