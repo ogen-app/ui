@@ -1981,8 +1981,6 @@ export const en = {
     band: {
       next: 'Next',
       nothingNext: 'Nothing scheduled',
-      timeline: 'Campaign timeline',
-      today: 'Today',
       published: '{{published}} of {{total}} published',
       scheduled_one: '{{formatted}} scheduled',
       scheduled_other: '{{formatted}} scheduled',
@@ -1995,10 +1993,6 @@ export const en = {
       empty: 'Nothing goes out this week.',
       /** Beside a post the user publishes by hand. */
       manual: 'MANUAL',
-    },
-    coverage: {
-      title: 'First two weeks',
-      summary: '{{covered}} of {{days}} publishing days have a post.',
     },
     lastWeek: {
       title: 'Last 7 days',

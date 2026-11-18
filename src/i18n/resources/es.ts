@@ -1587,8 +1587,6 @@ export const es: Translation = {
     band: {
       next: 'Siguiente',
       nothingNext: 'Nada programado',
-      timeline: 'Cronología de la campaña',
-      today: 'Hoy',
       published: '{{published}} de {{total}} publicadas',
       scheduled_one: '{{formatted}} programada',
       scheduled_other: '{{formatted}} programadas',
@@ -1600,11 +1598,6 @@ export const es: Translation = {
       today: 'Hoy',
       empty: 'No sale nada esta semana.',
       manual: 'MANUAL',
-    },
-    coverage: {
-      title: 'Primeras dos semanas',
-      summary:
-        '{{covered}} de {{days}} días de publicación tienen una publicación.',
     },
     lastWeek: {
       title: 'Últimos 7 días',

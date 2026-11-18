@@ -71,10 +71,11 @@ export type OverviewHandlers = {
 }
 
 /**
- * The campaign's front page, drawn from `overviewModel`: a band across the top
- * saying where the campaign is in its own time, then two columns — the left
- * about time (this week, the last seven days; the first week while planning;
- * the results once it is over), the right one list of what wants the user.
+ * The campaign's front page, drawn from `overviewModel`, in two columns. The
+ * left is about time: a band saying where the campaign is in its own time,
+ * then this week and the last seven days (the first week while planning, the
+ * results once it is over). The right, the page's full height, is one list of
+ * what wants the user.
  *
  * The rule for anything added here: a figure goes left, a thing to do goes
  * right, and anything that takes more than a glance to read belongs on the
@@ -120,17 +121,21 @@ export function CampaignOverview({
 
   return (
     <Frame>
-      <div className="flex h-full min-h-0 flex-col gap-3">
-        {model.band && (
-          <Band
-            stage={model.stage}
-            band={model.band}
-            campaignId={campaignId}
-            now={now}
-          />
-        )}
+      <div className="flex h-full min-h-0 flex-col">
         <Columns
-          left={<TimeColumn model={model} campaignId={campaignId} now={now} />}
+          left={
+            <>
+              {model.band && (
+                <Band
+                  stage={model.stage}
+                  band={model.band}
+                  campaignId={campaignId}
+                  now={now}
+                />
+              )}
+              <TimeColumn model={model} campaignId={campaignId} now={now} />
+            </>
+          }
           right={
             <NeedsList
               model={model}
@@ -138,7 +143,6 @@ export function CampaignOverview({
               handlers={handlers}
             />
           }
-          rightFirst
         />
       </div>
     </Frame>
@@ -167,30 +171,17 @@ function Frame({ children }: { children: ReactNode }) {
 const SURFACE = 'rounded-md border border-border bg-primary'
 
 /**
- * The two columns every stage shares — time on the left, what to do on the
- * right — each scrolling on its own once the container is wide enough to
- * hold both. `rightFirst` puts the to-do list on top when they stack.
+ * The two columns every stage shares — where the campaign is and its time on
+ * the left, what to do on the right, the full height of the page — each
+ * scrolling on its own once the container is wide enough to hold both.
  */
-function Columns({
-  left,
-  right,
-  rightFirst = false,
-}: {
-  left: ReactNode
-  right: ReactNode
-  rightFirst?: boolean
-}) {
+function Columns({ left, right }: { left: ReactNode; right: ReactNode }) {
   return (
     <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @4xl:grid-rows-[minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto">
         {left}
       </div>
-      <div
-        className={cn(
-          'flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto',
-          rightFirst && 'order-first @4xl:order-none',
-        )}
-      >
+      <div className="flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto">
         {right}
       </div>
     </div>
@@ -303,10 +294,10 @@ function Glyph({ icon, tone }: { icon: IconSvgElement; tone?: string }) {
 // --- The band ---------------------------------------------------------------
 
 /**
- * Where we are: the stage and the day, the window, what goes out next, then
- * the campaign as a line with today on it and its phases under it, and the
- * goal as a bar. Everything here is a glance; the goal's arithmetic is on
- * Strategy and the next post's neighbours are on the calendar.
+ * Where we are: the stage and the day, the window, what goes out next, and
+ * the goal as a bar. Everything here is a glance; the goal's arithmetic is on
+ * Strategy and the next post's neighbours are on the calendar. (The window as
+ * a line with its phases is off for now.)
  */
 function Band({
   stage,
@@ -379,58 +370,8 @@ function Band({
           </span>
         )}
       </div>
-      <Timeline band={band} />
       <GoalBar band={band} />
     </section>
-  )
-}
-
-/**
- * The window as a line, today as a tick on it, and the phases under it —
- * named, the current one in the foreground. Before the start the tick sits on
- * the left edge; after the end, on the right.
- */
-function Timeline({ band }: { band: OverviewBand }) {
-  const { t } = useTranslation()
-  const total = band.days
-  const span = (from: Date, to: Date) =>
-    (Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1) / total
-  return (
-    <div
-      className="flex flex-col gap-1.5"
-      aria-label={t('campaignOverview.band.timeline')}
-    >
-      <div className="relative h-1.5 rounded-full bg-secondary">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-quaternary-foreground"
-          style={{ width: `${band.todayAt * 100}%` }}
-        />
-        <div
-          className="absolute -top-1 h-3.5 w-0.5 -translate-x-1/2 bg-foreground"
-          style={{ left: `${band.todayAt * 100}%` }}
-          title={t('campaignOverview.band.today')}
-        />
-      </div>
-      {band.phases.length > 0 && (
-        <div className="flex gap-0.5 text-xs">
-          {band.phases.map((phase) => (
-            <div
-              key={phase.name + phase.start.toISOString()}
-              className={cn(
-                'min-w-0 truncate border-t-2 pt-1',
-                phase.current
-                  ? 'border-foreground text-foreground'
-                  : 'border-border text-tertiary-foreground',
-              )}
-              style={{ width: `${span(phase.start, phase.end) * 100}%` }}
-              title={phase.name}
-            >
-              {phase.name}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   )
 }
 
@@ -489,9 +430,6 @@ function TimeColumn({
           campaignId={campaignId}
           now={now}
         />
-      )}
-      {model.coverage && (
-        <CoverageBlock coverage={model.coverage} campaignId={campaignId} />
       )}
       {model.lastWeek && (
         <LastWeekBlock
@@ -619,62 +557,6 @@ function WeekPostRow({
         params={{ campaignId, postId: post.id }}
       />
     </LineItem>
-  )
-}
-
-/**
- * Before launch: the first two weeks as a strip of days, filled where a post
- * is planned. Days the campaign doesn't publish on are drawn faint, so a gap
- * on a Sunday the campaign skips doesn't read as a gap.
- */
-function CoverageBlock({
-  coverage,
-  campaignId,
-}: {
-  coverage: NonNullable<OverviewModel['coverage']>
-  campaignId: string
-}) {
-  const { t, i18n } = useTranslation()
-  const publishing = coverage.filter((c) => c.publishing)
-  const covered = publishing.filter((c) => c.posts > 0).length
-  return (
-    <Card
-      glyph={<SectionGlyph section="calendar" />}
-      title={t('campaignOverview.coverage.title')}
-      door={{ target: 'calendar' }}
-      campaignId={campaignId}
-    >
-      <div className="grid grid-cols-7 gap-1">
-        {coverage.map((c) => (
-          <div
-            key={c.date.toISOString()}
-            className={cn(
-              'flex h-10 flex-col items-center justify-center rounded-sm text-[11px]',
-              !c.publishing
-                ? 'text-quinary-foreground'
-                : c.posts > 0
-                  ? 'bg-positive/15 text-foreground'
-                  : 'bg-secondary text-tertiary-foreground',
-            )}
-            title={
-              formatDate(c.date, { dateStyle: 'full' }, i18n.language) ??
-              undefined
-            }
-          >
-            <span>
-              {formatDate(c.date, { weekday: 'narrow' }, i18n.language)}
-            </span>
-            <span className="font-medium">{c.posts > 0 ? c.posts : '·'}</span>
-          </div>
-        ))}
-      </div>
-      <p className="text-sm text-secondary-foreground">
-        {t('campaignOverview.coverage.summary', {
-          covered: formatNumber(covered),
-          days: formatNumber(publishing.length),
-        })}
-      </p>
-    </Card>
   )
 }
 
@@ -850,10 +732,10 @@ const MARK: Record<NeedsRow['mark'], LineItemIndicator> = {
 }
 
 /**
- * Everything that wants the user, in one list, worst first — one line a row
- * and its action on the right. A problem's other fixes and IGNORE are in the
- * row's menu: the row says what is wrong and offers the likeliest fix, and
- * the alternatives are a click further for the few who want them.
+ * Everything that wants the user, in one list, worst first. A problem's
+ * other fixes and IGNORE are in the row's menu: the row says what is wrong
+ * and offers the likeliest fix, and the alternatives are a click further for
+ * the few who want them.
  */
 function NeedsList({
   model,
@@ -907,7 +789,7 @@ function NeedsList({
       ) : (
         <ul className="flex flex-col">
           {rows.map((row) => (
-            <li key={row.id}>
+            <li key={row.id} className={DIVIDED}>
               <NeedsRowView
                 row={row}
                 campaignId={campaignId}
@@ -928,9 +810,13 @@ function NeedsList({
 const TEXT_ACTION =
   'cursor-pointer text-xs font-semibold tracking-[0.06em] text-foreground hover:text-secondary-foreground'
 
-const FIX_CLASS =
-  'max-w-40 shrink-0 cursor-pointer truncate border border-border px-2 py-0.5 text-[11px] font-semibold tracking-[0.06em] text-foreground uppercase hover:border-foreground'
-
+/**
+ * A warning is a row like the setup card's steps, in the same grammar: the
+ * sentence on the left, and either the whole row going where it is fixed
+ * (with the caret saying so), or the likeliest fix under it as a button —
+ * the setup card's outline buttons, beside the menu of the other fixes and
+ * IGNORE.
+ */
 function NeedsRowView({
   row,
   campaignId,
@@ -942,19 +828,77 @@ function NeedsRowView({
 }) {
   const { t } = useTranslation()
   const label = row.label ?? stageTodoLabel(t, row.todo)
+  const notes = [
+    row.idea && t('assistant.findings.fromIdea', { title: row.idea }),
+    row.more > 0 && t('campaignOverview.needs.more', counted(row.more)),
+  ].filter(Boolean)
+
+  // Two lines before it gives up: a problem's sentence is the whole of what
+  // it says, and the column is narrow.
+  const sentence = (
+    <span className="line-clamp-2 whitespace-normal" title={label}>
+      {label}
+    </span>
+  )
+  const details =
+    notes.length > 0 ? (
+      <span className="text-secondary-foreground">{notes.join(' · ')}</span>
+    ) : undefined
+
+  const action = row.action
+  if (action?.kind === 'section') {
+    return (
+      <LineItem
+        asChild
+        className="hover:bg-transparent"
+        indicator={MARK[row.mark]}
+        label={sentence}
+        details={details}
+      >
+        <TargetLink target={action.target} campaignId={campaignId} />
+      </LineItem>
+    )
+  }
+
+  const fix =
+    action?.kind === 'post' ? (
+      <Button variant="outline" size="sm" asChild>
+        <Link
+          to="/campaigns/$campaignId/posts/$postId"
+          params={{ campaignId, postId: action.postId }}
+          title={action.label}
+        >
+          <span className="truncate">{action.label}</span>
+        </Link>
+      </Button>
+    ) : action?.kind === 'ask' ? (
+      <Button
+        variant="outline"
+        size="sm"
+        title={action.fix}
+        onClick={() => runAction(action, handlers)}
+      >
+        <span className="truncate">{action.fix}</span>
+      </Button>
+    ) : action?.kind === 'add-post' ? (
+      <Button variant="outline" size="sm" onClick={handlers.addPost}>
+        <PlusIcon />
+        <span>{t('campaignOverview.todo.addPost')}</span>
+      </Button>
+    ) : null
   const menu =
     row.alternatives.length > 0 || row.ignoreKey ? (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="cursor-pointer rounded-sm p-0.5 text-tertiary-foreground hover:text-foreground"
+          <Button
+            variant="outline"
+            size="smIcon"
             aria-label={t('campaignOverview.needs.menu')}
           >
-            <DotsThreeIcon className="size-4" weight="bold" />
-          </button>
+            <DotsThreeIcon />
+          </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="start">
           {row.alternatives.map((alt, i) =>
             alt.action.kind === 'post' ? (
               <DropdownMenuItem key={i} asChild>
@@ -983,86 +927,21 @@ function NeedsRowView({
       </DropdownMenu>
     ) : null
 
-  const text = (
-    <span className="flex min-w-0 items-baseline gap-2 py-2 whitespace-normal">
-      {/* Two lines before it gives up: a problem's sentence is the whole of
-          what it says, and the column is narrow. */}
-      <span className="flex min-w-0 flex-col gap-1">
-        <span className="line-clamp-2" title={label}>
-          {label}
-        </span>
-        {row.idea && (
-          <span className="text-xs text-secondary-foreground">
-            {t('assistant.findings.fromIdea', { title: row.idea })}
-          </span>
-        )}
-      </span>
-      {row.more > 0 && (
-        <span className="shrink-0 text-xs text-tertiary-foreground">
-          {t('campaignOverview.needs.more', counted(row.more))}
-        </span>
-      )}
-    </span>
-  )
-
-  const action = row.action
-  // A row whose action is a place is that place, whole-row clickable, the
-  // way the rest of the app's line items are.
-  if (action?.kind === 'section') {
-    return (
-      <LineItem
-        asChild
-        indicator={MARK[row.mark]}
-        label={text}
-        trailing={
-          <span className="group-hover:text-primary-foreground">
-            {action.label ?? sectionLabel(t, action.target)}
-          </span>
-        }
-      >
-        <TargetLink target={action.target} campaignId={campaignId} />
-      </LineItem>
-    )
-  }
-
   return (
-    <LineItem
-      indicator={MARK[row.mark]}
-      chevron={false}
-      label={text}
-      trailing={
-        <span className="flex items-center gap-2">
-          {action?.kind === 'post' ? (
-            <Link
-              to="/campaigns/$campaignId/posts/$postId"
-              params={{ campaignId, postId: action.postId }}
-              className={FIX_CLASS}
-              title={action.label}
-            >
-              {action.label}
-            </Link>
-          ) : action?.kind === 'ask' ? (
-            <button
-              type="button"
-              className={FIX_CLASS}
-              title={action.fix}
-              onClick={() => runAction(action, handlers)}
-            >
-              {action.fix}
-            </button>
-          ) : action?.kind === 'add-post' ? (
-            <button
-              type="button"
-              className={FIX_CLASS}
-              onClick={handlers.addPost}
-            >
-              {t('campaignOverview.todo.addPost')}
-            </button>
-          ) : null}
+    <>
+      <LineItem
+        indicator={MARK[row.mark]}
+        chevron={false}
+        label={sentence}
+        details={details}
+      />
+      {(fix || menu) && (
+        <span className="flex min-w-0 flex-wrap gap-2 pb-3 pl-7">
+          {fix}
           {menu}
         </span>
-      }
-    />
+      )}
+    </>
   )
 }
 
@@ -1086,25 +965,6 @@ function stageTodoLabel(t: T, todo: NeedsRow['todo']): string {
       return t('campaignOverview.needs.archive')
     default:
       return ''
-  }
-}
-
-function sectionLabel(t: T, target: OverviewTarget): string {
-  switch (target) {
-    case 'calendar':
-      return t('campaignOverview.openCalendar')
-    case 'analytics':
-      return t('campaignOverview.openAnalytics')
-    case 'settings':
-      return t('campaignOverview.openSettings')
-    case 'strategy':
-      return t('campaignOverview.openStrategy')
-    case 'assets':
-      return t('campaignOverview.openAssets')
-    case 'posts':
-      return t('campaignOverview.openPosts')
-    case 'workspace-settings':
-      return t('campaignOverview.openSettings')
   }
 }
 
