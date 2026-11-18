@@ -169,8 +169,8 @@ function CampaignOverviewScreen() {
           )}
         </GridCell>
         {/* The same posts, seen by what they earned rather than by where they
-            are in the pipeline. The card reads its own flag and renders
-            nothing while `campaign-analytics` is off, which leaves no cell. */}
+            are in the pipeline. The card renders nothing for a workspace that
+            measures nothing, which leaves no cell. */}
         <GridCell span="full">
           <AnalyticsModule campaignId={campaignId} />
         </GridCell>

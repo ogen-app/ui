@@ -125,8 +125,9 @@ const DETAIL_PATHS: Partial<Record<ViewScreen, [string, string]>> = {
 /** Where a screen is, from what the action says about it. */
 export function destinationFor(action: UIAction): Destination | null {
   const { screen, campaignId, focus } = action
-  // A campaign's Analytics tab has no window of its own: the window lives on
-  // the dashboard, narrowed to that campaign.
+  // A window set from a campaign's Analytics tab lands on the workspace's
+  // dashboard narrowed to that campaign, where a change of campaign can land
+  // too; the applier's BACK and preset logic read that one address.
   if (action.type === 'set_window' && screen === 'campaign.analytics') {
     return { to: '/analytics', params: {} }
   }

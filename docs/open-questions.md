@@ -46,8 +46,7 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 | # | Waiting on | Ticket | Blocks |
 | --- | --- | --- | --- |
 | A4 | **Copy arrives as prose.** FR7 asks for `type` + `vars`; CON-242 ships a server-composed `title`/`body`. We render from `type` + `data` where we have a key and fall back to English where we don't — so a Spanish workspace reads English for any type this build predates. | CON-285 FR7 | — |
-| N2 | **A campaign dimension** on the dashboard reads. Until then the campaign screen sums one 100-row page client-side, which stops being complete past ~100 measured posts. | **CON-288** | `campaign-analytics` |
-| N3 | **A per-post series** — `GET /api/analytics/posts/:post_id`, returning per-metric running totals on an age-since-publish axis. **Written and in review** (ogen#130); re-test the client against it when it merges, per CLAUDE.md rule 4. | CON-250 | `campaign-analytics` |
+| N3 | **A per-post series** — `GET /api/analytics/posts/:post_id`, returning per-metric running totals on an age-since-publish axis. **Written and in review** (ogen#130); re-test the client against it when it merges, per CLAUDE.md rule 4. | CON-250 | — |
 | N7 | **`account.avatar_url` is declared and always empty**, `display_name` mirrors `username`. Rows fall back to the initial plus the platform badge and fill in on their own. | **CON-287** | — |
 | S1 | **A content-bank image has no thumbnail**, so the list's preview cell downloads the full file to draw it at 40px. Raised on the image service rather than as its own issue: it is one more output of a pipeline that already writes a normalized derivative. `assetPreview` prefers `thumbnail_url` already, so the client changes nothing when it lands. | CON-281 | — |
 | S3 | **Campaign-scoped assets**, with the workspace bank staying on as workspace-wide knowledge storage (CON-211). | CON-210 | — |

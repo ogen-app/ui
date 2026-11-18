@@ -1946,6 +1946,14 @@ export const en = {
      */
     noDate: 'No date',
 
+    /** The Analytics card: the tab's first row, over its default period. */
+    analytics: {
+      nothingMeasured: 'Nothing measured yet',
+      emptyBody:
+        'Once this campaign’s posts go out and the platforms report back, what they earn shows up here.',
+      error: 'Couldn’t load analytics.',
+    },
+
     /**
      * The calendar's problems, read from the server (CON-462). The fix is
      * asked of the campaign's assistant, which offers it to confirm.

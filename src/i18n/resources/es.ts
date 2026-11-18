@@ -1559,6 +1559,12 @@ export const es: Translation = {
     openAssets: 'ABRIR RECURSOS',
     openSettings: 'ABRIR AJUSTES',
     noDate: 'Sin fecha',
+    analytics: {
+      nothingMeasured: 'Aún no hay nada medido',
+      emptyBody:
+        'Cuando las publicaciones de esta campaña salgan y las plataformas informen, lo que consigan aparecerá aquí.',
+      error: 'No se pudieron cargar las analíticas.',
+    },
     problems: {
       ignore: 'IGNORAR',
       ignoreFailed: 'No se pudo ignorar ese problema. Inténtalo de nuevo.',
