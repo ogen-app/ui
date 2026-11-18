@@ -233,9 +233,6 @@ function NotScheduled({
       className="h-full"
       bodyClassName="flex-1"
     >
-      <p className="text-[12.5px] text-tertiary-foreground">
-        {t('calendar.notScheduledHint')}
-      </p>
       <div
         {...dropHandlers}
         className={cn(
@@ -259,36 +256,37 @@ function NotScheduled({
         ) : unscheduled.length === 0 ? (
           <PostsEmptyState variant="panel" onAddPost={onAddPost} />
         ) : (
-          // Compact rows rather than calendar cards (CON-485): a list to drag
+          // Small cards rather than calendar cards (CON-485): a pile to drag
           // from, the just written on top and tinted. Headed only when there
-          // is a second group to tell it from.
+          // is a second group to tell it from. No prose over either group:
+          // the heading names it, and each row says what it lacks.
           <div className="flex flex-col gap-2">
             {blocked.length === 0 ? (
-              <div className="flex flex-col border-t border-border">
+              <div className="flex flex-col gap-2">
                 {ready.map((post) => row(post))}
               </div>
-            ) : ready.length > 0 ? (
-              <Collapse
-                title={t('calendar.readyToSchedule')}
-                meta={formatNumber(ready.length)}
-                defaultOpen
-              >
-                <div className="flex flex-col border-t border-border">
-                  {ready.map((post) => row(post))}
-                </div>
-              </Collapse>
             ) : (
-              <p className="text-sm leading-5 text-tertiary-foreground">
-                {t('calendar.noneReady')}
-              </p>
+              ready.length > 0 && (
+                <Collapse
+                  title={t('calendar.readyToSchedule')}
+                  meta={formatNumber(ready.length)}
+                  defaultOpen
+                >
+                  <div className="flex flex-col gap-2">
+                    {ready.map((post) => row(post))}
+                  </div>
+                </Collapse>
+              )
             )}
             {blocked.length > 0 && (
               <Collapse
                 title={t('calendar.needsAccount')}
                 meta={formatNumber(blocked.length)}
-                description={t('calendar.needsAccountHint')}
+                // Open when it is all there is — folded away with nothing
+                // above it, the panel would read as empty.
+                defaultOpen={ready.length === 0}
               >
-                <div className="flex flex-col border-t border-border">
+                <div className="flex flex-col gap-2">
                   {blocked.map(({ post, gap }) => row(post, gap))}
                 </div>
               </Collapse>

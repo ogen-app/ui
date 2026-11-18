@@ -2093,8 +2093,6 @@ export const en = {
 
     /** The right rail's holding pen for posts with no date yet. */
     notScheduled: 'Not scheduled',
-    /** Under its title (CON-485): what the panel is for. */
-    notScheduledHint: 'Drag a post onto a day to schedule it.',
     /**
      * The Not scheduled panel's two groups: posts with an account to publish
      * as, and the ones the schedule gate would refuse for want of one —
@@ -2102,10 +2100,6 @@ export const en = {
      */
     readyToSchedule: 'Ready to schedule',
     needsAccount: 'Needs an account',
-    needsAccountHint:
-      'No account to publish as yet. Set one on each post, or connect one in Settings.',
-    /** When every undated post is in the second group. */
-    noneReady: 'None of these can publish yet: each needs an account.',
     /** A row's reason, worded as what to do about it. */
     accountGap: {
       noPlatform: 'Choose a platform',
