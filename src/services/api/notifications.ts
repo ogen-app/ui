@@ -125,6 +125,14 @@ export type NotificationStreamHandlers = {
   onNotification: (notification: AppNotification) => void
   /** Fires on any traffic, heartbeats included. Feeds the silence watchdog. */
   onActivity?: () => void
+  /**
+   * The server is closing this connection on purpose (CON-286's 30-minute
+   * lifetime ceiling), announced just before it does. Both streams send the
+   * same frame, and both send it with **no `id:` line** — here that is the
+   * load-bearing half, since an `id` would move the replay cursor onto a frame
+   * that is not a notification and skip whatever sits above it.
+   */
+  onRecycle?: () => void
 }
 
 /**
@@ -167,6 +175,10 @@ export async function streamNotifications(
   await readSSEStream(
     res.body,
     (frame) => {
+      if (frame.event === 'recycle') {
+        handlers.onRecycle?.()
+        return
+      }
       // The stream carries one frame type. Anything else is a producer this
       // build predates, and dropping it beats guessing at its shape.
       if (frame.event !== 'notification') return

@@ -70,6 +70,10 @@ const connection = createStreamConnection({
           }
         },
         onActivity: hooks.activity,
+        // Nothing is lost to an announced close here — the cursor below
+        // replays whatever landed in the gap — so this buys only the status:
+        // a handover that presents as a handover rather than as a drop.
+        onRecycle: hooks.recycling,
       },
       signal,
       // Read per attempt, not closed over: the cursor moves with every frame
