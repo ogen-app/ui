@@ -49,7 +49,11 @@ const SECTIONS = [
  * wrong for everything else — so a new section that is neither a document nor
  * a form has to be named here, or it inherits a calendar's header actions.
  */
-const DOCUMENT_SECTIONS: readonly string[] = ['Analytics', 'Activity']
+const DOCUMENT_SECTIONS: readonly string[] = [
+  'Overview',
+  'Analytics',
+  'Activity',
+]
 
 /**
  * The save context wraps every shell, not only the Strategy and Settings one
@@ -165,27 +169,8 @@ function CampaignShell() {
     )
   }
 
-  // The Overview is a dashboard rather than a document: it fills the height
-  // it is given and its two columns scroll on their own, so the page itself
-  // never does. The header stays put, which is why it doesn't fade.
-  if (section === 'Overview') {
-    return (
-      <PageContainer variant={'fullFlex'}>
-        <div className={'flex-1 min-h-0 flex flex-col'}>
-          <PageHeader title={title} />
-          <div
-            key={section}
-            className={'page-content-motion flex-1 min-h-0 px-3 lg:px-6 pt-4'}
-          >
-            <Outlet />
-          </div>
-        </div>
-      </PageContainer>
-    )
-  }
-
-  // Analytics and Activity read as documents too — same scrolling shell and
-  // fading header, minus the save button: nothing on them is edited in place.
+  // Overview and Analytics read as documents too — same scrolling shell and
+  // header, minus the save button: nothing on them is edited in place.
   if (DOCUMENT_SECTIONS.includes(section)) {
     return (
       <PageContainer variant={'fullFlex'}>

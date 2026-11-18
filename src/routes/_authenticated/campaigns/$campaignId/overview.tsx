@@ -10,6 +10,7 @@ import {
   CampaignOverview,
   type OverviewHandlers,
 } from '@/components/campaigns/overview/CampaignOverview.tsx'
+import { GridCell, PageGrid } from '@/components/page-primitives/PageGrid'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import {
   useCampaign,
@@ -58,7 +59,19 @@ function CampaignOverviewScreen() {
   // seeds itself from the sidebar's list), so this is rare.
   if (!campaign) {
     return (
-      <Skeleton variant="surface" className="mx-auto h-40 w-full max-w-wide" />
+      <div className="pb-10">
+        <PageGrid>
+          <GridCell span="full">
+            <Skeleton variant="surface" className="h-28" />
+          </GridCell>
+          <GridCell span="wide">
+            <Skeleton variant="surface" className="h-64" />
+          </GridCell>
+          <GridCell span="narrow">
+            <Skeleton variant="surface" className="h-64" />
+          </GridCell>
+        </PageGrid>
+      </div>
     )
   }
 

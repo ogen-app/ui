@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import {
   CaretRightIcon,
   CheckCircleIcon,
@@ -17,6 +17,7 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Logo } from '@/components/Logo'
 import { IgnoredList } from '@/components/assistant/FindingsBlock'
+import { GridCell, PageGrid } from '@/components/page-primitives/PageGrid'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge.tsx'
 import { Button } from '@/components/ui/button.tsx'
 import {
@@ -71,17 +72,19 @@ export type OverviewHandlers = {
 }
 
 /**
- * The campaign's front page, drawn from `overviewModel`, in two columns. The
- * left is about time: a band saying where the campaign is in its own time,
- * then this week and the last seven days (the first week while planning, the
- * results once it is over). The right, the page's full height, is one list of
- * what wants the user.
+ * The campaign's front page, drawn from `overviewModel`, as a dashboard
+ * (`PageGrid`) read in order of importance. Across the top, the band: where
+ * the campaign is in its own time. Then the row the screen is opened for —
+ * what goes out (this week; the first week while planning; the results once
+ * it is over) beside the one list of what wants the user — and under them
+ * the rest of the figures, the last seven days. On a narrow page that order
+ * is the stack.
  *
- * The rule for anything added here: a figure goes left, a thing to do goes
- * right, and anything that takes more than a glance to read belongs on the
- * page the row links to. Per-channel counts, the status tiles, the goal's
- * arithmetic and the assets tally all moved to their own pages for that
- * reason.
+ * The rule for anything added here: a figure goes in a time card, a thing to
+ * do goes in the list, and anything that takes more than a glance to read
+ * belongs on the page the row links to. Per-channel counts, the status tiles,
+ * the goal's arithmetic and the assets tally all moved to their own pages for
+ * that reason.
  */
 export function CampaignOverview({
   model,
@@ -97,69 +100,52 @@ export function CampaignOverview({
 }) {
   if (model.stage === 'new') {
     return (
-      <Frame>
-        <div className="flex h-full min-h-0 flex-col">
-          <Columns
-            left={
-              <SetupCard
-                steps={model.setup ?? []}
-                campaignId={campaignId}
-                handlers={handlers}
-              />
-            }
-            right={
-              <LearnCard
-                learnMore={handlers.learnMore}
-                campaignId={campaignId}
-              />
-            }
-          />
-        </div>
-      </Frame>
-    )
-  }
-
-  return (
-    <Frame>
-      <div className="flex h-full min-h-0 flex-col">
-        <Columns
-          left={
-            <>
-              {model.band && (
-                <Band
-                  stage={model.stage}
-                  band={model.band}
-                  campaignId={campaignId}
-                  now={now}
-                />
-              )}
-              <TimeColumn model={model} campaignId={campaignId} now={now} />
-            </>
-          }
-          right={
-            <NeedsList
-              model={model}
+      <div className="pb-10">
+        <PageGrid>
+          <GridCell span="wide">
+            <SetupCard
+              steps={model.setup ?? []}
               campaignId={campaignId}
               handlers={handlers}
             />
-          }
-        />
+          </GridCell>
+          <GridCell span="narrow">
+            <LearnCard learnMore={handlers.learnMore} campaignId={campaignId} />
+          </GridCell>
+        </PageGrid>
       </div>
-    </Frame>
-  )
-}
+    )
+  }
 
-/**
- * The page's frame: the height the campaign layout hands it, and a container
- * the columns measure against — the right rail can take a third of the
- * window, so the viewport is the wrong ruler.
- */
-function Frame({ children }: { children: ReactNode }) {
+  // The first time card shares the list's row; any after it get a row each.
+  const [lead, ...rest] = timeCards(model, campaignId, now)
   return (
-    <div className="@container h-full w-full">
-      <div className="h-full overflow-y-auto pb-4 @4xl:overflow-hidden">
-        {children}
-      </div>
+    <div className="pb-10">
+      <PageGrid>
+        {model.band && (
+          <GridCell span="full">
+            <Band
+              stage={model.stage}
+              band={model.band}
+              campaignId={campaignId}
+              now={now}
+            />
+          </GridCell>
+        )}
+        {lead && <GridCell span="wide">{lead}</GridCell>}
+        <GridCell span={lead ? 'narrow' : 'full'}>
+          <NeedsList
+            model={model}
+            campaignId={campaignId}
+            handlers={handlers}
+          />
+        </GridCell>
+        {rest.map((card) => (
+          <GridCell key={card.key} span="full">
+            {card}
+          </GridCell>
+        ))}
+      </PageGrid>
     </div>
   )
 }
@@ -169,24 +155,6 @@ function Frame({ children }: { children: ReactNode }) {
  * rail are drawn with, so the cards sit in the same frame as the chrome.
  */
 const SURFACE = 'rounded-md border border-border bg-primary'
-
-/**
- * The two columns every stage shares — where the campaign is and its time on
- * the left, what to do on the right, the full height of the page — each
- * scrolling on its own once the container is wide enough to hold both.
- */
-function Columns({ left, right }: { left: ReactNode; right: ReactNode }) {
-  return (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @4xl:grid-rows-[minmax(0,1fr)]">
-      <div className="flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto">
-        {left}
-      </div>
-      <div className="flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto">
-        {right}
-      </div>
-    </div>
-  )
-}
 
 /**
  * Where a card's header goes: a section of the campaign, or something the
@@ -410,39 +378,40 @@ function GoalBar({ band }: { band: OverviewBand }) {
   )
 }
 
-// --- The left column --------------------------------------------------------
+// --- The time cards ---------------------------------------------------------
 
-function TimeColumn({
-  model,
-  campaignId,
-  now,
-}: {
-  model: OverviewModel
-  campaignId: string
-  now: Date
-}) {
-  return (
-    <>
-      {model.week && (
-        <WeekBlock
-          kind={model.week.kind}
-          days={model.week.days}
-          campaignId={campaignId}
-          now={now}
-        />
-      )}
-      {model.lastWeek && (
-        <LastWeekBlock
-          published={model.lastWeek.published}
-          performance={model.lastWeek.performance}
-          campaignId={campaignId}
-        />
-      )}
-      {model.results && (
-        <ResultsBlock results={model.results} campaignId={campaignId} />
-      )}
-    </>
-  )
+/** What the stage has to say about time, most pressing first. */
+function timeCards(
+  model: OverviewModel,
+  campaignId: string,
+  now: Date,
+): ReactElement[] {
+  return [
+    model.week && (
+      <WeekBlock
+        key="week"
+        kind={model.week.kind}
+        days={model.week.days}
+        campaignId={campaignId}
+        now={now}
+      />
+    ),
+    model.lastWeek && (
+      <LastWeekBlock
+        key="lastWeek"
+        published={model.lastWeek.published}
+        performance={model.lastWeek.performance}
+        campaignId={campaignId}
+      />
+    ),
+    model.results && (
+      <ResultsBlock
+        key="results"
+        results={model.results}
+        campaignId={campaignId}
+      />
+    ),
+  ].filter((card): card is ReactElement => !!card)
 }
 
 /**
@@ -774,7 +743,6 @@ function NeedsList({
         )
       }
       campaignId={campaignId}
-      className="@4xl:flex-1"
     >
       {rows === null ? (
         <>

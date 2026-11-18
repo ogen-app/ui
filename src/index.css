@@ -139,9 +139,6 @@
    100% inside its columns, where the column is the measure. */
 @theme {
   --container-content: 740px;
-  /* A two-column dashboard — the campaign Overview's stats beside its
-     warnings and to-dos. Generates `max-w-wide`. */
-  --container-wide: 1180px;
 }
 
 @theme inline {
