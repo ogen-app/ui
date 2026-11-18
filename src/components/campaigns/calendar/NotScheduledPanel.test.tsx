@@ -43,6 +43,20 @@ vi.mock('@/hooks/usePlatforms', async (importOriginal) => ({
       postTypes: [{ slug: 'carousel', label: 'Carousel' }],
     }),
   }),
+  // The panel splits the posts by whether they have an account to publish
+  // as, and waits for the platforms to do it: Instagram has one account, so
+  // a post on it is ready; any other platform has none.
+  usePlatforms: () => ({ isPending: false }),
+  usePlatformViews: () => [
+    {
+      platform: { id: 'ig' },
+      connectedPublishers: [
+        {
+          accounts: [{ id: 'acct', username: 'hotel', display_name: 'Hotel' }],
+        },
+      ],
+    },
+  ],
 }))
 
 const post = (id: string, overrides: Partial<Post> = {}): Post =>
@@ -94,6 +108,18 @@ describe('the Not scheduled panel (CON-485)', () => {
       .map((l) => l.querySelector('span:nth-child(2)')?.textContent)
     expect(titles[0]).toBe('Fresh')
     expect(screen.getByText('JUST WRITTEN')).toBeTruthy()
+  })
+
+  it('folds the posts with no account to publish as into their own group', async () => {
+    data.posts = [post('Ready'), post('Stranded', { platform_id: 'tt' })]
+    await renderWithProviders(<NotScheduledPanel campaignId="c1" />)
+    const ready = screen.getByRole('button', { name: /Ready to schedule/ })
+    const blocked = screen.getByRole('button', { name: /Needs an account/ })
+    // The one group anybody can act on from here is open; the other is
+    // listed, so nothing undated disappears, but folded away.
+    expect(ready.getAttribute('aria-expanded')).toBe('true')
+    expect(blocked.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByText('Stranded')).toBeTruthy()
   })
 
   it('lets go of a just-written draft once it has a date', async () => {

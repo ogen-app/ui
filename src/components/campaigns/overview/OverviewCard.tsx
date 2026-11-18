@@ -25,9 +25,10 @@ export type CardLink = {
 }
 
 /**
- * One card on the Campaign Overview, and on the campaign's Analytics panel.
- * Capped at the shared content-column width and centred — on the Overview it
- * sits in a column narrower than that, so the cap only bites on Analytics.
+ * One card on the Campaign Overview and on the campaign's Analytics panel,
+ * and the shape of a dashboard card anywhere: glyph, title, status, then the
+ * way in on the right. Capped at the shared content-column width on its own;
+ * in a `PageGrid` cell it takes the cell, height included.
  *
  * A card that has somewhere to go says so with a button, not with a header that
  * lights up: a tinted header row is a hit area you have to discover by sweeping
