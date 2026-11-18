@@ -6,7 +6,6 @@ import {
   CircleDashedIcon,
   DotsThreeIcon,
   PlusIcon,
-  SparkleIcon,
 } from '@phosphor-icons/react'
 import {
   Alert02Icon,
@@ -16,6 +15,7 @@ import {
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { Logo } from '@/components/Logo'
 import { IgnoredList } from '@/components/assistant/FindingsBlock'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge.tsx'
 import { Button } from '@/components/ui/button.tsx'
@@ -1171,9 +1171,13 @@ function SetupCard({
       <ol className="flex flex-col">
         {steps.map((step, i) => (
           <li key={step.id} className={DIVIDED}>
+            {/* No hover fill: the row sits between hairlines with its own
+                buttons under it, and a fill stopping short of them reads as
+                a box around half a step. The caret darkening is enough. */}
             <LineItem
               asChild
               variant="entry"
+              className="hover:bg-transparent"
               indicator={{
                 kind: 'custom',
                 node: <StepMark n={i + 1} done={step.done} />,
@@ -1213,8 +1217,8 @@ function SetupCard({
                   size="sm"
                   onClick={() => handlers.withOgen(step.id)}
                 >
-                  <SparkleIcon />
-                  <span>{t('campaignOverview.setup.askOgen')}</span>
+                  <Logo variant="mark" />
+                  <span>{t('campaignOverview.setup.withOgen')}</span>
                 </Button>
               </span>
             )}
@@ -1225,8 +1229,8 @@ function SetupCard({
   )
 }
 
-/** A hairline between rows, none above the first. */
-const DIVIDED = 'border-t border-border first:border-t-0'
+/** A hairline between rows, none above the first, and a little air under it. */
+const DIVIDED = 'border-t border-border pt-2 first:border-t-0 first:pt-0'
 
 /** A step's number in a ring, or the tick once it is done — 16px, the row's slot. */
 function StepMark({ n, done }: { n: number; done: boolean }) {

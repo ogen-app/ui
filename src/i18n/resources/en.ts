@@ -2041,7 +2041,7 @@ export const en = {
      */
     setup: {
       title: 'Set up this campaign',
-      askOgen: 'ASK OGEN',
+      withOgen: 'DO IT WITH OGEN',
       strategy: {
         title: 'Dates and a post goal',
         detail: 'When it runs and how often it publishes.',

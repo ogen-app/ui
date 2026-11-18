@@ -1639,7 +1639,7 @@ export const es: Translation = {
     },
     setup: {
       title: 'Prepara esta campaña',
-      askOgen: 'PEDIR A OGEN',
+      withOgen: 'HACERLO CON OGEN',
       strategy: {
         title: 'Fechas y objetivo de publicaciones',
         detail: 'Cuándo se ejecuta y con qué frecuencia publica.',
