@@ -1,12 +1,18 @@
 import type { ReactNode } from 'react'
 import {
-  BookOpenIcon,
+  CaretRightIcon,
   CheckIcon,
   CircleDashedIcon,
   DotsThreeIcon,
   PlusIcon,
   SparkleIcon,
 } from '@phosphor-icons/react'
+import {
+  Alert02Icon,
+  BookOpen01Icon,
+  Task01Icon,
+} from '@hugeicons/core-free-icons'
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { IgnoredList } from '@/components/assistant/FindingsBlock'
@@ -21,6 +27,7 @@ import {
 import { LineItem, type LineItemIndicator } from '@/components/ui/line-item'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { cn, formatTitle } from '@/lib'
+import { campaignSection } from '@/lib/campaignSections'
 import type {
   NeedsAction,
   NeedsRow,
@@ -98,7 +105,12 @@ export function CampaignOverview({
                 handlers={handlers}
               />
             }
-            right={<LearnCard learnMore={handlers.learnMore} />}
+            right={
+              <LearnCard
+                learnMore={handlers.learnMore}
+                campaignId={campaignId}
+              />
+            }
           />
         </div>
       </Frame>
@@ -119,13 +131,11 @@ export function CampaignOverview({
         <Columns
           left={<TimeColumn model={model} campaignId={campaignId} now={now} />}
           right={
-            <div className={cn(SURFACE, 'flex flex-col gap-3 p-5 @4xl:flex-1')}>
-              <NeedsList
-                model={model}
-                campaignId={campaignId}
-                handlers={handlers}
-              />
-            </div>
+            <NeedsList
+              model={model}
+              campaignId={campaignId}
+              handlers={handlers}
+            />
           }
           rightFirst
         />
@@ -186,12 +196,106 @@ function Columns({
   )
 }
 
-/** A small-caps label over a block, the screen's one heading style. */
-function Eyebrow({ children }: { children: ReactNode }) {
+/**
+ * Where a card's header goes: a section of the campaign, or something the
+ * screen opens itself (the help centre's article).
+ */
+type CardDoor = { target: OverviewTarget } | { open: () => void; label: string }
+
+/**
+ * Every card on the page, built as Brand's section cards are: the glyph in its
+ * section's hue, the title in the display face, and — when the card has
+ * somewhere to go — a caret at the far end, the whole header being the way
+ * there. The caret replaces the OPEN … buttons, which named a destination in
+ * words on one card and not on the next.
+ *
+ * Only the header is the door, never the card: the rows inside are links and
+ * buttons of their own. The 20px glyph and its gap put the title's first
+ * letter on the same 28px the rows' labels start on (`LineItem`).
+ */
+function Card({
+  glyph,
+  title,
+  door,
+  aside,
+  campaignId,
+  className,
+  children,
+}: {
+  glyph: ReactNode
+  title: ReactNode
+  door?: CardDoor
+  /** Opposite the title, for a card with no door: a count, an action. */
+  aside?: ReactNode
+  campaignId: string
+  className?: string
+  children?: ReactNode
+}) {
+  const head = (
+    <>
+      {glyph}
+      <span className="truncate">{title}</span>
+    </>
+  )
+  const caret = (
+    <CaretRightIcon
+      className="ml-auto size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
+      weight="bold"
+      aria-hidden
+    />
+  )
+  const doorClass =
+    'group -m-1 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm p-1 text-left'
   return (
-    <h2 className="text-xs font-semibold tracking-[0.06em] text-tertiary-foreground uppercase">
+    <section className={cn(SURFACE, 'flex flex-col gap-4 p-6', className)}>
+      <div className="flex min-w-0 items-center gap-3">
+        <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-xl font-medium tracking-tight">
+          {!door ? (
+            head
+          ) : 'target' in door ? (
+            <TargetLink
+              target={door.target}
+              campaignId={campaignId}
+              className={doorClass}
+            >
+              {head}
+              {caret}
+            </TargetLink>
+          ) : (
+            <button
+              type="button"
+              className={doorClass}
+              onClick={door.open}
+              title={door.label}
+            >
+              {head}
+              {caret}
+            </button>
+          )}
+        </h2>
+        {aside}
+      </div>
       {children}
-    </h2>
+    </section>
+  )
+}
+
+/** A campaign section's glyph in its hue, the one the rail draws. */
+function SectionGlyph({ section }: { section: 'calendar' | 'analytics' }) {
+  const meta = campaignSection(section)
+  return <Glyph icon={meta.icon} tone={meta.tone} />
+}
+
+function Glyph({ icon, tone }: { icon: IconSvgElement; tone?: string }) {
+  return (
+    <HugeiconsIcon
+      icon={icon}
+      size={20}
+      strokeWidth={1.5}
+      className="shrink-0"
+      style={tone ? { color: tone } : undefined}
+      aria-hidden
+    />
   )
 }
 
@@ -230,9 +334,9 @@ function Band({
           })
 
   return (
-    <section className={cn(SURFACE, 'flex flex-col gap-4 p-5')}>
+    <section className={cn(SURFACE, 'flex flex-col gap-4 p-6')}>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <span className="font-display text-lg font-medium">
+        <span className="font-display text-xl font-medium tracking-tight">
           {t(`campaignOverview.stage.${stage}`)}
         </span>
         <span className="text-sm text-secondary-foreground">{where}</span>
@@ -385,7 +489,9 @@ function TimeColumn({
           now={now}
         />
       )}
-      {model.coverage && <CoverageBlock coverage={model.coverage} />}
+      {model.coverage && (
+        <CoverageBlock coverage={model.coverage} campaignId={campaignId} />
+      )}
       {model.lastWeek && (
         <LastWeekBlock
           published={model.lastWeek.published}
@@ -421,15 +527,12 @@ function WeekBlock({
   const empty = days.every((d) => d.posts.length === 0)
   const todayKey = now.toDateString()
   return (
-    <section className={cn(SURFACE, 'flex flex-col gap-3 p-5')}>
-      <div className="flex items-center gap-3">
-        <Eyebrow>{t(`campaignOverview.week.${kind}`)}</Eyebrow>
-        <Button variant="ghost" size="sm" className="ml-auto" asChild>
-          <SectionLink target="calendar" campaignId={campaignId}>
-            {t('campaignOverview.openCalendar')}
-          </SectionLink>
-        </Button>
-      </div>
+    <Card
+      glyph={<SectionGlyph section="calendar" />}
+      title={t(`campaignOverview.week.${kind}`)}
+      door={{ target: 'calendar' }}
+      campaignId={campaignId}
+    >
       {empty ? (
         <p className="text-sm text-tertiary-foreground">
           {t('campaignOverview.week.empty')}
@@ -470,7 +573,7 @@ function WeekBlock({
             ))}
         </ol>
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -525,15 +628,21 @@ function WeekPostRow({
  */
 function CoverageBlock({
   coverage,
+  campaignId,
 }: {
   coverage: NonNullable<OverviewModel['coverage']>
+  campaignId: string
 }) {
   const { t, i18n } = useTranslation()
   const publishing = coverage.filter((c) => c.publishing)
   const covered = publishing.filter((c) => c.posts > 0).length
   return (
-    <section className={cn(SURFACE, 'flex flex-col gap-3 p-5')}>
-      <Eyebrow>{t('campaignOverview.coverage.title')}</Eyebrow>
+    <Card
+      glyph={<SectionGlyph section="calendar" />}
+      title={t('campaignOverview.coverage.title')}
+      door={{ target: 'calendar' }}
+      campaignId={campaignId}
+    >
       <div className="grid grid-cols-7 gap-1">
         {coverage.map((c) => (
           <div
@@ -564,7 +673,7 @@ function CoverageBlock({
           days: formatNumber(publishing.length),
         })}
       </p>
-    </section>
+    </Card>
   )
 }
 
@@ -579,15 +688,12 @@ function LastWeekBlock({
 }) {
   const { t } = useTranslation()
   return (
-    <section className={cn(SURFACE, 'flex flex-col gap-3 p-5')}>
-      <div className="flex items-center gap-3">
-        <Eyebrow>{t('campaignOverview.lastWeek.title')}</Eyebrow>
-        <Button variant="ghost" size="sm" className="ml-auto" asChild>
-          <SectionLink target="analytics" campaignId={campaignId}>
-            {t('campaignOverview.openAnalytics')}
-          </SectionLink>
-        </Button>
-      </div>
+    <Card
+      glyph={<SectionGlyph section="analytics" />}
+      title={t('campaignOverview.lastWeek.title')}
+      door={{ target: 'analytics' }}
+      campaignId={campaignId}
+    >
       <Figures
         figures={[
           { label: t('campaignOverview.stats.published'), value: published },
@@ -608,7 +714,7 @@ function LastWeekBlock({
       {performance?.best && (
         <BestPost best={performance.best} campaignId={campaignId} />
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -621,15 +727,12 @@ function ResultsBlock({
 }) {
   const { t } = useTranslation()
   return (
-    <section className={cn(SURFACE, 'flex flex-col gap-3 p-5')}>
-      <div className="flex items-center gap-3">
-        <Eyebrow>{t('campaignOverview.results.title')}</Eyebrow>
-        <Button variant="ghost" size="sm" className="ml-auto" asChild>
-          <SectionLink target="analytics" campaignId={campaignId}>
-            {t('campaignOverview.openAnalytics')}
-          </SectionLink>
-        </Button>
-      </div>
+    <Card
+      glyph={<SectionGlyph section="analytics" />}
+      title={t('campaignOverview.results.title')}
+      door={{ target: 'analytics' }}
+      campaignId={campaignId}
+    >
       <Figures
         figures={[
           {
@@ -668,7 +771,7 @@ function ResultsBlock({
       {results.performance?.best && (
         <BestPost best={results.performance.best} campaignId={campaignId} />
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -764,24 +867,32 @@ function NeedsList({
   const rows = model.needs
   const askable = rows?.some((r) => r.action?.kind === 'ask') ?? false
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
-        <Eyebrow>{t(`campaignOverview.needs.${model.needsTitle}`)}</Eyebrow>
-        {rows && rows.length > 0 && (
-          <span className="text-xs text-tertiary-foreground tabular-nums">
-            {formatNumber(rows.length)}
-          </span>
-        )}
-        {askable && (
+    <Card
+      glyph={<Glyph icon={Alert02Icon} tone="var(--nav-overview)" />}
+      title={
+        <>
+          {t(`campaignOverview.needs.${model.needsTitle}`)}
+          {rows && rows.length > 0 && (
+            <span className="ml-2 font-sans text-sm font-normal text-tertiary-foreground tabular-nums">
+              {formatNumber(rows.length)}
+            </span>
+          )}
+        </>
+      }
+      aside={
+        askable && (
           <button
             type="button"
-            className={cn('ml-auto', TEXT_ACTION)}
+            className={TEXT_ACTION}
             onClick={handlers.askAll}
           >
             {t('campaignOverview.problems.fixAll')}
           </button>
-        )}
-      </div>
+        )
+      }
+      campaignId={campaignId}
+      className="@4xl:flex-1"
+    >
       {rows === null ? (
         <>
           <Skeleton className="h-10 w-full" />
@@ -809,7 +920,7 @@ function NeedsList({
         campaignId={campaignId}
         items={model.ignored.map((p) => ({ key: p.key, title: p.message }))}
       />
-    </section>
+    </Card>
   )
 }
 
@@ -1024,10 +1135,11 @@ function TargetLink({
 
 /**
  * A campaign with no dates has no time to place it in, so the left column is
- * the three things that make one. Every step offers the same pair — do it
- * yourself, or ask Ogen — and only the first step still open is drawn dark,
- * because that is the next thing to do. Steps already done are ticked rather
- * than hidden, so the card reads as progress.
+ * the three things that make one, drawn as Brand's rows are: a tick, the
+ * step, what it is for. Every open step offers the same pair under it — do it
+ * yourself, or ask Ogen — and only the first one still open is drawn dark,
+ * because that is the next thing to do. Steps already done keep their row and
+ * lose their buttons, so the card reads as progress.
  */
 function SetupCard({
   steps,
@@ -1041,63 +1153,48 @@ function SetupCard({
   const { t } = useTranslation()
   const next = steps.find((s) => !s.done)?.id
   return (
-    <section className={cn(SURFACE, 'flex flex-col gap-4 p-5')}>
-      <Eyebrow>{t('campaignOverview.setup.title')}</Eyebrow>
-      <ol className="flex flex-col">
-        {steps.map((step, i) => (
-          <li
-            key={step.id}
-            className="flex items-baseline gap-4 border-t border-border py-4 first:border-t-0 first:pt-0 last:pb-0"
-          >
-            <span
-              className={cn(
-                'flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-                step.done
-                  ? 'bg-positive text-primary'
-                  : 'border border-border text-secondary-foreground',
-              )}
-            >
-              {step.done ? (
-                <CheckIcon className="size-3.5" weight="bold" />
-              ) : (
-                i + 1
-              )}
-            </span>
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span
-                className={cn(
-                  'text-sm font-medium',
-                  step.done && 'text-secondary-foreground line-through',
-                )}
-              >
-                {t(`campaignOverview.setup.${step.id}.title`)}
-              </span>
-              <span className="text-sm text-tertiary-foreground">
-                {t(`campaignOverview.setup.${step.id}.detail`)}
-              </span>
-              {!step.done && (
-                <span className="mt-2 flex flex-wrap gap-2">
-                  <SetupAction
-                    step={step.id}
-                    primary={step.id === next}
-                    campaignId={campaignId}
-                    handlers={handlers}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlers.withOgen(step.id)}
-                  >
-                    <SparkleIcon />
-                    <span>{t('campaignOverview.setup.askOgen')}</span>
-                  </Button>
+    <Card
+      glyph={<Glyph icon={Task01Icon} tone="var(--nav-overview)" />}
+      title={t('campaignOverview.setup.title')}
+      campaignId={campaignId}
+    >
+      <ul className="flex flex-col gap-2">
+        {steps.map((step) => (
+          <li key={step.id}>
+            <LineItem
+              variant="entry"
+              indicator={{ kind: 'task', done: step.done }}
+              label={t(`campaignOverview.setup.${step.id}.title`)}
+              details={
+                <span className="text-secondary-foreground">
+                  {t(`campaignOverview.setup.${step.id}.detail`)}
                 </span>
-              )}
-            </div>
+              }
+              meta={
+                !step.done && (
+                  <span className="mt-2 flex flex-wrap gap-2">
+                    <SetupAction
+                      step={step.id}
+                      primary={step.id === next}
+                      campaignId={campaignId}
+                      handlers={handlers}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlers.withOgen(step.id)}
+                    >
+                      <SparkleIcon />
+                      <span>{t('campaignOverview.setup.askOgen')}</span>
+                    </Button>
+                  </span>
+                )
+              }
+            />
           </li>
         ))}
-      </ol>
-    </section>
+      </ul>
+    </Card>
   )
 }
 
@@ -1137,37 +1234,48 @@ function SetupAction({
 
 /**
  * The right column of a new campaign: what someone setting one up for the
- * first time would want explained, in three lines, and the way to the help
- * centre's article when one serves the topic. Teaching only — the screen
- * reads the same without it.
+ * first time would want explained, in three lines. Its header opens the help
+ * centre's article when one serves the topic, and is only a title otherwise.
+ * Teaching only — the screen reads the same without it.
  */
-function LearnCard({ learnMore }: { learnMore?: () => void }) {
+function LearnCard({
+  learnMore,
+  campaignId,
+}: {
+  learnMore?: () => void
+  campaignId: string
+}) {
   const { t } = useTranslation()
   const points = ['stages', 'goal', 'ogen'] as const
   return (
-    <section className={cn(SURFACE, 'flex flex-col gap-4 p-5')}>
-      <Eyebrow>{t('campaignOverview.learn.title')}</Eyebrow>
-      <ul className="flex flex-col gap-4">
+    <Card
+      glyph={<Glyph icon={BookOpen01Icon} />}
+      title={t('campaignOverview.learn.title')}
+      door={
+        learnMore && {
+          open: learnMore,
+          label: t('campaignOverview.learn.more'),
+        }
+      }
+      campaignId={campaignId}
+    >
+      <ul className="flex flex-col">
         {points.map((p) => (
-          <li key={p} className="flex flex-col gap-1">
-            <span className="text-sm font-medium">
-              {t(`campaignOverview.learn.${p}.title`)}
-            </span>
-            <span className="text-sm text-tertiary-foreground">
-              {t(`campaignOverview.learn.${p}.detail`)}
-            </span>
+          <li key={p}>
+            <LineItem
+              variant="entry"
+              indicator={{ kind: 'notification', tone: 'neutral' }}
+              label={t(`campaignOverview.learn.${p}.title`)}
+              details={
+                <span className="text-secondary-foreground">
+                  {t(`campaignOverview.learn.${p}.detail`)}
+                </span>
+              }
+            />
           </li>
         ))}
       </ul>
-      {learnMore && (
-        <span>
-          <Button variant="outline" size="sm" onClick={learnMore}>
-            <BookOpenIcon />
-            <span>{t('campaignOverview.learn.more')}</span>
-          </Button>
-        </span>
-      )}
-    </section>
+    </Card>
   )
 }
 
