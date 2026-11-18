@@ -229,15 +229,13 @@ function NotScheduled({
           </span>
         ) : undefined
       }
-      subheader={
-        <p className="text-[12.5px] text-tertiary-foreground">
-          {t('calendar.notScheduledHint')}
-        </p>
-      }
       onClose={onClose}
       className="h-full"
       bodyClassName="flex-1"
     >
+      <p className="text-[12.5px] text-tertiary-foreground">
+        {t('calendar.notScheduledHint')}
+      </p>
       <div
         {...dropHandlers}
         className={cn(

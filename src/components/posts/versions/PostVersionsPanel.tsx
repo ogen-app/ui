@@ -454,30 +454,6 @@ function VersionReader({
           <CaretLeftIcon className="size-5" />
         </Button>
       }
-      subheader={
-        <div className="flex items-center gap-2 min-w-0">
-          {version ? (
-            <>
-              <CreatorMark creator={version.creator} />
-              <span className="shrink-0 text-xs text-tertiary-foreground">
-                · {relativeTime(version.created_at)}
-              </span>
-            </>
-          ) : (
-            <span className="shrink-0 text-xs text-tertiary-foreground">
-              The post as it stands — not snapshotted yet
-            </span>
-          )}
-          {version?.note && (
-            <span
-              className="truncate text-xs text-secondary-foreground"
-              title={versionNote(t, version)}
-            >
-              · {versionNote(t, version)}
-            </span>
-          )}
-        </div>
-      }
       footer={
         onRestore ? (
           <div className="flex flex-col gap-2">
@@ -504,6 +480,28 @@ function VersionReader({
       }
       footerFade={48}
     >
+      <div className="flex items-center gap-2 min-w-0">
+        {version ? (
+          <>
+            <CreatorMark creator={version.creator} />
+            <span className="shrink-0 text-xs text-tertiary-foreground">
+              · {relativeTime(version.created_at)}
+            </span>
+          </>
+        ) : (
+          <span className="shrink-0 text-xs text-tertiary-foreground">
+            The post as it stands — not snapshotted yet
+          </span>
+        )}
+        {version?.note && (
+          <span
+            className="truncate text-xs text-secondary-foreground"
+            title={versionNote(t, version)}
+          >
+            · {versionNote(t, version)}
+          </span>
+        )}
+      </div>
       {content.trim() === '' ? (
         <p className="text-sm text-tertiary-foreground">
           There is no text here yet.

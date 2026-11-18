@@ -2169,22 +2169,13 @@ export const en = {
 
   assistant: {
     /**
-     * The status line under the panel's title.
-     *
-     * Two states get a number and one deliberately does not. *Active* is every
-     * thread open in the rail — the rail is where a thread lives, so opening
-     * one is what makes it active and closing it is what ends it. *Pending* is
-     * the subset waiting on the user: a turn that landed while they were
-     * looking somewhere else. A thread that is *working* is not counted, because
-     * the mark's animation already says so and a figure that changes every few
-     * seconds reads as something to act on rather than as a state.
-     *
-     * Two phrases rather than one sentence with two counts: i18next inflects
-     * around a single `count`, the pending clause is dropped entirely when it
-     * is zero, and only one of the two is ever tinted.
+     * The badge beside the panel's close button: every thread open in the
+     * rail. *Pending* — the ones with an answer the user hasn't seen — is the
+     * badge's dot, and this is its accessible name and tooltip. A thread that
+     * is *working* is not counted, because the mark's animation already says so.
      */
-    activeThreads_one: '{{formatted}} active thread',
-    activeThreads_other: '{{formatted}} active threads',
+    threadCount_one: '{{formatted}} thread',
+    threadCount_other: '{{formatted}} threads',
     pendingThreads_one: '{{formatted}} pending',
     pendingThreads_other: '{{formatted}} pending',
 
