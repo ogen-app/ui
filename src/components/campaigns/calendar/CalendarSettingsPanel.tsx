@@ -99,6 +99,7 @@ export function CalendarSettingsPanel({
 
   return (
     <RailPanel
+      header="solid"
       title={t('calendar.settings')}
       onClose={onClose}
       className="h-full"

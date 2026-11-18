@@ -86,6 +86,13 @@ type RailPanelProps = {
    * painted behind the footer for the rest of the ramp to work on.
    */
   footerFade?: number
+  /**
+   * How the header meets the body scrolling under it. `fade` dissolves it
+   * through a blurred ramp, with no edge to see; `solid` is an opaque band
+   * ruled off by a line across the panel's whole width — the calendar
+   * drawer's, and the direction the rest are moving in.
+   */
+  header?: 'fade' | 'solid'
 }
 
 export function RailPanel({
@@ -104,7 +111,9 @@ export function RailPanel({
   titleLabel,
   footerSolid,
   footerFade = 32,
+  header = 'fade',
 }: RailPanelProps) {
+  const solidHeader = header === 'solid'
   const footerRef = useRef<HTMLDivElement>(null)
   // The footer overlays the scroll rather than sitting beside it, so the body
   // needs to be told how much room to leave at the end. Measured, because the
@@ -130,18 +139,23 @@ export function RailPanel({
             its own right rather than to the block, because what it has to clear
             is the type: solid to the middle of the title, then out. */}
         <div
-          className="sticky top-0 shrink-0 flex flex-col"
+          className={cn(
+            'sticky top-0 shrink-0 flex flex-col',
+            solidHeader && 'bg-primary border-b border-border',
+          )}
           style={{ zIndex: ZIndex.pageHeader }}
         >
-          <SurfaceFader
-            edge="top"
-            solid={`${HEADER_SOLID}px`}
-            fade={HEADER_FADE}
-            style={{
-              top: -HEADER_LIFT,
-              height: HEADER_SOLID + HEADER_FADE,
-            }}
-          />
+          {!solidHeader && (
+            <SurfaceFader
+              edge="top"
+              solid={`${HEADER_SOLID}px`}
+              fade={HEADER_FADE}
+              style={{
+                top: -HEADER_LIFT,
+                height: HEADER_SOLID + HEADER_FADE,
+              }}
+            />
+          )}
           <div className="relative pt-6 px-3 lg:px-6 flex flex-col gap-0">
             <div className="flex items-stretch justify-between gap-3">
               {/* The whole block is the affordance when it has somewhere to go
@@ -192,8 +206,10 @@ export function RailPanel({
           className={cn(
             // `pt-2` is the other half of `HEADER_LIFT`: it starts the body
             // clear of the ramp's tail, so the first line is never washed by a
-            // fade that has nothing behind it yet.
-            'px-3 lg:px-6 pt-2 flex flex-col gap-4',
+            // fade that has nothing behind it yet. Under a ruled header the
+            // gap is the line's to open instead.
+            'px-3 lg:px-6 flex flex-col gap-4',
+            solidHeader ? 'pt-4' : 'pt-2',
             // With a footer the room at the end is the spacer's job — it has to
             // match the footer exactly, or the last line either hides under it
             // or stops short of it.
