@@ -17,6 +17,7 @@ import { Route as AuthenticatedFoundationRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as InviteIndexRouteImport } from './routes/invite/index'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
 import { Route as PlansIndexRouteImport } from './routes/plans/index'
 import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
 import { Route as SignupIndexRouteImport } from './routes/signup/index'
@@ -107,6 +108,11 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
 const InviteIndexRoute = InviteIndexRouteImport.update({
   id: '/invite/',
   path: '/invite/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlansIndexRoute = PlansIndexRouteImport.update({
@@ -417,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/signup/': typeof SignupIndexRoute
@@ -476,6 +483,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
   '/invite': typeof InviteIndexRoute
+  '/onboarding': typeof OnboardingIndexRoute
   '/plans': typeof PlansIndexRoute
   '/server-unavailable': typeof ServerUnavailableIndexRoute
   '/signup': typeof SignupIndexRoute
@@ -538,6 +546,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/signup/': typeof SignupIndexRoute
@@ -601,6 +610,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/auth/'
     | '/invite/'
+    | '/onboarding/'
     | '/plans/'
     | '/server-unavailable/'
     | '/signup/'
@@ -660,6 +670,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/invite'
+    | '/onboarding'
     | '/plans'
     | '/server-unavailable'
     | '/signup'
@@ -721,6 +732,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/auth/'
     | '/invite/'
+    | '/onboarding/'
     | '/plans/'
     | '/server-unavailable/'
     | '/signup/'
@@ -780,6 +792,7 @@ export interface RootRouteChildren {
   FlagsRoute: typeof FlagsRoute
   AuthIndexRoute: typeof AuthIndexRoute
   InviteIndexRoute: typeof InviteIndexRoute
+  OnboardingIndexRoute: typeof OnboardingIndexRoute
   PlansIndexRoute: typeof PlansIndexRoute
   ServerUnavailableIndexRoute: typeof ServerUnavailableIndexRoute
   SignupIndexRoute: typeof SignupIndexRoute
@@ -850,6 +863,13 @@ declare module '@tanstack/react-router' {
       path: '/invite'
       fullPath: '/invite/'
       preLoaderRoute: typeof InviteIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plans/': {
@@ -1381,6 +1401,7 @@ const rootRouteChildren: RootRouteChildren = {
   FlagsRoute: FlagsRoute,
   AuthIndexRoute: AuthIndexRoute,
   InviteIndexRoute: InviteIndexRoute,
+  OnboardingIndexRoute: OnboardingIndexRoute,
   PlansIndexRoute: PlansIndexRoute,
   ServerUnavailableIndexRoute: ServerUnavailableIndexRoute,
   SignupIndexRoute: SignupIndexRoute,

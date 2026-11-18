@@ -210,6 +210,33 @@ describe('streamNotifications', () => {
     expect(seen).toEqual(['post.publish_failed'])
   })
 
+  it('reports a recycle rather than dropping it as an unknown frame', async () => {
+    // Both streams send it (CON-286), and here it would otherwise fall through
+    // the `event !== 'notification'` filter and be indistinguishable from the
+    // drop it precedes — the connection coming back the slow way, on backoff.
+    stubFetch(
+      sseResponse(
+        `id: 10432\nevent: notification\ndata: ${JSON.stringify(ROW)}\n\n` +
+          'event: recycle\ndata: {"reason":"lifetime"}\n\n',
+      ),
+    )
+    const seen: string[] = []
+    let recycled = false
+
+    await streamNotifications(
+      {
+        onNotification: (n) => seen.push(n.type),
+        onRecycle: () => {
+          recycled = true
+        },
+      },
+      new AbortController().signal,
+    )
+
+    expect(seen).toEqual(['post.publish_failed'])
+    expect(recycled).toBe(true)
+  })
+
   it('survives a heartbeat and a malformed frame', async () => {
     stubFetch(
       sseResponse(

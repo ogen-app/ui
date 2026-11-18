@@ -201,8 +201,11 @@ the calendar's own drawer (`campaigns/calendar/CalendarDrawer.tsx`), rendered
 by the two calendar pages beside the column and under the bar over the page,
 so they never take the assistant's place.
 `page-primitives/RailPanel.tsx` is the standard panel chrome
-(title/close/actions/footer). Its header is solid and ruled off by a line
-across the panel's width; the body scrolls under the line, not into a fade.
+(title/close/actions/footer). Its header is one line in the frame's 56px band
+(`CHROME_BAR_H`), solid and ruled off across the panel's width, so its rule
+continues the bar over the page; the body scrolls under the line, not into a
+fade. A panel with something to say under its title says it as the body's
+first row.
 
 What's open is **derived, not stored**: `settingsStore.panelMemory` persists one
 remembered choice per screen, a route declares which screen it is with
