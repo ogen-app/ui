@@ -107,11 +107,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   straight to it — as Posts does, since `/posts` would be that campaign's list
   without ADD POST), and **workspace only** (the Inbox).
   **Strategy for all campaigns is the Foundation** (`/foundation/*`), and
-  both levels are built the same way: two `PageSection` bands. For all
-  campaigns, CAMPAIGNS — one timeline (`strategy/CampaignTimeline` — a plan,
-  not a status list; the Overview's cards already report progress) — then
-  FOUNDATION, the hub. For one, THIS CAMPAIGN — what it commits to — then
-  FOUNDATION as it has it (`strategy/FromTheWorkspace`): the voice, audience
+  both levels hold the same two things, with no headings over them. For all
+  campaigns, the hub in the page's column and, in a fixed-width column beside
+  it (under it when the page is too narrow), one timeline
+  (`strategy/CampaignTimeline` — a plan, not a status list; the Overview's
+  cards already report progress). For one, what it commits to, then the
+  Foundation as it has it (`strategy/FromTheWorkspace`): the voice, audience
   and series it *chooses*, and the guardrails and facts it only *reads*, as
   the hub's own cards opening the workspace's section — they apply to every
   campaign, so an edit belongs where it visibly does. A card about a

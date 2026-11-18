@@ -8322,23 +8322,6 @@ export const en = {
         noVoice: 'No voice',
         defaultVoice: '{{voice}} (default)',
       },
-      /**
-       * Strategy for one campaign: the workspace material it is written
-       * under and cannot change from here.
-       */
-      /**
-       * The two bands Strategy is built of at both levels: the campaigns (or
-       * this campaign), then the Foundation. Each Foundation sentence says
-       * what the band is from where it is read.
-       */
-      bands: {
-        campaigns: 'Campaigns',
-        thisCampaign: 'This campaign',
-        foundation:
-          'The voices it writes in, who it is written to, and what it may never claim. Written once for the workspace, and every campaign and every post inherits it.',
-        foundationForCampaign:
-          'The voice, audience and series this campaign writes in are chosen here. The guardrails and facts apply to every campaign, so they are edited for all campaigns at once.',
-      },
     },
     /**
      * The campaign's type on Strategy (CON-166). It locks once a post is

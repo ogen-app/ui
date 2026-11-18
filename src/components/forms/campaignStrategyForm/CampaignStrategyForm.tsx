@@ -60,7 +60,6 @@ import { SchedulingCard } from './SchedulingCard'
 import { CampaignBrandCard } from '@/components/brand/CampaignBrandCard'
 import { CampaignSeriesCard } from '@/components/series/CampaignSeriesCard'
 import { FromTheWorkspace } from '@/components/strategy/FromTheWorkspace'
-import { PageSection } from '@/components/page-primitives/PageSection'
 import {
   strategyDefaultValues,
   strategySchema,
@@ -299,9 +298,9 @@ export function CampaignStrategyForm({ campaign }: Props) {
             assistantRunning && 'opacity-60',
           )}
         >
-          {/* Two bands, as Strategy for all campaigns has: this campaign's
-              own commitments, then the Foundation as it has it. */}
-          <PageSection title={t('campaigns.strategy.bands.thisCampaign')}>
+          {/* Two groups, set apart by space alone: this campaign's own
+              commitments, then the Foundation as it has it. */}
+          <div className="flex flex-col gap-4">
             {/* What the campaign says, first: every card under it is a
               constraint on how much of it goes out and where, and reads as
               bookkeeping without the claim it is serving. */}
@@ -533,7 +532,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
                 />
               </div>
             </SettingsCard>
-          </PageSection>
+          </div>
 
           {/* Last, because it is the half of Strategy this campaign shares
               with every other: the Foundation, which Strategy is for all

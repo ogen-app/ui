@@ -6858,19 +6858,6 @@ export const es: Translation = {
         noVoice: 'Sin voz',
         defaultVoice: '{{voice}} (predeterminada)',
       },
-      /**
-       * The two bands Strategy is built of at both levels: the campaigns (or
-       * this campaign), then the Foundation. Each Foundation sentence says
-       * what the band is from where it is read.
-       */
-      bands: {
-        campaigns: 'Campañas',
-        thisCampaign: 'Esta campaña',
-        foundation:
-          'Las voces con las que escribe, a quién se dirige y lo que nunca puede afirmar. Se escribe una vez para el espacio de trabajo, y cada campaña y cada publicación lo heredan.',
-        foundationForCampaign:
-          'La voz, la audiencia y las series en las que escribe esta campaña se eligen aquí. Los límites y los datos se aplican a todas las campañas, así que se editan para todas a la vez.',
-      },
     },
     type: {
       label: 'Tipo de campaña',
