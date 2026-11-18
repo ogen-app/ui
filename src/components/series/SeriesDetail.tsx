@@ -12,7 +12,7 @@ import {
 import { BrandIntro } from '@/components/brand/shell'
 import { useSeriesLibrary } from '@/hooks/useSeries'
 import { brandSection, brandSectionCopy } from '@/lib/brandSections'
-import type { ContentSeries } from './types'
+import type { ContentSeries } from '@/types/series'
 
 /**
  * `/foundation/series` — the same screen shape every other Foundation section

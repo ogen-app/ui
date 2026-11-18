@@ -108,9 +108,12 @@ describe('triage', () => {
     expect(screen.getByText('of 14 · On the desk')).toBeTruthy()
     expect(screen.getByText('fit 82')).toBeTruthy()
     expect(screen.getByText('and 11 more')).toBeTruthy()
+    // Exactly that idea, opened (CON-510).
     expect(screen.getByText('The pool').getAttribute('href')).toBe(
-      '/campaigns/c1/ideas?idea=i1',
+      '/campaigns/c1/ideas?ids=i1&idea=i1',
     )
+    // SHOW ON SCREEN can run, so there is no OPEN ALL beside it.
+    expect(screen.queryByText('OPEN ALL')).toBeNull()
     fireEvent.click(screen.getByText('SHOW ON SCREEN'))
     expect(runUiAction).toHaveBeenCalledWith('campaign:c1', 't1', {
       type: 'set_filter',
@@ -174,6 +177,26 @@ describe('triage', () => {
     expect(screen.getByText('2 groups merged')).toBeTruthy()
     expect(screen.getByText('4 ideas → 2')).toBeTruthy()
     expect(screen.queryByText('UNDO')).toBeNull()
+    // The survivors, exactly, on the workspace's list (CON-510).
+    expect(screen.getByText('OPEN ALL').getAttribute('href')).toBe(
+      '/ideas?ids=i1%2Ci2',
+    )
+  })
+
+  it('opens a reloaded FOUND’s ideas exactly, on the pile most of them are in', async () => {
+    await show({
+      found: {
+        total: 3,
+        ideas: [
+          { id: 'i1', title: 'One', verdict: 'later', campaignId: 'c1' },
+          { id: 'i2', title: 'Two', verdict: 'yes', campaignId: 'c1' },
+          { id: 'i3', title: 'Three', verdict: 'yes', campaignId: 'c1' },
+        ],
+      },
+    })
+    expect(screen.getByText('OPEN ALL').getAttribute('href')).toBe(
+      '/campaigns/c1/ideas?ids=i1%2Ci2%2Ci3&pile=yes',
+    )
   })
 })
 
@@ -375,6 +398,123 @@ describe('compile and draft', () => {
     ).toBeTruthy()
     expect(screen.getByText('Draft 2 of 3')).toBeTruthy()
   })
+
+  const next = (ideas: string[], platformId = 'linkedin') => ({
+    ideas: ideas.map((title, i) => ({ ideaId: `i${i}`, title })),
+    platformId,
+    count: 1,
+    done: 2,
+    total: 4,
+  })
+
+  it('names the idea it is writing next and where it goes (CON-510)', async () => {
+    await renderWithProviders(
+      <LiveDrafts
+        drafts={{
+          done: 2,
+          total: 4,
+          posts: [],
+          next: next(['What the water does in March']),
+        }}
+      />,
+    )
+    expect(
+      screen.getByText('What the water does in March · LinkedIn'),
+    ).toBeTruthy()
+    expect(screen.queryByText('Draft 3 of 4')).toBeNull()
+  })
+
+  it('draws no placeholder once the drafts tool has finished, done or failed', async () => {
+    await renderWithProviders(
+      <LiveDrafts
+        drafts={{
+          done: 2,
+          total: 4,
+          posts: [],
+          ended: true,
+        }}
+      />,
+    )
+    expect(screen.queryByText('Draft 3 of 4')).toBeNull()
+    expect(screen.queryByText('Writing')).toBeNull()
+  })
+
+  it('names every idea a together post draws on', async () => {
+    await renderWithProviders(
+      <LiveDrafts
+        drafts={{
+          done: 2,
+          total: 4,
+          posts: [],
+          next: next(['The pool', 'Breakfast first'], 'instagram'),
+        }}
+      />,
+    )
+    expect(
+      screen.getByText('The pool and Breakfast first · Instagram'),
+    ).toBeTruthy()
+  })
+})
+
+describe('FOUND names what its search was about (CON-509)', () => {
+  const found = (named: NonNullable<Results['found']>['named']) =>
+    show({
+      found: {
+        total: 6,
+        ideas: [{ id: 'i1', title: 'The pool', campaignId: 'c1' }],
+        named,
+      },
+    })
+
+  it('words a kept document as the Ideas list does', async () => {
+    await found({ sourceAssets: [{ id: 'a1', title: 'Brochure' }] })
+    expect(screen.getByText('6 ideas from Brochure')).toBeTruthy()
+  })
+
+  it('never words a left-out document as kept', async () => {
+    await found({
+      sourceAssets: [{ id: 'a1', title: 'Brochure', excluded: true }],
+    })
+    expect(screen.getByText('6 ideas not from Brochure')).toBeTruthy()
+    expect(screen.queryByText('6 ideas from Brochure')).toBeNull()
+  })
+
+  it('names the document, the campaign and the author, in the list’s order', async () => {
+    await found({
+      authors: [{ id: 'u1', title: 'Ana' }],
+      campaigns: [{ id: 'c1', title: 'Spring reopening' }],
+      sourceAssets: [
+        { id: 'a1', title: 'Brochure' },
+        { id: 'a2', title: 'Menu' },
+      ],
+    })
+    expect(
+      screen.getByText(
+        '6 ideas from Brochure or Menu, in Spring reopening, written by Ana',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('keeps a title’s own angle brackets and dollar signs', async () => {
+    await found({ sourceAssets: [{ id: 'a1', title: 'Budget <draft> $1' }] })
+    expect(screen.getByText('6 ideas from Budget <draft> $1')).toBeTruthy()
+  })
+
+  it('keeps the count alone when the search named none of them', async () => {
+    await found(undefined)
+    expect(screen.getByText('6 ideas')).toBeTruthy()
+  })
+
+  it('words it in Spanish', async () => {
+    await loadLocaleResources('es')
+    await i18next.changeLanguage('es')
+    try {
+      await found({ sourceAssets: [{ id: 'a1', title: 'Folleto' }] })
+      expect(screen.getByText('6 ideas de Folleto')).toBeTruthy()
+    } finally {
+      await i18next.changeLanguage('en')
+    }
+  })
 })
 
 describe('reads', () => {
@@ -404,6 +544,22 @@ describe('reads', () => {
     expect(screen.getByText('OPEN').getAttribute('href')).toBe(
       '/campaigns/c1/assets/a1?lens=c1',
     )
+  })
+
+  it('leads its source row with the asset’s mark, and none untyped (CON-509)', async () => {
+    const read = (type?: string) =>
+      show({
+        idea: {
+          idea: { id: 'i1', title: 'The pool cut into the rock' },
+          sourceAsset: { id: 'a1', title: 'Villa Aurora brochure', type },
+          posts: [],
+        },
+      })
+    const { unmount } = await read('PDF')
+    expect(screen.getByRole('img', { name: 'PDF' })).toBeTruthy()
+    unmount()
+    await read(undefined)
+    expect(screen.queryByRole('img')).toBeNull()
   })
 
   it('names the page an idea came from, and opens the asset there (CON-487)', async () => {

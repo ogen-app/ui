@@ -58,9 +58,7 @@ function BrandOverviewPage() {
   // Both are views over the brand the hub already has — neither adds a wait.
   const { facts } = useFacts()
   const stance = useGuardrailsStance()
-  // Off: the Series card is not among the sections (`brandSections`), so this
-  // query never runs and the hub is byte-for-byte what it was before CON-264.
-  const { data: series } = useSeriesLibrary()
+  const series = useSeriesLibrary()
 
   return (
     <BrandPage>
@@ -92,9 +90,12 @@ function BrandOverviewPage() {
                     // The library only — a campaign's own series is bounded by it and
                     // is not something another campaign can pick up, so listing one
                     // on the workspace hub would overstate what is there.
-                    series={(series ?? []).filter(
-                      (entry) => entry.scope.kind === 'workspace',
-                    )}
+                    series={fetched({
+                      data: series.data?.filter(
+                        (entry) => entry.scope.kind === 'workspace',
+                      ),
+                      isError: series.isError,
+                    })}
                     stance={stance}
                     onOpen={(id) => navigate({ to: `/foundation/${id}` })}
                   />

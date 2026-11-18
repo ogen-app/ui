@@ -14,7 +14,7 @@ import {
 import { FormatPicker } from '@/components/formats/FormatPicker'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { RhythmPicker } from './RhythmPicker'
-import type { ContentSeries, SeriesSupply } from './types'
+import type { ContentSeries, SeriesSupply } from '@/types/series'
 
 /**
  * One series, being written (CON-264).

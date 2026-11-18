@@ -29,6 +29,8 @@ import { ThreadStatusSummary } from './ThreadStatusSummary'
 import { ThreadEmptyState } from './ThreadEmptyState'
 import { ThreadList } from './ThreadList'
 import { UserMessage } from './UserMessage'
+import { FromReview } from './FromReview'
+import { reviewFindingOf } from '@/lib/viewContext'
 import type { AssistantThread } from '@/types/assistant'
 
 /**
@@ -318,10 +320,16 @@ function ThreadView({
         />
       )
     const marker = markers.get(turn.id)
+    // A message sent from a review finding quotes the finding (CON-495).
+    const finding = reviewFindingOf(turn.view)
     return (
       <Fragment key={turn.id}>
         {marker && <ScreenMarker text={marker} />}
-        <UserMessage content={turn.content} />
+        {finding ? (
+          <FromReview finding={finding} />
+        ) : (
+          <UserMessage content={turn.content} />
+        )}
       </Fragment>
     )
   })

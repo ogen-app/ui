@@ -2,18 +2,26 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { ResultBlock, ResultRow, TEXT_ACTION_CLASS } from './blocks'
-import { counted, formatNumber } from '@/lib/intl'
-import type { CampaignState } from '@/types/assistant'
+import { counted, formatList, formatNumber } from '@/lib/intl'
+import { periodName } from '@/lib/goalPeriod'
+import type { CampaignCite, CampaignState } from '@/types/assistant'
 
 /**
  * The figures a campaign reply leaned on, cited in one quiet line under it
  * (CON-483): "Read from the campaign · April 14 of 20 · 2 conflicts · 4 of 8
- * sources ready". Whatever the state doesn't have is left out, and with
- * nothing to cite there is no line.
+ * sources ready". Only what the reply says it relied on (`cites`, CON-511),
+ * in its order; a part the state can't word is left out, and with nothing to
+ * cite there is no line.
  */
-export function StateCitation({ state }: { state: CampaignState }) {
+export function StateCitation({
+  state,
+  cites,
+}: {
+  state: CampaignState
+  cites: CampaignCite[]
+}) {
   const { t } = useTranslation()
-  const parts = citedParts(t, state)
+  const parts = cites.flatMap((cite) => citedPart(t, state, cite) ?? [])
   if (parts.length === 0) return null
   return (
     <p className="border-t border-border pt-2 text-[12.5px] text-tertiary-foreground">
@@ -25,51 +33,61 @@ export function StateCitation({ state }: { state: CampaignState }) {
   )
 }
 
-function citedParts(t: TFunction, state: CampaignState): string[] {
-  const parts: string[] = []
-  const period = state.goal && !state.goal.unknown && state.goal.period
-  if (period)
-    parts.push(
-      t('assistant.campaignState.period', {
-        period: period.label,
-        planned: formatNumber(period.planned),
-        target: formatNumber(period.target),
-      }),
-    )
-  if (state.calendar && state.calendar.total > 0)
-    parts.push(
-      t('assistant.campaignState.conflicts', counted(state.calendar.total)),
-    )
-  const sources = state.sources
-  if (sources && !sources.wholeBank && sources.attached > 0)
-    parts.push(
-      t('assistant.campaignState.sourcesReady', {
-        ready: formatNumber(sources.attached - sources.notReady),
-        attached: formatNumber(sources.attached),
-      }),
-    )
-  return parts
-}
-
-/**
- * Whether the SOURCES card has something to say: the campaign's own
- * documents, some of them not ready to write from.
- */
-function sourcesWorthShowing(state: CampaignState): boolean {
-  const sources = state.sources
-  return (
-    !!sources &&
-    !sources.wholeBank &&
-    sources.notReady > 0 &&
-    sources.items.length > 0
-  )
+/** One cited part in words, or nothing when the state can't say it. */
+function citedPart(
+  t: TFunction,
+  state: CampaignState,
+  cite: CampaignCite,
+): string | undefined {
+  const goal = state.goal && !state.goal.unknown ? state.goal : undefined
+  switch (cite) {
+    case 'goal':
+      return goal && goal.perPeriod > 0
+        ? t(
+            goal.cadence === 'week'
+              ? 'assistant.campaignState.goalWeek'
+              : 'assistant.campaignState.goalMonth',
+            counted(goal.perPeriod),
+          )
+        : undefined
+    case 'period':
+      return goal?.period
+        ? t('assistant.campaignState.period', {
+            period: periodName(goal.period),
+            planned: formatNumber(goal.period.planned),
+            target: formatNumber(goal.period.target),
+          })
+        : undefined
+    case 'posts':
+      return state.posts !== undefined
+        ? t('assistant.campaignState.posts', counted(state.posts))
+        : undefined
+    case 'platforms':
+      return state.platforms?.length
+        ? formatList(state.platforms.map((p) => p.name))
+        : undefined
+    case 'sources': {
+      const sources = state.sources
+      return sources && !sources.wholeBank && sources.attached > 0
+        ? t('assistant.campaignState.sourcesReady', {
+            ready: formatNumber(sources.attached - sources.notReady),
+            attached: formatNumber(sources.attached),
+          })
+        : undefined
+    }
+    case 'calendar':
+      return state.calendar && state.calendar.total > 0
+        ? t('assistant.campaignState.conflicts', counted(state.calendar.total))
+        : undefined
+  }
 }
 
 /**
  * The campaign's sources and how each stands (CON-483): ready, still being
  * analysed, or couldn't be read — the answer to "why are the drafts so
- * generic?", with OPEN ASSETS to the campaign's documents. Nothing when
- * every source is ready, or the campaign writes from the whole bank.
+ * generic?", with OPEN ASSETS to the campaign's documents. Drawn when the
+ * reply cites the sources (CON-511), every one ready or not; nothing when the
+ * campaign writes from the whole bank, which has no list of its own.
  */
 export function SourcesCard({
   state,
@@ -80,7 +98,7 @@ export function SourcesCard({
 }) {
   const { t } = useTranslation()
   const sources = state.sources
-  if (!sources || !sourcesWorthShowing(state)) return null
+  if (!sources || sources.wholeBank || sources.items.length === 0) return null
   return (
     <ResultBlock
       status={t('assistant.campaignState.sources.word')}

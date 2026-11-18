@@ -1,7 +1,14 @@
 import type { TFunction } from 'i18next'
 import { contentFormatLabel } from '@/lib/contentFormats'
 import type { SeriesPlan } from '@/lib/seriesPlan'
-import type { ContentSeries, SeriesRhythm, SeriesSupply } from './types'
+import { counted, formatDate, formatNumber } from '@/lib/intl'
+import {
+  SERIES_WEEKDAYS,
+  type ContentSeries,
+  type SeriesRhythm,
+  type SeriesSupply,
+  type SeriesWeekday,
+} from '@/types/series'
 
 /**
  * Series' words, in one file (CON-264).
@@ -22,9 +29,41 @@ import type { ContentSeries, SeriesRhythm, SeriesSupply } from './types'
  */
 export function rhythmLine(t: TFunction, rhythm: SeriesRhythm | null): string {
   if (!rhythm || rhythm.times <= 0) return t('series.rhythm.occasional')
+  const every = rhythm.every && rhythm.every > 1 ? rhythm.every : 1
+  // A day only comes with once a week (CON-496): "Every Tuesday", "Every 2
+  // weeks on Tuesday".
+  if (rhythm.weekday) {
+    const day = weekdayName(rhythm.weekday)
+    return every > 1
+      ? t('series.rhythm.everyWeeksOn', { ...counted(every), day })
+      : t('series.rhythm.everyDay', { day })
+  }
+  if (every > 1)
+    return rhythm.per === 'week'
+      ? t('series.rhythm.perWeeksEvery', {
+          ...counted(rhythm.times),
+          every: formatNumber(every),
+        })
+      : t('series.rhythm.perMonthsEvery', {
+          ...counted(rhythm.times),
+          every: formatNumber(every),
+        })
   return rhythm.per === 'week'
-    ? t('series.rhythm.perWeek', { count: rhythm.times })
-    : t('series.rhythm.perMonth', { count: rhythm.times })
+    ? t('series.rhythm.perWeek', counted(rhythm.times))
+    : t('series.rhythm.perMonth', counted(rhythm.times))
+}
+
+/**
+ * A weekday's name in the active language — "Tuesday", "martes" — from `Intl`
+ * rather than a table: 1 January 2024 was a Monday.
+ */
+export function weekdayName(weekday: SeriesWeekday): string {
+  return (
+    formatDate(Date.UTC(2024, 0, 1 + SERIES_WEEKDAYS.indexOf(weekday)), {
+      weekday: 'long',
+      timeZone: 'UTC',
+    }) ?? weekday
+  )
 }
 
 /** Whether it feeds itself or waits on an idea. See `SeriesSupply`. */
@@ -76,9 +115,9 @@ export function seriesMetaLine(
  *   prevented: a campaign may want more series output and then raise its rate,
  *   and refusing the rhythm would be the app deciding which of two numbers the
  *   user meant.
- * - **undated** — the rate is known and the window is not, so the arithmetic
- *   counts one period. Says so, rather than presenting one period's worth as a
- *   campaign total.
+ * - **undated** — the rate is known and the window is not. The goal counts
+ *   one period, and the series claim nothing: the plan places no series
+ *   without dates (CON-496).
  * - **ok** — the ordinary case.
  */
 export function planLine(t: TFunction, plan: SeriesPlan): string {
@@ -91,10 +130,7 @@ export function planLine(t: TFunction, plan: SeriesPlan): string {
     })
   }
   if (!plan.dated) {
-    return t('series.plan.undated', {
-      total: plan.total,
-      claimed: plan.claimed,
-    })
+    return t('series.plan.undated', { total: plan.total })
   }
   return t('series.plan.ok', {
     total: plan.total,
