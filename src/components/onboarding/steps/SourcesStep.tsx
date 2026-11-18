@@ -33,8 +33,14 @@ import {
  * Where one thing Ogen was given stands. A document is `uploading` first;
  * everything is `reading` from the moment it is added, for about a minute,
  * and `stopped` only if the person went on before it finished.
+ *
+ * Against the API as it is (`readsOnAdd` off), only a document is read on
+ * its own — its ingest — and the website and the answers are `queued` for
+ * the one brand read Continue starts. `failed` is an upload the server
+ * refused.
  */
-export type SourceStatus = 'uploading' | 'reading' | 'read' | 'stopped'
+export type SourceStatus =
+  'uploading' | 'reading' | 'read' | 'stopped' | 'queued' | 'failed'
 
 /**
  * One thing Ogen reads. A document is uploaded the moment it is chosen
@@ -104,6 +110,9 @@ export function SourcesStep({
   onRead,
   onStop,
   onLater,
+  readsOnAdd = true,
+  starting,
+  error,
 }: {
   /** Who is being read — the client's name, or how the sheet names them. */
   name: string
@@ -127,6 +136,17 @@ export function SourcesStep({
   onStop: () => void
   /** On without a read; the brand is read later from Foundation. */
   onLater: () => void
+  /**
+   * Whether each source is read the moment it is added (the design). Off,
+   * Continue starts one read over everything, documents still ingesting
+   * included — the API's shape — so there is nothing to stop and nothing to
+   * ask about.
+   */
+  readsOnAdd?: boolean
+  /** The read is being asked for. */
+  starting?: boolean
+  /** Why the read did not start, said where the hint is. */
+  error?: string
 }) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState<Kind | null>(null)
@@ -142,11 +162,13 @@ export function SourcesStep({
   ]
   const reading = statuses.some(busy)
   const anyRead = statuses.includes('read')
-  const onContinue = reading
-    ? () => setAsking(true)
-    : anyRead
-      ? onRead
-      : onLater
+  const onContinue = !readsOnAdd
+    ? onRead
+    : reading
+      ? () => setAsking(true)
+      : anyRead
+        ? onRead
+        : onLater
   // Asking only holds while something is still being read: a read finishing
   // under the question answers it, and the next add starts unasked.
   if (asking && !reading) setAsking(false)
@@ -164,7 +186,11 @@ export function SourcesStep({
   return (
     <StepCard
       title={t('onboarding.sources.title', { name })}
-      lead={t('onboarding.sources.lead')}
+      lead={t(
+        readsOnAdd
+          ? 'onboarding.sources.lead'
+          : 'onboarding.sources.leadTogether',
+      )}
       footer={
         <StepFooter
           onBack={onBack}
@@ -178,7 +204,18 @@ export function SourcesStep({
                 />
                 {t('onboarding.sources.stop.body')}
               </span>
-            ) : !given ? undefined : reading ? (
+            ) : error ? (
+              <span className="flex items-start gap-2 text-primary-foreground">
+                <WarningIcon
+                  aria-hidden
+                  weight="fill"
+                  className="mt-0.5 size-4 shrink-0 text-warning-ink"
+                />
+                {error}
+              </span>
+            ) : !given ? undefined : !readsOnAdd ? (
+              t('onboarding.sources.togetherHint')
+            ) : reading ? (
               t('onboarding.sources.readingHint')
             ) : anyRead ? (
               t('onboarding.sources.readHint')
@@ -195,7 +232,7 @@ export function SourcesStep({
                 </Button>
               </div>
             ) : given ? (
-              <Button variant="accent" onClick={onContinue}>
+              <Button variant="accent" loading={starting} onClick={onContinue}>
                 {t('onboarding.sources.continue')}
               </Button>
             ) : (
@@ -539,6 +576,13 @@ function AddedRow({
           className={cn(HINT_TEXT, 'flex shrink-0 items-center gap-1.5')}
           aria-live="polite"
         >
+          {status === 'failed' && (
+            <WarningIcon
+              aria-hidden
+              weight="fill"
+              className="size-3.5 text-warning-ink"
+            />
+          )}
           {status === 'read' && (
             <CheckIcon
               aria-hidden

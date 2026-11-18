@@ -5,7 +5,7 @@ import { ReviewScreen } from '@/components/brand/distill/ReviewScreen'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { keptTally } from '@/lib/brandDistill'
+import { isRunOpen, keptTally } from '@/lib/brandDistill'
 import { useDistillReview } from '@/stores/brandDistillStore'
 import type { DistillRun } from '@/types/brandDistill'
 import { LABEL_TEXT, StepCard, StepFooter } from '../OnboardingFrame'
@@ -29,6 +29,8 @@ export function BrandStep({
   onName,
   onBack,
   onSave,
+  saving,
+  error,
 }: {
   run: DistillRun
   name: string
@@ -38,9 +40,43 @@ export function BrandStep({
   siteName?: string
   onName: (name: string) => void
   onBack: () => void
+  /** Saves what was kept and goes on; past a failed read, only goes on. */
   onSave: () => void
+  saving?: boolean
+  error?: string
 }) {
   const { t } = useTranslation()
+
+  // A read that ended without anything to review — failed, or closed in
+  // another tab — says so and lets the person go on; the brand can be read
+  // again from Foundation.
+  if (!isRunOpen(run.status) && run.status !== 'ready') {
+    const failed = run.status === 'failed'
+    return (
+      <StepCard
+        title={t(
+          failed
+            ? 'onboarding.brand.failedTitle'
+            : 'onboarding.brand.closedTitle',
+        )}
+        lead={t(
+          failed
+            ? 'onboarding.brand.failedLead'
+            : 'onboarding.brand.closedLead',
+        )}
+        footer={
+          <StepFooter
+            onBack={onBack}
+            next={
+              <Button variant="accent" onClick={onSave}>
+                {t('onboarding.continue')}
+              </Button>
+            }
+          />
+        }
+      />
+    )
+  }
 
   if (run.status !== 'ready' || !run.proposal) {
     return (
@@ -69,7 +105,13 @@ export function BrandStep({
       </StepCard>
       <ReviewScreen run={run} proposal={run.proposal} brand={undefined} />
       <section className="bg-primary px-5 pb-6 lg:px-8">
-        <ReviewFooter run={run} onBack={onBack} onSave={onSave} />
+        <ReviewFooter
+          run={run}
+          onBack={onBack}
+          onSave={onSave}
+          saving={saving}
+          error={error}
+        />
       </section>
     </>
   )
@@ -79,10 +121,14 @@ function ReviewFooter({
   run,
   onBack,
   onSave,
+  saving,
+  error,
 }: {
   run: DistillRun
   onBack: () => void
   onSave: () => void
+  saving?: boolean
+  error?: string
 }) {
   const { t } = useTranslation()
   const review = useDistillReview(run.id)
@@ -91,6 +137,7 @@ function ReviewFooter({
   return (
     <StepFooter
       onBack={onBack}
+      note={error}
       next={
         <div className="flex items-center gap-3">
           {tally && (
@@ -98,7 +145,7 @@ function ReviewFooter({
               {t('onboarding.brand.kept', tally)}
             </span>
           )}
-          <Button variant="accent" onClick={onSave}>
+          <Button variant="accent" loading={saving} onClick={onSave}>
             {t('onboarding.brand.keep')}
           </Button>
         </div>

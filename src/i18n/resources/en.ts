@@ -9012,14 +9012,16 @@ export const en = {
       },
       nameClient: 'Client’s name',
       nameOwn: 'Business name',
-      nameHint: 'Optional. Left empty, Ogen takes it from the website.',
+      nameHint: 'Optional. It becomes the workspace’s name.',
     },
     sources: {
       title: 'What can Ogen read about {{name}}?',
       lead: 'Ogen learns how they sound from what already exists. Add whatever you have; each one is read as soon as it is added, and none of it is required.',
+      leadTogether:
+        'Ogen learns how they sound from what already exists. Add whatever you have; none of it is required.',
       website: {
         title: 'Website',
-        body: 'Ogen reads up to 30 of its pages.',
+        body: 'Ogen reads up to 10 of its pages.',
       },
       documents: {
         title: 'Documents',
@@ -9031,7 +9033,7 @@ export const en = {
         body: 'Little written down? A sentence each.',
       },
       websiteLabel: 'Website address',
-      websiteHint: 'Ogen reads the home page and up to 30 pages under it.',
+      websiteHint: 'Ogen reads the home page and up to 9 pages under it.',
       add: 'Add the website',
       drop: 'Drop files here, or',
       choose: 'choose them',
@@ -9046,6 +9048,8 @@ export const en = {
       reading: 'Reading, about a minute',
       done: 'Read',
       stopped: 'Stopped',
+      queued: 'Read when you continue',
+      failed: 'Couldn’t be uploaded',
       retry: 'Read again',
       answered_one: '{{formatted}} answer',
       answered_other: '{{formatted}} answers',
@@ -9054,6 +9058,8 @@ export const en = {
         'Each takes about a minute. You can wait here, or add more while you do.',
       readHint:
         'Next you see what Ogen took from them. Nothing goes into the brand until you review it.',
+      togetherHint:
+        'Continue reads all of it together, in a minute or two. Nothing goes into the brand until you review it.',
       later: 'Do this later',
       stop: {
         body: 'Ogen is still reading. Going on now stops it, and the sheet on the right is not filled in from what you added. You can read it again from Foundation later.',
@@ -9075,6 +9081,13 @@ export const en = {
       useSite: 'Use that',
       keep: 'Save to the brand',
       kept: '{{kept}} of {{total}} kept',
+      failedTitle: 'Ogen couldn’t read the brand',
+      failedLead:
+        'Nothing was saved. You can read it again from Foundation once setup is done.',
+      closedTitle: 'This read is over',
+      closedLead:
+        'It was saved, discarded or ran out of time. Foundation has whatever was kept.',
+      saveFailed: 'The brand wasn’t saved. Try again.',
     },
     accounts: {
       title: 'Where does {{name}} post?',
@@ -9086,6 +9099,10 @@ export const en = {
       later: 'You can connect more at any time in Workspace Settings.',
       finish: 'Finish setup',
       none: 'Finish without accounts',
+      connectFailed:
+        'That account didn’t connect. Try again, or connect it later in Workspace Settings.',
+      linkFailed:
+        'Couldn’t start connecting {{platform}}. Try again in a minute.',
     },
     sheet: {
       title: 'What Ogen needs',

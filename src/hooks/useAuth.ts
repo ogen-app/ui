@@ -10,6 +10,7 @@ import {
   resetPassword as resetPasswordRequest,
 } from '@/services/api/passwordReset'
 import { signup as signupRequest } from '@/services/api/tenants'
+import { owesOnboardingAfterSignup } from '@/hooks/useOnboarding'
 import { acceptInvitation } from '@/services/api/invitations'
 import { updateUser } from '@/services/api/users'
 import { listMembers, removeMember } from '@/services/api/workspaces'
@@ -70,9 +71,12 @@ export function useSignup() {
     // Same as login: `AuthRegisterForm` shows `error` inline.
     meta: { errorToast: false },
     mutationFn: signupRequest,
-    onSuccess: (user) => {
+    // Awaited before the form's own `onSuccess` navigates, so the guard's
+    // first read already finds the new workspace owing its setup.
+    onSuccess: async (user) => {
       invalidateSession()
       setUser(user)
+      await owesOnboardingAfterSignup()
     },
   })
 }
