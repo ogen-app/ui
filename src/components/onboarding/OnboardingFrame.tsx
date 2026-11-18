@@ -46,7 +46,10 @@ export function OnboardingFrame({
   const furthest = ONBOARDING_STAGES.indexOf(reached)
 
   return (
-    <PageContainer variant="fullscreen" className="bg-secondary">
+    // `fullscreen` pins the height to the viewport (`h-0` under a min-height),
+    // so a long step overflowed it and the grey page ended mid-scroll. Setup
+    // grows with its step instead.
+    <PageContainer variant="fullscreen" className="h-auto bg-secondary">
       <header className="flex h-14 shrink-0 items-center gap-4 border-b border-quaternary bg-primary px-4 lg:px-6">
         <Logo className="size-7 shrink-0" />
         <nav aria-label={t('onboarding.progress')} className="min-w-0 flex-1">
