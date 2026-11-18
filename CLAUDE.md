@@ -1204,11 +1204,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   solid, with no gradient. A list or grid keeps its header pinned (its actions
   steer it); a document (`PageHeader`'s `scrollAway`: Strategy, Overview,
   Analytics, Activity, Settings, Profile) lets it scroll away, and the top bar
-  takes over after the switcher as "Strategy › Voice" — the title, which
-  scrolls back up, and the card being read (`stores/pageCrumbStore`). What
-  the crumb can name is marked: `SettingsCard` and `PageSection` carry
-  `data-crumb`, and a heading holding more than the name marks the name with
-  `data-crumb-label`.
+  takes over its title after the switcher — "Strategy", which scrolls back
+  up (`stores/pageCrumbStore`). Only the title: the bar deliberately does not
+  follow which card is being read.
 - **There are no centred columns.** The content column is `max-w-content`
   (740px) against the page's left gutter, under the header's title — never
   `mx-auto`. `PageActionBar` centres itself on that column, not on the page.

@@ -21,7 +21,7 @@ export function PageSection({
   children: ReactNode
 }) {
   return (
-    <section data-crumb="" className="flex flex-col gap-4">
+    <section className="flex flex-col gap-4">
       <header className="flex w-full max-w-content flex-col gap-1">
         <h2 className="font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
           {title}

@@ -26,9 +26,6 @@ export function SettingsCard({
 }) {
   return (
     <section
-      // A titled card is something the bar over a document can name while it
-      // is being read ("Strategy › Voice", `PageHeader`'s `scrollAway`).
-      data-crumb={title ? '' : undefined}
       className={cn(
         'w-full max-w-content bg-primary px-6 py-6 flex flex-col gap-5 min-w-0',
         className,

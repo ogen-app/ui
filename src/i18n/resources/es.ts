@@ -327,7 +327,6 @@ export const es: Translation = {
     switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
     /** The bar's "Strategy › Voice" once a page's header has scrolled away. */
-    pageCrumb: 'Dónde estás en esta página',
     scope: {
       all: 'Todas las campañas',
       switch: 'Cambiar de campaña',

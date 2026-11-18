@@ -352,9 +352,7 @@ function SectionCard({
               style={{ color: section.tone }}
               aria-hidden
             />
-            <span className="truncate" data-crumb-label>
-              {copy.label}
-            </span>
+            <span className="truncate">{copy.label}</span>
             {/* The honesty rule (CON-226 §9) at index length. The section's own
                 screen still says it in a sentence; here it is three words,
                 because five sentences down one page is the noise that made this

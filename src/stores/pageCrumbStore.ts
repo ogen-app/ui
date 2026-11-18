@@ -1,9 +1,8 @@
 import { create } from 'zustand'
 
 /**
- * Where a document page is scrolled to, for the bar over the page: its title
- * once its own header has scrolled away, and the card being read
- * ("Strategy › Voice"). Written by `PageHeader` with `scrollAway`, read by
+ * A document page's title, for the bar over the page once the page's own
+ * header has scrolled away. Written by `PageHeader` with `scrollAway`, read by
  * `TopBar`.
  *
  * Token-guarded like the assistant's page: a page unmounting late must not
@@ -12,8 +11,6 @@ import { create } from 'zustand'
  */
 export type PageCrumb = {
   title: string
-  /** The card at the top of the scroller, by its heading; null above the first. */
-  section: string | null
   /** Scrolls the page back to its header. */
   toTop: () => void
 }
@@ -30,9 +27,7 @@ export const usePageCrumbStore = create<PageCrumbState>((set) => ({
   owner: null,
   show: (owner, crumb) =>
     set((state) =>
-      state.owner === owner &&
-      state.crumb?.title === crumb.title &&
-      state.crumb?.section === crumb.section
+      state.owner === owner && state.crumb?.title === crumb.title
         ? {}
         : { owner, crumb },
     ),

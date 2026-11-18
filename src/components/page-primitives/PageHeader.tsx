@@ -30,21 +30,11 @@ type PageHeaderProps = {
   actions?: ReactNode
   /**
    * A document page: the header scrolls away with the page, and the bar over
-   * the page takes over its title, with the card being read beside it
-   * (`pageCrumbStore`). Requires a scrollable ancestor (the header must sit
+   * the page takes over its title (`pageCrumbStore`). Requires a scrollable ancestor (the header must sit
    * inside the page's scroll container).
    */
   scrollAway?: boolean
 }
-
-/**
- * Everything that can be named in the crumb: `SettingsCard` and `PageSection`
- * mark themselves. A band is named until the first of its cards is reached.
- */
-const CRUMB_TARGET = '[data-crumb]'
-
-/** A card counts as being read once its top is this close under the bar. */
-const READING_LINE = 24
 
 /**
  * The one page-header primitive: a 40px row ruled off from the page by a
@@ -64,8 +54,9 @@ const READING_LINE = 24
  *
  * **Two behaviours on scroll.** A list or a grid keeps its header pinned —
  * its actions are what you steer it with. A document (`scrollAway`) lets the
- * header go with the page, and the bar over the page says where you are
- * instead: "Strategy › Voice", the title and the card being read.
+ * header go with the page, and the bar over the page carries its title
+ * instead, after the campaign. Only the title: which card is being read is
+ * not tracked.
  */
 export function PageHeader({
   title,
@@ -91,17 +82,8 @@ export function PageHeader({
     const onScroll = () => {
       const header = rootRef.current?.getBoundingClientRect()
       if (!header) return
-      const top = scroller.getBoundingClientRect().top
-      if (header.bottom > top) {
-        hide(owner)
-        return
-      }
-      let section: string | null = null
-      for (const card of scroller.querySelectorAll(CRUMB_TARGET)) {
-        if (card.getBoundingClientRect().top > top + READING_LINE) break
-        section = crumbLabel(card) ?? section
-      }
-      show(owner, { title, section, toTop })
+      if (header.bottom > scroller.getBoundingClientRect().top) hide(owner)
+      else show(owner, { title, toTop })
     }
     onScroll()
     scroller.addEventListener('scroll', onScroll, { passive: true })
@@ -176,16 +158,4 @@ export function PageHeader({
       <div aria-hidden className="relative mt-2 h-px bg-border" />
     </div>
   )
-}
-
-/**
- * A card's name as the crumb says it: its heading — the first `h2` in it —
- * or the label marked inside that heading when it carries more than the name
- * (a badge).
- */
-function crumbLabel(card: Element): string | null {
-  const heading = card.querySelector('h2')
-  const label = heading?.querySelector('[data-crumb-label]') ?? heading
-  const text = label?.textContent?.trim()
-  return text ? text : null
 }

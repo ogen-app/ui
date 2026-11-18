@@ -407,7 +407,6 @@ export const en = {
      * is narrowed to. "All campaigns" is the workspace.
      */
     /** The bar's "Strategy › Voice" once a page's header has scrolled away. */
-    pageCrumb: 'Where you are on this page',
     scope: {
       all: 'All campaigns',
       switch: 'Switch campaign',

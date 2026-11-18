@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { CaretRightIcon } from '@phosphor-icons/react'
 import { CampaignSwitcher } from '@/components/layout/CampaignSwitcher'
 import { Logo } from '@/components/Logo'
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
@@ -14,7 +13,7 @@ import { usePageCrumbStore } from '@/stores/pageCrumbStore'
 
 /**
  * The bar over the page: which part of the work — the campaign — on the left,
- * then, once a document's own header has scrolled away, where in it you are,
+ * then, once a document's own header has scrolled away, its title,
  * and at its far end Ogen. 56px, the workspace cell's height, so the two
  * rules under them are one line across the frame.
  */
@@ -33,43 +32,22 @@ export function TopBar() {
 }
 
 /**
- * "Strategy › Voice": a document's title once its header has scrolled away,
- * and the card being read (`pageCrumbStore`). The title takes you back up to
- * the header it stands in for.
+ * A document's title once its own header has scrolled away
+ * (`pageCrumbStore`), and the way back up to it. Only the title — the bar
+ * does not follow which card is being read.
  */
 function PageCrumbTrail() {
-  const { t } = useTranslation()
   const crumb = usePageCrumbStore((s) => s.crumb)
   if (!crumb) return null
 
   return (
-    <nav
-      aria-label={t('nav.pageCrumb')}
-      className="flex min-w-0 items-center gap-1.5 text-sm animate-in fade-in-0 duration-200"
+    <button
+      type="button"
+      onClick={crumb.toTop}
+      className="min-w-0 truncate rounded-button px-1 text-sm font-medium text-primary-foreground outline-none animate-in fade-in-0 duration-200 hover:text-secondary-foreground focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <button
-        type="button"
-        onClick={crumb.toTop}
-        className="truncate rounded-button px-1 font-medium text-secondary-foreground outline-none hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {crumb.title}
-      </button>
-      {crumb.section && (
-        <>
-          <CaretRightIcon
-            aria-hidden
-            weight="bold"
-            className="size-3 shrink-0 text-tertiary-foreground"
-          />
-          <span
-            aria-current="location"
-            className="truncate font-medium text-primary-foreground"
-          >
-            {crumb.section}
-          </span>
-        </>
-      )}
-    </nav>
+      {crumb.title}
+    </button>
   )
 }
 
