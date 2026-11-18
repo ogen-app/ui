@@ -17,6 +17,7 @@
  * triggers can be placed ahead of the writing.
  */
 export const HELP_TOPICS = [
+  'campaign.overview',
   'post.status',
   'post.schedule',
   'post.scheduled-at',

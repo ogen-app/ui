@@ -1553,8 +1553,6 @@ export const es: Translation = {
     },
     todo: {
       addPost: 'AÑADIR PUBLICACIÓN',
-      generate: 'GENERAR CON OGEN',
-      generateAsk: 'Genera un plan de contenido para esta campaña.',
     },
     stats: {
       dayOf: 'Día {{day}} de {{total}}',
@@ -1627,19 +1625,44 @@ export const es: Translation = {
     },
     setup: {
       title: 'Prepara esta campaña',
-      lede: 'Tres pasos, y esta página empieza a seguirla.',
+      askOgen: 'PEDIR A OGEN',
       strategy: {
         title: 'Fechas y objetivo de publicaciones',
         detail: 'Cuándo se ejecuta y con qué frecuencia publica.',
+        action: 'FIJAR FECHAS',
+        ask: 'Sugiere fechas y un objetivo de publicaciones para esta campaña.',
       },
       channels: {
         title: 'Canales',
         detail: 'Dónde publica, con una cuenta conectada.',
+        action: 'ELEGIR CANALES',
+        ask: 'Sugiere en qué canales debería publicar esta campaña.',
       },
       posts: {
         title: 'La primera publicación',
         detail: 'Escríbela tú o deja que Ogen prepare un plan.',
+        action: 'AÑADIR PUBLICACIÓN',
+        ask: 'Genera un plan de contenido para esta campaña.',
       },
+    },
+    learn: {
+      title: 'Cómo funciona una campaña',
+      stages: {
+        title: 'Sus fechas marcan su etapa',
+        detail:
+          'En preparación antes de empezar, en marcha mientras dura, terminada después. Esta página cambia con ella.',
+      },
+      goal: {
+        title: 'El objetivo es un ritmo',
+        detail:
+          'Tantas publicaciones por semana o por mes. El total sale de las fechas.',
+      },
+      ogen: {
+        title: 'Ogen trabaja dentro de ella',
+        detail:
+          'El asistente lee la estrategia y los recursos de la campaña, así que lo que redacta encaja con el brief.',
+      },
+      more: 'MÁS EN EL CENTRO DE AYUDA',
     },
   },
 

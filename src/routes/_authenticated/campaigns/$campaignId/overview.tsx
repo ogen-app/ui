@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { useHelpTopicMap } from '@/hooks/useHelp'
+import { useHelpStore } from '@/stores/helpStore'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
 import {
@@ -113,9 +116,10 @@ function CampaignOverviewScreen() {
 /**
  * What the screen's actions do for real. The Overview runs no assistant, so
  * a fix is asked of the campaign's thread — `<fix>: <problem>`, which answers
- * with that problem's fixes as offers — and GENERATE only writes the ask into
- * the composer: generating writes posts, so the send is the user's. Both
- * creating gestures are gated on the click (CON-232).
+ * with that problem's fixes as offers — and a setup step's ASK OGEN only
+ * writes the ask into the composer: each one changes the campaign, so the
+ * send is the user's. Adding a post and asking for a plan are gated on the
+ * click (CON-232).
  */
 function useOverviewHandlers(campaignId: string) {
   const { t } = useTranslation()
@@ -129,6 +133,12 @@ function useOverviewHandlers(campaignId: string) {
   const postGate = useUpgradeGate('posts_total')
   const planGate = useUpgradeGate('plan_runs_per_month')
   const thread = threadIdFor({ kind: 'campaign', campaignId })
+  const helpEnabled = useFeatureFlag('help-center')
+  const { data: helpTopics } = useHelpTopicMap({ enabled: helpEnabled })
+  const helpArticle = helpEnabled
+    ? helpTopics?.['campaign.overview']
+    : undefined
+  const openHelp = useHelpStore((s) => s.open)
 
   const ignore = useMutation({
     mutationFn: (key: string) => dismissCampaignFinding(campaignId, key),
@@ -151,11 +161,16 @@ function useOverviewHandlers(campaignId: string) {
     askAll: () => ask(t('campaignOverview.problems.askAll')),
     ignore: (key) => ignore.mutate(key),
     addPost: () => void postGate.intent(() => addPost())(),
-    generate: () =>
-      void planGate.intent(() => {
+    withOgen: (step) => {
+      const fill = () => {
         openRightPanel('assistant')
-        askFor(thread, t('campaignOverview.todo.generateAsk'))
-      })(),
+        askFor(thread, t(`campaignOverview.setup.${step}.ask`))
+      }
+      // Only the plan generates posts, so only it is gated.
+      if (step === 'posts') void planGate.intent(fill)()
+      else fill()
+    },
+    learnMore: helpArticle ? () => openHelp(helpArticle) : undefined,
   }
 
   return {

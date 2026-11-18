@@ -1930,12 +1930,9 @@ export const en = {
       /** Sent to the campaign's assistant: the fix, then the problem. */
       askFix: '{{fix}}: {{problem}}',
     },
-    /** A first post, two ways: the setup card and the Before-launch list. */
+    /** The Before-launch list's first post. */
     todo: {
       addPost: 'ADD POST',
-      generate: 'GENERATE WITH OGEN',
-      /** Written into the campaign's composer; the send is the user's. */
-      generateAsk: 'Generate a content plan for this campaign.',
     },
     /** Shared by the band and the figures. */
     stats: {
@@ -2015,21 +2012,52 @@ export const en = {
       archive: 'Archive the campaign',
     },
     /** A campaign with no dates: the three things that make one. */
+    /**
+     * A campaign with no dates: the three things that make one. Each step is
+     * done by hand (`action`) or asked of Ogen (`ask`, written into the
+     * campaign's composer — the send is the user's).
+     */
     setup: {
       title: 'Set up this campaign',
-      lede: 'Three steps, and this page starts tracking it.',
+      askOgen: 'ASK OGEN',
       strategy: {
         title: 'Dates and a post goal',
         detail: 'When it runs and how often it publishes.',
+        action: 'SET DATES',
+        ask: 'Suggest dates and a post goal for this campaign.',
       },
       channels: {
         title: 'Channels',
         detail: 'Where it publishes, with an account connected.',
+        action: 'CHOOSE CHANNELS',
+        ask: 'Suggest which channels this campaign should publish on.',
       },
       posts: {
         title: 'The first post',
         detail: 'Write one yourself, or have Ogen draft a plan.',
+        action: 'ADD POST',
+        ask: 'Generate a content plan for this campaign.',
       },
+    },
+    /** Beside the setup card: teaching only, the screen reads the same without it. */
+    learn: {
+      title: 'How a campaign works',
+      stages: {
+        title: 'Its dates set its stage',
+        detail:
+          'Planning before it starts, running while it runs, ended after. This page changes with it.',
+      },
+      goal: {
+        title: 'The goal is a rate',
+        detail:
+          'So many posts a week or a month. The total follows from the dates.',
+      },
+      ogen: {
+        title: 'Ogen works inside it',
+        detail:
+          'The assistant reads the campaign’s strategy and assets, so what it drafts fits the brief.',
+      },
+      more: 'LEARN MORE IN THE HELP CENTRE',
     },
   },
 

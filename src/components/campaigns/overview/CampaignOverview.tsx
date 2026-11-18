@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import {
+  BookOpenIcon,
   CheckIcon,
   CircleDashedIcon,
   DotsThreeIcon,
@@ -55,7 +56,10 @@ export type OverviewHandlers = {
   askAll: () => void
   ignore: (key: string) => void
   addPost: () => void
-  generate: () => void
+  /** A setup step, asked of Ogen: written into the composer, sent by the user. */
+  withOgen: (step: SetupStep['id']) => void
+  /** Opens the help centre's campaign article; absent while none serves it. */
+  learnMore?: () => void
 }
 
 /**
@@ -85,11 +89,18 @@ export function CampaignOverview({
   if (model.stage === 'new') {
     return (
       <Frame>
-        <SetupCard
-          steps={model.setup ?? []}
-          campaignId={campaignId}
-          handlers={handlers}
-        />
+        <div className="flex h-full min-h-0 flex-col">
+          <Columns
+            left={
+              <SetupCard
+                steps={model.setup ?? []}
+                campaignId={campaignId}
+                handlers={handlers}
+              />
+            }
+            right={<LearnCard learnMore={handlers.learnMore} />}
+          />
+        </div>
       </Frame>
     )
   }
@@ -105,18 +116,19 @@ export function CampaignOverview({
             now={now}
           />
         )}
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @4xl:grid-rows-[minmax(0,1fr)]">
-          <div className="flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto">
-            <TimeColumn model={model} campaignId={campaignId} now={now} />
-          </div>
-          <div className="order-first flex min-w-0 flex-col gap-3 rounded-md bg-primary p-5 @4xl:order-none @4xl:min-h-0 @4xl:overflow-y-auto">
-            <NeedsList
-              model={model}
-              campaignId={campaignId}
-              handlers={handlers}
-            />
-          </div>
-        </div>
+        <Columns
+          left={<TimeColumn model={model} campaignId={campaignId} now={now} />}
+          right={
+            <div className={cn(SURFACE, 'flex flex-col gap-3 p-5 @4xl:flex-1')}>
+              <NeedsList
+                model={model}
+                campaignId={campaignId}
+                handlers={handlers}
+              />
+            </div>
+          }
+          rightFirst
+        />
       </div>
     </Frame>
   )
@@ -129,9 +141,46 @@ export function CampaignOverview({
  */
 function Frame({ children }: { children: ReactNode }) {
   return (
-    <div className="@container mx-auto h-full w-full max-w-wide">
+    <div className="@container h-full w-full">
       <div className="h-full overflow-y-auto pb-4 @4xl:overflow-hidden">
         {children}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * A card on the page: the panel colour with the hairline the menu and the
+ * rail are drawn with, so the cards sit in the same frame as the chrome.
+ */
+const SURFACE = 'rounded-md border border-border bg-primary'
+
+/**
+ * The two columns every stage shares — time on the left, what to do on the
+ * right — each scrolling on its own once the container is wide enough to
+ * hold both. `rightFirst` puts the to-do list on top when they stack.
+ */
+function Columns({
+  left,
+  right,
+  rightFirst = false,
+}: {
+  left: ReactNode
+  right: ReactNode
+  rightFirst?: boolean
+}) {
+  return (
+    <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @4xl:grid-rows-[minmax(0,1fr)]">
+      <div className="flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto">
+        {left}
+      </div>
+      <div
+        className={cn(
+          'flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto',
+          rightFirst && 'order-first @4xl:order-none',
+        )}
+      >
+        {right}
       </div>
     </div>
   )
@@ -181,7 +230,7 @@ function Band({
           })
 
   return (
-    <section className="flex flex-col gap-4 rounded-md bg-primary p-5">
+    <section className={cn(SURFACE, 'flex flex-col gap-4 p-5')}>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         <span className="font-display text-lg font-medium">
           {t(`campaignOverview.stage.${stage}`)}
@@ -372,7 +421,7 @@ function WeekBlock({
   const empty = days.every((d) => d.posts.length === 0)
   const todayKey = now.toDateString()
   return (
-    <section className="flex flex-col gap-3 rounded-md bg-primary p-5">
+    <section className={cn(SURFACE, 'flex flex-col gap-3 p-5')}>
       <div className="flex items-center gap-3">
         <Eyebrow>{t(`campaignOverview.week.${kind}`)}</Eyebrow>
         <Button variant="ghost" size="sm" className="ml-auto" asChild>
@@ -483,7 +532,7 @@ function CoverageBlock({
   const publishing = coverage.filter((c) => c.publishing)
   const covered = publishing.filter((c) => c.posts > 0).length
   return (
-    <section className="flex flex-col gap-3 rounded-md bg-primary p-5">
+    <section className={cn(SURFACE, 'flex flex-col gap-3 p-5')}>
       <Eyebrow>{t('campaignOverview.coverage.title')}</Eyebrow>
       <div className="grid grid-cols-7 gap-1">
         {coverage.map((c) => (
@@ -530,7 +579,7 @@ function LastWeekBlock({
 }) {
   const { t } = useTranslation()
   return (
-    <section className="flex flex-col gap-3 rounded-md bg-primary p-5">
+    <section className={cn(SURFACE, 'flex flex-col gap-3 p-5')}>
       <div className="flex items-center gap-3">
         <Eyebrow>{t('campaignOverview.lastWeek.title')}</Eyebrow>
         <Button variant="ghost" size="sm" className="ml-auto" asChild>
@@ -572,7 +621,7 @@ function ResultsBlock({
 }) {
   const { t } = useTranslation()
   return (
-    <section className="flex flex-col gap-3 rounded-md bg-primary p-5">
+    <section className={cn(SURFACE, 'flex flex-col gap-3 p-5')}>
       <div className="flex items-center gap-3">
         <Eyebrow>{t('campaignOverview.results.title')}</Eyebrow>
         <Button variant="ghost" size="sm" className="ml-auto" asChild>
@@ -971,13 +1020,14 @@ function TargetLink({
   )
 }
 
-// --- New --------------------------------------------------------------------
+// --- New ---------------------------------------------------------------------
 
 /**
- * A campaign with no dates has no time to place it in, so the screen is the
- * three things that make one: what it is for and when, where it publishes,
- * and something to publish. Steps already done are ticked rather than
- * hidden, so the card reads as progress.
+ * A campaign with no dates has no time to place it in, so the left column is
+ * the three things that make one. Every step offers the same pair — do it
+ * yourself, or ask Ogen — and only the first step still open is drawn dark,
+ * because that is the next thing to do. Steps already done are ticked rather
+ * than hidden, so the card reads as progress.
  */
 function SetupCard({
   steps,
@@ -989,21 +1039,15 @@ function SetupCard({
   handlers: OverviewHandlers
 }) {
   const { t } = useTranslation()
+  const next = steps.find((s) => !s.done)?.id
   return (
-    <section className="mx-auto mt-8 flex w-full max-w-content flex-col gap-5 rounded-md bg-primary p-6">
-      <div className="flex flex-col gap-1">
-        <h2 className="font-display text-xl font-medium">
-          {t('campaignOverview.setup.title')}
-        </h2>
-        <p className="text-sm text-secondary-foreground">
-          {t('campaignOverview.setup.lede')}
-        </p>
-      </div>
+    <section className={cn(SURFACE, 'flex flex-col gap-4 p-5')}>
+      <Eyebrow>{t('campaignOverview.setup.title')}</Eyebrow>
       <ol className="flex flex-col">
         {steps.map((step, i) => (
           <li
             key={step.id}
-            className="flex items-start gap-4 border-t border-border py-4"
+            className="flex items-baseline gap-4 border-t border-border py-4 first:border-t-0 first:pt-0 last:pb-0"
           >
             <span
               className={cn(
@@ -1031,37 +1075,98 @@ function SetupCard({
               <span className="text-sm text-tertiary-foreground">
                 {t(`campaignOverview.setup.${step.id}.detail`)}
               </span>
-              {step.id === 'posts' && !step.done && (
+              {!step.done && (
                 <span className="mt-2 flex flex-wrap gap-2">
-                  <Button
-                    variant="defaultInverted"
-                    size="sm"
-                    onClick={handlers.addPost}
-                  >
-                    <PlusIcon />
-                    <span>{t('campaignOverview.todo.addPost')}</span>
-                  </Button>
+                  <SetupAction
+                    step={step.id}
+                    primary={step.id === next}
+                    campaignId={campaignId}
+                    handlers={handlers}
+                  />
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handlers.generate}
+                    onClick={() => handlers.withOgen(step.id)}
                   >
                     <SparkleIcon />
-                    <span>{t('campaignOverview.todo.generate')}</span>
+                    <span>{t('campaignOverview.setup.askOgen')}</span>
                   </Button>
                 </span>
               )}
             </div>
-            {step.id !== 'posts' && !step.done && (
-              <Button variant="ghost" size="sm" asChild>
-                <SectionLink target="strategy" campaignId={campaignId}>
-                  {t('campaignOverview.openStrategy')}
-                </SectionLink>
-              </Button>
-            )}
           </li>
         ))}
       </ol>
+    </section>
+  )
+}
+
+/**
+ * A step's do-it-yourself half: dates and channels are set on Strategy, so
+ * those go there; the first post is made here.
+ */
+function SetupAction({
+  step,
+  primary,
+  campaignId,
+  handlers,
+}: {
+  step: SetupStep['id']
+  primary: boolean
+  campaignId: string
+  handlers: OverviewHandlers
+}) {
+  const { t } = useTranslation()
+  const variant = primary ? 'defaultInverted' : 'outline'
+  if (step === 'posts') {
+    return (
+      <Button variant={variant} size="sm" onClick={handlers.addPost}>
+        <PlusIcon />
+        <span>{t('campaignOverview.setup.posts.action')}</span>
+      </Button>
+    )
+  }
+  return (
+    <Button variant={variant} size="sm" asChild>
+      <SectionLink target="strategy" campaignId={campaignId}>
+        {t(`campaignOverview.setup.${step}.action`)}
+      </SectionLink>
+    </Button>
+  )
+}
+
+/**
+ * The right column of a new campaign: what someone setting one up for the
+ * first time would want explained, in three lines, and the way to the help
+ * centre's article when one serves the topic. Teaching only — the screen
+ * reads the same without it.
+ */
+function LearnCard({ learnMore }: { learnMore?: () => void }) {
+  const { t } = useTranslation()
+  const points = ['stages', 'goal', 'ogen'] as const
+  return (
+    <section className={cn(SURFACE, 'flex flex-col gap-4 p-5')}>
+      <Eyebrow>{t('campaignOverview.learn.title')}</Eyebrow>
+      <ul className="flex flex-col gap-4">
+        {points.map((p) => (
+          <li key={p} className="flex flex-col gap-1">
+            <span className="text-sm font-medium">
+              {t(`campaignOverview.learn.${p}.title`)}
+            </span>
+            <span className="text-sm text-tertiary-foreground">
+              {t(`campaignOverview.learn.${p}.detail`)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {learnMore && (
+        <span>
+          <Button variant="outline" size="sm" onClick={learnMore}>
+            <BookOpenIcon />
+            <span>{t('campaignOverview.learn.more')}</span>
+          </Button>
+        </span>
+      )}
     </section>
   )
 }
