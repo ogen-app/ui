@@ -837,7 +837,7 @@ function PostEditorSurface({
           />
           <div
             className={cn(
-              'flex flex-col items-center gap-3 relative z-0',
+              'flex flex-col items-start gap-3 relative z-0 px-3 lg:px-6',
               PAGE_ACTION_BAR_INSET,
             )}
           >

@@ -27,8 +27,9 @@ export type CardLink = {
 
 /**
  * One module card on the Campaign Overview screen. Capped at the shared
- * content-column width and centred, so the screen reads as one column like
- * the Strategy and Settings pages rather than stretching to the viewport.
+ * content-column width and set against the left edge, so the screen reads as
+ * one column like the Strategy and Settings pages rather than stretching to
+ * the viewport.
  *
  * A card that has somewhere to go says so with a button, not with a header that
  * lights up: a tinted header row is a hit area you have to discover by sweeping
@@ -69,7 +70,7 @@ export function OverviewCard({
   return (
     <section
       className={cn(
-        'w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0',
+        'w-full max-w-content rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0',
         className,
       )}
     >
@@ -254,7 +255,7 @@ export function CollapsedCard({
     <SectionLink
       target={target}
       campaignId={campaignId}
-      className="group w-full max-w-content mx-auto rounded-md bg-primary px-5 py-4 flex flex-col gap-2 min-w-0 cursor-pointer transition-shadow duration-150 hover:shadow-lg"
+      className="group w-full max-w-content rounded-md bg-primary px-5 py-4 flex flex-col gap-2 min-w-0 cursor-pointer transition-shadow duration-150 hover:shadow-lg"
       label={t(openKey)}
     >
       <div className="flex items-center gap-3 min-w-0">

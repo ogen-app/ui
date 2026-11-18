@@ -326,6 +326,8 @@ export const es: Translation = {
     closeSidebar: 'Cerrar la barra lateral',
     switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
+    /** The bar's "Strategy › Voice" once a page's header has scrolled away. */
+    pageCrumb: 'Dónde estás en esta página',
     scope: {
       all: 'Todas las campañas',
       switch: 'Cambiar de campaña',
@@ -1193,10 +1195,6 @@ export const es: Translation = {
       },
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
-    },
-    page: {
-      campaignTitle: 'Ideas de {{campaign}}',
-      untitledCampaign: 'Campaña sin título',
     },
     loadFailed: 'No se pudieron cargar las ideas',
     saveFailed: 'No se pudo guardar. Tus ideas no han cambiado.',
@@ -6240,10 +6238,6 @@ export const es: Translation = {
     },
 
     overview: {
-      intro: {
-        title: 'A partir de qué escribe la app',
-        body: 'Las voces con las que escribe, a quién se dirige y lo que nunca puede afirmar. Se escribe una vez para el espacio de trabajo, y cada campaña y cada publicación lo heredan.',
-      },
       nothingReads: 'Todavía nada lee esto',
       unreadable: 'No se ha podido cargar lo que hay aquí.',
       stated: '{{count}} indicados',
@@ -6738,7 +6732,6 @@ export const es: Translation = {
       deleted_one: '{{formatted}} publicación eliminada',
       deleted_other: '{{formatted}} publicaciones eliminadas',
     },
-    title: 'Campañas',
     add: 'AÑADIR CAMPAÑA',
     error: 'No se pudieron cargar las campañas',
     untitled: 'esta campaña',
@@ -6758,7 +6751,6 @@ export const es: Translation = {
       removedByAssistant: '{{what}} quitado por el asistente',
       undoInThread: 'DESHACER está en la conversación',
       timeline: {
-        title: 'Campañas',
         empty:
           'Todavía no hay campañas. Cada una que añadas se dibuja aquí junto a las demás, según sus fechas.',
         undated: 'Sin fechas',
@@ -6773,9 +6765,18 @@ export const es: Translation = {
         noVoice: 'Sin voz',
         defaultVoice: '{{voice}} (predeterminada)',
       },
-      fromWorkspace: {
-        title: 'Del espacio de trabajo',
-        body: 'La voz, la audiencia y las series en las que escribe esta campaña se eligen aquí. Los límites y los datos se aplican a todas las campañas, así que se editan para todas a la vez.',
+      /**
+       * The two bands Strategy is built of at both levels: the campaigns (or
+       * this campaign), then the Foundation. Each Foundation sentence says
+       * what the band is from where it is read.
+       */
+      bands: {
+        campaigns: 'Campañas',
+        thisCampaign: 'Esta campaña',
+        foundation:
+          'Las voces con las que escribe, a quién se dirige y lo que nunca puede afirmar. Se escribe una vez para el espacio de trabajo, y cada campaña y cada publicación lo heredan.',
+        foundationForCampaign:
+          'La voz, la audiencia y las series en las que escribe esta campaña se eligen aquí. Los límites y los datos se aplican a todas las campañas, así que se editan para todas a la vez.',
       },
     },
     type: {
@@ -6852,7 +6853,6 @@ export const es: Translation = {
     },
     page: {
       title: 'Recursos',
-      campaignTitle: 'Recursos de {{campaign}}',
       add: {
         button: 'AÑADIR CONTENIDO',
         note: 'Escribir una nota',

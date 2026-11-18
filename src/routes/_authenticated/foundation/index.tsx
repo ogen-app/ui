@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { BrandOverview } from '@/components/brand/BrandOverview'
 import { BrandPage } from '@/components/brand/detail'
 import { CampaignTimeline } from '@/components/strategy/CampaignTimeline'
+import { PageSection } from '@/components/page-primitives/PageSection'
 import { useBrand } from '@/hooks/useBrand'
 import { useFacts } from '@/hooks/useFacts'
 import { useGuardrailsStance } from '@/hooks/useGuardrailsStance'
@@ -38,8 +39,8 @@ import { fetched } from '@/lib/fetched'
  * own card, on a screen where the others are readable.
  *
  * It still borrows `BrandDetail`'s frame: the header goes *inside* the
- * scroller, sticky and carrying the standard gradient, so the cards dissolve
- * under it rather than being cut off by it. See `BrandDetail`.
+ * scroller — and, being a document's, scrolls away with it, leaving its title
+ * and the card being read to the bar above. See `BrandDetail`.
  */
 export const Route = createFileRoute('/_authenticated/foundation/')({
   component: BrandOverviewPage,
@@ -64,20 +65,17 @@ function BrandOverviewPage() {
           type="scroll"
           scrollHideDelay={350}
         >
-          {/* `fadeOnScroll` because this header has a title. The section
-              screens keep the static gradient (post-details style) — they are
-              a bare caret, so there is nothing up there to collide with the
-              cards passing under it. A title is: it would sit on top of the
-              rows for the whole length of the page. Same treatment as Profile
-              and Workspace Settings, which are the app's other titled
-              scrollers. */}
-          <PageHeader title={t('nav.campaign.strategy')} fadeOnScroll />
-          <div className="flex flex-col gap-8 px-3 pb-10 lg:px-6">
-            <CampaignTimeline />
-            <section className="flex flex-col gap-3">
-              <h2 className="mx-auto w-full max-w-content font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
-                {t('nav.foundation')}
-              </h2>
+          <PageHeader title={t('nav.campaign.strategy')} scrollAway />
+          {/* Two bands, as a campaign's Strategy has: the campaigns, then the
+              Foundation they are all written under. */}
+          <div className="flex flex-col gap-10 px-3 pb-10 pt-4 lg:px-6">
+            <PageSection title={t('campaigns.strategy.bands.campaigns')}>
+              <CampaignTimeline />
+            </PageSection>
+            <PageSection
+              title={t('nav.foundation')}
+              description={t('campaigns.strategy.bands.foundation')}
+            >
               <BrandOverview
                 brand={fetched(brand)}
                 facts={facts}
@@ -90,7 +88,7 @@ function BrandOverviewPage() {
                 stance={stance}
                 onOpen={(id) => navigate({ to: `/foundation/${id}` })}
               />
-            </section>
+            </PageSection>
           </div>
         </ScrollArea>
       </div>

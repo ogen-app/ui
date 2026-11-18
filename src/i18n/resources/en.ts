@@ -406,6 +406,8 @@ export const en = {
      * The campaign switcher above the page: the scope every place in the menu
      * is narrowed to. "All campaigns" is the workspace.
      */
+    /** The bar's "Strategy › Voice" once a page's header has scrolled away. */
+    pageCrumb: 'Where you are on this page',
     scope: {
       all: 'All campaigns',
       switch: 'Switch campaign',
@@ -1419,10 +1421,6 @@ export const en = {
       },
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
-    },
-    page: {
-      campaignTitle: '{{campaign}} Ideas',
-      untitledCampaign: 'Untitled campaign',
     },
     loadFailed: 'Unable to load ideas',
     saveFailed: 'Could not save that. Your ideas are unchanged.',
@@ -7568,10 +7566,6 @@ export const en = {
        * count and nothing it cannot see — the facts card comes and goes with
        * its flag, and the line stays true either way.
        */
-      intro: {
-        title: 'What the app writes from',
-        body: 'The voices it writes in, who it is written to, and what it may never claim. Written once for the workspace, and every campaign and every post inherits it.',
-      },
       /**
        * The honesty rule at index length. The section's own screen says it in a
        * sentence (`shell.readByNothing`); five sentences down one page is the
@@ -8145,7 +8139,6 @@ export const en = {
       deleted_one: '{{formatted}} post deleted',
       deleted_other: '{{formatted}} posts deleted',
     },
-    title: 'Campaigns',
     add: 'ADD CAMPAIGN',
     error: 'Failed to load campaigns',
     untitled: 'this campaign',
@@ -8176,7 +8169,6 @@ export const en = {
        * what each commits to and the voice it writes in.
        */
       timeline: {
-        title: 'Campaigns',
         empty:
           'No campaigns yet. Each one you add is drawn here against the others, by its dates.',
         undated: 'No dates set',
@@ -8195,9 +8187,18 @@ export const en = {
        * Strategy for one campaign: the workspace material it is written
        * under and cannot change from here.
        */
-      fromWorkspace: {
-        title: 'From the workspace',
-        body: 'The voice, audience and series this campaign writes in are chosen here. The guardrails and facts apply to every campaign, so they are edited for all campaigns at once.',
+      /**
+       * The two bands Strategy is built of at both levels: the campaigns (or
+       * this campaign), then the Foundation. Each Foundation sentence says
+       * what the band is from where it is read.
+       */
+      bands: {
+        campaigns: 'Campaigns',
+        thisCampaign: 'This campaign',
+        foundation:
+          'The voices it writes in, who it is written to, and what it may never claim. Written once for the workspace, and every campaign and every post inherits it.',
+        foundationForCampaign:
+          'The voice, audience and series this campaign writes in are chosen here. The guardrails and facts apply to every campaign, so they are edited for all campaigns at once.',
       },
     },
     /**
@@ -8295,7 +8296,6 @@ export const en = {
      */
     page: {
       title: 'Assets',
-      campaignTitle: '{{campaign}} Assets',
       /** The ADD CONTENT menu (CON-484 moved it into the catalogue). */
       add: {
         button: 'ADD CONTENT',

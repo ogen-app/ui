@@ -1,4 +1,3 @@
-import { UsersThreeIcon, WaveformIcon } from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { SettingsCard } from '@/components/settings/SettingsCard'
@@ -9,6 +8,7 @@ import { useBrand } from '@/hooks/useBrand'
 import { useCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
 import type { UpdateCampaignPayload } from '@/types/campaigns'
 import type { BrandAudience, BrandVoice } from './types'
+import { BrandSectionGlyph } from './BrandSectionGlyph'
 
 /**
  * What this campaign draws on out of the workspace's Brand (§8, middle level).
@@ -68,7 +68,7 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
     <SettingsCard
       title={
         <>
-          <WaveformIcon className="size-5 text-tertiary-foreground" />
+          <BrandSectionGlyph id="voices" />
           {t('brand.binding.voice')}
         </>
       }
@@ -96,7 +96,7 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
       </div>
 
       <div className="mt-2 flex items-center gap-2">
-        <UsersThreeIcon className="size-5 text-tertiary-foreground" />
+        <BrandSectionGlyph id="audiences" />
         <h3 className="text-xl font-display font-medium tracking-tight">
           {t('brand.binding.audience')}
         </h3>

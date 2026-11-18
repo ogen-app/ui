@@ -61,7 +61,8 @@ function monthsOf(axis: { from: number; to: number }): number[] {
 }
 
 /**
- * Strategy for all campaigns, second half: every campaign on one time axis.
+ * Strategy for all campaigns, first band: every campaign on one time axis.
+ * The band names it, so the card has no heading of its own.
  *
  * **It is a plan, not a progress report.** The Overview's cards already say how
  * each campaign is doing — what needs attention, how far through its goal it
@@ -83,7 +84,7 @@ export function CampaignTimeline() {
 
   if (isPending) {
     return (
-      <SettingsCard title={t('campaigns.strategy.timeline.title')}>
+      <SettingsCard>
         <div className="flex flex-col gap-3" aria-hidden>
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-8 w-4/5" />
@@ -113,7 +114,7 @@ export function CampaignTimeline() {
   const every = Math.max(1, Math.ceil(months.length / 8))
 
   return (
-    <SettingsCard title={t('campaigns.strategy.timeline.title')}>
+    <SettingsCard>
       {list.length === 0 ? (
         <p className="text-sm text-secondary-foreground">
           {t('campaigns.strategy.timeline.empty')}

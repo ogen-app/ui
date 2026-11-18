@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { CampaignSwitcher } from '@/components/layout/CampaignSwitcher'
 import { Logo } from '@/components/Logo'
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
@@ -9,9 +10,11 @@ import {
 } from '@/stores/assistantStore'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
+import { usePageCrumbStore } from '@/stores/pageCrumbStore'
 
 /**
  * The bar over the page: which part of the work — the campaign — on the left,
+ * then, once a document's own header has scrolled away, where in it you are,
  * and at its far end Ogen. 56px, the workspace cell's height, so the two
  * rules under them are one line across the frame.
  */
@@ -21,10 +24,52 @@ export function TopBar() {
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-primary pl-4 pr-6">
       {isMobile && <SidebarTrigger />}
       <CampaignSwitcher />
+      <PageCrumbTrail />
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <AskOgen />
       </div>
     </header>
+  )
+}
+
+/**
+ * "Strategy › Voice": a document's title once its header has scrolled away,
+ * and the card being read (`pageCrumbStore`). The title takes you back up to
+ * the header it stands in for.
+ */
+function PageCrumbTrail() {
+  const { t } = useTranslation()
+  const crumb = usePageCrumbStore((s) => s.crumb)
+  if (!crumb) return null
+
+  return (
+    <nav
+      aria-label={t('nav.pageCrumb')}
+      className="flex min-w-0 items-center gap-1.5 text-sm animate-in fade-in-0 duration-200"
+    >
+      <button
+        type="button"
+        onClick={crumb.toTop}
+        className="truncate rounded-button px-1 font-medium text-secondary-foreground outline-none hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {crumb.title}
+      </button>
+      {crumb.section && (
+        <>
+          <CaretRightIcon
+            aria-hidden
+            weight="bold"
+            className="size-3 shrink-0 text-tertiary-foreground"
+          />
+          <span
+            aria-current="location"
+            className="truncate font-medium text-primary-foreground"
+          >
+            {crumb.section}
+          </span>
+        </>
+      )}
+    </nav>
   )
 }
 

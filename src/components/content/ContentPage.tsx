@@ -547,15 +547,9 @@ export function ContentPage({
           scrollHideDelay={350}
         >
           <PageHeader
-            // In a campaign, the shape the layout builds for every other section:
-            // `${campaign} ${section}`, with the section named as the rail names
-            // it. In the workspace the rail's own row is the whole address, so the
-            // title is the module's name and nothing else.
-            title={
-              campaign
-                ? t('content.page.campaignTitle', { campaign: scopeName })
-                : t('content.page.title')
-            }
+            // The module's name at both levels: the campaign, when there is
+            // one, is the header's scope.
+            title={t('content.page.title')}
             actions={
               <DropdownMenu open={addMenuOpen} onOpenChange={setAddMenuOpen}>
                 <DropdownMenuTrigger asChild>

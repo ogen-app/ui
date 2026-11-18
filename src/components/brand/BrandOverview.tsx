@@ -3,7 +3,6 @@ import {
   CaretRightIcon,
   ChatTeardropTextIcon,
   ClockCountdownIcon,
-  PaletteIcon,
   ProhibitIcon,
   SealCheckIcon,
   ShieldCheckIcon,
@@ -37,7 +36,7 @@ import {
   type BrandFact,
 } from './facts'
 import { defaultVoiceLabel, sampleCount, usageLine } from './format'
-import { BrandIntro, DefaultStar, WholeBrandOffer } from './shell'
+import { DefaultStar, WholeBrandOffer } from './shell'
 import { OfferRoutes } from './distill/OfferRoutes'
 import { SavedCard } from './distill/SavedCard'
 import {
@@ -178,8 +177,7 @@ export function BrandOverview({
 
   return (
     <Wrapper>
-      <FoundationIntro />
-      {/* The offer sits directly under the sentence explaining the screen, and
+      {/* The offer sits directly under the band's sentence explaining the screen, and
           above every card. It used to follow the documents card, which was the
           material it offers to read the brand out of; with the documents their
           own module the offer is the screen's one action and belongs where the
@@ -252,40 +250,6 @@ export function BrandSectionCards({
         />
       ))}
     </>
-  )
-}
-
-/**
- * The card the screen opens with, and the only one on it that goes nowhere.
- *
- * Every other card here is a door, and a screen made entirely of doors never
- * says what the building is. Somebody arriving at Foundation for the first time
- * is looking at four things they have not heard the app use before — a voice,
- * an audience, guardrails, facts — and the four cards under this one can each
- * say what *they* are while none of them can say why they are together.
- *
- * So: the same card a section opens with (`BrandIntro`), at the top of the hub.
- * **It cannot be closed and it carries nothing to click.** Both are deliberate.
- * A dismissible explanation is one the next person to join the workspace never
- * sees, and this is the screen where the next person is exactly who needs it; a
- * button on it would make it the seventh door and put the offer that *is* a
- * door (`WholeBrandOffer`, directly below) in competition with the sentence
- * explaining the screen.
- */
-function FoundationIntro() {
-  const { t } = useTranslation()
-  return (
-    <BrandIntro
-      icon={PaletteIcon}
-      // Not "Foundation": the page header two lines above says that, and the
-      // hub keeps its header title where the section screens gave theirs up —
-      // it is a top-level destination and the only one that would be untitled.
-      // So the card's heading does the other half of the job and says what the
-      // word means.
-      title={t('brand.overview.intro.title')}
-      body={t('brand.overview.intro.body')}
-      heading="h2"
-    />
   )
 }
 
@@ -388,7 +352,9 @@ function SectionCard({
               style={{ color: section.tone }}
               aria-hidden
             />
-            <span className="truncate">{copy.label}</span>
+            <span className="truncate" data-crumb-label>
+              {copy.label}
+            </span>
             {/* The honesty rule (CON-226 §9) at index length. The section's own
                 screen still says it in a sentence; here it is three words,
                 because five sentences down one page is the noise that made this
@@ -520,7 +486,7 @@ function Opens({
           onOpen()
         }
       }}
-      className="group mx-auto w-full max-w-content cursor-pointer transition-shadow duration-150 hover:shadow-lg"
+      className="group w-full max-w-content cursor-pointer transition-shadow duration-150 hover:shadow-lg"
     >
       {children}
     </div>
@@ -894,15 +860,15 @@ function missingSectionNames(t: TFunction, data: BrandData): string[] {
  * itself cannot be put under a sticky header, which is why this one stopped.
  */
 function Wrapper({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-3">{children}</div>
+  return <div className="flex flex-col gap-4">{children}</div>
 }
 
 function OverviewSkeleton() {
   return (
     <Wrapper>
-      <Skeleton className="mx-auto h-40 w-full max-w-content" />
-      <Skeleton className="mx-auto h-40 w-full max-w-content" />
-      <Skeleton className="mx-auto h-40 w-full max-w-content" />
+      <Skeleton className="h-40 w-full max-w-content" />
+      <Skeleton className="h-40 w-full max-w-content" />
+      <Skeleton className="h-40 w-full max-w-content" />
     </Wrapper>
   )
 }

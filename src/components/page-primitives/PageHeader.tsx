@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { ListIcon } from '@phosphor-icons/react'
 import { useRouterState } from '@tanstack/react-router'
 import { NavIcon } from '@/components/layout/nav/NavIcon'
@@ -10,8 +10,10 @@ import { cn } from '@/lib'
 import { findScrollParent } from '@/lib/scrollParent'
 import { Button } from '@/components/ui/button.tsx'
 import { useIsMobile } from '@/hooks/use-mobile.ts'
+import { usePageCrumbStore } from '@/stores/pageCrumbStore'
 
 type PageHeaderProps = {
+  /** The place's name — "Strategy", "Posts". The campaign is the switcher's. */
   title?: string
   /** A fully-formed back control (button or link), rendered before the title. */
   back?: ReactNode
@@ -27,27 +29,43 @@ type PageHeaderProps = {
   center?: ReactNode
   actions?: ReactNode
   /**
-   * Fades the title and the fader gradient out once the page scrolls; the
-   * buttons on both sides stay visible and clickable. Requires a scrollable
-   * ancestor (the header must sit inside the page's scroll container).
+   * A document page: the header scrolls away with the page, and the bar over
+   * the page takes over its title, with the card being read beside it
+   * (`pageCrumbStore`). Requires a scrollable ancestor (the header must sit
+   * inside the page's scroll container).
    */
-  fadeOnScroll?: boolean
+  scrollAway?: boolean
 }
 
 /**
- * The one page-header primitive: a sticky 40px row ruled off from the page by
- * a hairline that runs the content column's full width, with 8px above the row
- * and 8px below it, so an action on the right sits centred between the two. Solid while it stays put, so content
- * passes behind the rule rather than through it; the fading variant keeps its
- * gradient and lets the rule go with the title. Every top bar (workspace
- * pages, post details, asset editor) composes this component — don't
- * hand-roll header chrome elsewhere.
+ * Everything that can be named in the crumb: `SettingsCard` and `PageSection`
+ * mark themselves. A band is named until the first of its cards is reached.
+ */
+const CRUMB_TARGET = '[data-crumb]'
+
+/** A card counts as being read once its top is this close under the bar. */
+const READING_LINE = 24
+
+/**
+ * The one page-header primitive: a 40px row ruled off from the page by a
+ * hairline that runs the content column's full width, with 8px above the row
+ * and 8px below it, so an action on the right sits centred between the two.
+ * Always solid. Every top bar (workspace pages, post details, asset editor)
+ * composes this component — don't hand-roll header chrome elsewhere.
+ *
+ * The title is the place's name and nothing else, at both levels: which
+ * campaign it is narrowed to is the switcher's to say, in the bar above.
  *
  * A page with no back control is a module's own page, and its title leads with
  * that module's glyph in its hue — the rail row's, read off the address
  * (`whereOf`), so the header and the highlighted row name the same place. A
  * page with a back control was opened from a module, and leads with the way
  * back instead.
+ *
+ * **Two behaviours on scroll.** A list or a grid keeps its header pinned —
+ * its actions are what you steer it with. A document (`scrollAway`) lets the
+ * header go with the page, and the bar over the page says where you are
+ * instead: "Strategy › Voice", the title and the card being read.
  */
 export function PageHeader({
   title,
@@ -56,24 +74,43 @@ export function PageHeader({
   className,
   center,
   actions,
-  fadeOnScroll,
+  scrollAway,
 }: PageHeaderProps) {
   const { toggleSidebar } = useSidebar()
   const isMobile = useIsMobile()
   const rootRef = useRef<HTMLDivElement>(null)
-  const [scrolled, setScrolled] = useState(false)
+  const show = usePageCrumbStore((s) => s.show)
+  const hide = usePageCrumbStore((s) => s.hide)
 
   useEffect(() => {
-    if (!fadeOnScroll) return
+    if (!scrollAway || title === undefined) return
     const scroller = findScrollParent(rootRef.current)
     if (!scroller) return
-    const onScroll = () => setScrolled(scroller.scrollTop > 8)
+    const owner = Symbol(title)
+    const toTop = () => scroller.scrollTo({ top: 0, behavior: 'smooth' })
+    const onScroll = () => {
+      const header = rootRef.current?.getBoundingClientRect()
+      if (!header) return
+      const top = scroller.getBoundingClientRect().top
+      if (header.bottom > top) {
+        hide(owner)
+        return
+      }
+      let section: string | null = null
+      for (const card of scroller.querySelectorAll(CRUMB_TARGET)) {
+        if (card.getBoundingClientRect().top > top + READING_LINE) break
+        section = crumbLabel(card) ?? section
+      }
+      show(owner, { title, section, toTop })
+    }
     onScroll()
     scroller.addEventListener('scroll', onScroll, { passive: true })
-    return () => scroller.removeEventListener('scroll', onScroll)
-  }, [fadeOnScroll])
+    return () => {
+      scroller.removeEventListener('scroll', onScroll)
+      hide(owner)
+    }
+  }, [scrollAway, title, show, hide])
 
-  const faded = fadeOnScroll && scrolled
   const place = useRouterState({
     select: (s) =>
       whereOf(
@@ -87,31 +124,14 @@ export function PageHeader({
     <div
       ref={rootRef}
       className={cn(
-        'sticky top-0 pt-2 shrink-0',
-        // The fading variant moves the gradient to its own layer (so it can
-        // dissolve independently) and must not eat clicks once that layer is
-        // gone — pointer events are re-enabled per button group below.
-        fadeOnScroll ? 'pointer-events-none' : 'bg-background',
+        'pt-2 shrink-0 bg-background',
+        !scrollAway && 'sticky top-0',
         className,
       )}
-      style={{ zIndex: ZIndex.pageHeader }}
+      style={scrollAway ? undefined : { zIndex: ZIndex.pageHeader }}
     >
-      {fadeOnScroll && (
-        <div
-          aria-hidden
-          className={cn(
-            'absolute inset-0 bg-gradient-to-b from-background from-42% to-transparent transition-opacity duration-300',
-            faded && 'opacity-0',
-          )}
-        />
-      )}
       <div className="relative flex h-10 items-center gap-3 px-3 lg:px-6">
-        <div
-          className={cn(
-            'md:hidden shrink-0',
-            fadeOnScroll && 'pointer-events-auto',
-          )}
-        >
+        <div className="md:hidden shrink-0">
           <Button
             variant={'default'}
             size={isMobile ? 'smIcon' : 'defaultIcon'}
@@ -126,31 +146,14 @@ export function PageHeader({
         {/* `relative` on both side groups only so they paint over the
             absolutely-positioned centre when a long title runs into it. */}
         <div className="relative flex flex-1 min-w-0 items-center gap-2">
-          {back &&
-            (fadeOnScroll ? (
-              <span className="flex shrink-0 pointer-events-auto">{back}</span>
-            ) : (
-              back
-            ))}
+          {back}
           {glyph && (
-            <span
-              className={cn(
-                'flex shrink-0',
-                fadeOnScroll && 'transition-opacity duration-300',
-                faded && 'opacity-0',
-              )}
-            >
+            <span className="flex shrink-0">
               <NavIcon icon={glyph.icon} tone={glyph.tone} size={22} />
             </span>
           )}
           {title !== undefined && (
-            <h1
-              className={cn(
-                'type-display font-display text-display font-semibold tracking-tight text-primary-foreground truncate',
-                fadeOnScroll && 'transition-opacity duration-300',
-                faded && 'opacity-0',
-              )}
-            >
+            <h1 className="type-display font-display text-display font-semibold tracking-tight text-primary-foreground truncate">
               {title}
             </h1>
           )}
@@ -158,33 +161,31 @@ export function PageHeader({
         </div>
         {/* Absolute rather than a third flex child: a flex centre only lands
             on the true middle when both side groups are the same width, and
-            they never are. It also doesn't fade with the title — whether your
-            edits are saved matters most once you've scrolled into the
-            document. */}
+            they never are. */}
         {center && (
           <div className="pointer-events-none absolute inset-x-0 flex justify-center">
             <div className="flex items-center">{center}</div>
           </div>
         )}
         {actions && (
-          <div
-            className={cn(
-              'relative flex shrink-0 items-center gap-2',
-              fadeOnScroll && 'pointer-events-auto',
-            )}
-          >
+          <div className="relative flex shrink-0 items-center gap-2">
             {actions}
           </div>
         )}
       </div>
-      <div
-        aria-hidden
-        className={cn(
-          'relative mt-2 h-px bg-border',
-          fadeOnScroll && 'transition-opacity duration-300',
-          faded && 'opacity-0',
-        )}
-      />
+      <div aria-hidden className="relative mt-2 h-px bg-border" />
     </div>
   )
+}
+
+/**
+ * A card's name as the crumb says it: its heading — the first `h2` in it —
+ * or the label marked inside that heading when it carries more than the name
+ * (a badge).
+ */
+function crumbLabel(card: Element): string | null {
+  const heading = card.querySelector('h2')
+  const label = heading?.querySelector('[data-crumb-label]') ?? heading
+  const text = label?.textContent?.trim()
+  return text ? text : null
 }

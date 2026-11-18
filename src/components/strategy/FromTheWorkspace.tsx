@@ -2,14 +2,16 @@ import type { ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { BrandSectionCards } from '@/components/brand/BrandOverview'
+import { PageSection } from '@/components/page-primitives/PageSection'
 import { useBrand } from '@/hooks/useBrand'
 import { useFacts } from '@/hooks/useFacts'
 import { useGuardrailsStance } from '@/hooks/useGuardrailsStance'
 import { fetched } from '@/lib/fetched'
 
 /**
- * Strategy for one campaign, last part: what it takes from the workspace's
- * Foundation.
+ * Strategy for one campaign, second band: the Foundation, as this campaign
+ * has it. The same band, under the same name, that Strategy for all campaigns
+ * ends with.
  *
  * Two kinds of thing, in that order. The voice, the audience and the series
  * are the campaign's to choose, and `children` are the cards that choose them.
@@ -27,15 +29,10 @@ export function FromTheWorkspace({ children }: { children?: ReactNode }) {
   const stance = useGuardrailsStance()
 
   return (
-    <>
-      <div className="mx-auto flex w-full max-w-content flex-col gap-1 pt-2">
-        <h2 className="font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
-          {t('campaigns.strategy.fromWorkspace.title')}
-        </h2>
-        <p className="text-sm text-secondary-foreground">
-          {t('campaigns.strategy.fromWorkspace.body')}
-        </p>
-      </div>
+    <PageSection
+      title={t('nav.foundation')}
+      description={t('campaigns.strategy.bands.foundationForCampaign')}
+    >
       {children}
       <BrandSectionCards
         sections={['guardrails', 'facts']}
@@ -44,6 +41,6 @@ export function FromTheWorkspace({ children }: { children?: ReactNode }) {
         stance={stance}
         onOpen={(id) => navigate({ to: `/foundation/${id}` })}
       />
-    </>
+    </PageSection>
   )
 }

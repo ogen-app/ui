@@ -106,14 +106,17 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   `/campaigns?pick=<place>`, and a workspace with exactly one campaign goes
   straight to it — as Posts does, since `/posts` would be that campaign's list
   without ADD POST), and **workspace only** (the Inbox).
-  **Strategy for all campaigns is the Foundation** (`/foundation/*`): the
-  campaigns on one timeline (`strategy/CampaignTimeline` — a plan, not a
-  status list; the Overview's cards already report progress), then the hub.
-  A campaign's Strategy is what it commits to, then what it takes from the
-  Foundation (`strategy/FromTheWorkspace`): the voice, audience and series it
-  *chooses*, and the guardrails and facts it only *reads*, as the hub's own
-  cards opening the workspace's section — they apply to every campaign, so an
-  edit belongs where it visibly does. There is no Foundation row and no `g f`;
+  **Strategy for all campaigns is the Foundation** (`/foundation/*`), and
+  both levels are built the same way: two `PageSection` bands. For all
+  campaigns, CAMPAIGNS — one timeline (`strategy/CampaignTimeline` — a plan,
+  not a status list; the Overview's cards already report progress) — then
+  FOUNDATION, the hub. For one, THIS CAMPAIGN — what it commits to — then
+  FOUNDATION as it has it (`strategy/FromTheWorkspace`): the voice, audience
+  and series it *chooses*, and the guardrails and facts it only *reads*, as
+  the hub's own cards opening the workspace's section — they apply to every
+  campaign, so an edit belongs where it visibly does. A card about a
+  Foundation section leads with that section's hued glyph wherever it is
+  (`brand/BrandSectionGlyph`); a campaign's own cards have none. There is no Foundation row and no `g f`;
   `g t` is Strategy at both levels.
   Switching campaign keeps you on the same place (`scopeLink`). The address is
   the filter wherever it has one; on a workspace-only page the last choice is
@@ -199,7 +202,7 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   smart groups through the same `SavedViewsMenu` and `useSavedViews(surface)`,
   on the workspace page only. Both pages use the post page's scroll frame
   (CON-392): `PageHeader` sticky inside one `ScrollArea`, the whole page
-  scrolling under its fade, `PageBottomFader` along the bottom, and group
+  scrolling under it, `PageBottomFader` along the bottom, and group
   bands pinning at the header's foot through `page-primitives/pinnedBands` —
   always at least one band ("No grouping"), in the page's own colour, capped
   behind the header while pinned. The campaign layout hands both sections
@@ -1190,6 +1193,22 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   Colors only via semantic tokens (`bg-primary`, `text-tertiary-foreground` —
   never `bg-white`, palette steps, or raw hex/oklch): see
   [`docs/colors.md`](./docs/colors.md).
+- **A page header names the place, and the switcher names the scope.** The
+  title is the place's name at both levels — "Strategy", never "Spring launch
+  Strategy" — because the campaign is already in the bar above. Headers are
+  solid, with no gradient. A list or grid keeps its header pinned (its actions
+  steer it); a document (`PageHeader`'s `scrollAway`: Strategy, Overview,
+  Analytics, Activity, Settings, Profile) lets it scroll away, and the top bar
+  takes over after the switcher as "Strategy › Voice" — the title, which
+  scrolls back up, and the card being read (`stores/pageCrumbStore`). What
+  the crumb can name is marked: `SettingsCard` and `PageSection` carry
+  `data-crumb`, and a heading holding more than the name marks the name with
+  `data-crumb-label`.
+- **There are no centred columns.** The content column is `max-w-content`
+  (740px) against the page's left gutter, under the header's title — never
+  `mx-auto`. `PageActionBar` centres itself on that column, not on the page.
+  Full-screen flows outside the app frame (auth, `/plans`, checkout) are the
+  exception.
 - **Screen corners have fixed jobs — top is about the object, bottom is about
   the work** (CON-178). Top-left: where you are and how you get back.
   Top-right: **views only** — anything that opens or switches a representation,
