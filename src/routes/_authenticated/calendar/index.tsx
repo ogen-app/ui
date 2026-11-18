@@ -1,5 +1,4 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { isFeatureEnabled } from '@/config/featureFlags'
 import { readCalendarPlace } from '@/hooks/usePostsPlace'
 import { WORKSPACE_PLACE } from '@/lib/postsPlace'
 
@@ -14,8 +13,6 @@ import { WORKSPACE_PLACE } from '@/lib/postsPlace'
  */
 export const Route = createFileRoute('/_authenticated/calendar/')({
   beforeLoad: () => {
-    if (!isFeatureEnabled('workspace-calendar'))
-      throw redirect({ to: '/campaigns' })
     throw redirect({
       to: '/calendar/$anchor/$view',
       params: readCalendarPlace(WORKSPACE_PLACE),

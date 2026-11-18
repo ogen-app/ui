@@ -15,7 +15,6 @@ import {
   formatAnchor,
   parseAnchor,
 } from '@/components/campaigns/calendar/date'
-import { isFeatureEnabled } from '@/config/featureFlags'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { useWorkspacePosts } from '@/hooks/usePosts'
@@ -37,8 +36,6 @@ function isGranularity(value: string): value is CalendarGranularity {
 
 export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
   beforeLoad: ({ params }) => {
-    if (!isFeatureEnabled('workspace-calendar'))
-      throw redirect({ to: '/campaigns' })
     // Normalize malformed anchors / unsupported views to the current week, as
     // the campaign's calendar does — including `list`, which is a real view
     // there and not one here.

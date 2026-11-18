@@ -12,14 +12,13 @@ keep it accurate when these rules change.
   never which rows there are** — the rail used to be two menus, the
   workspace's and a campaign's, and moving between them rewrote the list under
   the pointer. Where each row goes under each filter is one table,
-  `lib/campaignScope` (`placeLink`), and every place is one of three kinds:
+  `lib/campaignScope` (`placeLink`), and every place is one of two kinds:
   **filtered** (a page for all campaigns and a page for one — Overview,
-  Strategy, Ideas, Assets, Posts, Analytics, Activity, Settings, and Calendar
-  while the workspace calendar is on), **campaign only** (Calendar while it is
-  off: with no campaign chosen the row opens the campaign cards at
-  `/campaigns?pick=<place>`, and a workspace with exactly one campaign goes
-  straight to it — as Posts does, since `/posts` would be that campaign's list
-  without ADD POST), and **workspace only** (the Inbox).
+  Strategy, Ideas, Assets, Posts, Calendar, Analytics, Activity, Settings;
+  in a workspace with exactly one campaign Posts goes straight to it, since
+  `/posts` would be that campaign's list without ADD POST) and **workspace
+  only** (the Inbox). No row asks you to pick a campaign first any more:
+  Calendar was the last, until the workspace calendar.
   **Strategy for all campaigns is the Foundation** (`/foundation/*`), and
   both levels hold the same two things, with no headings over them. For all
   campaigns, the hub in the page's column and, in a fixed-width column beside

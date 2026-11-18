@@ -182,32 +182,6 @@ const FEATURE_FLAGS = {
   'post-version-delete': false,
 
   /**
-   * The workspace's calendar — every campaign's posts on one grid.
-   *
-   * The campaign already has one (`/campaigns/:id/calendar`), which is the
-   * whole feature *for one campaign*; this is the same view with the filter
-   * taken off, and it is the workspace's twin of it in the rail. Built out of
-   * the same components, with the campaign passed as `null` — the cards name
-   * their campaign, nothing here creates a post, and the view switch drops the
-   * LIST segment, and that is the whole of the difference.
-   *
-   * **No longer waiting on an endpoint.** This flag used to say the query had
-   * not been written; it had. `GET /api/posts` returns the tenant's posts
-   * hydrated and the client already read it for two other cross-campaign
-   * questions, under a key every post write invalidates (`lib/postCache`) — so
-   * `useWorkspacePosts` is a third reader of a list that was already being
-   * kept in step, not a new contract.
-   *
-   * **On** (2026-11-16): with the campaign a filter over one fixed menu,
-   * Calendar under "All campaigns" has to be a calendar rather than a request
-   * to pick one. What it still lacks is **a range** — the endpoint takes no
-   * parameters, so the grid pulls every post in the workspace however few
-   * weeks are on screen (`docs/open-questions.md` P4). Fine at today's scale;
-   * the first large workspace is the test of whether it stays that way.
-   */
-  'workspace-calendar': true,
-
-  /**
    * The contextual help centre (CON-173) — the drawer, its triggers and the
    * `#help/<key>` deep link. **Off — waiting on content, not on an endpoint.**
    *
