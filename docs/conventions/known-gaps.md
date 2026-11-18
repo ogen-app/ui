@@ -64,7 +64,8 @@ components: both grids, the card, the rung ladder and the toolbar take the
 campaign as an argument, and `null` is what says there isn't one. Three things
 follow from that null and they are the whole difference — the cards name their
 campaign (`CardFields.campaign`, stamped by the view rather than switched by
-the user), nothing on the grid creates a post, and the view switch has no LIST
+the user), a day's add asks which campaign the post is for (`AddPostButton`),
+and the view switch has no LIST
 segment because the table is a campaign's. Its rows come from
 `useWorkspacePosts` — `GET /api/posts`, which existed all along and which
 `useAssetUsage` and the auto-publish allowlist already read, under a key every

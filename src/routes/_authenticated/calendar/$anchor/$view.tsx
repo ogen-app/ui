@@ -63,9 +63,9 @@ export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
  * components rather than a second implementation: the two grids, the cards, the
  * rung ladder and the toolbar all take the campaign as an argument, and `null`
  * is what says there isn't one. Three things follow from that null and they are
- * the whole of the difference — the cards name their campaign, nothing here
- * creates a post, and the view switch has no LIST segment because the table is
- * a campaign's.
+ * the whole of the difference — the cards name their campaign, a day's add
+ * asks which campaign the post is for, and the view switch has no LIST segment
+ * because the table is a campaign's.
  *
  * Owns its own page shell rather than sitting under a layout route: `/calendar`
  * is a redirect and this is the only screen beneath it, so a layout would exist

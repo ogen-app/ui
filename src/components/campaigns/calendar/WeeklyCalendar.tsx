@@ -4,7 +4,6 @@ import { useCampaign } from '@/hooks/useCampaigns'
 import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
-import { useAddPost } from '@/hooks/usePosts'
 // The drop logic that used to sit inline here — `useUpdatePost`,
 // `postToPayload`, `DEFAULT_HOUR` and the rest — now lives in this hook, which
 // the month view shares. Only the ordering rule stayed behind, because it is
@@ -19,6 +18,7 @@ import { coverDrawable, useFailedCovers } from '@/lib/failedCovers'
 import { isDateLocked } from './LockMark'
 import { isNotGrounded } from '@/lib/grounding'
 import { PostCard } from './PostCard'
+import { AddPostButton } from './AddPostButton'
 import { IDEA_SLOT_HEIGHT, IdeaSlotCard } from './IdeaSlotCard'
 import { useIdeaSlots } from '@/hooks/useIdeaPosts'
 import type { IdeaSlot } from '@/services/api/ideaPosts'
@@ -30,10 +30,9 @@ import { cn } from '@/lib'
 type WeeklyCalendarProps = {
   /**
    * The campaign this week belongs to, or `null` on the workspace calendar,
-   * where the week belongs to all of them. Two things follow from `null` and
-   * they are the whole difference between the two grids: the cards name their
-   * campaign (`withCampaignRow`), and there is nowhere for an ADD POST to put
-   * a new post, so the day offers none.
+   * where the week belongs to all of them. The cards then name their campaign
+   * (`withCampaignRow`), and a day's ADD POST asks which campaign the post is
+   * for (`AddPostButton`).
    */
   campaignId: string | null
   posts: Post[]
@@ -105,10 +104,6 @@ function WeeklyCalendarComponent({
   // Covers that would not load — a card that dropped its picture is not
   // charged the band for it (`lib/failedCovers`).
   const failedCovers = useFailedCovers()
-  // Never called on the workspace grid — the button that would call it isn't
-  // rendered there — but hooks don't take a branch, so it is given the empty
-  // campaign a disabled create would refuse anyway.
-  const addPost = useAddPost(campaignId ?? '')
   const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings()
   // Memoized because the identity is a `useMemo` dependency below and a `memo`
   // prop on every card — see `withCampaignRow`.
@@ -204,10 +199,7 @@ function WeeklyCalendarComponent({
         const daySlots = slotsByDay.get(isoDay(day)) ?? []
         // Past days draw no ADD POST button, so they have that much more room
         // for cards — the rung is per column, and so is what is in the column.
-        // Nor does any day on the workspace grid, which has no campaign to add
-        // to: reserving the space there would cost every column a card's worth
-        // of height for a button that is never drawn.
-        const addable = campaignId !== null && !isPastDay(day)
+        const addable = !isPastDay(day)
         // Slots are a fixed height, so the cards get what they leave.
         const available =
           laneHeight === null
@@ -266,7 +258,6 @@ function WeeklyCalendarComponent({
         }
       }),
     [
-      campaignId,
       days,
       today,
       postsByDay,
@@ -391,10 +382,10 @@ function WeeklyCalendarComponent({
                   plain create endpoint, which — unlike `schedule` — never
                   validates the date, so this is the only thing keeping a post
                   from being born already in the past. */}
-              {campaignId !== null && !isPastDay(col.day) && (
-                <button
-                  type="button"
-                  onClick={() => addPost(col.day)}
+              {!isPastDay(col.day) && (
+                <AddPostButton
+                  campaignId={campaignId}
+                  day={col.day}
                   title={t('calendar.addPostOn', { date: col.dateLabel })}
                   className={cn(
                     'shrink-0 flex h-9 items-center justify-center gap-2 cursor-pointer',
@@ -407,13 +398,13 @@ function WeeklyCalendarComponent({
                     'border border-dashed border-border text-[13px]/4 font-medium text-tertiary-foreground',
                     'transition-[opacity,background-color,color]',
                     hoverKey === col.key ? 'opacity-100' : 'opacity-0',
-                    'focus-visible:opacity-100',
+                    'focus-visible:opacity-100 data-[state=open]:opacity-100',
                     'hover:bg-primary hover:text-secondary-foreground',
                   )}
                 >
                   <PlusIcon weight="bold" className="size-4 shrink-0" />
                   <span>{t('calendar.addPost')}</span>
-                </button>
+                </AddPostButton>
               )}
             </div>
           </div>

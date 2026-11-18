@@ -2081,6 +2081,8 @@ export const en = {
      * readable again.
      */
     addPostOn: 'Add a post on {{date}}',
+    /** Over the campaigns the workspace calendar's add asks between. */
+    addPostTo: 'Add a post to',
     density_one: '{{count}} post on {{date}} — open this week',
     density_other: '{{count}} posts on {{date}} — open this week',
     /** On a day too busy to draw its cards, how many of its posts are ticked. */

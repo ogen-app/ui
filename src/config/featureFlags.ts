@@ -207,7 +207,7 @@ const FEATURE_FLAGS = {
    * whole feature *for one campaign*; this is the same view with the filter
    * taken off, and it is the workspace's twin of it in the rail. Built out of
    * the same components, with the campaign passed as `null` — the cards name
-   * their campaign, nothing here creates a post, and the view switch drops the
+   * their campaign, a day's add asks which campaign, and the view switch drops the
    * LIST segment, and that is the whole of the difference.
    *
    * **No longer waiting on an endpoint.** This flag used to say the query had
