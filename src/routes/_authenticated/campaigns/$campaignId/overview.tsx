@@ -1,19 +1,30 @@
-import type { ReactNode } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
+import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
+import {
+  CampaignOverview,
+  type OverviewHandlers,
+} from '@/components/campaigns/overview/CampaignOverview.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
-import { AnalyticsModule } from '@/components/campaigns/overview/AnalyticsModule.tsx'
-import { AssetsStats } from '@/components/campaigns/overview/AssetsStats.tsx'
-import { PostsStats } from '@/components/campaigns/overview/PostsStats.tsx'
-import { StrategyStats } from '@/components/campaigns/overview/StrategyStats.tsx'
-import { TodoCard } from '@/components/campaigns/overview/TodoCard.tsx'
-import { WarningsCard } from '@/components/campaigns/overview/WarningsCard.tsx'
-import { useCampaign, useCampaignSummaries } from '@/hooks/useCampaigns.ts'
-import { useCampaignPosts } from '@/hooks/usePosts.ts'
-import { useCampaignProblems } from '@/hooks/useCampaignProblems'
+import {
+  useCampaign,
+  useCampaignPhases,
+  useCampaignSummaries,
+} from '@/hooks/useCampaigns.ts'
+import {
+  campaignProblemsKey,
+  useCampaignProblems,
+} from '@/hooks/useCampaignProblems'
+import { useAddPost, useCampaignPosts } from '@/hooks/usePosts.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
+import { overviewModel, type OverviewPost } from '@/lib/campaignOverview'
 import { attentionItems } from '@/lib/campaignReadiness.ts'
 import { withoutServerChecked } from '@/lib/serverCheckedRules'
-import type { PostSummary } from '@/types/posts'
+import { dismissCampaignFinding } from '@/services/api/campaignProblems'
+import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/overview',
@@ -22,15 +33,10 @@ export const Route = createFileRoute(
 })
 
 /**
- * The campaign's front page, in two columns: on the left what the campaign
- * *is* — its terms, its posts, how they performed, what it writes from — as
- * figures; on the right what wants a person — warnings, then to-dos.
- *
- * The split is the rule for anything added here: a number or a fact goes
- * left, and only left; a thing to act on goes right, and only right. A stats
- * card never carries a call to action, and the to-do list never restates a
- * figure. Below the two-column width the right column comes first, because on
- * a narrow screen what needs doing is what someone opened this for.
+ * The campaign's front page. Everything it shows is `overviewModel`'s answer
+ * to what the queries below hold and today's date; this file only reads and
+ * wires. The design harness (`design/campaign-overview`) feeds the same model
+ * fixtures, which is why none of the stage logic lives here.
  */
 function CampaignOverviewScreen() {
   const { campaignId } = Route.useParams()
@@ -38,133 +44,127 @@ function CampaignOverviewScreen() {
   const postsQuery = useCampaignPosts(campaignId)
   const summariesQuery = useCampaignSummaries()
   const platformViews = usePlatformViews()
+  const phasesQuery = useCampaignPhases(campaignId)
   // A failed re-read keeps the last answer, which may predate a change made
   // since; the client's rules stand in until the server answers again.
   const problemsQuery = useCampaignProblems(campaignId)
   const problems = problemsQuery.isError ? undefined : problemsQuery.data
+  const { handlers, dialogs } = useOverviewHandlers(campaignId)
 
   // The layout normally hands this screen the campaign already (`useCampaign`
   // seeds itself from the sidebar's list), so this is rare.
   if (!campaign) {
     return (
-      <Columns
-        stats={
-          <>
-            <Skeleton variant="surface" className="h-48 w-full" />
-            <Skeleton variant="surface" className="h-40 w-full" />
-          </>
-        }
-        actions={<Skeleton className="h-40 w-full" />}
-      />
+      <Skeleton variant="surface" className="mx-auto h-40 w-full max-w-wide" />
     )
   }
 
   // The backend sends `null` for a campaign with no posts (Go nil slice), so
-  // settled is `data !== undefined`, not truthy data.
-  const posts =
-    postsQuery.data !== undefined ? (postsQuery.data ?? []) : undefined
-  // A failed fetch is not an empty campaign; cached data from an earlier
-  // success still counts.
-  const postsFailed = postsQuery.isError && postsQuery.data === undefined
-
-  // The counts and the rules don't wait for this campaign's posts: they are
-  // typed against `PostSummary`, and the workspace-wide summaries the
-  // Campaigns list fetched are normally cached already. The real posts win
-  // once they land. Absence from the summaries is an answer — the server
-  // omits campaigns with no posts — so only both sources being unsettled
-  // leaves nothing to count.
-  const summaries: PostSummary[] | null =
-    posts !== undefined
-      ? posts
+  // settled is `data !== undefined`, not truthy data. Until this campaign's
+  // posts land, the workspace summaries the Campaigns list fetched stand in —
+  // absence from them is an answer, since the server omits empty campaigns.
+  const posts: OverviewPost[] | null =
+    postsQuery.data !== undefined
+      ? (postsQuery.data ?? [])
       : summariesQuery.data !== undefined
         ? (summariesQuery.data[campaignId] ?? [])
         : null
 
-  // Recomputed every render against the current clock: several rules are
-  // time-based. Once the server has said what is wrong with the calendar, its
-  // findings stand for the rules that check the same thing here.
-  const items = summaries
+  const now = new Date()
+  // Once the server has said what is wrong with the calendar, its findings
+  // stand for the rules that check the same thing here.
+  const attention = posts
     ? withoutServerChecked(
-        attentionItems(campaign, summaries, platformViews, new Date()),
+        attentionItems(campaign, posts, platformViews, now),
         problems != null,
       )
     : []
-  const warnings = items.filter(
-    (item) => item.severity === 'alert' || item.severity === 'risk',
-  )
-  const todos = items.filter(
-    (item) => item.severity === 'todo' || item.severity === 'info',
-  )
+
+  const model = overviewModel({
+    campaign,
+    posts,
+    platformViews,
+    phases: phasesQuery.data?.phases ?? null,
+    attention,
+    problems: problems
+      ? { problems: problems.problems, dismissed: problems.dismissedProblems }
+      : null,
+    // The campaign's figures by window wait on the analytics read taking a
+    // range for one campaign (CON-175); until then the left column counts
+    // what was published and says nothing it can't back.
+    lastWeek: null,
+    total: null,
+    now,
+  })
 
   return (
-    <Columns
-      stats={
-        <>
-          <StrategyStats
-            campaign={campaign}
-            posts={summaries}
-            platformViews={platformViews}
-          />
-          <PostsStats
-            campaignId={campaignId}
-            summaries={summaries}
-            posts={posts}
-            failed={postsFailed}
-          />
-          {/* Reads its own flag and renders nothing while it is off. */}
-          <AnalyticsModule campaignId={campaignId} />
-          <AssetsStats campaign={campaign} />
-        </>
-      }
-      actions={
-        // Never the all-clear before the posts have been counted: "Nothing is
-        // failing" off a list nobody has read is the one wrong thing this
-        // screen could say.
-        summaries ? (
-          <>
-            <WarningsCard
-              items={warnings}
-              problems={problems ?? undefined}
-              campaignId={campaignId}
-            />
-            <hr className="border-border" />
-            <TodoCard items={todos} campaignId={campaignId} />
-          </>
-        ) : (
-          <>
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-32 w-full" />
-          </>
-        )
-      }
-    />
+    <>
+      <CampaignOverview
+        model={model}
+        campaignId={campaignId}
+        handlers={handlers}
+        now={now}
+      />
+      {dialogs}
+    </>
   )
 }
 
 /**
- * The two columns, filling the height the page has. Side by side, each
- * scrolls on its own and the page never does: the right one is one panel —
- * warnings, then to-dos — running to the foot of the window, so what needs
- * doing is never below the fold while the stats sit beside it.
- *
- * Measured against the space the page has rather than the viewport — the
- * right rail can take a third of the window — so they sit side by side only
- * where both fit. Where they don't they stack, actions first, and the whole
- * page scrolls as one.
+ * What the screen's actions do for real. The Overview runs no assistant, so
+ * a fix is asked of the campaign's thread — `<fix>: <problem>`, which answers
+ * with that problem's fixes as offers — and GENERATE only writes the ask into
+ * the composer: generating writes posts, so the send is the user's. Both
+ * creating gestures are gated on the click (CON-232).
  */
-function Columns({ stats, actions }: { stats: ReactNode; actions: ReactNode }) {
-  return (
-    <div className="@container mx-auto h-full w-full max-w-wide">
-      <div className="h-full overflow-y-auto pb-4 @4xl:overflow-hidden">
-        <div className="grid grid-cols-1 gap-3 @4xl:h-full @4xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] @4xl:grid-rows-[minmax(0,1fr)]">
-          <div className="@container flex min-w-0 flex-col gap-3 @4xl:min-h-0 @4xl:overflow-y-auto">
-            {stats}
-          </div>
-          <div className="@container order-first flex min-w-0 flex-col gap-5 rounded-md bg-primary p-5 @4xl:order-none @4xl:min-h-0 @4xl:overflow-y-auto">
-            {actions}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+function useOverviewHandlers(campaignId: string) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const send = useAssistantStore((s) => s.send)
+  const askFor = useAssistantStore((s) => s.askFor)
+  const openRightPanel = useSettingsStore((s) => s.openRightPanel)
+  // Wrapped, not passed bare: useAddPost takes an optional Date for the
+  // calendar's click-to-create, so onClick={addPost} would hand it an event.
+  const addPost = useAddPost(campaignId)
+  const postGate = useUpgradeGate('posts_total')
+  const planGate = useUpgradeGate('plan_runs_per_month')
+  const thread = threadIdFor({ kind: 'campaign', campaignId })
+
+  const ignore = useMutation({
+    mutationFn: (key: string) => dismissCampaignFinding(campaignId, key),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: campaignProblemsKey(campaignId),
+      }),
+    // The cache's handler toasts a failure under this title.
+    meta: { errorTitle: t('campaignOverview.problems.ignoreFailed') },
+  })
+
+  const ask = (text: string) => {
+    openRightPanel('assistant')
+    void send(thread, text)
+  }
+
+  const handlers: OverviewHandlers = {
+    ask: (fix, problem) =>
+      ask(t('campaignOverview.problems.askFix', { fix, problem })),
+    askAll: () => ask(t('campaignOverview.problems.askAll')),
+    ignore: (key) => ignore.mutate(key),
+    addPost: () => void postGate.intent(() => addPost())(),
+    generate: () =>
+      void planGate.intent(() => {
+        openRightPanel('assistant')
+        askFor(thread, t('campaignOverview.todo.generateAsk'))
+      })(),
+  }
+
+  return {
+    handlers,
+    dialogs: (
+      <>
+        <UpgradeDialog gate={postGate} />
+        <UpgradeDialog gate={planGate} />
+      </>
+    ),
+  }
 }

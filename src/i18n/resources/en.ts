@@ -1918,83 +1918,118 @@ export const en = {
     openSettings: 'OPEN SETTINGS',
 
     /**
-     * Stands in the time column of a post row that has no timestamp. A post
-     * really can be published without one — see the note at the call site —
-     * and a blank cell reads as a bug rather than as the fact it is.
-     */
-    noDate: 'No date',
-
-    /**
      * The calendar's problems, read from the server (CON-462). The fix is
      * asked of the campaign's assistant, which offers it to confirm.
      */
     problems: {
       ignore: 'IGNORE',
       ignoreFailed: 'Couldn’t ignore that problem. Try again.',
-      or: 'or {{fix}}',
       /** The card's header: every problem, to the campaign's assistant. */
       fixAll: 'FIX WITH ASSISTANT',
       askAll: 'Fix these with me.',
       /** Sent to the campaign's assistant: the fix, then the problem. */
       askFix: '{{fix}}: {{problem}}',
     },
-    /**
-     * The right-hand column's first card: what is already wrong or about to
-     * be — the client's alert and risk rules and the server's problems.
-     */
-    warnings: {
-      title: 'Warnings',
-      /** Beside the title: "4 · 1 ignored". */
-      countIgnored_one: '{{total}} · {{formatted}} ignored',
-      countIgnored_other: '{{total}} · {{formatted}} ignored',
-      none: 'Nothing is failing, overdue or at risk.',
-    },
-    /** The right-hand column's second card: gaps with no clock on them. */
+    /** A first post, two ways: the setup card and the Before-launch list. */
     todo: {
-      title: 'To do',
-      none: 'Nothing is waiting on you.',
       addPost: 'ADD POST',
       generate: 'GENERATE WITH OGEN',
       /** Written into the campaign's composer; the send is the user's. */
       generateAsk: 'Generate a content plan for this campaign.',
     },
-    /** The left-hand column: what the campaign is and where it stands. */
+    /** Shared by the band and the figures. */
     stats: {
-      notSet: 'Not set',
-      window: 'Window',
-      goal: 'Goal',
-      channels: 'Channels',
       /** Under the window while the campaign runs. */
       dayOf: 'Day {{day}} of {{total}}',
       /** `when` is a relative time, "in 5 days". */
       startsIn: 'Starts {{when}}',
       /** `when` is a relative time, "3 days ago". */
       ended: 'Ended {{when}}',
-      goalTotal_one: '{{formatted}} post',
-      goalTotal_other: '{{formatted}} posts',
-      goalRateWeek_one: '{{formatted}} a week',
-      goalRateWeek_other: '{{formatted}} a week',
-      goalRateMonth_one: '{{formatted}} a month',
-      goalRateMonth_other: '{{formatted}} a month',
-      goalPublished: '{{published}} published · {{scheduled}} scheduled',
-      channelPosts_one: '{{formatted}} post',
-      channelPosts_other: '{{formatted}} posts',
-      notConnected: 'Not connected',
-      inProgress: 'In progress',
-      readyToGo: 'Ready to go',
       published: 'Published',
       failed: 'Failed',
-      upNext: 'Up next',
-      nothingScheduled: 'Nothing scheduled yet.',
-      noPosts: 'No posts yet.',
       untitledPost: 'Untitled post',
-      postsFailed:
-        'Couldn’t load this campaign’s posts — they’ll appear here once they’re reachable again.',
-      documents_one: '{{formatted}} document',
-      documents_other: '{{formatted}} documents',
-      noDocuments: 'No documents — this campaign writes from its brief alone.',
-      wholeBank: 'Draws on the whole content bank.',
-      documentsGone: 'None of its documents still exist.',
+    },
+    /** The campaign's stage, derived from its dates (lib/campaignOverview). */
+    stage: {
+      new: 'New',
+      planning: 'Planning',
+      launched: 'Just launched',
+      running: 'Running',
+      closing: 'Closing',
+      ended: 'Ended',
+    },
+    /** The band across the top: where the campaign is in its own time. */
+    band: {
+      next: 'Next',
+      nothingNext: 'Nothing scheduled',
+      timeline: 'Campaign timeline',
+      today: 'Today',
+      published: '{{published}} of {{total}} published',
+      scheduled_one: '{{formatted}} scheduled',
+      scheduled_other: '{{formatted}} scheduled',
+      noGoal: 'No post goal set.',
+    },
+    week: {
+      this: 'This week',
+      first: 'First week',
+      today: 'Today',
+      empty: 'Nothing goes out this week.',
+      /** Beside a post the user publishes by hand. */
+      manual: 'MANUAL',
+    },
+    coverage: {
+      title: 'First two weeks',
+      summary: '{{covered}} of {{days}} publishing days have a post.',
+    },
+    lastWeek: {
+      title: 'Last 7 days',
+    },
+    results: {
+      title: 'Results',
+      publishedOf_one: 'Published of {{formatted}}',
+      publishedOf_other: 'Published of {{formatted}}',
+      neverPublished: 'Never went out',
+    },
+    figures: {
+      reach: 'Reach',
+      interactions: 'Interactions',
+      best: 'Best post',
+      reachOf: '{{reach}} reach',
+    },
+    /** The right-hand column: one list of what wants the user. */
+    needs: {
+      needsYou: 'Needs you',
+      beforeLaunch: 'Before launch',
+      wrapUp: 'Wrap up',
+      none: 'Nothing is waiting on you.',
+      /** After a problem standing for others of its kind. */
+      more_one: '+{{formatted}} like this',
+      more_other: '+{{formatted}} like this',
+      menu: 'More fixes',
+      firstPost: 'Add the first post',
+      coverageGaps_one:
+        '{{formatted}} publishing day in the first two weeks has nothing planned',
+      coverageGaps_other:
+        '{{formatted}} publishing days in the first two weeks have nothing planned',
+      readResults: 'Read how the campaign did',
+      archive: 'Archive the campaign',
+    },
+    /** A campaign with no dates: the three things that make one. */
+    setup: {
+      title: 'Set up this campaign',
+      lede: 'Three steps, and this page starts tracking it.',
+      strategy: {
+        title: 'Dates and a post goal',
+        detail: 'When it runs and how often it publishes.',
+      },
+      channels: {
+        title: 'Channels',
+        detail: 'Where it publishes, with an account connected.',
+      },
+      posts: {
+        title: 'The first post',
+        detail: 'Write one yourself, or have Ogen draft a plan.',
+      },
     },
   },
 
@@ -3754,7 +3789,6 @@ export const en = {
       blocking_one: '{{formatted}} blocks publishing',
       blocking_other: '{{formatted}} block publishing',
       none: 'Nothing wrong with the calendar.',
-      or: 'or {{fix}}',
       dismissed_one: '{{formatted}} dismissed finding left out.',
       dismissed_other: '{{formatted}} dismissed findings left out.',
       ignore: 'IGNORE',
