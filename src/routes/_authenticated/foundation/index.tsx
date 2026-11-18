@@ -13,15 +13,20 @@ import { useSeriesLibrary } from '@/hooks/useSeries'
 import { fetched } from '@/lib/fetched'
 
 /**
- * `/foundation` — **Strategy for all campaigns**: the campaigns on one time
- * axis, then the Foundation's hub.
+ * `/foundation` — **Strategy for all campaigns**: the Foundation's hub in the
+ * page's column, and the campaigns on one time axis in a second column beside
+ * it.
  *
  * Strategy and Foundation were two rows of the rail, one only for a campaign
  * and one only for the workspace, and they were one subject seen from the two
  * levels (`lib/campaignScope`). So this page is the Strategy row with no
  * campaign chosen, and a campaign's Strategy page is the same row narrowed.
- * The timeline comes first because it is one card and the hub is eight: under
- * them it would never be seen.
+ * The timeline sits beside the hub rather than under it because it is one card
+ * and the hub is eight: under them it would never be seen. Where there is no
+ * room for a second column (a narrow window, or the right rail open) the two
+ * stack, and the timeline comes first for the same reason. The columns follow
+ * the page's own width (a container query), not the window's, because the
+ * rail takes its width out of the page.
  *
  * Not a tab any more: it is what the sidebar points at, what the five sections
  * lead back to, and the only place that answers *what is in my brand* in one
@@ -40,7 +45,7 @@ import { fetched } from '@/lib/fetched'
  *
  * It still borrows `BrandDetail`'s frame: the header goes *inside* the
  * scroller — and, being a document's, scrolls away with it, leaving its title
- * and the card being read to the bar above. See `BrandDetail`.
+ * to the bar above. See `BrandDetail`.
  */
 export const Route = createFileRoute('/_authenticated/foundation/')({
   component: BrandOverviewPage,
@@ -66,29 +71,36 @@ function BrandOverviewPage() {
           scrollHideDelay={350}
         >
           <PageHeader title={t('nav.campaign.strategy')} scrollAway />
-          {/* Two bands, as a campaign's Strategy has: the campaigns, then the
-              Foundation they are all written under. */}
-          <div className="flex flex-col gap-10 px-3 pb-10 pt-4 lg:px-6">
-            <PageSection title={t('campaigns.strategy.bands.campaigns')}>
-              <CampaignTimeline />
-            </PageSection>
-            <PageSection
-              title={t('nav.foundation')}
-              description={t('campaigns.strategy.bands.foundation')}
-            >
-              <BrandOverview
-                brand={fetched(brand)}
-                facts={facts}
-                // The library only — a campaign's own series is bounded by it and
-                // is not something another campaign can pick up, so listing one
-                // on the workspace hub would overstate what is there.
-                series={(series ?? []).filter(
-                  (entry) => entry.scope.kind === 'workspace',
-                )}
-                stance={stance}
-                onOpen={(id) => navigate({ to: `/foundation/${id}` })}
-              />
-            </PageSection>
+          {/* Two bands, as a campaign's Strategy has: the campaigns and the
+              Foundation they are all written under — side by side once the
+              page is wide enough, the campaigns in the second column. */}
+          <div className="@container px-3 pb-10 pt-4 lg:px-6">
+            <div className="flex flex-col gap-10 @6xl:flex-row @6xl:items-start @6xl:gap-6">
+              <div className="min-w-0 @6xl:order-last @6xl:flex-1">
+                <PageSection title={t('campaigns.strategy.bands.campaigns')}>
+                  <CampaignTimeline />
+                </PageSection>
+              </div>
+              <div className="w-full max-w-content @6xl:shrink-0">
+                <PageSection
+                  title={t('nav.foundation')}
+                  description={t('campaigns.strategy.bands.foundation')}
+                >
+                  <BrandOverview
+                    brand={fetched(brand)}
+                    facts={facts}
+                    // The library only — a campaign's own series is bounded by it and
+                    // is not something another campaign can pick up, so listing one
+                    // on the workspace hub would overstate what is there.
+                    series={(series ?? []).filter(
+                      (entry) => entry.scope.kind === 'workspace',
+                    )}
+                    stance={stance}
+                    onOpen={(id) => navigate({ to: `/foundation/${id}` })}
+                  />
+                </PageSection>
+              </div>
+            </div>
           </div>
         </ScrollArea>
       </div>

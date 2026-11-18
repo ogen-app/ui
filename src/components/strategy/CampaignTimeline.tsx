@@ -120,10 +120,12 @@ export function CampaignTimeline() {
           {t('campaigns.strategy.timeline.empty')}
         </p>
       ) : (
-        <div className="flex flex-col">
+        // The card sits in a column of its own beside the hub, so the rows
+        // answer to its width rather than the window's.
+        <div className="@container flex flex-col">
           {dated.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,15rem)_1fr] md:gap-x-6">
-              <div className="hidden md:block" />
+            <div className="grid grid-cols-1 @xl:grid-cols-[minmax(0,15rem)_1fr] @xl:gap-x-6">
+              <div className="hidden @xl:block" />
               <div className="relative h-6 text-xs text-tertiary-foreground">
                 {months.map((month, i) =>
                   i % every === 0 ? (
@@ -168,7 +170,7 @@ export function CampaignTimeline() {
             {undated.map((campaign) => (
               <li
                 key={campaign.id}
-                className="grid grid-cols-1 gap-y-1 border-t border-border py-3 md:grid-cols-[minmax(0,15rem)_1fr] md:gap-x-6"
+                className="grid grid-cols-1 gap-y-1 border-t border-border py-3 @xl:grid-cols-[minmax(0,15rem)_1fr] @xl:gap-x-6"
               >
                 <CampaignLabel campaign={campaign} brand={brand} />
                 <p className="self-center text-sm text-tertiary-foreground">
@@ -213,7 +215,7 @@ function TimelineRow({
   )
 
   return (
-    <li className="grid grid-cols-1 gap-y-2 border-t border-border py-3 md:grid-cols-[minmax(0,15rem)_1fr] md:gap-x-6">
+    <li className="grid grid-cols-1 gap-y-2 border-t border-border py-3 @xl:grid-cols-[minmax(0,15rem)_1fr] @xl:gap-x-6">
       <CampaignLabel campaign={row.campaign} brand={brand} when={when} />
       <div className="relative h-7 self-center">
         {/* Month rules, faint, so a bar can be read against the axis. */}
