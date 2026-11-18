@@ -30,10 +30,11 @@ export function useSaveOnboarding() {
     mutationFn: (state: Omit<OnboardingState, 'updatedAt'>) =>
       putOnboarding(state),
     onMutate: (state) => {
-      qc.setQueryData<OnboardingState | null>(ONBOARDING_KEY, {
+      const next: OnboardingState = {
         ...state,
         updatedAt: new Date().toISOString(),
-      })
+      }
+      qc.setQueryData(ONBOARDING_KEY, next)
     },
     onSuccess: (row) => qc.setQueryData(ONBOARDING_KEY, row),
   })
