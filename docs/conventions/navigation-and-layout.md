@@ -24,8 +24,12 @@ keep it accurate when these rules change.
   campaigns, the hub in the page's column and, in a fixed-width column beside
   it (under it when the page is too narrow), one timeline
   (`strategy/CampaignTimeline` — a plan, not a status list; the Overview's
-  cards already report progress). For one, what it commits to, then the
-  Foundation as it has it (`strategy/FromTheWorkspace`): the voice, audience
+  cards already report progress). For one, the same two columns: what it
+  commits to and then the Foundation as it has it in the main one, and its
+  phases (`CampaignPhasesCard`) beside it, sticky, where the timeline is one
+  level up. The campaign's cards are being brought into the hub's card
+  grammar one at a time — a heading, then `LineItem` rows — the phases first.
+  The Foundation as it has it (`strategy/FromTheWorkspace`): the voice, audience
   and series it *chooses*, and the guardrails and facts it only *reads*, as
   the hub's own cards opening the workspace's section — they apply to every
   campaign, so an edit belongs where it visibly does. A card about a
@@ -126,8 +130,8 @@ keep it accurate when these rules change.
     — under a `scrollAway` header only, since it pins 16px from the top — and
     one taller than the screen is never cut off or given its own scroll: it
     rides up until its foot shows, by the asset page's rule
-    (`useStickyColumns`). It carries the page's gutters. Strategy for all
-    campaigns, with its timeline sticky.
+    (`useStickyColumns`). It carries the page's gutters. Strategy at both
+    levels: the timeline sticky for all campaigns, the phases for one.
   - **`PageGrid` — a dashboard.** Cards in rows, each in a `GridCell` asking
     for a named share: `full`, `wide` (⅔), `half`, `narrow` (⅓) of a six-track
     grid from 60rem; from 40rem every share short of `full` is a half, so a

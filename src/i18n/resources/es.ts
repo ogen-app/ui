@@ -6881,8 +6881,6 @@ export const es: Translation = {
     },
     phases: {
       title: 'Fases',
-      explainer:
-        'Un tipo de campaña avanza por sus fases en orden, y las publicaciones generadas se planifican en la fase en cuyas fechas caen. Mueve el día en que termina una fase para darle más o menos parte de la campaña.',
       derived: 'Repartidas por igual entre las fechas de la campaña.',
       manual: 'Fechas fijadas a mano.',
       reset: 'Repartir por igual de nuevo',
@@ -6896,12 +6894,9 @@ export const es: Translation = {
       pendingType: 'Guarda el nuevo tipo para ver sus fases.',
       empty: 'Este tipo de campaña no tiene fases.',
       loadError: 'No se pudieron cargar las fases.',
-      window: '{{start}} – {{end}}',
-      days_one: '{{count}} día',
-      days_other: '{{count}} días',
+      meta: '{{range}} · {{posts}}',
       posts_one: '{{count}} publicación',
       posts_other: '{{count}} publicaciones',
-      ends: 'Termina',
       endsLabel: 'Cuándo termina {{phase}}',
       saveError: 'No se pudieron guardar las fechas de las fases',
       resetError: 'No se pudieron volver a repartir las fases por igual',
