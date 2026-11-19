@@ -1591,8 +1591,6 @@ export const en = {
    */
   formats: {
     none: 'No format',
-    postHint:
-      'Optional. What shape this post takes — separate from the platform’s post type.',
     'how-to': {
       label: 'How-to',
       hint: 'Steps somebody can follow and get a result.',
@@ -5193,8 +5191,11 @@ export const en = {
      */
     columnTitle: 'Title',
     columnStatus: 'Status',
-    /** Where a post written from general knowledge says so (CON-484). */
-    columnGrounding: 'Sources',
+    /**
+     * What is wrong with the post, as a mark only; the words are in the
+     * drawer it opens (`warnings` below).
+     */
+    columnWarnings: 'Warnings',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
     /** Only on the workspace's list, where the rows come from every campaign. */
@@ -5205,12 +5206,6 @@ export const en = {
 
     /** A post with no publish date, in either date column. */
     notSet: 'Not scheduled',
-
-    /** The toolbar's line: the posts listed, and what a filter left of them. */
-    count_one: '{{formatted}} post',
-    count_other: '{{formatted}} posts',
-    countOf_one: '{{formatted}} of {{total}} posts',
-    countOf_other: '{{formatted}} of {{total}} posts',
 
     /** The table with no rows in it — the campaign has posts, this filter doesn't. */
     noPosts: 'No posts',
@@ -5242,6 +5237,76 @@ export const en = {
     inDays_other: 'In {{count}} days',
     daysAgo_one: '{{count}} day ago',
     daysAgo_other: '{{count}} days ago',
+
+    /**
+     * The Warnings column and the drawer it opens: what the list can tell is
+     * wrong with a post from the list alone (`lib/postWarnings`). The editor's
+     * Quality checks go further; these are the ones worth a mark in a row.
+     */
+    warnings: {
+      /** The row's mark, read aloud: it opens the drawer. */
+      open_one: '{{formatted}} warning on {{title}}',
+      open_other: '{{formatted}} warnings on {{title}}',
+      panelTitle: 'Warnings',
+      openPost: 'Open post',
+      /** The post was fixed, or left the list, while the drawer was open. */
+      none: 'Nothing to fix on this post any more.',
+      kind: {
+        failed: {
+          title: 'Publishing failed',
+          detail:
+            'The platform refused it. Open the post to see why and try again.',
+        },
+        missed: {
+          title: 'Missed its date',
+          detail:
+            'Its publish time passed without it going out. Give it a new date.',
+        },
+        noPlatform: {
+          title: 'No platform',
+          detail: 'Choose where it publishes before it can be scheduled.',
+        },
+        noAccount: {
+          title: 'No account connected',
+          detail:
+            'Nothing is connected for its platform. Connect an account in Workspace Settings.',
+        },
+        chooseAccount: {
+          title: 'Choose an account',
+          detail:
+            'More than one account is connected for its platform. Pick the one it publishes as.',
+        },
+        accountGone: {
+          title: 'Account disconnected',
+          detail:
+            'The account it was set to publish as is no longer connected. Choose another.',
+        },
+        outsidePlatform: {
+          title: 'Not a platform of this campaign',
+          detail:
+            'The campaign no longer targets this platform. Move the post, or add the platform back to the campaign.',
+        },
+        outsidePostType: {
+          title: 'Not a post type of this campaign',
+          detail:
+            'The campaign no longer takes this post type on this platform. Choose another type.',
+        },
+        notGrounded: {
+          title: 'Written without sources',
+          detail:
+            'It was generated from general knowledge rather than from the campaign’s own material.',
+        },
+      },
+    },
+
+    /**
+     * ADD POST on the all-campaigns list: a post belongs to one campaign, so
+     * the button asks which before it makes one.
+     */
+    chooseCampaign: {
+      title: 'Add a post to which campaign?',
+      description: 'A post belongs to one campaign. Pick where this one goes.',
+    },
   },
 
   /**
@@ -5933,11 +5998,161 @@ export const en = {
     },
 
     /**
-     * The post editor's back arrow. Names the destination generically because
-     * it is not always the same one — it returns to whichever arrangement of
-     * the campaign's posts the user came from, calendar or table.
+     * The post editor (`components/posts/editor`): its part of the bar over
+     * the page, and the side column's tabs.
      */
-    backToPosts: 'Back to posts',
+    editor: {
+      titlePlaceholder: 'Title',
+      /** The post's bar names it by its title; this when it has none. */
+      untitled: 'Post with no title',
+      back: 'Back to posts',
+      more: 'More actions',
+      downloadMarkdown: 'Download as Markdown',
+      delete: 'DELETE POST',
+      previous: 'Previous post',
+      next: 'Next post',
+      /** The post's place in the campaign's timeline: "3 of 21". */
+      position: '{{position}} of {{total}}',
+      tabs: {
+        label: 'About this post',
+        overview: 'Overview',
+        preview: 'Preview',
+        checks: 'Checks',
+        quality: 'Quality',
+        sources: 'Sources',
+        notes: 'Notes',
+        history: 'History',
+        /** A closed tab's name while something on it needs a look. */
+        withWarnings_one: '{{label}} — 1 thing to look at',
+        withWarnings_other: '{{label}} — {{count}} things to look at',
+      },
+      settings: {
+        platform: 'Platform',
+        postType: 'Post type',
+        account: 'Account',
+        date: 'Publish',
+        publishing: 'Publishing',
+        phase: 'Phase',
+        noPhase: 'No phase',
+        format: 'Format',
+        platformChange: 'Change platform',
+        platformPick: 'Select platform',
+        platformPickHint:
+          'Pick the platform this post publishes to — it decides the available post types and the publishing account.',
+        platformNone: 'No platforms on this campaign',
+        platformDeselect: 'Deselect platform',
+        postTypeChange: 'Change post type',
+        postTypePick: 'Select post type',
+        postTypePickHint:
+          'Pick the {{platform}} post type — it sets the format this post publishes as.',
+        postTypeNone: 'No post types on this campaign',
+        /** A post type the campaign plans for, with no account to publish it. */
+        notConnected: 'Not connected',
+        accountChange: 'Change the account this post publishes as',
+        accountNone: 'No account connected',
+        accountNoneHint:
+          'No {{platform}} account is connected, so nothing can publish this post. Connect one in Platform settings.',
+        accountNotRecorded: 'Account not recorded',
+        accountDisconnected: '{{name}} — disconnected',
+        accountDisconnectedUnnamed: 'Account disconnected',
+        accountGoneHint:
+          '{{name}} is no longer connected to {{platform}}, so this post can’t publish as it. Pick another account.',
+        accountGoneHintUnnamed:
+          'The account this post publishes as is no longer connected to {{platform}}. Pick another one.',
+        accountPick: 'Select account',
+        accountPickHint_one:
+          'This workspace has {{count}} {{platform}} account connected — pick the one this post publishes as.',
+        accountPickHint_other:
+          'This workspace has {{count}} {{platform}} accounts connected — pick the one this post publishes as.',
+        methodChange: 'Change how this post publishes',
+        methodNotAllowed:
+          'Not allowed for {{platform}} in this workspace — change it in Workspace Settings.',
+        methodNotAllowedUnnamed:
+          'Not allowed for this platform in this workspace — change it in Workspace Settings.',
+        methodNoAccount:
+          'No {{platform}} account is connected — this will fall back to a reminder.',
+        methodNoAccountUnnamed:
+          'No publishing account is connected — this will fall back to a reminder.',
+      },
+      /** The Overview tab's sections, and its one-line summaries of the rest. */
+      overview: {
+        publishing: 'Publishing',
+        health: 'Health',
+        quality: 'Quality',
+        notes: 'Notes',
+        sources: 'Sources',
+        writing: 'Writing',
+        /** The tooltip on a line that opens another tab. */
+        open: 'Open {{tab}}',
+        moreChecks_one: 'and {{count}} more',
+        moreChecks_other: 'and {{count}} more',
+        moreNotes_one: 'and {{count}} more note',
+        moreNotes_other: 'and {{count}} more notes',
+        /** The Quality section's one row. */
+        score: 'Score',
+        notAssessed: 'Not assessed yet',
+        /** A note with no title, where its title would be the row's label. */
+        note: 'Note',
+        /** The Sources section's one row: what is attached to the post. */
+        attached: 'Attached',
+        sourceCount_one: '{{count}} source',
+        sourceCount_other: '{{count}} sources',
+        noSources: 'No sources',
+        notGrounded: 'Not grounded — written from general knowledge',
+        /** A failing check as one sentence (`CheckProblem` in lib/postValidation). */
+        problems: {
+          platform: 'Pick a platform.',
+          postType: 'Pick a post type.',
+          videoUnsupported:
+            'This post type needs video, which the platform doesn’t publish.',
+          videoTitle: 'The video needs a title.',
+          titleOver_one: 'The title is {{count}} character over.',
+          titleOver_other: 'The title is {{count}} characters over.',
+          copy: 'The post needs copy.',
+          copyEmpty: 'There’s no copy yet.',
+          lengthOver_one: 'Length is {{count}} character over.',
+          lengthOver_other: 'Length is {{count}} characters over.',
+          needVideo: 'The post needs a video.',
+          needImage: 'The post needs an image.',
+          needFile: 'The post needs a file.',
+          tooFew_one: 'The post needs {{count}} more file.',
+          tooFew_other: 'The post needs {{count}} more files.',
+          tooMany_one: 'One file too many — the platform takes {{max}}.',
+          tooMany_other:
+            '{{count}} files too many — the platform takes {{max}}.',
+          unwanted: 'This post type publishes without media.',
+          wrongKind_one: '{{count}} file can’t go out with this post type.',
+          wrongKind_other: '{{count}} files can’t go out with this post type.',
+          altText_one: '{{count}} image has no alt text.',
+          altText_other: '{{count}} images have no alt text.',
+        },
+      },
+      /** The publishing list's date row, and what it says once it is history. */
+      schedule: {
+        setDate: 'Set publish date',
+        pickDate: 'Select publish date',
+        time: 'Publish time',
+        noDateHint:
+          'This post has no publish date, so it can’t be scheduled. Pick a date and time to publish it.',
+        pastHint:
+          'The publish date is in the past. Scheduling needs a date in the future — pick a new one.',
+        unscheduling: 'Unscheduling…',
+        noDate: 'No publish date set',
+        autoAt: 'Auto-publishes {{when}}',
+        manualAt: 'Manual publish — reminder {{when}}',
+        publishedAt: 'Published {{when}}',
+        published: 'Published',
+        failedAt: 'Publish failed — was scheduled for {{when}}',
+        failed: 'Publish failed',
+        notPublishedAt: 'Not published — was planned for {{when}}',
+        notPublished: 'Not published',
+        plannedAt: 'Planned for {{when}}',
+        notScheduled: 'Not scheduled yet',
+      },
+      checks: {
+        notAssessed: 'Not assessed yet.',
+      },
+    },
 
     /**
      * The card's warning mark. What is wrong is in the post itself — the mark

@@ -20,9 +20,8 @@ import { formatAnchor, parseAnchor } from '@/components/campaigns/calendar/date'
  */
 
 /**
- * The three arrangements a campaign's posts can be read in. The same vocabulary
- * the view switcher offers (`PostsToolbar`), because it is the same choice —
- * two calendar granularities and the table.
+ * The three arrangements a campaign's posts can be read in: two calendar
+ * granularities and the table.
  */
 export const POSTS_VIEWS = ['week', 'month', 'list'] as const
 export type PostsView = (typeof POSTS_VIEWS)[number]

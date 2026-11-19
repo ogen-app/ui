@@ -2,10 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { outsideCampaign } from '@/lib/campaignTarget'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { createPortal } from 'react-dom'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
-import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
-import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { Explainer } from '@/components/page-primitives/Explainer'
@@ -14,19 +11,21 @@ import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import { PostContentEditor } from '@/components/posts/PostContentEditor'
 import { ThreadSplitNote } from '@/components/posts/sequence/ThreadSplitNote'
-import { PostDetailsHeader } from '@/components/posts/PostDetailsHeader'
 import { PostLockNotice } from '@/components/posts/PostLockNotice'
 import { PostFailureNotice } from '@/components/posts/PostFailureNotice'
 import { PostPerformanceSection } from '@/components/analytics/PostPerformanceSection'
 import { usePostPerformance } from '@/hooks/usePostPerformance'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
-import { PostQuickSettingsBar } from '@/components/posts/PostQuickSettingsBar'
-import { PostStatusActionBar } from '@/components/posts/PostStatusActionBar'
+import { PostOverviewTab } from '@/components/posts/editor/PostOverviewTab'
+import { PostChecksTab } from '@/components/posts/editor/PostChecksTab'
+import {
+  PostSideColumn,
+  type PostTabBadge,
+} from '@/components/posts/editor/PostSideColumn'
+import { PostBar } from '@/components/posts/editor/PostBar'
 import { PostSourcesCard } from '@/components/posts/sources/PostSourcesCard'
-import { PostValidationsSection } from '@/components/posts/PostValidationsSection'
 import { DeletePostDialog } from '@/components/posts/DeletePostDialog'
 import { PublishedUrlDialog } from '@/components/posts/PublishedUrlDialog'
-import { PostSettingsForm } from '@/components/forms/postSettingsForm/PostSettingsForm'
 import { PostPreviewPanel } from '@/components/posts/preview/PostPreviewPanel'
 import { PostQualityPanelView } from '@/components/posts/quality/PostQualityPanelView'
 import { TitleHighlights } from '@/components/posts/quality/TitleHighlights'
@@ -37,14 +36,8 @@ import {
   PlannedPostPanel,
 } from '@/components/posts/PlannedPostPanel'
 import { PostFirstCommentCard } from '@/components/posts/firstComment/PostFirstCommentCard'
-import {
-  POST_PREVIEW_PORTAL_ID,
-  POST_QUALITY_PORTAL_ID,
-  POST_SETTINGS_PORTAL_ID,
-  POST_VERSIONS_PORTAL_ID,
-} from '@/components/layout/RightSidebar'
-import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
-import { usePanelScope } from '@/hooks/usePanelScope'
+import { useSettingsStore } from '@/stores/settingsStore'
+import type { PostTab } from '@/lib/postTabs'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { charCount } from '@/lib/socialText'
 import { firstCommentFit, hasFirstComment } from '@/lib/firstComment'
@@ -74,7 +67,11 @@ import { usePublishStatus } from '@/hooks/usePublishStatus'
 import { cn } from '@/lib'
 import { downloadMarkdown } from '@/lib/downloadMarkdown'
 import { resolvePublishMethod } from '@/lib/autoPublish'
-import { isSubmitted, type PublishMethod } from '@/lib/postStatusMachine'
+import {
+  isSubmitted,
+  type PostStatusBlocker,
+  type PublishMethod,
+} from '@/lib/postStatusMachine'
 import type { CancelTarget } from '@/services/api/posts'
 import type { PostNote } from '@/services/api/postNotes'
 import type { Post, PostStatus } from '@/types/posts'
@@ -88,12 +85,6 @@ export const Route = createFileRoute(
 
 function PostPage() {
   const { campaignId, postId } = Route.useParams()
-  // Declared by the route, not by the editor below it: being on a post is what
-  // makes the post panels resolvable, and that is true from the moment the URL
-  // is. Inside the editor it would drop for as long as the document takes to
-  // arrive — the rail would fall back to the assistant and animate its width
-  // twice on the way to a post nobody had opened before.
-  usePanelScope('post')
   const {
     doc,
     changeDoc,
@@ -205,10 +196,10 @@ function PostEditorSurface({
   const titleRef = useRef<HTMLTextAreaElement | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   // Opened by MARK AS PUBLISHED (the 'verify' mechanism), and by the
-  // quick-settings bar for a post that published without a link.
+  // Settings tab for a post that published without a link.
   const [publishedUrlOpen, setPublishedUrlOpen] = useState(false)
-  // Bumped when a status action is clicked while blocked; the quick-settings
-  // bar flashes the fields that are missing.
+  // When a status action was last pressed while blocked; the Settings tab
+  // opens and flashes the fields that are missing.
   const [attention, setAttention] = useState(0)
 
   // Auto vs manual publishing. Page-local on purpose: the server has no
@@ -388,44 +379,42 @@ function PostEditorSurface({
   // status actions wait for it too — scheduling a post the wrong way is not
   // something the user can see happening, let alone undo.
   const statusBusy = pending || cancelling || allowlistPending
-  const flashBlockers = useCallback(() => setAttention((n) => n + 1), [])
 
-  // The settings form renders in the shared right sidebar (one panel at a
-  // time, alongside the AI assistant). The route owns the form because it
-  // owns the post's autosave pipeline; the sidebar only hosts the layer. What
-  // makes these four resolvable at all is the scope `PostPage` declares — off
-  // this screen they stay remembered but the rail falls back to the assistant.
-  const activePanel = useSettingsStore(selectActivePanel)
-  const settingsOpen = activePanel === 'postSettings'
-  const previewOpen = activePanel === 'postPreview'
-  const qualityOpen = activePanel === 'postQuality'
-  const versionsOpen = activePanel === 'postVersions'
-  // Lazy, then sticky: the sidebar keeps every layer mounted for the
-  // crossfade, but the versions panel fetches its history on mount — portalled
-  // eagerly, merely opening a post costs a GET /versions nobody asked for.
-  // First open mounts it; after that it stays for the fade.
-  const [versionsWarm, setVersionsWarm] = useState(false)
-  useEffect(() => {
-    if (versionsOpen) setVersionsWarm(true)
-  }, [versionsOpen])
-  const toggleRightPanel = useSettingsStore((s) => s.toggleRightPanel)
-  const openRightPanel = useSettingsStore((s) => s.openRightPanel)
-  const closeRightPanel = useSettingsStore((s) => s.closeRightPanel)
+  // The side column's tab, one choice for every post. Everything that used to
+  // open in the right rail is a tab here now, so the rail stays the
+  // assistant's and Ogen can help with any of it.
+  const tab = useSettingsStore((s) => s.postTab)
+  const setTab = useSettingsStore((s) => s.setPostTab)
+  // A blocked press goes where the fix is: the Overview, its publishing list
+  // flashing, for
+  // everything but an over-long first comment, which is in the writing column
+  // and is read off the Checks tab.
+  const flashBlockers = useCallback(
+    (blockers: PostStatusBlocker[]) => {
+      if (blockers.some((b) => b.field !== 'first_comment')) {
+        setTab('overview')
+        setAttention(Date.now())
+      } else {
+        setTab('checks')
+      }
+    },
+    [setTab],
+  )
 
-  // Owned here rather than inside the quality panel (CON-183): the checks bar
-  // shows the score and can start a run, and the panel draws that same run's
-  // progress. Two `usePostAssessment` instances would share the cached result
-  // but not the run — the bar would stream while the panel sat on its "assess
-  // this post" empty state, offering a second one.
+  // Owned here rather than inside the Quality tab (CON-183): the Checks tab
+  // shows the score and can start a run, and the Quality tab draws that same
+  // run's progress. Two `usePostAssessment` instances would share the cached
+  // result but not the run — one would stream while the other sat on its
+  // "assess this post" empty state, offering a second one.
   // `doc.updated_at` so the first edit after a current score asks the server
   // again whether it still is — staleness is the server's call (CON-438).
   const quality = usePostAssessment(doc.id, doc.updated_at)
   const { assessment, assess: startAssessment, assessing } = quality
-  // While the panel is open, every suggestion's span is marked in the title
-  // and the body, and the list and the post choose together (CON-441).
+  // While the Quality tab is open, every suggestion's span is marked in the
+  // title and the body, and the list and the post choose together (CON-441).
   const highlights = useQualityHighlights({
     assessment,
-    open: qualityOpen,
+    open: tab === 'quality',
     title: titleDraft,
   })
   const { pick: pickHighlight, titleMarks } = highlights
@@ -438,19 +427,15 @@ function PostEditorSurface({
     },
     [titleMarks, pickHighlight],
   )
-  // One gate for both places a run can be started — the checks bar and the
-  // rail panel — because they start the same run and would otherwise disagree
-  // about whether there is one left.
+  // One gate for both places a run can be started — the Checks tab and the
+  // Quality tab — because they start the same run and would otherwise
+  // disagree about whether there is one left.
   const qualityGate = useUpgradeGate('quality_reviews_per_post')
   const runAssessment = qualityGate.intent(startAssessment)
-  // Opening the rail is its own action, separate from starting a run: the bar
-  // can now do both, and a link that says "see the full breakdown" must not
-  // also spend a model call.
-  const openQuality = useCallback(
-    () => openRightPanel('postQuality'),
-    [openRightPanel],
-  )
-  // Notes (CON-188), all of them in the one card below the media.
+  // Opening the breakdown is its own action, separate from starting a run: a
+  // link that says "see the full breakdown" must not also spend a model call.
+  const openQuality = useCallback(() => setTab('quality'), [setTab])
+  // Notes (CON-188), on their own tab.
   const notes = usePostNotes(doc.id)
   const { edit: editNote } = notes
   const saveNote = useCallback(
@@ -458,17 +443,6 @@ function PostEditorSurface({
       editNote(note.id, patch),
     [editNote],
   )
-
-  const [settingsHost, setSettingsHost] = useState<HTMLElement | null>(null)
-  const [previewHost, setPreviewHost] = useState<HTMLElement | null>(null)
-  const [qualityHost, setQualityHost] = useState<HTMLElement | null>(null)
-  const [versionsHost, setVersionsHost] = useState<HTMLElement | null>(null)
-  useEffect(() => {
-    setSettingsHost(document.getElementById(POST_SETTINGS_PORTAL_ID))
-    setPreviewHost(document.getElementById(POST_PREVIEW_PORTAL_ID))
-    setQualityHost(document.getElementById(POST_QUALITY_PORTAL_ID))
-    setVersionsHost(document.getElementById(POST_VERSIONS_PORTAL_ID))
-  }, [])
 
   // Being on a post page is what makes its assistant thread available: the
   // thread is registered here and becomes the panel's active one. It outlives
@@ -806,249 +780,202 @@ function PostEditorSurface({
     [doc.title, doc.content],
   )
 
+  // What a closed tab still says (`PostSideColumn`). Overview warns about
+  // what stops the primary move; Checks about the requirements that fail.
+  const primaryBlockers = buttons[buttons.length - 1]?.blockers ?? []
+  const badges: Partial<Record<PostTab, PostTabBadge>> = {
+    overview: {
+      warn: primaryBlockers.filter((b) => b.field !== 'first_comment').length,
+    },
+    checks: {
+      warn:
+        doc.status === 'published'
+          ? 0
+          : allChecks.filter((c) => c.status === 'fail' || c.status === 'warn')
+              .length,
+    },
+  }
+
   return (
     // Fades in rather than appearing whole. The document, the bars and the
     // cards all become ready in the same commit, so without this the screen
     // arrives as one hard cut — from a spinner, or from the post that was here
     // a moment ago. Keyed by post above, so the fade plays on each one.
     <PageContainer variant="fullFlex" className="page-content-motion">
-      {/* `relative` so the action bar anchors to the content column rather
-          than the window: the right rail is a sibling of this container, so
-          the bar recentres when a panel opens instead of drifting off the
-          post it acts on. */}
-      <div className="relative flex flex-1 min-h-0">
-        <ScrollArea
-          className="flex-1 min-h-0"
-          type="scroll"
-          scrollHideDelay={350}
-        >
-          <PostDetailsHeader
+      <UpgradeDialog gate={qualityGate} />
+      <div className="flex min-h-0 flex-1">
+        {/* The writing column: what gets published, and nothing about it —
+            under the post's own bar, level with the side column's tabs. */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <PostBar
             campaignId={campaignId}
+            postId={doc.id}
+            title={titleDraft}
+            status={doc.status}
             saving={saving}
-            settingsOpen={settingsOpen}
-            onToggleSettings={() => toggleRightPanel('postSettings')}
-            previewOpen={previewOpen}
-            onTogglePreview={() => toggleRightPanel('postPreview')}
-            qualityOpen={qualityOpen}
-            onToggleQuality={() => toggleRightPanel('postQuality')}
-            versionsOpen={versionsOpen}
-            onToggleVersions={() => toggleRightPanel('postVersions')}
+            buttons={buttons}
+            back={back}
+            duplicate={duplicateAction}
+            publishStatus={publishStatus}
+            pending={statusBusy}
+            onBlocked={flashBlockers}
             onDownloadMarkdown={handleDownloadMarkdown}
             onDeletePost={() => setDeleteOpen(true)}
           />
-          <div
-            className={cn(
-              'flex flex-col items-start gap-3 relative z-0 px-3 lg:px-6',
-              PAGE_ACTION_BAR_INSET,
-            )}
+          <ScrollArea
+            className="min-h-0 flex-1"
+            type="scroll"
+            scrollHideDelay={350}
           >
-            <div className="w-content">
-              <PostQuickSettingsBar
-                doc={doc}
-                changeDoc={changeDoc}
-                cancelling={cancelling}
-                attention={attention}
-                publishMethod={effectivePublishMethod}
-                onPublishMethodChange={setPublishMethod}
-                onAddPostLink={() => setPublishedUrlOpen(true)}
-                resolvedPostType={media.postType}
-              />
-            </div>
-            {/* Between the bar and the checks: below the status badge that is
-                the reason for the lock, above everything the lock applies to. */}
-            <div className="w-content empty:hidden">
-              <PostLockNotice status={doc.status} />
-            </div>
-            {/* The other fact about the whole post that a badge can't carry:
-                why a failed one failed. Same slot, and never alongside the
-                lock — a failed post isn't locked. */}
-            <div className="w-content empty:hidden">
-              <PostFailureNotice post={doc} />
-            </div>
-            <UpgradeDialog gate={qualityGate} />
-            <div className="w-content">
-              <PostValidationsSection
-                checks={allChecks}
-                status={doc.status}
-                assessment={assessment}
-                previousAssessment={quality.previous}
-                qualityUnavailable={quality.unavailable}
-                assessing={assessing || !!quality.autoAssessing}
-                exhausted={quality.exhausted}
-                onAssess={runAssessment}
-                onOpenQuality={openQuality}
-              />
-            </div>
-            <div className="w-content bg-primary px-10 py-8">
-              <div className="flex flex-col">
-                <div className="mb-4 flex flex-col">
-                  <div className="relative">
-                    {/* Same type as the textarea, or the marks drift off
+            <div className="flex flex-col gap-3 px-3 pt-4 pb-40 lg:px-6">
+              {/* Above everything the lock applies to. */}
+              <div className="empty:hidden">
+                <PostLockNotice status={doc.status} />
+              </div>
+              {/* Why a failed one failed. Never alongside the lock — a failed
+                post isn't locked. */}
+              <div className="empty:hidden">
+                <PostFailureNotice post={doc} />
+              </div>
+              <div className="bg-primary px-10 py-8">
+                <div className="flex flex-col">
+                  <div className="mb-4 flex flex-col">
+                    <div className="relative">
+                      {/* Same type as the textarea, or the marks drift off
                       their letters. */}
-                    <TitleHighlights
-                      title={titleDraft}
-                      marks={titleMarks}
-                      chosen={highlights.chosen}
-                      className="text-4xl font-bold tracking-tight"
-                    />
-                    <textarea
-                      ref={titleRef}
-                      value={titleDraft}
-                      onChange={(e) => {
-                        const next = e.target.value.replace(/\n/g, '')
-                        handleTitleChange(next)
-                      }}
-                      onClick={(e) =>
-                        pickTitleHighlight(e.currentTarget.selectionStart)
-                      }
-                      // No placeholder once locked: "Title" under a published
-                      // post reads as a field waiting to be filled in, and
-                      // nobody can fill it in. An untitled post that has gone
-                      // out simply has no title.
-                      placeholder={locked ? undefined : 'Title'}
-                      readOnly={locked}
-                      rows={1}
-                      className="relative block resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground"
-                    />
-                  </div>
-                  {/* Only where the platform publishes a title and caps it —
+                      <TitleHighlights
+                        title={titleDraft}
+                        marks={titleMarks}
+                        chosen={highlights.chosen}
+                        className="text-4xl font-bold tracking-tight"
+                      />
+                      <textarea
+                        ref={titleRef}
+                        value={titleDraft}
+                        onChange={(e) => {
+                          const next = e.target.value.replace(/\n/g, '')
+                          handleTitleChange(next)
+                        }}
+                        onClick={(e) =>
+                          pickTitleHighlight(e.currentTarget.selectionStart)
+                        }
+                        // No placeholder once locked: "Title" under a published
+                        // post reads as a field waiting to be filled in, and
+                        // nobody can fill it in. An untitled post that has gone
+                        // out simply has no title.
+                        placeholder={
+                          locked
+                            ? undefined
+                            : t('posts.editor.titlePlaceholder')
+                        }
+                        readOnly={locked}
+                        rows={1}
+                        className="relative block resize-none overflow-hidden bg-transparent border-0 outline-none w-full text-4xl font-bold tracking-tight placeholder:text-tertiary-foreground"
+                      />
+                    </div>
+                    {/* Only where the platform publishes a title and caps it —
                       YouTube today. Elsewhere the title is Ogen's own label
                       and a counter on it would be noise. Deliberately not a
                       `maxLength`: silently swallowing keystrokes mid-word is
                       worse than showing how far over the title is. */}
-                  <TitleCounter
-                    title={titleDraft}
-                    limit={media.maxTitleChars}
-                  />
-                </div>
-                {/* One editor for every post type, threads included: a thread
+                    <TitleCounter
+                      title={titleDraft}
+                      limit={media.maxTitleChars}
+                    />
+                  </div>
+                  {/* One editor for every post type, threads included: a thread
                     is the same Markdown body, and the chain is derived from
                     it. The Explainer teaches the divider; the note below
                     reports what the body actually became. */}
-                {isSequence && (
-                  <Explainer id="post-thread-sequence" className="mb-6">
-                    {t('posts.sequence.explainer')}
-                  </Explainer>
-                )}
-                <PostContentEditor
-                  content={doc.content}
-                  onContentChange={handleContentChange}
-                  readOnly={locked}
-                  busy={assistantRunning}
-                  highlights={highlights.bodySpans}
-                  chosenHighlight={highlights.chosen}
-                  onChooseHighlight={pickHighlight}
-                  onHighlightStatus={highlights.onBodyStatus}
+                  {isSequence && (
+                    <Explainer id="post-thread-sequence" className="mb-6">
+                      {t('posts.sequence.explainer')}
+                    </Explainer>
+                  )}
+                  <PostContentEditor
+                    content={doc.content}
+                    onContentChange={handleContentChange}
+                    readOnly={locked}
+                    busy={assistantRunning}
+                    highlights={highlights.bodySpans}
+                    chosenHighlight={highlights.chosen}
+                    onChooseHighlight={pickHighlight}
+                    onHighlightStatus={highlights.onBodyStatus}
+                  />
+                  {isSequence && (
+                    <ThreadSplitNote plan={plan} stale={media.previewStale} />
+                  )}
+                </div>
+              </div>
+              {/* What publishes with the words: the files, then the comment. */}
+              <div className="empty:hidden">
+                <PostMediaCard
+                  post={doc}
+                  attachments={media.attachments}
+                  pending={media.pending}
+                  policy={media.policy}
+                  upload={media.upload}
+                  attachFromAssets={media.attachFromAssets}
+                  attachedAssetIds={media.attachedAssetIds}
+                  remove={media.remove}
+                  reorder={media.reorder}
+                  describe={(attachmentId, altText) =>
+                    media.describe({ attachmentId, altText })
+                  }
+                  thread={threadTargets}
                 />
-                {isSequence && (
-                  <ThreadSplitNote plan={plan} stale={media.previewStale} />
-                )}
+              </div>
+              <div className="empty:hidden">
+                <PostFirstCommentCard
+                  post={doc}
+                  changeDoc={changeDoc}
+                  limit={media.maxFirstCommentChars}
+                  target={firstCommentTarget}
+                  locked={locked}
+                />
+              </div>
+              {/* A planned post's next step, and where any post came from
+                (CON-449). Both render nothing for a post they don't apply to. */}
+              <div className="empty:hidden">
+                <PlannedPostPanel post={doc} />
+              </div>
+              <div className="empty:hidden">
+                <BuiltFromIdeas postId={doc.id} />
+              </div>
+              {/* For a published post this is the reason the screen was opened.
+                `empty:hidden` because most of its states render nothing. */}
+              <div className="empty:hidden">
+                <PostPerformanceSection
+                  result={performance}
+                  onAddPostLink={() => setPublishedUrlOpen(true)}
+                />
               </div>
             </div>
-            {/* A planned post's next step, and where any post came from
-                (CON-449). Both render nothing for a post they don't apply to. */}
-            <div className="w-content empty:hidden">
-              <PlannedPostPanel post={doc} />
-            </div>
-            <div className="w-content empty:hidden">
-              <BuiltFromIdeas postId={doc.id} />
-            </div>
-            <div className="w-content empty:hidden">
-              <PostFirstCommentCard
-                post={doc}
-                changeDoc={changeDoc}
-                limit={media.maxFirstCommentChars}
-                target={firstCommentTarget}
-                locked={locked}
-              />
-            </div>
-            <div className="w-content">
-              <PostSourcesCard post={doc} changeDoc={changeDoc} />
-            </div>
-            <div className="w-content empty:hidden">
-              <PostMediaCard
-                post={doc}
-                attachments={media.attachments}
-                pending={media.pending}
-                policy={media.policy}
-                upload={media.upload}
-                attachFromAssets={media.attachFromAssets}
-                attachedAssetIds={media.attachedAssetIds}
-                remove={media.remove}
-                reorder={media.reorder}
-                describe={(attachmentId, altText) =>
-                  media.describe({ attachmentId, altText })
-                }
-                thread={threadTargets}
-              />
-            </div>
-            {/* Above the notes, below everything that *is* the post. For a
-                published post this is the reason the screen was opened, and
-                notes are the team's working material either way — burying the
-                figures under a card that grows without limit would put the
-                answer below the commentary. `empty:hidden` because most of
-                this section's states render nothing at all. */}
-            <div className="w-content empty:hidden">
-              <PostPerformanceSection
-                result={performance}
-                onAddPostLink={() => setPublishedUrlOpen(true)}
-              />
-            </div>
-            <div className="w-content">
-              <PostNotesCard
-                notes={notes.notes}
-                loading={notes.loading}
-                error={notes.error !== null}
-                onAdd={notes.add}
-                onSave={saveNote}
-                onDelete={notes.remove}
-              />
-            </div>
+          </ScrollArea>
+        </div>
 
-            {/* Scroll past the end. `PAGE_ACTION_BAR_INSET` above is only
-                clearance — the minimum that keeps the bar off the last card —
-                and it leaves the notes pinned against the bottom edge with
-                nowhere to go. This is the travel that lets the end of the post
-                come up to the middle of the screen, where you can read it. A
-                spacer rather than more padding: the two have different jobs,
-                and `cn` would merge one `pb-*` over the other and silently
-                drop the clearance. */}
-            <div className="h-40 shrink-0" aria-hidden />
-          </div>
-        </ScrollArea>
-
-        {/* The header's fade, mirrored: the post dissolves into the page on
-            its way under the action bar rather than being sliced off by the
-            bottom edge. Sibling of the scroll area, before the bar, so it
-            covers the document and nothing else. */}
-        <PageBottomFader />
-
-        {/* Outside the ScrollArea on purpose — inside it the bar would scroll
-            away with the post. Renders nothing once the post is terminal. */}
-        <PostStatusActionBar
-          buttons={buttons}
-          back={back}
-          duplicate={duplicateAction}
-          pending={statusBusy}
-          onBlocked={flashBlockers}
-          status={publishStatus}
-        />
-
-        {settingsHost &&
-          createPortal(
-            /* Remounting on platform/type keeps the RHF defaults in sync
-               when those fields change from the quick-settings bar. */
-            <PostSettingsForm
-              key={`${doc.platform_id}:${doc.platform_post_type}`}
+        <PostSideColumn badges={badges}>
+          {tab === 'overview' && (
+            <PostOverviewTab
               doc={doc}
               changeDoc={changeDoc}
-              onClose={closeRightPanel}
-            />,
-            settingsHost,
+              cancelling={cancelling}
+              attention={attention}
+              publishMethod={effectivePublishMethod}
+              onPublishMethodChange={setPublishMethod}
+              onAddPostLink={() => setPublishedUrlOpen(true)}
+              resolvedPostType={media.postType}
+              checks={allChecks}
+              assessment={assessment}
+              qualityUnavailable={quality.unavailable}
+              assessing={assessing || !!quality.autoAssessing}
+              exhausted={quality.exhausted}
+              onAssess={runAssessment}
+              notes={notes.notes}
+              onOpenTab={setTab}
+            />
           )}
-
-        {previewHost &&
-          createPortal(
+          {tab === 'preview' && (
             /* Attachments come from the same `usePostMedia` the media card
                uses — their presigned URLs expire, and one owner keeps one
                refresh timer. */
@@ -1057,13 +984,22 @@ function PostEditorSurface({
               postType={media.postType}
               attachments={media.attachments}
               sequence={isSequence ? plan : undefined}
-              onClose={closeRightPanel}
-            />,
-            previewHost,
+            />
           )}
-
-        {qualityHost &&
-          createPortal(
+          {tab === 'checks' && (
+            <PostChecksTab
+              checks={allChecks}
+              status={doc.status}
+              assessment={assessment}
+              previousAssessment={quality.previous}
+              qualityUnavailable={quality.unavailable}
+              assessing={assessing || !!quality.autoAssessing}
+              exhausted={quality.exhausted}
+              onAssess={runAssessment}
+              onOpenQuality={openQuality}
+            />
+          )}
+          {tab === 'quality' && (
             <PostQualityPanelView
               assessment={assessment}
               previous={quality.previous}
@@ -1097,21 +1033,38 @@ function PostEditorSurface({
                     }
                   : undefined
               }
-              onClose={closeRightPanel}
-            />,
-            qualityHost,
+            />
           )}
-
-        {versionsWarm &&
-          versionsHost &&
-          createPortal(
+          {tab === 'sources' && (
+            <div className="h-full overflow-y-auto">
+              <PostSourcesCard
+                post={doc}
+                changeDoc={changeDoc}
+                className="px-3 pt-4 pb-6 lg:px-6"
+              />
+            </div>
+          )}
+          {tab === 'notes' && (
+            <div className="h-full overflow-y-auto">
+              <PostNotesCard
+                notes={notes.notes}
+                loading={notes.loading}
+                error={notes.error !== null}
+                onAdd={notes.add}
+                onSave={saveNote}
+                onDelete={notes.remove}
+                className="px-3 pt-4 pb-6 lg:px-6"
+              />
+            </div>
+          )}
+          {tab === 'history' && (
             /* The live document, so the list can tell whether the newest
                snapshot still *is* the post's text or has been edited past.
                Its writes still go through the server's stored copy, flushing
                the autosave first. */
-            <PostVersionsPanel doc={doc} onClose={closeRightPanel} />,
-            versionsHost,
+            <PostVersionsPanel doc={doc} />
           )}
+        </PostSideColumn>
       </div>
       <DeletePostDialog
         post={doc}

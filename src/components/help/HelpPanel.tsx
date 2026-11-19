@@ -23,7 +23,7 @@ import type { HelpBlock, HelpEmbeddedArticle } from '@/types/help'
 /**
  * The help centre (CON-173): a right-rail panel, opened from Help in the bar
  * over the page (`TopBar`), which takes the assistant's place while it shows
- * and gives it back when closed (`lib/rightPanel`).
+ * and gives it back when closed (`settingsStore.helpOpen`).
  *
  * - **It reads the screen you are on.** Each route names its page article
  *   (`staticData: { help }`), and the panel follows the page for as long as

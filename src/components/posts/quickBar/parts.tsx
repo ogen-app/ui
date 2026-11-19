@@ -1,4 +1,6 @@
-import { WarningCircleIcon } from '@phosphor-icons/react'
+import type { ReactNode } from 'react'
+import { CaretRightIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
@@ -6,16 +8,114 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { cn } from '@/lib'
 
 /**
- * The pieces every control on the quick-settings bar is built from.
+ * The pieces every row of the post's Settings tab is built from.
  *
- * They live together because what they encode is the bar's own grammar — how
- * one inline control is separated from the next, what an incomplete field
- * looks like, what a trigger reads like — and each of the bar's four controls
- * is drawn with the same ones. Split across those files instead, the grammar
- * would only exist as a resemblance.
+ * They live together because what they encode is the tab's own grammar — a
+ * label, then a 16px mark, then the value; what an incomplete field looks
+ * like; what a trigger reads like — and every control is drawn with the same
+ * ones. Split across the controls' files instead, the grammar would only exist
+ * as a resemblance. (The folder keeps the name of what the tab was before it
+ * was a tab: a two-line bar above the post.)
  */
+
+/**
+ * The two columns every section of the Overview is drawn in: the labels, then
+ * the values. One grid for all of them, so every value on the tab starts at
+ * the same x whichever section it is in.
+ */
+export function SettingList({
+  className,
+  children,
+}: {
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <dl
+      className={cn(
+        'grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm',
+        className,
+      )}
+    >
+      {children}
+    </dl>
+  )
+}
+
+/**
+ * One row: the label, and beside it the value with its mark. Every value
+ * starts with a 16px mark — the platform's logo, the account's picture, an
+ * icon, or the warning that something is missing in its place — so the text
+ * of every row starts at the same x and the column reads straight down.
+ *
+ * `note` sits under the value, indented to the value's text: a quiet line by
+ * default, or whatever the row needs to say beneath it.
+ */
+export function SettingRow({
+  label,
+  help,
+  note,
+  children,
+}: {
+  label: string
+  help?: ReactNode
+  note?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <>
+      <dt className="flex h-6 min-w-0 items-center gap-1 self-start text-tertiary-foreground">
+        <span className="truncate">{label}</span>
+        {help}
+      </dt>
+      <dd className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-h-6 min-w-0 items-center gap-1.5">
+          {children}
+        </div>
+        {note && (
+          <div className="pl-5.5 text-xs text-tertiary-foreground">{note}</div>
+        )}
+      </dd>
+    </>
+  )
+}
+
+/**
+ * The 16px slot every value starts with. Icons in it are the tertiary grey
+ * the labels are, so the marks guide the eye without competing with the
+ * values; a platform logo keeps its own colour.
+ */
+export function Mark({ children }: { children: ReactNode }) {
+  return (
+    <span className="flex size-4 shrink-0 items-center justify-center text-tertiary-foreground [&_svg]:size-4">
+      {children}
+    </span>
+  )
+}
+
+/**
+ * A mark and a value side by side, for a value that is text rather than a
+ * trigger — the same gap a trigger puts between its own mark and label.
+ */
+export function Marked({
+  mark,
+  className,
+  children,
+}: {
+  mark: ReactNode
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <span className={cn('flex min-w-0 items-center gap-1.5', className)}>
+      <Mark>{mark}</Mark>
+      <span className="min-w-0 truncate">{children}</span>
+    </span>
+  )
+}
 
 /**
  * Separator between the bar's inline controls. Without it neighbouring
@@ -69,7 +169,7 @@ export function WarningHint({
  * panel's own selects: quieter than a disabled row, and not selectable, so
  * it can't be mistaken for an option.
  */
-export function InfoRow({ children }: { children: React.ReactNode }) {
+export function InfoRow({ children }: { children: ReactNode }) {
   return (
     <div className="px-2 py-1.5 text-xs text-tertiary-foreground">
       {children}
@@ -84,7 +184,7 @@ export function QuickBarTrigger({
 }: {
   label: string
   disabled?: boolean
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <DropdownMenuTrigger asChild>
@@ -98,5 +198,33 @@ export function QuickBarTrigger({
         {children}
       </Button>
     </DropdownMenuTrigger>
+  )
+}
+
+/**
+ * One line of the Overview that opens the tab with the rest of it: the whole line is the button,
+ * with a caret at its end saying it goes somewhere.
+ */
+export function SummaryLine({
+  onOpen,
+  label,
+  children,
+}: {
+  onOpen: () => void
+  /** The tab it opens, for the accessible name. */
+  label: string
+  children: ReactNode
+}) {
+  const { t } = useTranslation()
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      title={t('posts.editor.overview.open', { tab: label })}
+      className="group -mx-1.5 flex min-h-6 items-center gap-1.5 rounded-button px-1.5 py-0.5 text-left outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+    >
+      {children}
+      <CaretRightIcon className="ml-auto size-3.5 shrink-0 text-tertiary-foreground group-hover:text-foreground" />
+    </button>
   )
 }

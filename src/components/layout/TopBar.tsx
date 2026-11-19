@@ -59,7 +59,7 @@ function PageCrumbTrail() {
 /**
  * Help for the screen you are on (CON-173), in the column beside the page. It
  * takes the assistant's place there rather than opening a second column, and
- * pressing it again gives the assistant back (`lib/rightPanel`). The article is
+ * pressing it again gives the assistant back (`settingsStore.helpOpen`). The article is
  * the one the route names (`staticData.help`), and the panel follows the page
  * from then on (`HelpPanel`).
  *

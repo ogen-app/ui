@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import {
   ArrowSquareOutIcon,
+  CalendarBlankIcon,
   CaretDownIcon,
-  ClockIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
@@ -18,7 +19,7 @@ import { fromLocalParts, toLocalParts } from '@/lib/postSchedule'
 import { formatDate } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Post } from '@/types/posts'
-import { Dot, WarningHint } from './parts'
+import { Dot, Mark, WarningHint } from './parts'
 
 const SCHEDULED_DATE_FORMAT: Intl.DateTimeFormatOptions = {
   weekday: 'short',
@@ -56,7 +57,7 @@ export function SchedulingDetails({
   const { t } = useTranslation()
   const editable = canEditScheduledAt(post.status) && !cancelling
   if (!editable) {
-    const { text, warn } = schedulingDetails(post, cancelling)
+    const { text, warn } = schedulingDetails(t, post, cancelling)
     // The permalink, once the server has one (CON-165) — from Zernio on the
     // auto path, or from the URL the user pasted on the manual one. This is
     // the only place in the app that goes to what actually went out.
@@ -87,7 +88,9 @@ export function SchedulingDetails({
               className="size-4 shrink-0 text-warning"
             />
           ) : (
-            <ClockIcon className="size-4 shrink-0" />
+            <Mark>
+              <CalendarBlankIcon />
+            </Mark>
           )}
           <span className="truncate">{text}</span>
         </span>
@@ -141,6 +144,7 @@ function ScheduleEditor({
   post: Post
   onChange: (iso: string | null) => void
 }) {
+  const { t } = useTranslation()
   const [calendarOpen, setCalendarOpen] = useState(false)
   const { dateStr, timeStr } = toLocalParts(post.scheduled_at)
   const selected = post.scheduled_at ? new Date(post.scheduled_at) : null
@@ -154,17 +158,13 @@ function ScheduleEditor({
           separates the date from the time. */}
       <span className="flex min-w-0 items-center gap-1.5">
         {!valid ? (
-          <WarningHint
-            focusable
-            text="This post has no publish date, so it can't be scheduled. Pick a date and time to publish it."
-          />
+          <WarningHint focusable text={t('posts.editor.schedule.noDateHint')} />
         ) : inPast ? (
-          <WarningHint
-            focusable
-            text="The publish date is in the past. Scheduling needs a date in the future — pick a new one."
-          />
+          <WarningHint focusable text={t('posts.editor.schedule.pastHint')} />
         ) : (
-          <ClockIcon className="size-4 shrink-0 text-secondary-foreground" />
+          <Mark>
+            <CalendarBlankIcon />
+          </Mark>
         )}
 
         <DropdownMenu open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -172,10 +172,12 @@ function ScheduleEditor({
             <Button
               variant="ghost"
               size="excluded"
-              aria-label="Set publish date"
+              aria-label={t('posts.editor.schedule.setDate')}
               className="gap-1.5 text-sm font-normal text-primary-foreground shrink-0"
             >
-              {valid ? formatDate(selected, DAY_FORMAT) : 'Select publish date'}
+              {valid
+                ? formatDate(selected, DAY_FORMAT)
+                : t('posts.editor.schedule.pickDate')}
               <CaretDownIcon className="size-3 text-tertiary-foreground" />
             </Button>
           </DropdownMenuTrigger>
@@ -234,6 +236,7 @@ function TimeField({
   timeStr: string
   onChange: (iso: string | null) => void
 }) {
+  const { t } = useTranslation()
   // A half-typed time ("1" of "11:45") is an empty value on the element. A
   // plain controlled input would snap it back to the saved time on every
   // keystroke, so the draft is local and only re-syncs when the post's own
@@ -249,7 +252,7 @@ function TimeField({
         setDraft(e.target.value)
         if (e.target.value) onChange(fromLocalParts(dateStr, e.target.value))
       }}
-      aria-label="Publish time"
+      aria-label={t('posts.editor.schedule.time')}
       // Bare input: the bar's own text styling, no chrome. The webkit
       // indicator is hidden because the field itself is the affordance.
       className={cn(
@@ -269,47 +272,55 @@ function TimeField({
  * Friday" are the same date meaning opposite things.
  */
 function schedulingDetails(
+  t: TFunction,
   post: Post,
   cancelling: boolean,
 ): { text: string; warn: boolean } {
   // The badge still reads `scheduled` until the worker confirms, so this
   // is the textual signal that an unschedule is in progress.
-  if (cancelling) return { text: 'Unscheduling…', warn: false }
+  if (cancelling)
+    return { text: t('posts.editor.schedule.unscheduling'), warn: false }
   const when = formatDate(post.scheduled_at, SCHEDULED_DATE_FORMAT)
+  const noDate = t('posts.editor.schedule.noDate')
   switch (post.status) {
     case 'scheduled':
       return {
-        text: when ? `Auto-publishes ${when}` : 'No publish date set',
+        text: when ? t('posts.editor.schedule.autoAt', { when }) : noDate,
         warn: false,
       }
     case 'scheduled_for_manual_publishing':
       return {
-        text: when
-          ? `Manual publish — reminder ${when}`
-          : 'No publish date set',
+        text: when ? t('posts.editor.schedule.manualAt', { when }) : noDate,
         warn: false,
       }
     case 'published': {
       const at = formatDate(post.published_at, SCHEDULED_DATE_FORMAT)
-      return { text: at ? `Published ${at}` : 'Published', warn: false }
+      return {
+        text: at
+          ? t('posts.editor.schedule.publishedAt', { when: at })
+          : t('posts.editor.schedule.published'),
+        warn: false,
+      }
     }
     case 'failed':
       return {
         text: when
-          ? `Publish failed — was scheduled for ${when}`
-          : 'Publish failed',
+          ? t('posts.editor.schedule.failedAt', { when })
+          : t('posts.editor.schedule.failed'),
         warn: false,
       }
     case 'not_published':
       return {
         text: when
-          ? `Not published — was planned for ${when}`
-          : 'Not published',
+          ? t('posts.editor.schedule.notPublishedAt', { when })
+          : t('posts.editor.schedule.notPublished'),
         warn: false,
       }
     default:
       return {
-        text: when ? `Planned for ${when}` : 'Not scheduled yet',
+        text: when
+          ? t('posts.editor.schedule.plannedAt', { when })
+          : t('posts.editor.schedule.notScheduled'),
         warn: !when,
       }
   }

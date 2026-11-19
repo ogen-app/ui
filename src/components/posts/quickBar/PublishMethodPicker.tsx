@@ -1,4 +1,9 @@
-import { CaretDownIcon } from '@phosphor-icons/react'
+import {
+  BellSimpleIcon,
+  CaretDownIcon,
+  LightningIcon,
+} from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,9 +15,12 @@ import {
   type PublishMethod,
 } from '@/lib/postStatusMachine'
 import { cn } from '@/lib'
-import { QuickBarTrigger } from './parts'
+import { Mark, QuickBarTrigger } from './parts'
 
 const PUBLISH_METHODS: PublishMethod[] = ['auto', 'manual']
+
+/** Auto goes out by itself; manual is a reminder to post it yourself. */
+const METHOD_ICON = { auto: LightningIcon, manual: BellSimpleIcon } as const
 
 /**
  * Auto-publish vs manual. This is the one scheduling decision the status
@@ -34,9 +42,14 @@ export function PublishMethodPicker({
   /** The workspace allowlists this platform for auto-publishing. */
   autoAllowed: boolean
 }) {
+  const { t } = useTranslation()
+  const Icon = METHOD_ICON[method]
   return (
     <DropdownMenu>
-      <QuickBarTrigger label="Change how this post publishes">
+      <QuickBarTrigger label={t('posts.editor.settings.methodChange')}>
+        <Mark>
+          <Icon />
+        </Mark>
         <span>{PUBLISH_METHOD_LABELS[method]}</span>
         <CaretDownIcon className="size-3 text-tertiary-foreground" />
       </QuickBarTrigger>
@@ -64,16 +77,22 @@ export function PublishMethodPicker({
               </span>
               {blocked && (
                 <span className="text-xs text-tertiary-foreground">
-                  Not allowed for {platformName ?? 'this platform'} in this
-                  workspace — change it in Workspace Settings.
+                  {platformName
+                    ? t('posts.editor.settings.methodNotAllowed', {
+                        platform: platformName,
+                      })
+                    : t('posts.editor.settings.methodNotAllowedUnnamed')}
                 </span>
               )}
               {/* Auto needs a connected publisher; without one the server
                   routes it to manual anyway, so say that up front. */}
               {m === 'auto' && !blocked && !hasAccount && (
                 <span className="text-xs text-warning">
-                  No {platformName ?? 'publishing'} account is connected — this
-                  will fall back to a reminder.
+                  {platformName
+                    ? t('posts.editor.settings.methodNoAccount', {
+                        platform: platformName,
+                      })
+                    : t('posts.editor.settings.methodNoAccountUnnamed')}
                 </span>
               )}
             </DropdownMenuItem>
