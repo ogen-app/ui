@@ -2089,6 +2089,8 @@ export const en = {
      * readable again.
      */
     addPostOn: 'Add a post on {{date}}',
+    /** Over the campaigns the workspace calendar's add asks between. */
+    addPostTo: 'Add a post to',
     density_one: '{{count}} post on {{date}} — open this week',
     density_other: '{{count}} posts on {{date}} — open this week',
     /** On a day too busy to draw its cards, how many of its posts are ticked. */
@@ -2099,19 +2101,15 @@ export const en = {
 
     /** The right rail's holding pen for posts with no date yet. */
     notScheduled: 'Not scheduled',
-    /** Under its title (CON-485): what the panel is for. */
-    notScheduledHint: 'Drag a post onto a day to schedule it.',
     /**
      * The Not scheduled panel's two groups: posts with an account to publish
      * as, and the ones the schedule gate would refuse for want of one —
      * folded away by default, with each row's reason in amber.
      */
     readyToSchedule: 'Ready to schedule',
+    /** Inside that group when every undated post needs an account. */
+    noneReady: 'Nothing is ready to be scheduled',
     needsAccount: 'Needs an account',
-    needsAccountHint:
-      'No account to publish as yet. Set one on each post, or connect one in Settings.',
-    /** When every undated post is in the second group. */
-    noneReady: 'None of these can publish yet: each needs an account.',
     /** A row's reason, worded as what to do about it. */
     accountGap: {
       noPlatform: 'Choose a platform',

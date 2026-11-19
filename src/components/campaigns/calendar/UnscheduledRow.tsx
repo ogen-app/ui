@@ -12,9 +12,9 @@ import type { Post } from '@/types/posts'
 import type { AccountGap } from '@/lib/publishingAccount'
 
 /**
- * One post in the Not scheduled panel, as the CON-470 board draws it
- * (CON-485): the title, then "Instagram · Carousel · from 1 idea" — compact,
- * because the panel is a list to drag from rather than a calendar of cards.
+ * One post in the Not scheduled panel (CON-485): a card with the title, then
+ * "Instagram · Carousel · from 1 idea" — smaller than the grid's, since the
+ * panel is a pile to drag from rather than a calendar.
  * A draft just written in this tab leads, tinted, under a JUST WRITTEN
  * eyebrow. Dragged onto a day it is scheduled, as a calendar card is.
  */
@@ -61,8 +61,11 @@ export function UnscheduledRow({
         e.dataTransfer.setData('text/plain', post.id)
         e.dataTransfer.effectAllowed = 'move'
       }}
+      // A card, as on the grid, because it is the thing dragged onto it — and
+      // the grab cursor says so before the drag does.
       className={cn(
-        'flex flex-col gap-0.5 border-b border-border px-3 py-2.5 transition-colors hover:bg-secondary',
+        'flex flex-col gap-0.5 border border-border bg-primary p-3 transition-shadow hover:shadow-md',
+        draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
         justWritten && 'bg-accent/5',
       )}
     >
@@ -79,7 +82,7 @@ export function UnscheduledRow({
         <NotGroundedMark mode={post.grounding_mode} />
         <OutsideCampaignMark outside={outside} />
         {gap && (
-          <span className="font-medium text-warning">
+          <span className="text-warning">
             {t(`calendar.accountGap.${gap}`)}
           </span>
         )}

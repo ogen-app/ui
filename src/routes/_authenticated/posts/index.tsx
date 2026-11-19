@@ -75,11 +75,7 @@ function WorkspacePostsView() {
         <PageHeader title={t('nav.campaign.posts')} />
         <div className="page-content-motion grid overflow-hidden h-full px-3 lg:px-6">
           <div className="flex flex-col h-full min-h-0 min-w-0">
-            <PostsToolbar
-              campaignId={null}
-              view="list"
-              subheading={countLine}
-            />
+            <PostsToolbar campaignId={null} subheading={countLine} />
             {isError && posts === undefined ? (
               // A read that never answered is not an empty workspace.
               <p className="px-6 py-8 text-sm text-tertiary-foreground">
