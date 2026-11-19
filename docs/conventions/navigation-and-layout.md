@@ -105,7 +105,7 @@ keep it accurate when these rules change.
   Strategy" — because the campaign is already in the bar above. Headers are
   solid, with no gradient. A list or grid keeps its header pinned (its actions
   steer it); a document (`PageHeader`'s `scrollAway`: Strategy, Overview,
-  Analytics, Activity, Settings, Profile) lets it scroll away, and the top bar
+  Activity, Settings, Profile) lets it scroll away, and the top bar
   takes over its title after the switcher — "Strategy", which scrolls back
   up (`stores/pageCrumbStore`). Only the title: the bar deliberately does not
   follow which card is being read.
@@ -156,7 +156,9 @@ keep it accurate when these rules change.
     stretches every card beside it. Its header is `OverviewCard`'s: glyph,
     title, count or status, then one chevron or one action on the right. A
     cell whose card renders nothing is not drawn. No gutters, so it nests in
-    a `PageColumns` column. The campaign Overview.
+    a `PageColumns` column. The campaign Overview; Analytics, as what
+    happened across the row and the board and the lessons as two halves
+    under it.
   - **Neither is "fully fluid"** (cards choosing their own widths and
     wrapping like words): the rows would be whatever the window makes them.
     Wrapping by width is for tiles inside a card (`StatTile`), not for a page.
@@ -176,14 +178,16 @@ keep it accurate when these rules change.
   viewport (it would drift off the column when the right rail opens); pages
   using one leave `PAGE_ACTION_BAR_INSET` at the bottom of their content.
 
-- **A control that doesn't govern the whole page doesn't go in the corner.**
-  The top-right rule above says what *may* sit there, not that every view
-  switch must. Analytics' period sits in a scope bar above the cards
-  (`WorkspaceScopeBar`) because it does not reach the all-time lessons card,
-  and the platform marks sit beside it because the two are read together. What
-  makes that safe is that the cards answer back — `SectionCard`'s `scope`
-  prints one line under the heading when the period does *not* reach it. A card
-  silently ignoring a control above it is worse than not offering the control.
+- **A control in the corner says which cards it doesn't reach.** The
+  top-right rule above says what *may* sit there, not that every view switch
+  must. Analytics' platforms, campaign and period are its header's actions
+  (`WorkspaceScopeBar`), and that header is pinned rather than scrolling
+  away, because it is what the page is steered with. The period does not
+  reach the all-time lessons card; what makes the corner safe anyway is that
+  the cards answer back — `SectionCard`'s `scope` prints one line under the
+  heading when the period does *not* reach it. A card silently ignoring a
+  control above it is worse than not offering the control. A card's own
+  control (the board's basis, the lessons' metric) stays in that card.
   The platforms reach all three reads since CON-289: a repeatable `platform`
   (Zernio slugs, the union), multi-select on screen, and **nothing chosen is
   sent as no parameter**, never as every slug — so a selection that grows to

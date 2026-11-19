@@ -13,13 +13,15 @@ const CUSTOM = 'custom'
 const ALL = 'all'
 
 /**
- * What the dashboard is counting, and over what window.
+ * What the dashboard is counting, and over what window — the page header's
+ * actions, compact enough to share its 40px row with the title.
  *
- * The controls live here rather than in the page header. The corner is for
- * things that govern the page (CON-178), and the period does not: it does not
- * reach the lessons card, which says so under its heading. The platforms do
- * reach all three cards since CON-289, but they sit with the period because the
- * pair is only ever read together — what is in the numbers, and how far back.
+ * They are views, which is what the top-right corner is for (CON-178). The
+ * period does not reach the lessons card, and that card says so under its
+ * heading; that note is what makes it safe to put the period up here. The
+ * platforms reach all three cards since CON-289, and sit with the period
+ * because the pair is only ever read together — what is in the numbers, and
+ * how far back.
  *
  * **Several platforms at once, and nothing chosen means all of them.** The
  * empty selection is sent as no `platform` at all, which the server reads as
@@ -139,12 +141,7 @@ export function WorkspaceScopeBar({
     .map((c) => t(`analytics.scopeBar.control.${c}`))
 
   return (
-    <section
-      className={cn(
-        'flex w-full max-w-content flex-wrap items-center gap-x-4 gap-y-3 rounded-lg bg-primary px-5 py-4',
-        className,
-      )}
-    >
+    <section className={cn('flex min-w-0 items-center gap-3', className)}>
       {/* Read out once when the assistant moves the bar, silent otherwise. */}
       <p className="sr-only" aria-live="polite">
         {changedNames.length > 0
@@ -156,9 +153,9 @@ export function WorkspaceScopeBar({
       {filterable && (
         <div
           className={cn(
-            'flex flex-wrap items-center gap-2 rounded-md transition-colors',
+            'flex items-center gap-1.5 rounded-md transition-colors',
             changed.has('platforms') &&
-              'bg-accent/5 outline outline-1 outline-accent outline-offset-4',
+              'bg-accent/5 outline outline-1 outline-accent outline-offset-2',
           )}
         >
           {connected.map((option) => (
@@ -177,7 +174,6 @@ export function WorkspaceScopeBar({
             <Button
               variant="ghost"
               size="sm"
-              className="ml-1"
               onClick={() => {
                 clearHighlight()
                 onSelectedChange([])
@@ -189,9 +185,9 @@ export function WorkspaceScopeBar({
         </div>
       )}
 
-      {/* Far right, on its own, because it is the one control here that changes
-          the window rather than the sources. */}
-      <div className="ml-auto flex flex-wrap items-center gap-2">
+      {/* Last, because it is the one control here that changes the window
+          rather than the sources. */}
+      <div className="flex items-center gap-2">
         {/* What the numbers are about, then over when: the campaign narrows
             the posts counted, the period the days. */}
         {/* Also shown with no list to pick from — still loading, or a
@@ -251,7 +247,7 @@ function PlatformMark({
         accounts,
       })}
       className={cn(
-        'relative flex size-10 items-center justify-center rounded-md transition-colors',
+        'relative flex size-8 items-center justify-center rounded-md transition-colors',
         on
           ? 'bg-secondary outline outline-1 outline-foreground'
           : 'border border-border text-quaternary-foreground hover:bg-secondary',
@@ -259,7 +255,7 @@ function PlatformMark({
     >
       {Icon ? (
         <Icon
-          className="size-6"
+          className="size-[18px]"
           weight="fill"
           // Brand hue only while it is being counted. A greyed logo is the
           // fastest way to say "not in these numbers" — it needs no legend.
@@ -276,7 +272,7 @@ function PlatformMark({
           read at the same moment as the platform it qualifies. */}
       <span
         className={cn(
-          'absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[10px] font-medium tabular-nums ring-2 ring-primary',
+          'absolute -top-1 -right-1 flex size-3.5 items-center justify-center rounded-full text-[9px] font-medium tabular-nums ring-2 ring-background',
           on
             ? 'bg-foreground text-primary'
             : 'bg-quaternary text-tertiary-foreground',

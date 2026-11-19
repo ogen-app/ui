@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { PageHeader } from '@/components/page-primitives/PageHeader'
+import { GridCell, PageGrid } from '@/components/page-primitives/PageGrid'
 import { WorkspaceScopeBar } from '@/components/analytics/WorkspaceScopeBar'
 import { WorkspaceLearningsView } from '@/components/analytics/WorkspaceLearnings'
 import { WorkspaceOverviewView } from '@/components/analytics/WorkspaceOverview'
@@ -34,28 +36,40 @@ import { searchPlatforms, type AnalyticsSearch } from '@/lib/analyticsSearch'
  * card is the workspace's either way — the endpoint refuses a campaign — and
  * says so.
  *
- * **Three controls, in two different places, because they are two different
- * kinds of thing.** The period and the platforms are the page's, in the scope
- * bar above the cards. A card's own control sits in that card's own header:
- * the board chooses what "best" means, the lessons card chooses what it mines
- * on. Putting either in the bar would claim it governs the page.
+ * **Controls in two places, because they are two different kinds of thing.**
+ * The platforms, the campaign and the period are the page's, in its header
+ * (`WorkspaceScopeBar` as the header's actions). A card's own control sits in
+ * that card's own header: the board chooses what "best" means, the lessons
+ * card chooses what it mines on. Putting either up top would claim it governs
+ * the page.
  *
- * And the period does not govern the page either, which is the thing the
- * layout has to make visible. The first two cards repeat the window they
- * resolved to in their own headings; the third takes no window at all and says
- * so under its title. A card that quietly ignored the control above it would
- * be the worst of the three options. The platforms, by contrast, reach all
- * three (CON-289) — so no card has to disclaim them.
+ * The period does not quite govern the page either, which is what the cards
+ * have to make visible. The first two repeat the window they resolved to in
+ * their own headings; the third takes no window at all and says so under its
+ * title. A card that quietly ignored the control above it would be the worst
+ * of the three options. The platforms, by contrast, reach all three (CON-289)
+ * — so no card has to disclaim them.
+ *
+ * The header is pinned rather than scrolling away, as a list's is: it carries
+ * what the page is steered with.
+ *
+ * **One full-width card, then two halves** (`PageGrid`): what happened is the
+ * page's headline and gets the row; the board and the lessons are the two
+ * follow-ups and sit side by side under it, stacking on a narrow page in that
+ * order.
  *
  * The period, the platforms and — on the workspace's page — the campaign are
  * the address (CON-463), so the assistant can set them and a link carries
  * them; the page owns the address and hands it in.
  */
 export function AnalyticsDashboard({
+  title,
   search,
   onSearchChange,
   campaign,
 }: {
+  /** The place's name, for the page header the dashboard draws. */
+  title: string
   search: AnalyticsSearch
   onSearchChange: (next: AnalyticsSearch) => void
   /** A campaign's tab: the campaign the dashboard is fixed to, with no picker. */
@@ -180,42 +194,57 @@ export function AnalyticsDashboard({
     used it.
   */
   return (
-    <div className="flex flex-col gap-3">
-      <WorkspaceScopeBar
-        platforms={platforms}
-        selected={selected}
-        onSelectedChange={setSelected}
-        window={window}
-        windows={OVERVIEW_WINDOWS}
-        onWindowChange={setWindow}
-        range={range}
-        {...(campaign
-          ? {}
-          : {
-              campaigns: campaigns.map((c) => ({ id: c.id, name: c.name })),
-              campaignId,
-              onCampaignChange: setCampaign,
-            })}
+    <div className="h-0 grow overflow-y-auto flex flex-col">
+      <PageHeader
+        title={title}
+        actions={
+          <WorkspaceScopeBar
+            platforms={platforms}
+            selected={selected}
+            onSelectedChange={setSelected}
+            window={window}
+            windows={OVERVIEW_WINDOWS}
+            onWindowChange={setWindow}
+            range={range}
+            {...(campaign
+              ? {}
+              : {
+                  campaigns: campaigns.map((c) => ({ id: c.id, name: c.name })),
+                  campaignId,
+                  onCampaignChange: setCampaign,
+                })}
+          />
+        }
       />
-      <WorkspaceOverviewView
-        {...overview}
-        narrowedTo={namesOf(overview.platforms)}
-      />
-      <PerformerSelection.Provider value={performerSelection}>
-        <WorkspacePerformersView
-          result={performers}
-          by={by}
-          onChangeBasis={setBy}
-          narrowedTo={namesOf(performers.platforms)}
-        />
-      </PerformerSelection.Provider>
-      <WorkspaceLearningsView
-        result={learnings}
-        metric={metric}
-        onChangeMetric={setMetric}
-        narrowedTo={namesOf(learnings.platforms)}
-        campaignNarrowed={Boolean(campaignId)}
-      />
+      <div className="page-content-motion px-3 lg:px-6 pt-4 pb-10">
+        <PageGrid>
+          <GridCell span="full">
+            <WorkspaceOverviewView
+              {...overview}
+              narrowedTo={namesOf(overview.platforms)}
+            />
+          </GridCell>
+          <GridCell span="half">
+            <PerformerSelection.Provider value={performerSelection}>
+              <WorkspacePerformersView
+                result={performers}
+                by={by}
+                onChangeBasis={setBy}
+                narrowedTo={namesOf(performers.platforms)}
+              />
+            </PerformerSelection.Provider>
+          </GridCell>
+          <GridCell span="half">
+            <WorkspaceLearningsView
+              result={learnings}
+              metric={metric}
+              onChangeMetric={setMetric}
+              narrowedTo={namesOf(learnings.platforms)}
+              campaignNarrowed={Boolean(campaignId)}
+            />
+          </GridCell>
+        </PageGrid>
+      </div>
     </div>
   )
 }

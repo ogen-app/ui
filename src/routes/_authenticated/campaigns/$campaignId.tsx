@@ -48,11 +48,7 @@ const SECTIONS = [
  * wrong for everything else — so a new section that is neither a document nor
  * a form has to be named here, or it inherits a calendar's header actions.
  */
-const DOCUMENT_SECTIONS: readonly string[] = [
-  'Overview',
-  'Analytics',
-  'Activity',
-]
+const DOCUMENT_SECTIONS: readonly string[] = ['Overview', 'Activity']
 
 /**
  * The save context wraps every shell, not only the Strategy and Settings one
@@ -161,8 +157,9 @@ function CampaignShell() {
   // something there (add *to this campaign*) and the page is one big drop
   // target, neither of which a shared header sitting outside it could do.
   // Ideas too, for its scroll frame: its header is sticky inside the one
-  // scroller its list's bands pin under (CON-392).
-  if (section === 'Assets' || section === 'Ideas') {
+  // scroller its list's bands pin under (CON-392). Analytics, because its
+  // header carries the dashboard's period and platforms.
+  if (section === 'Assets' || section === 'Ideas' || section === 'Analytics') {
     return (
       <PageContainer variant={'fullFlex'}>
         <Outlet />
@@ -170,7 +167,7 @@ function CampaignShell() {
     )
   }
 
-  // Overview and Analytics read as documents too — same scrolling shell and
+  // Overview and Activity read as documents too — same scrolling shell and
   // header, minus the save button: nothing on them is edited in place.
   if (DOCUMENT_SECTIONS.includes(section)) {
     return (
