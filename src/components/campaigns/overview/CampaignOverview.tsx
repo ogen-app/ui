@@ -217,8 +217,11 @@ function Card({
     'group -m-1 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm p-1 text-left'
   return (
     <section className={cn(SURFACE, 'flex flex-col gap-4 p-6', className)}>
-      <div className="flex min-w-0 items-center gap-3">
-        <h2 className="flex min-w-0 flex-1 items-center gap-2 font-display text-xl font-medium tracking-tight">
+      {/* The title keeps its width and the aside goes under it when the two
+          don't fit — a narrow column (the assistant open beside the page)
+          would otherwise cut the title to its first word. */}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+        <h2 className="flex max-w-full min-w-0 flex-[1_0_auto] items-center gap-2 font-display text-xl font-medium tracking-tight">
           {!door ? (
             head
           ) : 'target' in door ? (
@@ -926,10 +929,11 @@ function NeedsRowView({
     row.more > 0 && t('campaignOverview.needs.more', counted(row.more)),
   ].filter(Boolean)
 
-  // Two lines before it gives up: a problem's sentence is the whole of what
-  // it says, and the column is narrow.
+  // Three lines before it gives up: a problem's sentence is the whole of what
+  // it says, and the column can be narrow — a third of a page the assistant
+  // has already taken from.
   const sentence = (
-    <span className="line-clamp-2 whitespace-normal" title={label}>
+    <span className="line-clamp-3 whitespace-normal" title={label}>
       {label}
     </span>
   )
@@ -955,7 +959,7 @@ function NeedsRowView({
 
   const fix =
     action?.kind === 'post' ? (
-      <Button variant="outline" size="sm" asChild>
+      <Button variant="outline" size="sm" className="min-w-0 shrink" asChild>
         <Link
           to="/campaigns/$campaignId/posts/$postId"
           params={{ campaignId, postId: action.postId }}
@@ -968,6 +972,7 @@ function NeedsRowView({
       <Button
         variant="outline"
         size="sm"
+        className="min-w-0 shrink"
         title={action.fix}
         onClick={() => runAction(action, handlers)}
       >
@@ -1029,7 +1034,8 @@ function NeedsRowView({
         details={details}
       />
       {(fix || menu) && (
-        <span className="flex min-w-0 flex-wrap gap-2 pb-3 pl-7">
+        // One line: the fix gives up its words before the menu leaves its side.
+        <span className="flex min-w-0 gap-2 pb-3 pl-7">
           {fix}
           {menu}
         </span>
