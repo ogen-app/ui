@@ -376,40 +376,21 @@ export function ProgressHeader({
  * when there is neither. Under it, the same figures as the other cards, the
  * pace last.
  */
-export function PostsBar({
-  band,
-  size = 'card',
-}: {
-  band: OverviewBand
-  /** `row` is the Campaigns list's: the figures on one line, in its text. */
-  size?: 'card' | 'row'
-}) {
+export function PostsBar({ band }: { band: OverviewBand }) {
   const { t } = useTranslation()
   const { goal, pace } = band
   const { published, scheduled } = goal != null ? band : band.recent
-  // With a goal, scheduled only fills what the published leave of it.
-  const track = goal ?? published + scheduled
-  const shown =
-    goal != null
-      ? Math.min(scheduled, Math.max(0, goal - published))
-      : scheduled
-  const of = (n: number) =>
-    `${track > 0 ? Math.min(100, (n / track) * 100) : 0}%`
   const days = formatNumber(RECENT_DAYS)
   const figures: FigureRow[] = [
     // Before the start nothing can be out; with a goal, the count still reads.
     ...(published > 0 || goal != null || band.startsIn == null
       ? [
           {
-            // On one line the goal reads as a fraction: "Published 40/48".
             label:
-              goal == null
-                ? t('campaignOverview.band.publishedRecent', { days })
-                : size === 'row'
-                  ? t('campaignOverview.stats.published')
-                  : t('campaignOverview.results.publishedOf', counted(goal)),
+              goal != null
+                ? t('campaignOverview.results.publishedOf', counted(goal))
+                : t('campaignOverview.band.publishedRecent', { days }),
             value: published,
-            ...(size === 'row' && goal != null ? { of: goal } : {}),
             dot: 'bg-positive',
           },
         ]
@@ -440,12 +421,54 @@ export function PostsBar({
   // Nothing at all: the grey track alone.
   const empty = published === 0 && scheduled === 0 && !pace && goal == null
   return (
-    <div className={cn('flex flex-col', size === 'row' ? 'gap-3' : 'gap-4')}>
-      <div className="flex h-1.5 overflow-hidden rounded-full bg-secondary">
-        <div className="bg-positive" style={{ width: of(published) }} />
-        <div className="bg-positive/35" style={{ width: of(shown) }} />
-      </div>
-      {!empty && <Figures figures={figures} inline={size === 'row'} />}
+    <div className="flex flex-col gap-4">
+      <BandBar band={band} />
+      {!empty && <Figures figures={figures} />}
+    </div>
+  )
+}
+
+/** `PostsBar`'s bar alone: published, then the scheduled after them. */
+export function BandBar({ band }: { band: OverviewBand }) {
+  const { goal } = band
+  const { published, scheduled } = goal != null ? band : band.recent
+  return (
+    <Bar
+      track={goal ?? published + scheduled}
+      parts={[
+        { value: published, className: 'bg-positive' },
+        // With a goal, scheduled only fills what the published leave of it.
+        {
+          value:
+            goal != null
+              ? Math.min(scheduled, Math.max(0, goal - published))
+              : scheduled,
+          className: 'bg-positive/35',
+        },
+      ]}
+    />
+  )
+}
+
+/** A thin track with its parts laid end to end; grey where there are none. */
+export function Bar({
+  track,
+  parts,
+}: {
+  track: number
+  parts: { value: number; className: string }[]
+}) {
+  return (
+    <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+      {parts.map((p) => (
+        <div
+          key={p.className}
+          className={p.className}
+          style={{
+            width: `${track > 0 ? Math.min(100, (p.value / track) * 100) : 0}%`,
+          }}
+        />
+      ))}
     </div>
   )
 }
@@ -632,25 +655,19 @@ function ResultsBlock({
 /** What an ended campaign came to: out, failed, never out, and the reach. */
 export function ResultsFigures({
   results,
-  size = 'card',
 }: {
   results: NonNullable<OverviewModel['results']>
-  size?: 'card' | 'row'
 }) {
   const { t } = useTranslation()
   return (
     <Figures
-      inline={size === 'row'}
       figures={[
         {
           label:
-            results.goal != null && size === 'card'
+            results.goal != null
               ? t('campaignOverview.results.publishedOf', counted(results.goal))
               : t('campaignOverview.stats.published'),
           value: results.published,
-          ...(size === 'row' && results.goal != null
-            ? { of: results.goal }
-            : {}),
         },
         {
           label: t('campaignOverview.stats.failed'),
@@ -682,53 +699,12 @@ type FigureRow = {
   label: string
   value: number
   alert?: boolean
-  /** What it is out of, written after it on a line of `inline` figures. */
-  of?: number
   /** The colour it has in a bar above, as a dot before its name. */
   dot?: string
 }
 
-/**
- * A row of figures, the number large and its name under it — or, `inline`,
- * each figure one line of body text, its name then its number, for a row on
- * the Campaigns list where every column reads in the same size.
- */
-function Figures({
-  figures,
-  inline = false,
-}: {
-  figures: FigureRow[]
-  inline?: boolean
-}) {
-  const value = (f: FigureRow) =>
-    formatNumber(f.value, {
-      notation: f.value >= 10_000 ? 'compact' : 'standard',
-    })
-  if (inline)
-    return (
-      <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
-        {figures.map((f) => (
-          <div key={f.label} className="flex items-center gap-1.5">
-            {f.dot && <Dot className={f.dot} />}
-            <dt>{f.label}</dt>
-            <dd
-              className={cn(
-                'font-medium tabular-nums text-primary-foreground',
-                f.alert && 'text-destructive',
-                f.value === 0 && !f.alert && 'text-tertiary-foreground',
-              )}
-            >
-              {value(f)}
-              {f.of != null && (
-                <span className="font-normal text-tertiary-foreground">
-                  /{formatNumber(f.of)}
-                </span>
-              )}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    )
+/** A row of figures, the number large and its name under it. */
+function Figures({ figures }: { figures: FigureRow[] }) {
   return (
     <dl className="flex flex-wrap gap-x-8 gap-y-3">
       {figures.map((f) => (
@@ -744,7 +720,9 @@ function Figures({
               f.value === 0 && !f.alert && 'text-tertiary-foreground',
             )}
           >
-            {value(f)}
+            {formatNumber(f.value, {
+              notation: f.value >= 10_000 ? 'compact' : 'standard',
+            })}
           </dd>
         </div>
       ))}
@@ -1067,8 +1045,8 @@ function runAction(action: NeedsAction, handlers: OverviewHandlers) {
 }
 
 /**
- * The list, short: its title and count, the first `limit` rows as one line
- * each, and how many more. The Campaigns list's third column — a row there is
+ * The list, short: its title and how many, then the first `limit` rows, one
+ * line each — the count in the title says how many more there are. The Campaigns list's third column — a row there is
  * one link to the Overview, so these are words and not doors, and the fixes
  * are the Overview's. With nothing in it, one line saying so where the title
  * would be. `lines` null is still loading.
@@ -1079,7 +1057,7 @@ function runAction(action: NeedsAction, handlers: OverviewHandlers) {
 export function NeedsPreview({
   title,
   lines,
-  limit = 3,
+  limit = 2,
 }: {
   title: string
   lines: NeedsLine[] | null
@@ -1110,7 +1088,7 @@ export function NeedsPreview({
       {lines === null ? (
         <Skeleton className="h-10 w-full" />
       ) : (
-        <ul className="flex min-w-0 flex-col gap-1 text-sm">
+        <ul className="flex min-w-0 flex-col gap-1.5 text-sm">
           {lines.slice(0, limit).map((line) => (
             <li key={line.id} className="flex min-w-0 items-center gap-2">
               <span
@@ -1125,14 +1103,6 @@ export function NeedsPreview({
               </span>
             </li>
           ))}
-          {lines.length > limit && (
-            <li className="pl-3.5 text-tertiary-foreground">
-              {t(
-                'campaignOverview.needs.moreRows',
-                counted(lines.length - limit),
-              )}
-            </li>
-          )}
         </ul>
       )}
     </>

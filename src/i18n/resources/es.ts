@@ -1619,8 +1619,6 @@ export const es: Translation = {
       none: 'Nada espera por ti.',
       more_one: '+{{formatted}} similar',
       more_other: '+{{formatted}} similares',
-      moreRows_one: '+{{formatted}} más',
-      moreRows_other: '+{{formatted}} más',
       menu: 'Más soluciones',
       firstPost: 'Añade la primera publicación',
       coverageGaps_one:
@@ -6931,6 +6929,35 @@ export const es: Translation = {
       open: 'Abrir {{name}}',
       noChannels: 'Sin canales todavía',
       goodShape: 'Todo en orden',
+      line: {
+        published_one: '{{formatted}} publicada en los últimos {{days}} días',
+        published_other:
+          '{{formatted}} publicadas en los últimos {{days}} días',
+        publishedTotal_one: '{{formatted}} publicada',
+        publishedTotal_other: '{{formatted}} publicadas',
+        publishedOf_one: '{{formatted}} de {{goal}} publicada',
+        publishedOf_other: '{{formatted}} de {{goal}} publicadas',
+        scheduledNext_one:
+          '{{formatted}} programada en los próximos {{days}} días',
+        scheduledNext_other:
+          '{{formatted}} programadas en los próximos {{days}} días',
+        scheduled_one: '{{formatted}} programada',
+        scheduled_other: '{{formatted}} programadas',
+        pace_one: 'Ritmo de {{formatted}} publicación por semana',
+        pace_other: 'Ritmo de {{formatted}} publicaciones por semana',
+        pacePlanned_one:
+          'Ritmo previsto de {{formatted}} publicación por semana',
+        pacePlanned_other:
+          'Ritmo previsto de {{formatted}} publicaciones por semana',
+        nothingYet: 'Nada publicado ni programado todavía',
+        failed_one: '{{formatted}} fallida',
+        failed_other: '{{formatted}} fallidas',
+        neverPublished_one: '{{formatted}} no llegó a salir',
+        neverPublished_other: '{{formatted}} no llegaron a salir',
+        reach: 'Alcance de {{formatted}}',
+        interactions_one: '{{formatted}} interacción',
+        interactions_other: '{{formatted}} interacciones',
+      },
       setUp: 'Por configurar',
       notDated: 'Sin fechas todavía',
       loadFailed:

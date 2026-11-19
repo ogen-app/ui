@@ -3,14 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { ArrowCounterClockwiseIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Collapse } from '@/components/ui/collapse'
-import { CampaignIcon } from '@/components/layout/CampaignIcon'
 import {
   useArchivedCampaigns,
   useUnarchiveCampaign,
 } from '@/hooks/useCampaigns'
 import { campaignTypeInfo } from '@/lib/campaignTypeDictionary'
 import { formatDate } from '@/lib/intl'
-import { identityAbbr, identityColorVar } from '@/lib/identity'
 import type { Campaign } from '@/types/campaigns'
 import { awaiting } from '@/lib/fetched'
 
@@ -120,11 +118,6 @@ function ArchivedRow({
 
   return (
     <div className="flex items-center gap-3 bg-secondary px-3 py-2.5">
-      <CampaignIcon
-        abbr={identityAbbr(title)}
-        color={identityColorVar(campaign.id)}
-        className="size-5"
-      />
       <div className="flex min-w-0 flex-1 flex-col">
         <Link
           to="/campaigns/$campaignId"

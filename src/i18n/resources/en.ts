@@ -2022,9 +2022,6 @@ export const en = {
       /** After a problem standing for others of its kind. */
       more_one: '+{{formatted}} like this',
       more_other: '+{{formatted}} like this',
-      /** Under a short list — the Campaigns list's — the rows not shown. */
-      moreRows_one: '+{{formatted}} more',
-      moreRows_other: '+{{formatted}} more',
       menu: 'More fixes',
       firstPost: 'Add the first post',
       coverageGaps_one:
@@ -8394,6 +8391,35 @@ export const en = {
       noChannels: 'No channels yet',
       /** The third column when nothing wants the user. */
       goodShape: 'In good shape',
+      /**
+       * The progress column's line under the bar, one sentence per figure.
+       * `days` is the window either side of today the bar covers.
+       */
+      line: {
+        published_one: '{{formatted}} published in the last {{days}} days',
+        published_other: '{{formatted}} published in the last {{days}} days',
+        publishedTotal_one: '{{formatted}} published',
+        publishedTotal_other: '{{formatted}} published',
+        publishedOf_one: '{{formatted}} of {{goal}} published',
+        publishedOf_other: '{{formatted}} of {{goal}} published',
+        scheduledNext_one: '{{formatted}} scheduled in the next {{days}} days',
+        scheduledNext_other:
+          '{{formatted}} scheduled in the next {{days}} days',
+        scheduled_one: '{{formatted}} scheduled',
+        scheduled_other: '{{formatted}} scheduled',
+        pace_one: 'Pace {{formatted}} post a week',
+        pace_other: 'Pace {{formatted}} posts a week',
+        pacePlanned_one: 'Planned pace {{formatted}} post a week',
+        pacePlanned_other: 'Planned pace {{formatted}} posts a week',
+        nothingYet: 'Nothing published or scheduled yet',
+        failed_one: '{{formatted}} failed',
+        failed_other: '{{formatted}} failed',
+        neverPublished_one: '{{formatted}} never went out',
+        neverPublished_other: '{{formatted}} never went out',
+        reach: '{{formatted}} reach',
+        interactions_one: '{{formatted}} interaction',
+        interactions_other: '{{formatted}} interactions',
+      },
       /** A campaign with no dates: the third column is its setup left. */
       setUp: 'Set up',
       /** A campaign with no dates, where the others have their window. */
