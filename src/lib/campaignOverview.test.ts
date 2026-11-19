@@ -71,7 +71,6 @@ function input(over: Partial<OverviewInput> = {}): OverviewInput {
     phases: null,
     attention: [],
     problems: null,
-    lastWeek: null,
     total: null,
     now: new Date(2026, 10, 1, 12),
     ...over,

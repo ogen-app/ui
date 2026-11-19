@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import {
   CaretRightIcon,
@@ -64,7 +64,7 @@ import { SectionLink } from './OverviewCard.tsx'
 export type OverviewHandlers = {
   /** A server problem's fix, asked of the campaign's assistant. */
   ask: (fix: string, problem: string) => void
-  /** Every problem at once — FIX WITH ASSISTANT. */
+  /** Every problem at once — FIX WITH OGEN. */
   askAll: () => void
   ignore: (key: string) => void
   addPost: () => void
@@ -76,12 +76,12 @@ export type OverviewHandlers = {
 
 /**
  * The campaign's front page, drawn from `overviewModel`, as a dashboard
- * (`PageGrid`) read in order of importance. Across the top, the band: where
- * the campaign is in its own time (off while planning, for now). Under it,
- * two columns: the time cards — what goes out (this week; the first week
- * while planning; the results once it is over), then the last seven days —
- * and beside them the one list of what wants the user, held on screen while
- * they are read. On a narrow page that order is the stack, the list last.
+ * (`PageGrid`) read in order of importance. Two columns: the progress card
+ * and the time cards — what goes out (this week; the first week while
+ * planning; the results once it is over), then the campaign's analytics card
+ * while it runs — and beside them the one list of what wants the user, held
+ * on screen while they are read. On a narrow page that order is the stack,
+ * the list last.
  *
  * The rule for anything added here: a figure goes in a time card, a thing to
  * do goes in the list, and anything that takes more than a glance to read
@@ -94,12 +94,18 @@ export function CampaignOverview({
   campaignId,
   handlers,
   now,
+  analytics,
 }: {
   model: OverviewModel
   campaignId: string
   handlers: OverviewHandlers
   /** The day the model was worked out for; relative times read from it. */
   now: Date
+  /**
+   * The analytics page's own overview card, narrowed to this campaign — a
+   * slot rather than a read here, so the harness can hand it fixtures.
+   */
+  analytics?: ReactNode
 }) {
   if (model.stage === 'new') {
     return (
@@ -128,7 +134,7 @@ export function CampaignOverview({
     model.band && model.stage !== 'ended' && (
       <ProgressCard key="band" stage={model.stage} band={model.band} />
     ),
-    ...timeCards(model, campaignId, now),
+    ...timeCards(model, campaignId, now, analytics),
   ].filter(Boolean)
   return (
     <div className="pb-10">
@@ -418,6 +424,7 @@ function timeCards(
   model: OverviewModel,
   campaignId: string,
   now: Date,
+  analytics: ReactNode,
 ): ReactElement[] {
   return [
     model.week && (
@@ -429,13 +436,8 @@ function timeCards(
         now={now}
       />
     ),
-    model.lastWeek && (
-      <LastWeekBlock
-        key="lastWeek"
-        published={model.lastWeek.published}
-        performance={model.lastWeek.performance}
-        campaignId={campaignId}
-      />
+    model.analytics && analytics && (
+      <Fragment key="analytics">{analytics}</Fragment>
     ),
     model.results && (
       <ResultsBlock
@@ -559,47 +561,6 @@ function WeekPostRow({
         params={{ campaignId, postId: post.id }}
       />
     </LineItem>
-  )
-}
-
-function LastWeekBlock({
-  published,
-  performance,
-  campaignId,
-}: {
-  published: number
-  performance: OverviewPerformance | null
-  campaignId: string
-}) {
-  const { t } = useTranslation()
-  return (
-    <Card
-      glyph={<SectionGlyph section="analytics" />}
-      title={t('campaignOverview.lastWeek.title')}
-      door={{ target: 'analytics' }}
-      campaignId={campaignId}
-    >
-      <Figures
-        figures={[
-          { label: t('campaignOverview.stats.published'), value: published },
-          ...(performance
-            ? [
-                {
-                  label: t('campaignOverview.figures.reach'),
-                  value: performance.reach,
-                },
-                {
-                  label: t('campaignOverview.figures.interactions'),
-                  value: performance.interactions,
-                },
-              ]
-            : []),
-        ]}
-      />
-      {performance?.best && (
-        <BestPost best={performance.best} campaignId={campaignId} />
-      )}
-    </Card>
   )
 }
 

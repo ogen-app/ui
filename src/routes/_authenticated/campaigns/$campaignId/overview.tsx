@@ -10,6 +10,7 @@ import {
   CampaignOverview,
   type OverviewHandlers,
 } from '@/components/campaigns/overview/CampaignOverview.tsx'
+import { CampaignAnalytics } from '@/components/campaigns/overview/CampaignAnalytics'
 import { GridCell, PageGrid } from '@/components/page-primitives/PageGrid'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import {
@@ -105,10 +106,8 @@ function CampaignOverviewScreen() {
     problems: problems
       ? { problems: problems.problems, dismissed: problems.dismissedProblems }
       : null,
-    // The campaign's figures by window wait on the analytics read taking a
-    // range for one campaign (CON-175); until then the left column counts
-    // what was published and says nothing it can't back.
-    lastWeek: null,
+    // An ended campaign's results wait on the analytics read taking the
+    // campaign's own range (CON-175); until then they count what went out.
     total: null,
     now,
   })
@@ -120,6 +119,7 @@ function CampaignOverviewScreen() {
         campaignId={campaignId}
         handlers={handlers}
         now={now}
+        analytics={<CampaignAnalytics campaignId={campaignId} />}
       />
       {dialogs}
     </>

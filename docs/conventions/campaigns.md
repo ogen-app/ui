@@ -142,8 +142,10 @@ rewrite.
   and today's phase on the left, the day and the dates on the right, then a
   bar of published against scheduled (the last and next 30 days; the whole
   campaign against its goal when one is set, which is the lesser case) with
-  the pace under its end — then what goes out (this week; the first week
-  while planning; the results once it is over) and the last seven days. The
+  the pace under its end, in the cards' own figures — then what goes out
+  (this week; the first week while planning; the results once it is over)
+  and, while it runs, the analytics page's own overview card narrowed to the
+  campaign: reused, never a second set of stats drawn for the Overview. The
   narrow column is the one list of what wants the user, the server's problems
   and the client's rules together, held on screen while the time cards are
   read and scrolling inside itself when it is longer than the screen. A

@@ -1600,9 +1600,6 @@ export const es: Translation = {
       empty: 'No sale nada esta semana.',
       manual: 'MANUAL',
     },
-    lastWeek: {
-      title: 'Últimos 7 días',
-    },
     results: {
       title: 'Resultados',
       publishedOf_one: 'Publicadas de {{formatted}}',

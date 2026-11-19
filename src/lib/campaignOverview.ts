@@ -74,8 +74,6 @@ export type OverviewInput = {
   attention: AttentionItem[]
   /** The server's calendar problems; null when unread or failed. */
   problems: { problems: CalendarFinding[]; dismissed: CalendarFinding[] } | null
-  /** The last seven days' figures; null where analytics is off or empty. */
-  lastWeek: OverviewPerformanceInput | null
   /** The whole campaign's figures, for an ended campaign. */
   total: OverviewPerformanceInput | null
   now: Date
@@ -210,11 +208,11 @@ export type OverviewModel = {
   week: { kind: 'this' | 'first'; days: OverviewDay[] } | null
   /** Planning only: whether each of the first days has a post. */
   coverage: { date: Date; posts: number; publishing: boolean }[] | null
-  /** Published in the last seven days, with the analytics figures if any. */
-  lastWeek: {
-    published: number
-    performance: OverviewPerformance | null
-  } | null
+  /**
+   * Whether the campaign's analytics card stands under the week: from the
+   * launch to the close. Before it nothing is out; after it, the results.
+   */
+  analytics: boolean
   /** Ended only: what the campaign came to. */
   results: {
     published: number
@@ -366,7 +364,7 @@ export function overviewModel(input: OverviewInput): OverviewModel {
       ],
       week: null,
       coverage: null,
-      lastWeek: null,
+      analytics: false,
       results: null,
       needsTitle: 'needsYou',
       needs: null,
@@ -458,14 +456,6 @@ export function overviewModel(input: OverviewInput): OverviewModel {
       }
     })
 
-  const sevenDaysAgo = now.getTime() - 7 * DAY_MS
-  const publishedLastWeek = all.filter(
-    (p) =>
-      p.status === 'published' &&
-      p.published_at != null &&
-      Date.parse(p.published_at) >= sevenDaysAgo,
-  ).length
-
   const base = { stage, band, setup: null, ignored }
 
   if (stage === 'planning') {
@@ -502,7 +492,7 @@ export function overviewModel(input: OverviewInput): OverviewModel {
       ...base,
       week: { kind: 'first', days: weekFrom(start) },
       coverage,
-      lastWeek: null,
+      analytics: false,
       results: null,
       needsTitle: 'beforeLaunch',
       needs: needsRows(input, extra),
@@ -526,7 +516,7 @@ export function overviewModel(input: OverviewInput): OverviewModel {
       ...base,
       week: null,
       coverage: null,
-      lastWeek: null,
+      analytics: false,
       results: {
         published,
         failed,
@@ -551,10 +541,7 @@ export function overviewModel(input: OverviewInput): OverviewModel {
     ...base,
     week: { kind: 'this', days: weekFrom(startOfWeek(now)) },
     coverage: null,
-    lastWeek: {
-      published: publishedLastWeek,
-      performance: figures(input.lastWeek),
-    },
+    analytics: true,
     results: null,
     needsTitle: 'needsYou',
     needs: needsRows(input, []),

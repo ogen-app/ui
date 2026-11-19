@@ -2001,9 +2001,6 @@ export const en = {
       /** Beside a post the user publishes by hand. */
       manual: 'MANUAL',
     },
-    lastWeek: {
-      title: 'Last 7 days',
-    },
     results: {
       title: 'Results',
       publishedOf_one: 'Published of {{formatted}}',
