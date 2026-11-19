@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { ArchiveIcon, TrashIcon } from '@phosphor-icons/react'
+import { Archive02Icon, Delete02Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 
 import { Button } from '@/components/ui/button'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { useEndCampaign } from '@/components/campaigns/useEndCampaign'
 import type { Campaign } from '@/types/campaigns'
 
@@ -14,8 +15,9 @@ import type { Campaign } from '@/types/campaigns'
  * option. That reasoning made the wrong trade: it left someone who wanted rid
  * of a campaign scanning two cards to find out which one they meant, and the
  * card that offered the *reversible* answer was the one they had already
- * scrolled past. Both actions live here, archive first, and both wear the
- * destructive button: what they have in common is that they take a campaign
+ * scrolled past. Both actions live here, archive first, in the card's content
+ * rather than its header (a header holds one), and both wear the destructive
+ * button: what they have in common is that they take a campaign
  * out of circulation, and the card is titled Danger Zone. Which of the two is
  * reversible is a fact about consequences, and consequences are stated in the
  * modals rather than encoded in a button colour nobody reads that closely.
@@ -36,33 +38,33 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
 
   return (
     <>
-      <SettingsCard title={t('campaigns.dangerZone.title')}>
-        <div className="flex flex-col gap-3 items-start">
+      <Card title={t('campaigns.dangerZone.title')} capped>
+        <div className="flex flex-col items-start gap-3">
           <p className="max-w-150 text-sm text-tertiary-foreground">
             {t('campaigns.dangerZone.body')}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
-              variant="destructiveInverted"
+              size="sm"
+              variant="destructive"
               onClick={() => ask('archive')}
             >
-              <ArchiveIcon />
+              <HugeiconsIcon icon={Archive02Icon} strokeWidth={1.5} />
               <span>{t('campaigns.dangerZone.archive.action')}</span>
             </Button>
             <Button
               type="button"
-              variant="destructiveInverted"
+              size="sm"
+              variant="destructive"
               onClick={() => ask('delete')}
             >
-              <TrashIcon />
-              {/* Literal caps in every language — see CLAUDE.md on
-                  destructive labels. */}
+              <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
               <span>{t('campaigns.dangerZone.delete.action')}</span>
             </Button>
           </div>
         </div>
-      </SettingsCard>
+      </Card>
 
       {dialogs}
     </>

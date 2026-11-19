@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { ArrowUpRightIcon, XIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { SettingsCard } from '@/components/settings/SettingsCard'
-import { BrandSectionGlyph } from '@/components/brand/BrandSectionGlyph'
+import { Card } from '@/components/ui/card'
+import { brandSection } from '@/lib/brandSections'
 import { TextSelect } from '@/components/ui/text-select'
 import {
   useAttachSeries,
@@ -76,6 +76,8 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
   // somebody who is already reading it.
   if (!enabled || !library || !campaignSeries) return null
 
+  const section = brandSection('series')
+
   const runs = campaignSeries.runs
   const byId = new Map(library.map((entry) => [entry.id, entry]))
   // Everything this campaign could still pick up: the workspace library, minus
@@ -88,13 +90,21 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
   )
 
   return (
-    <SettingsCard
-      title={
-        <>
-          <BrandSectionGlyph id="series" />
-          {t('series.campaign.title')}
-        </>
-      }
+    <Card
+      icon={section.icon}
+      tone={section.tone}
+      title={t('series.campaign.title')}
+      // Writing a new one is a move to the series editor, so it is the card's
+      // one action; attaching one already written is a field, below.
+      action={{
+        label: t('series.campaign.writeOne'),
+        onClick: () =>
+          void navigate({
+            to: '/foundation/series/$seriesId',
+            params: { seriesId: 'new' },
+          }),
+      }}
+      capped
     >
       <p className="text-sm text-tertiary-foreground">
         {t('series.campaign.hint')}
@@ -192,8 +202,8 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
         </ul>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        {available.length > 0 ? (
+      {available.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-3">
           <TextSelect
             variant="inline"
             className="w-auto"
@@ -208,22 +218,8 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
             }))}
             onValueChange={(seriesId) => attach.mutate(seriesId)}
           />
-        ) : null}
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            navigate({
-              to: '/foundation/series/$seriesId',
-              params: { seriesId: 'new' },
-            })
-          }
-        >
-          <span className="uppercase">{t('series.campaign.writeOne')}</span>
-        </Button>
-      </div>
-    </SettingsCard>
+        </div>
+      ) : null}
+    </Card>
   )
 }

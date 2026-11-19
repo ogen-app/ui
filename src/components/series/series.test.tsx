@@ -226,7 +226,7 @@ describe('in Spanish', () => {
     // under the post goal sums, and the only number this card states.
     expect(await screen.findByText('4 publicaciones')).toBeInTheDocument()
     expect(screen.getByText('Aporta su propio tema')).toBeInTheDocument()
-    expect(screen.getByText('ESCRIBIR UNA')).toBeInTheDocument()
+    expect(screen.getByText('Escribir una')).toBeInTheDocument()
     // The words that would still be here if any of this were a literal.
     expect(screen.queryByText('4 posts')).not.toBeInTheDocument()
     expect(

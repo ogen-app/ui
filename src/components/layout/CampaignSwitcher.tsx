@@ -154,7 +154,7 @@ export function CampaignSwitcher() {
                   onSelect={() => end.ask('archive')}
                 >
                   <ArchiveIcon className="size-3.5 shrink-0" />
-                  {t('campaigns.dangerZone.archive.menuItem')}
+                  {t('campaigns.dangerZone.archive.action')}
                 </ChromeMenuItem>
               )}
               <ChromeMenuItem
@@ -162,7 +162,7 @@ export function CampaignSwitcher() {
                 onSelect={() => end.ask('delete')}
               >
                 <TrashIcon className="size-3.5 shrink-0" />
-                {t('campaigns.dangerZone.delete.menuItem')}
+                {t('campaigns.dangerZone.delete.action')}
               </ChromeMenuItem>
             </>
           )}

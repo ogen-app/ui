@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib'
 import { formatNumber } from '@/lib/intl'
 import { RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
-import { Picker } from './ComparisonBar'
 import {
   availableCriteria,
   criterionHeldOut,
@@ -27,7 +27,7 @@ import {
   type QualitySpread,
   type SpreadGap,
 } from './quality'
-import { Basis, FigureGrid, FigureTile, NotYet, SectionCard } from './shell'
+import { Basis, FigureGrid, FigureTile, NotYet, ScopeNote } from './shell'
 import type { PerformerCriterionId, QualityView } from './types'
 
 /**
@@ -72,11 +72,12 @@ export function QualitySection({ view }: { view: QualityView }) {
 
   if (posts.length === 0 || criteria.length === 0) {
     return (
-      <SectionCard title={t('analytics.quality.title')} scope="all-time">
+      <Card capped title={t('analytics.quality.title')}>
+        <ScopeNote scope="all-time" />
         <NotYet title={emptyTitle(t, view, posts.length, criteria.length)}>
           {emptyBody(t, view, posts.length, criteria.length)}
         </NotYet>
-      </SectionCard>
+      </Card>
     )
   }
 
@@ -94,14 +95,15 @@ export function QualitySection({ view }: { view: QualityView }) {
   */
   if (posts.length < MIN_SCORED_POSTS) {
     return (
-      <SectionCard title={t('analytics.quality.title')} scope="all-time">
+      <Card capped title={t('analytics.quality.title')}>
+        <ScopeNote scope="all-time" />
         <NotYet
           title={t('analytics.quality.gateTitle', { count: posts.length })}
         >
           {t('analytics.quality.gateBody', { minimum: MIN_SCORED_POSTS })}
         </NotYet>
         <Basis>{coverage(t, view, posts.length, stale)}</Basis>
-      </SectionCard>
+      </Card>
     )
   }
 
@@ -113,22 +115,21 @@ export function QualitySection({ view }: { view: QualityView }) {
   const copy = elementCopy(t, element)
 
   return (
-    <SectionCard
+    <Card
+      capped
       title={t('analytics.quality.title')}
       qualifier={t('analytics.quality.qualifier')}
-      scope="all-time"
-      status={
-        <Picker
-          label={t('analytics.quality.didBetterOn')}
-          value={criterionLabel(t, criterion, corrected)}
-          options={criteria.map((c) => ({
-            value: c.id,
-            label: criterionLabel(t, c, corrected),
-          }))}
-          onChange={(v) => setPickedCriterion(v as PerformerCriterionId)}
-        />
-      }
+      choice={{
+        label: t('analytics.quality.didBetterOn'),
+        value: criterion.id,
+        options: criteria.map((c) => ({
+          id: c.id,
+          displayValue: criterionLabel(t, c, corrected),
+        })),
+        onChange: (v) => setPickedCriterion(v as PerformerCriterionId),
+      }}
     >
+      <ScopeNote scope="all-time" />
       <FigureGrid columns={QUALITY_ELEMENTS.length}>
         {QUALITY_ELEMENTS.map((el) => (
           <ElementTile
@@ -200,7 +201,7 @@ export function QualitySection({ view }: { view: QualityView }) {
           : t('analytics.quality.uncorrectedBasis')}{' '}
         {t('analytics.quality.advisoryBasis')}
       </Basis>
-    </SectionCard>
+    </Card>
   )
 }
 

@@ -363,7 +363,7 @@ function EntryRow({
           <div className="flex items-center gap-2">
             <Button
               type="button"
-              variant="destructive"
+              variant="destructiveInverted"
               size="sm"
               disabled={removing}
               loading={removing}

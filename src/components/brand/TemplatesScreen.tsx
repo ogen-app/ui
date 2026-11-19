@@ -1,15 +1,13 @@
 import { useState } from 'react'
-import {
-  CheckIcon,
-  PlugsConnectedIcon,
-  WarningCircleIcon,
-} from '@phosphor-icons/react'
+import { CheckIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { Plug01Icon, PlusSignIcon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { formatList } from '@/lib/intl'
 import { PLATFORMS } from '@/lib/platformDictionary'
 import { cn } from '@/lib'
-import { AddButton, Gap } from './shell'
+import { Gap } from './shell'
 import { EXPECTED_RATIOS, type BrandTemplate } from './types'
 
 /**
@@ -322,11 +320,18 @@ function Detail({
   if (selected === EVERYWHERE) {
     const fallback = templates.find((o) => o.isDefault) ?? null
     return (
-      <DetailShell
+      <Card
         title={t('brand.templates.everywhere')}
-        subtitle={t('brand.templates.everywhereSubtitle')}
-        action={<AddButton label={t('brand.templates.add')} onClick={onAdd} />}
+        action={{
+          label: t('brand.templates.add'),
+          icon: PlusSignIcon,
+          onClick: () => onAdd?.(),
+          disabled: !onAdd,
+        }}
       >
+        <p className="text-sm text-secondary-foreground">
+          {t('brand.templates.everywhereSubtitle')}
+        </p>
         {fallback ? (
           <SetPanel
             template={fallback}
@@ -339,7 +344,7 @@ function Detail({
             {t('brand.templates.noDefault')}
           </p>
         )}
-      </DetailShell>
+      </Card>
     )
   }
 
@@ -351,38 +356,31 @@ function Detail({
   const connected = isConnected(platform.name)
 
   return (
-    <DetailShell
+    <Card
       title={platform.name}
-      subtitle={
-        inherited
-          ? t('brand.templates.inherited')
-          : t('brand.templates.ownTemplate')
+      // Stated flatly. Not a warning and not a call to connect: whether an
+      // account exists has nothing to do with whether the artwork is right,
+      // and nagging here would be nagging in the wrong place.
+      status={
+        connected
+          ? { label: t('brand.templates.connected'), icon: Plug01Icon }
+          : { label: t('brand.templates.notConnected') }
       }
-      badge={
-        connected ? (
-          <span className="flex items-center gap-1 text-xs text-tertiary-foreground">
-            <PlugsConnectedIcon className="size-3.5" />
-            {t('brand.templates.connected')}
-          </span>
-        ) : (
-          // Stated flatly. Not a warning and not a call to connect: whether an
-          // account exists has nothing to do with whether the artwork is right,
-          // and nagging here would be nagging in the wrong place.
-          <span className="text-xs text-tertiary-foreground">
-            {t('brand.templates.notConnected')}
-          </span>
-        )
-      }
-      action={
-        // Disabled until a caller wires the flow — the route renders this
-        // screen with no `onAdd` today.
-        <Button variant="outline" size="sm" onClick={onAdd} disabled={!onAdd}>
-          {inherited
-            ? t('brand.templates.giveItsOwn')
-            : t('brand.templates.replace')}
-        </Button>
-      }
+      // Disabled until a caller wires the flow — the route renders this
+      // screen with no `onAdd` today.
+      action={{
+        label: inherited
+          ? t('brand.templates.giveItsOwn')
+          : t('brand.templates.replace'),
+        onClick: () => onAdd?.(),
+        disabled: !onAdd,
+      }}
     >
+      <p className="text-sm text-secondary-foreground">
+        {inherited
+          ? t('brand.templates.inherited')
+          : t('brand.templates.ownTemplate')}
+      </p>
       {template ? (
         <SetPanel
           template={template}
@@ -401,39 +399,7 @@ function Detail({
           {t('brand.templates.nothingApplies')}
         </p>
       )}
-    </DetailShell>
-  )
-}
-
-function DetailShell({
-  title,
-  subtitle,
-  badge,
-  action,
-  children,
-}: {
-  title: string
-  subtitle: string
-  badge?: React.ReactNode
-  action?: React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <section className="flex flex-col gap-4 rounded-lg bg-primary p-5">
-      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <h2 className="font-display text-lg font-medium leading-6">
-              {title}
-            </h2>
-            {badge}
-          </div>
-          <p className="text-xs text-tertiary-foreground">{subtitle}</p>
-        </div>
-        {action}
-      </header>
-      {children}
-    </section>
+    </Card>
   )
 }
 

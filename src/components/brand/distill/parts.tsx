@@ -5,7 +5,6 @@ import {
   CircleIcon,
   QuotesIcon,
   XIcon,
-  type Icon,
 } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -164,46 +163,6 @@ export function KeepMark({
         <CircleIcon className="size-4 text-senary-foreground" />
       )}
     </button>
-  )
-}
-
-/**
- * A section of the review, laid out like the hub's card for the same section —
- * the hue on the glyph, the display heading, and the count opposite. Same
- * cards in the same order, so what is proposed is already where it will live.
- */
-export function ReviewSection({
-  icon: Glyph,
-  tone,
-  title,
-  qualifier,
-  children,
-}: {
-  icon: Icon
-  tone: string
-  title: string
-  qualifier?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section className="flex w-full min-w-0 max-w-content flex-col gap-5 bg-primary px-6 py-6">
-      <header className="flex min-w-0 items-center justify-between gap-4">
-        <h2 className="flex min-w-0 items-center gap-2 font-display text-xl font-medium tracking-tight">
-          <Glyph
-            className="size-5 shrink-0"
-            style={{ color: tone }}
-            aria-hidden
-          />
-          <span className="truncate">{title}</span>
-        </h2>
-        {qualifier != null && (
-          <span className="shrink-0 text-sm text-secondary-foreground">
-            {qualifier}
-          </span>
-        )}
-      </header>
-      {children}
-    </section>
   )
 }
 

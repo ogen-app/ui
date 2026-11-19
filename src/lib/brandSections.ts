@@ -1,13 +1,13 @@
 import {
-  ChatCircleDotsIcon,
-  FrameCornersIcon,
+  BubbleChatIcon,
+  CheckmarkBadge01Icon,
+  ColorsIcon,
+  CropIcon,
   RepeatIcon,
-  SealCheckIcon,
-  ShieldIcon,
-  SwatchesIcon,
-  UsersThreeIcon,
-  type Icon,
-} from '@phosphor-icons/react'
+  Shield01Icon,
+  UserGroupIcon,
+} from '@hugeicons/core-free-icons'
+import type { IconSvgElement } from '@hugeicons/react'
 import type { TFunction } from 'i18next'
 import type { BrandConsumer } from '@/components/brand/types'
 import { isFeatureEnabled } from '@/config/featureFlags'
@@ -75,7 +75,8 @@ export type BrandSectionId =
  */
 export type BrandSectionInfo = {
   id: BrandSectionId
-  icon: Icon
+  /** A Hugeicon, as the rail and the cards draw it. */
+  icon: IconSvgElement
   /**
    * The glyph's permanent colour (see `--brand-*` in index.css), the same
    * device `campaignSections` uses in the rail: five otherwise-identical line
@@ -118,28 +119,28 @@ export type BrandSectionInfo = {
 export const BRAND_SECTIONS: BrandSectionInfo[] = [
   {
     id: 'voices',
-    icon: ChatCircleDotsIcon,
+    icon: BubbleChatIcon,
     tone: 'var(--brand-voices)',
     readBy: ['plan', 'post'],
     shown: true,
   },
   {
     id: 'audiences',
-    icon: UsersThreeIcon,
+    icon: UserGroupIcon,
     tone: 'var(--brand-audiences)',
     readBy: ['plan', 'post'],
     shown: true,
   },
   {
     id: 'guardrails',
-    icon: ShieldIcon,
+    icon: Shield01Icon,
     tone: 'var(--brand-guardrails)',
     readBy: [],
     shown: true,
   },
   {
     id: 'facts',
-    icon: SealCheckIcon,
+    icon: CheckmarkBadge01Icon,
     tone: 'var(--brand-facts)',
     // Every generation flow reads the ledger since CON-316, and leaves out a
     // fact past its expiry.
@@ -158,14 +159,14 @@ export const BRAND_SECTIONS: BrandSectionInfo[] = [
   },
   {
     id: 'look',
-    icon: SwatchesIcon,
+    icon: ColorsIcon,
     tone: 'var(--brand-look)',
     readBy: [],
     shown: false,
   },
   {
     id: 'templates',
-    icon: FrameCornersIcon,
+    icon: CropIcon,
     tone: 'var(--brand-templates)',
     readBy: [],
     shown: false,

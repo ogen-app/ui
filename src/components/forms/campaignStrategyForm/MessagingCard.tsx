@@ -1,7 +1,8 @@
 import { useFormContext } from 'react-hook-form'
-import { SparkleIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
+import { SparklesIcon } from '@hugeicons/core-free-icons'
 
-import { Button } from '@/components/ui/button'
+import { Card, type CardAction } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import {
   FormControl,
@@ -10,7 +11,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { SettingsCard } from '@/components/settings/SettingsCard.tsx'
 import { BRIEF_FIELD_LABELS, briefPosture } from '@/lib/campaignReadiness.ts'
 import { useSettingsStore } from '@/stores/settingsStore.ts'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore.ts'
@@ -31,12 +31,10 @@ import type { StrategyFormValues } from './schema'
  */
 export function MessagingCard({ campaign }: { campaign: Campaign }) {
   const form = useFormContext<StrategyFormValues>()
+  const generateBrief = useGenerateBriefAction(campaign)
 
   return (
-    <SettingsCard
-      title="Messaging"
-      actions={<GenerateBriefAction campaign={campaign} />}
-    >
+    <Card title="Messaging" action={generateBrief} capped>
       {/* Single column, but the same row rhythm as the settings grids. */}
       <div className="grid grid-cols-1 gap-y-5">
         <FormField
@@ -72,7 +70,7 @@ export function MessagingCard({ campaign }: { campaign: Campaign }) {
           )}
         />
       </div>
-    </SettingsCard>
+    </Card>
   )
 }
 
@@ -89,7 +87,8 @@ export function MessagingCard({ campaign }: { campaign: Campaign }) {
  * Rendered inside the form's `fieldset`, so it disables itself for the length
  * of an assistant turn along with the fields it would rewrite.
  */
-function GenerateBriefAction({ campaign }: { campaign: Campaign }) {
+function useGenerateBriefAction(campaign: Campaign): CardAction {
+  const { t } = useTranslation()
   const askFor = useAssistantStore((s) => s.askFor)
   const openRightPanel = useSettingsStore((s) => s.openRightPanel)
   // The ask names the fields still missing, so it must not ask for the two
@@ -105,14 +104,14 @@ function GenerateBriefAction({ campaign }: { campaign: Campaign }) {
     )
   }
 
-  return (
-    <Button type="button" variant="ghost" onClick={ask}>
-      <SparkleIcon />
-      <span>
-        {posture.state === 'complete' ? 'IMPROVE BRIEF' : 'GENERATE BRIEF'}
-      </span>
-    </Button>
-  )
+  return {
+    label:
+      posture.state === 'complete'
+        ? t('campaigns.strategy.messaging.improveBrief')
+        : t('campaigns.strategy.messaging.generateBrief'),
+    icon: SparklesIcon,
+    onClick: ask,
+  }
 }
 
 /**

@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { TrashIcon } from '@phosphor-icons/react'
+import { Delete02Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import {
   useDeleteWorkspace,
   useWorkspace,
@@ -88,28 +88,26 @@ export function DeleteWorkspaceCard() {
 
   return (
     <>
-      <SettingsCard title={t('workspaceSettings.dangerZone.title')}>
-        <div className="flex flex-col gap-3 items-start">
-          <p className="max-w-150 text-sm text-tertiary-foreground">
-            {t('workspaceSettings.dangerZone.body')}
+      <Card
+        title={t('workspaceSettings.dangerZone.title')}
+        action={{
+          label: t('workspaceSettings.dangerZone.action'),
+          icon: Delete02Icon,
+          onClick: () => setOpen(true),
+          disabled: isLast,
+          destructive: true,
+        }}
+        capped
+      >
+        <p className="max-w-150 text-sm text-tertiary-foreground">
+          {t('workspaceSettings.dangerZone.body')}
+        </p>
+        {isLast && (
+          <p className="max-w-150 text-sm text-warning">
+            {t('workspaceSettings.dangerZone.lastWorkspace')}
           </p>
-          {isLast && (
-            <p className="max-w-150 text-sm text-warning">
-              {t('workspaceSettings.dangerZone.lastWorkspace')}
-            </p>
-          )}
-          <Button
-            type="button"
-            variant="destructiveInverted"
-            onClick={() => setOpen(true)}
-            disabled={isLast}
-          >
-            <TrashIcon />
-            {/* Literal caps in every language — see CLAUDE.md on destructive labels. */}
-            <span>{t('workspaceSettings.dangerZone.action')}</span>
-          </Button>
-        </div>
-      </SettingsCard>
+        )}
+      </Card>
 
       <ModalContainer
         isOpen={open}

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Label } from '@/components/ui/label'
 import { TextSelect } from '@/components/ui/text-select'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { ENABLED_LOCALES, isEnabledLocale } from '@/i18n/config'
 import { useLocaleStore } from '@/stores/localeStore'
 
@@ -33,7 +33,7 @@ export function LanguageSection() {
   const setLocale = useLocaleStore((s) => s.setLocale)
 
   return (
-    <SettingsCard title={t('locale.section.title')}>
+    <Card title={t('locale.section.title')} capped>
       <div className="grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={id}>{t('locale.section.label')}</Label>
@@ -61,6 +61,6 @@ export function LanguageSection() {
       <p className="max-w-150 text-xs text-tertiary-foreground">
         {t('locale.section.description')}
       </p>
-    </SettingsCard>
+    </Card>
   )
 }

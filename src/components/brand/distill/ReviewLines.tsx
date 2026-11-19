@@ -9,6 +9,7 @@ import {
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import { TextSelect } from '@/components/ui/text-select'
@@ -42,13 +43,7 @@ import {
   type FactKind,
   type FactSubject,
 } from '../facts'
-import {
-  GroupLabel,
-  KeepDrop,
-  KeepMark,
-  ReviewSection,
-  SourceLabel,
-} from './parts'
+import { GroupLabel, KeepDrop, KeepMark, SourceLabel } from './parts'
 
 /**
  * The small items of a review — guardrail lines, banned words, the
@@ -86,7 +81,8 @@ export function GuardrailsReview({
   const lines = g.mayClaim.length + g.neverClaim.length + (g.disclaimer ? 1 : 0)
 
   return (
-    <ReviewSection
+    <Card
+      capped
       icon={info.icon}
       tone={info.tone}
       title={brandSectionCopy(t, 'guardrails').label}
@@ -135,7 +131,7 @@ export function GuardrailsReview({
           )}
         </Group>
       )}
-    </ReviewSection>
+    </Card>
   )
 }
 
@@ -412,7 +408,8 @@ export function FactsReview({
   const rest = facts.length - shown.length
 
   return (
-    <ReviewSection
+    <Card
+      capped
       icon={info.icon}
       tone={info.tone}
       title={brandSectionCopy(t, 'facts').label}
@@ -450,7 +447,7 @@ export function FactsReview({
           {t('brand.distill.review.moreFacts', { count: rest })}
         </button>
       )}
-    </ReviewSection>
+    </Card>
   )
 }
 

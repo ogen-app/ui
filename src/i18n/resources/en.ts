@@ -20,9 +20,10 @@
  * - **Plurals use i18next's `_one` / `_other` suffixes** and spell out the
  *   whole sentence in each form. English pronouns ("it"/"them") and Spanish
  *   agreement do not survive being stitched together at runtime.
- * - **Destructive-action labels stay in literal capitals in every language**
- *   (`DELETE ACCOUNT`, `ELIMINAR CUENTA`). The caps are part of the copy — see
- *   CLAUDE.md.
+ * - **Button labels on cards and the commit panel are sentence case in every
+ *   language**, destructive ones included (`Delete campaign`, `Eliminar
+ *   campaña`), written into the copy rather than set with a class — see
+ *   CLAUDE.md. Labels elsewhere still in capitals follow as their screens move.
  */
 export const en = {
   common: {
@@ -1527,7 +1528,7 @@ export const en = {
       empty:
         'This campaign runs none. Pick one up and every period it will claim its slots automatically.',
       addPlaceholder: 'Add a series',
-      writeOne: 'WRITE ONE',
+      writeOne: 'Write one',
       localOnly: 'this campaign only',
       promote: 'To library',
       promoteHint:
@@ -1571,8 +1572,8 @@ export const en = {
       rhythmHint:
         'A starting point when a campaign picks this up. Each campaign sets its own, so two can run it at different rates.',
       needsName: 'Give the series a name',
-      create: 'CREATE SERIES',
-      dangerNoun: 'SERIES',
+      create: 'Create series',
+      dangerNoun: 'series',
       deleteCost:
         'Posts already written keep their text. Every campaign running this one stops, and the plan gives their slots back.',
     },
@@ -2032,7 +2033,7 @@ export const en = {
       ignore: 'IGNORE',
       ignoreFailed: 'Couldn’t ignore that problem. Try again.',
       /** The card's header: every problem, to the campaign's assistant. */
-      fixAll: 'FIX WITH OGEN',
+      fixAll: 'Fix with Ogen',
       askAll: 'Fix these with me.',
       /** Sent to the campaign's assistant: the fix, then the problem. */
       askFix: '{{fix}}: {{problem}}',
@@ -2162,7 +2163,6 @@ export const en = {
         detail:
           'The assistant reads the campaign’s strategy and assets, so what it drafts fits the brief.',
       },
-      more: 'LEARN MORE IN THE HELP CENTRE',
     },
   },
 
@@ -4942,7 +4942,7 @@ export const en = {
        *  accounts and the API offers no account delete — the copy must not
        *  promise one. */
       body: 'Leaving this workspace removes your access and deletes everything you created in it — for everyone. Your login and your other workspaces are untouched. This cannot be undone.',
-      action: 'LEAVE THIS WORKSPACE',
+      action: 'Leave this workspace',
     },
     leave: {
       title: 'Leave {{workspace}}?',
@@ -4969,7 +4969,7 @@ export const en = {
       slugNote:
         "Set from the name at creation; renaming the workspace won't change it.",
       /** The way out of this card — every field in it describes one workspace. */
-      switch: 'SWITCH',
+      switch: 'Switch',
       timeZoneLabel: 'Time zone',
       timeZoneNote:
         'Everything is scheduled in UTC for now; per-workspace time zones land with CON-94.',
@@ -4985,10 +4985,10 @@ export const en = {
       emailLabel: 'Email',
       emailPlaceholder: 'name@company.com',
       roleLabel: 'Role',
-      invite: 'INVITE',
-      remove: 'REMOVE',
-      resend: 'RESEND',
-      cancel: 'CANCEL',
+      invite: 'Invite',
+      remove: 'Remove',
+      resend: 'Resend',
+      cancel: 'Cancel',
       cancelInvitation: 'Cancel the invitation to {{email}}',
       invitedBy: 'invited by {{name}}',
       /** Nought days is neither "in 0 days" nor "0 days ago", so it gets its own line. */
@@ -5014,8 +5014,8 @@ export const en = {
       removeBody:
         'This removes {{name}} from the workspace and deletes everything they created in it — their campaigns, those campaigns’ posts, and their uploaded assets — for everyone. Their login and their other workspaces are untouched. Posts that already went out stay live on the social networks. It cannot be undone.',
       removeConfirmLabel: 'Type their email address to confirm',
-      removeDismiss: 'KEEP THEM',
-      removeConfirm: 'REMOVE FROM WORKSPACE',
+      removeDismiss: 'Keep them',
+      removeConfirm: 'Remove from workspace',
     },
     dangerZone: {
       title: 'Danger Zone',
@@ -5024,7 +5024,7 @@ export const en = {
       body: 'Deleting this workspace removes its campaigns, posts, assets and connected social accounts, and every member loses access. Already-published posts stay live on the social networks. You can’t undo this yourself — recovering a deleted workspace is a manual support request.',
       lastWorkspace:
         'This is your only workspace. Deleting it leaves you with nowhere to work — create another one first.',
-      action: 'DELETE WORKSPACE',
+      action: 'Delete workspace',
       confirmTitle: 'Delete {{name}}?',
       confirmBody:
         'Everything in this workspace is deleted, for every member, and you can’t restore it yourself. Type <strong>{{name}}</strong> to confirm.',
@@ -6400,6 +6400,8 @@ export const en = {
      * the refusals the copy can meet.
      */
     media: {
+      /** The shut media card's one action. */
+      add: 'Add media',
       fromAssets: {
         tile: 'From Assets',
         title: 'Add images from Assets',
@@ -6837,8 +6839,8 @@ export const en = {
       heading: 'First comment',
       helper:
         'Great for links — LinkedIn and Instagram favour posts without links in the caption.',
-      add: 'ADD FIRST COMMENT',
-      remove: 'REMOVE',
+      add: 'Add first comment',
+      remove: 'Remove',
       fieldLabel: 'First comment',
       placeholder: 'A link, a source, or the rest of the story',
       delayLabel: 'Post it',
@@ -7693,8 +7695,6 @@ export const en = {
 
     /** The furniture every Brand screen is built from — `shell.tsx`. */
     shell: {
-      readByNothing:
-        "Nothing reads this yet — you can fill it in, but it won't change what comes out.",
       /** The word beside the star. Lower case is deliberate — it sits in a row of facts. */
       default: 'default',
       chipMore: '+{{count}} more',
@@ -7999,12 +7999,11 @@ export const en = {
         openFile: 'Open the file',
         kept: '{{kept}} of {{count}} kept',
         keptShort: '{{kept}}/{{count}}',
-        discard: 'DISCARD',
-        save: 'SAVE TO FOUNDATION',
+        discard: 'Discard',
+        save: 'Save to Foundation',
       },
       saved: {
         title: 'Saved to your Foundation',
-        dismiss: 'Close',
         nothing: 'nothing new',
         fromWebsite: '{{what}}, read off {{site}}.',
         fromDocument: '{{what}}, taken from {{title}}.',
@@ -8066,10 +8065,10 @@ export const en = {
           internal:
             'Something went wrong on our side. Nothing was proposed, and this read did not count against your allowance.',
         },
-        tryAgain: 'TRY AGAIN',
+        tryAgain: 'Try again',
       },
       closed: {
-        back: 'BACK TO FOUNDATION',
+        back: 'Back to Foundation',
         committed: {
           title: 'Saved to your Foundation',
           body: 'What was kept from this read is in your Foundation now, each item saying where it was read from.',
@@ -8162,7 +8161,7 @@ export const en = {
 
     /** The visual half — `LookSection.tsx`. */
     look: {
-      edit: 'EDIT',
+      edit: 'Edit',
       gap: 'No logo, no colours, no type. Anything generated with an image in it will look like stock.',
       uploadLogo: 'Upload a logo',
       best: 'best',
@@ -8277,8 +8276,6 @@ export const en = {
         forkedNote:
           'Nothing is saved yet, and the samples are empty: that is the half a template cannot give you, and the half that does the work.',
         general: 'General',
-        defaultDoes: 'Posts start in this voice unless another one is picked.',
-        defaultCosts: 'Takes the default off whichever voice has it now.',
         name: 'Name',
         namePlaceholder: 'Founder, off the cuff',
         description: 'Description',
@@ -8358,7 +8355,7 @@ export const en = {
             long: 'long',
           },
         },
-        noun: 'VOICE',
+        noun: 'voice',
         deleteCostPublished_one:
           '{{count}} published post was written in this voice. Deleting it leaves it exactly as it is — its text was written and it stands — but nothing new can be generated in it, and any campaign pointing here falls back to no voice at all.',
         deleteCostPublished_other:
@@ -8443,7 +8440,7 @@ export const en = {
         believesPlaceholder:
           'The number comes with the period it was measured over',
         /** The noun spliced into the danger zone's labels — capitals are the copy. */
-        noun: 'AUDIENCE',
+        noun: 'audience',
         deleteCostPublished_one:
           '{{count}} published post was written for this audience. Deleting it leaves it exactly as it is — its text was written and it stands — but nothing new can be written to it, and any campaign pointing here falls back to no audience at all.',
         deleteCostPublished_other:
@@ -8459,8 +8456,7 @@ export const en = {
 
     /** The frames — `TemplatesSection.tsx` and `TemplatesScreen.tsx`. */
     templates: {
-      count: '· {{count}}',
-      add: 'ADD TEMPLATE',
+      add: 'Add template',
       gap: 'Images go out bare. Nothing marks a picture as yours once it has left the app.',
       gapScreen:
         'Images go out bare. Nothing marks a picture as yours once it has left the app — and nothing here is per-platform yet, so there is no Instagram story frame and no LinkedIn lockup.',
@@ -8545,7 +8541,7 @@ export const en = {
       removeLine: 'Remove this line',
       keyboardHint:
         'Enter starts the next one. Paste a list to add all of it at once.',
-      noun: 'GUARDRAILS',
+      noun: 'guardrails',
       /** The `name` in the delete dialog's title — a singleton has no name of its own. */
       dangerName: 'Guardrails',
       deleteCost:
@@ -8641,18 +8637,16 @@ export const en = {
       danger: {
         title: 'Danger zone',
         /**
-         * `{{noun}}` arrives already in capitals (`VOICE`, `AUDIENCE`) because
-         * the caps are part of the copy for a destructive action — they survive
-         * copy/paste, screen readers and any restyle, which a `uppercase` class
-         * does not. Every language writes its own here.
+         * `{{noun}}` arrives in lower case (`voice`, `audience`): a card's
+         * buttons are written in sentence case. Every language writes its own.
          */
-        delete: 'DELETE {{noun}}',
-        keep: 'KEEP {{noun}}',
+        delete: 'Delete {{noun}}',
+        keep: 'Keep {{noun}}',
         confirmTitle: 'Delete "{{name}}"?',
         confirmBody: '{{cost}} This cannot be undone.',
       },
       default: 'Default',
-      makeDefault: 'MAKE DEFAULT',
+      makeDefault: 'Make default',
     },
   },
 
@@ -8750,14 +8744,22 @@ export const en = {
       removedByAssistant: '{{what}} removed by the assistant',
       undoInThread: 'UNDO is in the thread',
       /**
-       * Strategy for all campaigns: every campaign on one time axis, with
-       * what each commits to and the voice it writes in.
+       * Strategy for all campaigns: every campaign, with what each commits to
+       * and the voice it writes in.
        */
-      timeline: {
-        empty:
-          'No campaigns yet. Each one you add is drawn here against the others, by its dates.',
-        undated: 'No dates set',
-        barLabel: '{{name}}, {{window}}',
+      /** The Goals card's one action: it opens or closes the section. */
+      goals: {
+        switchOn: 'Switch on',
+        switchOff: 'Switch off',
+      },
+      /** The Messaging card's one action, which asks the assistant. */
+      messaging: {
+        generateBrief: 'Generate brief',
+        improveBrief: 'Improve brief',
+      },
+      campaigns: {
+        title: 'Campaigns',
+        empty: 'No campaigns yet.',
         windowAndRate: '{{window}} · {{rate}}',
         perWeek_one: '{{formatted}} post a week',
         perWeek_other: '{{formatted}} posts a week',
@@ -8827,23 +8829,20 @@ export const en = {
       title: 'Danger Zone',
       body: 'Two ways to stop running this campaign. Archiving keeps everything and can be undone; deleting removes the campaign and its posts for good.',
       archive: {
-        action: 'ARCHIVE CAMPAIGN',
-        /** A dropdown row is sentence case; the caps are the buttons'. */
-        menuItem: 'Archive campaign',
+        action: 'Archive campaign',
         confirmTitle: 'Archive {{name}}?',
         confirmBody:
           'The campaign comes off the Campaigns list and stops being offered anywhere new work is filed. Nothing is deleted. Its posts, schedule, brief and content stay exactly as they are, and you can bring it back from the archive at any time.',
-        keep: 'KEEP IT ACTIVE',
-        confirm: 'ARCHIVE CAMPAIGN',
+        keep: 'Keep it active',
+        confirm: 'Archive campaign',
       },
       delete: {
-        action: 'DELETE CAMPAIGN',
-        menuItem: 'Delete campaign',
+        action: 'Delete campaign',
         confirmTitle: 'Delete {{name}}?',
         confirmBody:
           'The campaign, its posts and its schedule are removed, and nothing in the app can bring them back. Posts that have already been published stay live on the social networks. Archive it instead if you only want it off the list.',
-        keep: 'KEEP CAMPAIGN',
-        confirm: 'DELETE CAMPAIGN',
+        keep: 'Keep campaign',
+        confirm: 'Delete campaign',
       },
     },
   },

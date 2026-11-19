@@ -11,7 +11,7 @@ import {
   TrashIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button.tsx'
+import { Card } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,7 +83,6 @@ type Props = {
   describe: (attachmentId: string, altText: string) => Promise<unknown>
   /** Absent for every post that is not a thread, which is nearly all of them. */
   thread?: ThreadMediaTargets
-  className?: string
 }
 
 /**
@@ -108,7 +107,6 @@ export function PostMediaCard({
   reorder,
   describe,
   thread,
-  className,
 }: Props) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -211,51 +209,32 @@ export function PostMediaCard({
   }
 
   return (
-    <div
-      className={cn(
-        'w-full bg-primary px-10 py-6 flex flex-col gap-3',
-        className,
-      )}
+    <Card
+      title="Media"
+      qualifier={
+        attachments.length > 0
+          ? // Only against a cap the post type can actually reach — a text
+            // post caps at 0, and "2 / 0" reads as a broken counter. A thread
+            // reaches none: its cap is per post of the chain.
+            `${attachments.length}${policy.accepts && totalMax !== null ? ` / ${totalMax}` : ''}`
+          : undefined
+      }
+      // The button is what the card offers while shut; once open, the tiles
+      // below are how media is added and the constraints say what fits.
+      action={
+        collapsed
+          ? { label: t('posts.media.add'), onClick: () => setRevealed(true) }
+          : undefined
+      }
     >
-      {/* `SettingsCard`'s header, matched deliberately: title left, the one
-          action opposite it. This is a card with a heading and a body like
-          any settings section, and it was the only one drawing its own. */}
-      <div className="flex items-center justify-between gap-4 min-w-0">
-        <h2 className="flex items-center gap-2 min-w-0 text-xl font-display font-medium tracking-tight">
-          Media
-          {attachments.length > 0 && (
-            <span className="font-normal text-tertiary-foreground">
-              {attachments.length}
-              {/* Only against a cap the post type can actually reach — a text
-                  post caps at 0, and "2 / 0" reads as a broken counter. A
-                  thread reaches none: its cap is per post of the chain. */}
-              {policy.accepts && totalMax !== null && ` / ${totalMax}`}
-            </span>
-          )}
-        </h2>
-
-        {/* The two share the slot because they never coexist: constraints are
-            what the card says once it is open, the button is what it offers
-            while shut. With no platform the numbers would be the fallback
-            policy's rather than a platform's, and stating them would be
-            inventing rules. */}
-        {collapsed ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setRevealed(true)}
-          >
-            ADD MEDIA
-          </Button>
-        ) : (
-          policy.accepts && (
-            <span className="shrink-0 text-xs text-tertiary-foreground">
-              {describeConstraints(policy)}
-            </span>
-          )
-        )}
-      </div>
+      {/* What the card says once it is open. With no platform the numbers
+          would be the fallback policy's rather than a platform's, and stating
+          them would be inventing rules — so a collapsed card says nothing. */}
+      {!collapsed && policy.accepts && (
+        <p className="text-xs text-tertiary-foreground">
+          {describeConstraints(policy)}
+        </p>
+      )}
 
       {thread && policy.accepts && (
         <p className="text-xs text-tertiary-foreground">
@@ -451,7 +430,7 @@ export function PostMediaCard({
           onClose={() => setChoosingAssets(false)}
         />
       )}
-    </div>
+    </Card>
   )
 }
 

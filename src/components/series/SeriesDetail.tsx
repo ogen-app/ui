@@ -9,7 +9,8 @@ import {
   BrandColumn,
   BrandPage,
 } from '@/components/brand/detail'
-import { BrandIntro } from '@/components/brand/shell'
+import { readByStatus } from '@/components/brand/shell'
+import { Card } from '@/components/ui/card'
 import { useSeriesLibrary } from '@/hooks/useSeries'
 import { brandSection, brandSectionCopy } from '@/lib/brandSections'
 import type { ContentSeries } from '@/types/series'
@@ -87,14 +88,19 @@ function SeriesDetailBody({
 
   return (
     <BrandColumn>
-      <BrandIntro
+      <Card
+        heading="h1"
         icon={info.icon}
         tone={info.tone}
         title={copy.label}
-        body={copy.description}
-        missing={library.length === 0 ? copy.whenEmpty : undefined}
-        readBy={info.readBy}
-      />
+        status={readByStatus(t, info.readBy)}
+        capped
+      >
+        <p className="text-sm text-secondary-foreground">{copy.description}</p>
+        {library.length === 0 && (
+          <p className="text-sm text-secondary-foreground">{copy.whenEmpty}</p>
+        )}
+      </Card>
       {children(library)}
     </BrandColumn>
   )

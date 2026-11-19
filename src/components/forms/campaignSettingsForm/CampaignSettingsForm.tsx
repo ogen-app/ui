@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useUpdateCampaign } from '@/hooks/useCampaigns'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { campaignToPayload } from '@/lib/campaignPayload'
 import { CampaignDangerZone } from './CampaignDangerZone'
@@ -86,7 +86,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
     <Form {...form}>
       <form noValidate autoComplete="off">
         <fieldset className="flex flex-col gap-8 pb-10">
-          <SettingsCard title={t('campaigns.settings.record')}>
+          <Card title={t('campaigns.settings.record')} capped>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
               <FormField
                 control={form.control}
@@ -118,7 +118,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
                 )}
               />
             </div>
-          </SettingsCard>
+          </Card>
 
           <CampaignDangerZone campaign={campaign} />
         </fieldset>

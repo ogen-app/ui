@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatList } from '@/lib/intl'
 import { NowSection } from './ComparisonSections'
-import { NotYet, SectionCard } from './shell'
+import { NotYet } from './shell'
 import type { AnalyticsOverviewResult } from '@/hooks/useAnalyticsOverview'
 
 /**
@@ -55,11 +56,11 @@ export function WorkspaceOverviewView({
 
   if (isUnavailable) {
     return (
-      <SectionCard title={t('analytics.now.title')}>
+      <Card capped title={t('analytics.now.title')}>
         <NotYet title={t('analytics.now.unavailableTitle')}>
           {t('analytics.now.unavailableBody')}
         </NotYet>
-      </SectionCard>
+      </Card>
     )
   }
 
@@ -69,7 +70,7 @@ export function WorkspaceOverviewView({
   // broken when the truth is that it hasn't published yet.
   if (isEmpty) {
     return (
-      <SectionCard title={t('analytics.now.title')}>
+      <Card capped title={t('analytics.now.title')}>
         {narrowedTo.length > 0 ? (
           <NotYet
             title={t('analytics.now.emptyNarrowedTitle', {
@@ -83,7 +84,7 @@ export function WorkspaceOverviewView({
             {t('analytics.now.emptyBody')}
           </NotYet>
         )}
-      </SectionCard>
+      </Card>
     )
   }
 
@@ -92,11 +93,11 @@ export function WorkspaceOverviewView({
   // leave the skeleton spinning, which is indistinguishable from a hung app.
   if (isError || !view) {
     return (
-      <SectionCard title={t('analytics.now.title')}>
+      <Card capped title={t('analytics.now.title')}>
         <NotYet title={t('analytics.now.errorTitle')}>
           {t('analytics.now.errorBody')}
         </NotYet>
-      </SectionCard>
+      </Card>
     )
   }
 

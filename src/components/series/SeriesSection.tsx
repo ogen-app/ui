@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { LibrarySelectionBar } from '@/components/brand/librarySelection'
 import {
   useLibrarySelection,
@@ -13,7 +14,6 @@ import {
   LibraryEntry,
   PlainActionCard,
   StarterCard,
-  StarterGroup,
 } from '@/components/brand/shell'
 import { seriesMetaLine, supplyLine } from './format'
 import { SERIES_STARTERS, seriesStarterCopy } from './starters'
@@ -101,24 +101,26 @@ function SeriesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
   const { t } = useTranslation()
   const { tone } = brandSection('series')
   return (
-    <StarterGroup
-      title={t('series.library.starterGroupTitle')}
-      body={t('series.library.starterGroupBody')}
-    >
-      {SERIES_STARTERS.map((starter) => {
-        const copy = seriesStarterCopy(t, starter)
-        return (
-          <StarterCard
-            key={starter.id}
-            icon={starter.icon}
-            tone={tone}
-            title={copy.title}
-            body={copy.body}
-            onClick={onStart ? () => onStart(starter.id) : undefined}
-          />
-        )
-      })}
-    </StarterGroup>
+    <Card title={t('series.library.starterGroupTitle')} capped>
+      <p className="text-sm text-secondary-foreground">
+        {t('series.library.starterGroupBody')}
+      </p>
+      <div className="grid gap-3">
+        {SERIES_STARTERS.map((starter) => {
+          const copy = seriesStarterCopy(t, starter)
+          return (
+            <StarterCard
+              key={starter.id}
+              icon={starter.icon}
+              tone={tone}
+              title={copy.title}
+              body={copy.body}
+              onClick={onStart ? () => onStart(starter.id) : undefined}
+            />
+          )
+        })}
+      </div>
+    </Card>
   )
 }
 

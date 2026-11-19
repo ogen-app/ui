@@ -1,13 +1,15 @@
 import { memo, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Delete02Icon } from '@hugeicons/core-free-icons'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { TextSelect } from '@/components/ui/text-select'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import {
@@ -115,7 +117,7 @@ function PeopleSectionComponent() {
   )
 
   return (
-    <SettingsCard title={t('workspaceSettings.people.title')}>
+    <Card title={t('workspaceSettings.people.title')} capped>
       {!workspace || membersLoading ? (
         <p className="text-sm text-tertiary-foreground">
           {t('common.loading')}
@@ -165,7 +167,7 @@ function PeopleSectionComponent() {
           )}
         </div>
       )}
-    </SettingsCard>
+    </Card>
   )
 }
 
@@ -261,14 +263,15 @@ function MemberRow({
         {canRemove && (
           <Button
             type="button"
-            variant="outline"
+            variant="destructive"
             size="sm"
             onClick={() => setConfirming(true)}
             title={t('workspaceSettings.people.removeTitle', {
               name: member.name,
             })}
           >
-            {t('workspaceSettings.people.remove')}
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
+            <span>{t('workspaceSettings.people.remove')}</span>
           </Button>
         )}
       </div>
@@ -370,7 +373,6 @@ function RemoveMemberDialog({
             disabled={!matches || isPending}
             loading={isPending}
           >
-            {/* Literal caps, not `uppercase` — see CLAUDE.md on destructive labels. */}
             <span>{t('workspaceSettings.people.removeConfirm')}</span>
           </Button>
         </div>

@@ -8,7 +8,8 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { FloppyDiskIcon } from '@phosphor-icons/react'
+import { FloppyDiskIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 
 import { Button } from '@/components/ui/button'
 import { PageActionBar } from '@/components/page-primitives/PageActionBar'
@@ -101,8 +102,8 @@ export function useRegisterSettingsSave(
 }
 
 /**
- * The page's commit, on the floating bottom bar — hidden until some registered
- * field is dirty.
+ * The page's commit, on the bottom panel — hidden until some registered field
+ * is dirty.
  *
  * It used to appear and disappear in the top-right corner as you typed, which
  * made the header jitter and put a commit next to whatever else that corner
@@ -121,18 +122,13 @@ export function SettingsSaveBar() {
     <PageActionBar>
       <Button
         type="button"
-        // `ghost` — no fill, no border: the bar is the surface, and anything
-        // drawn inside it is text.
-        variant="ghost"
+        variant="defaultInverted"
         size="sm"
-        className="text-primary-foreground"
         onClick={saveAll}
         loading={saving}
       >
-        <FloppyDiskIcon />
-        {/* CSS casing, not literal caps: the label is translated (CON-174) and
-            the literal-caps rule is for irreversible actions, which this isn't. */}
-        <span className="uppercase">{t('common.save')}</span>
+        <HugeiconsIcon icon={FloppyDiskIcon} strokeWidth={1.5} />
+        <span>{t('common.save')}</span>
       </Button>
     </PageActionBar>
   )

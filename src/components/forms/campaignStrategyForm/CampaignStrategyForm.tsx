@@ -36,7 +36,7 @@ import {
   CampaignTypeCard,
   CampaignTypePicker,
 } from '@/components/campaigns/CampaignTypePicker'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { registerPendingSave } from '@/lib/pendingSaves.ts'
 import { cn } from '@/lib'
@@ -317,7 +317,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
               bookkeeping without the claim it is serving. */}
             <MessagingCard campaign={campaign} />
 
-            <SettingsCard title={t('campaigns.strategy.commitment')}>
+            <Card title={t('campaigns.strategy.commitment')} capped>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
                 <FormField
                   control={form.control}
@@ -410,7 +410,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
                   )}
                 />
               </div>
-            </SettingsCard>
+            </Card>
 
             {/* How much the campaign should produce, then when it goes out. The
             post target used to sit in Advanced next to budget and language,
@@ -420,30 +420,26 @@ export function CampaignStrategyForm({ campaign }: Props) {
 
             <SchedulingCard />
 
-            <SettingsCard
+            <Card
               title={
-                <>
-                  <span className="truncate">
-                    {accountsEnabled
-                      ? 'Accounts & Post Types'
-                      : 'Platforms & Post Types'}
-                  </span>
-                  {/* After the heading, not before it: the dot comes and goes, and
-                  leading it would shift the title sideways as platforms are
-                  added. Same warning tone as the summary line inside. */}
-                  {noPlatforms && (
-                    <span
-                      className="size-2 shrink-0 rounded-full bg-warning"
-                      role="img"
-                      aria-label={
-                        accountsEnabled
-                          ? 'No accounts selected'
-                          : 'No platforms selected'
-                      }
-                    />
-                  )}
-                </>
+                accountsEnabled
+                  ? 'Accounts & Post Types'
+                  : 'Platforms & Post Types'
               }
+              // A status rather than a bare dot: it comes and goes, and after
+              // the title it shifts nothing sideways as platforms are added.
+              // Same warning tone as the summary line inside.
+              status={
+                noPlatforms
+                  ? {
+                      label: accountsEnabled
+                        ? 'No accounts selected'
+                        : 'No platforms selected',
+                      tone: 'warn',
+                    }
+                  : undefined
+              }
+              capped
             >
               {removal && (
                 <p className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-accent bg-accent/5 px-3 py-2 text-sm text-foreground">
@@ -481,13 +477,13 @@ export function CampaignStrategyForm({ campaign }: Props) {
                   )}
                 />
               )}
-            </SettingsCard>
+            </Card>
 
             {/* What it costs and what language it speaks: commitments too, and
               the reason they are last rather than on the settings page —
               budget is a spend the campaign is planned against, not a property
               of the record like its name. */}
-            <SettingsCard title={t('campaigns.strategy.spend')}>
+            <Card title={t('campaigns.strategy.spend')} capped>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
                 <FormField
                   control={form.control}
@@ -535,7 +531,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
                   )}
                 />
               </div>
-            </SettingsCard>
+            </Card>
 
             {/* Last, because it is the half of Strategy this campaign shares
               with every other: the Foundation, which Strategy is for all

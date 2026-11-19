@@ -1,142 +1,16 @@
 import type { ReactNode } from 'react'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Link } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button.tsx'
+import { Link, linkOptions, useRouter } from '@tanstack/react-router'
+import type { CardDoor } from '@/components/ui/card'
 import { useCalendarPlace } from '@/hooks/usePostsPlace'
-import { cn } from '@/lib'
-import {
-  campaignSection,
-  type CampaignSectionId,
-} from '@/lib/campaignSections.ts'
 import type { FixTarget } from '@/lib/campaignReadiness.ts'
 
 /**
- * Where a card sends the user. `calendar` is the one destination the fix rules
- * don't have a name for: an attention row about a post opens the list it can be
- * fixed in, while the Content card opens the week the posts live in.
+ * Where a row or a card's door sends the user. `calendar` is the one
+ * destination the fix rules don't have a name for: an attention row about a
+ * post opens the list it can be fixed in, while the week card opens the week
+ * the posts live in.
  */
 export type CardTarget = FixTarget | 'calendar'
-
-/** Where a card's "open" button goes. */
-export type CardLink = {
-  target: CardTarget
-  campaignId: string
-}
-
-/**
- * One card on the Campaign Overview and on the campaign's Analytics panel,
- * and the shape of a dashboard card anywhere: glyph, title, status, then the
- * way in on the right. Capped at the shared content-column width on its own;
- * in a `PageGrid` cell it takes the cell, height included.
- *
- * A card that has somewhere to go says so with a button, not with a header that
- * lights up: a tinted header row is a hit area you have to discover by sweeping
- * the card. One rule across the screen — a header is never a control.
- */
-export function OverviewCard({
-  section,
-  title,
-  icon,
-  status,
-  link,
-  children,
-  className,
-  bare = false,
-}: {
-  /** Sets the card's title, glyph and open-button label from one table. */
-  section?: CampaignSectionId
-  /** For a card that isn't one of the campaign's sections. */
-  title?: string
-  /** Ditto — the mark beside such a card's title. */
-  icon?: ReactNode
-  /**
-   * Sits in the header beside the title — normally a `StatusBadge`. A module's
-   * verdict belongs here whether it's good news or not, so the body is free to
-   * be about what to do next.
-   */
-  status?: ReactNode
-  /** Adds the open button. Needs `section`, which is where its label comes from. */
-  link?: CardLink
-  children?: ReactNode
-  className?: string
-  /**
-   * The header and body without the card around them, for a section that
-   * shares a surface with others — the Overview's right-hand panel.
-   */
-  bare?: boolean
-}) {
-  const { t } = useTranslation()
-  const meta = section ? campaignSection(section) : undefined
-  const Glyph = meta?.icon
-  const heading = title ?? (meta ? t(meta.labelKey) : undefined)
-
-  return (
-    <section
-      className={cn(
-        'flex flex-col gap-4 min-w-0',
-        !bare && 'w-full max-w-content mx-auto rounded-md bg-primary p-5',
-        className,
-      )}
-    >
-      {(heading || status || link) && (
-        <div className="flex items-center gap-3 min-w-0">
-          <CardGlyph>
-            {Glyph ? (
-              <HugeiconsIcon
-                icon={Glyph}
-                size={20}
-                strokeWidth={1.5}
-                style={{ color: meta?.tone }}
-                aria-hidden
-              />
-            ) : (
-              icon
-            )}
-          </CardGlyph>
-          {heading && (
-            <h2 className="font-display text-base font-medium shrink-0">
-              {heading}
-            </h2>
-          )}
-          {status}
-          {link && meta && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto shrink-0"
-              asChild
-            >
-              <SectionLink target={link.target} campaignId={link.campaignId}>
-                {t(meta.openKey)}
-              </SectionLink>
-            </Button>
-          )}
-        </div>
-      )}
-      {children}
-    </section>
-  )
-}
-
-/**
- * The header's mark slot: 16px of layout, whatever is standing in it.
- *
- * The same 16px the rows below reserve (`LineItem`), so a card's title starts
- * on the column its list items start on and the screen has one left edge for
- * text rather than one per card type. The glyph itself keeps its own size and
- * is centred on the slot — a mark drawn to 16px reads smaller than the title
- * beside it, and shrinking it to make the arithmetic tidy would be optimising
- * the grid at the mark's expense. The 2px it spills each side is over the
- * card's padding on one side and the gap on the other, so nothing collides.
- */
-function CardGlyph({ children }: { children?: ReactNode }) {
-  return (
-    <span className="flex w-4 shrink-0 items-center justify-center">
-      {children}
-    </span>
-  )
-}
 
 /**
  * A typed link to the campaign section (or workspace settings) that fixes or
@@ -227,5 +101,41 @@ export function SectionLink({
           {children}
         </Link>
       )
+  }
+}
+
+/**
+ * `SectionLink` as a `Card` door: the href, so the door is a real link that
+ * opens in a new tab, and a navigate for the plain click.
+ */
+export function useSectionDoor(campaignId: string) {
+  const router = useRouter()
+  const calendar = useCalendarPlace(campaignId)
+  const params = { campaignId }
+  return (target: CardTarget, kind: CardDoor['kind'] = 'header'): CardDoor => {
+    const options = (() => {
+      switch (target) {
+        case 'strategy':
+          return linkOptions({ to: '/campaigns/$campaignId/strategy', params })
+        case 'assets':
+          return linkOptions({ to: '/campaigns/$campaignId/assets', params })
+        case 'posts':
+          return linkOptions({ to: '/campaigns/$campaignId/list', params })
+        case 'calendar':
+          return linkOptions({
+            to: '/campaigns/$campaignId/calendar/$anchor/$view',
+            params: { campaignId, ...calendar },
+          })
+        case 'analytics':
+          return linkOptions({ to: '/campaigns/$campaignId/analytics', params })
+        case 'workspace-settings':
+          return linkOptions({ to: '/workspace-settings' })
+      }
+    })()
+    return {
+      kind,
+      href: router.buildLocation(options).href,
+      onOpen: () => void router.navigate(options),
+    }
   }
 }

@@ -1,19 +1,17 @@
 import { Fragment, useEffect, useRef } from 'react'
 import type { ReactElement, ReactNode, RefObject } from 'react'
-import {
-  CaretRightIcon,
-  CheckCircleIcon,
-  CheckIcon,
-  CircleDashedIcon,
-  DotsThreeIcon,
-  PlusIcon,
-} from '@phosphor-icons/react'
+import { CircleDashedIcon } from '@phosphor-icons/react'
 import {
   Alert02Icon,
   BookOpen01Icon,
+  CheckmarkCircle02Icon,
+  Flag02Icon,
+  MoreHorizontalIcon,
+  PlusSignIcon,
   Task01Icon,
+  Tick02Icon,
 } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Logo } from '@/components/Logo'
@@ -21,6 +19,7 @@ import { IgnoredList } from '@/components/assistant/FindingsBlock'
 import { GridCell, PageGrid } from '@/components/page-primitives/PageGrid'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge.tsx'
 import { Button } from '@/components/ui/button.tsx'
+import { Card } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +53,7 @@ import {
 } from '@/lib/intl'
 import { getPlatformByZernioId } from '@/lib/platformDictionary'
 import { stageTodoLabel, type NeedsLine } from './needsLines'
-import { SectionLink } from './OverviewCard.tsx'
+import { SectionLink, useSectionDoor } from './OverviewCard.tsx'
 import { OverviewDoors } from './OverviewDoors.tsx'
 import type { OverviewDoor } from '@/lib/campaignDoors'
 
@@ -133,7 +132,7 @@ export function CampaignOverview({
             </div>
           </GridCell>
           <GridCell span="narrow">
-            <LearnCard learnMore={handlers.learnMore} campaignId={campaignId} />
+            <LearnCard learnMore={handlers.learnMore} />
           </GridCell>
         </PageGrid>
       </div>
@@ -177,127 +176,16 @@ export function CampaignOverview({
   )
 }
 
-/**
- * A card on the page: the panel colour with the hairline the menu and the
- * rail are drawn with, so the cards sit in the same frame as the chrome.
- */
-const SURFACE = 'rounded-md border border-border bg-primary'
-
-/**
- * Where a card's header goes: a section of the campaign, or something the
- * screen opens itself (the help centre's article).
- */
-type CardDoor = { target: OverviewTarget } | { open: () => void; label: string }
-
-/**
- * Every card on the page, built as Brand's section cards are: the glyph in its
- * section's hue, the title in the display face, and — when the card has
- * somewhere to go — a caret at the far end, the whole header being the way
- * there. The caret replaces the OPEN … buttons, which named a destination in
- * words on one card and not on the next.
- *
- * Only the header is the door, never the card: the rows inside are links and
- * buttons of their own. The 20px glyph and its gap put the title's first
- * letter on the same 28px the rows' labels start on (`LineItem`).
- */
-function Card({
-  glyph,
-  title,
-  door,
-  aside,
-  campaignId,
-  className,
-  children,
-}: {
-  glyph: ReactNode
-  title: ReactNode
-  door?: CardDoor
-  /** Opposite the title, for a card with no door: a count, an action. */
-  aside?: ReactNode
-  campaignId: string
-  className?: string
-  children?: ReactNode
-}) {
-  const head = (
-    <>
-      {glyph}
-      <span className="truncate">{title}</span>
-    </>
-  )
-  const caret = (
-    <CaretRightIcon
-      className="ml-auto size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-      weight="bold"
-      aria-hidden
-    />
-  )
-  const doorClass =
-    'group -m-1 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm p-1 text-left'
-  return (
-    <section className={cn(SURFACE, 'flex flex-col gap-4 p-6', className)}>
-      {/* The title keeps its width and the aside goes under it when the two
-          don't fit — a narrow column (the assistant open beside the page)
-          would otherwise cut the title to its first word. */}
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-        <h2 className="flex max-w-full min-w-0 flex-[1_0_auto] items-center gap-2 font-display text-xl font-medium tracking-tight">
-          {!door ? (
-            head
-          ) : 'target' in door ? (
-            <TargetLink
-              target={door.target}
-              campaignId={campaignId}
-              className={doorClass}
-            >
-              {head}
-              {caret}
-            </TargetLink>
-          ) : (
-            <button
-              type="button"
-              className={doorClass}
-              onClick={door.open}
-              title={door.label}
-            >
-              {head}
-              {caret}
-            </button>
-          )}
-        </h2>
-        {aside}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-/** A campaign section's glyph in its hue, the one the rail draws. */
-function SectionGlyph({ section }: { section: 'calendar' | 'analytics' }) {
-  const meta = campaignSection(section)
-  return <Glyph icon={meta.icon} tone={meta.tone} />
-}
-
-function Glyph({ icon, tone }: { icon: IconSvgElement; tone?: string }) {
-  return (
-    <HugeiconsIcon
-      icon={icon}
-      size={20}
-      strokeWidth={1.5}
-      className="shrink-0"
-      style={tone ? { color: tone } : undefined}
-      aria-hidden
-    />
-  )
-}
+const CALENDAR = campaignSection('calendar')
+const ANALYTICS = campaignSection('analytics')
 
 // --- The progress card -----------------------------------------------------
 
 /**
- * Where the campaign is in its own time: the stage and the day, the window,
- * today's phase, and the goal as a bar. Everything here is a glance; the
- * goal's arithmetic is on Strategy. What goes out next is the week card's,
- * so it is not repeated here. Two type styles: the title, and one size of
- * text at full strength — the bar's colours are carried by its legend's
- * dots, not by fading the words.
+ * Where the campaign is in its own time: the stage and today's phase in the
+ * title, the dates and the day opposite, and the goal as a bar. Everything
+ * here is a glance; the goal's arithmetic is on Strategy. What goes out next
+ * is the week card's, so it is not repeated here.
  *
  * Exported for the design harness's specimens.
  */
@@ -308,84 +196,86 @@ export function ProgressCard({
   stage: OverviewModel['stage']
   band: OverviewBand
 }) {
+  const { t } = useTranslation()
+  const { phase, when } = useBandLines(band)
   return (
-    <section className={cn(SURFACE, 'flex flex-col gap-4 p-6')}>
-      <ProgressHeader stage={stage} band={band} />
+    <Card
+      icon={Flag02Icon}
+      tone="var(--nav-overview)"
+      title={t(`campaignOverview.stage.${stage}`)}
+      qualifier={phase}
+      aside={when}
+    >
       <PostsBar band={band} />
-    </section>
+    </Card>
   )
 }
 
 /**
- * The progress card's first line: the stage and today's phase on the left,
- * the dates and the day on the right. `row` is the Campaigns list's size,
- * where the campaign's name is the largest thing and the stage sits under
- * it as a column head. Without a band — a campaign with no dates — the stage
- * alone.
+ * Today's phase ("Launch, day 3 of 10") — none before the start, between
+ * phases or after — and the window with where today sits in it.
+ */
+function useBandLines(band: OverviewBand | null) {
+  const { t, i18n } = useTranslation()
+  if (!band) return { phase: null, when: null }
+  const where =
+    band.startsIn != null
+      ? t('campaignOverview.stats.startsIn', {
+          when: formatRelative(band.startsIn, 'day', i18n.language),
+        })
+      : band.endedAgo != null
+        ? t('campaignOverview.stats.ended', {
+            when: formatRelative(-band.endedAgo, 'day', i18n.language),
+          })
+        : t('campaignOverview.stats.dayOf', {
+            day: formatNumber(band.day),
+            total: formatNumber(band.days),
+          })
+  const current = band.phases.find((p) => p.current)
+  return {
+    phase:
+      current?.day != null
+        ? t('campaignOverview.band.phaseNow', {
+            name: current.name,
+            day: formatNumber(current.day),
+            total: formatNumber(current.days),
+          })
+        : null,
+    when: t('campaignOverview.band.when', {
+      range: formatDateRange(
+        band.start,
+        band.end,
+        { month: 'short', day: 'numeric', year: 'numeric' },
+        i18n.language,
+      ),
+      where,
+    }),
+  }
+}
+
+/**
+ * The Campaigns list's column head for where a campaign is in its own time:
+ * the stage, today's phase under it, and the dates and the day opposite.
+ * Without a band — a campaign with no dates — the stage alone.
  */
 export function ProgressHeader({
   stage,
   band,
-  size = 'card',
 }: {
   stage: OverviewModel['stage']
   band: OverviewBand | null
-  size?: 'card' | 'row'
 }) {
-  const { t, i18n } = useTranslation()
-  const where =
-    band == null
-      ? null
-      : band.startsIn != null
-        ? t('campaignOverview.stats.startsIn', {
-            when: formatRelative(band.startsIn, 'day', i18n.language),
-          })
-        : band.endedAgo != null
-          ? t('campaignOverview.stats.ended', {
-              when: formatRelative(-band.endedAgo, 'day', i18n.language),
-            })
-          : t('campaignOverview.stats.dayOf', {
-              day: formatNumber(band.day),
-              total: formatNumber(band.days),
-            })
-  // Only today's phase; none before the start, between phases or after.
-  const phase = band?.phases.find((p) => p.current)
-  const Heading = size === 'row' ? 'h3' : 'h2'
-
+  const { t } = useTranslation()
+  const { phase, when } = useBandLines(band)
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
       <div className="flex flex-col gap-1">
-        <Heading
-          className={cn(
-            'font-display font-medium',
-            size === 'row' ? 'text-base' : 'text-xl tracking-tight',
-          )}
-        >
+        <h3 className="font-display text-base font-medium">
           {t(`campaignOverview.stage.${stage}`)}
-        </Heading>
-        {phase?.day != null && (
-          <p className="text-sm">
-            {t('campaignOverview.band.phaseNow', {
-              name: phase.name,
-              day: formatNumber(phase.day),
-              total: formatNumber(phase.days),
-            })}
-          </p>
-        )}
+        </h3>
+        {phase && <p className="text-sm">{phase}</p>}
       </div>
-      {band && where && (
-        <span className="ml-auto text-sm">
-          {t('campaignOverview.band.when', {
-            range: formatDateRange(
-              band.start,
-              band.end,
-              { month: 'short', day: 'numeric', year: 'numeric' },
-              i18n.language,
-            ),
-            where,
-          })}
-        </span>
-      )}
+      {when && <span className="ml-auto text-sm">{when}</span>}
     </div>
   )
 }
@@ -553,14 +443,15 @@ function WeekBlock({
   now: Date
 }) {
   const { t, i18n } = useTranslation()
+  const door = useSectionDoor(campaignId)
   const empty = days.every((d) => d.posts.length === 0)
   const todayKey = now.toDateString()
   return (
     <Card
-      glyph={<SectionGlyph section="calendar" />}
+      icon={CALENDAR.icon}
+      tone={CALENDAR.tone}
       title={t(`campaignOverview.week.${kind}`)}
-      door={{ target: 'calendar' }}
-      campaignId={campaignId}
+      door={door('calendar')}
     >
       {empty ? (
         <p className="text-sm text-tertiary-foreground">
@@ -658,12 +549,13 @@ function ResultsBlock({
   campaignId: string
 }) {
   const { t } = useTranslation()
+  const door = useSectionDoor(campaignId)
   return (
     <Card
-      glyph={<SectionGlyph section="analytics" />}
+      icon={ANALYTICS.icon}
+      tone={ANALYTICS.tone}
       title={t('campaignOverview.results.title')}
-      door={{ target: 'analytics' }}
-      campaignId={campaignId}
+      door={door('analytics')}
     >
       <ResultsFigures results={results} />
       {results.performance?.best && (
@@ -856,41 +748,33 @@ function NeedsList({
   const askable = rows?.some((r) => r.action?.kind === 'ask') ?? false
   return (
     <div ref={frameRef} className="flex flex-col">
-      <Card
+      {/* Holds the card to the screen's height while it is pinned, so its
+          rows scroll under the header; stacked, it is an ordinary card. */}
+      <div
         className={cn(
-          'flex-1',
+          'flex flex-1 flex-col',
           pinned &&
-            '@min-[40rem]:sticky @min-[40rem]:top-4 @min-[40rem]:max-h-[calc(var(--scroll-viewport,100svh)-2rem)] @min-[40rem]:flex-none @min-[40rem]:overflow-hidden',
+            '@min-[40rem]:sticky @min-[40rem]:top-4 @min-[40rem]:max-h-[calc(var(--scroll-viewport,100svh)-2rem)] @min-[40rem]:flex-none',
         )}
-        glyph={<Glyph icon={Alert02Icon} tone="var(--nav-overview)" />}
-        title={
-          <>
-            {t(`campaignOverview.needs.${model.needsTitle}`)}
-            {rows && rows.length > 0 && (
-              <span className="ml-2 font-sans text-sm font-normal text-tertiary-foreground tabular-nums">
-                {formatNumber(rows.length)}
-              </span>
-            )}
-          </>
-        }
-        aside={
-          askable && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={handlers.askAll}
-            >
-              <Logo variant="mark" />
-              <span>{t('campaignOverview.problems.fixAll')}</span>
-            </Button>
-          )
-        }
-        campaignId={campaignId}
       >
-        {/* The rows scroll under the header once the card is as tall as the
-          screen; edge to edge, so the bar sits on the card's border. */}
-        <div className="-mx-6 -mb-6 flex min-h-0 flex-col gap-4 overflow-y-auto px-6 pb-6">
+        <Card
+          scrolls
+          icon={Alert02Icon}
+          tone="var(--nav-overview)"
+          title={t(`campaignOverview.needs.${model.needsTitle}`)}
+          qualifier={
+            rows && rows.length > 0 ? formatNumber(rows.length) : undefined
+          }
+          action={
+            askable
+              ? {
+                  label: t('campaignOverview.problems.fixAll'),
+                  icon: 'ogen',
+                  onClick: handlers.askAll,
+                }
+              : undefined
+          }
+        >
           {rows === null ? (
             <>
               <Skeleton className="h-10 w-full" />
@@ -898,7 +782,13 @@ function NeedsList({
             </>
           ) : rows.length === 0 ? (
             <p className="flex items-center gap-2 text-sm text-secondary-foreground">
-              <CheckIcon className="size-4 text-positive" aria-hidden />
+              <HugeiconsIcon
+                icon={Tick02Icon}
+                size={16}
+                strokeWidth={1.5}
+                className="text-positive"
+                aria-hidden
+              />
               {t('campaignOverview.needs.none')}
             </p>
           ) : (
@@ -918,8 +808,8 @@ function NeedsList({
             campaignId={campaignId}
             items={model.ignored.map((p) => ({ key: p.key, title: p.message }))}
           />
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   )
 }
@@ -1000,7 +890,7 @@ function NeedsRowView({
       </Button>
     ) : action?.kind === 'add-post' ? (
       <Button variant="outline" size="sm" onClick={handlers.addPost}>
-        <PlusIcon />
+        <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
         <span>{t('campaignOverview.todo.addPost')}</span>
       </Button>
     ) : null
@@ -1013,7 +903,7 @@ function NeedsRowView({
             size="smIcon"
             aria-label={t('campaignOverview.needs.menu')}
           >
-            <DotsThreeIcon />
+            <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={1.5} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
@@ -1094,9 +984,11 @@ export function NeedsPreview({
   if (lines && lines.length === 0)
     return (
       <p className="font-display text-base font-medium">
-        <CheckCircleIcon
-          weight="fill"
-          className="mr-1.5 inline size-5 align-[-0.3em] text-positive"
+        <HugeiconsIcon
+          icon={CheckmarkCircle02Icon}
+          size={20}
+          strokeWidth={1.5}
+          className="mr-1.5 inline align-[-0.3em] text-positive"
           aria-hidden
         />
         {t('campaigns.list.goodShape')}
@@ -1199,9 +1091,9 @@ function SetupCard({
   const next = steps.find((s) => !s.done)?.id
   return (
     <Card
-      glyph={<Glyph icon={Task01Icon} tone="var(--nav-overview)" />}
+      icon={Task01Icon}
+      tone="var(--nav-overview)"
       title={t('campaignOverview.setup.title')}
-      campaignId={campaignId}
     >
       <ol className="flex flex-col">
         {steps.map((step, i) => (
@@ -1270,7 +1162,14 @@ const DIVIDED = 'border-t border-border pt-2 first:border-t-0 first:pt-0'
 /** A step's number in a ring, or the tick once it is done — 16px, the row's slot. */
 function StepMark({ n, done }: { n: number; done: boolean }) {
   if (done) {
-    return <CheckCircleIcon weight="fill" className="size-4 text-positive" />
+    return (
+      <HugeiconsIcon
+        icon={CheckmarkCircle02Icon}
+        size={16}
+        strokeWidth={1.5}
+        className="text-positive"
+      />
+    )
   }
   return (
     <span className="flex size-4 items-center justify-center rounded-full border border-border text-[10px] leading-none font-semibold text-secondary-foreground tabular-nums">
@@ -1299,7 +1198,7 @@ function SetupAction({
   if (step === 'posts') {
     return (
       <Button variant={variant} size="sm" onClick={handlers.addPost}>
-        <PlusIcon />
+        <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
         <span>{t('campaignOverview.setup.posts.action')}</span>
       </Button>
     )
@@ -1315,47 +1214,43 @@ function SetupAction({
 
 /**
  * The right column of a new campaign: what someone setting one up for the
- * first time would want explained, in three lines. Its header opens the help
- * centre's article when one serves the topic, and is only a title otherwise.
+ * first time would want explained, in three lines. The whole card opens the
+ * help centre's article when one serves the topic; otherwise it opens nothing.
  * Teaching only — the screen reads the same without it.
  */
-function LearnCard({
-  learnMore,
-  campaignId,
-}: {
-  learnMore?: () => void
-  campaignId: string
-}) {
+function LearnCard({ learnMore }: { learnMore?: () => void }) {
   const { t } = useTranslation()
   const points = ['stages', 'goal', 'ogen'] as const
-  return (
+  const title = t('campaignOverview.learn.title')
+  const list = (
+    <ul className="flex flex-col">
+      {points.map((p) => (
+        <li key={p} className={DIVIDED}>
+          <LineItem
+            variant="entry"
+            indicator={{ kind: 'notification', tone: 'neutral' }}
+            label={t(`campaignOverview.learn.${p}.title`)}
+            details={
+              <span className="text-secondary-foreground">
+                {t(`campaignOverview.learn.${p}.detail`)}
+              </span>
+            }
+          />
+        </li>
+      ))}
+    </ul>
+  )
+  return learnMore ? (
     <Card
-      glyph={<Glyph icon={BookOpen01Icon} />}
-      title={t('campaignOverview.learn.title')}
-      door={
-        learnMore && {
-          open: learnMore,
-          label: t('campaignOverview.learn.more'),
-        }
-      }
-      campaignId={campaignId}
+      icon={BookOpen01Icon}
+      title={title}
+      door={{ kind: 'card', onOpen: learnMore }}
     >
-      <ul className="flex flex-col">
-        {points.map((p) => (
-          <li key={p} className={DIVIDED}>
-            <LineItem
-              variant="entry"
-              indicator={{ kind: 'notification', tone: 'neutral' }}
-              label={t(`campaignOverview.learn.${p}.title`)}
-              details={
-                <span className="text-secondary-foreground">
-                  {t(`campaignOverview.learn.${p}.detail`)}
-                </span>
-              }
-            />
-          </li>
-        ))}
-      </ul>
+      {list}
+    </Card>
+  ) : (
+    <Card icon={BookOpen01Icon} title={title}>
+      {list}
     </Card>
   )
 }

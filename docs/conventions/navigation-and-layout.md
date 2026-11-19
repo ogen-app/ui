@@ -22,12 +22,14 @@ keep it accurate when these rules change.
   **Strategy for all campaigns is the Foundation** (`/foundation/*`), and
   both levels hold the same two things, with no headings over them. For all
   campaigns, the hub in the page's column and, in a fixed-width column beside
-  it (under it when the page is too narrow), one timeline
-  (`strategy/CampaignTimeline` — a plan, not a status list; the Overview's
-  cards already report progress). For one, the same two columns: what it
+  it (under it when the page is too narrow), the Campaigns card
+  (`strategy/StrategyCampaigns` — each campaign's dates, rate, channels and
+  voice: a plan, not a status list; the Overview's cards already report
+  progress). The swimlane timeline it replaced is parked.
+  For one, the same two columns: what it
   commits to and then the Foundation as it has it in the main one, and its
-  phases (`CampaignPhasesCard`) beside it, sticky, where the timeline is one
-  level up. The campaign's cards are being brought into the hub's card
+  phases (`CampaignPhasesCard`) beside it, sticky, where the Campaigns card is
+  one level up. The campaign's cards are being brought into the hub's card
   grammar one at a time — a heading, then `LineItem` rows — the phases first.
   The Foundation as it has it (`strategy/FromTheWorkspace`): the voice, audience
   and series it *chooses*, and the guardrails and facts it only *reads*, as
@@ -113,7 +115,7 @@ keep it accurate when these rules change.
 
 - **There are no centred columns.** The content column is `max-w-content`
   (740px) against the page's left gutter, under the header's title — never
-  `mx-auto`. `PageActionBar` centres itself on that column, not on the page.
+  `mx-auto`. `PageActionBar` spans that column, not the page.
   Full-screen flows outside the app frame (auth, `/plans`, checkout) are the
   exception.
 
@@ -135,7 +137,7 @@ keep it accurate when these rules change.
     one taller than the screen is never cut off or given its own scroll: it
     rides up until its foot shows, by the asset page's rule
     (`useStickyColumns`). It carries the page's gutters. Strategy at both
-    levels: the timeline sticky for all campaigns, the phases for one.
+    levels: the Campaigns card sticky for all campaigns, the phases for one.
     Activity, with Needs you sticky beside the day cards: the live
     warnings (`workspaceWarnings`, alert and risk only), never unread
     notifications, which the feed marks read on sight.
@@ -166,10 +168,13 @@ keep it accurate when these rules change.
   Top-right: **views only** — anything that opens or switches a representation,
   never anything that changes the document. Top-centre (`PageHeader`'s `center`
   slot): passive status, in practice just `SaveStatus`, non-interactive by
-  rule. Bottom-centre: the commit, on `PageActionBar`. The assistant is not a
+  rule. Bottom: the commit, on `PageActionBar` — a white 56px band with a
+  rule on top, the height of the rail's account row so the two read as one
+  band, its buttons on the left and the main one black (`defaultInverted`),
+  the others `outline`. The assistant is not a
   corner of the page: it opens from Work with Ogen at the far end of the top bar
   (`TopBar`), which belongs to the app rather than the page — the floating
-  bottom-right trigger is gone. Bottom-left and bottom-right stay empty. A bar
+  bottom-right trigger is gone. A bar
   belongs to **editor** screens only (asset, brief, settings) — a list has creation, not
   commit, so `ADD CAMPAIGN` stays top-right, and so do the Assets list's ADD
   and the posts list's `ADD POST`. The bar must anchor to the

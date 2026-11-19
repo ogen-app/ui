@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { useUpdateProfile } from '@/hooks/useAuth'
 import { useProfileSchema } from '@/hooks/useAuthSchemas'
@@ -77,7 +77,7 @@ export function ProfileIdentitySection({ user }: { user: User }) {
     '?'
 
   return (
-    <SettingsCard title={t('profile.account.title')}>
+    <Card title={t('profile.account.title')} capped>
       <div className="flex items-center gap-4">
         <Avatar className="size-12">
           <AvatarFallback>{initials}</AvatarFallback>
@@ -123,7 +123,7 @@ export function ProfileIdentitySection({ user }: { user: User }) {
           )}
         </div>
       </div>
-    </SettingsCard>
+    </Card>
   )
 }
 

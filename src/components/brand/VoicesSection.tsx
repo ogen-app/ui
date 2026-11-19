@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { LibrarySelectionBar } from '@/components/brand/librarySelection'
 import {
   useLibrarySelection,
@@ -15,7 +16,6 @@ import {
   OriginLine,
   PlainActionCard,
   StarterCard,
-  StarterGroup,
 } from './shell'
 import { VOICE_STARTERS, voiceStarterCopy } from './starters'
 import { MIN_VOICE_SAMPLES, type BrandVoice } from './types'
@@ -115,24 +115,26 @@ function VoicesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
   const { t } = useTranslation()
   const { tone } = brandSection('voices')
   return (
-    <StarterGroup
-      title={t('brand.voices.starterGroupTitle')}
-      body={t('brand.voices.starterGroupBody')}
-    >
-      {VOICE_STARTERS.map((starter) => {
-        const copy = voiceStarterCopy(t, starter)
-        return (
-          <StarterCard
-            key={starter.id}
-            icon={starter.icon}
-            tone={tone}
-            title={copy.title}
-            body={copy.body}
-            onClick={onStart ? () => onStart(starter.id) : undefined}
-          />
-        )
-      })}
-    </StarterGroup>
+    <Card title={t('brand.voices.starterGroupTitle')} capped>
+      <p className="text-sm text-secondary-foreground">
+        {t('brand.voices.starterGroupBody')}
+      </p>
+      <div className="grid gap-3">
+        {VOICE_STARTERS.map((starter) => {
+          const copy = voiceStarterCopy(t, starter)
+          return (
+            <StarterCard
+              key={starter.id}
+              icon={starter.icon}
+              tone={tone}
+              title={copy.title}
+              body={copy.body}
+              onClick={onStart ? () => onStart(starter.id) : undefined}
+            />
+          )
+        })}
+      </div>
+    </Card>
   )
 }
 

@@ -70,7 +70,7 @@ describe('PostFirstCommentCard — drafting', () => {
     )
     const user = userEvent.setup()
 
-    await user.click(screen.getByRole('button', { name: 'ADD FIRST COMMENT' }))
+    await user.click(screen.getByRole('button', { name: 'Add first comment' }))
     await user.type(screen.getByLabelText('First comment'), 'Link ')
 
     // The trailing space survives in the field — the server trims what it
@@ -112,7 +112,7 @@ describe('PostFirstCommentCard — drafting', () => {
     expect(screen.getByText('6 / 4')).toHaveClass('text-destructive')
   })
 
-  it('clears the comment and its delay on REMOVE', async () => {
+  it('clears the comment and its delay on Remove', async () => {
     let latest: Post | undefined
     await renderWithProviders(
       <Harness
@@ -126,11 +126,11 @@ describe('PostFirstCommentCard — drafting', () => {
     )
     await userEvent
       .setup()
-      .click(screen.getByRole('button', { name: 'REMOVE' }))
+      .click(screen.getByRole('button', { name: 'Remove' }))
     expect(latest?.first_comment).toBe('')
     expect(latest?.first_comment_delay_minutes).toBe(0)
     expect(
-      screen.getByRole('button', { name: 'ADD FIRST COMMENT' }),
+      screen.getByRole('button', { name: 'Add first comment' }),
     ).toBeInTheDocument()
   })
 })
@@ -221,11 +221,11 @@ describe('PostFirstCommentCard — localisation', () => {
         <Harness initial={makePost({ first_comment: COMMENT })} limit={1250} />,
       )
       expect(screen.getByText('Primer comentario')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'QUITAR' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Quitar' })).toBeInTheDocument()
       expect(screen.getByText('Publicarlo')).toBeInTheDocument()
       expect(screen.queryByText('First comment')).not.toBeInTheDocument()
       expect(screen.queryByText('Post it')).not.toBeInTheDocument()
-      expect(screen.queryByText('REMOVE')).not.toBeInTheDocument()
+      expect(screen.queryByText('Remove')).not.toBeInTheDocument()
     } finally {
       await i18next.changeLanguage('en')
     }

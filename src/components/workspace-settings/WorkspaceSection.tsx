@@ -1,15 +1,14 @@
 import { memo, useCallback, useId, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowsLeftRightIcon } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
+import { ArrowDataTransferHorizontalIcon } from '@hugeicons/core-free-icons'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { useRegisterSettingsSave } from '@/components/settings/settingsSave'
 import { useWorkspace, useUpdateWorkspace } from '@/hooks/useWorkspaces'
 import { canManageWorkspace, type Workspace } from '@/types/workspace'
-import { ReadOnlyField, SettingsRow } from './SettingsRow'
+import { ReadOnlyField } from './SettingsRow'
 
 /**
  * The current workspace's own settings: name, slug, time zone.
@@ -23,61 +22,48 @@ function WorkspaceSectionComponent() {
   const workspace = useWorkspace()
   const navigate = useNavigate()
 
+  // Every card has a title, and this one's is the workspace's own name — so
+  // until the workspace is read, the title says that it is being read.
+  if (!workspace) return <Card title={t('common.loading')} capped />
+
   return (
-    <SettingsCard>
-      {!workspace ? (
-        <p className="text-sm text-tertiary-foreground">
-          {t('common.loading')}
-        </p>
-      ) : (
-        <ul className="flex flex-col">
-          {/* No card h2 here — the row title doubles as the section heading,
-              e.g. "BN Digital Workspace". The whole phrase is one key: the
-              name does not sit in the same place in every language. */}
-          <SettingsRow
-            title={t('workspaceSettings.workspace.rowTitle', {
-              name: workspace.name,
-            })}
-            actions={
-              // The way out of this card: everything in it describes one
-              // workspace, so the other ones belong behind a single move.
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate({ to: '/workspaces' })}
-              >
-                <ArrowsLeftRightIcon />
-                <span>{t('workspaceSettings.workspace.switch')}</span>
-              </Button>
-            }
-          >
-            <div className="flex flex-col gap-5">
-              {/* Same two-column body as the platform rows, so the fields line
-                  up and stretch across the card. */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
-                <NameField workspace={workspace} />
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
-                <ReadOnlyField
-                  label={t('workspaceSettings.workspace.slugLabel')}
-                  value={workspace.slug}
-                  description={t('workspaceSettings.workspace.slugNote')}
-                />
-                {/* Not a control yet, and shown rather than hidden because
-                    "what time zone am I scheduling in" is a question the
-                    calendar makes people ask. */}
-                <ReadOnlyField
-                  label={t('workspaceSettings.workspace.timeZoneLabel')}
-                  value="UTC"
-                  description={t('workspaceSettings.workspace.timeZoneNote')}
-                />
-              </div>
-            </div>
-          </SettingsRow>
-        </ul>
-      )}
-    </SettingsCard>
+    // The workspace's name is the heading, e.g. "BN Digital Workspace". The
+    // whole phrase is one key: the name does not sit in the same place in
+    // every language.
+    <Card
+      title={t('workspaceSettings.workspace.rowTitle', {
+        name: workspace.name,
+      })}
+      // The way out of this card: everything in it describes one workspace,
+      // so the other ones belong behind a single move.
+      action={{
+        label: t('workspaceSettings.workspace.switch'),
+        icon: ArrowDataTransferHorizontalIcon,
+        onClick: () => void navigate({ to: '/workspaces' }),
+      }}
+      capped
+    >
+      {/* Same two-column body as the platform rows, so the fields line up
+          and stretch across the card. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
+        <NameField workspace={workspace} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+        <ReadOnlyField
+          label={t('workspaceSettings.workspace.slugLabel')}
+          value={workspace.slug}
+          description={t('workspaceSettings.workspace.slugNote')}
+        />
+        {/* Not a control yet, and shown rather than hidden because "what time
+            zone am I scheduling in" is a question the calendar makes people
+            ask. */}
+        <ReadOnlyField
+          label={t('workspaceSettings.workspace.timeZoneLabel')}
+          value="UTC"
+          description={t('workspaceSettings.workspace.timeZoneNote')}
+        />
+      </div>
+    </Card>
   )
 }
 

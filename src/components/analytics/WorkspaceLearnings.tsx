@@ -5,12 +5,12 @@ import {
   TrendUpIcon,
 } from '@phosphor-icons/react'
 import { Trans, useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib'
 import { formatList, formatNumber } from '@/lib/intl'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DecayCurve, SlotHeatmap } from './charts'
-import { Picker } from './ComparisonBar'
-import { Basis, NotYet, SectionCard } from './shell'
+import { Basis, NotYet, ScopeNote } from './shell'
 import { formatHours, shortWeekdays } from './format'
 import {
   LEARNINGS_METRICS,
@@ -222,7 +222,7 @@ export function WorkspaceLearningsView({
 /**
  * The card's frame, so every withdrawal keeps the heading it withdrew from.
  *
- * `scope="all-time"` is the load-bearing prop: it prints the line saying the
+ * The `ScopeNote` is the load-bearing line: it says the
  * period picker above does not reach this card, which is the difference between
  * a standing lesson and a figure for the month.
  */
@@ -243,26 +243,27 @@ function Shell({
 }) {
   const { t } = useTranslation()
   return (
-    <SectionCard
+    <Card
+      capped
       title={t('analytics.learned.title')}
-      scope={campaignNarrowed ? 'all-time-workspace' : 'all-time'}
       qualifier={qualifier}
-      status={
-        withPicker ? (
-          <Picker
-            label={t('analytics.learned.metric')}
-            value={metricLabel(t, metric)}
-            options={LEARNINGS_METRICS.map((id) => ({
-              value: id,
-              label: metricLabel(t, id),
-            }))}
-            onChange={(v) => onChangeMetric(v as LearningsMetric)}
-          />
-        ) : undefined
+      choice={
+        withPicker
+          ? {
+              label: t('analytics.learned.metric'),
+              value: metric,
+              options: LEARNINGS_METRICS.map((id) => ({
+                id,
+                displayValue: metricLabel(t, id),
+              })),
+              onChange: (v: string) => onChangeMetric(v as LearningsMetric),
+            }
+          : undefined
       }
     >
+      <ScopeNote scope={campaignNarrowed ? 'all-time-workspace' : 'all-time'} />
       {children}
-    </SectionCard>
+    </Card>
   )
 }
 

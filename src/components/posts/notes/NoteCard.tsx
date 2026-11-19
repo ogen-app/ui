@@ -129,7 +129,7 @@ export function NoteCard({ note, onSave, onDelete, className }: Props) {
             <div className="flex items-center gap-2">
               <Button
                 type="button"
-                variant="destructive"
+                variant="destructiveInverted"
                 size="sm"
                 disabled={removing}
                 loading={removing}

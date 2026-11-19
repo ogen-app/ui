@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatList, formatNumber } from '@/lib/intl'
 import { PaceBar, RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
-import { Picker } from './ComparisonBar'
-import { Basis, NotYet, SectionCard } from './shell'
+import { Basis, NotYet } from './shell'
 import { periodPhrase } from './format'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import {
@@ -129,25 +129,26 @@ function Shell({
 }) {
   const { t } = useTranslation()
   return (
-    <SectionCard
+    <Card
+      capped
       title={t('analytics.performers.title')}
       qualifier={qualifier}
-      status={
-        withPicker ? (
-          <Picker
-            label={t('analytics.performers.by')}
-            value={basisLabel(t, by)}
-            options={PERFORMER_BASES.map((id) => ({
-              value: id,
-              label: basisLabel(t, id),
-            }))}
-            onChange={(v) => onChangeBasis(v as PerformerSort)}
-          />
-        ) : undefined
+      choice={
+        withPicker
+          ? {
+              label: t('analytics.performers.by'),
+              value: by,
+              options: PERFORMER_BASES.map((id) => ({
+                id,
+                displayValue: basisLabel(t, id),
+              })),
+              onChange: (v: string) => onChangeBasis(v as PerformerSort),
+            }
+          : undefined
       }
     >
       {children}
-    </SectionCard>
+    </Card>
   )
 }
 

@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NowSection } from './ComparisonSections'
 import { PerformersSection } from './PerformersSection'
 import { PlatformFilter } from './PlatformFilter'
 import { QualitySection } from './QualitySection'
-import { NotYet, SectionCard } from './shell'
+import { NotYet } from './shell'
 import type { AnalyticsScope, AnalyticsSurfaceState, Period } from './types'
 
 /**
@@ -62,11 +63,11 @@ export function AnalyticsSurface({
   if (state.isUnavailable) {
     return (
       <Wrapper>
-        <SectionCard title={t('analytics.surface.title')}>
+        <Card capped title={t('analytics.surface.title')}>
           <NotYet title={t('analytics.surface.unavailableTitle')}>
             {t('analytics.surface.unavailableBody')}
           </NotYet>
-        </SectionCard>
+        </Card>
       </Wrapper>
     )
   }
@@ -74,13 +75,13 @@ export function AnalyticsSurface({
   if (state.isError || !state.data) {
     return (
       <Wrapper>
-        <SectionCard title={t('analytics.surface.title')}>
+        <Card capped title={t('analytics.surface.title')}>
           <NotYet title={t('analytics.surface.errorTitle')}>
             {scope.kind === 'campaign'
               ? t('analytics.surface.errorBodyCampaign')
               : t('analytics.surface.errorBodyWorkspace')}
           </NotYet>
-        </SectionCard>
+        </Card>
       </Wrapper>
     )
   }
@@ -108,7 +109,7 @@ export function AnalyticsSurface({
             would be counted, and a scope line that appears only once figures
             arrive is one nobody knows they can change. */}
         {scopeBar}
-        <SectionCard title={t('analytics.now.title')} scope="lens">
+        <Card capped title={t('analytics.now.title')}>
           <NotYet title={t('analytics.surface.coldTitle')}>
             {now.coverage.published === 0
               ? t('analytics.surface.coldNothingPublished')
@@ -116,7 +117,7 @@ export function AnalyticsSurface({
                   count: now.coverage.published,
                 })}
           </NotYet>
-        </SectionCard>
+        </Card>
       </Wrapper>
     )
   }

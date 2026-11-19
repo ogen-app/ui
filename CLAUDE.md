@@ -132,15 +132,15 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   [`docs/colors.md`](./docs/colors.md).
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
-- **Destructive-action labels are written in literal capitals** — `DELETE
-  CAMPAIGN`, not `Delete campaign` with a `uppercase` class. The caps are part
-  of the copy (they survive copy/paste, screen readers, and any restyle), so
-  never swap them for CSS casing and never "sentence-case" them back. Applies
-  to every Danger Zone / irreversible action across the app. Leave the button
-  styling alone — this is a copy rule, not a style rule. **The one exception is
-  a dropdown menu row**, which is sentence case like the rows around it
-  (`Delete campaign`, a `menuItem` key beside the button's `action`); the
-  caps are the buttons' and the confirm modals'.
+- **Button labels on cards and the commit panel are sentence case** —
+  `Delete campaign`, `Fix with Ogen`, `Save`, destructive or not (decided
+  2026-11-19, replacing the old literal-capitals rule). Write the casing into
+  the copy, never with an `uppercase` class. Labels elsewhere that are still in
+  capitals move to sentence case as their screens join `ui/card`.
+- **A destructive button is red in its body or in its icon** — never grey, and
+  never a pale red tint. The way in (Danger Zone, Remove) is `destructive`:
+  white with a border and the icon in the danger colour, so it always has an
+  icon. The step that does it (a dialog's confirm) is `destructiveInverted`.
 - **Design harnesses live on `design/*` branches, never on `develop`.** A
   harness is a `/design/<feature>` route rendering every state of a component
   from fixtures, and it needs an exemption in `__root.tsx` `beforeLoad` to open

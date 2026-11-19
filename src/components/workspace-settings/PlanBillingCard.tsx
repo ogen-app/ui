@@ -5,7 +5,7 @@ import { Link } from '@tanstack/react-router'
 import { ArrowSquareOutIcon, SealCheckIcon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { SettingsRow } from '@/components/workspace-settings/SettingsRow'
 import { formatDay } from '@/components/entitlements/parts'
 import { usePlanStatement } from '@/hooks/usePlanStatement'
@@ -102,7 +102,7 @@ export function PlanBillingCard({
   const subscription = billing?.subscription ?? null
 
   return (
-    <SettingsCard title={t('tiers.billingTitle')}>
+    <Card title={t('tiers.billingTitle')} capped>
       <ul className="flex flex-col divide-y divide-border">
         <SettingsRow>
           <PlanBanner
@@ -185,7 +185,7 @@ export function PlanBillingCard({
           />
         )}
       </ul>
-    </SettingsCard>
+    </Card>
   )
 }
 

@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { CheckCircleIcon, WarningIcon } from '@phosphor-icons/react'
+import { Alert02Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { LineItem } from '@/components/ui/line-item'
-import {
-  OverviewCard,
-  SectionLink,
-} from '@/components/campaigns/overview/OverviewCard'
+import { SectionLink } from '@/components/campaigns/overview/OverviewCard'
 import { useWorkspaceWarnings } from '@/hooks/useWorkspaceWarnings'
 import { counted, formatList, formatNumber } from '@/lib/intl'
 import type { WorkspaceWarning } from '@/lib/workspaceWarnings'
@@ -75,15 +73,16 @@ export function NeedsYouCard() {
 
   if (urgent.length === 0) {
     return (
-      <OverviewCard
+      <Card
+        capped
+        icon={CheckmarkCircle02Icon}
+        tone="var(--positive)"
         title={t('activity.needsYou.allSet')}
-        icon={<CheckCircleIcon className="size-5 text-positive" aria-hidden />}
-        className="gap-2"
       >
         <p className="text-sm text-secondary-foreground">
           {t('activity.needsYou.allSetBody')}
         </p>
-      </OverviewCard>
+      </Card>
     )
   }
 
@@ -93,14 +92,12 @@ export function NeedsYouCard() {
   const hidden = urgent.length - shown.length
 
   return (
-    <OverviewCard
+    <Card
+      capped
+      icon={Alert02Icon}
+      tone="var(--warning)"
       title={t('activity.needsYou.title')}
-      icon={<WarningIcon className="size-5 text-warning" aria-hidden />}
-      status={
-        <span className="text-sm text-secondary-foreground">
-          {formatNumber(urgent.length)}
-        </span>
-      }
+      status={{ label: formatNumber(urgent.length), tone: 'warn' }}
     >
       <ul className="flex flex-col">
         {shown.map((w) => (
@@ -139,6 +136,6 @@ export function NeedsYouCard() {
           </li>
         )}
       </ul>
-    </OverviewCard>
+    </Card>
   )
 }

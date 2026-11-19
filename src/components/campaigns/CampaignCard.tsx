@@ -148,14 +148,14 @@ function CampaignActions({
             onSelect={() => ask('archive')}
           >
             <ArchiveIcon />
-            <span>{t('campaigns.dangerZone.archive.menuItem')}</span>
+            <span>{t('campaigns.dangerZone.archive.action')}</span>
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
             onSelect={() => ask('delete')}
           >
             <TrashIcon />
-            <span>{t('campaigns.dangerZone.delete.menuItem')}</span>
+            <span>{t('campaigns.dangerZone.delete.action')}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -274,7 +274,7 @@ export function CampaignRow({
           )}
         >
           <div className="self-baseline">
-            <ProgressHeader stage={model.stage} band={model.band} size="row" />
+            <ProgressHeader stage={model.stage} band={model.band} />
           </div>
           <div className="flex min-w-0 flex-col gap-1.5 text-sm/5">
             <div className="flex h-5 items-center">
