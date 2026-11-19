@@ -45,8 +45,8 @@ export const BRIEF_FIELD_LABELS: Record<BriefField, string> = {
  *
  * This does not count *having* a voice as part of readiness. It should — an
  * unbound campaign is exactly as incomplete as one with no tone written — but
- * the binding would make a pure derivation fetch, so it is the attention rail's
- * job rather than this one's.
+ * the binding would make a pure derivation fetch, so it is the Overview's to-do
+ * list's job rather than this one's.
  */
 const BRIEF_FIELDS: BriefField[] = ['description', 'key_messages']
 
@@ -331,18 +331,8 @@ export type AttentionItem = {
 }
 
 /**
- * Rows the rail shows before collapsing the rest behind "+N more".
- *
- * Three, because the rail is the top of a screen with five cards under it and
- * a to-do list long enough to scroll is one the user reads as a wall rather
- * than as a shortlist. Items arrive sorted by severity, so the three that show
- * are always the three that matter most.
- */
-export const MAX_ATTENTION_ITEMS = 3
-
-/**
  * Worst first. Exported because a list that merges several campaigns' items
- * has to order them by the same scale the rail does, and a second copy of this
+ * has to order them by the same scale the Overview does, and a second copy of this
  * map is a second opinion waiting to drift.
  */
 export const ATTENTION_SEVERITY_RANK: Record<AttentionSeverity, number> = {
@@ -384,7 +374,8 @@ function isOpen(status: PostStatus): boolean {
 }
 
 /**
- * The prioritized to-do list for the attention rail, sorted by severity and,
+ * The prioritized list behind the Overview's Warnings (`alert`, `risk`) and
+ * To do (`todo`, `info`) cards, sorted by severity and,
  * within a severity, by the catalogue order of docs/attention-rules.md (the
  * order a user would naturally work through). `now` is a parameter, never read
  * from the clock in here, so every time-based rule stays testable.

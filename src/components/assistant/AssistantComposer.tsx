@@ -84,11 +84,9 @@ export function AssistantComposer({
   }
 
   return (
-    // No fill of its own. The panel's bottom fader is the surface here, and a
-    // slab of `bg-primary` on top of it hides whatever part of the ramp reaches
-    // this row — the fade then appears to start at the composer's top edge
-    // instead of running through it.
-    <div className="relative flex items-end gap-2 px-4 py-3">
+    // No fill of its own: the panel's footer section is the surface. No side
+    // padding either — the section's 8px is the row's.
+    <div className="relative flex items-end gap-2 py-3">
       {/* The field's fill. First in the DOM and the only absolute box here, so
           every (position: relative) button above paints over it. At rest it
           stops short of the send button; opening it runs the fill the whole
@@ -99,8 +97,10 @@ export function AssistantComposer({
         className={cn(
           'absolute bg-tertiary transition-[top,right,bottom,left] duration-200 ease-out',
           // At rest the fill is exactly the row — the same band as the
-          // buttons. Open, it bleeds 4px past it on every side.
-          active ? 'inset-y-1 left-2 right-2' : 'inset-y-3 left-13 right-13',
+          // buttons, 4px into the gap beside each. Open, it takes the whole
+          // footer section: its full height, and out through the section's
+          // 8px to both edges.
+          active ? 'inset-y-0 -left-2 -right-2' : 'inset-y-3 left-9 right-9',
         )}
       />
 
@@ -192,12 +192,17 @@ export function AssistantComposer({
         </Button>
       ) : (
         <Button
-          variant="ghost"
+          // Ogen's teal once there is something to send — the Ask Ogen
+          // button's own fill — and a quiet white square until then.
+          variant={canSend ? 'accent' : 'ghost'}
           size="smIcon"
           onClick={submit}
           disabled={!canSend}
           aria-label={t('assistant.composer.send')}
-          className="self-end bg-primary disabled:text-senary-foreground"
+          className={cn(
+            'self-end',
+            !canSend && 'bg-primary disabled:text-senary-foreground',
+          )}
         >
           <PaperPlaneRightIcon />
         </Button>
