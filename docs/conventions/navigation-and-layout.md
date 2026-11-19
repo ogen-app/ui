@@ -159,7 +159,8 @@ keep it accurate when these rules change.
   (`TopBar`), which belongs to the app rather than the page — the floating
   bottom-right trigger is gone. Bottom-left and bottom-right stay empty. A bar
   belongs to **editor** screens only (post, asset, brief, settings) — a list has creation, not
-  commit, so `ADD CAMPAIGN` stays top-right. The bar must anchor to the
+  commit, so `ADD CAMPAIGN` stays top-right, and so do the Assets list's ADD
+  and the posts list's `ADD POST`. The bar must anchor to the
   *content column*, not the scroller (it would scroll away) and not the
   viewport (it would drift off the column when the right rail opens); pages
   using one leave `PAGE_ACTION_BAR_INSET` at the bottom of their content.

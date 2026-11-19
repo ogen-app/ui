@@ -5074,8 +5074,11 @@ export const en = {
      */
     columnTitle: 'Title',
     columnStatus: 'Status',
-    /** Where a post written from general knowledge says so (CON-484). */
-    columnGrounding: 'Sources',
+    /**
+     * What is wrong with the post, as a mark only; the words are in the
+     * drawer it opens (`warnings` below).
+     */
+    columnWarnings: 'Warnings',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
     /** Only on the workspace's list, where the rows come from every campaign. */
@@ -5086,12 +5089,6 @@ export const en = {
 
     /** A post with no publish date, in either date column. */
     notSet: 'Not scheduled',
-
-    /** The toolbar's line: the posts listed, and what a filter left of them. */
-    count_one: '{{formatted}} post',
-    count_other: '{{formatted}} posts',
-    countOf_one: '{{formatted}} of {{total}} posts',
-    countOf_other: '{{formatted}} of {{total}} posts',
 
     /** The table with no rows in it — the campaign has posts, this filter doesn't. */
     noPosts: 'No posts',
@@ -5123,6 +5120,76 @@ export const en = {
     inDays_other: 'In {{count}} days',
     daysAgo_one: '{{count}} day ago',
     daysAgo_other: '{{count}} days ago',
+
+    /**
+     * The Warnings column and the drawer it opens: what the list can tell is
+     * wrong with a post from the list alone (`lib/postWarnings`). The editor's
+     * Quality checks go further; these are the ones worth a mark in a row.
+     */
+    warnings: {
+      /** The row's mark, read aloud: it opens the drawer. */
+      open_one: '{{formatted}} warning on {{title}}',
+      open_other: '{{formatted}} warnings on {{title}}',
+      panelTitle: 'Warnings',
+      openPost: 'Open post',
+      /** The post was fixed, or left the list, while the drawer was open. */
+      none: 'Nothing to fix on this post any more.',
+      kind: {
+        failed: {
+          title: 'Publishing failed',
+          detail:
+            'The platform refused it. Open the post to see why and try again.',
+        },
+        missed: {
+          title: 'Missed its date',
+          detail:
+            'Its publish time passed without it going out. Give it a new date.',
+        },
+        noPlatform: {
+          title: 'No platform',
+          detail: 'Choose where it publishes before it can be scheduled.',
+        },
+        noAccount: {
+          title: 'No account connected',
+          detail:
+            'Nothing is connected for its platform. Connect an account in Workspace Settings.',
+        },
+        chooseAccount: {
+          title: 'Choose an account',
+          detail:
+            'More than one account is connected for its platform. Pick the one it publishes as.',
+        },
+        accountGone: {
+          title: 'Account disconnected',
+          detail:
+            'The account it was set to publish as is no longer connected. Choose another.',
+        },
+        outsidePlatform: {
+          title: 'Not a platform of this campaign',
+          detail:
+            'The campaign no longer targets this platform. Move the post, or add the platform back to the campaign.',
+        },
+        outsidePostType: {
+          title: 'Not a post type of this campaign',
+          detail:
+            'The campaign no longer takes this post type on this platform. Choose another type.',
+        },
+        notGrounded: {
+          title: 'Written without sources',
+          detail:
+            'It was generated from general knowledge rather than from the campaign’s own material.',
+        },
+      },
+    },
+
+    /**
+     * ADD POST on the all-campaigns list: a post belongs to one campaign, so
+     * the button asks which before it makes one.
+     */
+    chooseCampaign: {
+      title: 'Add a post to which campaign?',
+      description: 'A post belongs to one campaign. Pick where this one goes.',
+    },
   },
 
   /**

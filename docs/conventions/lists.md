@@ -90,3 +90,19 @@ keep it accurate when these rules change.
   "Selected 2 posts" says — on a calendar the server keeps only the posts on
   screen (CON-486); the posts list marks a filter the assistant set until it
   changes (`viewContextStore.assistantFilter`).
+
+- **The posts list is a header, a sentence and a table — nothing between.**
+  Both lists, a campaign's and the workspace's, sit in `PostsListFrame`:
+  ADD POST in the header's top-right (on the workspace list it asks which
+  campaign in a modal), then the filter sentence, then the table. There is no
+  count line: the sentence says "3 of 21" while a filter narrows the list and
+  nothing when it doesn't. The bulk bar floats over the list's foot, as on the
+  calendar. **What is wrong with a post is one column of marks** after Status
+  (`lib/postWarnings`): read off the list payload alone — a failed or missed
+  publish, no platform, no account it can publish as, outside its campaign's
+  platforms or post types (CON-483), written without sources (CON-484) — and
+  pressing a mark opens the drawer that says each in words. The editor's
+  Quality checks need a fetch per post and stay in the editor, so a clean row
+  is not a promise the post will publish. A filter that leaves nothing is the
+  shared `smartFilter/NoMatches`: a washed sketch of the list, the
+  illustration, and the one removal that brings the most back.

@@ -165,12 +165,14 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
   }
 }
 
-function useCreatePost(campaignId: string) {
+function useCreatePost() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: PostPayload) => createPost(payload),
-    onSuccess: () => {
-      invalidateCampaignPosts(qc, campaignId)
+    // The payload's campaign rather than one bound to the hook: the workspace
+    // calendar picks it per click.
+    onSuccess: (_post, payload) => {
+      invalidateCampaignPosts(qc, payload.campaign_id)
       // An idea's post count and its MADE INTO list count this post (CON-470).
       void qc.invalidateQueries({ queryKey: ['ideas'] })
     },
@@ -187,10 +189,22 @@ function useCreatePost(campaignId: string) {
  * TypeScript rejects the bare form.
  */
 export function useAddPost(campaignId: string) {
-  const createPost = useCreatePost(campaignId)
+  const addPostTo = useAddPostTo()
+  return useCallback(
+    (day?: Date) => addPostTo(campaignId, day),
+    [addPostTo, campaignId],
+  )
+}
+
+/**
+ * `useAddPost` with the campaign named per call — for the workspace calendar,
+ * where the grid has no campaign and the user picks one for each post.
+ */
+export function useAddPostTo() {
+  const createPost = useCreatePost()
   const navigate = useNavigate()
   return useCallback(
-    (day?: Date) => {
+    (campaignId: string, day?: Date) => {
       const scheduled_at = day ? atDefaultTime(day) : undefined
       createPost.mutate(
         { campaign_id: campaignId, scheduled_at },
@@ -204,7 +218,7 @@ export function useAddPost(campaignId: string) {
         },
       )
     },
-    [createPost, navigate, campaignId],
+    [createPost, navigate],
   )
 }
 
@@ -275,7 +289,7 @@ function duplicatePayload(post: Post, title: string): PostPayload {
  * taken to is indistinguishable from a button that did nothing.
  */
 export function useDuplicatePost(campaignId: string) {
-  const create = useCreatePost(campaignId)
+  const create = useCreatePost()
   const navigate = useNavigate()
   const { t } = useTranslation()
 

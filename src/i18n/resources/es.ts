@@ -4309,7 +4309,7 @@ export const es: Translation = {
 
     columnTitle: 'Título',
     columnStatus: 'Estado',
-    columnGrounding: 'Fuentes',
+    columnWarnings: 'Avisos',
     columnPlatform: 'Plataforma',
     columnFormat: 'Formato',
     columnCampaign: 'Campaña',
@@ -4318,11 +4318,6 @@ export const es: Translation = {
     columnWhen: 'Cuándo',
 
     notSet: 'Sin programar',
-
-    count_one: '{{formatted}} publicación',
-    count_other: '{{formatted}} publicaciones',
-    countOf_one: '{{formatted}} de {{total}} publicaciones',
-    countOf_other: '{{formatted}} de {{total}} publicaciones',
 
     noPosts: 'No hay publicaciones',
 
@@ -4343,6 +4338,66 @@ export const es: Translation = {
     inDays_other: 'Dentro de {{count}} días',
     daysAgo_one: 'Hace {{count}} día',
     daysAgo_other: 'Hace {{count}} días',
+
+    warnings: {
+      open_one: '{{formatted}} aviso en {{title}}',
+      open_other: '{{formatted}} avisos en {{title}}',
+      panelTitle: 'Avisos',
+      openPost: 'Abrir publicación',
+      none: 'Ya no hay nada que corregir en esta publicación.',
+      kind: {
+        failed: {
+          title: 'No se pudo publicar',
+          detail:
+            'La plataforma la rechazó. Abre la publicación para ver por qué y vuelve a intentarlo.',
+        },
+        missed: {
+          title: 'Se pasó la fecha',
+          detail:
+            'Su hora de publicación pasó sin que saliera. Dale una fecha nueva.',
+        },
+        noPlatform: {
+          title: 'Sin plataforma',
+          detail: 'Elige dónde se publica antes de poder programarla.',
+        },
+        noAccount: {
+          title: 'Ninguna cuenta conectada',
+          detail:
+            'No hay nada conectado para su plataforma. Conecta una cuenta en Ajustes del espacio.',
+        },
+        chooseAccount: {
+          title: 'Elige una cuenta',
+          detail:
+            'Hay más de una cuenta conectada para su plataforma. Elige con cuál se publica.',
+        },
+        accountGone: {
+          title: 'Cuenta desconectada',
+          detail:
+            'La cuenta con la que iba a publicarse ya no está conectada. Elige otra.',
+        },
+        outsidePlatform: {
+          title: 'No es una plataforma de esta campaña',
+          detail:
+            'La campaña ya no usa esta plataforma. Mueve la publicación o vuelve a añadir la plataforma a la campaña.',
+        },
+        outsidePostType: {
+          title: 'No es un tipo de publicación de esta campaña',
+          detail:
+            'La campaña ya no admite este tipo de publicación en esta plataforma. Elige otro tipo.',
+        },
+        notGrounded: {
+          title: 'Escrita sin fuentes',
+          detail:
+            'Se generó a partir de conocimiento general, no del material propio de la campaña.',
+        },
+      },
+    },
+
+    chooseCampaign: {
+      title: '¿A qué campaña añades la publicación?',
+      description:
+        'Una publicación pertenece a una sola campaña. Elige dónde va esta.',
+    },
   },
 
   analytics: {
