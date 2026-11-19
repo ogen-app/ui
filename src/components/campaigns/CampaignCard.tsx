@@ -1,6 +1,18 @@
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { ArchiveIcon, DotsThreeIcon, TrashIcon } from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button.tsx'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
+import { placeGlyph } from '@/components/layout/nav/placeGlyph'
+import { useEndCampaign } from '@/components/campaigns/useEndCampaign'
 import {
   Bar,
   BandBar,
@@ -60,32 +72,103 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
     now,
   })
 
+  const name = campaign.name.trim() || t('nav.untitledCampaign')
+
   return (
-    // The whole row is the link, named for what it opens rather than read out
-    // as every figure and warning in one breath.
-    <Link
-      to="/campaigns/$campaignId/overview"
-      params={{ campaignId: campaign.id }}
-      aria-label={t('campaigns.list.open', {
-        name: campaign.name.trim() || t('nav.untitledCampaign'),
-      })}
-      className="block min-w-0"
-    >
-      <CampaignRow
-        campaign={campaign}
-        model={model}
-        platforms={overviewPlatforms(campaign, platformViews)}
-        loading={posts === null && !summariesQuery.isError}
-        failed={summariesQuery.isError}
-      />
-    </Link>
+    // `group` so the row keeps its lift while the pointer is on the menu
+    // button, which sits over the row but outside its link.
+    <div className="group relative min-w-0">
+      {/* The whole row is the link, named for what it opens rather than read
+          out as every figure and warning in one breath. */}
+      <Link
+        to="/campaigns/$campaignId/overview"
+        params={{ campaignId: campaign.id }}
+        aria-label={t('campaigns.list.open', { name })}
+        className="block min-w-0"
+      >
+        <CampaignRow
+          campaign={campaign}
+          model={model}
+          platforms={overviewPlatforms(campaign, platformViews)}
+          loading={posts === null && !summariesQuery.isError}
+          failed={summariesQuery.isError}
+        />
+      </Link>
+      <CampaignActions campaign={campaign} name={name} />
+    </div>
+  )
+}
+
+/**
+ * The row's three dots: what can be done to the campaign without opening it —
+ * the same three that end the campaign's menu in the top bar
+ * (`CampaignSwitcher`), with the same modals (`useEndCampaign`). Here because
+ * a test campaign is most often got rid of from the list it clutters.
+ *
+ * A sibling of the row's link, laid over its top-right corner, because a
+ * button can't sit inside a link; the row keeps that corner clear for it.
+ */
+function CampaignActions({
+  campaign,
+  name,
+}: {
+  campaign: Campaign
+  name: string
+}) {
+  const { t } = useTranslation()
+  const { ask, dialogs } = useEndCampaign(campaign)
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="smIcon"
+            aria-label={t('campaigns.list.actions', { name })}
+            className="absolute top-4 right-3 text-tertiary-foreground hover:text-primary-foreground data-[state=open]:text-primary-foreground"
+          >
+            <DotsThreeIcon weight="bold" className="size-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <Link
+              to="/campaigns/$campaignId/settings"
+              params={{ campaignId: campaign.id }}
+            >
+              {/* The rail's own gear, so the two read as one place. */}
+              <NavIcon icon={placeGlyph('settings').icon} size={16} />
+              <span>{t('nav.scope.settings')}</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={() => ask('archive')}
+          >
+            <ArchiveIcon />
+            <span>{t('campaigns.dangerZone.archive.menuItem')}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={() => ask('delete')}
+          >
+            <TrashIcon />
+            <span>{t('campaigns.dangerZone.delete.menuItem')}</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {dialogs}
+    </>
   )
 }
 
 /**
  * The row itself, from a model — split from the reads so the design harness
  * can draw every stage from fixtures. It sits inside the link the list wraps
- * it in, so nothing in it is a link or a button.
+ * it in, so nothing in it is a link or a button; its top-right corner is kept
+ * clear for the menu button laid over it (`CampaignActions`).
  *
  * Every column is a head and two lines of body text: the type and the
  * channels; the bar and what it counts; the first two things that want the
@@ -141,7 +224,7 @@ export function CampaignRow({
   return (
     // The columns answer to the row's own width: three across on a wide page;
     // narrower, the name over the other two; narrowest, one under another.
-    <div className="@container rounded-md border border-border bg-primary px-5 py-4 transition-shadow duration-150 hover:shadow-lg">
+    <div className="@container rounded-md border border-border bg-primary py-4 pr-14 pl-5 transition-shadow duration-150 group-hover:shadow-lg hover:shadow-lg">
       <div
         className={cn(
           'grid gap-y-4',

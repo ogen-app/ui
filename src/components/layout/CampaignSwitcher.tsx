@@ -154,7 +154,7 @@ export function CampaignSwitcher() {
                   onSelect={() => end.ask('archive')}
                 >
                   <ArchiveIcon className="size-3.5 shrink-0" />
-                  {t('campaigns.dangerZone.archive.action')}
+                  {t('campaigns.dangerZone.archive.menuItem')}
                 </ChromeMenuItem>
               )}
               <ChromeMenuItem
@@ -162,9 +162,7 @@ export function CampaignSwitcher() {
                 onSelect={() => end.ask('delete')}
               >
                 <TrashIcon className="size-3.5 shrink-0" />
-                {/* Literal caps in every language — see CLAUDE.md on
-                    destructive labels. */}
-                {t('campaigns.dangerZone.delete.action')}
+                {t('campaigns.dangerZone.delete.menuItem')}
               </ChromeMenuItem>
             </>
           )}

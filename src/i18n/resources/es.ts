@@ -6933,6 +6933,7 @@ export const es: Translation = {
         ended: 'Terminadas',
       },
       open: 'Abrir {{name}}',
+      actions: 'Acciones de {{name}}',
       noChannels: 'Sin canales todavía',
       goodShape: 'Todo en orden',
       line: {
@@ -7047,6 +7048,7 @@ export const es: Translation = {
       body: 'Dos maneras de dejar de ejecutar esta campaña. Archivarla lo conserva todo y se puede deshacer; eliminarla borra la campaña y sus publicaciones para siempre.',
       archive: {
         action: 'ARCHIVAR CAMPAÑA',
+        menuItem: 'Archivar campaña',
         confirmTitle: '¿Archivar {{name}}?',
         confirmBody:
           'La campaña sale de la lista de campañas y deja de ofrecerse allí donde se archiva trabajo nuevo. No se borra nada. Sus publicaciones, su calendario, su brief y su contenido siguen tal cual, y puedes recuperarla desde el archivo cuando quieras.',
@@ -7055,6 +7057,7 @@ export const es: Translation = {
       },
       delete: {
         action: 'ELIMINAR CAMPAÑA',
+        menuItem: 'Eliminar campaña',
         confirmTitle: '¿Eliminar {{name}}?',
         confirmBody:
           'Se borran la campaña, sus publicaciones y su calendario, y nada en la aplicación puede recuperarlos. Las publicaciones ya publicadas siguen activas en las redes sociales. Archívala si solo quieres quitarla de la lista.',

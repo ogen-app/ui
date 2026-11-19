@@ -8400,6 +8400,8 @@ export const en = {
       },
       /** The row's link, named for what it opens. */
       open: 'Open {{name}}',
+      /** The row's three-dots button: what can be done to the campaign. */
+      actions: 'Actions for {{name}}',
       noChannels: 'No channels yet',
       /** The third column when nothing wants the user. */
       goodShape: 'In good shape',
@@ -8541,6 +8543,8 @@ export const en = {
       body: 'Two ways to stop running this campaign. Archiving keeps everything and can be undone; deleting removes the campaign and its posts for good.',
       archive: {
         action: 'ARCHIVE CAMPAIGN',
+        /** A dropdown row is sentence case; the caps are the buttons'. */
+        menuItem: 'Archive campaign',
         confirmTitle: 'Archive {{name}}?',
         confirmBody:
           'The campaign comes off the Campaigns list and stops being offered anywhere new work is filed. Nothing is deleted. Its posts, schedule, brief and content stay exactly as they are, and you can bring it back from the archive at any time.',
@@ -8549,6 +8553,7 @@ export const en = {
       },
       delete: {
         action: 'DELETE CAMPAIGN',
+        menuItem: 'Delete campaign',
         confirmTitle: 'Delete {{name}}?',
         confirmBody:
           'The campaign, its posts and its schedule are removed, and nothing in the app can bring them back. Posts that have already been published stay live on the social networks. Archive it instead if you only want it off the list.',

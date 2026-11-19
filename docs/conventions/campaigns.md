@@ -57,8 +57,11 @@ keep it accurate when these rules change.
   the way to Settings, also end the campaign's menu in the top bar**
   (`CampaignSwitcher`): someone who has opened a test campaign and wants rid of
   it reads the campaign's name, not the gear at the foot of the rail, and the
-  Danger Zone is a scroll below that. Both open `useEndCampaign`'s modals, so
-  the consequences are written once.
+  Danger Zone is a scroll below that. **And each row of the Campaigns list
+  has them behind three dots** (`CampaignCard`), laid over the row's corner
+  as a sibling of its link, since a test campaign is most often got rid of
+  from the list it clutters. All three open `useEndCampaign`'s modals, so the
+  consequences are written once.
 
 - **The campaign's `estimated_post_count` is a rate, not a total.** Since
   CON-182 it means "this many posts per `goal_cadence` period" (`week`/`month`),
