@@ -99,7 +99,7 @@ Two deliberate asymmetries:
 (`schedule`), `lib/postStatusMachine.ts` (`mechanism: 'schedule'`,
 `getTransitionBlockers`, `canEditScheduledAt`),
 `components/campaigns/calendar/PostCard.tsx` / `WeeklyCalendar.tsx`,
-`components/posts/editor/PostSettingsTab.tsx`. Server:
+`components/posts/editor/PostSettings.tsx`. Server:
 `src/handlers/posts.go` (`Schedule`), `src/post_actions/schedule/schedule.go`.
 
 ## The Query cache doubles as the post editor's document store
@@ -305,9 +305,13 @@ remembered panel had nowhere to render. It worked, but every one of those
 panels put the assistant away to show something about the page in front of
 you, and the assistant is about the work. So the calendar's two became its own
 drawer (`CalendarDrawer`, `settingsStore.calendarDrawer`), and the post
-editor's became tabs in the editor's own side column — settings, preview,
+editor's became tabs in the editor's own side column — overview, preview,
 checks, quality, sources, notes and history (`components/posts/editor/PostSideColumn`,
 the tab remembered in `settingsStore.postTab`, one choice for every post).
+The first is an **Overview**, not a settings tab: the settings plus one line
+from each of the others — the checks' verdict and the score, the first notes,
+the sources — because a tab is only opened by someone who already knows to
+care about what is in it, and nobody opens one called Quality to find out.
 Both sit beside the page and open alongside the assistant. With one panel left
 the model had nothing to resolve, and it went.
 

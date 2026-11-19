@@ -1,13 +1,14 @@
 /**
  * The tabs of the post editor's side column, in the order they sit.
  *
- * Settings is first because it is the one that can stop a post going out: it
- * carries a mark while anything there blocks publishing. The rest are about
- * the post rather than part of it — how it will look, whether it passes, what
- * it reads from, what the team said, what it used to be.
+ * Overview is first and is where a post opens: its settings, and the one line
+ * of every other tab that says whether that tab is worth opening — nobody goes
+ * looking in a tab called Quality. It carries a mark while anything blocks
+ * publishing. The rest are the detail behind it — how it will look, whether
+ * it passes, what it reads from, what the team said, what it used to be.
  */
 export const POST_TABS = [
-  'settings',
+  'overview',
   'preview',
   'checks',
   'quality',
@@ -18,7 +19,7 @@ export const POST_TABS = [
 
 export type PostTab = (typeof POST_TABS)[number]
 
-export const DEFAULT_POST_TAB: PostTab = 'settings'
+export const DEFAULT_POST_TAB: PostTab = 'overview'
 
 export function isPostTab(value: unknown): value is PostTab {
   return (

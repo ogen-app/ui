@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import {
   CheckCircleIcon,
   CircleDashedIcon,
+  GaugeIcon,
   SparkleIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
@@ -15,6 +16,14 @@ import {
   type PostCheck,
 } from '@/lib/postValidation'
 import { isSubmitted } from '@/lib/postStatusMachine'
+import {
+  overallBand,
+  overallPct,
+  postSuggestions,
+  suggestionCountLine,
+} from '@/lib/postQuality'
+import { BandTag } from '../quality/BandTag'
+import { SummaryLine } from '../quickBar/parts'
 import { QualityInlineSummary } from '../quality/QualityInlineSummary'
 import type { PostEvaluation } from '@/types/quality'
 import type { PostStatus } from '@/types/posts'
@@ -173,6 +182,120 @@ export function PostChecksTab({
         )}
       </div>
     </div>
+  )
+}
+
+/** How many problems the Overview names before it says "and N more". */
+const SUMMARY_ROWS = 3
+
+/**
+ * The Overview's health section: the Checks tab and the Quality tab, each cut
+ * to the line that says whether anything needs doing.
+ *
+ * It exists because nobody opens a tab called Quality to find out whether
+ * they should care about quality. Shown on the tab the post opens on, the
+ * answer comes to them: the requirements' verdict with the first few that
+ * fail, and the score with its count of suggestions — each line a way into
+ * the tab that has the rest. The same two halves stop applying at the same
+ * moments as on the Checks tab (see `PostChecksTab`).
+ */
+export function PostHealthSummary({
+  checks,
+  status,
+  assessment,
+  qualityUnavailable,
+  assessing,
+  exhausted = false,
+  onAssess,
+  onOpenChecks,
+  onOpenQuality,
+}: Omit<Props, 'previousAssessment'> & { onOpenChecks: () => void }) {
+  const { t } = useTranslation()
+  const showQuality = !qualityUnavailable
+  const showChecks = status !== 'published'
+  const canAssess = showQuality && !isSubmitted(status)
+  const problems = awaitingPlatform(checks)
+    ? []
+    : checks.filter((c) => c.status === 'fail' || c.status === 'warn')
+  const more = problems.length - SUMMARY_ROWS
+
+  return (
+    <div className="flex flex-col gap-2 text-sm">
+      {showChecks && (
+        <SummaryLine
+          onOpen={onOpenChecks}
+          label={t('posts.editor.tabs.checks')}
+        >
+          <StatusIcon status={worstStatus(checks)} />
+          <span className="min-w-0 truncate">{checksSummary(checks)}</span>
+        </SummaryLine>
+      )}
+      {showChecks && problems.length > 0 && (
+        <ul className="flex flex-col gap-1 pl-5.5">
+          {problems.slice(0, SUMMARY_ROWS).map((check) => (
+            <li key={check.id} className="min-w-0">
+              <span className="text-foreground">{check.label}</span>
+              {check.detail && (
+                <span className="text-warning"> — {check.detail}</span>
+              )}
+            </li>
+          ))}
+          {more > 0 && (
+            <li className="text-tertiary-foreground">
+              {t('posts.editor.overview.moreChecks', { count: more })}
+            </li>
+          )}
+        </ul>
+      )}
+
+      {showQuality &&
+        (assessment ? (
+          <SummaryLine
+            onOpen={onOpenQuality}
+            label={t('posts.editor.tabs.quality')}
+          >
+            <GaugeIcon className="size-4 shrink-0 text-tertiary-foreground" />
+            <QualityLine assessment={assessment} />
+          </SummaryLine>
+        ) : (
+          <div className="flex min-h-6 items-center gap-1.5">
+            <GaugeIcon className="size-4 shrink-0 text-tertiary-foreground" />
+            <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
+              {assessment === null && !assessing
+                ? t('posts.editor.overview.notAssessed')
+                : t('posts.editor.tabs.quality')}
+            </span>
+            {canAssess && (
+              <AssessLink
+                assessment={assessment}
+                assessing={assessing}
+                exhausted={exhausted}
+                onAssess={onAssess}
+              />
+            )}
+          </div>
+        ))}
+    </div>
+  )
+}
+
+/** "72 GOOD · 3 suggestions" — the score, its band, and whether to look. */
+function QualityLine({ assessment }: { assessment: PostEvaluation }) {
+  const { t } = useTranslation()
+  const pct = Math.round(overallPct(assessment))
+  const suggestions = postSuggestions(assessment)
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <span className="font-medium tabular-nums text-foreground">
+        {t('posts.editor.overview.quality', { score: pct })}
+      </span>
+      <BandTag band={overallBand(pct)} />
+      {suggestions.length > 0 && (
+        <span className="min-w-0 truncate text-secondary-foreground">
+          {suggestionCountLine(t, suggestions)}
+        </span>
+      )}
+    </span>
   )
 }
 

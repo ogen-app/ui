@@ -7,7 +7,6 @@ import { PostBrandSection } from '@/components/brand/PostBrandSection'
 import { PostFormatSection } from '@/components/formats/PostFormatSection'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
-import { HelpTrigger } from '@/components/help/HelpTrigger'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
@@ -63,25 +62,21 @@ const ATTENTION_MS = 1500
 const FRESH_MS = 500
 
 /**
- * The post editor's first tab: where the post goes, when, and how — the
- * fields that decide whether it can be published at all, which is why the tab
- * carries a mark while any of them blocks that (`PostSideColumn`).
+ * Where the post goes, when, and how — the fields that decide whether it can
+ * be published at all. The top of the Overview tab, which is why that tab
+ * carries a mark while any of them blocks publishing (`PostSideColumn`), and
+ * why a blocked press flashes this list.
  *
- * One list, one labelled row per decision, every one of them editable in place
- * and autosaving through `changeDoc`. Each value starts with a 16px mark — the
+ * One labelled row per decision, every one of them editable in place and
+ * autosaving through `changeDoc`. Each value starts with a 16px mark — the
  * platform's logo, the account's picture, an icon, or the warning standing in
  * for a value that is missing — so every row's text starts at the same x. The
- * pickers only offer what the campaign allows, plus a deselect option, and a
- * field that blocks publishing says so with that warning on its own row.
+ * pickers only offer what the campaign allows, plus a deselect option.
  *
- * Above the rule, where and when it goes out. Below it, the inputs to writing
- * it that are not about publishing: the campaign phase, the voice and
- * audience, the format.
- *
- * Each control's own behaviour lives in `quickBar/`, which is what this tab
+ * Each control's own behaviour lives in `quickBar/`, which is what this list
  * was before it was a tab — a two-line bar above the post.
  */
-export function PostSettingsTab({
+export function PublishingSettings({
   doc,
   changeDoc,
   cancelling,
@@ -92,7 +87,6 @@ export function PostSettingsTab({
   resolvedPostType,
 }: Props) {
   const { t } = useTranslation()
-  const formatsEnabled = useFeatureFlag('content-formats')
   const catalog = usePlatformCatalog()
   const platform = catalog.resolve(doc.platform_id)
   const campaignQuery = useCampaign(doc.campaign_id)
@@ -213,6 +207,103 @@ export function PostSettingsTab({
     })
   }
 
+  const methodOpen =
+    doc.status === 'draft' || doc.status === 'ready_for_publish'
+
+  return (
+    <dl
+      className={cn(
+        LIST,
+        // Blocked-action feedback: shake, then the ring fades out. Defined in
+        // index.css because the ring's colour is animated, and it uses
+        // `outline` rather than `border` so nothing reflows.
+        flashing && 'animate-attention',
+      )}
+    >
+      <Row label={t('posts.editor.settings.platform')}>
+        <PlatformPicker
+          platform={platform}
+          platforms={campaignPlatforms}
+          disabled={campaignPending}
+          readOnly={locked}
+          onSelect={selectPlatform}
+        />
+      </Row>
+      {/* Post types and accounts are a property of the platform, so there
+              is nothing to choose from until one is picked — the rows are
+              left out rather than shown empty under its warning. */}
+      {platform && (
+        <>
+          <Row label={t('posts.editor.settings.postType')}>
+            <PostTypePicker
+              platform={platform}
+              selected={doc.platform_post_type}
+              types={campaignTypes}
+              connectedSlugs={
+                connectedPostTypes.get(doc.platform_id) ?? EMPTY_SLUGS
+              }
+              auto={autoOffered}
+              resolved={resolvedPostType}
+              disabled={campaignPending}
+              readOnly={locked}
+              onSelect={selectPostType}
+            />
+          </Row>
+          <Row label={t('posts.editor.settings.account')}>
+            <AccountSlot
+              account={account}
+              platformName={platform.name}
+              editable={canEditPublishingAccount(doc.status)}
+              onSelect={selectAccount}
+            />
+          </Row>
+        </>
+      )}
+      <Row label={t('posts.editor.settings.date')}>
+        <SchedulingDetails
+          post={doc}
+          cancelling={cancelling}
+          onChange={setScheduledAt}
+          onAddPostLink={onAddPostLink}
+        />
+      </Row>
+      {/* Only while the fork is still ahead of the post. Once it is
+              scheduled the status itself records which way it went. */}
+      {methodOpen && (
+        <Row label={t('posts.editor.settings.publishing')}>
+          {autoPublish === 'unknown' ? (
+            <Skeleton className="h-4 w-28" />
+          ) : (
+            <PublishMethodPicker
+              method={publishMethod}
+              onChange={onPublishMethodChange}
+              platformName={platform?.name ?? null}
+              hasAccount={account.connected}
+              autoAllowed={autoPublish === 'allowed'}
+            />
+          )}
+        </Row>
+      )}
+    </dl>
+  )
+}
+
+/**
+ * The inputs to writing the post that are not about publishing it: the
+ * campaign phase, the voice and audience, the format. The foot of the
+ * Overview tab — set once, if at all.
+ */
+export function WritingSettings({
+  doc,
+  changeDoc,
+}: {
+  doc: Post
+  changeDoc: (fn: (p: Post) => void) => void
+}) {
+  const { t } = useTranslation()
+  const formatsEnabled = useFeatureFlag('content-formats')
+  const campaign = useCampaign(doc.campaign_id).data
+  const locked = isSubmitted(doc.status)
   const phases = campaign?.campaign_type?.phases ?? []
   const phaseOptions = [
     { id: NO_PHASE, displayValue: t('posts.editor.settings.noPhase') },
@@ -223,120 +314,33 @@ export function PostSettingsTab({
       d.campaign_type_phase_id = id === NO_PHASE ? null : id
     })
 
-  const methodOpen =
-    doc.status === 'draft' || doc.status === 'ready_for_publish'
-
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
-      <div
-        className={cn(
-          'flex flex-col gap-6 px-3 pt-4 pb-6 lg:px-6',
-          // Blocked-action feedback: shake, then the ring fades out. Defined
-          // in index.css because the ring's colour is animated, and it uses
-          // `outline` rather than `border` so nothing reflows.
-          flashing && 'animate-attention',
-        )}
-      >
-        <dl className={LIST}>
-          <Row label={t('posts.editor.settings.platform')}>
-            <PlatformPicker
-              platform={platform}
-              platforms={campaignPlatforms}
-              disabled={campaignPending}
-              readOnly={locked}
-              onSelect={selectPlatform}
-            />
-          </Row>
-          {/* Post types and accounts are a property of the platform, so there
-              is nothing to choose from until one is picked — the rows are
-              left out rather than shown empty under its warning. */}
-          {platform && (
-            <>
-              <Row label={t('posts.editor.settings.postType')}>
-                <PostTypePicker
-                  platform={platform}
-                  selected={doc.platform_post_type}
-                  types={campaignTypes}
-                  connectedSlugs={
-                    connectedPostTypes.get(doc.platform_id) ?? EMPTY_SLUGS
-                  }
-                  auto={autoOffered}
-                  resolved={resolvedPostType}
-                  disabled={campaignPending}
-                  readOnly={locked}
-                  onSelect={selectPostType}
-                />
-              </Row>
-              <Row label={t('posts.editor.settings.account')}>
-                <AccountSlot
-                  account={account}
-                  platformName={platform.name}
-                  editable={canEditPublishingAccount(doc.status)}
-                  onSelect={selectAccount}
-                />
-              </Row>
-            </>
-          )}
-          <Row
-            label={t('posts.editor.settings.date')}
-            help={<HelpTrigger topic="post.schedule" />}
-          >
-            <SchedulingDetails
-              post={doc}
-              cancelling={cancelling}
-              onChange={setScheduledAt}
-              onAddPostLink={onAddPostLink}
-            />
-          </Row>
-          {/* Only while the fork is still ahead of the post. Once it is
-              scheduled the status itself records which way it went. */}
-          {methodOpen && (
-            <Row label={t('posts.editor.settings.publishing')}>
-              {autoPublish === 'unknown' ? (
-                <Skeleton className="h-4 w-28" />
-              ) : (
-                <PublishMethodPicker
-                  method={publishMethod}
-                  onChange={onPublishMethodChange}
-                  platformName={platform?.name ?? null}
-                  hasAccount={account.connected}
-                  autoAllowed={autoPublish === 'allowed'}
-                />
-              )}
-            </Row>
-          )}
-        </dl>
-
-        <dl className={cn(LIST, 'border-t border-border pt-5')}>
-          {phases.length > 0 && (
-            <Row label={t('posts.editor.settings.phase')}>
-              <Mark>
-                <FlagIcon />
-              </Mark>
-              <TextSelect
-                variant="inline"
-                size="sm"
-                value={doc.campaign_type_phase_id ?? NO_PHASE}
-                onValueChange={selectPhase}
-                elements={phaseOptions}
-                disabled={locked}
-                ariaLabel={t('posts.editor.settings.phase')}
-              />
-            </Row>
-          )}
-          <PostBrandSection post={doc} />
-          {formatsEnabled && (
-            <PostFormatSection post={doc} changeDoc={changeDoc} />
-          )}
-        </dl>
-      </div>
-    </div>
+    <dl className={LIST}>
+      {phases.length > 0 && (
+        <Row label={t('posts.editor.settings.phase')}>
+          <Mark>
+            <FlagIcon />
+          </Mark>
+          <TextSelect
+            variant="inline"
+            size="sm"
+            value={doc.campaign_type_phase_id ?? NO_PHASE}
+            onValueChange={selectPhase}
+            elements={phaseOptions}
+            disabled={locked}
+            ariaLabel={t('posts.editor.settings.phase')}
+          />
+        </Row>
+      )}
+      <PostBrandSection post={doc} />
+      {formatsEnabled && <PostFormatSection post={doc} changeDoc={changeDoc} />}
+    </dl>
   )
 }
 
 /**
- * The two lists' grid: the labels' column, then the values'. Shared so the
- * values below the rule start where the ones above it do.
+ * The lists' grid: the labels' column, then the values'. Shared so the values
+ * of every section of the Overview start at the same x.
  */
 const LIST = 'grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm'
 

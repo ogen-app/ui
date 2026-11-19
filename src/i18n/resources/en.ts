@@ -5896,7 +5896,7 @@ export const en = {
       position: '{{position}} of {{total}}',
       tabs: {
         label: 'About this post',
-        settings: 'Settings',
+        overview: 'Overview',
         preview: 'Preview',
         checks: 'Checks',
         quality: 'Quality',
@@ -5955,7 +5955,28 @@ export const en = {
         methodNoAccountUnnamed:
           'No publishing account is connected — this will fall back to a reminder.',
       },
-      /** The Settings tab's date row, and what it says once it is history. */
+      /** The Overview tab's sections, and its one-line summaries of the rest. */
+      overview: {
+        publishing: 'Publishing',
+        health: 'Health',
+        notes_one: 'Notes · {{count}}',
+        notes_other: 'Notes · {{count}}',
+        sources: 'Sources',
+        writing: 'Writing',
+        /** The tooltip on a line that opens another tab. */
+        open: 'Open {{tab}}',
+        moreChecks_one: 'and {{count}} more',
+        moreChecks_other: 'and {{count}} more',
+        moreNotes_one: 'and {{count}} more note',
+        moreNotes_other: 'and {{count}} more notes',
+        quality: 'Quality {{score}}',
+        notAssessed: 'Quality not assessed yet',
+        sourceCount_one: '{{count}} source',
+        sourceCount_other: '{{count}} sources',
+        noSources: 'No sources',
+        notGrounded: 'Not grounded — written from general knowledge',
+      },
+      /** The publishing list's date row, and what it says once it is history. */
       schedule: {
         setDate: 'Set publish date',
         pickDate: 'Select publish date',

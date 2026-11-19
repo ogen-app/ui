@@ -16,7 +16,7 @@ import { PostFailureNotice } from '@/components/posts/PostFailureNotice'
 import { PostPerformanceSection } from '@/components/analytics/PostPerformanceSection'
 import { usePostPerformance } from '@/hooks/usePostPerformance'
 import { PostMediaCard } from '@/components/posts/PostMediaCard'
-import { PostSettingsTab } from '@/components/posts/editor/PostSettingsTab'
+import { PostOverviewTab } from '@/components/posts/editor/PostOverviewTab'
 import { PostChecksTab } from '@/components/posts/editor/PostChecksTab'
 import {
   PostSideColumn,
@@ -384,13 +384,14 @@ function PostEditorSurface({
   // assistant's and Ogen can help with any of it.
   const tab = useSettingsStore((s) => s.postTab)
   const setTab = useSettingsStore((s) => s.setPostTab)
-  // A blocked press goes where the fix is: the Settings tab, flashing, for
+  // A blocked press goes where the fix is: the Overview, its publishing list
+  // flashing, for
   // everything but an over-long first comment, which is in the writing column
   // and is read off the Checks tab.
   const flashBlockers = useCallback(
     (blockers: PostStatusBlocker[]) => {
       if (blockers.some((b) => b.field !== 'first_comment')) {
-        setTab('settings')
+        setTab('overview')
         setAttention(Date.now())
       } else {
         setTab('checks')
@@ -778,11 +779,11 @@ function PostEditorSurface({
     [doc.title, doc.content],
   )
 
-  // What a closed tab still says (`PostSideColumn`). Settings warns about
+  // What a closed tab still says (`PostSideColumn`). Overview warns about
   // what stops the primary move; Checks about the requirements that fail.
   const primaryBlockers = buttons[buttons.length - 1]?.blockers ?? []
   const badges: Partial<Record<PostTab, PostTabBadge>> = {
-    settings: {
+    overview: {
       warn: primaryBlockers.filter((b) => b.field !== 'first_comment').length,
     },
     checks: {
@@ -953,8 +954,8 @@ function PostEditorSurface({
         </div>
 
         <PostSideColumn badges={badges}>
-          {tab === 'settings' && (
-            <PostSettingsTab
+          {tab === 'overview' && (
+            <PostOverviewTab
               doc={doc}
               changeDoc={changeDoc}
               cancelling={cancelling}
@@ -963,6 +964,14 @@ function PostEditorSurface({
               onPublishMethodChange={setPublishMethod}
               onAddPostLink={() => setPublishedUrlOpen(true)}
               resolvedPostType={media.postType}
+              checks={allChecks}
+              assessment={assessment}
+              qualityUnavailable={quality.unavailable}
+              assessing={assessing || !!quality.autoAssessing}
+              exhausted={quality.exhausted}
+              onAssess={runAssessment}
+              notes={notes.notes}
+              onOpenTab={setTab}
             />
           )}
           {tab === 'preview' && (

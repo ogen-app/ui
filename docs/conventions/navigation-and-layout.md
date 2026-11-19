@@ -169,10 +169,11 @@ keep it accurate when these rules change.
   last, in the corner, on the right. Not in the bar over the page — that one
   is the app's, and a post's SCHEDULE beside Ask Ogen fought it for the
   corner — and not floating at the foot of the page over a fade. The tabs are
-  an icon over a one-word name: icon-only hid Notes and Quality from everyone
-  who did not hover. In the Settings tab every value starts with a 16px mark
-  (logo, picture, icon, or the warning in its place) so the column of values
-  reads straight down.
+  an icon over a one-word name, and the first is an Overview: the settings,
+  then one line from each other tab saying whether it is worth opening — a
+  label alone never got Quality or Notes opened. Every settings value starts
+  with a 16px mark (logo, picture, icon, or the warning in its place) so the
+  column of values reads straight down.
 
 - **A control that doesn't govern the whole page doesn't go in the corner.**
   The top-right rule above says what *may* sit there, not that every view

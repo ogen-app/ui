@@ -5,9 +5,9 @@ import {
   ClockCounterClockwiseIcon,
   DevicesIcon,
   GaugeIcon,
-  GearSixIcon,
   ListChecksIcon,
   NotePencilIcon,
+  LayoutIcon,
   type Icon,
 } from '@phosphor-icons/react'
 import { RailPanelEmbeddedProvider } from '@/components/page-primitives/RailPanel'
@@ -16,7 +16,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
 
 const ICON: Record<PostTab, Icon> = {
-  settings: GearSixIcon,
+  overview: LayoutIcon,
   preview: DevicesIcon,
   checks: ListChecksIcon,
   quality: GaugeIcon,

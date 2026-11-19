@@ -1,4 +1,3 @@
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import {
@@ -12,8 +11,9 @@ import {
   radarScore,
   scoreDelta,
   staleReason,
+  suggestionCountLine,
 } from '@/lib/postQuality.ts'
-import type { PostEvaluation, QualitySuggestion } from '@/types/quality'
+import type { PostEvaluation } from '@/types/quality'
 import { Button } from '@/components/ui/button.tsx'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { BandTag } from './BandTag.tsx'
@@ -157,19 +157,4 @@ export function QualityInlineSummary({
       )}
     </section>
   )
-}
-
-/**
- * "5 suggestions, 2 of them high." — one whole sentence per case rather than a
- * count with a clause bolted on, so each language words all three its own way.
- */
-function suggestionCountLine(
-  t: TFunction,
-  suggestions: QualitySuggestion[],
-): string {
-  const count = suggestions.length
-  const high = suggestions.filter((s) => s.severity === 'high').length
-  if (high === 0) return t('posts.quality.inline.countNoneHigh', { count })
-  if (high === count) return t('posts.quality.inline.countAllHigh', { count })
-  return t('posts.quality.inline.countSomeHigh', { count, high })
 }

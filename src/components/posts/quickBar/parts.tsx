@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { WarningCircleIcon } from '@phosphor-icons/react'
+import { CaretRightIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
@@ -172,5 +173,33 @@ export function QuickBarTrigger({
         {children}
       </Button>
     </DropdownMenuTrigger>
+  )
+}
+
+/**
+ * One line of the Overview that opens the tab with the rest of it: the whole line is the button,
+ * with a caret at its end saying it goes somewhere.
+ */
+export function SummaryLine({
+  onOpen,
+  label,
+  children,
+}: {
+  onOpen: () => void
+  /** The tab it opens, for the accessible name. */
+  label: string
+  children: ReactNode
+}) {
+  const { t } = useTranslation()
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      title={t('posts.editor.overview.open', { tab: label })}
+      className="group -mx-1.5 flex min-h-6 items-center gap-1.5 rounded-button px-1.5 py-0.5 text-left outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+    >
+      {children}
+      <CaretRightIcon className="ml-auto size-3.5 shrink-0 text-tertiary-foreground group-hover:text-foreground" />
+    </button>
   )
 }
