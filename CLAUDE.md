@@ -171,7 +171,7 @@ Loaded automatically in `src/components/layout`, `src/components/page-primitives
 - There are no centred columns.
 - A page that is more than one column of cards uses one of two layouts.
 - Screen corners have fixed jobs — top is about the object, bottom is about the work.
-- A control that doesn't govern the whole page doesn't go in the corner.
+- A control in the corner says which cards it doesn't reach.
 - The app's keys are one listener and one table.
 
 ### Server-driven lists & filters — [`docs/conventions/lists.md`](./docs/conventions/lists.md)

@@ -5050,12 +5050,9 @@ export const es: Translation = {
       platformNoAccount: '{{platform}} — ninguna cuenta conectada',
       platformAccountsLabel: '{{platform}}, {{accounts}}',
       platformNoAccountLabel: '{{platform}}, ninguna cuenta conectada',
-      campaign: 'Campaña',
-      allCampaigns: 'Todas las campañas',
       control: {
         period: 'Periodo',
         platforms: 'Plataformas',
-        campaign: 'Campaña',
       },
       assistantChanged: 'El asistente cambió {{controls}}',
       otherCampaign: 'Una campaña que ya no aparece',

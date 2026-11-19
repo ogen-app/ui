@@ -84,7 +84,7 @@ export function SectionCard({
   return (
     <section
       className={cn(
-        'flex w-full max-w-content flex-col gap-3 rounded-lg bg-primary p-5',
+        'flex w-full max-w-content flex-col gap-3 rounded-lg border border-border bg-primary p-5',
         className,
       )}
     >
