@@ -37,7 +37,7 @@ export function AssetPreview({
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
-        <span className="size-8 shrink-0 overflow-hidden border border-quaternary bg-secondary">
+        <span className="size-5 shrink-0 overflow-hidden rounded-xs border border-quaternary bg-secondary">
           <img
             src={url}
             alt=""

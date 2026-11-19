@@ -20,9 +20,10 @@
  * - **Plurals use i18next's `_one` / `_other` suffixes** and spell out the
  *   whole sentence in each form. English pronouns ("it"/"them") and Spanish
  *   agreement do not survive being stitched together at runtime.
- * - **Destructive-action labels stay in literal capitals in every language**
- *   (`DELETE ACCOUNT`, `ELIMINAR CUENTA`). The caps are part of the copy — see
- *   CLAUDE.md.
+ * - **Button labels on cards and the commit panel are sentence case in every
+ *   language**, destructive ones included (`Delete campaign`, `Eliminar
+ *   campaña`), written into the copy rather than set with a class — see
+ *   CLAUDE.md. Labels elsewhere still in capitals follow as their screens move.
  */
 export const en = {
   common: {
@@ -411,6 +412,7 @@ export const en = {
       all: 'All campaigns',
       switch: 'Switch campaign',
       newCampaign: 'New campaign',
+      settings: 'Campaign settings',
     },
     /**
      * Heads the workspace's destinations where they appear inside the account
@@ -824,12 +826,18 @@ export const en = {
   sentence: {
     label: 'Filter',
     addDetail: 'add a detail',
+    /** The pills row's way into a detail (design/ideas-cards). */
+    add: 'Add',
     addPlaceholder: 'a detail…',
     change: 'Change: {{clause}}',
     remove: 'Remove: {{clause}}',
     removeDetail: 'Remove this detail',
     done: 'Done',
     clear: 'Clear',
+    /** The pills row's end: every filter off at once. */
+    clearAll: 'Clear filters',
+    /** A pill naming its first value only: how many more it holds. */
+    more: '+{{formatted}}',
     removeLast: 'remove the last detail',
     noValues: 'Nothing to choose from yet',
     heading: {
@@ -851,6 +859,10 @@ export const en = {
     share: 'Share with the workspace',
     unshare: 'Stop sharing',
     duplicate: 'Duplicate',
+    /** The tab strip's menu of smart groups, beside Filter. */
+    views: 'Views',
+    /** The × after an open group's name, leading the pills row. */
+    close: 'Close “{{name}}”',
     delete: 'Delete',
     copyName: '{{name}} (copy)',
     edited: 'edited',
@@ -1002,6 +1014,11 @@ export const en = {
       retry: 'Try again',
       dismiss: 'Dismiss',
       hintMultiline: 'Shift <key/> for a new line · Return <key/> to keep it',
+      /** The header's button that opens the field, and the way out of it. */
+      open: 'ADD IDEA',
+      close: 'Stop adding ideas',
+      /** The field's send button: Return, for the mouse. */
+      keep: 'Keep this idea',
     },
     /** The verdicts as the piles they name. */
     verdict: {
@@ -1015,8 +1032,6 @@ export const en = {
       later: 'In the drawer',
       no: 'Set aside',
       undecide: 'Put it back on the desk',
-      close: 'Close this idea',
-      open: 'Open this idea',
       delete: 'DELETE IDEA',
     },
     horizon: {
@@ -1065,11 +1080,12 @@ export const en = {
     undecidedCount_other: '{{count}} ideas on the desk',
     /** The Ideas page's card (CON-388): where each idea came from. */
     card: {
-      written: 'Written',
       writtenBy: 'Written by {{name}}',
       writtenByAt: 'Written by {{name}} · {{at}}',
       /** An idea generated from no document, opened (CON-484). */
       suggestedAt: 'Suggested by the assistant · {{at}}',
+      /** The assistant's spark, in the card's mark column. */
+      suggested: 'Suggested by the assistant',
       /** Its writer's slot: the assistant, not whoever asked. */
       assistant: 'Assistant',
       /** A written idea whose writer was never named. */
@@ -1277,14 +1293,21 @@ export const en = {
     },
     bulk: {
       select: 'Select “{{title}}”',
-      selectAll_one: 'Select {{formatted}} idea',
-      selectAll_other: 'Select all {{formatted}} ideas',
+      /** The list head's box: the ideas loaded, not every match. */
+      selectPage: 'Select the ideas shown',
+      /** The named step from a ticked page to every match in the pile. */
+      selectAllIn_one: 'Select the {{formatted}} idea in “{{pile}}”',
+      selectAllIn_other: 'Select all {{formatted}} ideas in “{{pile}}”',
+      allIn_one: 'The {{formatted}} idea in “{{pile}}” is selected',
+      allIn_other: 'All {{formatted}} ideas in “{{pile}}” are selected',
+      /** Ticked but not on screen — in another pile, or not loaded. */
+      elsewhere_one: '{{formatted}} more selected elsewhere',
+      elsewhere_other: '{{formatted}} more selected elsewhere',
       clearAll: 'Clear the selection',
       tooMany: 'Narrow the filter to select all (up to 5,000).',
       count_one: '{{count}} selected',
       count_other: '{{count}} selected',
       delete: 'DELETE',
-      clear: 'CLEAR',
       done_one: 'Deleted {{count}} idea.',
       done_other: 'Deleted {{count}} ideas.',
       partial_one: 'Deleted {{count}} idea; {{failed}} couldn’t be deleted.',
@@ -1950,6 +1973,57 @@ export const en = {
     openStrategy: 'OPEN STRATEGY',
     openAssets: 'OPEN ASSETS',
     openSettings: 'OPEN SETTINGS',
+
+    /**
+     * The row of doors at the foot of the Overview: one per place in the
+     * campaign, each with the one thing to know before opening it — whether
+     * that part is set, and if not what is missing first (`lib/campaignDoors`).
+     */
+    doors: {
+      title: 'Everything in this campaign',
+      loading: 'Counting…',
+      strategy: {
+        set_one: 'Dates, goal and {{formatted}} channel',
+        set_other: 'Dates, goal and {{formatted}} channels',
+        noDates: 'No dates yet',
+        noGoal: 'No post goal yet',
+        noChannels: 'No channels yet',
+        notConnected: 'No account to publish through',
+      },
+      ideas: {
+        waiting_one: '{{formatted}} idea waiting for a decision',
+        waiting_other: '{{formatted}} ideas waiting for a decision',
+        none: 'Nothing waiting for a decision',
+      },
+      assets: {
+        all: 'Every document in the workspace',
+        some_one: '{{formatted}} document',
+        some_other: '{{formatted}} documents',
+        none: 'None yet — Ogen writes from the brief',
+      },
+      posts: {
+        none: 'No posts yet',
+        some_one: '{{formatted}} post',
+        some_other: '{{formatted}} posts',
+        /** Joined after `some` when any are still plans or drafts. */
+        drafts_one: '{{formatted}} still a draft',
+        drafts_other: '{{formatted}} still drafts',
+      },
+      calendar: {
+        next_one: '{{formatted}} scheduled, next on {{date}}',
+        next_other: '{{formatted}} scheduled, next on {{date}}',
+        some_one: '{{formatted}} scheduled',
+        some_other: '{{formatted}} scheduled',
+        none: 'Nothing scheduled',
+        over: 'Nothing left to go out',
+      },
+      analytics: {
+        some_one: '{{formatted}} post published',
+        some_other: '{{formatted}} posts published',
+        none: 'Results once a post goes out',
+      },
+      settings: 'Name, type, archive or delete',
+    },
 
     /**
      * The calendar's problems, read from the server (CON-462). The fix is
@@ -5847,12 +5921,9 @@ export const en = {
       platformNoAccount: '{{platform}} — no account connected',
       platformAccountsLabel: '{{platform}}, {{accounts}}',
       platformNoAccountLabel: '{{platform}}, no account connected',
-      campaign: 'Campaign',
-      allCampaigns: 'All campaigns',
       control: {
         period: 'Period',
         platforms: 'Platforms',
-        campaign: 'Campaign',
       },
       assistantChanged: 'The assistant changed {{controls}}',
       otherCampaign: 'A campaign no longer listed',
@@ -8608,6 +8679,8 @@ export const en = {
       },
       /** The row's link, named for what it opens. */
       open: 'Open {{name}}',
+      /** The row's three-dots button: what can be done to the campaign. */
+      actions: 'Actions for {{name}}',
       noChannels: 'No channels yet',
       /** The third column when nothing wants the user. */
       goodShape: 'In good shape',
@@ -8866,24 +8939,29 @@ export const en = {
       label: 'Documents',
       untitled: 'Untitled',
       selectRow: 'Select {{title}}',
-      deleteRow: 'Delete {{title}}',
+      /** A group head's box, over its cards' boxes. */
+      selectGroup: 'Select everything in {{group}}',
       justNow: 'just now',
       minutes_one: '{{count}} min',
       minutes_other: '{{count}} min',
       /** The facts line's date: `when` is a distance, "14 months ago". */
       publishedAgo: 'published {{when}}',
       addedAgo: 'added {{when}}',
-      /** After the next undecided idea's title: how many more are waiting. */
-      nextIdeaMore_one: 'and {{count}} more',
-      nextIdeaMore_other: 'and {{count}} more',
-      readingTitle: 'Reading this file.',
-      readingBody:
-        'Ideas appear here on their own when it’s done; you can leave.',
-      failedTitle: 'We couldn’t read this file.',
+      /** The card's one standing fact, and its mark's name, while it is read. */
+      reading: 'Reading it…',
+      /** …and when it couldn't be: the reason is where the summary would be. */
+      failed: 'Couldn’t read it',
       /** After the reason a file failed. Nothing re-runs a PDF or an office file. */
       failedNext: 'Upload it again, or delete it.',
-      noIdeas: 'Read, but no post ideas came out of it.',
+      noIdeas: 'No ideas came out of it',
       analyseAgain: 'Analyse again',
+      /** A file on its way in, as a card at the list's head. */
+      uploading: 'Uploading, {{progress}}%',
+      retryUpload: 'Upload {{name}} again',
+      dismissUpload: 'Dismiss {{name}}',
+      /** The card's end: the ideas still waiting on it, opening that pile. */
+      ideasWaiting_one: '{{formatted}} idea →',
+      ideasWaiting_other: '{{formatted}} ideas →',
       /** A group band's fold, named for the group. */
       fold: 'Fold {{group}}',
       unfold: 'Unfold {{group}}',
@@ -9220,15 +9298,21 @@ export const en = {
         "This image's format can't be shown in a browser, and no viewable copy was made.",
     },
 
-    /** The floating bar over a ticked selection in the documents list. */
+    /** The list head over a ticked selection in the documents list. */
     selection: {
       count_one: '{{count}} selected',
       count_other: '{{count}} selected',
-      clear: 'CLEAR',
       delete: 'DELETE',
-      /** The filter bar's select-all: every match, not just the rows loaded. */
+      /** The head's box: the documents loaded, not every match. */
+      selectPage: 'Select the documents shown',
+      /** The named step from a ticked page to every match. */
       selectAll_one: 'Select the {{formatted}} document',
       selectAll_other: 'Select all {{formatted}} documents',
+      allSelected_one: 'The {{formatted}} document is selected',
+      allSelected_other: 'All {{formatted}} documents are selected',
+      /** Ticked but not loaded — the assistant's choice, say. */
+      elsewhere_one: '{{formatted}} more selected elsewhere',
+      elsewhere_other: '{{formatted}} more selected elsewhere',
       clearAll: 'Clear the selection',
       failed: 'Unable to select every match',
     },

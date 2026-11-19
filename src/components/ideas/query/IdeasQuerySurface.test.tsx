@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -95,13 +96,22 @@ function page(over: Partial<IdeaListPageBody> = {}): IdeaListPageBody {
 
 const onSearchChange = vi.fn()
 
+/** ADD IDEA in the header opens the capture field across it. */
+async function openCapture() {
+  await userEvent.click(screen.getByRole('button', { name: 'ADD IDEA' }))
+  return screen.getByRole('textbox', { name: 'Write down an idea' })
+}
+
 function renderSurface(search = {}) {
   return renderWithProviders(
-    <IdeasQuerySurface
-      campaignId={null}
-      search={search}
-      onSearchChange={onSearchChange}
-    />,
+    <SidebarProvider>
+      <IdeasQuerySurface
+        heading="Ideas"
+        campaignId={null}
+        search={search}
+        onSearchChange={onSearchChange}
+      />
+    </SidebarProvider>,
   )
 }
 
@@ -153,13 +163,14 @@ describe('IdeasQuerySurface', () => {
     ).toBeInTheDocument()
   })
 
-  it('draws one "No grouping" band when the list is not grouped', async () => {
+  it('draws no group heads when the list is not grouped', async () => {
     await renderSurface({ group: 'none' })
     await screen.findByText('Idea a')
-    // The list always has an edge to pin under the page header (CON-392).
-    const bands = screen.getAllByRole('heading', { level: 2 })
-    expect(bands).toHaveLength(1)
-    expect(bands[0]).toHaveTextContent('No grouping2')
+    // The list's head is its edge to pin under the page header (CON-392).
+    expect(screen.queryAllByRole('heading', { level: 2 })).toHaveLength(0)
+    expect(
+      screen.getByRole('checkbox', { name: 'Select the ideas shown' }),
+    ).toBeInTheDocument()
   })
 
   it('draws a band per group, counted over the whole match', async () => {
@@ -174,19 +185,68 @@ describe('IdeasQuerySurface', () => {
     expect(screen.getByText('PDF · 7 pages')).toBeInTheDocument()
   })
 
+  it('ticks the page from the head box, and every match as its own step', async () => {
+    api.queryIdeas.mockResolvedValue(page({ total: 30 }))
+    api.queryIdeaIds.mockResolvedValue({ ids: ['a', 'b', 'c'] })
+    await renderSurface()
+    await screen.findByText('Idea a')
+
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Select the ideas shown' }),
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('2 selected')
+    expect(api.queryIdeaIds).not.toHaveBeenCalled()
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Select all 30 ideas in “On the desk”',
+      }),
+    )
+    expect(
+      await screen.findByText('All 30 ideas in “On the desk” are selected'),
+    ).toBeInTheDocument()
+
+    // A half- or fully-ticked head box clears.
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Clear the selection' }),
+    )
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('ticks a group from its own box', async () => {
+    await renderSurface({ group: 'source' })
+    await userEvent.click(
+      await screen.findByRole('checkbox', {
+        name: 'Select everything in Handbook',
+      }),
+    )
+    expect(
+      screen.getByRole('checkbox', { name: 'Select “Idea a”' }),
+    ).toBeChecked()
+    expect(
+      screen.getByRole('checkbox', { name: 'Select “Idea b”' }),
+    ).not.toBeChecked()
+  })
+
   it('says so, and selects nothing, when the match is too big', async () => {
+    api.queryIdeas.mockResolvedValue(page({ total: 30 }))
     api.queryIdeaIds.mockResolvedValue(null)
     await renderSurface()
     await screen.findByText('Idea a')
 
-    await userEvent.click(screen.getByRole('checkbox', { name: /Select all/ }))
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Select the ideas shown' }),
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: /^Select all 30 ideas/ }),
+    )
 
     await waitFor(() =>
       expect(toasts.error).toHaveBeenCalledWith(
         'Narrow the filter to select all (up to 5,000).',
       ),
     )
-    expect(screen.queryByText(/selected/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/are selected/)).not.toBeInTheDocument()
   })
 
   it('deletes a selection only after asking, naming one idea', async () => {
@@ -212,15 +272,28 @@ describe('IdeasQuerySurface', () => {
 })
 
 describe('capturing', () => {
+  it('opens over the header from ADD IDEA and folds back on Escape', async () => {
+    await renderSurface()
+    await screen.findByText('Idea a')
+    const field = await openCapture()
+    expect(field).toHaveFocus()
+    // The field lies over the header's row; what it covers stays put, inert.
+    expect(
+      screen.getByRole('button', { name: /On the desk/ }).closest('[inert]'),
+    ).not.toBeNull()
+    await userEvent.keyboard('{Escape}')
+    expect(
+      screen.queryByRole('textbox', { name: 'Write down an idea' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'ADD IDEA' })).toBeInTheDocument()
+  })
+
   it('shows a new idea at once on the undecided pile, and not on Yes', async () => {
     // The server takes its time; the row must not wait for it.
     api.captureIdea.mockReturnValue(new Promise(() => {}))
     await renderSurface()
     await screen.findByText('Idea a')
-    await userEvent.type(
-      screen.getByRole('textbox', { name: 'Write down an idea' }),
-      'A brand-new idea{Enter}',
-    )
+    await userEvent.type(await openCapture(), 'A brand-new idea{Enter}')
     expect(await screen.findByText('A brand-new idea')).toBeInTheDocument()
   })
 
@@ -228,7 +301,7 @@ describe('capturing', () => {
     api.captureIdea.mockRejectedValue(new Error('offline'))
     await renderSurface()
     await screen.findByText('Idea a')
-    const field = screen.getByRole('textbox', { name: 'Write down an idea' })
+    const field = await openCapture()
     await userEvent.type(field, 'A brand-new idea{Enter}')
 
     await waitFor(() => expect(field).toHaveValue('A brand-new idea'))
@@ -242,7 +315,7 @@ describe('capturing', () => {
     )
     await renderSurface()
     await screen.findByText('Idea a')
-    const field = screen.getByRole('textbox', { name: 'Write down an idea' })
+    const field = await openCapture()
     await userEvent.type(field, 'First idea{Enter}')
     await userEvent.type(field, 'Second idea{Enter}')
     await waitFor(() => expect(pending).toHaveLength(2))
@@ -262,10 +335,7 @@ describe('capturing', () => {
     api.captureIdea.mockReturnValue(new Promise(() => {}))
     await renderSurface({ pile: 'yes' })
     await screen.findByText('Idea a')
-    await userEvent.type(
-      screen.getByRole('textbox', { name: 'Write down an idea' }),
-      'A brand-new idea{Enter}',
-    )
+    await userEvent.type(await openCapture(), 'A brand-new idea{Enter}')
     await new Promise((resolve) => setTimeout(resolve, 50))
     expect(screen.queryByText('A brand-new idea')).not.toBeInTheDocument()
   })
@@ -281,7 +351,7 @@ describe('an answered idea', () => {
     api.queryIdeas.mockResolvedValue(
       page({ ideas: [page().ideas[0]], total: 1 }),
     )
-    const answer = screen.getByRole('group', { name: 'Answer this idea' })
+    const answer = screen.getByRole('group', { name: 'Answer “Idea b”' })
     await userEvent.click(
       within(answer).getByRole('button', { name: /Making/ }),
     )
@@ -297,9 +367,8 @@ describe('an answered idea', () => {
     // Open, a written idea's title is its field.
     expect(screen.getByDisplayValue('Idea b')).toBeInTheDocument()
 
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Close this idea' }),
-    )
+    // The card closes from anywhere on it that is not a control.
+    await userEvent.click(screen.getByDisplayValue('Idea b').closest('li')!)
     await waitFor(() =>
       expect(screen.queryByText('Idea b')).not.toBeInTheDocument(),
     )
@@ -333,9 +402,7 @@ describe('smart groups', () => {
   it('lists the groups with their undecided counts and opens one', async () => {
     await renderSurface({ pile: 'yes' })
 
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Views: All ideas' }),
-    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Views' }))
     const open = await screen.findByRole('menuitem', { name: /^Strong PDFs/ })
     expect(open).toHaveTextContent('3')
     await userEvent.click(open)
@@ -354,9 +421,7 @@ describe('smart groups', () => {
 
   it("offers only Duplicate on somebody else's shared group", async () => {
     await renderSurface()
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Views: All ideas' }),
-    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Views' }))
     await userEvent.click(
       await screen.findByRole('menuitem', {
         name: 'Actions for “Strong PDFs”',
@@ -387,7 +452,7 @@ describe('smart groups', () => {
     first.unmount()
 
     await renderSurface({ fit: 'high', kind: 'pdf', view: 'v1' })
-    // On the Views button, which names the open group.
+    // Beside the open group's name, leading the pills row.
     expect(await screen.findByText('edited')).toBeInTheDocument()
     // Somebody else's group: no Save changes, but it can be saved as new.
     expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull()
@@ -425,13 +490,24 @@ describe('smart groups', () => {
   })
 })
 
-describe('the filter as a sentence', () => {
-  const sentence = () => screen.getByRole('group', { name: 'Filter' })
+describe('the filter as pills', () => {
+  const pills = () => screen.getByRole('group', { name: 'Filter' })
+  const words = () =>
+    screen
+      .getAllByRole('button', { name: /^Change: / })
+      .map((pill) => pill.textContent)
 
-  it('reads "Showing all ideas" with nothing chosen', async () => {
+  it('draws no pills row with nothing chosen; Filter opens one', async () => {
     await renderSurface()
     await screen.findByText('Idea a')
-    expect(sentence()).toHaveTextContent('Showing all ideas')
+    expect(screen.queryByRole('group', { name: 'Filter' })).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: /^Filter/ }))
+    await waitFor(() =>
+      expect(
+        screen.getByRole('combobox', { name: 'add a detail' }),
+      ).toHaveFocus(),
+    )
   })
 
   it('reads the clauses in a fixed order, however the address holds them', async () => {
@@ -443,10 +519,17 @@ describe('the filter as a sentence', () => {
       origin: 'asset_analysis',
     })
     await screen.findByText('Idea a')
-    expect(sentence()).toHaveTextContent(
-      'Showing ideas from documents, in Bees, that aren’t web pages, with a high or medium fit, added in the last 30 days',
+    expect(words()).toEqual([
+      'from documents',
+      'in Bees',
+      'that aren’t web pages',
+      'with a high or medium fit',
+      'added in the last 30 days',
+    ])
+    // Filter says how many are on.
+    expect(screen.getByRole('button', { name: /^Filter/ })).toHaveTextContent(
+      'Filter5',
     )
-    expect(sentence()).toHaveTextContent('2 of 9')
   })
 
   it('changes a clause from its panel, and switches it to "not in"', async () => {
@@ -469,10 +552,8 @@ describe('the filter as a sentence', () => {
   it('words "before" a preset as its own phrase, and reopens it on the presets', async () => {
     await renderSurface({ created_before: '7d' })
     await screen.findByText('Idea a')
-    expect(sentence()).toHaveTextContent(
-      'Showing ideas added more than 7 days ago',
-    )
-    expect(sentence()).not.toHaveTextContent(/Invalid Date/)
+    expect(words()).toEqual(['added more than 7 days ago'])
+    expect(pills()).not.toHaveTextContent(/Invalid Date/)
 
     await userEvent.click(
       screen.getByRole('button', {
@@ -490,9 +571,8 @@ describe('the filter as a sentence', () => {
   it('words exactly these ideas, asks for them, and lets the clause go (CON-510)', async () => {
     await renderSurface({ ids: 'a,b', fit: 'high' })
     await screen.findByText('Idea a')
-    expect(sentence()).toHaveTextContent(
-      'Showing ideas limited to these 2, with a high fit',
-    )
+    expect(pills()).toHaveTextContent('limited to these 2')
+    expect(words()).toEqual(['with a high fit'])
     expect(api.queryIdeas.mock.calls[0][0]).toMatchObject({ ids: 'a,b' })
     // Its words open nothing; its × drops it.
     expect(
@@ -517,14 +597,14 @@ describe('the filter as a sentence', () => {
     await renderSurface()
     await screen.findByText('Idea a')
 
-    await userEvent.click(screen.getByRole('button', { name: /add a detail/ }))
+    await userEvent.click(screen.getByRole('button', { name: /^Filter/ }))
     const field = screen.getByRole('combobox', { name: 'add a detail' })
     expect(screen.getByText('in a campaign…')).toBeInTheDocument()
 
     await userEvent.type(field, 'wax{Enter}')
     expect(onSearchChange).toHaveBeenLastCalledWith({ text: 'wax' })
 
-    await userEvent.click(screen.getByRole('button', { name: /add a detail/ }))
+    await userEvent.click(screen.getByRole('button', { name: /^Filter/ }))
     await userEvent.click(screen.getByText('in a campaign…'))
     const panel = screen.getByRole('dialog', { name: 'Ideas filed under…' })
     await userEvent.click(within(panel).getByRole('checkbox', { name: /Bees/ }))
@@ -545,11 +625,11 @@ describe('the filter as a sentence', () => {
     expect(onSearchChange).toHaveBeenLastCalledWith({ kind: 'pdf' })
   })
 
-  it('offers Clear, but not while a group is open as saved', async () => {
+  it('offers Clear filters, but not while a group is open as saved', async () => {
     const first = await renderSurface({ fit: 'high' })
     await screen.findByText('Idea a')
     await userEvent.click(
-      within(sentence()).getByRole('button', { name: 'Clear' }),
+      within(pills()).getByRole('button', { name: 'Clear filters' }),
     )
     expect(onSearchChange).toHaveBeenLastCalledWith({})
     first.unmount()
@@ -563,7 +643,7 @@ describe('the filter as a sentence', () => {
     })
     await screen.findByText('Idea a')
     expect(
-      within(sentence()).queryByRole('button', { name: 'Clear' }),
+      within(pills()).queryByRole('button', { name: 'Clear filters' }),
     ).toBeNull()
   })
 })
@@ -579,17 +659,12 @@ describe('IdeasQuerySurface in Spanish', () => {
     await renderSurface()
     await screen.findByText('Idea a')
 
-    expect(screen.getByRole('group', { name: 'Filtro' })).toHaveTextContent(
-      'Mostrando todas las ideas',
-    )
-    expect(
-      screen.getByRole('button', { name: /añadir un detalle/ }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Filtro/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Vistas' })).toBeInTheDocument()
     expect(screen.getByText('Más tiempo esperando')).toBeInTheDocument()
     expect(screen.getByText('Fecha de alta')).toBeInTheDocument()
     expect(screen.queryByText('Waiting longest')).not.toBeInTheDocument()
-    expect(screen.queryByText(/Showing/)).not.toBeInTheDocument()
-    expect(screen.queryByText('add a detail')).not.toBeInTheDocument()
+    expect(screen.queryByText('Views')).not.toBeInTheDocument()
   })
 
   it('words each clause as one Spanish sentence', async () => {
@@ -599,8 +674,7 @@ describe('IdeasQuerySurface in Spanish', () => {
     await screen.findByText('Idea a')
 
     expect(screen.getByRole('group', { name: 'Filtro' })).toHaveTextContent(
-      // The language's own joining: Spanish puts "y" before the last.
-      'Mostrando ideas de documentos y con un encaje alto o medio',
+      'de documentos',
     )
     expect(
       screen.getByRole('button', {
@@ -643,11 +717,14 @@ describe('an idea the address names (CON-481)', () => {
           <button type="button" onClick={() => setSearch({ ids: 'b' })}>
             next set
           </button>
-          <IdeasQuerySurface
-            campaignId={null}
-            search={search}
-            onSearchChange={setSearch}
-          />
+          <SidebarProvider>
+            <IdeasQuerySurface
+              heading="Ideas"
+              campaignId={null}
+              search={search}
+              onSearchChange={setSearch}
+            />
+          </SidebarProvider>
         </>
       )
     }

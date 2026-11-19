@@ -8,7 +8,8 @@ import type { Translation } from './en'
  * added to `en.ts` and forgotten here is a compile error rather than a string
  * that silently falls back mid-screen.
  *
- * Destructive-action labels keep their literal capitals, as in English.
+ * Button labels follow English's casing: sentence case on cards and the
+ * commit panel, destructive ones included.
  */
 export const es: Translation = {
   common: {
@@ -331,6 +332,7 @@ export const es: Translation = {
       all: 'Todas las campañas',
       switch: 'Cambiar de campaña',
       newCampaign: 'Nueva campaña',
+      settings: 'Ajustes de la campaña',
     },
     workspaceMenu: 'Menú del espacio de trabajo',
     yourWorkspaces: 'Tus espacios de trabajo',
@@ -673,12 +675,15 @@ export const es: Translation = {
   sentence: {
     label: 'Filtro',
     addDetail: 'añadir un detalle',
+    add: 'Añadir',
     addPlaceholder: 'un detalle…',
     change: 'Cambiar: {{clause}}',
     remove: 'Quitar: {{clause}}',
     removeDetail: 'Quitar este detalle',
     done: 'Hecho',
     clear: 'Borrar',
+    clearAll: 'Quitar filtros',
+    more: '+{{formatted}}',
     removeLast: 'quitar el último detalle',
     noValues: 'Aún no hay nada que elegir',
     heading: {
@@ -700,6 +705,8 @@ export const es: Translation = {
     share: 'Compartir con el espacio de trabajo',
     unshare: 'Dejar de compartir',
     duplicate: 'Duplicar',
+    views: 'Vistas',
+    close: 'Cerrar «{{name}}»',
     delete: 'Eliminar',
     copyName: '{{name}} (copia)',
     edited: 'modificado',
@@ -830,6 +837,9 @@ export const es: Translation = {
       dismiss: 'Descartar',
       hintMultiline:
         'Mayús <key/> para otra línea · Intro <key/> para guardarla',
+      open: 'AÑADIR IDEA',
+      close: 'Dejar de añadir ideas',
+      keep: 'Guardar esta idea',
     },
     verdict: {
       yes: 'En marcha',
@@ -841,8 +851,6 @@ export const es: Translation = {
       later: 'En el cajón',
       no: 'Apartar',
       undecide: 'Devolverla a la mesa',
-      close: 'Cerrar esta idea',
-      open: 'Abrir esta idea',
       delete: 'ELIMINAR IDEA',
     },
     horizon: {
@@ -879,10 +887,10 @@ export const es: Translation = {
     undecidedCount_one: '{{count}} idea sobre la mesa',
     undecidedCount_other: '{{count}} ideas sobre la mesa',
     card: {
-      written: 'Escrita',
       writtenBy: 'Escrita por {{name}}',
       writtenByAt: 'Escrita por {{name}} · {{at}}',
       suggestedAt: 'Sugerida por el asistente · {{at}}',
+      suggested: 'Sugerida por el asistente',
       assistant: 'Asistente',
       someone: 'Alguien',
       byAssistant: 'sugerida por el asistente',
@@ -1058,14 +1066,18 @@ export const es: Translation = {
     },
     bulk: {
       select: 'Seleccionar «{{title}}»',
-      selectAll_one: 'Seleccionar {{formatted}} idea',
-      selectAll_other: 'Seleccionar las {{formatted}} ideas',
+      selectPage: 'Seleccionar las ideas que se muestran',
+      selectAllIn_one: 'Seleccionar la {{formatted}} idea de «{{pile}}»',
+      selectAllIn_other: 'Seleccionar las {{formatted}} ideas de «{{pile}}»',
+      allIn_one: 'La {{formatted}} idea de «{{pile}}» está seleccionada',
+      allIn_other: 'Las {{formatted}} ideas de «{{pile}}» están seleccionadas',
+      elsewhere_one: '{{formatted}} más seleccionada en otro sitio',
+      elsewhere_other: '{{formatted}} más seleccionadas en otro sitio',
       clearAll: 'Quitar la selección',
       tooMany: 'Acota el filtro para seleccionarlas todas (hasta 5.000).',
       count_one: '{{count}} seleccionada',
       count_other: '{{count}} seleccionadas',
       delete: 'ELIMINAR',
-      clear: 'QUITAR',
       done_one: 'Se eliminó {{count}} idea.',
       done_other: 'Se eliminaron {{count}} ideas.',
       partial_one:
@@ -1565,6 +1577,51 @@ export const es: Translation = {
     openStrategy: 'ABRIR ESTRATEGIA',
     openAssets: 'ABRIR RECURSOS',
     openSettings: 'ABRIR AJUSTES',
+
+    doors: {
+      title: 'Todo lo de esta campaña',
+      loading: 'Contando…',
+      strategy: {
+        set_one: 'Fechas, objetivo y {{formatted}} canal',
+        set_other: 'Fechas, objetivo y {{formatted}} canales',
+        noDates: 'Todavía sin fechas',
+        noGoal: 'Todavía sin objetivo de publicaciones',
+        noChannels: 'Todavía sin canales',
+        notConnected: 'Ninguna cuenta con la que publicar',
+      },
+      ideas: {
+        waiting_one: '{{formatted}} idea esperando una decisión',
+        waiting_other: '{{formatted}} ideas esperando una decisión',
+        none: 'Nada esperando una decisión',
+      },
+      assets: {
+        all: 'Todos los documentos del espacio de trabajo',
+        some_one: '{{formatted}} documento',
+        some_other: '{{formatted}} documentos',
+        none: 'Ninguno todavía: Ogen escribe a partir del brief',
+      },
+      posts: {
+        none: 'Todavía sin publicaciones',
+        some_one: '{{formatted}} publicación',
+        some_other: '{{formatted}} publicaciones',
+        drafts_one: '{{formatted}} todavía en borrador',
+        drafts_other: '{{formatted}} todavía en borrador',
+      },
+      calendar: {
+        next_one: '{{formatted}} programada, la próxima el {{date}}',
+        next_other: '{{formatted}} programadas, la próxima el {{date}}',
+        some_one: '{{formatted}} programada',
+        some_other: '{{formatted}} programadas',
+        none: 'Nada programado',
+        over: 'No queda nada por salir',
+      },
+      analytics: {
+        some_one: '{{formatted}} publicación publicada',
+        some_other: '{{formatted}} publicaciones publicadas',
+        none: 'Resultados cuando salga una publicación',
+      },
+      settings: 'Nombre, tipo, archivar o eliminar',
+    },
     problems: {
       ignore: 'IGNORAR',
       ignoreFailed: 'No se pudo ignorar ese problema. Inténtalo de nuevo.',
@@ -4993,12 +5050,9 @@ export const es: Translation = {
       platformNoAccount: '{{platform}} — ninguna cuenta conectada',
       platformAccountsLabel: '{{platform}}, {{accounts}}',
       platformNoAccountLabel: '{{platform}}, ninguna cuenta conectada',
-      campaign: 'Campaña',
-      allCampaigns: 'Todas las campañas',
       control: {
         period: 'Periodo',
         platforms: 'Plataformas',
-        campaign: 'Campaña',
       },
       assistantChanged: 'El asistente cambió {{controls}}',
       otherCampaign: 'Una campaña que ya no aparece',
@@ -7121,6 +7175,7 @@ export const es: Translation = {
         ended: 'Terminadas',
       },
       open: 'Abrir {{name}}',
+      actions: 'Acciones de {{name}}',
       noChannels: 'Sin canales todavía',
       goodShape: 'Todo en orden',
       line: {
@@ -7316,21 +7371,22 @@ export const es: Translation = {
       label: 'Documentos',
       untitled: 'Sin título',
       selectRow: 'Seleccionar {{title}}',
-      deleteRow: 'Eliminar {{title}}',
+      selectGroup: 'Seleccionar todo en {{group}}',
       justNow: 'ahora mismo',
       minutes_one: '{{count}} min',
       minutes_other: '{{count}} min',
       publishedAgo: 'publicado {{when}}',
       addedAgo: 'añadido {{when}}',
-      nextIdeaMore_one: 'y {{count}} más',
-      nextIdeaMore_other: 'y {{count}} más',
-      readingTitle: 'Leyendo este archivo.',
-      readingBody:
-        'Las ideas aparecerán aquí solas cuando termine; puedes irte.',
-      failedTitle: 'No hemos podido leer este archivo.',
+      reading: 'Leyéndolo…',
+      failed: 'No se pudo leer',
       failedNext: 'Vuelve a subirlo o elimínalo.',
-      noIdeas: 'Leído, pero no ha salido ninguna idea de publicación.',
+      noIdeas: 'No ha salido ninguna idea',
       analyseAgain: 'Analizar de nuevo',
+      uploading: 'Subiendo, {{progress}} %',
+      retryUpload: 'Volver a subir {{name}}',
+      dismissUpload: 'Descartar {{name}}',
+      ideasWaiting_one: '{{formatted}} idea →',
+      ideasWaiting_other: '{{formatted}} ideas →',
       fold: 'Plegar {{group}}',
       unfold: 'Desplegar {{group}}',
       otherIdeasLoading: 'Cargando las ideas…',
@@ -7623,10 +7679,14 @@ export const es: Translation = {
     selection: {
       count_one: '{{count}} seleccionado',
       count_other: '{{count}} seleccionados',
-      clear: 'QUITAR SELECCIÓN',
       delete: 'ELIMINAR',
+      selectPage: 'Seleccionar los documentos que se muestran',
       selectAll_one: 'Seleccionar el documento',
       selectAll_other: 'Seleccionar los {{formatted}} documentos',
+      allSelected_one: 'El documento está seleccionado',
+      allSelected_other: 'Los {{formatted}} documentos están seleccionados',
+      elsewhere_one: '{{formatted}} más seleccionado en otro sitio',
+      elsewhere_other: '{{formatted}} más seleccionados en otro sitio',
       clearAll: 'Quitar la selección',
       failed: 'No se han podido seleccionar todas las coincidencias',
     },

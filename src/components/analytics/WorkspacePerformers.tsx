@@ -272,17 +272,20 @@ function PostList({
   note?: string
 }) {
   const { t } = useTranslation()
+  // A container, so the columns give way to the title when the board sits in
+  // half the page: the published column goes first (the age is the least
+  // compared thing here), then the figure column narrows.
   return (
-    <div className="flex flex-col">
+    <div className="@container flex flex-col">
       <div className="flex items-end gap-3 border-b border-border pb-1.5">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <h3 className="text-sm font-medium">{heading}</h3>
           {note && <p className="text-xs text-tertiary-foreground">{note}</p>}
         </div>
-        <span className="w-36 shrink-0 text-right text-xs leading-tight text-tertiary-foreground">
+        <span className="w-24 shrink-0 text-right text-xs leading-tight text-tertiary-foreground @lg:w-36">
           {basisLabel(t, by)}
         </span>
-        <span className="w-28 shrink-0 text-right text-xs text-tertiary-foreground">
+        <span className="hidden w-28 shrink-0 text-right text-xs text-tertiary-foreground @md:block">
           {t('analytics.performers.publishedColumn')}
         </span>
       </div>
@@ -355,7 +358,7 @@ function PostRow({ row, leader }: { row: PerformerRowView; leader: number }) {
         </span>
       </div>
 
-      <div className="flex w-36 shrink-0 flex-col items-end gap-1.5">
+      <div className="flex w-24 shrink-0 flex-col items-end gap-1.5 @lg:w-36">
         <span className="text-sm tabular-nums">{row.figure}</span>
         {/*
           The comparison, in the column it qualifies. A separate "vs typical"
@@ -393,7 +396,7 @@ function PostRow({ row, leader }: { row: PerformerRowView; leader: number }) {
         ) : null}
       </div>
 
-      <div className="flex w-28 shrink-0 flex-col items-end gap-1">
+      <div className="hidden w-28 shrink-0 flex-col items-end gap-1 @md:flex">
         <span className="text-sm">{row.published}</span>
         {/* How long it has been earning. Whether it has *finished* earning is
             said beside the reach instead — a post is not still counting in

@@ -139,24 +139,26 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** A row's own controls, by the names a screen reader hears. */
+/** A card's box, by the name a screen reader hears. */
 const tick = (title: string) =>
   userEvent.click(screen.getByRole('checkbox', { name: `Select ${title}` }))
-const bin = (title: string) =>
-  userEvent.click(screen.getByRole('button', { name: `Delete ${title}` }))
 const ticked = (title: string) =>
   screen.getByRole('checkbox', { name: `Select ${title}` })
+/** DELETE in the list's head, over whatever is ticked. */
+const deleteTicked = () =>
+  userEvent.click(screen.getByRole('button', { name: 'DELETE' }))
 
-describe('deleting one row', () => {
+describe('deleting one document', () => {
   /*
-   * The regression this exists for. The bin used to call the delete directly:
-   * one click, no dialog, and nothing anywhere in the product that undoes it.
+   * There is no bin on a card: one document is a selection of one, and the
+   * selection's DELETE asks, naming it — nothing in the product undoes this.
    */
   it('asks first, and names the document it is asking about', async () => {
     const { ui, onDeleteMany } = show()
     await renderWithProviders(ui)
 
-    await bin('Positioning')
+    await tick('Positioning')
+    await deleteTicked()
 
     expect(
       screen.getByRole('heading', { name: 'Delete "Positioning"?' }),
@@ -168,7 +170,8 @@ describe('deleting one row', () => {
     const { ui, onDeleteMany } = show()
     await renderWithProviders(ui)
 
-    await bin('Interview transcript')
+    await tick('Interview transcript')
+    await deleteTicked()
     await userEvent.click(
       screen.getByRole('button', { name: 'DELETE DOCUMENT' }),
     )
@@ -180,29 +183,27 @@ describe('deleting one row', () => {
     const { ui, onDeleteMany } = show()
     await renderWithProviders(ui)
 
-    await bin('Positioning')
+    await tick('Positioning')
+    await deleteTicked()
     await userEvent.click(screen.getByRole('button', { name: 'KEEP DOCUMENT' }))
 
     expect(onDeleteMany).not.toHaveBeenCalled()
     expect(screen.queryByText('Delete "Positioning"?')).not.toBeInTheDocument()
-  })
-
-  /*
-   * A row's bin and the selection are different gestures on the same screen,
-   * and binning a row nobody ticked must not throw away a selection somebody
-   * spent a minute building.
-   */
-  it('leaves a selection that was not what it deleted', async () => {
-    const { ui } = show()
-    await renderWithProviders(ui)
-
-    await tick('Positioning')
-    await bin('Interview transcript')
-    await userEvent.click(
-      screen.getByRole('button', { name: 'DELETE DOCUMENT' }),
-    )
-
+    // The selection is still there to act on.
     expect(ticked('Positioning')).toBeChecked()
+  })
+})
+
+describe('ticking', () => {
+  it('extends a range with Shift, from the last box pressed', async () => {
+    await renderWithProviders(show().ui)
+    await tick('Positioning')
+    await userEvent.keyboard('{Shift>}')
+    await tick('Interview transcript')
+    await userEvent.keyboard('{/Shift}')
+    expect(ticked('Positioning')).toBeChecked()
+    expect(ticked('Interview transcript')).toBeChecked()
+    expect(screen.getByRole('status')).toHaveTextContent('2 selected')
   })
 })
 
@@ -213,7 +214,7 @@ describe('deleting a selection', () => {
 
     await tick('Positioning')
     await tick('Interview transcript')
-    await userEvent.click(screen.getByRole('button', { name: /DELETE$/ }))
+    await deleteTicked()
 
     expect(
       screen.getByRole('heading', { name: 'Delete 2 documents?' }),
@@ -231,11 +232,12 @@ describe('deleting a selection', () => {
 
 describe('select all', () => {
   /*
-   * The list is fifty rows at a time, so the box on the filter bar selects the
-   * whole match by asking the server for its ids — never just what is loaded —
-   * and the delete it leads to names the count it will act on.
+   * The list is fifty rows at a time. The head box takes the cards loaded;
+   * the whole match is a separate, named step that asks the server for its
+   * ids — never just what is loaded — and the delete it leads to names the
+   * count it will act on.
    */
-  it('selects every match from the Group by line, and deletes all N', async () => {
+  it('ticks the page from the head box, then every match as its own step, and deletes all N', async () => {
     ids.fn.mockResolvedValue(['a1', 'a2', 'a3', 'a4', 'a5'])
     const { ui, onDeleteMany } = show(undefined, {
       total: 5,
@@ -244,13 +246,20 @@ describe('select all', () => {
     await renderWithProviders(ui)
 
     await userEvent.click(
-      screen.getByRole('checkbox', { name: 'Select all 5 documents' }),
+      screen.getByRole('checkbox', { name: 'Select the documents shown' }),
     )
+    expect(screen.getByRole('status')).toHaveTextContent('2 selected')
+    expect(ids.fn).not.toHaveBeenCalled()
 
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Select all 5 documents' }),
+    )
     expect(ids.fn).toHaveBeenCalledWith({ kind: 'pdf', sort: '-updated_at' })
-    expect(await screen.findByText('5 selected')).toBeInTheDocument()
+    expect(
+      await screen.findByText('All 5 documents are selected'),
+    ).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: /DELETE$/ }))
+    await deleteTicked()
     expect(
       screen.getByRole('heading', { name: 'Delete 5 documents?' }),
     ).toBeInTheDocument()
@@ -260,22 +269,16 @@ describe('select all', () => {
     expect(onDeleteMany).toHaveBeenCalledWith(['a1', 'a2', 'a3', 'a4', 'a5'])
   })
 
-  it('shows a dash while some are selected, and clears once all are', async () => {
-    ids.fn.mockResolvedValue(['a1', 'a2'])
+  it('shows a dash while some are ticked, and a half-ticked head box clears', async () => {
     const { ui } = show(undefined, { total: 2 })
     await renderWithProviders(ui)
 
     await tick('Positioning')
-    const box = screen.getByRole('checkbox', { name: 'Select all 2 documents' })
+    const box = screen.getByRole('checkbox', { name: 'Clear the selection' })
     expect(box).toHaveAttribute('aria-checked', 'mixed')
 
     await userEvent.click(box)
-    const full = await screen.findByRole('checkbox', {
-      name: 'Clear the selection',
-    })
-    expect(full).toBeChecked()
-
-    await userEvent.click(full)
+    expect(ticked('Positioning')).not.toBeChecked()
     expect(screen.queryByText(/selected$/)).not.toBeInTheDocument()
   })
 
@@ -299,7 +302,10 @@ describe('select all', () => {
     }
     await renderWithProviders(<Harness />)
     await userEvent.click(
-      screen.getByRole('checkbox', { name: 'Select all 5 documents' }),
+      screen.getByRole('checkbox', { name: 'Select the documents shown' }),
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Select all 5 documents' }),
     )
     await userEvent.click(screen.getByText('refilter'))
     answer(['a1', 'a2', 'a3', 'a4', 'a5'])
@@ -342,15 +348,15 @@ describe('select all', () => {
   })
 })
 
-describe('the filter sentence', () => {
-  const sentence = () => screen.getByRole('group', { name: 'Filter' })
+describe('the filter as pills', () => {
+  const pills = () => screen.getByRole('group', { name: 'Filter' })
 
-  it('reads "Showing all assets" with nothing chosen', async () => {
+  it('draws no pills with nothing chosen', async () => {
     await renderWithProviders(show().ui)
-    expect(sentence()).toHaveTextContent('Showing all assets')
+    expect(screen.queryByRole('group', { name: 'Filter' })).toBeNull()
   })
 
-  it('names what is listed by its type, and reads the rest in order', async () => {
+  it('names each filter as a pill, in order, and Filter counts them', async () => {
     let filter = withToken(EMPTY_FILTER, {
       field: 'status',
       negated: false,
@@ -372,23 +378,32 @@ describe('the filter sentence', () => {
       values: ['30d'],
     })
     await renderWithProviders(show(undefined, { filter, total: 2 }).ui)
-    expect(sentence()).toHaveTextContent(
-      'Showing PDFs or web pages, with “q4” in the title, only partly read, updated in the last 30 days',
+    expect(
+      screen
+        .getAllByRole('button', { name: /^Change: / })
+        .map((pill) => pill.textContent),
+    ).toEqual([
+      'PDFs or web pages',
+      'with “q4” in the title',
+      'only partly read',
+      'updated in the last 30 days',
+    ])
+    expect(screen.getByRole('button', { name: /^Filter/ })).toHaveTextContent(
+      'Filter4',
     )
-    expect(sentence()).toHaveTextContent('2 of 5')
   })
 
-  it('falls back to "assets" when a type is left out', async () => {
+  it('words a left-out type as its own pill', async () => {
     const filter = withToken(EMPTY_FILTER, {
       field: 'kind',
       negated: true,
       values: ['pdf'],
     })
     await renderWithProviders(show(undefined, { filter }).ui)
-    expect(sentence()).toHaveTextContent('Showing assets that aren’t PDFs')
+    expect(pills()).toHaveTextContent('that aren’t PDFs')
   })
 
-  it('removes a clause and clears them all', async () => {
+  it('removes a pill and clears them all', async () => {
     const onFilterChange = vi.fn()
     const filter = withToken(EMPTY_FILTER, {
       field: 'kind',
@@ -400,14 +415,14 @@ describe('the filter sentence', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Remove: PDFs' }))
     expect(onFilterChange).toHaveBeenLastCalledWith(EMPTY_FILTER)
-    await userEvent.click(screen.getByRole('button', { name: 'Clear' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
     expect(onFilterChange).toHaveBeenLastCalledWith(EMPTY_FILTER)
   })
 
   it('offers both searches when typing — inside the documents and in the title', async () => {
     const onFilterChange = vi.fn()
     await renderWithProviders(show(undefined, { onFilterChange }).ui)
-    await userEvent.click(screen.getByRole('button', { name: /add a detail/ }))
+    await userEvent.click(screen.getByRole('button', { name: /^Filter/ }))
     const field = screen.getByRole('combobox', { name: 'add a detail' })
     await userEvent.type(field, 'garden')
     const options = screen.getAllByRole('option').map((o) => o.textContent)
@@ -426,7 +441,7 @@ describe('the filter sentence', () => {
 
   it('takes a day, never a preset, for "updated before"', async () => {
     await renderWithProviders(show().ui)
-    await userEvent.click(screen.getByRole('button', { name: /add a detail/ }))
+    await userEvent.click(screen.getByRole('button', { name: /^Filter/ }))
     await userEvent.click(screen.getByText('updated…'))
     const panel = () => screen.getByRole('dialog', { name: 'Assets updated…' })
     expect(panel()).toHaveTextContent('Last 7 days')
@@ -460,8 +475,9 @@ describe('in Spanish', () => {
     await renderWithProviders(ui)
 
     await userEvent.click(
-      screen.getByRole('button', { name: 'Eliminar Positioning' }),
+      screen.getByRole('checkbox', { name: 'Seleccionar Positioning' }),
     )
+    await userEvent.click(screen.getByRole('button', { name: 'ELIMINAR' }))
 
     expect(
       screen.getByRole('heading', { name: '¿Eliminar «Positioning»?' }),
@@ -473,7 +489,7 @@ describe('in Spanish', () => {
     expect(screen.queryByText(/permanently deleted/)).not.toBeInTheDocument()
   })
 
-  it('reads the sentence in Spanish', async () => {
+  it('reads the pills in Spanish', async () => {
     const filter = withToken(EMPTY_FILTER, {
       field: 'kind',
       negated: false,
@@ -481,11 +497,11 @@ describe('in Spanish', () => {
     })
     await renderWithProviders(show(undefined, { filter, total: 2 }).ui)
     expect(screen.getByRole('group', { name: 'Filtro' })).toHaveTextContent(
-      'Mostrando PDF',
+      'PDF',
     )
     expect(
       screen.getByRole('button', { name: 'Quitar: PDF' }),
     ).toBeInTheDocument()
-    expect(screen.queryByText(/Showing/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Clear filters')).not.toBeInTheDocument()
   })
 })

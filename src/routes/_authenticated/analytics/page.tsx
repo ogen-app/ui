@@ -1,7 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
-import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
 import type { AnalyticsSearch } from '@/lib/analyticsSearch'
 
@@ -19,17 +18,13 @@ export function AnalyticsPage() {
 
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
-      <div className="h-0 grow overflow-y-auto flex flex-col">
-        <PageHeader title={t('analytics.surface.title')} scrollAway />
-        <div className="px-3 lg:px-6 pt-4 pb-10">
-          <AnalyticsDashboard
-            search={search}
-            onSearchChange={(next: AnalyticsSearch) =>
-              void navigate({ search: next, replace: true })
-            }
-          />
-        </div>
-      </div>
+      <AnalyticsDashboard
+        title={t('analytics.surface.title')}
+        search={search}
+        onSearchChange={(next: AnalyticsSearch) =>
+          void navigate({ search: next, replace: true })
+        }
+      />
     </PageContainer>
   )
 }

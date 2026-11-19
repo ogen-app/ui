@@ -9,17 +9,20 @@ import { useAnalyticsHighlightStore } from '@/stores/analyticsHighlightStore'
 
 /** The picker's value for a range the address names. */
 const CUSTOM = 'custom'
-/** The picker's value for the whole workspace. */
-const ALL = 'all'
 
 /**
- * What the dashboard is counting, and over what window.
+ * What the dashboard is counting, and over what window — the page header's
+ * actions, compact enough to share its 40px row with the title.
  *
- * The controls live here rather than in the page header. The corner is for
- * things that govern the page (CON-178), and the period does not: it does not
- * reach the lessons card, which says so under its heading. The platforms do
- * reach all three cards since CON-289, but they sit with the period because the
- * pair is only ever read together — what is in the numbers, and how far back.
+ * No campaign picker: the campaign is the switcher's, in the bar above, and a
+ * campaign's Analytics is its own address (`/campaigns/:id/analytics`).
+ *
+ * They are views, which is what the top-right corner is for (CON-178). The
+ * period does not reach the lessons card, and that card says so under its
+ * heading; that note is what makes it safe to put the period up here. The
+ * platforms reach all three cards since CON-289, and sit with the period
+ * because the pair is only ever read together — what is in the numbers, and
+ * how far back.
  *
  * **Several platforms at once, and nothing chosen means all of them.** The
  * empty selection is sent as no `platform` at all, which the server reads as
@@ -46,9 +49,6 @@ export function WorkspaceScopeBar({
   windows,
   onWindowChange,
   range,
-  campaigns = [],
-  campaignId,
-  onCampaignChange,
   className,
 }: {
   platforms: PlatformOption[]
@@ -66,14 +66,6 @@ export function WorkspaceScopeBar({
    * (CON-463) or a link. Shown as the period until a span is picked.
    */
   range?: { from: string; to: string }
-  /**
-   * The campaigns the dashboard can be narrowed to. Fewer than two hides the
-   * picker: every post is in a campaign, so with one the workspace *is* it.
-   */
-  campaigns?: { id: string; name: string }[]
-  /** The campaign it is narrowed to; absent for the whole workspace. */
-  campaignId?: string
-  onCampaignChange?: (campaignId: string | undefined) => void
   className?: string
 }) {
   const { t, i18n } = useTranslation()
@@ -83,10 +75,10 @@ export function WorkspaceScopeBar({
   const clearHighlight = useAnalyticsHighlightStore((s) => s.clear)
   const connected = platforms.filter((p) => p.accounts > 0)
 
-  // Nothing to filter. One connected platform means every state of this control
-  // shows the same numbers, and a control that can only be used pointlessly
-  // should not be on the page. The period stays either way, so the bar keeps
-  // its place and its height however much of the workspace is connected.
+  // Nothing to filter with one connected platform: every state of the control
+  // shows the same numbers. Its mark still shows, as a mark rather than a
+  // button, because which networks are in the numbers is worth seeing even
+  // when there is no choice about it.
   const filterable = connected.length > 1
   const current = windows.find((w) => w.window === window) ?? windows[0]
   const periods = windows.map((w) => ({ value: w.window, label: w.label }))
@@ -104,22 +96,6 @@ export function WorkspaceScopeBar({
     : undefined
   if (custom) periods.unshift({ value: CUSTOM, label: custom })
 
-  // A campaign the list no longer has (archived since the link was made)
-  // still narrows the numbers, so it stays named in the picker.
-  const campaignOptions = [
-    { value: ALL, label: t('analytics.scopeBar.allCampaigns') },
-    ...campaigns.map((c) => ({ value: c.id, label: c.name })),
-  ]
-  if (campaignId && !campaigns.some((c) => c.id === campaignId)) {
-    campaignOptions.push({
-      value: campaignId,
-      label: t('analytics.scopeBar.otherCampaign'),
-    })
-  }
-  const campaignLabel =
-    campaignOptions.find((o) => o.value === (campaignId ?? ALL))?.label ??
-    campaignOptions[0].label
-
   // Only what can be pressed counts as chosen. A platform that lost its last
   // account while chosen has no mark left to switch it off with.
   const chosen = selected.filter((id) => connected.some((p) => p.id === id))
@@ -134,17 +110,12 @@ export function WorkspaceScopeBar({
     clearHighlight()
     onSelectedChange(next.length === connected.length ? [] : next)
   }
-  const changedNames = (['platforms', 'campaign', 'period'] as const)
+  const changedNames = (['platforms', 'period'] as const)
     .filter((c) => changed.has(c))
     .map((c) => t(`analytics.scopeBar.control.${c}`))
 
   return (
-    <section
-      className={cn(
-        'flex w-full max-w-content flex-wrap items-center gap-x-4 gap-y-3 rounded-lg bg-primary px-5 py-4',
-        className,
-      )}
-    >
+    <section className={cn('flex min-w-0 items-center gap-3', className)}>
       {/* Read out once when the assistant moves the bar, silent otherwise. */}
       <p className="sr-only" aria-live="polite">
         {changedNames.length > 0
@@ -153,12 +124,12 @@ export function WorkspaceScopeBar({
             })
           : ''}
       </p>
-      {filterable && (
+      {connected.length > 0 && (
         <div
           className={cn(
-            'flex flex-wrap items-center gap-2 rounded-md transition-colors',
+            'flex items-center gap-2 rounded-md transition-colors',
             changed.has('platforms') &&
-              'bg-accent/5 outline outline-1 outline-accent outline-offset-4',
+              'bg-accent/5 outline outline-1 outline-accent outline-offset-2',
           )}
         >
           {connected.map((option) => (
@@ -166,7 +137,7 @@ export function WorkspaceScopeBar({
               key={option.id}
               platform={option}
               on={!narrowed || chosen.includes(option.id)}
-              onSelect={() => toggle(option.id)}
+              onSelect={filterable ? () => toggle(option.id) : undefined}
             />
           ))}
 
@@ -177,7 +148,6 @@ export function WorkspaceScopeBar({
             <Button
               variant="ghost"
               size="sm"
-              className="ml-1"
               onClick={() => {
                 clearHighlight()
                 onSelectedChange([])
@@ -189,26 +159,9 @@ export function WorkspaceScopeBar({
         </div>
       )}
 
-      {/* Far right, on its own, because it is the one control here that changes
-          the window rather than the sources. */}
-      <div className="ml-auto flex flex-wrap items-center gap-2">
-        {/* What the numbers are about, then over when: the campaign narrows
-            the posts counted, the period the days. */}
-        {/* Also shown with no list to pick from — still loading, or a
-            workspace without campaigns — while a link has narrowed it, so
-            the filter can be seen and cleared. */}
-        {onCampaignChange && (campaigns.length > 1 || campaignId) && (
-          <Picker
-            label={t('analytics.scopeBar.campaign')}
-            value={campaignLabel}
-            options={campaignOptions}
-            highlighted={changed.has('campaign')}
-            onChange={(value) => {
-              clearHighlight()
-              onCampaignChange(value === ALL ? undefined : value)
-            }}
-          />
-        )}
+      {/* Last, because it is the one control here that changes the window
+          rather than the sources. */}
+      <div className="flex items-center gap-2">
         <Picker
           label={t('analytics.scopeBar.period')}
           value={custom ?? current.label}
@@ -232,7 +185,8 @@ function PlatformMark({
   platform: PlatformOption
   /** Whether this platform is in the numbers — true for all of them by default. */
   on: boolean
-  onSelect: () => void
+  /** Absent when it is the only one connected: a mark, not a toggle. */
+  onSelect?: () => void
 }) {
   const { t } = useTranslation()
   const info = usePlatformCatalog().resolve(platform.id)
@@ -241,25 +195,21 @@ function PlatformMark({
     count: platform.accounts,
   })
 
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={on}
-      title={t('analytics.scopeBar.platformAccounts', {
-        platform: platform.label,
-        accounts,
-      })}
-      className={cn(
-        'relative flex size-10 items-center justify-center rounded-md transition-colors',
-        on
-          ? 'bg-secondary outline outline-1 outline-foreground'
-          : 'border border-border text-quaternary-foreground hover:bg-secondary',
-      )}
-    >
+  const title = t('analytics.scopeBar.platformAccounts', {
+    platform: platform.label,
+    accounts,
+  })
+  // The period picker's box (`Picker`): 1px border, 6px/10px padding and a
+  // 16px line, so the two sit at one height in the header and read as one row
+  // of controls. The count rides inside rather than as a badge, as a button's
+  // label would.
+  const shape =
+    'inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium tabular-nums transition-colors'
+  const body = (
+    <>
       {Icon ? (
         <Icon
-          className="size-6"
+          className="size-4"
           weight="fill"
           // Brand hue only while it is being counted. A greyed logo is the
           // fastest way to say "not in these numbers" — it needs no legend.
@@ -267,29 +217,41 @@ function PlatformMark({
           aria-hidden
         />
       ) : (
-        <span className="text-xs font-medium">
-          {platform.label.slice(0, 2)}
-        </span>
+        <span>{platform.label.slice(0, 2)}</span>
       )}
-
-      {/* The count rides the mark rather than sitting in a summary line: it is
-          read at the same moment as the platform it qualifies. */}
-      <span
-        className={cn(
-          'absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[10px] font-medium tabular-nums ring-2 ring-primary',
-          on
-            ? 'bg-foreground text-primary'
-            : 'bg-quaternary text-tertiary-foreground',
-        )}
-      >
-        {platform.accounts}
-      </span>
+      {/* The count is read at the same moment as the platform it qualifies. */}
+      <span aria-hidden>{platform.accounts}</span>
       <span className="sr-only">
         {t('analytics.scopeBar.platformAccountsLabel', {
           platform: platform.label,
           accounts,
         })}
       </span>
+    </>
+  )
+
+  return onSelect ? (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={on}
+      title={title}
+      className={cn(
+        shape,
+        on
+          ? 'border-border bg-primary text-foreground hover:bg-secondary'
+          : 'border-border bg-transparent text-quaternary-foreground hover:bg-secondary',
+      )}
+    >
+      {body}
     </button>
+  ) : (
+    // The only network connected: in the numbers, with nothing to press.
+    <span
+      title={title}
+      className={cn(shape, 'border-border bg-primary text-foreground')}
+    >
+      {body}
+    </span>
   )
 }

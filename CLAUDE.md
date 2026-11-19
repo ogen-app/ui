@@ -171,7 +171,7 @@ Loaded automatically in `src/components/layout`, `src/components/page-primitives
 - There are no centred columns.
 - A page that is more than one column of cards uses one of two layouts.
 - Screen corners have fixed jobs — top is about the object, bottom is about the work.
-- A control that doesn't govern the whole page doesn't go in the corner.
+- A control in the corner says which cards it doesn't reach.
 - The app's keys are one listener and one table.
 
 ### Server-driven lists & filters — [`docs/conventions/lists.md`](./docs/conventions/lists.md)
@@ -182,6 +182,7 @@ Loaded automatically in `src/components/smartFilter`, `src/components/content`, 
 - The asset list is the server's answer to the URL, a page at a time.
 - The Ideas list is the server's answer to the URL too.
 - A campaign's posts list and calendar read one filter.
+- The Ideas and Assets lists are cards on `listCards`' rules: tabs in the page header, and one pinned line for the filter, the arrangement and the selection.
 
 ### Posts — [`docs/conventions/posts.md`](./docs/conventions/posts.md)
 
