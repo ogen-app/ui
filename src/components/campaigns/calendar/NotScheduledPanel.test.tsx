@@ -119,14 +119,14 @@ describe('the Not scheduled panel (CON-485)', () => {
     expect(screen.getByText('Stranded')).toBeTruthy()
   })
 
-  it('opens the no-account group when it is all there is', async () => {
+  it('says nothing is ready, and opens the no-account group, when every post needs an account', async () => {
     data.posts = [post('Stranded', { platform_id: 'tt' })]
     await renderWithProviders(<NotScheduledPanel campaignId="c1" />)
     const blocked = screen.getByRole('button', { name: /Needs an account/ })
     expect(blocked.getAttribute('aria-expanded')).toBe('true')
-    expect(
-      screen.queryByRole('button', { name: /Ready to schedule/ }),
-    ).toBeNull()
+    const ready = screen.getByRole('button', { name: /Ready to schedule/ })
+    expect(ready.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByText('Nothing is ready to be scheduled')).toBeTruthy()
   })
 
   it('lets go of a just-written draft once it has a date', async () => {

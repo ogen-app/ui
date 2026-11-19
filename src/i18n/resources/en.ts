@@ -2099,6 +2099,8 @@ export const en = {
      * folded away by default, with each row's reason in amber.
      */
     readyToSchedule: 'Ready to schedule',
+    /** Inside that group when every undated post needs an account. */
+    noneReady: 'Nothing is ready to be scheduled',
     needsAccount: 'Needs an account',
     /** A row's reason, worded as what to do about it. */
     accountGap: {

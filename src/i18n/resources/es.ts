@@ -1637,6 +1637,7 @@ export const es: Translation = {
      * folded away by default, with each row's reason in amber.
      */
     readyToSchedule: 'Listas para programar',
+    noneReady: 'Nada está listo para programar',
     needsAccount: 'Necesitan una cuenta',
     /** A row's reason, worded as what to do about it. */
     accountGap: {

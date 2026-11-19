@@ -266,17 +266,23 @@ function NotScheduled({
                 {ready.map((post) => row(post))}
               </div>
             ) : (
-              ready.length > 0 && (
-                <Collapse
-                  title={t('calendar.readyToSchedule')}
-                  meta={formatNumber(ready.length)}
-                  defaultOpen
-                >
+              // Shown empty too, so the panel says in one line that nothing
+              // here can go on a day yet — the only prose it has.
+              <Collapse
+                title={t('calendar.readyToSchedule')}
+                meta={formatNumber(ready.length)}
+                defaultOpen
+              >
+                {ready.length > 0 ? (
                   <div className="flex flex-col gap-2">
                     {ready.map((post) => row(post))}
                   </div>
-                </Collapse>
-              )
+                ) : (
+                  <p className="text-sm leading-5 text-tertiary-foreground">
+                    {t('calendar.noneReady')}
+                  </p>
+                )}
+              </Collapse>
             )}
             {blocked.length > 0 && (
               <Collapse
