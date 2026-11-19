@@ -4,7 +4,7 @@ import { findScrollParent } from '@/lib/scrollParent'
 /**
  * Group bands that pin under the page header, for a list that scrolls with
  * its page in the post page's frame (CON-392): `PageHeader` sticky inside one
- * `ScrollArea`, its 80px fade over whatever scrolls under it. The Assets and
+ * `ScrollArea`, whatever scrolls passing under it. The Assets and
  * Ideas lists both read this way.
  *
  * A band pins at the foot of that fade (`BAND_TOP`). While pinned it carries
@@ -15,14 +15,14 @@ import { findScrollParent } from '@/lib/scrollParent'
  */
 
 /**
- * Where a band pins: the foot of the page header, whose 80px fade (24px over
- * the title, the 40px row, 16px under) the list scrolls under.
+ * Where a band pins: the foot of the page header — 8px over its 40px row, 8px
+ * under it and its 1px rule. `CardHead` pins at the same line (`top-[57px]`).
  */
-export const BAND_TOP = 80
+export const BAND_TOP = 57
 
 /** A band's classes: sticky at `BAND_TOP`, the cap shown while pinned. */
 export const PINNED_BAND =
-  "sticky top-20 border-b border-quaternary bg-background before:absolute before:inset-x-0 before:bottom-full before:hidden before:h-20 before:bg-background before:content-[''] data-pinned:before:block"
+  "sticky top-[57px] border-b border-quaternary bg-background before:absolute before:inset-x-0 before:bottom-full before:hidden before:h-20 before:bg-background before:content-[''] data-pinned:before:block"
 
 /**
  * The page's scroller: the `ScrollArea`'s viewport, found by what it is

@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -18,16 +19,12 @@ import {
   type IdeaPostAnswer,
 } from '@/components/ideas/IdeaPostForm'
 import { HugeiconsIcon } from '@hugeicons/react'
-import {
-  ArrowDown01Icon,
-  ArrowUpDownIcon,
-  Layers01Icon,
-  Note01Icon,
-} from '@hugeicons/core-free-icons'
-import { TrashIcon } from '@phosphor-icons/react'
+import { Note01Icon } from '@hugeicons/core-free-icons'
+import { CaretDownIcon, PlusIcon } from '@phosphor-icons/react'
 import { KIND_ICON } from '@/components/content/AssetKindMark'
 import { KIND_TONE } from '@/components/content/kindTone'
 import { NoMatches } from '@/components/smartFilter/NoMatches'
+import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { Button } from '@/components/ui/button'
@@ -41,11 +38,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  PINNED_BAND,
   scrollerOf,
   usePinnedBands,
 } from '@/components/page-primitives/pinnedBands'
-import { ZIndex } from '@/config/zIndex'
+import {
+  CARD_LIST,
+  CardBand,
+  CardHead,
+  HeaderTabs,
+} from '@/components/page-primitives/listCards'
 import {
   ideaCountQuery,
   useIdeaList,
@@ -92,7 +93,12 @@ import {
   GroupActions,
   SaveGroupDialog,
 } from '@/components/smartFilter/SavedViewsMenu'
-import { FilterSentence } from '@/components/smartFilter/FilterSentence'
+import { FilterPills } from '@/components/smartFilter/FilterPills'
+import {
+  FilterButton,
+  LINE_CONTROL,
+  OpenView,
+} from '@/components/smartFilter/ListStrip'
 import { useIdeaVocabulary, type IdeaVocabulary } from './useIdeaVocabulary'
 
 /** What the delete dialog is asking about. */
@@ -123,18 +129,21 @@ const ARRIVAL_PAGES = 5
  * dialog a written idea's own DELETE IDEA uses.
  */
 export function IdeasQuerySurface({
+  heading,
   campaignId,
   search,
   onSearchChange,
   onHasMoreChange,
 }: {
+  /** The page header's title: "Ideas", or the campaign's. */
+  heading: string
   campaignId: string | null
   search: IdeaListSearch
   onSearchChange: (next: IdeaListSearch) => void
   /** Whether a further page is still to load — the page's bottom fader asks. */
   onHasMoreChange?: (hasMore: boolean) => void
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   // The clock and the zone the presets are read in, once a visit.
   const [now] = useState(() => new Date())
   const [timeZone] = useState(viewerTimeZone)
@@ -251,9 +260,11 @@ export function IdeasQuerySurface({
   const [confirming, setConfirming] = useState<Confirming | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // A new question empties the selection; a new order does not.
+  // A new question empties the selection; a new order does not, and nor
+  // does another pile — ticks survive a tab switch, the way a mail client's
+  // do, and the head says how many are ticked elsewhere.
   const question = useMemo(() => {
-    const { sort: _sort, group: _group, tz: _tz, ...rest } = params
+    const { sort: _sort, group: _group, tz: _tz, pile: _pile, ...rest } = params
     return JSON.stringify(rest)
   }, [params])
   const [selectionFor, setSelectionFor] = useState(question)
@@ -262,6 +273,22 @@ export function IdeasQuerySurface({
     setTicked(new Set())
     setAllMatching(false)
   }
+  // "Every match" is the pile's, so it is let go with the pile; the ids stay.
+  const [pileFor, setPileFor] = useState(pile)
+  if (pileFor !== pile) {
+    setPileFor(pile)
+    setAllMatching(false)
+  }
+  /** The asked-for pile and question, for an answer that arrives after either changed. */
+  const askedPile = useRef(pile)
+  useEffect(() => {
+    askedPile.current = pile
+  }, [pile])
+  // The add field of the pills, which Filter in the list's head opens.
+  const [adding, setAdding] = useState(false)
+  // Whether ADD IDEA has opened the capture field across the header.
+  const [capturing, setCapturing] = useState(false)
+  const filterCount = IDEA_FILTER_MODEL.tokensOf(filter).length
   /** The question on screen, for a request that answers after it changed. */
   const asked = useRef(question)
   useEffect(() => {
@@ -370,21 +397,48 @@ export function IdeasQuerySurface({
     viewWriter.update.mutate({ id: active.id, query: ideaViewQuery(search) })
   // Saving is on demand: with filters on and no group open, the bar offers it.
   const saveAsGroup = groupsOn && !active && narrowed && (
-    <Button
-      variant="outline"
-      size="sm"
+    <button
+      type="button"
       onClick={() => setSaving({ mode: 'new' })}
+      className="cursor-pointer font-medium text-accent outline-none hover:underline focus-visible:underline"
     >
       {t('savedViews.saveAs')}
-    </Button>
+    </button>
   )
 
-  const toggleRow = (id: string) => {
+  /** The last box pressed, which Shift extends a range from. */
+  const anchor = useRef<string | null>(null)
+  const toggleRow = (id: string, shift = false) => {
     setAllMatching(false)
     setTicked((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      const on = !prev.has(id)
+      const from = shift && anchor.current
+      const a = from ? visibleRows.findIndex((r) => r.id === from) : -1
+      const b = visibleRows.findIndex((r) => r.id === id)
+      const range =
+        a >= 0 && b >= 0
+          ? visibleRows.slice(Math.min(a, b), Math.max(a, b) + 1)
+          : [{ id }]
+      for (const r of range)
+        if (on) next.add(r.id)
+        else next.delete(r.id)
+      return next
+    })
+    anchor.current = id
+  }
+  /**
+   * A group's box takes the group's loaded cards: half-ticked, it fills the
+   * group rather than clearing it — clearing everything is the head box's job.
+   */
+  const toggleBand = (ids: string[]) => {
+    setAllMatching(false)
+    setTicked((prev) => {
+      const next = new Set(prev)
+      const all = ids.every((id) => next.has(id))
+      for (const id of ids)
+        if (all) next.delete(id)
+        else next.add(id)
       return next
     })
   }
@@ -394,12 +448,13 @@ export function IdeasQuerySurface({
   }
   const selectAllMatching = async () => {
     const question = asked.current
+    const forPile = askedPile.current
     setResolving(true)
     try {
       const answer = await queryIdeaIds(params)
-      // The filter moved while this was in flight: these ids answer the
-      // previous question, and a delete must never act on that one.
-      if (asked.current !== question) return
+      // The filter or the pile moved while this was in flight: these ids
+      // answer the previous question, and a delete must never act on that one.
+      if (asked.current !== question || askedPile.current !== forPile) return
       if (!answer) {
         toast.error(t('ideas.bulk.tooMany'))
         return
@@ -414,24 +469,17 @@ export function IdeasQuerySurface({
       setResolving(false)
     }
   }
-  const everything = total > 0 && (allMatching || ticked.size >= total)
-  const selectAll = (
-    <Checkbox
-      checked={everything ? true : ticked.size > 0 ? 'indeterminate' : false}
-      disabled={total === 0 || resolving}
-      onCheckedChange={() =>
-        everything ? clearSelection() : void selectAllMatching()
-      }
-      aria-label={
-        everything
-          ? t('ideas.bulk.clearAll')
-          : t('ideas.bulk.selectAll', {
-              count: total,
-              formatted: formatNumber(total, {}, i18n.language),
-            })
-      }
-    />
-  )
+  // The head box takes the page — the cards loaded — and widening to every
+  // match is a separate, named step; a half-ticked head box clears.
+  const onPage = visibleRows.filter((r) => ticked.has(r.id)).length
+  const pageAll = visibleRows.length > 0 && onPage === visibleRows.length
+  const elsewhere = allMatching ? 0 : ticked.size - onPage
+  const headState: boolean | 'indeterminate' =
+    allMatching || pageAll ? true : ticked.size > 0 ? 'indeterminate' : false
+  const toggleHead = () =>
+    ticked.size > 0
+      ? clearSelection()
+      : setTicked(new Set(visibleRows.map((r) => r.id)))
 
   const handleDeleteConfirmed = async () => {
     if (!confirming) return
@@ -465,51 +513,141 @@ export function IdeasQuerySurface({
   // panel's room is measured on, and the measure is taken once it mounts.
   if (query.isPending)
     return (
-      <div className="h-[60vh]">
-        <PageLoader />
-      </div>
+      <>
+        <PageHeader title={heading} />
+        <div className="h-[60vh]">
+          <PageLoader />
+        </div>
+      </>
     )
   if (query.isError && rows.length === 0)
-    return <PageError header={t('ideas.loadFailed')} />
+    return (
+      <>
+        <PageHeader title={heading} />
+        <PageError header={t('ideas.loadFailed')} />
+      </>
+    )
 
   const firstRun = totalUnfiltered === 0 && !narrowed
-  const selecting = ticked.size > 0
+  const selecting = ticked.size > 0 || allMatching
+  // With no ideas yet, writing one is all there is to do.
+  const writing = capturing || firstRun
 
-  return (
-    // The Assets page's frame (CON-388): full width, the list on white in its
-    // own scroller, so its group bands stay pinned while the rows pass under
-    // them. Nothing above the list scrolls.
-    <div className="flex flex-col gap-4 pt-1 pb-4">
-      <IdeaCapture
-        onCapture={(title, note, by) => writer.capture(title, note, by)}
-      />
-
-      {firstRun ? (
-        <div className="pt-2">
-          <p className="text-sm text-secondary-foreground">
-            {t('ideas.empty.title')}
-          </p>
-          <p className="pt-1 text-sm text-tertiary-foreground">
-            {t('ideas.empty.subtitle')}
-          </p>
-        </div>
+  /**
+   * The list's one line, pinned: the box over the boxes, then Views, Filter
+   * and the pills, Group and Sort at its end — or the selection and its
+   * actions in their place.
+   */
+  const listHead = (
+    <CardHead
+      wide={campaignId === null}
+      box={
+        <Checkbox
+          checked={headState}
+          disabled={resolving}
+          onCheckedChange={toggleHead}
+          aria-label={
+            ticked.size > 0
+              ? t('ideas.bulk.clearAll')
+              : t('ideas.bulk.selectPage')
+          }
+        />
+      }
+    >
+      {selecting ? (
+        <SelectionLine
+          count={ticked.size}
+          allMatching={allMatching}
+          elsewhere={elsewhere}
+          canWiden={pageAll && !allMatching && total > onPage}
+          total={total}
+          pileLabel={t(PILE_LABEL[pile])}
+          resolving={resolving}
+          onWiden={() => void selectAllMatching()}
+          onClear={clearSelection}
+        >
+          <SelectionActions
+            count={ticked.size}
+            busy={deleting || resolving || compile.isPending || draft.isPending}
+            campaignId={tickedCampaign}
+            plans={tickedPlans}
+            onCompile={({ platformIds }) =>
+              compile.mutate(
+                {
+                  ids: [...ticked],
+                  campaignId: tickedCampaign ?? undefined,
+                  platformIds,
+                },
+                { onSuccess: clearSelection },
+              )
+            }
+            onDraft={({ platformIds, together }) =>
+              draft.mutate(
+                {
+                  ids: [...ticked],
+                  campaignId: tickedCampaign ?? undefined,
+                  platformIds,
+                  together,
+                },
+                { onSuccess: clearSelection },
+              )
+            }
+            onDelete={() => {
+              const ids = [...ticked]
+              const only =
+                ids.length === 1 ? rows.find((r) => r.id === ids[0]) : undefined
+              setConfirming({
+                ids,
+                title: only?.title ?? null,
+                fromSelection: true,
+              })
+            }}
+          />
+        </SelectionLine>
       ) : (
-        // 32px under the capture field (16 here, on the page's 16): writing
-        // an idea and narrowing the list are different acts.
-        <div className="mt-4 flex flex-col">
-          {/* Which view this is, then what it shows, as one sentence. */}
-          <FilterSentence
-            filter={filter}
-            model={IDEA_FILTER_MODEL}
-            onChange={onFilterChange}
-            vocabulary={vocabulary}
-            total={total}
-            totalUnfiltered={totalUnfiltered}
-            countQuery={(f) => ideaCountQuery(contextFor(f))}
-            clearable={!active}
-            leading={
+        <>
+          <div className="flex min-w-0 flex-1 items-start gap-x-4">
+            <FilterButton count={filterCount} onClick={() => setAdding(true)} />
+            <FilterPills
+              inline
+              filter={filter}
+              model={IDEA_FILTER_MODEL}
+              onChange={onFilterChange}
+              vocabulary={vocabulary}
+              countQuery={(f) => ideaCountQuery(contextFor(f))}
+              adding={adding}
+              onAddingChange={setAdding}
+              clearable={!active}
+              leading={
+                groupsOn &&
+                active && (
+                  <OpenView
+                    view={active}
+                    edited={edited}
+                    onClose={() => openView(null)}
+                  />
+                )
+              }
+              trailing={
+                groupsOn && active
+                  ? edited && (
+                      <GroupActions
+                        canEdit={active.canEdit}
+                        busy={viewWriter.update.isPending}
+                        onSaveChanges={saveChanges}
+                        onSaveAs={() => setSaving({ mode: 'new' })}
+                        onRevert={() => openView(active)}
+                      />
+                    )
+                  : saveAsGroup
+              }
+            />
+          </div>
+          <Arrangement
+            views={
               groupsOn && (
                 <SavedViewsMenu
+                  trigger="tab"
                   views={views.data ?? []}
                   allLabel={t('savedViews.all.ideas')}
                   countName="undecided"
@@ -536,45 +674,11 @@ export function IdeasQuerySurface({
                 />
               )
             }
-            trailing={
-              groupsOn && active
-                ? edited && (
-                    <GroupActions
-                      canEdit={active.canEdit}
-                      busy={viewWriter.update.isPending}
-                      onSaveChanges={saveChanges}
-                      onSaveAs={() => setSaving({ mode: 'new' })}
-                      onRevert={() => openView(active)}
-                    />
-                  )
-                : saveAsGroup
-            }
-          />
-          {groupsOn && active && !active.valid && (
-            <p className="mt-1 flex items-center gap-2 pl-5 text-sm text-destructive">
-              {t('savedViews.invalid')}
-              {active.canEdit && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setRemoving(active)}
-                >
-                  {t('savedViews.remove.confirm')}
-                </Button>
-              )}
-            </p>
-          )}
-
-          <ViewRow
-            selectAll={selectAll}
-            piles={piles}
-            pile={pile}
-            onPile={(next) =>
-              change({ pile: next === 'waiting' ? undefined : next })
-            }
             group={group}
             onGroup={(next) =>
-              change({ group: next === DEFAULT_IDEA_GROUP ? undefined : next })
+              change({
+                group: next === DEFAULT_IDEA_GROUP ? undefined : next,
+              })
             }
             scoped={!!campaignId}
             sort={sort}
@@ -582,107 +686,135 @@ export function IdeasQuerySurface({
               change({ sort: next === 'waiting' ? undefined : next })
             }
           />
+        </>
+      )}
+    </CardHead>
+  )
 
-          {visibleRows.length === 0 ? (
-            <div className="bg-primary">
-              {narrowed ? (
-                <NoMatches
-                  title={t('ideas.filter.nothingMatches')}
-                  filter={filter}
-                  model={IDEA_FILTER_MODEL}
-                  vocabulary={vocabulary}
-                  countQuery={(f) => ideaCountQuery(contextFor(f))}
-                  onChange={onFilterChange}
-                />
-              ) : (
-                <p className="py-12 text-center text-sm text-tertiary-foreground">
-                  {t(`ideas.pileEmpty.${pile}`)}
-                </p>
-              )}
-            </div>
-          ) : (
-            <IdeaRows
-              rows={visibleRows}
-              groups={groups ?? []}
-              total={total}
-              group={group}
-              vocabulary={vocabulary}
-              now={now}
-              showCampaign={campaignId === null}
-              expandedId={expandedId}
-              onToggleExpanded={(id) =>
-                setExpandedId((open) => (open === id ? null : id))
-              }
-              ticked={ticked}
-              selecting={selecting}
-              onToggleRow={toggleRow}
-              writer={writer}
-              onDelete={(idea) =>
-                setConfirming({
-                  ids: [idea.id],
-                  title: idea.title,
-                  fromSelection: false,
-                })
-              }
-              revealId={opened === named ? named : undefined}
-              onEndReached={() => {
-                // Not after a page failed: re-observing the foot would ask
-                // again at once, and again. The retry below is the way on.
-                if (
-                  query.hasNextPage &&
-                  !query.isFetchingNextPage &&
-                  !query.isFetchNextPageError
-                )
-                  void query.fetchNextPage()
-              }}
-              loadingMore={query.isFetchingNextPage}
-              moreFailed={query.isFetchNextPageError}
-              onRetryMore={() => void query.fetchNextPage()}
+  return (
+    <>
+      {/* The page header carries the piles — the only counts on the page,
+          counted within the filter so the four add up to the match — and
+          ADD IDEA, which lays the capture field over the whole row. */}
+      <PageHeader
+        title={heading}
+        actions={
+          <Button size="lg" onClick={() => setCapturing(true)}>
+            <PlusIcon />
+            <span>{t('ideas.capture.open')}</span>
+          </Button>
+        }
+        overlay={
+          writing && (
+            <IdeaCapture
+              onCapture={(title, note, by) => writer.capture(title, note, by)}
+              onClose={firstRun ? undefined : () => setCapturing(false)}
             />
-          )}
-        </div>
-      )}
-
-      {selecting && (
-        <SelectionBar
-          count={ticked.size}
-          busy={deleting || resolving || compile.isPending || draft.isPending}
-          onClear={clearSelection}
-          campaignId={tickedCampaign}
-          plans={tickedPlans}
-          onCompile={({ platformIds }) =>
-            compile.mutate(
-              {
-                ids: [...ticked],
-                campaignId: tickedCampaign ?? undefined,
-                platformIds,
-              },
-              { onSuccess: clearSelection },
-            )
+          )
+        }
+      >
+        <PileTabs
+          piles={piles}
+          pile={pile}
+          onPile={(next) =>
+            change({ pile: next === 'waiting' ? undefined : next })
           }
-          onDraft={({ platformIds, together }) =>
-            draft.mutate(
-              {
-                ids: [...ticked],
-                campaignId: tickedCampaign ?? undefined,
-                platformIds,
-                together,
-              },
-              { onSuccess: clearSelection },
-            )
-          }
-          onDelete={() => {
-            const ids = [...ticked]
-            const only =
-              ids.length === 1 ? rows.find((r) => r.id === ids[0]) : undefined
-            setConfirming({
-              ids,
-              title: only?.title ?? null,
-              fromSelection: true,
-            })
-          }}
         />
-      )}
+      </PageHeader>
+
+      <div className="flex flex-col px-3 pb-4 lg:px-6">
+        {firstRun ? (
+          <div>
+            <p className="text-sm text-secondary-foreground">
+              {t('ideas.empty.title')}
+            </p>
+            <p className="pt-1 text-sm text-tertiary-foreground">
+              {t('ideas.empty.subtitle')}
+            </p>
+          </div>
+        ) : (
+          <>
+            {groupsOn && active && !active.valid && (
+              <p className="flex items-center gap-2 pb-3 text-xs/4 text-destructive">
+                {t('savedViews.invalid')}
+                {active.canEdit && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setRemoving(active)}
+                  >
+                    {t('savedViews.remove.confirm')}
+                  </Button>
+                )}
+              </p>
+            )}
+
+            {visibleRows.length === 0 ? (
+              <>
+                {/* The line stays, so the filter that emptied the list can be
+                  changed where it was set. */}
+                <ul className={CARD_LIST}>{listHead}</ul>
+                <div className="pt-4">
+                  {narrowed ? (
+                    <NoMatches
+                      title={t('ideas.filter.nothingMatches')}
+                      filter={filter}
+                      model={IDEA_FILTER_MODEL}
+                      vocabulary={vocabulary}
+                      countQuery={(f) => ideaCountQuery(contextFor(f))}
+                      onChange={onFilterChange}
+                    />
+                  ) : (
+                    <p className="py-12 text-center text-sm/5 text-secondary-foreground">
+                      {t(`ideas.pileEmpty.${pile}`)}
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <IdeaRows
+                head={listHead}
+                rows={visibleRows}
+                groups={groups ?? []}
+                group={group}
+                vocabulary={vocabulary}
+                now={now}
+                showCampaign={campaignId === null}
+                expandedId={expandedId}
+                onToggleExpanded={(id) =>
+                  setExpandedId((open) => (open === id ? null : id))
+                }
+                ticked={ticked}
+                selecting={selecting}
+                onToggleRow={toggleRow}
+                onToggleBand={toggleBand}
+                writer={writer}
+                onDelete={(idea) =>
+                  setConfirming({
+                    ids: [idea.id],
+                    title: idea.title,
+                    fromSelection: false,
+                  })
+                }
+                revealId={opened === named ? named : undefined}
+                onEndReached={() => {
+                  // Not after a page failed: re-observing the foot would ask
+                  // again at once, and again. The retry below is the way on.
+                  if (
+                    query.hasNextPage &&
+                    !query.isFetchingNextPage &&
+                    !query.isFetchNextPageError
+                  )
+                    void query.fetchNextPage()
+                }}
+                loadingMore={query.isFetchingNextPage}
+                moreFailed={query.isFetchNextPageError}
+                onRetryMore={() => void query.fetchNextPage()}
+              />
+            )}
+          </>
+        )}
+      </div>
 
       <SaveGroupDialog
         isOpen={saving !== null}
@@ -727,7 +859,7 @@ export function IdeasQuerySurface({
         onConfirm={() => void handleDeleteConfirmed()}
         deleting={deleting}
       />
-    </div>
+    </>
   )
 }
 
@@ -740,126 +872,117 @@ const PILE_LABEL = {
 } as const satisfies Record<IdeaPile, string>
 
 /**
- * The piles as tabs, counted within the filter — the four always add up to
- * the match — and on the same line, how to read them: Group by and Sort.
+ * The piles as tabs in the page header, after the title, with the only
+ * counts on the page — counted within the filter, so the four always add up
+ * to the match. The pile shown is a white tab with a hairline, as a card is.
  */
-function ViewRow({
-  selectAll,
+function PileTabs({
   piles,
   pile,
   onPile,
+}: {
+  piles: Record<IdeaPile, number>
+  pile: IdeaPile
+  onPile: (pile: IdeaPile) => void
+}) {
+  const { t, i18n } = useTranslation()
+  return (
+    <HeaderTabs
+      tabs={IDEA_PILES.map((p) => ({
+        id: p,
+        label: t(PILE_LABEL[p]),
+        count: formatNumber(piles[p], {}, i18n.language),
+      }))}
+      current={pile}
+      onPick={(p) => onPile(p as IdeaPile)}
+    />
+  )
+}
+
+/** Views, Group and Sort, at the head's end. */
+function Arrangement({
+  views,
   group,
   onGroup,
   scoped,
   sort,
   onSort,
 }: {
-  /** Select all, at the line's start over the rows' boxes. */
-  selectAll: React.ReactNode
-  piles: Record<IdeaPile, number>
-  pile: IdeaPile
-  onPile: (pile: IdeaPile) => void
+  /** Views, first at the end: what is saved beside how it is arranged. */
+  views: ReactNode
   group: IdeaGrouping
   onGroup: (group: IdeaGrouping) => void
   scoped: boolean
   sort: IdeaSort
   onSort: (sort: IdeaSort) => void
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const groupings = IDEA_GROUPS.filter((g) => !(scoped && g === 'campaign'))
+  const trigger = LINE_CONTROL
   return (
-    // 24px under the sentence, so the filter reads as the list's heading
-    // rather than part of its tabs.
-    <div className="mt-6 flex flex-wrap items-end gap-x-5 border-b border-quaternary">
-      <div className="flex items-center gap-1">
-        {/* In the rows' 20px inset, with the same 20px after it that the
-            rows leave before their score: the tabs start where the scores do. */}
-        <span className="flex h-10 items-center pr-1 pl-5">{selectAll}</span>
-        {IDEA_PILES.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => onPile(p)}
-            aria-current={p === pile}
-            className={cn(
-              '-mb-px cursor-pointer border-b-2 px-3 py-2 text-sm transition-colors',
-              p === pile
-                ? 'border-primary-foreground font-medium text-primary-foreground'
-                : 'border-transparent text-tertiary-foreground hover:text-primary-foreground',
-            )}
+    <div className="ml-auto flex shrink-0 items-center gap-5">
+      {views}
+      <DropdownMenu>
+        <DropdownMenuTrigger className={trigger}>
+          {t('content.view.groupBy')}
+          <span className="font-medium text-foreground">
+            {t(`ideas.view.group.${group}`)}
+          </span>
+          <CaretDownIcon className="size-3" aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={6} className="w-56">
+          <DropdownMenuRadioGroup
+            value={group}
+            onValueChange={(v) => onGroup(v as IdeaGrouping)}
           >
-            {t(PILE_LABEL[p])}
-            <span className="ml-1.5 text-tertiary-foreground tabular-nums">
-              {formatNumber(piles[p], {}, i18n.language)}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div className="ml-auto flex items-center gap-5 pb-2 text-[13px]">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-1.5 text-secondary-foreground outline-none focus-visible:underline">
-            <HugeiconsIcon icon={Layers01Icon} size={16} aria-hidden />
-            {t('content.view.groupBy')}
-            <span className="flex items-center gap-1 font-medium text-foreground">
-              {t(`ideas.view.group.${group}`)}
-              <HugeiconsIcon icon={ArrowDown01Icon} size={14} aria-hidden />
-            </span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" sideOffset={6} className="w-56">
-            <DropdownMenuRadioGroup
-              value={group}
-              onValueChange={(v) => onGroup(v as IdeaGrouping)}
-            >
-              {groupings.map((g) => (
-                <DropdownMenuRadioItem key={g} value={g}>
-                  {t(`ideas.view.group.${g}`)}
-                </DropdownMenuRadioItem>
-              ))}
-              <DropdownMenuSeparator className="mx-2" />
-              <DropdownMenuRadioItem value="none">
-                {t('ideas.view.group.none')}
+            {groupings.map((g) => (
+              <DropdownMenuRadioItem key={g} value={g}>
+                {t(`ideas.view.group.${g}`)}
               </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            ))}
+            <DropdownMenuSeparator className="mx-2" />
+            <DropdownMenuRadioItem value="none">
+              {t('ideas.view.group.none')}
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-1.5 text-secondary-foreground outline-none focus-visible:underline">
-            <HugeiconsIcon icon={ArrowUpDownIcon} size={16} aria-hidden />
-            {t('content.view.sortBy')}
-            <span className="flex items-center gap-1 font-medium text-foreground">
-              {t(`ideas.view.sort.${sort}`)}
-              <HugeiconsIcon icon={ArrowDown01Icon} size={14} aria-hidden />
-            </span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" sideOffset={6} className="w-56">
-            <DropdownMenuRadioGroup
-              value={sort}
-              onValueChange={(v) => onSort(v as IdeaSort)}
-            >
-              {IDEA_SORTS.map((s) => (
-                <DropdownMenuRadioItem key={s} value={s}>
-                  {t(`ideas.view.sort.${s}`)}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger className={trigger}>
+          {t('content.view.sortBy')}
+          <span className="font-medium text-foreground">
+            {t(`ideas.view.sort.${sort}`)}
+          </span>
+          <CaretDownIcon className="size-3" aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={6} className="w-56">
+          <DropdownMenuRadioGroup
+            value={sort}
+            onValueChange={(v) => onSort(v as IdeaSort)}
+          >
+            {IDEA_SORTS.map((s) => (
+              <DropdownMenuRadioItem key={s} value={s}>
+                {t(`ideas.view.sort.${s}`)}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   )
 }
 
 /**
- * The rows, under a sticky band wherever the group changes. The rows arrive
- * ordered by group, and a band's count is the server's for the whole match —
- * a band whose rows run onto the next page still says how many it holds.
+ * The cards, under the list's head and, grouped, under a group head wherever
+ * the group changes. The rows arrive ordered by group, and a group's count is
+ * the server's for the whole match — a group whose cards run onto the next
+ * page still says how many it holds. Its box ticks the cards loaded.
  */
 function IdeaRows({
+  head,
   rows,
   groups,
-  total,
   group,
   vocabulary,
   now,
@@ -869,6 +992,7 @@ function IdeaRows({
   ticked,
   selecting,
   onToggleRow,
+  onToggleBand,
   writer,
   onDelete,
   revealId,
@@ -877,10 +1001,10 @@ function IdeaRows({
   moreFailed,
   onRetryMore,
 }: {
+  /** The list's head (`CardHead`), the list's first item. */
+  head: React.ReactNode
   rows: Idea[]
   groups: { key: string; count: number }[]
-  /** Every match — the one band's count when the list is not grouped. */
-  total: number
   group: IdeaGrouping
   vocabulary: IdeaVocabulary
   now: Date
@@ -889,10 +1013,11 @@ function IdeaRows({
   onToggleExpanded: (id: string) => void
   ticked: Set<string>
   selecting: boolean
-  onToggleRow: (id: string) => void
+  onToggleRow: (id: string, shift: boolean) => void
+  onToggleBand: (ids: string[]) => void
   writer: ReturnType<typeof useIdeaListWriter>
   onDelete: (idea: Idea) => void
-  /** An idea a link opened (CON-481): its band unfolds to show it. */
+  /** An idea a link opened (CON-481): its group unfolds to show it. */
   revealId?: string
   onEndReached: () => void
   loadingMore: boolean
@@ -903,9 +1028,9 @@ function IdeaRows({
   const { t, i18n } = useTranslation()
   const listRef = useRef<HTMLUListElement>(null)
   const footRef = useRef<HTMLDivElement>(null)
-  /** Bands folded this visit, as `grouping:key`. */
+  /** Groups folded this visit, as `grouping:key`. */
   const [folded, setFolded] = useState<Set<string>>(new Set())
-  const toggleBand = (id: string) =>
+  const toggleFold = (id: string) =>
     setFolded((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -916,16 +1041,26 @@ function IdeaRows({
     () => new Map(groups.map((g) => [g.key, g.count])),
     [groups],
   )
-  // Ungrouped, the whole list is one band — "No grouping" — so it always has
-  // an edge to pin under the page header (CON-392).
   const grouped = group !== 'none' && groups.length > 0
+  // The head is the list's first band, so it always has an edge to pin under
+  // the page header (CON-392).
   usePinnedBands(listRef, rows.length > 0, [rows, folded, group])
 
-  // A linked idea in a folded band unfolds it, before the page scrolls to it.
+  /** Each group's loaded cards, for its box. */
+  const members = useMemo(() => {
+    const map = new Map<string, string[]>()
+    if (!grouped) return map
+    for (const r of rows) {
+      const key = r.groupKey ?? ''
+      map.set(key, [...(map.get(key) ?? []), r.id])
+    }
+    return map
+  }, [rows, grouped])
+
+  // A linked idea in a folded group unfolds it, before the page scrolls to it.
   const revealed = revealId ? rows.find((r) => r.id === revealId) : undefined
-  const revealBand = revealed
-    ? `${group}:${grouped ? (revealed.groupKey ?? '') : ''}`
-    : undefined
+  const revealBand =
+    revealed && grouped ? `${group}:${revealed.groupKey ?? ''}` : undefined
   if (revealBand && folded.has(revealBand)) {
     const next = new Set(folded)
     next.delete(revealBand)
@@ -951,41 +1086,46 @@ function IdeaRows({
     observer.observe(foot)
     return () => observer.disconnect()
     // Observed afresh once a page has landed: an observer reports only
-    // changes, and with bands folded the foot can stay in view while the new
+    // changes, and with groups folded the foot can stay in view while the new
     // rows go into them, so no change would ever ask for the next page.
   }, [rows.length, loadingMore])
 
   return (
     // The list scrolls with the page, as the Assets list does (CON-392): its
-    // bands pin under the page header while their rows pass under them.
-    <div className="@container bg-primary">
+    // head and group heads pin under the page header while the cards pass
+    // under them. `@container`: the campaign's column needs the room.
+    <div className="@container pb-4">
       <ul
         ref={listRef}
         aria-label={t('ideas.list.label')}
-        className="flex flex-col"
+        className={CARD_LIST}
       >
+        {head}
         {rows.map((idea, i) => {
           const key = grouped ? (idea.groupKey ?? '') : ''
-          const opensBand = grouped
-            ? i === 0 || rows[i - 1].groupKey !== idea.groupKey
-            : i === 0
+          const opensBand =
+            grouped && (i === 0 || rows[i - 1].groupKey !== idea.groupKey)
           const bandId = `${group}:${key}`
-          const isFolded = folded.has(bandId)
+          const isFolded = grouped && folded.has(bandId)
+          const ids = members.get(key) ?? []
           return (
             <Fragment key={idea.id}>
               {opensBand && (
-                <Band
+                <IdeaBand
                   group={group}
                   groupKey={key}
                   first={idea}
                   vocabulary={vocabulary}
-                  count={formatNumber(
-                    grouped ? (counts.get(key) ?? 0) : total,
-                    {},
-                    i18n.language,
-                  )}
+                  count={formatNumber(counts.get(key) ?? 0, {}, i18n.language)}
+                  ticked={{
+                    on: ids.filter((id) => ticked.has(id)).length,
+                    of: ids.length,
+                  }}
+                  selecting={selecting}
+                  wide={showCampaign}
                   folded={isFolded}
-                  onToggle={() => toggleBand(bandId)}
+                  onFold={() => toggleFold(bandId)}
+                  onTick={() => onToggleBand(ids)}
                 />
               )}
               {!isFolded && (
@@ -1005,7 +1145,7 @@ function IdeaRows({
                   selection={{
                     selected: ticked.has(idea.id),
                     selecting,
-                    onToggle: () => onToggleRow(idea.id),
+                    onToggle: (shift) => onToggleRow(idea.id, shift),
                   }}
                 />
               )}
@@ -1015,12 +1155,12 @@ function IdeaRows({
       </ul>
       <div ref={footRef} aria-hidden className="h-px" />
       {loadingMore && (
-        <p className="py-3 text-center text-xs text-secondary-foreground">
+        <p className="py-3 text-center text-xs/4 text-secondary-foreground">
           {t('content.filter.loadingMore')}
         </p>
       )}
       {moreFailed && !loadingMore && (
-        <p className="flex justify-center gap-2 py-3 text-xs text-destructive">
+        <p className="flex justify-center gap-2 py-3 text-xs/4 text-destructive">
           {t('ideas.list.moreFailed')}
           <button
             type="button"
@@ -1031,30 +1171,30 @@ function IdeaRows({
           </button>
         </p>
       )}
-      {/* Room for the floating selection bar, so it never sits on the last row. */}
-      {selecting && <div aria-hidden className="h-20" />}
     </div>
   )
 }
 
-/** A group's band: its name and how many it holds. */
-function Band({
+/** A group's head: its box, its name and how many it holds. */
+function IdeaBand({
   group,
   groupKey,
   first,
   vocabulary,
-  count,
-  folded,
-  onToggle,
+  ...band
 }: {
   group: IdeaGrouping
   groupKey: string
-  /** The band's first row — it carries the author's name the key does not. */
+  /** The group's first card — it carries the author's name the key does not. */
   first: Idea
   vocabulary: IdeaVocabulary
   count: string
+  ticked: { on: number; of: number }
+  selecting: boolean
+  wide: boolean
   folded: boolean
-  onToggle: () => void
+  onFold: () => void
+  onTick: () => void
 }) {
   const { t } = useTranslation()
   const source = group === 'source' && groupKey !== NONE
@@ -1093,60 +1233,27 @@ function Band({
     }
   })()
   return (
-    // The Assets list's band (`pinnedBands`): pinned under the page header
-    // while its rows pass under it, the page's own colour, and folded by its
-    // whole width. Its chevron sits over the rows' boxes and its name level
-    // with the filter's words.
-    <li
-      data-band
-      className={PINNED_BAND}
-      style={{ zIndex: ZIndex.stickyTableHeader }}
-    >
-      <h2>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={!folded}
-          aria-label={t(folded ? 'content.list.unfold' : 'content.list.fold', {
-            group: label,
-          })}
-          className="flex h-9.5 w-full cursor-pointer items-center gap-1.5 px-5 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
-        >
+    <CardBand
+      {...band}
+      label={label}
+      selectable
+      leading={
+        source && (
           <HugeiconsIcon
-            icon={ArrowDown01Icon}
-            size={16}
-            strokeWidth={1.8}
+            icon={(kind && KIND_ICON[kind]) || Note01Icon}
+            size={12}
+            strokeWidth={1.75}
             aria-hidden
             className={cn(
-              'shrink-0 text-secondary-foreground transition-transform',
-              folded && '-rotate-90',
+              'shrink-0',
+              (kind && KIND_TONE[kind]) ?? 'text-kind-neutral',
             )}
           />
-          {source && (
-            <HugeiconsIcon
-              icon={(kind && KIND_ICON[kind]) || Note01Icon}
-              size={16}
-              strokeWidth={1.5}
-              aria-hidden
-              className={cn(
-                'shrink-0',
-                (kind && KIND_TONE[kind]) ?? 'text-kind-neutral',
-              )}
-            />
-          )}
-          <span className="truncate font-medium text-foreground">{label}</span>
-          <span className="tabular-nums text-secondary-foreground">
-            {count}
-          </span>
-          {source && first.sourceAsset && (
-            // What the document is, beside how many ideas it gave.
-            <span className="truncate text-secondary-foreground">
-              {sourceFacts(t, first.sourceAsset)}
-            </span>
-          )}
-        </button>
-      </h2>
-    </li>
+        )
+      }
+      // What the document is, beside how many ideas it gave.
+      aside={source && first.sourceAsset && sourceFacts(t, first.sourceAsset)}
+    />
   )
 }
 
@@ -1170,16 +1277,103 @@ function sharedCampaign(rows: Idea[], ticked: Set<string>): string | null {
 const MAX_IDEAS_PER_POST = 10
 
 /**
- * What is ticked, and what can be done to it — Assets' bar, with one action
- * (§6). It floats at the foot of the column on the app's bottom line, and its
- * count is in tabular figures so the buttons hold still.
+ * The list's head while something is ticked: how many, then — the
+ * mail-client way — how many are ticked elsewhere, or the named step that
+ * widens a ticked page to every match, or the way out of every match; then
+ * what can be done to them (`children`).
  */
-function SelectionBar({
+function SelectionLine({
+  count,
+  allMatching,
+  elsewhere,
+  canWiden,
+  total,
+  pileLabel,
+  resolving,
+  onWiden,
+  onClear,
+  children,
+}: {
+  count: number
+  allMatching: boolean
+  /** Ticked but not on screen: in another pile, or never loaded. */
+  elsewhere: number
+  /** The whole page is ticked and the pile holds more. */
+  canWiden: boolean
+  total: number
+  pileLabel: string
+  resolving: boolean
+  onWiden: () => void
+  onClear: () => void
+  children: React.ReactNode
+}) {
+  const { t, i18n } = useTranslation()
+  const n = (value: number) => formatNumber(value, {}, i18n.language)
+  return (
+    // One pill's height, like the line it stands in for; the actions' 32px
+    // buttons lean 2px past it either side rather than heighten the line.
+    <div className="flex h-7 min-w-0 flex-1 items-center gap-3">
+      <span
+        role="status"
+        aria-live="polite"
+        className="shrink-0 text-sm/5 font-medium whitespace-nowrap tabular-nums"
+      >
+        {allMatching
+          ? t('ideas.bulk.allIn', {
+              count: total,
+              formatted: n(total),
+              pile: pileLabel,
+            })
+          : t('ideas.bulk.count', { count })}
+      </span>
+      {allMatching ? (
+        <button
+          type="button"
+          onClick={onClear}
+          className="cursor-pointer truncate text-sm/5 text-secondary-foreground outline-none hover:text-foreground hover:underline focus-visible:underline"
+        >
+          {t('ideas.bulk.clearAll')}
+        </button>
+      ) : canWiden ? (
+        <button
+          type="button"
+          onClick={onWiden}
+          disabled={resolving}
+          className="cursor-pointer truncate text-sm/5 font-medium text-accent outline-none hover:underline focus-visible:underline disabled:opacity-60"
+        >
+          {t('ideas.bulk.selectAllIn', {
+            count: total,
+            formatted: n(total),
+            pile: pileLabel,
+          })}
+        </button>
+      ) : (
+        elsewhere > 0 && (
+          <span className="truncate text-sm/5 text-secondary-foreground">
+            {t('ideas.bulk.elsewhere', {
+              count: elsewhere,
+              formatted: n(elsewhere),
+            })}
+          </span>
+        )
+      )}
+      <div className="-my-0.5 ml-auto flex shrink-0 items-center gap-1">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * What can be done to the ticked ideas, in the list's head: make posts of
+ * them (a planned post, or finished drafts — one to ten at a time), or
+ * delete them, which asks first.
+ */
+function SelectionActions({
   count,
   busy,
   campaignId,
   plans,
-  onClear,
   onDelete,
   onCompile,
   onDraft,
@@ -1190,11 +1384,10 @@ function SelectionBar({
   campaignId: string | null
   /** The ticked ideas' plans, which the form presets from (CON-485). */
   plans: IdeaPlan[]
-  onClear: () => void
   onDelete: () => void
-  /** Ideas into a planned post per platform (CON-449/470) — at most ten at a time. */
+  /** Ideas into a planned post per platform (CON-449/470). */
   onCompile: (answer: IdeaPostAnswer) => void
-  /** Ideas into finished drafts — at most ten at a time. */
+  /** Ideas into finished drafts. */
   onDraft: (answer: IdeaPostAnswer) => void
 }) {
   const { t } = useTranslation()
@@ -1202,77 +1395,44 @@ function SelectionBar({
   const tooMany = count > MAX_IDEAS_PER_POST
   const tooManyTitle = tooMany ? t('ideas.lifecycle.tooMany') : undefined
   return (
-    <div
-      // Sticky at the foot of the page's scroller, as on Assets (CON-392):
-      // the list scrolls with the page, so the bar keeps to the column's
-      // bottom edge. `-mt-12` takes back the room it would occupy.
-      className="pointer-events-none sticky bottom-4 -mt-12 flex justify-center"
-      style={{ zIndex: ZIndex.pageActionBar }}
-    >
-      <div className="pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg">
-        <span
-          role="status"
-          aria-live="polite"
-          className="shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap"
-        >
-          {t('ideas.bulk.count', { count })}
-        </span>
-        <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
-        <IdeaPostForm
-          verb="compile"
-          ideaCount={count}
-          campaignId={campaignId}
-          plans={plans}
-          disabled={busy || tooMany}
-          onSubmit={onCompile}
-        >
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-primary-foreground"
-            disabled={busy || tooMany}
-            title={tooManyTitle}
-          >
-            {t('ideas.lifecycle.compile')}
-          </Button>
-        </IdeaPostForm>
-        <IdeaPostForm
-          verb="draft"
-          ideaCount={count}
-          campaignId={campaignId}
-          plans={plans}
-          disabled={busy || tooMany}
-          onSubmit={onDraft}
-        >
-          <Button
-            variant="defaultInverted"
-            size="sm"
-            disabled={busy || tooMany}
-            title={tooManyTitle}
-          >
-            {t('ideas.lifecycle.draft')}
-          </Button>
-        </IdeaPostForm>
+    <>
+      <IdeaPostForm
+        verb="compile"
+        ideaCount={count}
+        campaignId={campaignId}
+        plans={plans}
+        disabled={busy || tooMany}
+        onSubmit={onCompile}
+      >
         <Button
           variant="ghost"
           size="sm"
-          className="text-primary-foreground"
-          onClick={onDelete}
-          disabled={busy}
+          disabled={busy || tooMany}
+          title={tooManyTitle}
         >
-          <TrashIcon />
-          <span>{t('ideas.bulk.delete')}</span>
+          {t('ideas.lifecycle.compile')}
         </Button>
+      </IdeaPostForm>
+      <IdeaPostForm
+        verb="draft"
+        ideaCount={count}
+        campaignId={campaignId}
+        plans={plans}
+        disabled={busy || tooMany}
+        onSubmit={onDraft}
+      >
         <Button
           variant="ghost"
           size="sm"
-          className="text-tertiary-foreground"
-          onClick={onClear}
-          disabled={busy}
+          disabled={busy || tooMany}
+          title={tooManyTitle}
         >
-          {t('ideas.bulk.clear')}
+          {t('ideas.lifecycle.draft')}
         </Button>
-      </div>
-    </div>
+      </IdeaPostForm>
+      <Button variant="ghost" size="sm" onClick={onDelete} disabled={busy}>
+        {t('ideas.bulk.delete')}
+      </Button>
+    </>
   )
 }

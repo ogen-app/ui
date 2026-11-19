@@ -206,7 +206,7 @@ keep it accurate when these rules change.
   `useAppShortcuts`, mounted once in `_authenticated`, owns `[` (the menu —
   ⌘B still works), `]` (the right rail), `o` (the assistant, composer
   focused), `?` (the sheet) and `g` then a letter; `/` stays with the filter
-  sentence. Where a letter goes is `lib/shortcuts.ts`, and inside a campaign
+  (its sentence, or the pills' add field). Where a letter goes is `lib/shortcuts.ts`, and inside a campaign
   `g i/a/n/s` go to the campaign's own sections, which is the nav's campaign
   filter again. `]` is the same toggle as Ask Ogen, since the rail is the
   assistant's. `shouldIgnoreAppShortcut` allows Alt and

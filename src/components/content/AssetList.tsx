@@ -7,36 +7,51 @@ import {
   type ReactNode,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { ArrowDown01Icon } from '@hugeicons/core-free-icons'
 import {
-  PINNED_BAND,
+  ArrowsClockwiseIcon,
+  WarningCircleIcon,
+  XIcon,
+} from '@phosphor-icons/react'
+import {
   scrollerOf,
   usePinnedBands,
 } from '@/components/page-primitives/pinnedBands'
-import { ZIndex } from '@/config/zIndex'
+import {
+  CARD,
+  CARD_GRID,
+  CARD_GRID_WIDE,
+  CARD_LIST,
+  CardBand,
+} from '@/components/page-primitives/listCards'
 import { useCampaignNames } from '@/hooks/useCampaignNames'
 import { cn } from '@/lib'
 import type { AssetGrouping } from '@/lib/assetFilter'
 import { formatNumber } from '@/lib/intl'
+import { uploadErrorMessage } from '@/lib/uploadError'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 import type { AssetGroupCount, AssetListItem } from '@/types/assetList'
-import { AssetListRow } from './AssetListRow'
+import { AssetListRow, StateRing } from './AssetListRow'
 
 type Props = {
+  /** The list's head (`CardHead`), its first item and the edge it pins by. */
+  head: ReactNode
   /** The rows loaded so far, in the server's order — grouped, when grouped. */
   rows: AssetListItem[]
   /** Every group of the whole match with its count, in display order. */
   groups: AssetGroupCount[]
-  /** Every match — the one band's count when the list is not grouped. */
-  total: number
   grouping: AssetGrouping
-  /** What a band is called: the group key in words. */
+  /** What a group head is called: the group key in words. */
   groupLabel: (key: string) => string
   campaignId: string | null
+  /** Files still in transit to this scope, or refused on the way. */
+  uploads?: UploadItem[]
   selectedIds: Set<string>
-  onToggleRow: (id: string) => void
-  onDelete: (row: AssetListItem) => void
+  /** Something is ticked somewhere: every box at full ink. */
+  selecting: boolean
+  onToggleRow: (id: string, shift: boolean) => void
+  /** A group head's box: its loaded cards' ids. */
+  onToggleBand: (ids: string[]) => void
   /**
    * When the server answered, as epoch ms: every date on screen is said
    * against that one clock — "added 2 minutes ago" as of the read — so the
@@ -51,53 +66,43 @@ type Props = {
   className?: string
 }
 
-/** A band's id in the folded set: the grouping and its key. */
+/** A group's id in the folded set: the grouping and its key. */
 const bandId = (grouping: AssetGrouping, key: string) => `${grouping}:${key}`
 
 /**
- * The Assets list (CON-378): documents under sticky group bands.
+ * The Assets list: documents as cards (design/ideas-cards), under the list's
+ * head and, grouped, under a group head wherever the group changes.
  *
- * **A list, not a table.** The rows are read top to bottom for what each
- * document offers, and they vary in height with what they say, so there are
- * no column headers to line them up under — the band above a run of rows is
- * the only heading, and it is an `<h2>`, which is what a screen reader's
- * heading list then offers as a way through.
+ * **A list, not a table.** The cards are read top to bottom for what each
+ * document offers, and there are no column headers to line them up under —
+ * a group head is the only heading over a run of cards, and it is an `<h2>`,
+ * which is what a screen reader's heading list then offers as a way through.
  *
- * **The bands are sticky and pushed off by the next one.** That is plain
- * `position: sticky` on each band inside the *page's* scroller (CON-392): the
- * list has none of its own, so the sentence and the Group by line scroll away
- * with it, and a band pins at the foot of the page header's 80px fade
- * (`BAND_TOP`, `pinnedBands`). A pinned band carries the page background up behind the
- * header, so rows never show through the fade's transparent half — only while
- * pinned, or it would cover the last rows of the group above it. The band is
- * the page's own colour, with one hairline under it, so it reads as the page
- * continuing rather than a strip. This is also why the list is not
- * virtualised: a virtual window mounts only what is on screen, so the band of
- * a run that began above it would not exist to stick. Pages are fifty rows,
- * and the next is asked for as the foot comes into view.
+ * **The head pins** in the *page's* scroller (CON-392): the list has none
+ * of its own; the head pins at the foot of the page header (`pinnedBands`),
+ * and the group heads scroll with their cards. The list is not virtualised:
+ * pages are fifty rows, the next asked for as the foot comes into view.
  *
  * **Grouping is the server's** (CON-379). The rows arrive ordered by group, a
- * band is drawn where the group changes, and its count is the server's total
- * for the whole match — a band whose rows run onto the next page still says
- * how many it holds. A tag grouping lists a document once per tag, so the
- * same row may appear under two bands; that is the grouping, not a mistake.
- * A grouping with a single group still draws its band: the band is what says
- * the list is grouped, and by what. And an ungrouped list has one too — "No
- * grouping", with the count — so the list always has an edge to pin.
- *
- * A band folds on its chevron. What is folded is display state, kept per
- * device (`settingsStore.collapsedAssetBands`), never the workspace's.
+ * head is drawn where the group changes, and its count is the server's total
+ * for the whole match — a group whose rows run onto the next page still says
+ * how many it holds; its box ticks the cards loaded. A tag grouping lists a
+ * document once per tag, so the same card may appear under two heads; that
+ * is the grouping, not a mistake. A group folds on its name; what is folded
+ * is display state, kept per device (`settingsStore.collapsedAssetBands`).
  */
 export function AssetList({
+  head,
   rows,
   groups,
-  total,
   grouping,
   groupLabel,
   campaignId,
+  uploads = [],
   selectedIds,
+  selecting,
   onToggleRow,
-  onDelete,
+  onToggleBand,
   asOf,
   onEndReached,
   loadingMore,
@@ -115,29 +120,33 @@ export function AssetList({
     () => new Map(groups.map((g) => [g.key, g.count])),
     [groups],
   )
-  // Ungrouped, the whole list is one band — "No grouping" — under the key ''.
   const grouped = grouping !== 'none' && groups.length > 0
-  const selecting = selectedIds.size > 0
 
-  // Where each band opens, worked out once per page of rows: the rows arrive
-  // ordered by group, so a band starts wherever the key changes.
+  // Where each group opens, worked out once per page of rows: the rows arrive
+  // ordered by group, so a group starts wherever the key changes.
   const entries = useMemo(
     () =>
       rows.map((row, i) => ({
         row,
         key: grouped ? (row.group_key ?? '') : '',
-        opensBand: grouped
-          ? i === 0 || rows[i - 1].group_key !== row.group_key
-          : i === 0,
+        opensBand:
+          grouped && (i === 0 || rows[i - 1].group_key !== row.group_key),
       })),
     [rows, grouped],
   )
+  /** Each group's loaded cards, for its box. */
+  const members = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const { row, key } of entries)
+      map.set(key, [...(map.get(key) ?? []), row.id])
+    return map
+  }, [entries])
 
   // The foot coming into view is the cue for the next page. A ref to the
   // callback, so a new one each render doesn't re-observe. The observer is
   // attached again whenever the list goes from empty to not, because the
   // empty state mounts neither the scroller nor the foot it watches.
-  const hasRows = rows.length > 0
+  const hasRows = rows.length > 0 || uploads.length > 0
   const endReached = useRef(onEndReached)
   useLayoutEffect(() => {
     endReached.current = onEndReached
@@ -158,31 +167,50 @@ export function AssetList({
 
   usePinnedBands(listRef, hasRows, [entries, collapsed, grouping])
 
-  if (rows.length === 0) {
-    return <div className={cn('min-h-50', className)}>{emptyState}</div>
+  if (!hasRows) {
+    // The head stays, so the filter that emptied the list can be changed
+    // where it was set.
+    return (
+      <div className={cn('min-h-50', className)}>
+        <ul className={CARD_LIST}>{head}</ul>
+        {emptyState}
+      </div>
+    )
   }
 
   return (
-    <div className={cn('@container bg-primary', className)}>
-      <ul ref={listRef} aria-label={t('content.list.label')}>
+    // `@container`: the campaigns' column needs the room.
+    <div className={cn('@container pb-4', className)}>
+      <ul
+        ref={listRef}
+        aria-label={t('content.list.label')}
+        className={CARD_LIST}
+      >
+        {head}
+        {uploads.map((file) => (
+          <UploadCard key={file.id} file={file} />
+        ))}
         {entries.map(({ row, key, opensBand }) => {
-          const folded = collapsed.includes(bandId(grouping, key))
+          const folded = grouped && collapsed.includes(bandId(grouping, key))
+          const ids = members.get(key) ?? []
           // A row listed under two tags is two rows; the key keeps them apart.
           const id = `${key}:${row.id}`
           return (
             <Fragment key={id}>
               {opensBand && (
-                <Band
-                  label={
-                    grouped ? groupLabel(key) : t('content.view.group.none')
-                  }
-                  count={formatNumber(
-                    grouped ? (counts.get(key) ?? 0) : total,
-                    {},
-                    i18n.language,
-                  )}
+                <CardBand
+                  label={groupLabel(key)}
+                  count={formatNumber(counts.get(key) ?? 0, {}, i18n.language)}
+                  ticked={{
+                    on: ids.filter((i) => selectedIds.has(i)).length,
+                    of: ids.length,
+                  }}
+                  selectable
+                  selecting={selecting}
                   folded={folded}
-                  onToggle={() => toggleBand(bandId(grouping, key))}
+                  onFold={() => toggleBand(bandId(grouping, key))}
+                  onTick={() => onToggleBand(ids)}
+                  wide
                 />
               )}
               {!folded && (
@@ -194,7 +222,6 @@ export function AssetList({
                   selected={selectedIds.has(row.id)}
                   selecting={selecting}
                   onToggle={onToggleRow}
-                  onDelete={onDelete}
                   now={now}
                 />
               )}
@@ -204,67 +231,93 @@ export function AssetList({
       </ul>
       <div ref={footRef} aria-hidden className="h-px" />
       {loadingMore && (
-        <p className="py-3 text-center text-xs text-secondary-foreground">
+        <p className="py-3 text-center text-xs/4 text-secondary-foreground">
           {t('content.filter.loadingMore')}
         </p>
       )}
-      {/* Room for the floating selection bar, so it never sits on the last row. */}
-      {selecting && <div aria-hidden className="h-20" />}
     </div>
   )
 }
 
 /**
- * A group's band: its name and how many it holds, and the fold. The whole
- * band is the button, since a 16px chevron is a small target for the one
- * thing the band does.
+ * A file in flight, or refused on the way in, as a card at the head of the
+ * list. It has no box — there is nothing yet to select — and opens nothing:
+ * the moment the server has it, it leaves and joins the list as a document
+ * being read. A refusal stays here, where the file was dropped and where the
+ * user is looking, with its reason and the way on.
  */
-function Band({
-  label,
-  count,
-  folded,
-  onToggle,
-}: {
-  label: string
-  count: string
-  folded: boolean
-  onToggle: () => void
-}) {
+function UploadCard({ file }: { file: UploadItem }) {
   const { t } = useTranslation()
+  const retry = useUploadStore((s) => s.retry)
+  const remove = useUploadStore((s) => s.remove)
+  const failed = file.phase === 'failed'
   return (
     <li
-      data-band
-      // Pinned under the page header, the page's own colour, the cap behind
-      // the header while pinned (`pinnedBands`).
-      className={PINNED_BAND}
-      style={{ zIndex: ZIndex.stickyTableHeader }}
+      className={cn(CARD_GRID, CARD_GRID_WIDE, CARD, 'py-4 hover:bg-primary')}
     >
-      <h2>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={!folded}
-          aria-label={t(folded ? 'content.list.unfold' : 'content.list.fold', {
-            group: label,
-          })}
-          className="flex h-9.5 w-full items-center gap-3 px-4.5 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
-        >
-          <HugeiconsIcon
-            icon={ArrowDown01Icon}
-            size={16}
-            strokeWidth={1.8}
-            aria-hidden
-            className={cn(
-              'shrink-0 text-secondary-foreground transition-transform',
-              folded && '-rotate-90',
-            )}
-          />
-          <span className="font-medium text-foreground">{label}</span>
-          <span className="tabular-nums text-secondary-foreground">
-            {count}
-          </span>
-        </button>
-      </h2>
+      <span aria-hidden />
+      <span
+        role="img"
+        aria-label={
+          failed
+            ? t('uploads.failed')
+            : t('content.list.uploading', { progress: file.progress })
+        }
+        className="flex size-5 items-center justify-center"
+      >
+        {failed ? (
+          <WarningCircleIcon aria-hidden className="size-5 text-destructive" />
+        ) : (
+          <StateRing value={file.progress} />
+        )}
+      </span>
+      <div className="flex min-w-0 flex-col">
+        <h3 className="truncate text-sm/5 font-medium text-secondary-foreground">
+          {file.filename}
+        </h3>
+        <div className="mt-2 flex min-w-0 items-center gap-1.5 text-xs/4 text-secondary-foreground tabular-nums">
+          {failed ? (
+            // The reason in words (`lib/uploadError`), under the name it is
+            // about.
+            <span className="truncate text-destructive">
+              {file.error
+                ? uploadErrorMessage(t, file.error)
+                : t('uploads.failed')}
+            </span>
+          ) : (
+            <span className="text-foreground">
+              {t('content.list.uploading', { progress: file.progress })}
+            </span>
+          )}
+        </div>
+      </div>
+      <span className="hidden @4xl:block" />
+      <span className="flex h-5 items-center justify-end gap-1">
+        {/* Not for a file this client refused before sending it — the same
+            file fails the same check again. */}
+        {failed && file.kind !== null && (
+          <button
+            type="button"
+            aria-label={t('content.list.retryUpload', { name: file.filename })}
+            onClick={() => retry(file.id)}
+            className="flex size-6 cursor-pointer items-center justify-center rounded-button text-secondary-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ArrowsClockwiseIcon className="size-4" />
+          </button>
+        )}
+        {failed && (
+          <button
+            type="button"
+            aria-label={t('content.list.dismissUpload', {
+              name: file.filename,
+            })}
+            onClick={() => remove(file.id)}
+            className="flex size-6 cursor-pointer items-center justify-center rounded-button text-secondary-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <XIcon className="size-4" />
+          </button>
+        )}
+      </span>
     </li>
   )
 }

@@ -7,8 +7,8 @@ import type { SavedView } from '@/services/api/savedViews'
 import type { Campaign } from '@/types/campaigns'
 
 /**
- * The Assets page's smart groups (CON-392): the Views dropdown at the
- * sentence's start, a group opened into the address, edited, and saved.
+ * The Assets page's smart groups (CON-392): Views at the end of the list's
+ * head line, a group opened into the address, edited, and saved.
  */
 const groups = vi.hoisted(() => ({
   listSavedViews: vi.fn(),
@@ -81,9 +81,7 @@ beforeEach(() => {
 describe('the Assets page’s smart groups', () => {
   it('lists the groups with their counts and opens one into the address', async () => {
     await renderPage()
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Views: All assets' }),
-    )
+    await userEvent.click(screen.getByRole('button', { name: 'Views' }))
     const item = await screen.findByRole('menuitem', {
       name: /^Gartner research/,
     })
@@ -131,6 +129,10 @@ describe('the Assets page’s smart groups', () => {
       }),
     )
     await renderPage({ kind: 'pdf', updated: '30d' })
+    // The header's one tab counts the match out of every document.
+    expect(
+      await screen.findByRole('button', { name: /^Documents/ }),
+    ).toHaveTextContent('Documents6 of 24')
     await userEvent.click(
       await screen.findByRole('button', { name: 'Save as group' }),
     )
@@ -162,9 +164,10 @@ describe('the Assets page’s smart groups', () => {
       asset_ids: [],
       use_assets: false,
     } as unknown as Campaign)
-    expect(screen.getByRole('group', { name: 'Filter' })).toBeInTheDocument()
+    // Filter is there; Views, at the line's end, is not.
+    expect(screen.getByRole('button', { name: /^Filter/ })).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: /^Views:/ }),
+      screen.queryByRole('button', { name: 'Views' }),
     ).not.toBeInTheDocument()
     expect(groups.listSavedViews).not.toHaveBeenCalled()
   })

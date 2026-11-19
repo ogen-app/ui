@@ -24,7 +24,9 @@ keep it accurate when these rules change.
   record, so nothing needs a sweep), and **every other verdict clears
   `remind_at`**, or archiving something you postponed pulls it back out of the
   archive on a day nobody chose. Everything is reversible — `no` archives and a
-  decided row carries its undo — which is what makes one-click triage safe;
+  decided row carries its undo: the three answers are always on the card,
+  the one given pressed, and pressing it again puts the idea back on the
+  desk — which is what makes one-click triage safe;
   deleting is final and reachable only from an opened row. The four counts
   always sum to the list, so a woken idea is undecided and **not** also later.
   **The rail's Ideas row draws the undecided count and never the backlog's
