@@ -132,6 +132,8 @@ keep it accurate when these rules change.
     rides up until its foot shows, by the asset page's rule
     (`useStickyColumns`). It carries the page's gutters. Strategy at both
     levels: the timeline sticky for all campaigns, the phases for one.
+    Workspace Settings, with Plan & billing sticky: it is what People and
+    Platforms count against.
   - **`PageGrid` — a dashboard.** Cards in rows, each in a `GridCell` asking
     for a named share: `full`, `wide` (⅔), `half`, `narrow` (⅓) of a six-track
     grid from 60rem; from 40rem every share short of `full` is a half, so a

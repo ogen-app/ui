@@ -12,7 +12,7 @@ import {
   SettingsSaveProvider,
 } from '@/components/settings/settingsSave'
 import { PAGE_ACTION_BAR_INSET } from '@/components/page-primitives/PageActionBar'
-import { cn } from '@/lib'
+import { PageColumns } from '@/components/page-primitives/PageColumns'
 import { WorkspaceSection } from '@/components/workspace-settings/WorkspaceSection'
 import { PlanSection } from '@/components/workspace-settings/PlanSection'
 import { PeopleSection } from '@/components/workspace-settings/PeopleSection'
@@ -111,28 +111,27 @@ function WorkspaceSettings() {
         <div className="relative flex h-0 grow flex-col">
           <div className="h-0 grow overflow-y-auto flex flex-col">
             <PageHeader title={t('workspaceSettings.title')} scrollAway />
-            <div
-              className={cn(
-                'flex flex-col gap-8 px-3 lg:px-6 pt-4',
-                PAGE_ACTION_BAR_INSET,
-              )}
-            >
-              {/* This page is about the workspace you're in; the list of all
-                  of them lives at /workspaces, one click from the Switch
-                  button in the card below. */}
-              {/* Above the cards: it reports on something that has already
-                  happened, and the account it is about arrives below it. */}
-              <ConnectLanding
-                connected={connected}
-                connectError={connectError}
-              />
-              <WorkspaceSection />
-              <PlanSection />
-              <PeopleSection />
-              <PlatformsSection focus={reconnecting} />
-              <ConnectPlatformsSection focus={connect ?? unfound} />
-              <IntegrationsSection />
-              <DeleteWorkspaceCard />
+            {/* Plan & billing beside the rest, held on screen: it is what
+                People and Platforms count against, so the limits stay in
+                view while seats and accounts are added. */}
+            <div className={PAGE_ACTION_BAR_INSET}>
+              <PageColumns stickyAside aside={<PlanSection />}>
+                {/* Above the cards: it reports on something that has already
+                    happened, and the account it is about arrives below it. */}
+                <ConnectLanding
+                  connected={connected}
+                  connectError={connectError}
+                />
+                {/* This page is about the workspace you're in; the list of
+                    all of them lives at /workspaces, one click from the
+                    Switch button in the card below. */}
+                <WorkspaceSection />
+                <PeopleSection />
+                <PlatformsSection focus={reconnecting} />
+                <ConnectPlatformsSection focus={connect ?? unfound} />
+                <IntegrationsSection />
+                <DeleteWorkspaceCard />
+              </PageColumns>
             </div>
           </div>
           <SettingsSaveBar />
