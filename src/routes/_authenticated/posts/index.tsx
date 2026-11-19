@@ -33,6 +33,7 @@ const NO_POSTS: Post[] = []
  * shows the same rows and can add to them.
  */
 export const Route = createFileRoute('/_authenticated/posts/')({
+  staticData: { help: 'posts' },
   beforeLoad: async () => {
     const campaigns = await queryClient
       .ensureQueryData(campaignsQuery)
