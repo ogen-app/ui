@@ -24,6 +24,8 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
+import { PageColumns } from '@/components/page-primitives/PageColumns'
+import { NeedsYouCard } from './NeedsYouCard'
 import { useActivityFeed } from '@/hooks/useActivity'
 import {
   useMarkNotificationsReadThrough,
@@ -166,7 +168,7 @@ export function ActivityFeed() {
   return (
     <PageContainer variant="fullFlex">
       <div className="h-0 grow overflow-y-auto flex flex-col">
-        <PageHeader title={t('activity.title')} />
+        <PageHeader title={t('activity.title')} scrollAway />
 
         {/* A source failed while another answered. Above the cards and above
             the empty state, because the empty state is where the silence lies
@@ -177,7 +179,7 @@ export function ActivityFeed() {
             {degraded.map((source) => (
               <p
                 key={source}
-                className="w-full max-w-content mx-auto px-1 text-xs text-warning"
+                className="w-full max-w-content px-1 text-xs text-warning"
               >
                 {t(`activity.unavailable.${source}`)}
               </p>
@@ -193,9 +195,12 @@ export function ActivityFeed() {
             />
           </div>
         ) : (
-          // Same stack as the Campaigns list — one card per day, same gap, same
-          // gutters — so the two screens are read the same way.
-          <div className="flex flex-col gap-3 px-3 lg:px-6 pt-4 pb-10">
+          // One card per day in the main column, and beside it what is wrong
+          // now (`NeedsYouCard`), held on screen while the history scrolls:
+          // the feed is a record and the aside is the to-do, so the two are
+          // never one list. Neither centred nor stretched — a row is one line
+          // and its time, and at full width the two drift a screen apart.
+          <PageColumns stickyAside aside={<NeedsYouCard />}>
             {days.map((day) => (
               <DayCard
                 key={day.date}
@@ -216,7 +221,7 @@ export function ActivityFeed() {
             {isTruncated && (
               <p
                 ref={endRef}
-                className="w-full max-w-content mx-auto px-1 text-xs text-tertiary-foreground"
+                className="w-full max-w-content px-1 text-xs text-tertiary-foreground"
               >
                 {t('activity.truncated', {
                   entries: NOTIFICATION_PAGE_SIZE,
@@ -224,7 +229,7 @@ export function ActivityFeed() {
                 })}
               </p>
             )}
-          </div>
+          </PageColumns>
         )}
       </div>
     </PageContainer>
@@ -300,7 +305,7 @@ function DayCard({
   const dayLabel = useDayLabel()
 
   return (
-    <article className="w-full max-w-content mx-auto rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0">
+    <article className="w-full max-w-content rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0">
       {/* The day is the card's whole title. No second line: what happened is
           the sections' job, and a summary above them would say it twice. */}
       <h2 className="font-display text-base/6 font-medium truncate">

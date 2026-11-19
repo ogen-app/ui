@@ -15,11 +15,10 @@ const RIBBON_HEIGHT = '2.5rem'
 
 /**
  * The CTA's outline in the ribbon's own ink, since the stock outline is drawn
- * for a light surface. `pt-[9px]` over `sm`'s 11px centres the capitals in
- * the 32px box.
+ * for a light surface.
  */
 const RIBBON_CTA =
-  'shrink-0 border-primary/40 pt-[9px] text-primary uppercase hover:border-primary hover:bg-primary/10'
+  'shrink-0 border-primary/40 text-primary uppercase hover:border-primary hover:bg-primary/10'
 
 /**
  * The newest operator announcement (CON-230), as a one-line ribbon across the

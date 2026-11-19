@@ -5,11 +5,11 @@ import type { GoKey } from './hotkeys'
  * "g then a letter" (CON-394): where each letter goes, on a workspace page
  * and inside a campaign.
  *
- * Inside a campaign Ideas, Assets, Analytics and Settings go to the
+ * Inside a campaign Ideas, Assets, Strategy, Analytics and Settings go to the
  * campaign's own sections — the same letters, one level in, as the rail's two
- * levels answer to each other. Campaigns and Foundation are the workspace's
- * at both levels. Strategy, Posts and Calendar exist only in a campaign, and
- * go nowhere outside one.
+ * levels answer to each other; Strategy for all campaigns is the Foundation.
+ * Campaigns is the workspace's at both levels. Posts and Calendar exist only
+ * in a campaign, and go nowhere outside one.
  */
 type Place = { to: LinkProps['to']; params?: Record<string, string> }
 
@@ -18,7 +18,7 @@ const WORKSPACE: Partial<Record<GoKey, Place>> = {
   a: { to: '/assets' },
   c: { to: '/campaigns' },
   n: { to: '/analytics' },
-  f: { to: '/foundation' },
+  t: { to: '/foundation' },
   s: { to: '/workspace-settings' },
 }
 
@@ -35,7 +35,7 @@ const CAMPAIGN: Partial<Record<GoKey, LinkProps['to']>> = {
 }
 
 export function isGoKey(key: string): key is GoKey {
-  return 'iacnfstpr'.includes(key) && key.length === 1
+  return 'iacnstpr'.includes(key) && key.length === 1
 }
 
 /** Where `g` then `key` goes, or null where it goes nowhere. */

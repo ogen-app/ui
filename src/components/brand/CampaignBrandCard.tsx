@@ -1,9 +1,3 @@
-import {
-  ArrowUpRightIcon,
-  ShieldIcon,
-  UsersThreeIcon,
-  WaveformIcon,
-} from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { SettingsCard } from '@/components/settings/SettingsCard'
@@ -14,6 +8,7 @@ import { useBrand } from '@/hooks/useBrand'
 import { useCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
 import type { UpdateCampaignPayload } from '@/types/campaigns'
 import type { BrandAudience, BrandVoice } from './types'
+import { BrandSectionGlyph } from './BrandSectionGlyph'
 
 /**
  * What this campaign draws on out of the workspace's Brand (§8, middle level).
@@ -39,18 +34,11 @@ import type { BrandAudience, BrandVoice } from './types'
  * consumer failure CON-226 §9 names, and it was ours. If the cast lands
  * server-side, §13 is where it comes back.
  *
- * **The guardrails are named here and not offered.** They are the third piece
- * of brand material and the only one with no question attached: they apply to
- * every generation whichever voice is picked, so there is nothing to select and
- * nothing to override, and a control for them on this screen would imply a
- * campaign could opt out of the claims it is allowed to make. What was wrong
- * was going from *unpickable* to *unmentioned* — a rule nobody can see is a
- * rule nobody believes is running. So the card ends by saying they exist and
- * pointing at the workspace's Foundation, which is where they are written. It
- * pointed at the campaign's own Foundation page until that page became Assets:
- * the guardrails were never the campaign's to begin with, and a link to the
- * one place they can be read in full is the honest version of the same
- * sentence.
+ * **The guardrails are not offered here.** They apply to every generation
+ * whichever voice is picked, so there is nothing to select and nothing to
+ * override. They are shown in full under this card instead, read-only, by
+ * `FromTheWorkspace` — a rule nobody can see is a rule nobody believes is
+ * running.
  *
  * **It saves on the spot**, not through the page's Save button, following
  * `PlatformsControl` — a selection that sat dirty until an unrelated Save would
@@ -80,7 +68,7 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
     <SettingsCard
       title={
         <>
-          <WaveformIcon className="size-5 text-tertiary-foreground" />
+          <BrandSectionGlyph id="voices" />
           {t('brand.binding.voice')}
         </>
       }
@@ -108,7 +96,7 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
       </div>
 
       <div className="mt-2 flex items-center gap-2">
-        <UsersThreeIcon className="size-5 text-tertiary-foreground" />
+        <BrandSectionGlyph id="audiences" />
         <h3 className="text-xl font-display font-medium tracking-tight">
           {t('brand.binding.audience')}
         </h3>
@@ -133,44 +121,7 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
           />
         ))}
       </div>
-
-      <WhatAlsoApplies hasGuardrails={brand.guardrails !== null} />
     </SettingsCard>
-  )
-}
-
-/**
- * The card's last word: what this campaign is also written under, that nothing
- * above it chose.
- *
- * A paragraph and a link, deliberately not a control and deliberately not a
- * fourth section — the moment it looks like one, somebody goes looking for the
- * checkbox that turns it off. The wording changes with whether anything is
- * stated, because the two facts are opposite in kind: rules in force are a
- * constraint, and no rules at all is a gap worth the same one line.
- */
-function WhatAlsoApplies({ hasGuardrails }: { hasGuardrails: boolean }) {
-  const { t } = useTranslation()
-  return (
-    <div className="mt-1 flex flex-col gap-2 border-t border-tertiary pt-4">
-      <p className="flex gap-2 text-sm text-tertiary-foreground">
-        <ShieldIcon className="mt-0.5 size-4 shrink-0" />
-        <span>
-          {hasGuardrails
-            ? t('brand.binding.alsoApplies')
-            : t('brand.binding.alsoAppliesEmpty')}
-        </span>
-      </p>
-      <div>
-        <Link
-          to="/foundation"
-          className="inline-flex items-center gap-1 text-sm text-secondary-foreground hover:text-foreground"
-        >
-          {t('brand.binding.seeEverything')}
-          <ArrowUpRightIcon className="size-3.5" />
-        </Link>
-      </div>
-    </div>
   )
 }
 

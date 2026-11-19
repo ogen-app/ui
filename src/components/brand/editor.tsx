@@ -435,7 +435,7 @@ export function EditorCard({
   children: ReactNode
 }) {
   return (
-    <section className="mx-auto flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6">
+    <section className="flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6">
       <header className="flex items-start justify-between gap-4">
         <div className="flex max-w-2xl flex-col gap-1">
           <h2 className="font-display text-lg font-medium leading-6 tracking-tight">

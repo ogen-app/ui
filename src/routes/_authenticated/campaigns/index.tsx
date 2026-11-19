@@ -28,10 +28,11 @@ type CampaignsSearch = { archived?: boolean }
 
 export const Route = createFileRoute('/_authenticated/campaigns/')({
   component: Campaigns,
-  validateSearch: (search: Record<string, unknown>): CampaignsSearch =>
-    search.archived === true || search.archived === 'true'
+  validateSearch: (search: Record<string, unknown>): CampaignsSearch => ({
+    ...(search.archived === true || search.archived === 'true'
       ? { archived: true }
-      : {},
+      : {}),
+  }),
 })
 
 function Campaigns() {
@@ -67,14 +68,14 @@ function Campaigns() {
   }
 
   // One scroll container owning the sticky header, the same shell as Overview
-  // and Settings — cards pass under the header's gradient instead of stopping
-  // at it. The header itself does not fade: this is the list you steer from,
-  // so "Campaigns" and ADD CAMPAIGN stay legible however far you scroll.
+  // and Settings. No large title: this is the list you steer from, so its
+  // name and ADD CAMPAIGN stay in the header however far you scroll. It is the
+  // Overview row with no campaign chosen, and is titled as the rail names it.
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="h-0 grow overflow-y-auto flex flex-col">
         <PageHeader
-          title={t('campaigns.title')}
+          title={t('nav.campaign.overview')}
           actions={
             <Button onClick={create} size="lg">
               <PlusIcon className="size-4" />
@@ -107,12 +108,10 @@ function Campaigns() {
         {/* After both branches: a workspace whose only campaigns are archived
             still has to be able to reach them, and the empty state's `grow`
             leaves this sitting at the bottom of the screen where it belongs.
-            The inner column is `CampaignCard`'s own, so the drawer lines up
-            with the cards it continues rather than spanning the page. */}
+            It spans the page like the cards above it, so the drawer lines up
+            with the list it continues. */}
         <div className="px-3 lg:px-6 pt-2 pb-10">
-          <div className="w-full max-w-content mx-auto">
-            <ArchivedCampaigns defaultOpen={archived} />
-          </div>
+          <ArchivedCampaigns defaultOpen={archived} />
         </div>
       </div>
       <CreateCampaignDialog

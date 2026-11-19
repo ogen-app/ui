@@ -326,8 +326,17 @@ export const es: Translation = {
     closeSidebar: 'Cerrar la barra lateral',
     switchWorkspace: 'Crear o cambiar',
     untitledCampaign: 'Campaña sin título',
-    backToWorkspace: 'Volver al espacio de trabajo',
-    workspaceScope: 'Espacio de trabajo',
+    /** The bar's "Strategy › Voice" once a page's header has scrolled away. */
+    scope: {
+      all: 'Todas las campañas',
+      switch: 'Cambiar de campaña',
+      newCampaign: 'Nueva campaña',
+    },
+    workspaceMenu: 'Menú del espacio de trabajo',
+    yourWorkspaces: 'Tus espacios de trabajo',
+    accountMenu: 'Menú de la cuenta',
+    askOgen: 'Preguntar a Ogen',
+    assistantFinished: 'El asistente ha terminado',
     campaignNoWindow: 'Sin fechas',
     campaign: {
       overview: 'Resumen',
@@ -637,7 +646,7 @@ export const es: Translation = {
     anywhere: 'En cualquier lugar',
     inCampaign: 'En esta campaña',
     campaignNote:
-      'Estrategia, Publicaciones y Calendario tienen teclas dentro de una campaña.',
+      'Publicaciones y Calendario tienen teclas dentro de una campaña.',
     thisCampaign: 'de esta campaña',
     foot: '<k1>?</k1> o <k2>esc</k2> para cerrar',
     sequence: '{{first}}, luego {{second}}',
@@ -646,7 +655,6 @@ export const es: Translation = {
       assets: 'Recursos',
       campaigns: '<k>C</k>ampañas',
       analytics: 'A<k>n</k>alíticas',
-      foundation: '<k>F</k>undamentos',
       workspaceSettings: 'Ajuste<k>s</k> del espacio',
       settings: 'Ajuste<k>s</k>',
       strategy: 'Es<k>t</k>rategia',
@@ -1189,10 +1197,6 @@ export const es: Translation = {
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
     },
-    page: {
-      campaignTitle: 'Ideas de {{campaign}}',
-      untitledCampaign: 'Campaña sin título',
-    },
     loadFailed: 'No se pudieron cargar las ideas',
     saveFailed: 'No se pudo guardar. Tus ideas no han cambiado.',
   },
@@ -1451,6 +1455,14 @@ export const es: Translation = {
       subtitle:
         'Aquí aparecerán las publicaciones que salgan, las que fallen y un informe de cada día.',
     },
+    needsYou: {
+      title: 'Te necesita',
+      showMore_one: 'VER {{formatted}} MÁS',
+      showMore_other: 'VER {{formatted}} MÁS',
+      allSet: 'Nada te necesita',
+      allSetBody:
+        'Nada ha fallado, va con retraso ni está a punto de vencer en ninguna campaña. Si eso cambia, aparecerá aquí.',
+    },
     unread: 'Sin leer',
     recent: 'Nuevo',
     seenBefore: 'Visto antes de esta visita',
@@ -1555,6 +1567,12 @@ export const es: Translation = {
     openAssets: 'ABRIR RECURSOS',
     openSettings: 'ABRIR AJUSTES',
     noDate: 'Sin fecha',
+    analytics: {
+      nothingMeasured: 'Aún no hay nada medido',
+      emptyBody:
+        'Cuando las publicaciones de esta campaña salgan y las plataformas informen, lo que consigan aparecerá aquí.',
+      error: 'No se pudieron cargar las analíticas.',
+    },
     problems: {
       ignore: 'IGNORAR',
       ignoreFailed: 'No se pudo ignorar ese problema. Inténtalo de nuevo.',
@@ -1619,6 +1637,7 @@ export const es: Translation = {
     weekCard: 'TARJETA DE SEMANA',
     monthCard: 'TARJETA DE MES',
     addPostOn: 'Añadir una publicación el {{date}}',
+    addPostTo: 'Añadir una publicación a',
     density_one: '{{count}} publicación el {{date}} — abrir esta semana',
     density_other: '{{count}} publicaciones el {{date}} — abrir esta semana',
     densityTicked_one: '{{formatted}} marcada',
@@ -1626,7 +1645,21 @@ export const es: Translation = {
     today: 'HOY',
 
     notScheduled: 'Sin programar',
-    notScheduledHint: 'Arrastra una publicación a un día para programarla.',
+    /**
+     * The Not scheduled panel's two groups: posts with an account to publish
+     * as, and the ones the schedule gate would refuse for want of one —
+     * folded away by default, with each row's reason in amber.
+     */
+    readyToSchedule: 'Listas para programar',
+    noneReady: 'Nada está listo para programar',
+    needsAccount: 'Necesitan una cuenta',
+    /** A row's reason, worded as what to do about it. */
+    accountGap: {
+      noPlatform: 'Elige una plataforma',
+      noAccount: 'Conecta una cuenta',
+      chooseAccount: 'Elige una cuenta',
+      accountGone: 'Cuenta desconectada',
+    },
     justWritten: 'RECIÉN ESCRITA',
     fromIdeas_one: 'de {{formatted}} idea',
     fromIdeas_other: 'de {{formatted}} ideas',
@@ -1650,12 +1683,15 @@ export const es: Translation = {
         'Las publicaciones se escriben dentro de una campaña. Programa una y aparecerá aquí, sea cual sea la campaña a la que pertenezca.',
       workspacePanelSubtitle:
         'Las publicaciones sin fecha esperan aquí — arrastra una al calendario para darle una.',
+      workspaceListTitle: 'Aún no hay publicaciones',
+      workspaceListSubtitle:
+        'Las publicaciones se escriben dentro de una campaña. Añade una allí y aparecerá aquí, sea cual sea la campaña a la que pertenezca.',
     },
   },
 
   assistant: {
-    activeThreads_one: '{{formatted}} conversación activa',
-    activeThreads_other: '{{formatted}} conversaciones activas',
+    threadCount_one: '{{formatted}} conversación',
+    threadCount_other: '{{formatted}} conversaciones',
     pendingThreads_one: '{{formatted}} pendiente',
     pendingThreads_other: '{{formatted}} pendientes',
 
@@ -4287,6 +4323,7 @@ export const es: Translation = {
     columnGrounding: 'Fuentes',
     columnPlatform: 'Plataforma',
     columnFormat: 'Formato',
+    columnCampaign: 'Campaña',
     columnSeries: 'Serie',
     columnPublishDate: 'Fecha de publicación',
     columnWhen: 'Cuándo',
@@ -5818,11 +5855,6 @@ export const es: Translation = {
         'Este espacio de trabajo aún no tiene voces ni audiencias. Se escriben una vez y todas las campañas se basan en ellas.',
       emptyShort: 'Este espacio de trabajo aún no tiene voces ni audiencias.',
       openBrand: 'Abrir Fundamentos',
-      alsoApplies:
-        'Los límites del espacio de trabajo también se aplican a todas las publicaciones de aquí, sea quien sea la voz que escriba. No se eligen por campaña y no se pueden anular.',
-      alsoAppliesEmpty:
-        'El espacio de trabajo no ha indicado ningún límite, así que nada está descartado: cualquier voz de aquí puede prometer lo que sea, con las palabras que sea.',
-      seeEverything: 'Ver todo aquello a partir de lo que escribe esta campaña',
       saveError: 'No se pudo guardar la voz de la campaña',
     },
 
@@ -6310,10 +6342,6 @@ export const es: Translation = {
     },
 
     overview: {
-      intro: {
-        title: 'A partir de qué escribe la app',
-        body: 'Las voces con las que escribe, a quién se dirige y lo que nunca puede afirmar. Se escribe una vez para el espacio de trabajo, y cada campaña y cada publicación lo heredan.',
-      },
       nothingReads: 'Todavía nada lee esto',
       unreadable: 'No se ha podido cargar lo que hay aquí.',
       stated: '{{count}} indicados',
@@ -6808,7 +6836,6 @@ export const es: Translation = {
       deleted_one: '{{formatted}} publicación eliminada',
       deleted_other: '{{formatted}} publicaciones eliminadas',
     },
-    title: 'Campañas',
     add: 'AÑADIR CAMPAÑA',
     error: 'No se pudieron cargar las campañas',
     untitled: 'esta campaña',
@@ -6827,6 +6854,21 @@ export const es: Translation = {
       spend: 'Presupuesto e idioma',
       removedByAssistant: '{{what}} quitado por el asistente',
       undoInThread: 'DESHACER está en la conversación',
+      timeline: {
+        empty:
+          'Todavía no hay campañas. Cada una que añadas se dibuja aquí junto a las demás, según sus fechas.',
+        undated: 'Sin fechas',
+        barLabel: '{{name}}, {{window}}',
+        windowAndRate: '{{window}} · {{rate}}',
+        perWeek_one: '{{formatted}} publicación a la semana',
+        perWeek_other: '{{formatted}} publicaciones a la semana',
+        perMonth_one: '{{formatted}} publicación al mes',
+        perMonth_other: '{{formatted}} publicaciones al mes',
+        noRate: 'Sin objetivo de publicaciones',
+        noPlatforms: 'Sin plataformas',
+        noVoice: 'Sin voz',
+        defaultVoice: '{{voice}} (predeterminada)',
+      },
     },
     type: {
       label: 'Tipo de campaña',
@@ -6844,8 +6886,6 @@ export const es: Translation = {
     },
     phases: {
       title: 'Fases',
-      explainer:
-        'Un tipo de campaña avanza por sus fases en orden, y las publicaciones generadas se planifican en la fase en cuyas fechas caen. Mueve el día en que termina una fase para darle más o menos parte de la campaña.',
       derived: 'Repartidas por igual entre las fechas de la campaña.',
       manual: 'Fechas fijadas a mano.',
       reset: 'Repartir por igual de nuevo',
@@ -6859,12 +6899,9 @@ export const es: Translation = {
       pendingType: 'Guarda el nuevo tipo para ver sus fases.',
       empty: 'Este tipo de campaña no tiene fases.',
       loadError: 'No se pudieron cargar las fases.',
-      window: '{{start}} – {{end}}',
-      days_one: '{{count}} día',
-      days_other: '{{count}} días',
+      meta: '{{range}} · {{posts}}',
       posts_one: '{{count}} publicación',
       posts_other: '{{count}} publicaciones',
-      ends: 'Termina',
       endsLabel: 'Cuándo termina {{phase}}',
       saveError: 'No se pudieron guardar las fechas de las fases',
       resetError: 'No se pudieron volver a repartir las fases por igual',
@@ -6902,7 +6939,6 @@ export const es: Translation = {
     },
     page: {
       title: 'Recursos',
-      campaignTitle: 'Recursos de {{campaign}}',
       add: {
         button: 'AÑADIR CONTENIDO',
         note: 'Escribir una nota',
@@ -7434,6 +7470,174 @@ export const es: Translation = {
         'La aplicación tuvo un error inesperado. Recargar suele solucionarlo.',
       type: 'ERROR',
       reload: 'Recargar',
+    },
+  },
+  onboarding: {
+    progress: 'Configuración',
+    skip: 'Saltar la configuración',
+    back: 'Atrás',
+    continue: 'Continuar',
+    stages: {
+      you: 'Sobre ti',
+      sources: 'Qué lee Ogen',
+      brand: 'La marca',
+      accounts: 'Cuentas',
+    },
+    stageDone: '{{stage}}, hecho',
+    stageCurrent: '{{stage}}, paso actual',
+    saving: 'Guardando…',
+    saved: 'Guardado',
+    you: {
+      title: '¿Para quién escribe Ogen?',
+      lead: 'Un espacio de trabajo guarda una marca: su voz, sus audiencias, sus cuentas y sus campañas. ¿Trabajas para varios clientes? Cada uno tiene su propio espacio de trabajo.',
+      client: {
+        title: 'Un cliente',
+        body: 'Haces marketing para otras empresas, como freelance o desde una agencia.',
+      },
+      own: {
+        title: 'Mi propio negocio',
+        body: 'Haces marketing para el negocio que diriges o en el que trabajas.',
+      },
+      nameClient: 'Nombre del cliente',
+      nameOwn: 'Nombre del negocio',
+      nameHint: 'Opcional. Será el nombre del espacio de trabajo.',
+    },
+    sources: {
+      title: '¿Qué puede leer Ogen sobre {{name}}?',
+      lead: 'Ogen aprende cómo suenan a partir de lo que ya existe. Añade lo que tengas; cada cosa se lee en cuanto la añades, y nada es obligatorio.',
+      leadTogether:
+        'Ogen aprende cómo suenan a partir de lo que ya existe. Añade lo que tengas; nada es obligatorio.',
+      website: {
+        title: 'Sitio web',
+        body: 'Ogen lee hasta 10 de sus páginas.',
+      },
+      documents: {
+        title: 'Documentos',
+        body: 'Un manual de marca, un dosier de prensa, ofertas.',
+        more: 'Más documentos',
+      },
+      questions: {
+        title: 'Unas preguntas',
+        body: '¿Poco por escrito? Una frase cada una.',
+      },
+      websiteLabel: 'Dirección del sitio web',
+      websiteHint: 'Ogen lee la página de inicio y hasta 9 páginas por debajo.',
+      add: 'Añadir el sitio web',
+      drop: 'Suelta los archivos aquí, o',
+      choose: 'elígelos',
+      formats: 'PDF, Word o Markdown',
+      answerLabel: 'Tu respuesta',
+      addAnswers: 'Añadir las respuestas',
+      cancel: 'Cerrar',
+      remove: 'Quitar {{name}}',
+      pages_one: '{{formatted}} página',
+      pages_other: '{{formatted}} páginas',
+      uploading: 'Subiendo',
+      reading: 'Leyendo, cerca de un minuto',
+      done: 'Leído',
+      stopped: 'Detenido',
+      queued: 'Se lee al continuar',
+      failed: 'No se pudo subir',
+      retry: 'Leer de nuevo',
+      answered_one: '{{formatted}} respuesta',
+      answered_other: '{{formatted}} respuestas',
+      continue: 'Continuar',
+      readingHint:
+        'Cada uno tarda cerca de un minuto. Puedes esperar aquí o añadir más mientras tanto.',
+      readHint:
+        'Después verás qué ha sacado Ogen de ellos. Nada entra en la marca hasta que lo revises.',
+      togetherHint:
+        'Al continuar, Ogen lo lee todo junto, en uno o dos minutos. Nada entra en la marca hasta que lo revises.',
+      later: 'Hacerlo más tarde',
+      tryAgain: 'Reintentar',
+      withoutRead: 'Continuar sin leer',
+      stop: {
+        body: 'Ogen todavía está leyendo. Si sigues ahora, la lectura se detiene y la hoja de la derecha no se completa con lo que añadiste. Puedes volver a leerlo desde Fundamentos más tarde.',
+        keep: 'Seguir leyendo',
+        go: 'Seguir de todos modos',
+      },
+    },
+    brand: {
+      readingTitle: 'Leyendo lo que diste',
+      readingLead:
+        'Puedes quedarte a mirar o volver luego; la lectura sigue de todos modos.',
+      reviewTitle: 'Lo que Ogen ha sacado',
+      reviewLead:
+        'Todo empieza conservado. Descarta lo que esté mal y corrige lo que se acerque. Nada se guarda hasta que continúes.',
+      nameLabel: 'Nombre',
+      namedByYou: 'Puesto por ti',
+      namedFrom: 'De {{source}}',
+      siteSays: 'El sitio web dice «{{name}}».',
+      useSite: 'Usar ese',
+      keep: 'Guardar en la marca',
+      kept: '{{kept}} de {{total}} conservados',
+      failedTitle: 'Ogen no pudo leer la marca',
+      failedLead:
+        'No se guardó nada. Puedes volver a leerla desde Fundamentos cuando termines la configuración.',
+      closedTitle: 'Esta lectura ha terminado',
+      closedLead:
+        'Se guardó, se descartó o se quedó sin tiempo. Fundamentos tiene lo que se conservó.',
+      saveFailed: 'La marca no se guardó. Inténtalo de nuevo.',
+    },
+    accounts: {
+      title: '¿Dónde publica {{name}}?',
+      leadClient:
+        'Conecta las cuentas que gestionas para ellos. Si el acceso lo tiene el cliente, sáltala por ahora y conéctala más tarde en Ajustes.',
+      leadOwn: 'Conecta las cuentas desde las que publicas.',
+      connect: 'Conectar',
+      connected: 'Conectada',
+      later:
+        'Puedes conectar más en cualquier momento en Ajustes del espacio de trabajo.',
+      finish: 'Terminar la configuración',
+      none: 'Terminar sin cuentas',
+      connectFailed:
+        'Esa cuenta no se conectó. Inténtalo de nuevo o conéctala más tarde en Ajustes del espacio de trabajo.',
+      linkFailed:
+        'No se pudo empezar a conectar {{platform}}. Inténtalo de nuevo en un minuto.',
+    },
+    sheet: {
+      title: 'Lo que Ogen necesita',
+      to: 'para sonar como {{name}}',
+      unnamedClient: 'tu cliente',
+      unnamedOwn: 'tu negocio',
+      meter: '{{count}} de {{total}} suficientes',
+      verdict: {
+        none: 'Todavía no hay nada en qué basarse.',
+        some: 'Un comienzo. Las publicaciones aún sonarían como las de cualquiera.',
+        most: 'Suficiente para empezar a escribir.',
+        all: 'Suficiente para sonar como ellos.',
+      },
+      levels: {
+        missing: 'Falta',
+        thin: 'Escaso',
+        enough: 'Suficiente',
+      },
+      needs: {
+        apart: {
+          label: 'Qué los distingue',
+          hint: 'Las páginas de inicio y «quiénes somos» del sitio web, o un manual de marca.',
+        },
+        voice: {
+          label: 'Tono de voz',
+          hint: 'Publicaciones que ya han hecho, o la sección de tono de un manual de marca.',
+        },
+        audience: {
+          label: 'A quién se dirigen',
+          hint: 'Una página «quiénes somos», un dosier de prensa o las preguntas.',
+        },
+        onlyThey: {
+          label: 'Lo que solo ellos pueden decir',
+          hint: 'Datos, cifras y ofertas: un dosier de prensa o una hoja de ofertas.',
+        },
+        never: {
+          label: 'Lo que nunca dicen',
+          hint: 'Lo que no se hace según un manual de marca, o tus propias notas.',
+        },
+        channels: {
+          label: 'Dónde publican',
+          hint: 'Conecta una cuenta.',
+        },
+      },
     },
   },
 }

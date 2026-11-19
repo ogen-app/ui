@@ -11,9 +11,11 @@ const TOP = 16
 const BOTTOM = 96
 
 /**
- * Lays out a pinned left column beside a longer right one (CON-373), as
- * `stickyColumns` describes: the left pinned while the right is read, then
- * the right held by its foot while the left shows the rest of itself.
+ * Lays out a pinned column beside a longer one that is read (CON-373), as
+ * `stickyColumns` describes: the pinned one held while the other is read,
+ * then the read one held by its foot while the pinned one shows the rest of
+ * itself. Which side each is on is the caller's: the asset page pins its left
+ * column, `PageColumns` its right.
  *
  * Measured, not scrolled: a `ResizeObserver` re-reads the heights whenever
  * either column or the scroll area changes size — an idea opening, a lens or
@@ -29,8 +31,21 @@ export function useStickyColumns(
   rowRef: RefObject<HTMLElement | null>,
   leftRef: RefObject<HTMLElement | null>,
   rightRef: RefObject<HTMLElement | null>,
+  {
+    enabled = true,
+    sideBySide,
+  }: {
+    enabled?: boolean
+    /**
+     * Whether the two columns are side by side right now. Defaults to the
+     * window being `lg`; a layout that switches on its own width (a container
+     * query) says so from the row instead.
+     */
+    sideBySide?: (row: HTMLElement) => boolean
+  } = {},
 ) {
   useEffect(() => {
+    if (!enabled) return
     const row = rowRef.current
     const left = leftRef.current
     const right = rightRef.current
@@ -39,10 +54,11 @@ export function useStickyColumns(
 
     const scroller = findScrollParent(row)
     const wide = window.matchMedia(SIDE_BY_SIDE)
+    const isWide = () => (sideBySide ? sideBySide(row) : wide.matches)
     const viewport = () => scroller?.clientHeight ?? window.innerHeight
 
     const apply = () => {
-      const { rightTop, rowMinHeight } = wide.matches
+      const { rightTop, rowMinHeight } = isWide()
         ? stickyColumns({
             viewport: viewport(),
             top: TOP,
@@ -58,7 +74,7 @@ export function useStickyColumns(
 
     const onFocus = (e: FocusEvent) => {
       const target = e.target
-      if (!(target instanceof HTMLElement) || !wide.matches) return
+      if (!(target instanceof HTMLElement) || !isWide()) return
       requestAnimationFrame(() => {
         const visibleBottom =
           (scroller?.getBoundingClientRect().top ?? 0) + viewport() - BOTTOM
@@ -85,5 +101,5 @@ export function useStickyColumns(
       right.style.top = ''
       row.style.minHeight = ''
     }
-  }, [rowRef, leftRef, rightRef])
+  }, [rowRef, leftRef, rightRef, enabled, sideBySide])
 }

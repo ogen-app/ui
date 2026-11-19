@@ -8,10 +8,6 @@ import type { Idea } from '@/lib/ideas'
 import { DeleteIdeasDialog } from './DeleteIdeasDialog'
 import { IdeaRow } from './IdeaRow'
 import { IdeaCapture } from './IdeaCapture'
-import { IdeasSidebarItem } from './IdeasSidebarItem'
-
-/** The rail's row reads the server's undecided count; here, a fixed answer. */
-const undecided = vi.hoisted(() => ({ count: 0 }))
 
 /** The posts an opened idea was made into (CON-470). */
 const madeInto = vi.hoisted(() => ({ list: vi.fn() }))
@@ -19,11 +15,6 @@ const madeInto = vi.hoisted(() => ({ list: vi.fn() }))
 vi.mock('@/services/api/ideaPosts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/api/ideaPosts')>()),
   listIdeaPosts: madeInto.list,
-}))
-
-vi.mock('@/hooks/useIdeaList', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/hooks/useIdeaList')>()),
-  useUndecidedIdeaCount: () => undecided.count,
 }))
 
 /**
@@ -357,20 +348,5 @@ describe('capture in Spanish', () => {
       'Cada viernes de primavera',
       expect.anything(),
     )
-  })
-})
-
-describe("the rail's Ideas row in Spanish", () => {
-  it('counts what is still a question, and says so', async () => {
-    undecided.count = 2
-
-    await renderWithProviders(<IdeasSidebarItem isActive={false} />, {
-      path: '/ideas',
-    })
-
-    // The undecided pile, not the backlog's size.
-    const chip = screen.getByLabelText('2 ideas sobre la mesa')
-    expect(chip).toHaveTextContent('2')
-    expect(screen.queryByLabelText('2 undecided ideas')).not.toBeInTheDocument()
   })
 })

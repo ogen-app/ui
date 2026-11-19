@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { accountLabel, resolvePublishingAccount } from './publishingAccount.ts'
+import {
+  accountGap,
+  accountLabel,
+  resolvePublishingAccount,
+} from './publishingAccount.ts'
 import type { PublisherAccount } from '@/types/campaigns'
 
 function account(overrides: Partial<PublisherAccount> = {}): PublisherAccount {
@@ -86,5 +90,38 @@ describe('accountLabel', () => {
 
   it('falls back to the handle when there is no display name', () => {
     expect(accountLabel(account({ display_name: '' }))).toBe('acme-corp')
+  })
+})
+
+describe('accountGap', () => {
+  it('has none when the platform has one account and none is named', () => {
+    // The submit worker picks the single account, as the schedule gate does.
+    expect(accountGap('p-1', resolvePublishingAccount(ONE, ''))).toBeNull()
+  })
+
+  it('has none when the named account is connected', () => {
+    expect(accountGap('p-1', resolvePublishingAccount(TWO, 'acc-2'))).toBeNull()
+  })
+
+  it('is the platform when the post has none', () => {
+    expect(accountGap('', resolvePublishingAccount([], ''))).toBe('noPlatform')
+  })
+
+  it('asks for a connection when the platform has no account', () => {
+    expect(accountGap('p-1', resolvePublishingAccount([], ''))).toBe(
+      'noAccount',
+    )
+  })
+
+  it('asks for a choice when two are connected and none is named', () => {
+    expect(accountGap('p-1', resolvePublishingAccount(TWO, ''))).toBe(
+      'chooseAccount',
+    )
+  })
+
+  it('says the account is gone when the named one is not connected', () => {
+    expect(accountGap('p-1', resolvePublishingAccount(ONE, 'acc-9'))).toBe(
+      'accountGone',
+    )
   })
 })

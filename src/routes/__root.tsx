@@ -22,6 +22,8 @@ import { ENTITLEMENTS_KEY } from '../hooks/useEntitlements'
 import { isGateExempt } from '../lib/billingGate'
 import { searchTextOf } from '../lib/searchText'
 import { queryClient } from '../lib/queryClient'
+import { isFeatureEnabled } from '../config/featureFlags'
+import { onboardingQuery } from '../hooks/useOnboarding'
 
 const SERVER_DOWN_PATH = '/server-unavailable'
 
@@ -106,6 +108,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       await seedActiveWorkspace()
       if (await billingGated(location.pathname))
         throw redirect({ to: '/plans' })
+      const setup = await setupRedirect(location.pathname, location.search)
+      if (setup === 'app') throw redirect({ to: '/' })
+      if (setup)
+        throw redirect({
+          to: '/onboarding',
+          search: setup === 'setup' ? {} : setup,
+        })
     }
 
     return { auth: { isAuthenticated: user !== null } }
@@ -185,6 +194,56 @@ async function billingGated(pathname: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/**
+ * Where setup sends this navigation, if anywhere (the `onboarding` flag).
+ *
+ * A workspace whose setup is `pending` — written at signup — opens on
+ * `/onboarding` wherever it was headed, until it is finished or skipped; and
+ * `/onboarding` itself sends anyone it is not owed to into the app. The
+ * billing gate's exempt paths stay reachable, so a workspace that must buy a
+ * plan buys it first and is set up after.
+ *
+ * Connecting an account leaves the app and Zernio brings the browser back to
+ * `/workspace-settings?connected=…` (or `connect_error`), which knows nothing
+ * of setup. Mid-setup that lands back on the accounts step with the same
+ * answer; the picker for a connect with several targets is let through, and
+ * comes back by the same road once a target is chosen.
+ *
+ * A failed read lets the navigation through, like the billing gate: setup is
+ * an offer, and an error here must not hold anybody out of their workspace.
+ */
+async function setupRedirect(
+  pathname: string,
+  search: unknown,
+): Promise<
+  null | 'app' | 'setup' | { connected?: string; connect_error?: string }
+> {
+  if (!isFeatureEnabled('onboarding')) return null
+  const here = pathname === '/onboarding' || pathname === '/onboarding/'
+  if (
+    !here &&
+    (isGateExempt(pathname) || pathname.startsWith('/workspace-settings/'))
+  )
+    return null
+  let pending: boolean
+  try {
+    const state = await queryClient.fetchQuery(onboardingQuery)
+    pending = state?.status === 'pending'
+  } catch {
+    return null
+  }
+  if (here) return pending ? null : 'app'
+  if (!pending) return null
+  if (pathname === '/workspace-settings') {
+    const params = (search ?? {}) as Record<string, unknown>
+    const connected = searchTextOf(params.connected)
+    const connectError = searchTextOf(params.connect_error)
+    if (connected) return { connected }
+    if (connectError) return { connect_error: connectError }
+  }
+  return 'setup'
 }
 
 /** Named rather than inline, so it is a component the hooks rules can see. */

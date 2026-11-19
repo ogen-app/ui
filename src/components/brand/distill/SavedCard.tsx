@@ -21,7 +21,7 @@ export function SavedCard() {
   if (!saved) return null
 
   return (
-    <section className="relative mx-auto flex w-full max-w-content flex-col gap-2 bg-primary px-6 py-5">
+    <section className="relative flex w-full max-w-content flex-col gap-2 bg-primary px-6 py-5">
       <Button
         variant="ghost"
         size="smIcon"

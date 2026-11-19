@@ -12,7 +12,6 @@ type GoRow = {
     | 'assets'
     | 'campaigns'
     | 'analytics'
-    | 'foundation'
     | 'workspaceSettings'
     | 'settings'
     | 'strategy'
@@ -137,13 +136,12 @@ export function ShortcutsSheet() {
     { key: 'a', label: 'assets', campaigns: true },
     { key: 'c', label: 'campaigns' },
     { key: 'n', label: 'analytics', campaigns: true },
-    { key: 'f', label: 'foundation' },
+    { key: 't', label: 'strategy', campaigns: true },
     inCampaign
       ? { key: 's', label: 'settings', campaigns: true }
       : { key: 's', label: 'workspaceSettings' },
   ]
   const campaignRows: GoRow[] = [
-    { key: 't', label: 'strategy' },
     { key: 'p', label: 'posts' },
     { key: 'r', label: 'calendar' },
   ]

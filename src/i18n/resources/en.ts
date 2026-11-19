@@ -402,13 +402,25 @@ export const en = {
     /** Both halves of what the /workspaces page offers, in one row. */
     switchWorkspace: 'Create or switch',
     untitledCampaign: 'Untitled campaign',
-    /** The way out of a campaign, on the header caret and on the mark beside it. */
-    backToWorkspace: 'Back to workspace',
+    /**
+     * The campaign switcher above the page: the scope every place in the menu
+     * is narrowed to. "All campaigns" is the workspace.
+     */
+    /** The bar's "Strategy › Voice" once a page's header has scrolled away. */
+    scope: {
+      all: 'All campaigns',
+      switch: 'Switch campaign',
+      newCampaign: 'New campaign',
+    },
     /**
      * Heads the workspace's destinations where they appear inside the account
      * menu — level 1's way back to a module without leaving the campaign first.
      */
-    workspaceScope: 'Workspace',
+    workspaceMenu: 'Workspace menu',
+    yourWorkspaces: 'Your workspaces',
+    accountMenu: 'Account menu',
+    askOgen: 'Ask Ogen',
+    assistantFinished: 'The assistant has finished',
     /** A campaign with no start or end date, in the rail's window line. */
     campaignNoWindow: 'No dates set',
     /**
@@ -784,7 +796,7 @@ export const en = {
     goHint: 'Press g, then the letter.',
     anywhere: 'Anywhere',
     inCampaign: 'In this campaign',
-    campaignNote: 'Strategy, Posts and Calendar have keys inside a campaign.',
+    campaignNote: 'Posts and Calendar have keys inside a campaign.',
     thisCampaign: 'this campaign’s',
     foot: '<k1>?</k1> or <k2>esc</k2> to close',
     /** A two-key shortcut, as a screen reader says it. */
@@ -794,7 +806,6 @@ export const en = {
       assets: '<k>A</k>ssets',
       campaigns: '<k>C</k>ampaigns',
       analytics: 'A<k>n</k>alytics',
-      foundation: '<k>F</k>oundation',
       workspaceSettings: 'Workspace <k>s</k>ettings',
       settings: '<k>S</k>ettings',
       strategy: 'S<k>t</k>rategy',
@@ -1413,10 +1424,6 @@ export const en = {
       ideas_one: '{{formatted}} idea',
       ideas_other: '{{formatted}} ideas',
     },
-    page: {
-      campaignTitle: '{{campaign}} Ideas',
-      untitledCampaign: 'Untitled campaign',
-    },
     loadFailed: 'Unable to load ideas',
     saveFailed: 'Could not save that. Your ideas are unchanged.',
   },
@@ -1743,6 +1750,19 @@ export const en = {
       subtitle:
         'Posts going out, posts failing, and a report of each day land here as they happen.',
     },
+    /**
+     * The second column: live conditions across every campaign that are wrong
+     * now or about to be (`NeedsYouCard`). Not unread notifications — a row
+     * leaves when it is fixed, not when it is seen.
+     */
+    needsYou: {
+      title: 'Needs you',
+      showMore_one: 'SHOW {{formatted}} MORE',
+      showMore_other: 'SHOW {{formatted}} MORE',
+      allSet: 'Nothing needs you',
+      allSetBody:
+        'Nothing is failing, overdue or about to lapse in any campaign. If that changes, it shows up here.',
+    },
     /** The dot's accessible name — the only thing that says what it means. */
     unread: 'Unread',
     /**
@@ -1939,6 +1959,14 @@ export const en = {
      */
     noDate: 'No date',
 
+    /** The Analytics card: the tab's first row, over its default period. */
+    analytics: {
+      nothingMeasured: 'Nothing measured yet',
+      emptyBody:
+        'Once this campaign’s posts go out and the platforms report back, what they earn shows up here.',
+      error: 'Couldn’t load analytics.',
+    },
+
     /**
      * The calendar's problems, read from the server (CON-462). The fix is
      * asked of the campaign's assistant, which offers it to confirm.
@@ -2074,6 +2102,8 @@ export const en = {
      * readable again.
      */
     addPostOn: 'Add a post on {{date}}',
+    /** Over the campaigns the workspace calendar's add asks between. */
+    addPostTo: 'Add a post to',
     density_one: '{{count}} post on {{date}} — open this week',
     density_other: '{{count}} posts on {{date}} — open this week',
     /** On a day too busy to draw its cards, how many of its posts are ticked. */
@@ -2084,8 +2114,22 @@ export const en = {
 
     /** The right rail's holding pen for posts with no date yet. */
     notScheduled: 'Not scheduled',
-    /** Under its title (CON-485): what the panel is for. */
-    notScheduledHint: 'Drag a post onto a day to schedule it.',
+    /**
+     * The Not scheduled panel's two groups: posts with an account to publish
+     * as, and the ones the schedule gate would refuse for want of one —
+     * folded away by default, with each row's reason in amber.
+     */
+    readyToSchedule: 'Ready to schedule',
+    /** Inside that group when every undated post needs an account. */
+    noneReady: 'Nothing is ready to be scheduled',
+    needsAccount: 'Needs an account',
+    /** A row's reason, worded as what to do about it. */
+    accountGap: {
+      noPlatform: 'Choose a platform',
+      noAccount: 'Connect an account',
+      chooseAccount: 'Choose an account',
+      accountGone: 'Account disconnected',
+    },
     /**
      * On a draft just written in this tab (CON-470), at the panel's top —
      * an eyebrow in literal capitals, like the cards' status words.
@@ -2135,27 +2179,22 @@ export const en = {
         'Posts are written inside a campaign. Schedule one and it will show up here, whichever campaign it belongs to.',
       workspacePanelSubtitle:
         'Posts without a date wait here — drag one onto the calendar to give it one.',
+      /** The workspace's posts list, which has no ADD POST either. */
+      workspaceListTitle: 'No posts yet',
+      workspaceListSubtitle:
+        'Posts are written inside a campaign. Add one there and it will show up here, whichever campaign it belongs to.',
     },
   },
 
   assistant: {
     /**
-     * The status line under the panel's title.
-     *
-     * Two states get a number and one deliberately does not. *Active* is every
-     * thread open in the rail — the rail is where a thread lives, so opening
-     * one is what makes it active and closing it is what ends it. *Pending* is
-     * the subset waiting on the user: a turn that landed while they were
-     * looking somewhere else. A thread that is *working* is not counted, because
-     * the mark's animation already says so and a figure that changes every few
-     * seconds reads as something to act on rather than as a state.
-     *
-     * Two phrases rather than one sentence with two counts: i18next inflects
-     * around a single `count`, the pending clause is dropped entirely when it
-     * is zero, and only one of the two is ever tinted.
+     * The badge beside the panel's close button: every thread open in the
+     * rail. *Pending* — the ones with an answer the user hasn't seen — is the
+     * badge's dot, and this is its accessible name and tooltip. A thread that
+     * is *working* is not counted, because the mark's animation already says so.
      */
-    activeThreads_one: '{{formatted}} active thread',
-    activeThreads_other: '{{formatted}} active threads',
+    threadCount_one: '{{formatted}} thread',
+    threadCount_other: '{{formatted}} threads',
     pendingThreads_one: '{{formatted}} pending',
     pendingThreads_other: '{{formatted}} pending',
 
@@ -5058,6 +5097,8 @@ export const en = {
     columnGrounding: 'Sources',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
+    /** Only on the workspace's list, where the rows come from every campaign. */
+    columnCampaign: 'Campaign',
     columnSeries: 'Series',
     columnPublishDate: 'Publish date',
     columnWhen: 'When',
@@ -7135,11 +7176,6 @@ export const en = {
         'This workspace has no voices or audiences yet. They are written once and every campaign draws on them.',
       emptyShort: 'This workspace has no voices or audiences yet.',
       openBrand: 'Open Foundation',
-      alsoApplies:
-        'The workspace’s guardrails also apply to every post here, whichever voice writes it. They are not chosen per campaign and cannot be overridden.',
-      alsoAppliesEmpty:
-        'The workspace has stated no guardrails, so nothing is off limits — any voice here may promise anything, in any words.',
-      seeEverything: 'See everything this campaign writes from',
       saveError: 'Unable to save the campaign voice',
     },
 
@@ -7679,10 +7715,6 @@ export const en = {
        * count and nothing it cannot see — the facts card comes and goes with
        * its flag, and the line stays true either way.
        */
-      intro: {
-        title: 'What the app writes from',
-        body: 'The voices it writes in, who it is written to, and what it may never claim. Written once for the workspace, and every campaign and every post inherits it.',
-      },
       /**
        * The honesty rule at index length. The section's own screen says it in a
        * sentence (`shell.readByNothing`); five sentences down one page is the
@@ -8256,7 +8288,6 @@ export const en = {
       deleted_one: '{{formatted}} post deleted',
       deleted_other: '{{formatted}} posts deleted',
     },
-    title: 'Campaigns',
     add: 'ADD CAMPAIGN',
     error: 'Failed to load campaigns',
     untitled: 'this campaign',
@@ -8282,6 +8313,25 @@ export const en = {
        */
       removedByAssistant: '{{what}} removed by the assistant',
       undoInThread: 'UNDO is in the thread',
+      /**
+       * Strategy for all campaigns: every campaign on one time axis, with
+       * what each commits to and the voice it writes in.
+       */
+      timeline: {
+        empty:
+          'No campaigns yet. Each one you add is drawn here against the others, by its dates.',
+        undated: 'No dates set',
+        barLabel: '{{name}}, {{window}}',
+        windowAndRate: '{{window}} · {{rate}}',
+        perWeek_one: '{{formatted}} post a week',
+        perWeek_other: '{{formatted}} posts a week',
+        perMonth_one: '{{formatted}} post a month',
+        perMonth_other: '{{formatted}} posts a month',
+        noRate: 'No post goal',
+        noPlatforms: 'No platforms',
+        noVoice: 'No voice',
+        defaultVoice: '{{voice}} (default)',
+      },
     },
     /**
      * The campaign's type on Strategy (CON-166). It locks once a post is
@@ -8307,8 +8357,6 @@ export const en = {
      */
     phases: {
       title: 'Phases',
-      explainer:
-        'A campaign type moves through its phases in order, and generated posts are planned into the phase whose dates they fall on. Move the day a phase ends to give it more or less of the campaign.',
       derived: 'Split evenly across the campaign dates.',
       manual: 'Dates set by hand.',
       reset: 'Split evenly again',
@@ -8321,12 +8369,9 @@ export const en = {
       pendingType: 'Save the new type to see its phases.',
       empty: 'This campaign type has no phases.',
       loadError: "The phases couldn't be loaded.",
-      window: '{{start}} – {{end}}',
-      days_one: '{{count}} day',
-      days_other: '{{count}} days',
+      meta: '{{range}} · {{posts}}',
       posts_one: '{{count}} post',
       posts_other: '{{count}} posts',
-      ends: 'Ends',
       endsLabel: 'When {{phase}} ends',
       saveError: 'Unable to save the phase dates',
       resetError: 'Unable to split the phases evenly again',
@@ -8378,7 +8423,6 @@ export const en = {
      */
     page: {
       title: 'Assets',
-      campaignTitle: '{{campaign}} Assets',
       /** The ADD CONTENT menu (CON-484 moved it into the catalogue). */
       add: {
         button: 'ADD CONTENT',
@@ -9087,6 +9131,173 @@ export const en = {
       message: 'The app hit an unexpected error. Reloading usually fixes it.',
       type: 'ERROR',
       reload: 'Reload',
+    },
+  },
+  onboarding: {
+    progress: 'Setup',
+    skip: 'Skip setup',
+    back: 'Back',
+    continue: 'Continue',
+    stages: {
+      you: 'About you',
+      sources: 'What Ogen reads',
+      brand: 'The brand',
+      accounts: 'Accounts',
+    },
+    stageDone: '{{stage}}, done',
+    stageCurrent: '{{stage}}, current step',
+    saving: 'Saving…',
+    saved: 'Saved',
+    you: {
+      title: 'Who is Ogen writing for?',
+      lead: 'A workspace holds one brand: its voice, audiences, accounts and campaigns. Working for several clients? Each gets a workspace of its own.',
+      client: {
+        title: 'A client',
+        body: 'You market other businesses, as a freelancer or an agency.',
+      },
+      own: {
+        title: 'My own business',
+        body: 'You market the business you run or work for.',
+      },
+      nameClient: 'Client’s name',
+      nameOwn: 'Business name',
+      nameHint: 'Optional. It becomes the workspace’s name.',
+    },
+    sources: {
+      title: 'What can Ogen read about {{name}}?',
+      lead: 'Ogen learns how they sound from what already exists. Add whatever you have; each one is read as soon as it is added, and none of it is required.',
+      leadTogether:
+        'Ogen learns how they sound from what already exists. Add whatever you have; none of it is required.',
+      website: {
+        title: 'Website',
+        body: 'Ogen reads up to 10 of its pages.',
+      },
+      documents: {
+        title: 'Documents',
+        body: 'A brand book, a press kit, offers.',
+        more: 'More documents',
+      },
+      questions: {
+        title: 'A few questions',
+        body: 'Little written down? A sentence each.',
+      },
+      websiteLabel: 'Website address',
+      websiteHint: 'Ogen reads the home page and up to 9 pages under it.',
+      add: 'Add the website',
+      drop: 'Drop files here, or',
+      choose: 'choose them',
+      formats: 'PDF, Word or Markdown',
+      answerLabel: 'Your answer',
+      addAnswers: 'Add the answers',
+      cancel: 'Close',
+      remove: 'Remove {{name}}',
+      pages_one: '{{formatted}} page',
+      pages_other: '{{formatted}} pages',
+      uploading: 'Uploading',
+      reading: 'Reading, about a minute',
+      done: 'Read',
+      stopped: 'Stopped',
+      queued: 'Read when you continue',
+      failed: 'Couldn’t be uploaded',
+      retry: 'Read again',
+      answered_one: '{{formatted}} answer',
+      answered_other: '{{formatted}} answers',
+      continue: 'Continue',
+      readingHint:
+        'Each takes about a minute. You can wait here, or add more while you do.',
+      readHint:
+        'Next you see what Ogen took from them. Nothing goes into the brand until you review it.',
+      togetherHint:
+        'Continue reads all of it together, in a minute or two. Nothing goes into the brand until you review it.',
+      later: 'Do this later',
+      tryAgain: 'Try again',
+      withoutRead: 'Continue without reading',
+      stop: {
+        body: 'Ogen is still reading. Going on now stops it, and the sheet on the right is not filled in from what you added. You can read it again from Foundation later.',
+        keep: 'Keep reading',
+        go: 'Go on anyway',
+      },
+    },
+    brand: {
+      readingTitle: 'Reading what you gave',
+      readingLead:
+        'You can stay and watch, or come back; the read carries on either way.',
+      reviewTitle: 'What Ogen took from it',
+      reviewLead:
+        'Everything starts kept. Drop what is wrong, fix what is close. Nothing is saved until you continue.',
+      nameLabel: 'Name',
+      namedByYou: 'Named by you',
+      namedFrom: 'From {{source}}',
+      siteSays: 'The website says “{{name}}”.',
+      useSite: 'Use that',
+      keep: 'Save to the brand',
+      kept: '{{kept}} of {{total}} kept',
+      failedTitle: 'Ogen couldn’t read the brand',
+      failedLead:
+        'Nothing was saved. You can read it again from Foundation once setup is done.',
+      closedTitle: 'This read is over',
+      closedLead:
+        'It was saved, discarded or ran out of time. Foundation has whatever was kept.',
+      saveFailed: 'The brand wasn’t saved. Try again.',
+    },
+    accounts: {
+      title: 'Where does {{name}} post?',
+      leadClient:
+        'Connect the accounts you run for them. If the client holds a login, skip it for now and connect it later in Settings.',
+      leadOwn: 'Connect the accounts you post from.',
+      connect: 'Connect',
+      connected: 'Connected',
+      later: 'You can connect more at any time in Workspace Settings.',
+      finish: 'Finish setup',
+      none: 'Finish without accounts',
+      connectFailed:
+        'That account didn’t connect. Try again, or connect it later in Workspace Settings.',
+      linkFailed:
+        'Couldn’t start connecting {{platform}}. Try again in a minute.',
+    },
+    sheet: {
+      title: 'What Ogen needs',
+      to: 'to sound like {{name}}',
+      unnamedClient: 'your client',
+      unnamedOwn: 'your business',
+      meter: '{{count}} of {{total}} enough',
+      verdict: {
+        none: 'Nothing to go on yet.',
+        some: 'A start. Posts would still read like anyone’s.',
+        most: 'Enough to start writing.',
+        all: 'Enough to sound like them.',
+      },
+      levels: {
+        missing: 'Missing',
+        thin: 'Thin',
+        enough: 'Enough',
+      },
+      needs: {
+        apart: {
+          label: 'What sets them apart',
+          hint: 'The website’s home and about pages, or a brand book.',
+        },
+        voice: {
+          label: 'Tone of voice',
+          hint: 'Posts they have published, or the tone section of a brand book.',
+        },
+        audience: {
+          label: 'Who they talk to',
+          hint: 'An about page, a press kit, or the questions.',
+        },
+        onlyThey: {
+          label: 'Things only they can say',
+          hint: 'Facts, figures and offers: a press kit or an offer sheet.',
+        },
+        never: {
+          label: 'What they never say',
+          hint: 'The don’ts in a brand book, or your own notes.',
+        },
+        channels: {
+          label: 'Where they post',
+          hint: 'Connect an account.',
+        },
+      },
     },
   },
 }

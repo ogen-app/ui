@@ -22,7 +22,7 @@ import type { BrandData } from './types'
  *
  * ## The shape is the post details screen's, on purpose
  *
- * A caret back at top-left, and one centred column under it. That is what every
+ * A caret back at top-left, and one column under it, against the left edge. That is what every
  * other *drilldown* in this app looks like — a post, an asset — and Brand's
  * sections are drilldowns now rather than tabs, so they should look like one. It
  * is not decoration: the caret in that corner is the app's one promise that
@@ -30,14 +30,13 @@ import type { BrandData } from './types'
  * other means has to keep it.
  *
  * **And the shape is structural, not just visual.** The header sits *inside*
- * the scroller, sticky, carrying the standard gradient — so the column
- * dissolves under it as it passes. The first build put the header above the
- * scroller as a sibling, which is a different screen with the same parts: the
- * content stops at a hard horizontal edge and cards slide under a cut. Every
- * other scrolling screen in this app (post details, Profile, Workspace
- * Settings) wraps its header in the scroll container, and the fade is the
- * visible half of that. `ScrollArea` rather than a bare `overflow-y-auto`, for
- * the same reason the post uses it: an overlay scrollbar that does not take a
+ * the scroller, sticky and solid — so the column passes under it. The first
+ * build put the header above the scroller as a sibling, which is a different
+ * screen with the same parts: the content stops at a hard horizontal edge and
+ * cards slide under a cut. Every other scrolling screen in this app (post
+ * details, Profile, Workspace Settings) wraps its header in the scroll
+ * container. `ScrollArea` rather than a bare `overflow-y-auto`, for the same
+ * reason the post uses it: an overlay scrollbar that does not take a
  * column of width away from the content while it is idle.
  *
  * What that buys over the tab bar it replaces: the Overview gets its whole

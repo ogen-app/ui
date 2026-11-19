@@ -89,7 +89,7 @@ export function ConnectErrorNotice({ code }: { code: string }) {
       role="alert"
       // Same column as the cards below it, so it reads as part of the page
       // rather than as chrome laid over it.
-      className="mx-auto flex w-full max-w-content items-start gap-3 bg-secondary px-4 py-3 text-sm"
+      className="flex w-full max-w-content items-start gap-3 bg-secondary px-4 py-3 text-sm"
     >
       <WarningCircleIcon
         className="size-5 shrink-0 text-destructive"
@@ -104,7 +104,7 @@ export function ConnectErrorNotice({ code }: { code: string }) {
 export function ConnectSettlingNotice() {
   const { t } = useTranslation()
   return (
-    <div className="mx-auto flex w-full max-w-content items-center gap-3 bg-secondary px-4 py-3 text-sm text-tertiary-foreground">
+    <div className="flex w-full max-w-content items-center gap-3 bg-secondary px-4 py-3 text-sm text-tertiary-foreground">
       {/* `w-5` to sit in the same 20px column the error notice's icon occupies,
           so the two strips start their text on the same line. `onSurface`
           because the default tone is a white line meant for the inside of a

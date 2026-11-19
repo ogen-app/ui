@@ -29,9 +29,7 @@ describe('ShortcutsSheet', () => {
     expect(screen.getByText('Ogen keyboard shortcuts')).toBeInTheDocument()
     const text = document.body.textContent
     expect(text).toContain('Workspace settings')
-    expect(text).toContain(
-      'Strategy, Posts and Calendar have keys inside a campaign.',
-    )
+    expect(text).toContain('Posts and Calendar have keys inside a campaign.')
     expect(screen.queryByText('In this campaign')).not.toBeInTheDocument()
     expect(screen.queryByText('this campaign’s')).not.toBeInTheDocument()
   })
@@ -39,7 +37,7 @@ describe('ShortcutsSheet', () => {
   it('inside a campaign, adds its own rows and says whose sections they are', () => {
     open('/campaigns/c1/strategy')
     expect(screen.getByText('In this campaign')).toBeInTheDocument()
-    expect(screen.getAllByText('this campaign’s')).toHaveLength(4)
+    expect(screen.getAllByText('this campaign’s')).toHaveLength(5)
     expect(document.body.textContent).not.toContain('Workspace settings')
   })
 
