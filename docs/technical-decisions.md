@@ -248,7 +248,7 @@ Calendar Settings' *Show cards as image previews* switch was **hidden behind
 `calendar-card-images`** while no card could draw a picture: it was on by
 default and inert, which is the worst of the three states it could be in — a
 switch already *on* says the pictures are missing for some other reason. The
-flag is on since the re-test and waits to be deleted.
+flag was turned on after the re-test and deleted on 2026-11-18.
 
 **Where.** `components/campaigns/calendar/PostCard.tsx`,
 `lib/postValidation.ts` (`hasVisibleProblem`).
@@ -290,15 +290,24 @@ editor's autosave.
 ## The right sidebar remembers a choice per screen, and derives what's open {#panel-memory}
 
 **Decision.** `settingsStore` persists `panelMemory` — `{ assistantOpen,
-scoped: { calendar?, post? } }` — to localStorage, and **never** persists which
+scoped: { post? } }` — to localStorage, and **never** persists which
 panel is open. What's on screen is computed on every read by
 `resolveActivePanel(memory, scope)`: the panel remembered for the screen you're
 on, else the assistant, else closed. Routes declare their screen with
-`usePanelScope('post' | 'calendar', campaignId)`; that is the only thing
-navigation is allowed to write.
+`usePanelScope('post')`; that is the only thing navigation is allowed to
+write.
 
-**Why.** The panels aren't peers. `assistant` renders anywhere; the other six
-are portal targets or campaign-scoped views that only exist on one route.
+**The calendar's two panels left the rail** (2026-11). Its settings and its
+unscheduled posts were `calendar`-scoped panels here, so opening either put the
+assistant away. They are about the grid in front of you and the assistant is
+about the work, so they are now the calendar's own drawer
+(`CalendarDrawer`, `settingsStore.calendarDrawer`): beside the column, under
+the bar over the page, one choice shared by every calendar, and open alongside
+the assistant. Rehydration drops a stored `calendar` entry like any other
+scope this build no longer has.
+
+**Why.** The panels aren't peers. `assistant` renders anywhere; the post
+editor's four are portal targets that only exist on one route.
 Persisting a single `activeRightPanel` would restore a fact about one screen
 onto whichever screen you reloaded on — `postQuality` remembered, campaign list
 open, and the rail slides out 480px wide hosting an empty `<div>`. Deriving
@@ -312,7 +321,7 @@ persisting a value that navigation itself rewrites means saving the *side
 effects of moving around* rather than the user's choice, so going away and
 coming back could never be a no-op. Now memory is written by clicks alone.
 
-**The assistant is the floor, not a seventh panel.** Every other panel is an
+**The assistant is the floor, not one more panel.** Every other panel is an
 overlay on top of it, so closing one drops back to the assistant rather than
 collapsing the rail, and only closing the assistant shuts it. This is a
 behaviour change: toggling a post panel off used to close the sidebar and now
@@ -338,8 +347,8 @@ holds them behind `openRightPanel` / `toggleRightPanel` / `closeRightPanel` and
 exports `selectActivePanel`, which is how components ask what's open —
 `panelMemory` is never read directly. `hooks/usePanelScope.ts` runs as a
 *layout* effect so a reload straight into a post paints the restored panel
-rather than opening it a frame later. Scope and `campaignId` are session-only:
-where you are is not a preference.
+rather than opening it a frame later. The scope is session-only: where you
+are is not a preference.
 
 ## A campaign remembers where you were in its posts {#posts-place}
 

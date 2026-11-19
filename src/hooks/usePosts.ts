@@ -9,10 +9,11 @@ import {
   listPosts,
   updatePost,
 } from '@/services/api/posts'
-import { invalidateCampaignPosts } from '@/lib/postCache'
+import { invalidateCampaignPosts, invalidatePostLists } from '@/lib/postCache'
 import { atDefaultTime } from '@/lib/postSchedule'
 import { PRESIGN_REFRESH_MS } from '@/lib/presignedUrls'
 import {
+  CAMPAIGN_SUMMARIES_KEY,
   campaignPostsKey,
   filteredCampaignPostsKey,
   WORKSPACE_POSTS_KEY,
@@ -164,12 +165,14 @@ function draftPost(streamed: StreamedPost, campaignId: string): Post {
   }
 }
 
-function useCreatePost(campaignId: string) {
+function useCreatePost() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: PostPayload) => createPost(payload),
-    onSuccess: () => {
-      invalidateCampaignPosts(qc, campaignId)
+    // The payload's campaign rather than one bound to the hook: the workspace
+    // calendar picks it per click.
+    onSuccess: (_post, payload) => {
+      invalidateCampaignPosts(qc, payload.campaign_id)
       // An idea's post count and its MADE INTO list count this post (CON-470).
       void qc.invalidateQueries({ queryKey: ['ideas'] })
     },
@@ -186,10 +189,22 @@ function useCreatePost(campaignId: string) {
  * TypeScript rejects the bare form.
  */
 export function useAddPost(campaignId: string) {
-  const createPost = useCreatePost(campaignId)
+  const addPostTo = useAddPostTo()
+  return useCallback(
+    (day?: Date) => addPostTo(campaignId, day),
+    [addPostTo, campaignId],
+  )
+}
+
+/**
+ * `useAddPost` with the campaign named per call — for the workspace calendar,
+ * where the grid has no campaign and the user picks one for each post.
+ */
+export function useAddPostTo() {
+  const createPost = useCreatePost()
   const navigate = useNavigate()
   return useCallback(
-    (day?: Date) => {
+    (campaignId: string, day?: Date) => {
       const scheduled_at = day ? atDefaultTime(day) : undefined
       createPost.mutate(
         { campaign_id: campaignId, scheduled_at },
@@ -203,7 +218,7 @@ export function useAddPost(campaignId: string) {
         },
       )
     },
-    [createPost, navigate, campaignId],
+    [createPost, navigate],
   )
 }
 
@@ -237,8 +252,8 @@ export function useAddPost(campaignId: string) {
  * them in too. Its outcome (`first_comment_status` and the rest) is the
  * original's and stays behind, for the same reason `published_url` does.
  *
- * And the format (CON-329): the shape a post took is what made it worth
- * repurposing, and the server's clone keeps it too.
+ * And the format (CON-329) and the series (CON-496): the shape a post took is
+ * what made it worth repurposing, and the server's clone keeps both too.
  */
 function duplicatePayload(post: Post, title: string): PostPayload {
   return {
@@ -258,6 +273,8 @@ function duplicatePayload(post: Post, title: string): PostPayload {
     first_comment: post.first_comment,
     first_comment_delay_minutes: post.first_comment_delay_minutes,
     content_format: post.content_format,
+    // Same campaign, so the series still belongs to it (CON-496).
+    series_id: post.series_id ?? null,
   }
 }
 
@@ -272,7 +289,7 @@ function duplicatePayload(post: Post, title: string): PostPayload {
  * taken to is indistinguishable from a button that did nothing.
  */
 export function useDuplicatePost(campaignId: string) {
-  const create = useCreatePost(campaignId)
+  const create = useCreatePost()
   const navigate = useNavigate()
   const { t } = useTranslation()
 
@@ -359,7 +376,12 @@ export function useUpdatePost(campaignId: string | null) {
   })
 }
 
-export function useDeletePost(campaignId: string) {
+/**
+ * `null` is the workspace's list, whose rows come from every campaign: the
+ * deleted post's campaign isn't known here, so every post list is marked
+ * stale instead of one campaign's.
+ */
+export function useDeletePost(campaignId: string | null) {
   const qc = useQueryClient()
   return useMutation({
     // Keeps the wording `DeletePostDialog` used to supply itself: the server's
@@ -368,7 +390,12 @@ export function useDeletePost(campaignId: string) {
     meta: { errorTitle: 'Unable to delete post' },
     mutationFn: (id: string) => deletePost(id),
     onSuccess: () => {
-      invalidateCampaignPosts(qc, campaignId)
+      if (campaignId) {
+        invalidateCampaignPosts(qc, campaignId)
+      } else {
+        invalidatePostLists(qc)
+        void qc.invalidateQueries({ queryKey: CAMPAIGN_SUMMARIES_KEY })
+      }
       // An idea's post count, its used filter and its MADE INTO list all
       // counted this post (CON-485) — from the dialog and the bulk bar alike,
       // which deletes through this mutation one post at a time.

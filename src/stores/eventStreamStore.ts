@@ -14,6 +14,7 @@ import { createStreamConnection } from '@/lib/streamConnection'
 import { streamAppEvents } from '@/services/api/events'
 import { toast } from '@/stores/toastStore'
 import { useAssistantStore } from '@/stores/assistantStore'
+import { noteFreshScore } from '@/stores/freshScoreStore'
 import {
   autoAssessmentEnded,
   autoAssessmentStarted,
@@ -93,6 +94,7 @@ const connection = createStreamConnection({
           if (!signal.aborted) handleEvent(event)
         },
         onActivity: hooks.activity,
+        onRecycle: hooks.recycling,
       },
       signal,
     ),
@@ -105,8 +107,8 @@ const connection = createStreamConnection({
         ? { status, attempts, reconciling: false }
         : { status, attempts },
     ),
-  onOpen: ({ reconnected }) => {
-    if (reconnected) void reconcile()
+  onOpen: ({ reconnected, afterRecycle }) => {
+    if (reconnected) void reconcile({ announce: !afterRecycle })
   },
 })
 
@@ -137,9 +139,16 @@ export function reconnectEvents(): void {
  * Refetch after a gap, since there is nothing to replay. Pending edits are
  * written first so the refetch can't briefly restore pre-edit content over
  * what the user is typing.
+ *
+ * `announce` is about the banner, never about the work: an announced recycle
+ * (CON-286) still leaves a gap the width of a round trip, and this bus keeps no
+ * log, so the refetch runs either way. What it does not do is say *"Catching
+ * up…"* about a handover the user could not have noticed — the banner's whole
+ * job is to warn that what's on screen may be stale, and one that appears twice
+ * an hour when nothing is wrong teaches people to read past the one that isn't.
  */
-async function reconcile(): Promise<void> {
-  set({ reconciling: true })
+async function reconcile({ announce }: { announce: boolean }): Promise<void> {
+  if (announce) set({ reconciling: true })
   // The gap may have held a run's ending; the refetch below brings its score.
   clearAutoAssessments()
   try {
@@ -150,7 +159,7 @@ async function reconcile(): Promise<void> {
       ),
     )
   } finally {
-    set({ reconciling: false })
+    if (announce) set({ reconciling: false })
   }
 }
 
@@ -221,7 +230,13 @@ function trackAutoAssessment(event: AppEvent): void {
     }
     // No toast for a failure: the server retries an automatic run once, and
     // the author asked for nothing.
-    case 'assessment.completed':
+    case 'assessment.completed': {
+      autoAssessmentEnded(subject.id)
+      // The score itself, for a card drawn before it existed (CON-511).
+      const pct = event.payload?.overallPct
+      if (typeof pct === 'number') noteFreshScore(subject.id, pct)
+      return
+    }
     case 'assessment.failed':
       autoAssessmentEnded(subject.id)
   }

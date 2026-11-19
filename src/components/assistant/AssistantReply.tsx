@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/react/shallow'
 import type { TFunction } from 'i18next'
 import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
+import { turnFixes } from '@/lib/assistantFindings'
 import { ThinkingTimeline } from './ThinkingTimeline'
 import { hasResultCard, ResultCard } from './ResultCard'
 import { OfferOutcome } from './OfferOutcome'
@@ -18,6 +19,7 @@ import { WorkspaceResults } from './WorkspaceResults'
 import { IdeaReadOnly, IdeasResults, LiveDrafts } from './IdeasResults'
 import { FoundationResults } from './FoundationResults'
 import { RepairResults } from './RepairResults'
+import { LineDiff } from './LineDiff'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { cn } from '@/lib'
 import {
@@ -79,19 +81,6 @@ export function AssistantReply({
   })
   const showCard = settled && hasResultCard(turn.details)
   const campaignId = subject ? subjectCampaignId(subject) : undefined
-  // A turn that changed nothing — an answer, a push-back, an offer still
-  // waiting — is the one that cites what it read (CON-483).
-  const quiet =
-    !hasResultCard(turn.details) &&
-    !turn.answered &&
-    !turn.findings &&
-    !turn.repair &&
-    !turn.assets &&
-    !turn.foundation &&
-    !turn.analytics &&
-    !turn.workspace &&
-    !turn.ideas &&
-    !turn.uiActions?.length
   const drawnElsewhere = offersDrawnInPlace(turn)
   // A retry's run, summed with the run it retried (CON-482): the first run's
   // total, found through the offer this turn answered and its `retryOf`.
@@ -192,6 +181,9 @@ export function AssistantReply({
           disabled={running}
         />
       )}
+
+      {/* The lines a post edit rewrote (CON-495). */}
+      {settled && turn.postLines && <LineDiff runs={turn.postLines} />}
 
       {/* What the assets pack's tools found (CON-460). */}
       {settled && turn.assets && subject && (
@@ -300,16 +292,20 @@ export function AssistantReply({
             />
           ))}
 
-      {/* What a reply that changed nothing leaned on (CON-483): the
-          campaign's sources when some aren't ready, and one quiet line
-          citing the figures. */}
-      {settled && quiet && turn.campaignState && (
+      {/* What the reply says it relied on (CON-511): the campaign's sources
+          when it cites them, and one quiet line citing the figures. */}
+      {settled && turn.campaignState?.cites && (
         <>
-          <SourcesCard
+          {turn.campaignState.cites.includes('sources') && (
+            <SourcesCard
+              state={turn.campaignState.state}
+              campaignId={campaignId}
+            />
+          )}
+          <StateCitation
             state={turn.campaignState.state}
-            campaignId={campaignId}
+            cites={turn.campaignState.cites}
           />
-          <StateCitation state={turn.campaignState.state} />
         </>
       )}
 
@@ -406,15 +402,10 @@ function ListBlock({
  * plan's own offer.
  */
 function offersDrawnInPlace(turn: AssistantTurn): Set<string> {
-  const ids = new Set<string>()
-  const add = (fixes: { proposalId?: string }[]) =>
-    fixes.forEach((f) => f.proposalId && ids.add(f.proposalId))
-  for (const f of turn.findings?.findings ?? []) add(f.fixes)
-  const r = turn.repair
-  for (const review of [r?.review, r?.briefReview, r?.postsReview])
-    for (const f of review?.findings ?? []) add(f.fixes)
-  if (r?.plan?.proposalId) ids.add(r.plan.proposalId)
-  for (const f of turn.foundation?.brandCheck?.findings ?? []) add(f.fixes)
+  const ids = new Set(
+    turnFixes(turn).flatMap((f) => (f.proposalId ? [f.proposalId] : [])),
+  )
+  if (turn.repair?.plan?.proposalId) ids.add(turn.repair.plan.proposalId)
   return ids
 }
 

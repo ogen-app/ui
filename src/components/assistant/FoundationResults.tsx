@@ -6,6 +6,7 @@ import { useDistillRun } from '@/hooks/useBrandDistill'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { humanizeStep } from '@/lib/assistantTools'
 import { counted, formatDate, formatList, formatNumber } from '@/lib/intl'
+import { rhythmLine } from '@/components/series/format'
 import type { ViewContext } from '@/lib/viewContext'
 import { useAssistantStore } from '@/stores/assistantStore'
 import type {
@@ -1003,11 +1004,10 @@ function DistillSavedCard({ t, saved }: { t: TFunction; saved: DistillSaved }) {
   )
 }
 
+/** The series' own words for a rhythm, but "Now and then" for none. */
 function rhythmText(t: TFunction, rhythm: SeriesRhythm | undefined): string {
   if (!rhythm) return t('assistant.foundation.rhythm.occasional')
-  return rhythm.per === 'week'
-    ? t('assistant.foundation.rhythm.week', counted(rhythm.times))
-    : t('assistant.foundation.rhythm.month', counted(rhythm.times))
+  return rhythmLine(t, rhythm)
 }
 
 /** "In Spring reopening · once a week", for each campaign that runs it. */
@@ -1045,7 +1045,7 @@ function SeriesListCard({ t, list }: { t: TFunction; list: SeriesList }) {
 /**
  * A series made, changed or removed — and, when it was made to run in a
  * campaign in the same step, that run, under the series' one UNDO. OPEN goes
- * to the campaign it runs in: the series' own screen is behind its flag.
+ * to the campaign it runs in, where its rhythm is set.
  */
 function SeriesCard({
   t,

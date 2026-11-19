@@ -15,13 +15,18 @@ describe('goTarget', () => {
     expect(goTarget('s', 'c1')?.to).toBe('/campaigns/$campaignId/settings')
   })
 
-  it('keeps Campaigns and Foundation the workspace’s at both levels', () => {
+  it('keeps Campaigns the workspace’s at both levels', () => {
     expect(goTarget('c', 'c1')).toEqual({ to: '/campaigns' })
-    expect(goTarget('f', 'c1')).toEqual({ to: '/foundation' })
+  })
+
+  it('takes Strategy to the Foundation outside a campaign', () => {
+    expect(goTarget('t', null)).toEqual({ to: '/foundation' })
+    expect(goTarget('t', 'c1')?.to).toBe('/campaigns/$campaignId/strategy')
   })
 
   it('sends the campaign-only letters nowhere outside a campaign', () => {
-    for (const key of ['t', 'p', 'r']) expect(goTarget(key, null)).toBeNull()
+    for (const key of ['p', 'r']) expect(goTarget(key, null)).toBeNull()
+    expect(goTarget('f', null)).toBeNull()
     expect(goTarget('x', 'c1')).toBeNull()
   })
 })

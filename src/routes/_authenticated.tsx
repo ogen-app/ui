@@ -4,6 +4,7 @@ import { AppSidebar } from '@/components/layout/AppSidebar'
 import { AnnouncementFrame } from '@/components/layout/AnnouncementRibbon'
 import { UploadTracker } from '@/components/uploads/UploadTracker'
 import { RightSidebar } from '@/components/layout/RightSidebar'
+import { TopBar } from '@/components/layout/TopBar'
 import { ShortcutsSheet } from '@/components/layout/ShortcutsSheet'
 import { useAppShortcuts } from '@/hooks/useAppShortcuts'
 import { useBillingGateWatch } from '@/hooks/useBillingGateWatch'
@@ -55,7 +56,11 @@ function AuthenticatedLayout() {
         className="min-h-[calc(100svh-var(--announcement-h))]"
       >
         <AppSidebar />
-        <SidebarInset className="min-w-0">
+        {/* The bar over the page carries the campaign scope and Ogen. Pages
+            size themselves against `--scope-bar-h` as well as the ribbon
+            (`PageContainer`). */}
+        <SidebarInset className="min-w-0 [--scope-bar-h:3.5rem]">
+          <TopBar />
           <Outlet />
         </SidebarInset>
         <RightSidebar />

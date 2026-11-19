@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  queryOptions,
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   listCampaigns,
   listCampaignSummaries,
@@ -46,11 +51,14 @@ export const campaignPhasesKey = (id: string) =>
  */
 const ARCHIVED_CAMPAIGNS_KEY = ['campaigns-archived'] as const
 
+/** The active campaigns, as options a route's `beforeLoad` can await too. */
+export const campaignsQuery = queryOptions({
+  queryKey: CAMPAIGNS_KEY,
+  queryFn: () => listCampaigns(),
+})
+
 export function useCampaigns() {
-  return useQuery({
-    queryKey: CAMPAIGNS_KEY,
-    queryFn: () => listCampaigns(),
-  })
+  return useQuery(campaignsQuery)
 }
 
 /** Campaigns that have been put away (CON-156). Fetched only where shown. */

@@ -36,7 +36,7 @@ or work everyone agrees about that nobody has raised.
 | **S4** | **A post's failure `code` as its own field**, beside `failure_reason`. | Narrower than it was. Every terminal write goes through one function, `terminal(ctx, post, "<code>", msg)`, so `failure_reason` is reliably `<code>: <message>` — and since CON-200 the client words the code (`lib/postFailure`) on the post's screen and in the daily report, falling back to a generic sentence for a code it predates — with the whole string under it on the post's screen. What is left is the tidiness of not parsing a prefix: the day a writer forgets the convention, the fallback shows its prose rather than a wrong sentence, which is the failure mode to want. Not worth a ticket alone; worth folding into the next change to that table. |
 | **V1** | **`none` in `voicePerson`**, the voice-rules enum — a voice that speaks with no narrator at all. | Added to the editor 2026-09-19 as the fourth answer to *Speaks as*, because copy with no speaker in it is a style brands write in on purpose and the three-way choice put a person into every generated post. It travels as `''`, which `checkEnum` accepts as *unset* and `renderRules` drops — so the round trip works and the generator gets no person instruction, which is the right output by accident rather than by instruction. One enum member plus a line in `renderRules` (*no narrator — write about the subject, not from a speaker*) turns an omission into a rule. Nothing is blocked meanwhile; the option ships. |
 | **V2** | **Where a hashtag policy lives.** It came off the voice on 2026-09-19 (`VoiceRules`) — one answer for six networks is wrong on at least one of them the moment it is given — and the per-channel half that should hold it is not built. | So nothing states a hashtag policy anywhere in the app today, and `renderRules` has one fewer clause. The question is whether the per-channel note is free prose, an override of the voice's rules, or its own small set of fields; the editor's Channels card is parked on exactly that question. Worth answering before anyone asks for the field back on the voice. |
-| **P4** | **A date range on `GET /api/posts`** — `?from=&to=`, or a slim projection, or both. | The endpoint takes no parameters and returns the tenant's posts *hydrated* — Markdown bodies, campaign, platform and asset graphs — which is what the workspace calendar is drawn from (`useWorkspacePosts`) however few weeks are on screen. Nobody has raised it because nothing was hurt by it yet: the auto-publish allowlist (and, until CON-370, the Assets list's usage column) has read the same list for months and says in its own comments that it is fine at today's scale. A calendar makes it a hot path rather than a column. The client's half is one query key and a param, and the grid already knows the range it is showing. Until then the flag stays off — not because the screen doesn't work, but because "opens instantly" is the only thing a calendar is for. |
+| **P4** | **A date range on `GET /api/posts`** — `?from=&to=`, or a slim projection, or both. | The endpoint takes no parameters and returns the tenant's posts *hydrated* — Markdown bodies, campaign, platform and asset graphs — which is what the workspace calendar is drawn from (`useWorkspacePosts`) however few weeks are on screen. Nobody has raised it because nothing was hurt by it yet: the auto-publish allowlist (and, until CON-370, the Assets list's usage column) has read the same list for months and says in its own comments that it is fine at today's scale. A calendar makes it a hot path rather than a column. The client's half is one query key and a param, and the grid already knows the range it is showing. The calendar shipped without it (2026-11-16), so this is the first thing to fix if a large workspace finds it slow — "opens instantly" is the only thing a calendar is for. |
 | **X2** | **`updated_by` exists nowhere**, so "who edited this" is unanswerable. | Named as out of scope in CON-285 and never raised on its own. **Deferred 2026-09-16** — wanted eventually, not now. Kept here rather than deleted because it is the reason a whole class of feed entry — teammate activity — cannot be built at any price, and because the column's value is the history it accumulates: the day it is added is the day that history starts. |
 
 ## §2 — Tracked
@@ -46,8 +46,7 @@ Answered and owned. Listed so the client's blockers are visible in one place.
 | # | Waiting on | Ticket | Blocks |
 | --- | --- | --- | --- |
 | A4 | **Copy arrives as prose.** FR7 asks for `type` + `vars`; CON-242 ships a server-composed `title`/`body`. We render from `type` + `data` where we have a key and fall back to English where we don't — so a Spanish workspace reads English for any type this build predates. | CON-285 FR7 | — |
-| N2 | **A campaign dimension** on the dashboard reads. Until then the campaign screen sums one 100-row page client-side, which stops being complete past ~100 measured posts. | **CON-288** | `campaign-analytics` |
-| N3 | **A per-post series** — `GET /api/analytics/posts/:post_id`, returning per-metric running totals on an age-since-publish axis. **Written and in review** (ogen#130); re-test the client against it when it merges, per CLAUDE.md rule 4. | CON-250 | `campaign-analytics` |
+| N3 | **A per-post series** — `GET /api/analytics/posts/:post_id`, returning per-metric running totals on an age-since-publish axis. **Written and in review** (ogen#130); re-test the client against it when it merges, per CLAUDE.md rule 4. | CON-250 | — |
 | N7 | **`account.avatar_url` is declared and always empty**, `display_name` mirrors `username`. Rows fall back to the initial plus the platform badge and fill in on their own. | **CON-287** | — |
 | S1 | **A content-bank image has no thumbnail**, so the list's preview cell downloads the full file to draw it at 40px. Raised on the image service rather than as its own issue: it is one more output of a pipeline that already writes a normalized derivative. `assetPreview` prefers `thumbnail_url` already, so the client changes nothing when it lands. | CON-281 | — |
 | S3 | **Campaign-scoped assets**, with the workspace bank staying on as workspace-wide knowledge storage (CON-211). | CON-210 | — |
@@ -118,14 +117,16 @@ Kept for one cycle so nobody re-raises them, then deleted.
   every device: at two streams per tab, `activity` on made ten *five tabs*, and
   past the cap evict-oldest does not settle, it rotates. The permanent 429
   lockout is gone, and a persistent reconnect loop now means a real outage
-  rather than this bug. **Two consequences are ours, not the server's**, and
-  neither is written down yet: a clean close mid-session is now *expected*
-  periodically, and ogen#152 added a frame announcing it —
-  `event: recycle`, `data: {"reason":"lifetime"}`, deliberately **without an
-  `id:` line** so it does not advance the replay cursor. Nothing in
-  `lib/streamConnection.ts` listens for it, so every recycle still runs the full
-  recovery path and shows *"Catching up…"* when nothing was down — twice an hour,
-  per tab. Handling it is the last of this, and it is client work.
+  rather than this bug. **Two consequences were ours, not the server's**: a
+  clean close mid-session is now *expected* periodically, and ogen#152 added a
+  frame announcing it — `event: recycle`, `data: {"reason":"lifetime"}`,
+  deliberately **without an `id:` line** so it does not advance the replay
+  cursor. Both are handled now: `lib/streamConnection.ts` treats an announced
+  close as a handover — reconnect at once, no backoff, no failure counted, and
+  the status holds at `open` — so *"Catching up…"* is back to meaning the
+  connection was down. The events bus still reconciles either way, because a
+  round-trip gap on a bus that keeps no log is still a gap; it just no longer
+  says so.
 - **N4 — the three fields with no wire source.** `matured` and the performers'
   `curve`/`typical` are served by CON-250 under other names (`still_counting`,
   and a per-platform p25/p50/p75 curve), so they are a renaming pass on this

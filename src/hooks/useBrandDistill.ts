@@ -88,7 +88,7 @@ export function useStarterQuestions() {
 export type DistillRefusal =
   'invalidUrl' | 'scrapingUnavailable' | 'gateOff' | 'unavailable' | 'failed'
 
-function refusalOf(err: unknown): DistillRefusal | null {
+export function refusalOf(err: unknown): DistillRefusal | null {
   if (!(err instanceof ApiError)) return 'failed'
   switch (err.code) {
     case 'invalid_url':

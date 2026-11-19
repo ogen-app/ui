@@ -3,7 +3,6 @@ import {
   CaretRightIcon,
   ChatTeardropTextIcon,
   ClockCountdownIcon,
-  PaletteIcon,
   ProhibitIcon,
   SealCheckIcon,
   ShieldCheckIcon,
@@ -22,7 +21,7 @@ import { cn } from '@/lib'
 import type { Fetched } from '@/lib/fetched'
 import { isFeatureEnabled } from '@/config/featureFlags'
 import { seriesMetaLine } from '@/components/series/format'
-import type { ContentSeries } from '@/components/series/types'
+import type { ContentSeries } from '@/types/series'
 import {
   brandSectionCopy,
   SHOWN_BRAND_SECTIONS,
@@ -37,7 +36,7 @@ import {
   type BrandFact,
 } from './facts'
 import { defaultVoiceLabel, sampleCount, usageLine } from './format'
-import { BrandIntro, DefaultStar, WholeBrandOffer } from './shell'
+import { DefaultStar, WholeBrandOffer } from './shell'
 import { OfferRoutes } from './distill/OfferRoutes'
 import { SavedCard } from './distill/SavedCard'
 import {
@@ -102,10 +101,13 @@ import {
  * way they always have, and the three routes that read a brand off what the
  * workspace already has are offered once, in a band, by `WholeBrandOffer`.
  */
+/** A screen given no series has none to show. */
+const READY_NONE: Fetched<ContentSeries[]> = { status: 'ready', data: [] }
+
 export function BrandOverview({
   brand,
   facts = [],
-  series = [],
+  series = READY_NONE,
   stance,
   onOpen,
 }: {
@@ -116,16 +118,15 @@ export function BrandOverview({
    * from `useBrand`, so the route owns the query and this screen stays a
    * rendering of what it is given.
    *
-   * A plain list rather than a `Fetched`, for the reason `facts` below is one:
-   * it is read out of `localStorage` until the table exists, so it cannot be in
-   * flight and cannot fail. It becomes a `Fetched` on the day it becomes a
-   * fetch — see the `series` flag.
+   * A `Fetched`, because it is its own request (`GET /api/series`): its card
+   * waits or apologises on its own while the rest of the hub draws, rather
+   * than passing a list still in flight off as an empty library.
    *
    * **Workspace-scoped entries only.** A series defined inside a campaign is
    * bounded by it and is not the workspace's yet; listing one here would report
    * a library that nobody else can pick from. The route filters.
    */
-  series?: ContentSeries[]
+  series?: Fetched<ContentSeries[]>
   /**
    * The ledger, already assembled — `useFacts`. Passed in rather than fetched
    * here for the reason the rest of this screen takes `brand`: the statements
@@ -159,10 +160,18 @@ export function BrandOverview({
    */
   const contents = (section: BrandSectionInfo): Fetched<SectionContents> => {
     if (brand.status !== 'ready') return brand
+    if (section.id === 'series' && series.status !== 'ready') return series
     return {
       status: 'ready',
       data: {
-        rows: sectionRows(t, section.id, brand.data, facts, series, stance),
+        rows: sectionRows(
+          t,
+          section.id,
+          brand.data,
+          facts,
+          series.status === 'ready' ? series.data : [],
+          stance,
+        ),
       },
     }
   }
@@ -178,8 +187,7 @@ export function BrandOverview({
 
   return (
     <Wrapper>
-      <FoundationIntro />
-      {/* The offer sits directly under the sentence explaining the screen, and
+      {/* The offer sits directly under the band's sentence explaining the screen, and
           above every card. It used to follow the documents card, which was the
           material it offers to read the brand out of; with the documents their
           own module the offer is the screen's one action and belongs where the
@@ -201,36 +209,57 @@ export function BrandOverview({
 }
 
 /**
- * The card the screen opens with, and the only one on it that goes nowhere.
+ * Some of the hub's cards, on their own — what a campaign's Strategy shows of
+ * the Foundation it is written under (the guardrails and the facts).
  *
- * Every other card here is a door, and a screen made entirely of doors never
- * says what the building is. Somebody arriving at Foundation for the first time
- * is looking at four things they have not heard the app use before — a voice,
- * an audience, guardrails, facts — and the four cards under this one can each
- * say what *they* are while none of them can say why they are together.
- *
- * So: the same card a section opens with (`BrandIntro`), at the top of the hub.
- * **It cannot be closed and it carries nothing to click.** Both are deliberate.
- * A dismissible explanation is one the next person to join the workspace never
- * sees, and this is the screen where the next person is exactly who needs it; a
- * button on it would make it the seventh door and put the offer that *is* a
- * door (`WholeBrandOffer`, directly below) in competition with the sentence
- * explaining the screen.
+ * The same cards rather than a summary of them, so a rule reads the same
+ * wherever it is read. They are read-only where they are shown: opening one
+ * goes to the workspace's section, which is where it is edited for every
+ * campaign at once.
  */
-function FoundationIntro() {
+export function BrandSectionCards({
+  sections,
+  brand,
+  facts = [],
+  stance,
+  onOpen,
+}: {
+  sections: BrandSectionId[]
+  brand: Fetched<BrandData>
+  facts?: BrandFact[]
+  stance?: GuardrailsStance
+  onOpen?: (id: BrandSectionId) => void
+}) {
   const { t } = useTranslation()
   return (
-    <BrandIntro
-      icon={PaletteIcon}
-      // Not "Foundation": the page header two lines above says that, and the
-      // hub keeps its header title where the section screens gave theirs up —
-      // it is a top-level destination and the only one that would be untitled.
-      // So the card's heading does the other half of the job and says what the
-      // word means.
-      title={t('brand.overview.intro.title')}
-      body={t('brand.overview.intro.body')}
-      heading="h2"
-    />
+    <>
+      {SHOWN_BRAND_SECTIONS.filter((section) =>
+        sections.includes(section.id),
+      ).map((section) => (
+        <SectionCard
+          key={section.id}
+          section={section}
+          contents={
+            brand.status !== 'ready'
+              ? brand
+              : {
+                  status: 'ready',
+                  data: {
+                    rows: sectionRows(
+                      t,
+                      section.id,
+                      brand.data,
+                      facts,
+                      [],
+                      stance,
+                    ),
+                  },
+                }
+          }
+          onOpen={onOpen}
+        />
+      ))}
+    </>
   )
 }
 
@@ -465,7 +494,7 @@ function Opens({
           onOpen()
         }
       }}
-      className="group mx-auto w-full max-w-content cursor-pointer transition-shadow duration-150 hover:shadow-lg"
+      className="group w-full max-w-content cursor-pointer transition-shadow duration-150 hover:shadow-lg"
     >
       {children}
     </div>
@@ -833,21 +862,21 @@ function missingSectionNames(t: TFunction, data: BrandData): string[] {
 }
 
 /**
- * The stack, and **not a scroller**. The page owns the scrolling so that the
- * header can sit inside it and the cards can dissolve under its gradient
- * instead of being cut off by it — see `BrandDetail`. A component that scrolls
- * itself cannot be put under a sticky header, which is why this one stopped.
+ * The cards, and nothing around them: the column they are put in spaces them
+ * (`PageColumns` — a stack, or masonry), so they reach it as its own children.
+ * **Not a scroller** either: the page owns the scrolling so that the header
+ * can sit inside it — see `BrandDetail`.
  */
 function Wrapper({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-3">{children}</div>
+  return <>{children}</>
 }
 
 function OverviewSkeleton() {
   return (
     <Wrapper>
-      <Skeleton className="mx-auto h-40 w-full max-w-content" />
-      <Skeleton className="mx-auto h-40 w-full max-w-content" />
-      <Skeleton className="mx-auto h-40 w-full max-w-content" />
+      <Skeleton className="h-40 w-full max-w-content" />
+      <Skeleton className="h-40 w-full max-w-content" />
+      <Skeleton className="h-40 w-full max-w-content" />
     </Wrapper>
   )
 }

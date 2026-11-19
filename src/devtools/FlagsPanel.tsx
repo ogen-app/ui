@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import {
   buildFlagValue,
   FLAG_IDS,
+  isFeatureEnabled,
   type FeatureFlag,
 } from '@/config/featureFlags'
 import {
@@ -17,6 +19,12 @@ import {
   type DemoMode,
 } from '@/services/api/analytics.demo'
 import { cn } from '@/lib'
+import { useOnboarding } from '@/hooks/useOnboarding'
+import {
+  putOnboarding,
+  startOnboarding,
+  type OnboardingStatus,
+} from '@/services/api/onboarding'
 
 /** What each analytics mode answers, said in the panel rather than in a doc. */
 const ANALYTICS_MODES: { id: DemoMode; label: string; note: string }[] = [
@@ -173,6 +181,8 @@ export default function FlagsPanel() {
           </div>
         </div>
 
+        <OnboardingReset />
+
         <div className="flex flex-col gap-2">
           <h2 className="text-sm font-medium">Share this set</h2>
           <p className="text-sm text-tertiary-foreground">
@@ -200,6 +210,94 @@ export default function FlagsPanel() {
             Reset all to build defaults
           </Button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+const SETUP_WORDS: Record<OnboardingStatus, string> = {
+  pending: 'owed — the app opens on setup',
+  done: 'finished',
+  skipped: 'skipped',
+}
+
+/**
+ * Setup's state for the workspace this tab is in (the `onboarding` setting),
+ * and a way to owe it again — the only way back to it after finishing, short
+ * of signing up a new workspace.
+ */
+function OnboardingReset() {
+  const state = useOnboarding()
+  const [busy, setBusy] = useState(false)
+  const on = isFeatureEnabled('onboarding')
+
+  const write = async (change: () => Promise<unknown>, then: string) => {
+    setBusy(true)
+    try {
+      await change()
+      window.location.assign(then)
+    } catch {
+      setBusy(false)
+    }
+  }
+
+  const now = state.isPending
+    ? 'reading…'
+    : state.isError
+      ? 'couldn’t be read'
+      : state.data
+        ? `${SETUP_WORDS[state.data.status]}, at “${state.data.step}”`
+        : 'never owed — this workspace predates setup'
+
+  return (
+    <div className="flex flex-col gap-2">
+      <h2 className="text-sm font-medium">Setup</h2>
+      <p className="text-sm text-tertiary-foreground">
+        Whether this workspace still owes its setup is a workspace setting,
+        written at signup. Starting over puts it back to the first step and
+        opens it; the brand, accounts and name it already changed stay as they
+        are.{' '}
+        {!on && (
+          <>
+            The <code className="font-mono">onboarding</code> flag is off, so
+            the app will not send anyone there.
+          </>
+        )}
+      </p>
+      <p className="text-sm">
+        This workspace: <span className="font-mono text-xs">{now}</span>
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy || !on}
+          onClick={() => void write(startOnboarding, '/onboarding')}
+        >
+          Start setup over
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy || !state.data || state.data.status !== 'pending'}
+          onClick={() =>
+            void write(
+              () =>
+                putOnboarding({
+                  ...(state.data ?? {
+                    step: 'you',
+                    reached: 'you',
+                    role: null,
+                    runId: null,
+                  }),
+                  status: 'skipped',
+                }),
+              '/',
+            )
+          }
+        >
+          Mark skipped
+        </Button>
       </div>
     </div>
   )

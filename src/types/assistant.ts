@@ -3,6 +3,7 @@ import type { ViewContext } from '@/lib/viewContext'
 import type { AppliedUIAction } from '@/lib/assistantUiActions'
 import type { AnalyticsOverview, PerformersBoard } from '@/types/analytics'
 import type { AssetsState } from '@/services/api/content'
+import type { SeriesRhythm } from './series'
 
 /**
  * What an assistant thread is attached to — its scope (CON-450). One thread
@@ -228,6 +229,23 @@ export type AssistantProposal = {
    * the summary and CONFIRM.
    */
   card?: ProposalDetails
+  /**
+   * What a confirmed offer did, as the server recorded it (CON-495): read
+   * back on a reload, and on a 409 that names the offer as it stands.
+   */
+  outcome?: ProposalOutcome
+}
+
+/**
+ * A confirmed offer's answer (CON-495). `text` is the server's sentence, kept
+ * for a kind this build can't word; `movedTo` is the day a move landed on,
+ * when the work moved one post — what "Fixed since: moved to Mon 14" names.
+ */
+export type ProposalOutcome = {
+  text: string
+  made?: number
+  total?: number
+  movedTo?: { day: string; at?: string }
 }
 
 export type ProposalDetails = {
@@ -569,7 +587,8 @@ export type DistillSaved = {
   skipped: string[]
 }
 
-export type SeriesRhythm = { times: number; per: 'week' | 'month' }
+/** A run's rhythm, as `/api/series` has it (CON-496). */
+export type { SeriesRhythm }
 
 export type SeriesBrief = {
   id: string
@@ -689,6 +708,11 @@ export type CalendarFinding = {
   postIds: string[]
   /** The posts by title and day, when the server names them. */
   posts: { id: string; title: string; date?: string }[]
+  /**
+   * The ideas the posts share (`same_idea_close`, CON-495). A deleted idea's
+   * title is empty.
+   */
+  ideas?: { id: string; title: string }[]
   fixes: RepairFix[]
 }
 
@@ -716,9 +740,32 @@ export type CampaignReviewFinding = {
   label?: string
   postId?: string
   issue: string
+  /** The post's exact words the issue is about; absent for the whole post (CON-495). */
+  quote?: string
   suggestion?: string
   fixes: RepairFix[]
 }
+
+/**
+ * A review finding a post thread was asked to fix (CON-495), as the user
+ * turn's view context stores it: what FROM THE REVIEW quotes.
+ */
+export type ReviewFindingRef = {
+  key: string
+  postId: string
+  title: string
+  severity?: ReviewSeverity
+  issue: string
+  quote?: string
+  suggestion?: string
+}
+
+/**
+ * Lines an edit rewrote (CON-495): each run is the lines it replaced and the
+ * lines that replaced them. `before` is empty for lines added, `after` for
+ * lines removed, and a blank line is `""`.
+ */
+export type LineRun = { before: string[]; after: string[] }
 
 /**
  * The campaign's brief and posts reviewed against each other — by
@@ -790,6 +837,13 @@ export type ChangedPost = {
   fromType?: string
   toType?: string
   kept: string[]
+  /**
+   * Whether a conversion passes its new type's rules (CON-495); absent when
+   * its media couldn't be read, which claims nothing.
+   */
+  rules?:
+    | { passes: true }
+    | { passes: false; broken: { rule: string; message: string }[] }
 }
 
 /** What a repair fix did to posts: converted, unscheduled or deleted. */
@@ -825,6 +879,27 @@ export type RepairResults = {
   deleted?: PostsChanged
   /** `revisePost`: one post rewritten, kept as a version. */
   revised?: PostRevised
+  /** `setPostVoice`: the voice one post is read in, its copy untouched. */
+  voiceChanged?: PostVoiceChanged
+}
+
+/** A voice as a result names it. */
+export type VoiceRef = { id: string; name: string }
+
+/**
+ * One post given another voice (`setPostVoice`, CON-494): the brand check's
+ * "use the campaign's voice" fix. The copy stays as it is; checks and
+ * rewrites read it in the new voice from here on.
+ */
+export type PostVoiceChanged = {
+  postId: string
+  campaignId?: string
+  title?: string
+  from?: VoiceRef
+  to?: VoiceRef
+  /** False when the post now reads in its campaign's voice. */
+  own: boolean
+  undoId?: string
 }
 
 export type PostRevised = {
@@ -841,6 +916,8 @@ export type PostRevised = {
   versioned: boolean
   /** The post's own; absent when it never was known. */
   grounding?: Grounding
+  /** The lines it rewrote (CON-495). */
+  lines?: LineRun[]
 }
 
 /**
@@ -1294,6 +1371,23 @@ export type CompiledPost = {
  */
 export type DateFrom = 'asked' | 'plan'
 
+/** One value a found filter named: a document, a campaign or a member. */
+export type FoundNamedValue = {
+  id: string
+  title: string
+  /** An asset's stored type, for a document. */
+  type?: string
+  /** Named as left out (`<key>_not`). */
+  excluded?: boolean
+}
+
+/** What a `findIdeas` filter named (CON-509). */
+export type FoundNamed = {
+  sourceAssets?: FoundNamedValue[]
+  campaigns?: FoundNamedValue[]
+  authors?: FoundNamedValue[]
+}
+
 export type IdeaBrief = {
   id: string
   title: string
@@ -1342,6 +1436,12 @@ export type IdeasResults = {
     total: number
     /** The pile the filter named, counted with no other filter (CON-481). */
     pileTotal?: number
+    /**
+     * What the filter named, by name (CON-501/509): each list in the filter's
+     * order, kept values first, a `<key>_not` value `excluded`. Absent when it
+     * names none of these.
+     */
+    named?: FoundNamed
   }
   /** `setIdeaVerdict`. */
   decided?: { idea: IdeaBrief; undoId?: string }
@@ -1394,7 +1494,13 @@ export type IdeasResults = {
       caps: string[]
     }
     /** With the passage the idea came from, where the server knows it. */
-    sourceAsset?: { id: string; title: string; passage?: AssetPassage }
+    sourceAsset?: {
+      id: string
+      title: string
+      /** Its stored type — `PDF`, `URL`, `AUDIO`… (CON-501); absent untyped. */
+      type?: string
+      passage?: AssetPassage
+    }
     analysisGist?: string
     /** The lens the analysis it came from read in; none is the workspace's. */
     lens?: { campaignId?: string; campaignName?: string }
@@ -1432,6 +1538,22 @@ export type IdeasResults = {
     groups: { idea: IdeaBrief; deleted: number }[]
     stopped?: string
   }
+}
+
+/**
+ * The post `draftIdeas` is about to write (`idea_draft_started`, CON-500):
+ * the ideas it draws on — several for a together post — and where it goes.
+ * Sent for a post the writer then fails on too.
+ */
+export type IdeaDraftStarted = {
+  ideas: { ideaId: string; title: string }[]
+  platformId: string
+  postType?: string
+  /** Posts this job writes; almost always 1. */
+  count: number
+  /** Posts written before this one, and the run's whole. */
+  done: number
+  total: number
 }
 
 /** A draft written from ideas: the result's rows and each streamed event. */
@@ -1531,6 +1653,8 @@ export type AssistantTurn = {
   ignored?: string[]
   /** What the repair tools did this turn (CON-462). */
   repair?: RepairResults
+  /** The lines a post edit rewrote (`results.post.lines`, CON-495). */
+  postLines?: LineRun[]
   /** What the assets pack's tools found this turn (CON-460). */
   assets?: AssetsResults
   /** What the brand tools did this turn (CON-461). */
@@ -1545,7 +1669,18 @@ export type AssistantTurn = {
    * Drafts from ideas as they are written (CON-481): drawn in the rail while
    * the turn runs, replaced by the summary card when it completes.
    */
-  liveDrafts?: { posts: DraftedIdeaPost[]; done: number; total: number }
+  liveDrafts?: {
+    posts: DraftedIdeaPost[]
+    done: number
+    total: number
+    /** The one being written now, once the server has said (CON-510). */
+    next?: IdeaDraftStarted
+    /**
+     * The drafts tool finished — done, or failed part way — so nothing is
+     * being written, whatever the count says.
+     */
+    ended?: boolean
+  }
   /**
    * Refusals the server named with a code (CON-481) — `idea_read_only` —
    * which the reply draws as a card of its own.
@@ -1711,12 +1846,26 @@ export type PostRef = {
 
 /** A goal period's figures: "April: 14 of 20 planned". */
 export type GoalPeriod = {
-  /** The server's name for the period ("April", "next week"). */
+  /**
+   * The server's English name for it ("April") — read only when the data
+   * below is missing; it goes once every server sends that (CON-503/511).
+   */
   label: string
+  /** The goal's cadence; weeks count from the campaign's start. */
+  cadence?: 'week' | 'month'
+  /** Its place in the campaign, from 1. */
+  index?: number
+  /** Its days, `YYYY-MM-DD`, both included. */
+  start?: string
+  end?: string
   target: number
   planned: number
   left: number
 }
+
+/** A part of the campaign's state a reply can say it relied on (CON-503). */
+export type CampaignCite =
+  'goal' | 'period' | 'posts' | 'platforms' | 'sources' | 'calendar'
 
 /**
  * The campaign as a turn read it (CON-483): the goal and its current
@@ -1734,6 +1883,10 @@ export type CampaignState = {
     period?: GoalPeriod
   }
   calendar?: { total: number }
+  /** The campaign's posts; absent when the server couldn't count them. */
+  posts?: number
+  /** The platforms it targets, by the server's names. */
+  platforms?: { id: string; name: string }[]
   sources?: {
     wholeBank: boolean
     attached: number
@@ -1750,7 +1903,15 @@ export type CampaignState = {
 /** A starter that leads with the state's numbers (CON-483). */
 export type CampaignStarter = {
   kind: 'fill' | 'draft' | 'calendar' | 'sources'
-  /** The server's sentence, sent as the message on a click. */
+  /** The posts to fill or draft, the conflicts, the sources not ready. */
+  count?: number
+  /** A fill's goal period. */
+  period?: GoalPeriod
+  /**
+   * The server's English chip and sentence — used only when the starter can't
+   * be worded from its figures; they go once every server sends them.
+   */
+  label?: string
   instruction: string
 }
 
@@ -1758,6 +1919,11 @@ export type CampaignStarter = {
 export type CampaignStateRead = {
   state: CampaignState
   starters: CampaignStarter[]
+  /**
+   * The parts of the state the reply relied on, in its order (CON-503).
+   * Absent off a turn — the `/assistant-state` read has no reply.
+   */
+  cites?: CampaignCite[]
 }
 
 /** An item a run left undone. `title` is missing where the tool names none. */

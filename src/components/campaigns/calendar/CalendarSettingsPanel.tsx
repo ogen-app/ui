@@ -4,12 +4,13 @@ import { Collapse } from '@/components/ui/collapse'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { TextSelect } from '@/components/ui/text-select'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { publishingDayNumbers } from '@/lib/campaignScheduling'
 import { CARD_FIELDS, canHideField } from './cardFields'
 import { weekdayLabel } from './date'
+import { useCampaignSeries } from '@/hooks/useSeries'
+import { SERIES_WEEKDAYS } from '@/types/series'
 
 // Displayed Monday-first regardless of the chosen first day of week.
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0] as const
@@ -48,8 +49,9 @@ const CARD_VIEWS = [
 ] as const
 
 /**
- * "Calendar Settings" content for the right sidebar. The sidebar is
- * non-blocking, so the calendar behind it reflects preference changes live.
+ * "Calendar Settings" content for the calendar's drawer. The drawer sits
+ * beside the grid rather than over it, so the calendar reflects preference
+ * changes live.
  *
  * The preferences themselves are the user's and are shared by every calendar
  * (`useCalendarSettings`), so this panel is the same panel wherever it is
@@ -66,7 +68,6 @@ export function CalendarSettingsPanel({
   onClose?: () => void
 }) {
   const { t, i18n } = useTranslation()
-  const imagesEnabled = useFeatureFlag('calendar-card-images')
   const dayLabels = dayNames(i18n.language)
   const firstDayOptions = WEEK_DAYS.map((day) => ({
     id: String(day),
@@ -95,6 +96,16 @@ export function CalendarSettingsPanel({
   const publishingDays = campaign
     ? publishingDayNumbers(campaign.publishing_days)
     : null
+  // A weekly series lands on its own day even when the campaign doesn't
+  // publish then (CON-496), so that day is not safe to hide.
+  const { data: campaignSeries } = useCampaignSeries(campaignId ?? '')
+  const seriesDays = new Set(
+    (campaignSeries?.runs ?? []).flatMap((run) =>
+      run.rhythm?.weekday
+        ? [(SERIES_WEEKDAYS.indexOf(run.rhythm.weekday) + 1) % 7]
+        : [],
+    ),
+  )
 
   return (
     <RailPanel
@@ -131,29 +142,24 @@ export function CalendarSettingsPanel({
               and turning it off is a decision about what the calendar is for
               rather than about what a week card needs. It reaches both views —
               the month on a shorter band, and only on the days that have room
-              for one (see `cardRungs`).
-
-              Behind `calendar-card-images` until that flag is retired — it hid
-              the switch while no card could draw a picture (CON-247). */}
-          {imagesEnabled && (
-            <div className="mt-2 flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2">
-              <span className="flex min-w-0 flex-col">
-                <span className="text-sm">{t('calendar.imagePreviews')}</span>
-                <span className="text-xs text-tertiary-foreground">
-                  {t('calendar.imagePreviewsNote')}
-                </span>
+              for one (see `cardRungs`). */}
+          <div className="mt-2 flex min-h-10 items-center justify-between gap-3 bg-secondary px-4 py-2">
+            <span className="flex min-w-0 flex-col">
+              <span className="text-sm">{t('calendar.imagePreviews')}</span>
+              <span className="text-xs text-tertiary-foreground">
+                {t('calendar.imagePreviewsNote')}
               </span>
-              {isPending ? (
-                <Skeleton className="h-5 w-9" />
-              ) : (
-                <Switch
-                  checked={imagePreviews}
-                  onCheckedChange={setImagePreviews}
-                  aria-label={t('calendar.imagePreviews')}
-                />
-              )}
-            </div>
-          )}
+            </span>
+            {isPending ? (
+              <Skeleton className="h-5 w-9" />
+            ) : (
+              <Switch
+                checked={imagePreviews}
+                onCheckedChange={setImagePreviews}
+                aria-label={t('calendar.imagePreviews')}
+              />
+            )}
+          </div>
         </div>
       </Collapse>
 
@@ -221,7 +227,7 @@ export function CalendarSettingsPanel({
           a property of how they work, not something they come back to tune the
           way they tune what a card shows. Open by default it pushed the two
           card sections, the ones this panel is actually opened for, off the
-          bottom of the rail. Closed, it is a title they can find when they want
+          bottom of the drawer. Closed, it is a title they can find when they want
           it and a line of chrome when they don't. */}
       <Collapse
         title={t('calendar.daysVisibility')}
@@ -231,9 +237,12 @@ export function CalendarSettingsPanel({
           {WEEK_DAYS.map((day) => {
             // Why a hidden day may be safe to hide: the campaign never
             // publishes on it. State, not teaching, so it sits in the row
-            // rather than in a note the user can close.
-            const unused =
+            // rather than in a note the user can close. A series' day is
+            // used whatever the publishing days say.
+            const offDay =
               publishingDays !== null && !publishingDays.includes(day)
+            const seriesDay = offDay && seriesDays.has(day)
+            const unused = offDay && !seriesDay
             return (
               <div
                 key={day}
@@ -244,6 +253,11 @@ export function CalendarSettingsPanel({
                   {unused && (
                     <span className="truncate text-xs text-tertiary-foreground">
                       {t('calendar.notAPublishingDay')}
+                    </span>
+                  )}
+                  {seriesDay && (
+                    <span className="truncate text-xs text-tertiary-foreground">
+                      {t('calendar.seriesDay')}
                     </span>
                   )}
                 </span>

@@ -13,9 +13,8 @@ import type { PanelScope } from '@/lib/rightPanel'
  * coming back restores them without anything having been saved on the way out.
  *
  * @param scope which family of panels this screen can host
- * @param campaignId the campaign those panels are about, for the ones that need it
  */
-type Claim = { token: symbol; scope: PanelScope; campaignId?: string }
+type Claim = { token: symbol; scope: PanelScope }
 
 /**
  * Every mounted screen's claim, newest last — the top one owns the scope.
@@ -28,15 +27,15 @@ type Claim = { token: symbol; scope: PanelScope; campaignId?: string }
  */
 let claims: Claim[] = []
 
-export function usePanelScope(scope: PanelScope, campaignId?: string) {
+export function usePanelScope(scope: PanelScope) {
   // Layout, not passive: loading straight into a post with `postQuality`
   // remembered would otherwise paint one frame with no scope — the rail closed
   // — and then slide it open. Running before paint makes the restored panel
   // simply be there, which is the point of remembering it.
   useLayoutEffect(() => {
-    const claim: Claim = { token: Symbol(scope), scope, campaignId }
+    const claim: Claim = { token: Symbol(scope), scope }
     claims.push(claim)
-    useSettingsStore.getState().setPanelScope(scope, campaignId)
+    useSettingsStore.getState().setPanelScope(scope)
     return () => {
       // The store only follows the top of the stack: a buried claim leaving
       // changes nothing, and the top leaving restores whichever screen is
@@ -45,10 +44,8 @@ export function usePanelScope(scope: PanelScope, campaignId?: string) {
       claims = claims.filter((c) => c.token !== claim.token)
       if (wasTop) {
         const top = claims[claims.length - 1]
-        useSettingsStore
-          .getState()
-          .setPanelScope(top?.scope ?? null, top?.campaignId)
+        useSettingsStore.getState().setPanelScope(top?.scope ?? null)
       }
     }
-  }, [scope, campaignId])
+  }, [scope])
 }

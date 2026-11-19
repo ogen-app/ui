@@ -43,6 +43,20 @@ vi.mock('@/hooks/usePlatforms', async (importOriginal) => ({
       postTypes: [{ slug: 'carousel', label: 'Carousel' }],
     }),
   }),
+  // The panel splits the posts by whether they have an account to publish
+  // as, and waits for the platforms to do it: Instagram has one account, so
+  // a post on it is ready; any other platform has none.
+  usePlatforms: () => ({ isPending: false }),
+  usePlatformViews: () => [
+    {
+      platform: { id: 'ig' },
+      connectedPublishers: [
+        {
+          accounts: [{ id: 'acct', username: 'hotel', display_name: 'Hotel' }],
+        },
+      ],
+    },
+  ],
 }))
 
 const post = (id: string, overrides: Partial<Post> = {}): Post =>
@@ -69,7 +83,7 @@ beforeEach(() => {
 })
 
 describe('the Not scheduled panel (CON-485)', () => {
-  it('counts what waits, says what to do, and lists compact rows', async () => {
+  it('counts what waits and lists compact rows', async () => {
     data.posts = [
       post('A pool in the rock'),
       post('Wedding packages', { idea_count: 0 }),
@@ -77,9 +91,6 @@ describe('the Not scheduled panel (CON-485)', () => {
     await renderWithProviders(<NotScheduledPanel campaignId="c1" />)
     expect(screen.getByText('Not scheduled')).toBeTruthy()
     expect(screen.getByText('2')).toBeTruthy()
-    expect(
-      screen.getByText('Drag a post onto a day to schedule it.'),
-    ).toBeTruthy()
     expect(screen.getByText('Instagram · Carousel · from 1 idea')).toBeTruthy()
     // Written directly: no "from N ideas".
     expect(screen.getByText('Instagram · Carousel')).toBeTruthy()
@@ -94,6 +105,28 @@ describe('the Not scheduled panel (CON-485)', () => {
       .map((l) => l.querySelector('span:nth-child(2)')?.textContent)
     expect(titles[0]).toBe('Fresh')
     expect(screen.getByText('JUST WRITTEN')).toBeTruthy()
+  })
+
+  it('folds the posts with no account to publish as into their own group', async () => {
+    data.posts = [post('Ready'), post('Stranded', { platform_id: 'tt' })]
+    await renderWithProviders(<NotScheduledPanel campaignId="c1" />)
+    const ready = screen.getByRole('button', { name: /Ready to schedule/ })
+    const blocked = screen.getByRole('button', { name: /Needs an account/ })
+    // The one group anybody can act on from here is open; the other is
+    // listed, so nothing undated disappears, but folded away.
+    expect(ready.getAttribute('aria-expanded')).toBe('true')
+    expect(blocked.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByText('Stranded')).toBeTruthy()
+  })
+
+  it('says nothing is ready, and opens the no-account group, when every post needs an account', async () => {
+    data.posts = [post('Stranded', { platform_id: 'tt' })]
+    await renderWithProviders(<NotScheduledPanel campaignId="c1" />)
+    const blocked = screen.getByRole('button', { name: /Needs an account/ })
+    expect(blocked.getAttribute('aria-expanded')).toBe('true')
+    const ready = screen.getByRole('button', { name: /Ready to schedule/ })
+    expect(ready.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByText('Nothing is ready to be scheduled')).toBeTruthy()
   })
 
   it('lets go of a just-written draft once it has a date', async () => {

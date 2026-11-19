@@ -151,8 +151,7 @@ describe('fetchPostAnalytics', () => {
 
   it('keeps its own 503 message apart from the one /analytics/posts sends', async () => {
     // "post analytics is not available" here, "analytics is not available"
-    // there. One condition, two strings — so `isAnalyticsUnavailable` does not
-    // match this and a screen reading both endpoints needs both predicates.
+    // there. One condition, two strings, so the predicate matches this one.
     stubFetch(jsonResponse(503, { error: 'post analytics is not available' }))
 
     expect(

@@ -29,6 +29,8 @@ import { ThreadStatusSummary } from './ThreadStatusSummary'
 import { ThreadEmptyState } from './ThreadEmptyState'
 import { ThreadList } from './ThreadList'
 import { UserMessage } from './UserMessage'
+import { FromReview } from './FromReview'
+import { reviewFindingOf } from '@/lib/viewContext'
 import type { AssistantThread } from '@/types/assistant'
 
 /**
@@ -135,18 +137,15 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
       className="h-full"
       bodyClassName="flex-1 gap-6"
       scrollRef={scrollRef}
-      subheader={<ThreadStatusSummary />}
-      // The panel's square, and the one place the rail says what the two lines
-      // beside it are: a list of conversations. Exactly a row's square — 40px
-      // and the same 20px glyph — rather than stretched to the two lines it
-      // stands against, which came to 46 and read as a different object next to
-      // the list it heads. It centres on the pair instead, so the 3px of slack
-      // is split rather than hanging off one end.
+      actions={<ThreadStatusSummary />}
+      // The panel's square, and the one place the rail says what the title
+      // beside it heads: a list of conversations. As tall as the title's line,
+      // since the header is one line in the 56px band.
       leading={
         <span
           aria-hidden
           className={cn(
-            'flex size-10 shrink-0 items-center justify-center self-center',
+            'flex size-7 shrink-0 items-center justify-center',
             // Its own fill, unlike the type beside it: the mark is an object,
             // and a thread scrolling through the inside of a bordered square
             // reads as a hole in the header rather than as translucency.
@@ -156,7 +155,7 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
             'group-hover/title:border-foreground group-hover/title:text-foreground',
           )}
         >
-          <ListBulletsIcon className="size-5" />
+          <ListBulletsIcon className="size-4" />
         </span>
       }
       // Only inside a thread does the header have somewhere to go; on the list
@@ -318,10 +317,16 @@ function ThreadView({
         />
       )
     const marker = markers.get(turn.id)
+    // A message sent from a review finding quotes the finding (CON-495).
+    const finding = reviewFindingOf(turn.view)
     return (
       <Fragment key={turn.id}>
         {marker && <ScreenMarker text={marker} />}
-        <UserMessage content={turn.content} />
+        {finding ? (
+          <FromReview finding={finding} />
+        ) : (
+          <UserMessage content={turn.content} />
+        )}
       </Fragment>
     )
   })

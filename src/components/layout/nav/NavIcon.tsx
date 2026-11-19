@@ -1,21 +1,23 @@
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
 
 /**
- * A rail row's glyph: Hugeicons at 20px with the set's 1.5 stroke, the same
- * slot at both levels so the labels line up. `tone` is a campaign section's
- * permanent hue (`lib/campaignSections`); the workspace's rows are in ink.
+ * A place's glyph: Hugeicons with the set's 1.5 stroke, 18px in the rail and
+ * larger beside a page title. `tone` is the place's permanent hue
+ * (`lib/campaignSections`); Foundation, the Inbox and the utilities are in ink.
  */
 export function NavIcon({
   icon,
   tone,
+  size = 18,
 }: {
   icon: IconSvgElement
   tone?: string
+  size?: number
 }) {
   return (
     <HugeiconsIcon
       icon={icon}
-      size={20}
+      size={size}
       strokeWidth={1.5}
       aria-hidden
       className="flex-none"

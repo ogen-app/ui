@@ -33,6 +33,18 @@ export type StreamHooks = {
   opened: () => void
   /** Any traffic at all, heartbeats included. Re-arms the silence watchdog. */
   activity: () => void
+  /**
+   * The server said it is closing this connection on purpose (CON-286's
+   * 30-minute lifetime ceiling), in the frame it sends just before doing it.
+   *
+   * A clean close is otherwise exactly what a dropped connection looks like,
+   * and since that fix a clean close is *expected* — twice an hour, per tab.
+   * So this is the difference between a handover and an outage, and the driver
+   * treats it as one: reconnect at once, no backoff, no failure counted, and
+   * the status holds at `open` rather than flashing through `reconnecting` for
+   * a round trip nobody could have noticed.
+   */
+  recycling: () => void
 }
 
 export type StreamConnectionConfig = {
@@ -51,8 +63,14 @@ export type StreamConnectionConfig = {
    * A connection just opened. `reconnected` is false only for the first one of
    * a session — which is the difference between "start up" and "you missed
    * something", and the whole reason the two callers diverge here.
+   *
+   * `afterRecycle` narrows that second case: this connection replaces one the
+   * server announced it was closing, so the gap was a round trip rather than
+   * an outage. It is not permission to skip recovery — `/api/events` keeps no
+   * log, so an event published inside even that gap is gone — but it is
+   * permission to do it **quietly**, because there is nothing to warn about.
    */
-  onOpen?: (info: { reconnected: boolean }) => void
+  onOpen?: (info: { reconnected: boolean; afterRecycle: boolean }) => void
   /** Backoff between attempts, in ms, holding at the last value. */
   backoffMs?: readonly number[]
   /** How long silence may last before the connection is presumed dead. */
@@ -100,6 +118,12 @@ export function createStreamConnection(
   let attempts = 0
   /** True once a connection has been open, so a later one is a *re*connect. */
   let everConnected = false
+  /**
+   * Set when the connection that just ended had announced it, and read by the
+   * one that replaces it. It spans two attempts by definition, which is why it
+   * lives out here rather than inside `connect`.
+   */
+  let replacingRecycled = false
 
   const report = (status: StreamConnectionStatus) =>
     config.onState({ status, attempts })
@@ -133,25 +157,33 @@ export function createStreamConnection(
     controller = null
     everConnected = false
     attempts = 0
+    replacingRecycled = false
     report('idle')
   }
 
   async function connect(): Promise<void> {
     const own = new AbortController()
     controller = own
+    /** Whether *this* connection's end was announced before it came. */
+    let announced = false
 
     try {
       await config.open(own.signal, {
         opened: () => {
           if (own.signal.aborted) return
           const reconnected = everConnected
+          const afterRecycle = replacingRecycled
+          replacingRecycled = false
           everConnected = true
           attempts = 0
           report('open')
           armWatchdog(own)
-          config.onOpen?.({ reconnected })
+          config.onOpen?.({ reconnected, afterRecycle })
         },
         activity: () => armWatchdog(own),
+        recycling: () => {
+          announced = true
+        },
       })
     } catch {
       // Any failure is the same failure: we're not connected. The status says
@@ -164,11 +196,27 @@ export function createStreamConnection(
     // before its abort lands, so it returns here instead.
     if (controller !== own) return
     controller = null
+
+    // Announced: a handover rather than a drop, so it skips the tail entirely
+    // — no backoff step, no failure counted, and no `reconnecting` report. The
+    // status holds at `open` for the round trip, which is honest: nothing is
+    // wrong, and saying otherwise twice an hour is how a warning stops meaning
+    // anything. `announced` can only be true of a connection that was live, so
+    // a server misbehaving on the way *up* still lands in the backoff.
+    if (announced) {
+      replacingRecycled = true
+      if (subscribers > 0) void connect()
+      return
+    }
+
     scheduleRetry()
   }
 
   function scheduleRetry(): void {
     if (subscribers === 0) return
+    // Entering backoff means the handover failed: the gap is now an outage,
+    // however it started, so whatever opens next must reconcile out loud.
+    replacingRecycled = false
     const step = backoff[Math.min(attempts, backoff.length - 1)]
     attempts += 1
     report('reconnecting')
@@ -194,6 +242,10 @@ export function createStreamConnection(
       clearTimers()
       controller?.abort()
       controller = null
+      // A pending handover belongs to the workspace being left, and this is
+      // not one: the tab re-pinned, so the next connection is a fresh read of
+      // somewhere else and its caller should treat it as such.
+      replacingRecycled = false
       // Not `stop()`: this is the same session continuing in another
       // workspace, so it should present as a reconnect rather than flashing
       // through "connecting" as though the app had just started.

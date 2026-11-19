@@ -209,6 +209,42 @@ describe('ideasResults', () => {
     })
   })
 
+  it('reads a source asset’s type, and none when it has none (CON-509)', () => {
+    const read = (sourceAsset: unknown) =>
+      ideasResults({
+        ideas: {
+          getIdea: { idea: { id: 'i1', title: 'The pool' }, sourceAsset },
+        },
+      })?.idea?.sourceAsset
+    expect(read({ id: 'a1', title: 'Brochure', type: 'PDF' })?.type).toBe('PDF')
+    expect(read({ id: 'a1', title: 'Brochure' })?.type).toBeUndefined()
+  })
+
+  it('reads what a found filter named, kept and left out, and nothing for none (CON-509)', () => {
+    const found = (named: unknown) =>
+      ideasResults({
+        ideas: { findIdeas: { ideas: [], total: 6, named } },
+      })?.found?.named
+    expect(
+      found({
+        sourceAssets: [
+          { id: 'a1', title: 'Brochure', type: 'PDF' },
+          { id: 'a2', title: 'Menu', excluded: true },
+        ],
+        campaigns: [],
+        authors: [{ id: 'u1', title: 'Ana' }],
+      }),
+    ).toEqual({
+      sourceAssets: [
+        { id: 'a1', title: 'Brochure', type: 'PDF' },
+        { id: 'a2', title: 'Menu', excluded: true },
+      ],
+      authors: [{ id: 'u1', title: 'Ana' }],
+    })
+    expect(found(undefined)).toBeUndefined()
+    expect(found({ campaigns: [] })).toBeUndefined()
+  })
+
   it('reads what a selection shares, in the card’s order, empty kinds left out', () => {
     const r = ideasResults({
       ideas: {
@@ -354,5 +390,35 @@ describe('draftedPost', () => {
     })
     expect(r?.merged?.groups.map((g) => g.deleted)).toEqual([1, 2])
     expect(r?.idea?.lens).toEqual({ campaignId: 'c1', campaignName: 'Spring' })
+  })
+})
+
+describe('ideaDraftStarted (CON-510)', () => {
+  it('reads the ideas and platform of the post about to be written', async () => {
+    const { ideaDraftStarted } = await import('./assistantIdeas')
+    expect(
+      ideaDraftStarted({
+        ideas: [
+          { ideaId: 'i1', title: 'The pool' },
+          { ideaId: 'i2', title: 'Breakfast first' },
+        ],
+        platformId: 'instagram',
+        postType: 'carousel',
+        count: 1,
+        done: 2,
+        total: 4,
+      }),
+    ).toEqual({
+      ideas: [
+        { ideaId: 'i1', title: 'The pool' },
+        { ideaId: 'i2', title: 'Breakfast first' },
+      ],
+      platformId: 'instagram',
+      postType: 'carousel',
+      count: 1,
+      done: 2,
+      total: 4,
+    })
+    expect(ideaDraftStarted({ ideas: [], platformId: 'x' })).toBeNull()
   })
 })

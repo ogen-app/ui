@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 import { LockSimpleIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
+import { useShallow } from 'zustand/react/shallow'
 import type { TFunction } from 'i18next'
 import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
@@ -15,8 +16,10 @@ import type {
   CalendarMoved,
   CalendarPlan,
   CampaignReview,
+  CampaignReviewFinding,
   ChangedPost,
   PostRevised,
+  PostVoiceChanged,
   PostsChanged,
   RepairResults as Results,
   UndoState,
@@ -39,6 +42,7 @@ import {
 } from './FindingsBlock'
 import { useIsIgnored } from './useIsIgnored'
 import { ProposalCard } from './ProposalCard'
+import { LineDiff } from './LineDiff'
 import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
 
 /**
@@ -103,6 +107,12 @@ export function RepairResults({
     [
       'revised',
       r.revised && <RevisedCard t={t} revised={r.revised} undo={undoFor} />,
+    ],
+    [
+      'voiceChanged',
+      r.voiceChanged && (
+        <VoiceChangedCard t={t} change={r.voiceChanged} undo={undoFor} />
+      ),
     ],
     [
       'converted',
@@ -170,7 +180,49 @@ function ReviewCard({
   const { t } = useTranslation()
   const ignore = useAssistantStore((s) => s.ignoreFinding)
   const send = useAssistantStore((s) => s.send)
+  const adoptThread = useAssistantStore((s) => s.adoptThread)
+  const campaignName = useAssistantStore(
+    (s) => s.threads[threadId]?.campaignTitle || s.threads[threadId]?.title,
+  )
+  // Post threads mid-turn: their send would refuse FIX WITH ASSISTANT.
+  const runningPosts = useAssistantStore(
+    useShallow((s) =>
+      Object.values(s.threads).flatMap((thread) =>
+        thread.status === 'running' && thread.subject.kind === 'post'
+          ? [thread.subject.postId]
+          : [],
+      ),
+    ),
+  )
   const { campaignId } = review
+  // FIX WITH ASSISTANT (CON-495, board 7): the post's thread, bound in the
+  // rail where the review is, asked about this finding by its key. Not a
+  // navigation — the user stays on the screen they reviewed from.
+  const fixWithAssistant = (f: CampaignReviewFinding) => {
+    if (!f.postId || !f.key || !campaignId) return undefined
+    const { postId, key } = f
+    return () => {
+      const postThread = adoptThread(
+        { kind: 'post', postId, campaignId },
+        f.label ?? '',
+        campaignName ?? '',
+      )
+      void send(postThread, t('assistant.repair.review.fixPrompt'), {
+        kind: 'finding',
+        campaignId,
+        key,
+        finding: {
+          key,
+          postId,
+          title: f.label ?? '',
+          severity: f.severity,
+          issue: f.issue,
+          quote: f.quote,
+          suggestion: f.suggestion,
+        },
+      })
+    }
+  }
   const isIgnored = useIsIgnored(
     campaignId,
     ignored,
@@ -213,7 +265,13 @@ function ReviewCard({
               key={f.key || i}
               n={i + 1}
               warn={f.severity === 'high'}
-              title={f.issue}
+              // The post's own words lead when the finding is about some of
+              // them (CON-495); the issue then follows where they are.
+              title={
+                f.quote
+                  ? t('assistant.repair.review.quoted', { quote: f.quote })
+                  : f.issue
+              }
               detail={
                 [
                   f.label &&
@@ -222,6 +280,7 @@ function ReviewCard({
                       : t('assistant.repair.review.inBrief', {
                           aspect: f.label,
                         })),
+                  f.quote && f.issue,
                   f.suggestion,
                 ]
                   .filter(Boolean)
@@ -239,6 +298,8 @@ function ReviewCard({
                 campaignId={campaignId}
                 fixes={f.fixes}
                 proposals={proposals}
+                onAssist={f.kind === 'post' ? fixWithAssistant(f) : undefined}
+                assistBusy={!!f.postId && runningPosts.includes(f.postId)}
                 disabled={disabled}
               />
             </FindingRow>
@@ -678,6 +739,23 @@ function ChangedCard({
       minute: '2-digit',
     })
 
+  // Whether it passes its new type's rules (CON-495). No answer — its media
+  // couldn't be read — says nothing rather than claim a pass.
+  const rulesLine = (post: ChangedPost) => {
+    if (!post.rules) return undefined
+    const platform =
+      resolve(post.platformId ?? post.platform ?? '')?.name ?? post.platform
+    const type = typeName(post, post.toType)
+    if (post.rules.passes)
+      return platform && type
+        ? t('assistant.repair.converted.passes', { platform, type })
+        : t('assistant.repair.converted.passesAny')
+    const broken = post.rules.broken.map((b) => b.message || b.rule)
+    return broken.length > 0
+      ? t('assistant.repair.converted.breaks', { rules: formatList(broken) })
+      : t('assistant.repair.converted.breaksAny')
+  }
+
   const rows = (post: ChangedPost) => {
     if (kind === 'converted') {
       return (
@@ -697,13 +775,19 @@ function ChangedCard({
               }
             />
           )}
-          {when(post.scheduledAt) && (
+          {when(post.scheduledAt) ? (
             <MovedRow
               title={t('assistant.repair.converted.still', {
                 when: when(post.scheduledAt),
               })}
-              sub={undefined}
+              sub={rulesLine(post)}
             />
+          ) : (
+            rulesLine(post) && (
+              <ResultRow className="text-[12.5px] text-secondary-foreground">
+                {rulesLine(post)}
+              </ResultRow>
+            )
           )}
         </>
       )
@@ -853,8 +937,78 @@ function RevisedCard({
           </Link>
         )}
       </ResultRow>
+      {revised.lines && <LineDiff runs={revised.lines} />}
       <UndoNote t={t} undoId={revised.undoId} undo={undo} />
       {revised.grounding && <SourcesLine grounding={revised.grounding} />}
     </ResultBlock>
   )
+}
+
+/**
+ * One post given another voice (`setPostVoice`, CON-494): the post by name,
+ * the voice it left and the one it reads in now, that its copy is untouched,
+ * OPEN and UNDO — drawn like the rewrite it stands in for.
+ */
+function VoiceChangedCard({
+  t,
+  change,
+  undo,
+}: {
+  t: TFunction
+  change: PostVoiceChanged
+  undo: ResultUndo
+}) {
+  const undone = change.undoId && undo.states[change.undoId] === 'undone'
+  return (
+    <ResultBlock
+      status={t('assistant.repair.voiceChanged.word')}
+      title={change.title || t('assistant.repair.voiceChanged.title')}
+      action={<UndoAction t={t} undoId={change.undoId} undo={undo} />}
+    >
+      <ResultRow className="flex items-baseline gap-3">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-sm text-foreground">
+            {voiceLine(t, change)}
+          </span>
+          <span className="text-[12.5px] text-secondary-foreground">
+            {t('assistant.repair.voiceChanged.copyKept')}
+          </span>
+        </span>
+        {change.campaignId && !undone && (
+          <Link
+            to="/campaigns/$campaignId/posts/$postId"
+            params={{ campaignId: change.campaignId, postId: change.postId }}
+            className={`shrink-0 ${TEXT_ACTION_CLASS}`}
+          >
+            {t('assistant.repair.voiceChanged.open')}
+          </Link>
+        )}
+      </ResultRow>
+      <UndoNote t={t} undoId={change.undoId} undo={undo} />
+    </ResultBlock>
+  )
+}
+
+/** "Formal → Plain, the campaign’s voice", with whichever names it has. */
+function voiceLine(t: TFunction, change: PostVoiceChanged): string {
+  const { from, to, own } = change
+  // Only an inherited voice is the campaign's; an own one left unnamed says
+  // no more than that it is its own.
+  if (!to)
+    return own
+      ? t('assistant.repair.voiceChanged.ownUnnamed')
+      : t('assistant.repair.voiceChanged.campaign')
+  if (!from)
+    return own
+      ? t('assistant.repair.voiceChanged.to', { to: to.name })
+      : t('assistant.repair.voiceChanged.toCampaign', { to: to.name })
+  return own
+    ? t('assistant.repair.voiceChanged.fromTo', {
+        from: from.name,
+        to: to.name,
+      })
+    : t('assistant.repair.voiceChanged.fromToCampaign', {
+        from: from.name,
+        to: to.name,
+      })
 }

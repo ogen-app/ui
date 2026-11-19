@@ -17,6 +17,7 @@ import { Route as AuthenticatedFoundationRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as InviteIndexRouteImport } from './routes/invite/index'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
 import { Route as PlansIndexRouteImport } from './routes/plans/index'
 import { Route as ServerUnavailableIndexRouteImport } from './routes/server-unavailable/index'
 import { Route as SignupIndexRouteImport } from './routes/signup/index'
@@ -39,6 +40,7 @@ import { Route as AuthenticatedFoundationSeriesRouteImport } from './routes/_aut
 import { Route as AuthenticatedFoundationTemplatesRouteImport } from './routes/_authenticated/foundation/templates'
 import { Route as AuthenticatedFoundationVoicesRouteImport } from './routes/_authenticated/foundation/voices'
 import { Route as AuthenticatedIdeasIndexRouteImport } from './routes/_authenticated/ideas/index'
+import { Route as AuthenticatedPostsIndexRouteImport } from './routes/_authenticated/posts/index'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile/index'
 import { Route as AuthenticatedWorkspaceSettingsIndexRouteImport } from './routes/_authenticated/workspace-settings/index'
 import { Route as AuthForgotIndexRouteImport } from './routes/auth/forgot/index'
@@ -106,6 +108,11 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
 const InviteIndexRoute = InviteIndexRouteImport.update({
   id: '/invite/',
   path: '/invite/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlansIndexRoute = PlansIndexRouteImport.update({
@@ -233,6 +240,11 @@ const AuthenticatedFoundationVoicesRoute =
 const AuthenticatedIdeasIndexRoute = AuthenticatedIdeasIndexRouteImport.update({
   id: '/ideas/',
   path: '/ideas/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPostsIndexRoute = AuthenticatedPostsIndexRouteImport.update({
+  id: '/posts/',
+  path: '/posts/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProfileIndexRoute =
@@ -411,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthenticatedTasksRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/signup/': typeof SignupIndexRoute
@@ -433,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/foundation/': typeof AuthenticatedFoundationIndexRoute
   '/ideas/': typeof AuthenticatedIdeasIndexRoute
+  '/posts/': typeof AuthenticatedPostsIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot/': typeof AuthForgotIndexRoute
@@ -469,6 +483,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthIndexRoute
   '/invite': typeof InviteIndexRoute
+  '/onboarding': typeof OnboardingIndexRoute
   '/plans': typeof PlansIndexRoute
   '/server-unavailable': typeof ServerUnavailableIndexRoute
   '/signup': typeof SignupIndexRoute
@@ -490,6 +505,7 @@ export interface FileRoutesByTo {
   '/campaigns': typeof AuthenticatedCampaignsIndexRoute
   '/foundation': typeof AuthenticatedFoundationIndexRoute
   '/ideas': typeof AuthenticatedIdeasIndexRoute
+  '/posts': typeof AuthenticatedPostsIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
   '/workspace-settings': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot': typeof AuthForgotIndexRoute
@@ -530,6 +546,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/auth/': typeof AuthIndexRoute
   '/invite/': typeof InviteIndexRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/plans/': typeof PlansIndexRoute
   '/server-unavailable/': typeof ServerUnavailableIndexRoute
   '/signup/': typeof SignupIndexRoute
@@ -552,6 +569,7 @@ export interface FileRoutesById {
   '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexRoute
   '/_authenticated/foundation/': typeof AuthenticatedFoundationIndexRoute
   '/_authenticated/ideas/': typeof AuthenticatedIdeasIndexRoute
+  '/_authenticated/posts/': typeof AuthenticatedPostsIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
   '/_authenticated/workspace-settings/': typeof AuthenticatedWorkspaceSettingsIndexRoute
   '/auth/forgot/': typeof AuthForgotIndexRoute
@@ -592,6 +610,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/auth/'
     | '/invite/'
+    | '/onboarding/'
     | '/plans/'
     | '/server-unavailable/'
     | '/signup/'
@@ -614,6 +633,7 @@ export interface FileRouteTypes {
     | '/campaigns/'
     | '/foundation/'
     | '/ideas/'
+    | '/posts/'
     | '/profile/'
     | '/workspace-settings/'
     | '/auth/forgot/'
@@ -650,6 +670,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/invite'
+    | '/onboarding'
     | '/plans'
     | '/server-unavailable'
     | '/signup'
@@ -671,6 +692,7 @@ export interface FileRouteTypes {
     | '/campaigns'
     | '/foundation'
     | '/ideas'
+    | '/posts'
     | '/profile'
     | '/workspace-settings'
     | '/auth/forgot'
@@ -710,6 +732,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/auth/'
     | '/invite/'
+    | '/onboarding/'
     | '/plans/'
     | '/server-unavailable/'
     | '/signup/'
@@ -732,6 +755,7 @@ export interface FileRouteTypes {
     | '/_authenticated/campaigns/'
     | '/_authenticated/foundation/'
     | '/_authenticated/ideas/'
+    | '/_authenticated/posts/'
     | '/_authenticated/profile/'
     | '/_authenticated/workspace-settings/'
     | '/auth/forgot/'
@@ -768,6 +792,7 @@ export interface RootRouteChildren {
   FlagsRoute: typeof FlagsRoute
   AuthIndexRoute: typeof AuthIndexRoute
   InviteIndexRoute: typeof InviteIndexRoute
+  OnboardingIndexRoute: typeof OnboardingIndexRoute
   PlansIndexRoute: typeof PlansIndexRoute
   ServerUnavailableIndexRoute: typeof ServerUnavailableIndexRoute
   SignupIndexRoute: typeof SignupIndexRoute
@@ -838,6 +863,13 @@ declare module '@tanstack/react-router' {
       path: '/invite'
       fullPath: '/invite/'
       preLoaderRoute: typeof InviteIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plans/': {
@@ -992,6 +1024,13 @@ declare module '@tanstack/react-router' {
       path: '/ideas'
       fullPath: '/ideas/'
       preLoaderRoute: typeof AuthenticatedIdeasIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/posts/': {
+      id: '/_authenticated/posts/'
+      path: '/posts'
+      fullPath: '/posts/'
+      preLoaderRoute: typeof AuthenticatedPostsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/profile/': {
@@ -1309,6 +1348,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCalendarIndexRoute: typeof AuthenticatedCalendarIndexRoute
   AuthenticatedCampaignsIndexRoute: typeof AuthenticatedCampaignsIndexRoute
   AuthenticatedIdeasIndexRoute: typeof AuthenticatedIdeasIndexRoute
+  AuthenticatedPostsIndexRoute: typeof AuthenticatedPostsIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
   AuthenticatedWorkspaceSettingsIndexRoute: typeof AuthenticatedWorkspaceSettingsIndexRoute
   AuthenticatedCalendarAnchorViewRoute: typeof AuthenticatedCalendarAnchorViewRoute
@@ -1333,6 +1373,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCalendarIndexRoute: AuthenticatedCalendarIndexRoute,
   AuthenticatedCampaignsIndexRoute: AuthenticatedCampaignsIndexRoute,
   AuthenticatedIdeasIndexRoute: AuthenticatedIdeasIndexRoute,
+  AuthenticatedPostsIndexRoute: AuthenticatedPostsIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
   AuthenticatedWorkspaceSettingsIndexRoute:
     AuthenticatedWorkspaceSettingsIndexRoute,
@@ -1360,6 +1401,7 @@ const rootRouteChildren: RootRouteChildren = {
   FlagsRoute: FlagsRoute,
   AuthIndexRoute: AuthIndexRoute,
   InviteIndexRoute: InviteIndexRoute,
+  OnboardingIndexRoute: OnboardingIndexRoute,
   PlansIndexRoute: PlansIndexRoute,
   ServerUnavailableIndexRoute: ServerUnavailableIndexRoute,
   SignupIndexRoute: SignupIndexRoute,

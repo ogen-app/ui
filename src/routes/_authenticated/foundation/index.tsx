@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { PageColumns } from '@/components/page-primitives/PageColumns'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { BrandOverview } from '@/components/brand/BrandOverview'
 import { BrandPage } from '@/components/brand/detail'
+import { CampaignTimeline } from '@/components/strategy/CampaignTimeline'
 import { useBrand } from '@/hooks/useBrand'
 import { useFacts } from '@/hooks/useFacts'
 import { useGuardrailsStance } from '@/hooks/useGuardrailsStance'
@@ -11,7 +13,17 @@ import { useSeriesLibrary } from '@/hooks/useSeries'
 import { fetched } from '@/lib/fetched'
 
 /**
- * `/foundation` — the Overview, and **the main Brand screen**.
+ * `/foundation` — **Strategy for all campaigns**: the Foundation's hub in the
+ * page's column, and the campaigns on one time axis in a fixed-width second
+ * column beside it.
+ *
+ * Strategy and Foundation were two rows of the rail, one only for a campaign
+ * and one only for the workspace, and they were one subject seen from the two
+ * levels (`lib/campaignScope`). So this page is the Strategy row with no
+ * campaign chosen, and a campaign's Strategy page is the same row narrowed.
+ * The timeline sits beside the hub (`PageColumns`' second column) because it
+ * is one card and the hub is eight; it goes under the hub only when the page
+ * is too narrow for both.
  *
  * Not a tab any more: it is what the sidebar points at, what the five sections
  * lead back to, and the only place that answers *what is in my brand* in one
@@ -29,8 +41,8 @@ import { fetched } from '@/lib/fetched'
  * own card, on a screen where the others are readable.
  *
  * It still borrows `BrandDetail`'s frame: the header goes *inside* the
- * scroller, sticky and carrying the standard gradient, so the cards dissolve
- * under it rather than being cut off by it. See `BrandDetail`.
+ * scroller — and, being a document's, scrolls away with it, leaving its title
+ * to the bar above. See `BrandDetail`.
  */
 export const Route = createFileRoute('/_authenticated/foundation/')({
   component: BrandOverviewPage,
@@ -43,9 +55,7 @@ function BrandOverviewPage() {
   // Both are views over the brand the hub already has — neither adds a wait.
   const { facts } = useFacts()
   const stance = useGuardrailsStance()
-  // Off: the Series card is not among the sections (`brandSections`), so this
-  // query never runs and the hub is byte-for-byte what it was before CON-264.
-  const { data: series } = useSeriesLibrary()
+  const series = useSeriesLibrary()
 
   return (
     <BrandPage>
@@ -55,28 +65,24 @@ function BrandOverviewPage() {
           type="scroll"
           scrollHideDelay={350}
         >
-          {/* `fadeOnScroll` because this header has a title. The section
-              screens keep the static gradient (post-details style) — they are
-              a bare caret, so there is nothing up there to collide with the
-              cards passing under it. A title is: it would sit on top of the
-              rows for the whole length of the page. Same treatment as Profile
-              and Workspace Settings, which are the app's other titled
-              scrollers. */}
-          <PageHeader title={t('nav.foundation')} fadeOnScroll />
-          <div className="px-3 pb-10 lg:px-6">
+          <PageHeader title={t('nav.campaign.strategy')} scrollAway />
+          <PageColumns aside={<CampaignTimeline />} stickyAside>
             <BrandOverview
               brand={fetched(brand)}
               facts={facts}
               // The library only — a campaign's own series is bounded by it and
               // is not something another campaign can pick up, so listing one
               // on the workspace hub would overstate what is there.
-              series={(series ?? []).filter(
-                (entry) => entry.scope.kind === 'workspace',
-              )}
+              series={fetched({
+                data: series.data?.filter(
+                  (entry) => entry.scope.kind === 'workspace',
+                ),
+                isError: series.isError,
+              })}
               stance={stance}
               onOpen={(id) => navigate({ to: `/foundation/${id}` })}
             />
-          </div>
+          </PageColumns>
         </ScrollArea>
       </div>
     </BrandPage>

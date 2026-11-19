@@ -6,7 +6,7 @@ import {
 } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import type { ContentFormatId } from '@/lib/contentFormats'
-import type { ContentSeries, SeriesRhythm, SeriesSupply } from './types'
+import type { ContentSeries, SeriesRhythm, SeriesSupply } from '@/types/series'
 
 /**
  * Three series of ours, offered to an empty library (CON-264).

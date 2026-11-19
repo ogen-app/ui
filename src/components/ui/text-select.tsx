@@ -71,6 +71,8 @@ type CurrencySelectProps = {
   disabled?: boolean
   className?: string
   id?: string
+  /** The trigger's accessible name, when no `<label>` points at its `id`. */
+  ariaLabel?: string
   variant?: 'default' | 'ghost' | 'primary' | 'inline' | null | undefined
   size?: 'default' | 'sm' | 'lg'
 }
@@ -83,6 +85,7 @@ function TextSelect({
   disabled,
   className,
   id,
+  ariaLabel,
   variant = 'primary',
   size = 'lg',
 }: CurrencySelectProps) {
@@ -103,6 +106,7 @@ function TextSelect({
     >
       <SelectPrimitive.Trigger
         id={id}
+        aria-label={ariaLabel}
         className={cn(
           selectTriggerVariants({ variant, size }),
           borderless

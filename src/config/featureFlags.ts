@@ -109,57 +109,6 @@ const FEATURE_FLAGS = {
   'campaign-accounts': false,
 
   /**
-   * The **numbers** in the campaign's Analytics section (CON-175) — not the
-   * section itself. The page, the sidebar item and the Overview card are
-   * always there; with this off they say what the section will hold and
-   * measure nothing, and no analytics request is made. Turning it on swaps
-   * that preview for the real totals in both places.
-   *
-   * **Still waiting on: a campaign dimension.** CON-236–239 landed the
-   * analytics dashboard API on 2026-08-27 — `/overview`, `/performers` and
-   * `/learnings`, typed against the real handlers in `types/analytics.ts` and
-   * pinned by `services/api/analytics.test.ts` — and every one of them is
-   * **tenant-scoped**. None takes a `campaign_id`; all three take a repeatable
-   * `platform` (CON-289), which narrows by network and not by campaign. So the
-   * thing this flag was originally waiting for did not arrive: a campaign
-   * screen still cannot ask the server its own question.
-   *
-   * Until it can, the page fetches one 100-row page of `/posts`, intersects it
-   * with the campaign's posts client-side, and sums the rows itself; the
-   * server's `overview` block is workspace-wide and deliberately ignored.
-   * Beyond ~100 measured posts in a workspace that stops being complete, which
-   * is why every surface states its coverage.
-   *
-   * **Before this can be flipped**, in order:
-   *
-   * 1. A campaign dimension — `campaign_id` on the dashboard reads, or a
-   *    campaign column on the rows. Nothing else unblocks the campaign screen.
-   * 2. A per-post series. `post_analytics_snapshots` is written and retained,
-   *    and no endpoint reads it (`models/post_analytics.go` says so in as many
-   *    words), so a post's own history has no source — the ask is
-   *    `GET /api/analytics/posts/:id/series` with a granularity.
-   * 3. A live re-test. Everything typed here was read off the Go source, not
-   *    off a running server; the shapes with the least margin for a
-   *    misreading are the overview's `series.previous` (index-aligned to the
-   *    *current* window's buckets) and the learnings sections, each of which
-   *    withdraws on its own.
-   *
-   * The two workspace-wide surfaces (`components/analytics`) needed no campaign
-   * dimension and shipped ahead of this one — unflagged since 2026-09-18, with
-   * the mappers from these wire shapes onto the view models written and
-   * tested. Two of their fields still have no wire source — per-post `matured`
-   * and the performers' `curve`/`typical` — and each surface states that where
-   * it would otherwise draw them; CON-250 serves both under other names
-   * (`still_counting`, and a p25/p50/p75 curve), so that is a renaming pass
-   * once ogen#130 merges rather than an ask. The third, the `save_rate` and
-   * `follow_rate` criteria, was **deleted** on 2026-09-06 instead of left
-   * waiting: `/performers` reports neither, so both were filtered out of every
-   * render they ever had. This flag is waiting on the campaign dimension
-   * (CON-288), nothing else. See `docs/analytics-contract.md`.
-   */
-  'campaign-analytics': false,
-
-  /**
    * The marketing-email switch on Profile (CON-155). **Off — waiting on the
    * back end.** CON-154/CON-155 shipped the suppression engine, but every
    * endpoint it exposes is public and token-gated: it verifies a signature
@@ -173,25 +122,6 @@ const FEATURE_FLAGS = {
   'email-preferences': false,
 
   /**
-   * *Show cards as image previews* in Calendar Settings — the one switch in
-   * that panel, and the calendar-wide answer the per-view `image` field is
-   * copied from (`useCalendarSettings`).
-   *
-   * **On since 2026-10-19 (CON-247).** The card reads the server's `cover_url`
-   * off the post list rows (ogen#185, signed since CON-368's ogen#216), and was
-   * re-tested against the local API: present on a post with a drawable file and
-   * absent on one without, the week's full band and the month's short one, and
-   * a cover that fails to load dropped rather than drawn broken.
-   *
-   * Only the control is behind this. The card draws a cover whenever the
-   * preference is on, and the preference defaults on — so with this off the
-   * pictures still show and nobody can turn them off. Delete the flag, and the
-   * `imagesEnabled` branch in `CalendarSettingsPanel`, at the first flag review
-   * after a deploy.
-   */
-  'calendar-card-images': true,
-
-  /**
    * Deleting one saved version of a post, from the version-history panel
    * (CON-168). Off until the API grows `DELETE /api/posts/:id/versions/
    * :versionId` — `handlers/posts.go` registers `GET`/`POST` on `/versions`
@@ -199,40 +129,6 @@ const FEATURE_FLAGS = {
    * CON-44; the client, the menu item and the confirm step are already written.
    */
   'post-version-delete': false,
-
-  /**
-   * The workspace's calendar — every campaign's posts on one grid.
-   *
-   * The campaign already has one (`/campaigns/:id/calendar`), which is the
-   * whole feature *for one campaign*; this is the same view with the filter
-   * taken off, and it is the workspace's twin of it in the rail. Built out of
-   * the same components, with the campaign passed as `null` — the cards name
-   * their campaign, nothing here creates a post, and the view switch drops the
-   * LIST segment, and that is the whole of the difference.
-   *
-   * **No longer waiting on an endpoint.** This flag used to say the query had
-   * not been written; it had. `GET /api/posts` returns the tenant's posts
-   * hydrated and the client already read it for two other cross-campaign
-   * questions, under a key every post write invalidates (`lib/postCache`) — so
-   * `useWorkspacePosts` is a third reader of a list that was already being
-   * kept in step, not a new contract.
-   *
-   * What it is waiting on now is **a range**. The endpoint takes no
-   * parameters, so the grid pulls every post in the workspace — bodies,
-   * campaigns, platforms and assets — however few weeks are on screen. That is
-   * the same cost the auto-publish allowlist already pays, and fine at
-   * today's scale; on a workspace with thousands of posts it is a calendar
-   * that opens slowly, which is worse than one that isn't offered. So the flag
-   * stays off until either `?from=&to=` lands (filed in
-   * `docs/open-questions.md`) or the feature is tried against a real workspace
-   * and judged fast enough — rule 4, deliberately, rather than flipping
-   * because the screen renders.
-   *
-   * Turning it on is one word here. Everything else is built: the route, the
-   * nav row, the panels and the place memory all read this flag already, and
-   * `?ff=workspace-calendar` exercises it on staging without a deploy.
-   */
-  'workspace-calendar': false,
 
   /**
    * The contextual help centre (CON-173) — the drawer, its triggers and the
@@ -282,13 +178,13 @@ const FEATURE_FLAGS = {
    * mix you type is a plan you break in week two, and a mix you derive is a
    * fact.
    *
-   * **Waiting on** a workspace-scoped `brand_series` table, `series_ids` plus a
-   * per-series rhythm on the campaign — **attached and detached, never
-   * restated**, for the reason CON-233 gives about `asset_ids` — a nullable
-   * `series_id` on the post, and analytics grouped by it, which is the "for
-   * insights" half of the ticket. Everything above the stub in
-   * `services/api/series.stub.ts` is written against the signatures those will
-   * have.
+   * **Backed by the API** since CON-496: `/api/series`, a campaign's runs
+   * attached, detached and re-rhythmed one at a time, `series_id` on ideas and
+   * posts — wired in CON-508, with the claims ported from `seriesplan.Days`.
+   * **Waiting on** the live pass against it (create, promote, attach, every 2
+   * weeks on Tuesday, a plan whose series ideas land on Tuesdays), then this
+   * flag goes. Still owed by the API: `series_id` on idea slots (CON-512) and
+   * analytics grouped by series.
    */
   series: false,
 
@@ -325,6 +221,38 @@ const FEATURE_FLAGS = {
    * series' own `content_format` (CON-330) and analytics grouped by format.
    */
   'content-formats': false,
+
+  /**
+   * Setup after signup (`/onboarding`): who the workspace is for, what Ogen
+   * can read about them, the brand read off it, and the accounts it posts to
+   * — then the Campaigns list's empty state, where the first campaign is made
+   * the ordinary way.
+   *
+   * **What is real**: the documents upload as `brand_source` and show their
+   * ingest; the website, the documents and the answers go to one brand read
+   * (`POST /api/brand/distills`), reviewed and committed as on Foundation; the
+   * accounts connect through Zernio. Whether setup is still owed is a
+   * workspace setting (`onboarding`, `services/api/onboarding.ts`) written
+   * `pending` at signup — the root guard sends a pending workspace here, and
+   * the `/flags` panel puts it back to pending.
+   *
+   * **Waiting on**:
+   * - **a read per source.** The design reads each source the moment it is
+   *   added, so the sheet fills while the person is still adding. The API
+   *   has one run per workspace over everything at once, so the website and
+   *   the answers wait for Continue, and nothing can be stopped on its own.
+   * - **an onboarding state of the API's own.** The setting is a key in
+   *   `/api/settings`, which any member can overwrite; a column on the
+   *   tenant (`setup_status`, with who finished it and when) is the real
+   *   thing, and is what would let the server send a welcome nudge to a
+   *   workspace that skipped.
+   * - **the business's name and favicon off the website**, for the brand
+   *   step's "the website says" and the sheet's mark. Neither is on the run.
+   * - **OAuth coming back to setup.** Zernio's connect always returns to
+   *   `/workspace-settings`; the guard bounces it here, which loses the
+   *   multi-target picker's way back (it returns to Settings, then here).
+   */
+  onboarding: false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

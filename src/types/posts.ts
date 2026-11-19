@@ -218,6 +218,14 @@ export type Post = {
    */
   content_format: ContentFormatId | null
   /**
+   * The series it was made for (CON-496) — set when it is compiled or drafted
+   * from a series idea, `null` otherwise. Server-owned here: presence-aware on
+   * the PUT, so `postToPayload` leaves it out and an autosave can't clear it.
+   * Optional only because a post built on the client before the server
+   * answered has none.
+   */
+  series_id?: string | null
+  /**
    * Whether generation drew on the campaign's own documents (CON-448):
    * `exploratory` is written from general knowledge, and `null` is a post
    * nobody generated — unknown, never "not grounded". Written by the server
@@ -340,4 +348,10 @@ export type PostPayload = {
    * not a change.
    */
   content_format?: ContentFormatId | null
+  /**
+   * Presence-aware (CON-496): omitted keeps it, `null` clears it. Sent only
+   * by a duplicate, which keeps the original's series as the server's clone
+   * does.
+   */
+  series_id?: string | null
 }

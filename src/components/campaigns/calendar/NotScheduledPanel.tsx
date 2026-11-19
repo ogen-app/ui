@@ -5,6 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { useSearch } from '@tanstack/react-router'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Collapse } from '@/components/ui/collapse'
+import { usePlatformViews, usePlatforms } from '@/hooks/usePlatforms'
+import {
+  accountGap,
+  resolveForPlatform,
+  type AccountGap,
+} from '@/lib/publishingAccount'
 import {
   UPDATE_POST_KEY,
   useAddPost,
@@ -39,8 +46,8 @@ export function NotScheduledPanel({
 }) {
   // The filter of the posts screen beside it (CON-486), read off the address
   // both screens keep it in: a post the grid hides for not matching is not
-  // offered here to be dragged onto it either. `strict: false` — the rail
-  // mounts this panel, not the route.
+  // offered here to be dragged onto it either. `strict: false` — the
+  // calendar's drawer mounts this panel, not the route.
   const search = useSearch({ strict: false })
   const filter = useMemo(
     () => postFilterFromSearch(parsePostListSearch(search)),
@@ -91,8 +98,8 @@ export function WorkspaceNotScheduledPanel({
 }
 
 /**
- * "Not Scheduled Posts" content for the right sidebar. The sidebar is
- * non-blocking, so posts can be dragged out onto the calendar days; dropping
+ * "Not Scheduled Posts" content for the calendar's drawer. The drawer sits
+ * beside the grid rather than over it, so posts can be dragged out onto the calendar days; dropping
  * a scheduled post onto the panel body unschedules it.
  */
 function NotScheduled({
@@ -147,6 +154,46 @@ function NotScheduled({
     ]
   }, [posts, justWritten])
 
+  // Two groups: the posts that have an account to publish as, and the ones
+  // the schedule endpoint would refuse for want of one — no platform, no
+  // account connected, several and none chosen, or the chosen one gone. The
+  // second is folded away, because it is the pile nobody can act on from
+  // here; it is still listed, so nothing undated disappears from the panel.
+  // The account is resolved as the schedule gate resolves it, so a lone
+  // account counts even when the post names none. Until the platforms are in,
+  // every post would read as having no account, so the panel waits for them.
+  const platformsPending = usePlatforms().isPending
+  const views = usePlatformViews()
+  const { ready, blocked } = useMemo(() => {
+    const ready: Post[] = []
+    const blocked: { post: Post; gap: AccountGap }[] = []
+    for (const post of unscheduled) {
+      const gap = accountGap(
+        post.platform_id,
+        resolveForPlatform(
+          views,
+          post.platform_id,
+          post.social_account_id,
+          post.social_account,
+        ),
+      )
+      if (gap) blocked.push({ post, gap })
+      else ready.push(post)
+    }
+    return { ready, blocked }
+  }, [unscheduled, views])
+  const loading = waiting || platformsPending
+  const row = (post: Post, gap: AccountGap | null = null) => (
+    <UnscheduledRow
+      key={post.id}
+      post={post}
+      justWritten={justWritten.has(post.id)}
+      showCampaign={campaignId === null}
+      targets={targets}
+      gap={gap}
+    />
+  )
+
   const dropHandlers = {
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault()
@@ -176,16 +223,11 @@ function NotScheduled({
       title={t('calendar.notScheduled')}
       // How many wait, muted beside the title, and what to do with them.
       titleAdornment={
-        !waiting && unscheduled.length > 0 ? (
+        !loading && unscheduled.length > 0 ? (
           <span className="text-base font-normal text-tertiary-foreground">
             {formatNumber(unscheduled.length)}
           </span>
         ) : undefined
-      }
-      subheader={
-        <p className="text-[12.5px] text-tertiary-foreground">
-          {t('calendar.notScheduledHint')}
-        </p>
       }
       onClose={onClose}
       className="h-full"
@@ -200,7 +242,7 @@ function NotScheduled({
       >
         {/* `awaiting`, not `isLoading` — see `lib/fetched`: the state below
             is exactly the announcement this guard exists to hold back. */}
-        {waiting ? (
+        {loading ? (
           // Two cards' worth of panel, so it doesn't announce "nothing
           // unscheduled" before it has looked.
           <div className="flex flex-col gap-3">
@@ -214,18 +256,47 @@ function NotScheduled({
         ) : unscheduled.length === 0 ? (
           <PostsEmptyState variant="panel" onAddPost={onAddPost} />
         ) : (
-          // Compact rows rather than calendar cards (CON-485): a list to drag
-          // from, the just written on top and tinted.
-          <div className="flex flex-col border-t border-border">
-            {unscheduled.map((post) => (
-              <UnscheduledRow
-                key={post.id}
-                post={post}
-                justWritten={justWritten.has(post.id)}
-                showCampaign={campaignId === null}
-                targets={targets}
-              />
-            ))}
+          // Small cards rather than calendar cards (CON-485): a pile to drag
+          // from, the just written on top and tinted. Headed only when there
+          // is a second group to tell it from. No prose over either group:
+          // the heading names it, and each row says what it lacks.
+          <div className="flex flex-col gap-2">
+            {blocked.length === 0 ? (
+              <div className="flex flex-col gap-2">
+                {ready.map((post) => row(post))}
+              </div>
+            ) : (
+              // Shown empty too, so the panel says in one line that nothing
+              // here can go on a day yet — the only prose it has.
+              <Collapse
+                title={t('calendar.readyToSchedule')}
+                meta={formatNumber(ready.length)}
+                defaultOpen
+              >
+                {ready.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {ready.map((post) => row(post))}
+                  </div>
+                ) : (
+                  <p className="text-sm leading-5 text-tertiary-foreground">
+                    {t('calendar.noneReady')}
+                  </p>
+                )}
+              </Collapse>
+            )}
+            {blocked.length > 0 && (
+              <Collapse
+                title={t('calendar.needsAccount')}
+                meta={formatNumber(blocked.length)}
+                // Open when it is all there is — folded away with nothing
+                // above it, the panel would read as empty.
+                defaultOpen={ready.length === 0}
+              >
+                <div className="flex flex-col gap-2">
+                  {blocked.map(({ post, gap }) => row(post, gap))}
+                </div>
+              </Collapse>
+            )}
           </div>
         )}
       </div>

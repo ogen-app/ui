@@ -36,7 +36,7 @@ export function DistillPage({
           type="scroll"
           scrollHideDelay={350}
         >
-          <PageHeader back={<BrandBackButton />} title={title} fadeOnScroll />
+          <PageHeader back={<BrandBackButton />} title={title} />
           <div
             className={cn(
               'flex flex-col gap-3 px-3 lg:px-6',

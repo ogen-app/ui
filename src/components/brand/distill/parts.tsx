@@ -186,7 +186,7 @@ export function ReviewSection({
   children: ReactNode
 }) {
   return (
-    <section className="mx-auto flex w-full min-w-0 max-w-content flex-col gap-5 bg-primary px-6 py-6">
+    <section className="flex w-full min-w-0 max-w-content flex-col gap-5 bg-primary px-6 py-6">
       <header className="flex min-w-0 items-center justify-between gap-4">
         <h2 className="flex min-w-0 items-center gap-2 font-display text-xl font-medium tracking-tight">
           <Glyph

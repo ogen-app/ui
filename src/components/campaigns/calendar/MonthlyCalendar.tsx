@@ -4,7 +4,6 @@ import { useCampaign } from '@/hooks/useCampaigns'
 import { useTranslation } from 'react-i18next'
 import { PlusIcon } from '@phosphor-icons/react'
 import type { Post } from '@/types/posts'
-import { useAddPost } from '@/hooks/usePosts'
 import { useCalendarDrop } from '@/hooks/useCalendarDrop'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
@@ -13,6 +12,7 @@ import { hasVisibleProblem } from '@/lib/postValidation'
 import { coverDrawable, useFailedCovers } from '@/lib/failedCovers'
 import { MonthDensity } from './MonthDensity'
 import { PostCard } from './PostCard'
+import { AddPostButton } from './AddPostButton'
 import { withCampaignRow } from './cardFields'
 import { isDateLocked } from './LockMark'
 import { isNotGrounded } from '@/lib/grounding'
@@ -32,7 +32,7 @@ type MonthlyCalendarProps = {
   /**
    * The campaign this month belongs to, or `null` on the workspace calendar —
    * see `WeeklyCalendar`, which takes it on the same terms. The cells name
-   * their campaign and offer no add affordance when it is `null`.
+   * their campaign, and a day's add asks which campaign the post is for.
    */
   campaignId: string | null
   posts: Post[]
@@ -90,8 +90,6 @@ function MonthlyCalendarComponent({
   // Covers that would not load — a card that dropped its picture is not
   // charged the band for it (`lib/failedCovers`).
   const failedCovers = useFailedCovers()
-  // Never called on the workspace grid — see `WeeklyCalendar`.
-  const addPost = useAddPost(campaignId ?? '')
   const { firstDayOfWeek, hiddenDays, card } = useCalendarSettings()
   const fields = useMemo(
     () => withCampaignRow(card.month, campaignId === null),
@@ -288,10 +286,10 @@ function MonthlyCalendarComponent({
                         the plain create endpoint, which — unlike `schedule` —
                         never validates the date, so this is the only thing
                         keeping a post from being born already in the past. */}
-                    {campaignId !== null && !isPastDay(day) && (
-                      <button
-                        type="button"
-                        onClick={() => addPost(day)}
+                    {!isPastDay(day) && (
+                      <AddPostButton
+                        campaignId={campaignId}
+                        day={day}
                         title={t('calendar.addPostOn', {
                           date: formatDate(
                             day,
@@ -303,12 +301,12 @@ function MonthlyCalendarComponent({
                           'flex size-5 shrink-0 items-center justify-center cursor-pointer',
                           'text-tertiary-foreground transition-[opacity,background-color,color]',
                           hoverKey === key ? 'opacity-100' : 'opacity-0',
-                          'focus-visible:opacity-100',
+                          'focus-visible:opacity-100 data-[state=open]:opacity-100',
                           'hover:bg-primary hover:text-secondary-foreground',
                         )}
                       >
                         <PlusIcon weight="bold" className="size-3.5" />
-                      </button>
+                      </AddPostButton>
                     )}
                   </div>
 

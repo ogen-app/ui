@@ -15,7 +15,12 @@ executable statement of the contract.
 
 ## 1. What is unchanged
 
-`GET /api/analytics/posts` — the only analytics endpoint the app reads today —
+> Historical: the client for `/analytics/posts` described in this section —
+> `lib/campaignAnalytics`, `isAnalyticsUnavailable` and the list types — was
+> deleted on 2026-11-18, when the campaign's Analytics tab moved onto the
+> dashboard's `campaign_id` reads (§3).
+
+`GET /api/analytics/posts` — the only analytics endpoint the app read then —
 came through CON-236's storage rework field for field. `PostAnalyticsItem`,
 `PostAnalyticsOverview` and `AnalyticsPagination` in `types/analytics.ts` match
 `repository.PostAnalyticsListItem`, `repository.PostAnalyticsOverview` and the
@@ -210,16 +215,16 @@ with `insufficient_history`; the card says which platforms it counted when that
 happens. `GET /api/analytics/posts?platform=` was left alone server-side — one
 value, matched on the display name — and nothing here sends it. So:
 
-1. **A campaign dimension.** `campaign_id` on the dashboard reads, or a campaign
-   column on the rows. Nothing else unblocks the campaign screen, which is what
-   `campaign-analytics` gates.
+1. **A campaign dimension.** Landed as CON-288 (2026-10-03): `/overview` and
+   `/performers` take `campaign_id`, `/learnings` refuses it. A campaign's
+   Analytics tab is now the dashboard narrowed to it, and the
+   `campaign-analytics` flag and the client-side `/posts` summing it gated were
+   deleted on 2026-11-18. Nothing in the app reads `/analytics/posts` any more.
 2. **A per-post series** (§2.3).
 3. **Live re-test** (§4).
 
-The two workspace-wide surfaces need none of (1), and shipped first — unflagged
-since 2026-09-18. (3) is still outstanding for them: it is something to check on
-a live workspace rather than something to wait for, and §4 below is the list.
-`campaign-analytics` stays off until (1) exists.
+(3) is something to check on a live workspace rather than something to wait
+for, and §4 below is the list.
 
 ## 4. Only verifiable against a running backend
 
@@ -260,9 +265,8 @@ reads, and nothing else. It answers in three ways:
   that never went out through Zernio.
 
 Plus **503** `post analytics is not available` — note the message differs from
-`/analytics/posts`'s `analytics is not available`, so `isAnalyticsUnavailable`
-does **not** match it. A client for this endpoint needs its own predicate or a
-widened one.
+`/analytics/posts`'s `analytics is not available`, so this endpoint has its own
+predicate (`isPostAnalyticsUnavailable`).
 
 ### 5.2 What `PostPerformanceView` needs, and where it comes from
 

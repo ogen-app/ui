@@ -17,7 +17,7 @@ import {
 } from '@/components/brand/shell'
 import { seriesMetaLine, supplyLine } from './format'
 import { SERIES_STARTERS, seriesStarterCopy } from './starters'
-import type { ContentSeries } from './types'
+import type { ContentSeries } from '@/types/series'
 
 /**
  * The recurring things this workspace makes — the library, one card each.

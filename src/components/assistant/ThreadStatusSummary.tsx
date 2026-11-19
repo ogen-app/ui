@@ -3,18 +3,14 @@ import { useAssistantStore } from '@/stores/assistantStore'
 import { counted } from '@/lib/intl'
 
 /**
- * What the assistant has open, on a line of its own under the panel title.
+ * How many threads the rail has open, as a badge beside the panel's close
+ * button — the header is one line, so this is not a line of its own.
  *
- * It reports two numbers and withholds a third. *Active* is every thread open
- * in the rail; *pending* is the subset with an answer the user has not seen,
- * tinted because it is the one that asks for something. A thread that is
- * *working* is not counted: the mark animates while anything runs, and a figure
- * that changed every few seconds would read as a queue draining rather than as
- * a state of the rail.
- *
- * It sits below the title rather than beside it because the title row is also
- * the way back out of a thread — a count on the same line reads as part of the
- * heading, and grew to where it pushed against the close button.
+ * It reports one number and marks a second. *Threads* is every thread open in
+ * the rail; a teal dot says some of them have an answer the user has not seen,
+ * and names how many on hover. A thread that is *working* is not counted: the
+ * mark animates while anything runs, and a figure that changed every few
+ * seconds would read as a queue draining rather than as a state of the rail.
  */
 export function ThreadStatusSummary() {
   const threads = useAssistantStore((s) => s.threads)
@@ -24,21 +20,22 @@ export function ThreadStatusSummary() {
   if (list.length === 0) return null
 
   const pending = list.filter((thread) => thread.unread).length
+  const pendingLabel =
+    pending > 0 ? t('assistant.pendingThreads', counted(pending)) : undefined
 
   return (
-    // No padding above it: the title's line box already leaves the pair enough
-    // air, and the 2px on top of that read as a gap between two things rather
-    // than as the second line of one heading.
-    <p className="text-xs text-tertiary-foreground">
-      {t('assistant.activeThreads', counted(list.length))}
-      {pending > 0 && (
-        <>
-          {', '}
-          <span className="text-accent">
-            {t('assistant.pendingThreads', counted(pending))}
-          </span>
-        </>
+    <span
+      title={pendingLabel}
+      className="inline-flex h-6 items-center gap-1.5 rounded-full border border-border px-2 text-xs text-tertiary-foreground"
+    >
+      {pendingLabel && (
+        <span
+          role="img"
+          aria-label={pendingLabel}
+          className="size-1.5 shrink-0 rounded-full bg-accent"
+        />
       )}
-    </p>
+      {t('assistant.threadCount', counted(list.length))}
+    </span>
   )
 }

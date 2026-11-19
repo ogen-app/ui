@@ -3,7 +3,7 @@ import type {
   CampaignSeries,
   ContentSeries,
   SeriesRhythm,
-} from '@/components/series/types'
+} from '@/types/series'
 import { useFeatureFlag } from '@/config/featureFlags'
 import {
   attachSeries,
@@ -26,12 +26,11 @@ import {
  * list keep (`["post", id]` vs `["campaigns", id, "posts"]`).
  *
  * **The flag is the default `enabled`, not a call-site obligation.** A
- * campaign's Strategy page renders whether or not this feature exists, so an
- * unconditional query here would open a request on an ordinary screen for a
- * card that cannot be shown — the cost `useHelpTopicMap` describes, which
- * fixtures hide until the day the real read is swapped in. Reading the flag
- * inside and letting a caller override it gets that safety without asking eight
- * call sites to remember.
+ * campaign's Strategy page, its calendar and the idea and post lists render
+ * whether or not this feature is on, so an unconditional query here would open
+ * a request on an ordinary screen for something that cannot be shown. Reading
+ * the flag inside, and letting a caller override it, gets that without asking
+ * every call site to remember.
  */
 
 export const SERIES_KEY = ['series'] as const
@@ -57,7 +56,7 @@ export function useCampaignSeries(
   return useQuery<CampaignSeries>({
     queryKey: campaignSeriesKey(campaignId),
     queryFn: () => getCampaignSeries(campaignId),
-    enabled: enabled ?? flagged,
+    enabled: (enabled ?? flagged) && Boolean(campaignId),
   })
 }
 
