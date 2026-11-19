@@ -49,7 +49,7 @@ describe('the calendar drawer', () => {
     useSettingsStore.setState({
       scope: null,
       rightRailHidden: false,
-      panelMemory: { assistantOpen: true, scoped: {} },
+      panelMemory: { assistantOpen: true, helpOpen: false, scoped: {} },
       calendarDrawer: null,
     })
   })

@@ -125,6 +125,44 @@ describe('togglePanel', () => {
   })
 })
 
+describe('help', () => {
+  it('replaces whatever was showing, and closing it gives that back', () => {
+    const under = memory({
+      assistantOpen: true,
+      scoped: { post: 'postQuality' },
+    })
+    const m = openPanel(under, 'help', 'post')
+    expect(resolveActivePanel(m, 'post')).toBe('help')
+    expect(resolveActivePanel(m, null)).toBe('help')
+    expect(resolveActivePanel(closePanel(m, 'post'), 'post')).toBe(
+      'postQuality',
+    )
+    expect(resolveActivePanel(closePanel(m, null), null)).toBe('assistant')
+  })
+
+  it('opens on a closed rail, and closing it closes the rail again', () => {
+    const m = openPanel(EMPTY_PANEL_MEMORY, 'help', null)
+    expect(resolveActivePanel(m, null)).toBe('help')
+    expect(resolveActivePanel(closePanel(m, null), null)).toBeNull()
+  })
+
+  it('gives way to the assistant or a post panel chosen over it', () => {
+    const m = openPanel(EMPTY_PANEL_MEMORY, 'help', 'post')
+    expect(resolveActivePanel(openPanel(m, 'assistant', 'post'), 'post')).toBe(
+      'assistant',
+    )
+    expect(
+      resolveActivePanel(openPanel(m, 'postPreview', 'post'), 'post'),
+    ).toBe('postPreview')
+  })
+
+  it('toggles from the same button', () => {
+    const m = togglePanel(EMPTY_PANEL_MEMORY, 'help', null)
+    expect(resolveActivePanel(m, null)).toBe('help')
+    expect(resolveActivePanel(togglePanel(m, 'help', null), null)).toBeNull()
+  })
+})
+
 describe('sanitizePanelMemory', () => {
   it('keeps a memory this build still understands', () => {
     const m = memory({ assistantOpen: true, scoped: { post: 'postVersions' } })
@@ -169,5 +207,6 @@ describe('sanitizePanelMemory', () => {
     expect(sanitizePanelMemory({ assistantOpen: 'yes' })).toEqual(
       EMPTY_PANEL_MEMORY,
     )
+    expect(sanitizePanelMemory({ helpOpen: 'yes' })).toEqual(EMPTY_PANEL_MEMORY)
   })
 })

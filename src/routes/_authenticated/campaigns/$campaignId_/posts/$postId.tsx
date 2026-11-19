@@ -82,6 +82,7 @@ import type { Post, PostStatus } from '@/types/posts'
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId_/posts/$postId',
 )({
+  staticData: { help: 'post' },
   component: PostPage,
 })
 

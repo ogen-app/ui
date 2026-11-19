@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { useHelpTopicMap } from '@/hooks/useHelp'
+import { useHelpIndex } from '@/hooks/useHelp'
 import { useHelpStore } from '@/stores/helpStore'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate.ts'
@@ -34,6 +34,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/overview',
 )({
+  staticData: { help: 'campaign.overview' },
   component: CampaignOverviewScreen,
 })
 
@@ -147,9 +148,9 @@ function useOverviewHandlers(campaignId: string) {
   const planGate = useUpgradeGate('plan_runs_per_month')
   const thread = threadIdFor({ kind: 'campaign', campaignId })
   const helpEnabled = useFeatureFlag('help-center')
-  const { data: helpTopics } = useHelpTopicMap({ enabled: helpEnabled })
+  const { data: helpIndex } = useHelpIndex({ enabled: helpEnabled })
   const helpArticle = helpEnabled
-    ? helpTopics?.['campaign.overview']
+    ? helpIndex?.pages['campaign.overview']
     : undefined
   const openHelp = useHelpStore((s) => s.open)
 

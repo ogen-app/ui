@@ -6,7 +6,8 @@ import { ErrorBoundary } from '@sentry/react'
 import { queryClient } from './lib/queryClient'
 import { routeTree } from './routeTree.gen'
 import { Toaster } from './components/ui/toaster'
-import { HelpDrawer } from './components/help/HelpDrawer'
+import { helpPageOf, type HelpPage } from './lib/helpTopics'
+import { useHelpStore } from './stores/helpStore'
 import { LocaleSwitchOverlay } from './components/layout/LocaleSwitchOverlay'
 import { AppErrorFallback } from './components/layout/AppErrorFallback'
 import { FLAG_IDS } from './config/featureFlags'
@@ -56,7 +57,22 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
   }
+  interface StaticDataRouteOption {
+    /**
+     * The screen this route is, for the help centre (CON-173): the page
+     * article Help in the top bar opens here. The deepest match that names one wins
+     * (`helpPageOf`).
+     */
+    help?: HelpPage
+  }
 }
+
+// The help panel is told which screen is on view rather than asking the router
+// from every component that wants it. Every resolved navigation, the first
+// included.
+router.subscribe('onResolved', () =>
+  useHelpStore.getState().setPage(helpPageOf(router.state.matches)),
+)
 
 // After `createRouter` so browser-tracing can name transactions by route
 // template, and before render so the error boundary and API instrumentation are
@@ -73,10 +89,6 @@ createRoot(document.getElementById('root')!).render(
           broke. */}
       <ErrorBoundary fallback={<AppErrorFallback />}>
         <RouterProvider router={router} />
-        {/* Mounted beside the router, not inside it: the drawer outlives any
-            route, and navigating the app must never close the help you opened
-            to read while doing it. */}
-        <HelpDrawer />
         <LocaleSwitchOverlay />
         <Suspense fallback={null}>
           <OverrideMarker />

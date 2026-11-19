@@ -11,7 +11,7 @@ export type ScopedPanel =
   'postSettings' | 'postPreview' | 'postQuality' | 'postVersions'
 
 /** Content shown in the right sidebar. Only one panel is on screen at a time. */
-export type RightPanel = 'assistant' | ScopedPanel
+export type RightPanel = 'assistant' | 'help' | ScopedPanel
 
 /**
  * The screen a scoped panel needs underneath it in order to render.
@@ -56,6 +56,14 @@ export type PanelMemory = {
    * every screen, which makes it the fallback that keeps the rule total.
    */
   assistantOpen: boolean
+  /**
+   * Help is the other panel every screen has (CON-173), and it sits on top of
+   * everything else: it *replaces* whatever was showing — the assistant or a
+   * post panel — and closing it gives that back. It is not per screen because
+   * its article is: the panel follows the page, so "help is open" is one fact
+   * however far the reader moves.
+   */
+  helpOpen: boolean
   /** Screen -> the panel last chosen there. */
   scoped: Partial<Record<PanelScope, ScopedPanel>>
 }
@@ -63,6 +71,7 @@ export type PanelMemory = {
 /** Nothing open anywhere. The floor of the model, and what closing everything reaches. */
 export const EMPTY_PANEL_MEMORY: PanelMemory = {
   assistantOpen: false,
+  helpOpen: false,
   scoped: {},
 }
 
@@ -76,12 +85,14 @@ export const EMPTY_PANEL_MEMORY: PanelMemory = {
  */
 export const DEFAULT_PANEL_MEMORY: PanelMemory = {
   assistantOpen: true,
+  helpOpen: false,
   scoped: {},
 }
 
 /**
- * The panel on screen: the most specific thing the current screen can actually
- * serve, falling back to the assistant, falling back to closed.
+ * The panel on screen: help if it is open, else the most specific thing the
+ * current screen can actually serve, falling back to the assistant, falling
+ * back to closed.
  *
  * Two properties come out of this and they are the whole point:
  *
@@ -97,6 +108,7 @@ export function resolveActivePanel(
   memory: PanelMemory,
   scope: PanelScope | null,
 ): RightPanel | null {
+  if (memory.helpOpen) return 'help'
   const scoped = scope ? memory.scoped[scope] : undefined
   if (scoped) return scoped
   return memory.assistantOpen ? 'assistant' : null
@@ -113,6 +125,9 @@ function forget(
 /**
  * Remember `panel` as the choice for its screen, and put it on screen now.
  *
+ * Help goes on top of whatever is there. Anything else takes help away, or the
+ * panel just chosen would open underneath it and the button would look broken.
+ *
  * Opening the assistant also clears the current screen's overlay. Without that,
  * "open the assistant" would record it as open *underneath* a panel still
  * covering it, and the button would look broken. Only the current screen's
@@ -124,21 +139,25 @@ export function openPanel(
   panel: RightPanel,
   scope: PanelScope | null,
 ): PanelMemory {
+  if (panel === 'help') return { ...memory, helpOpen: true }
   if (panel === 'assistant') {
     return {
       assistantOpen: true,
+      helpOpen: false,
       scoped: scope ? forget(memory.scoped, scope) : memory.scoped,
     }
   }
   return {
     ...memory,
+    helpOpen: false,
     scoped: { ...memory.scoped, [PANEL_SCOPE[panel]]: panel },
   }
 }
 
 /**
- * Close whatever is on screen. An overlay drops back to the assistant; the
- * assistant itself closes the rail. One X, one level at a time.
+ * Close whatever is on screen. Help drops back to what it covered, an overlay
+ * to the assistant, and the assistant itself closes the rail. One X, one level
+ * at a time.
  */
 export function closePanel(
   memory: PanelMemory,
@@ -146,6 +165,7 @@ export function closePanel(
 ): PanelMemory {
   const active = resolveActivePanel(memory, scope)
   if (active === null) return memory
+  if (active === 'help') return { ...memory, helpOpen: false }
   if (active === 'assistant') return { ...memory, assistantOpen: false }
   return { ...memory, scoped: forget(memory.scoped, PANEL_SCOPE[active]) }
 }
@@ -190,5 +210,9 @@ export function sanitizePanelMemory(value: unknown): PanelMemory {
       }
     }
   }
-  return { assistantOpen: raw.assistantOpen === true, scoped }
+  return {
+    assistantOpen: raw.assistantOpen === true,
+    helpOpen: raw.helpOpen === true,
+    scoped,
+  }
 }

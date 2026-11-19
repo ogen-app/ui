@@ -23,6 +23,7 @@ const withoutCampaign = (search: AnalyticsSearch): AnalyticsSearch => ({
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/analytics',
 )({
+  staticData: { help: 'analytics' },
   validateSearch: (raw: Record<string, unknown>) =>
     withoutCampaign(
       validateAnalyticsSearch(

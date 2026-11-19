@@ -6,6 +6,7 @@ import { parseAssetSearch } from '@/lib/assetSearch'
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId_/assets/$assetId',
 )({
+  staticData: { help: 'asset' },
   component: CampaignDocument,
   // `?lens=` and `?verdict=` — see `lib/assetSearch`.
   validateSearch: parseAssetSearch,

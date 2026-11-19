@@ -2,7 +2,7 @@ import { Question } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { useHelpTopicMap } from '@/hooks/useHelp'
+import { useHelpIndex } from '@/hooks/useHelp'
 import type { HelpTopic } from '@/lib/helpTopics'
 import { useHelpStore } from '@/stores/helpStore'
 
@@ -23,10 +23,10 @@ export function HelpTrigger({
 }) {
   const { t } = useTranslation()
   const enabled = useFeatureFlag('help-center')
-  const { data: topics } = useHelpTopicMap({ enabled })
+  const { data: index } = useHelpIndex({ enabled })
   const open = useHelpStore((s) => s.open)
 
-  const articleKey = topics?.[topic]
+  const articleKey = index?.topics[topic]
   if (!enabled || !articleKey) return null
 
   return (
