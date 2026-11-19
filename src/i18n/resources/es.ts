@@ -1595,8 +1595,8 @@ export const es: Translation = {
       scheduledRecent_one: '{{formatted}} programada, próximos {{days}} días',
       scheduledRecent_other:
         '{{formatted}} programadas, próximos {{days}} días',
-      pace: '{{value}} a la semana',
-      pacePlanned: '{{value}} a la semana previstas',
+      pace: 'Ritmo {{value}} a la semana',
+      pacePlanned: 'Ritmo previsto {{value}} a la semana',
     },
     week: {
       this: 'Esta semana',

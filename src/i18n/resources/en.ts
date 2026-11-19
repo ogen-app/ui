@@ -1993,9 +1993,9 @@ export const en = {
       scheduledRecent_one: '{{formatted}} scheduled, next {{days}} days',
       scheduledRecent_other: '{{formatted}} scheduled, next {{days}} days',
       /** Published posts a week since the start. */
-      pace: '{{value}} a week',
+      pace: 'Pace {{value}} a week',
       /** Before the start: scheduled posts a week. */
-      pacePlanned: '{{value}} a week planned',
+      pacePlanned: 'Planned pace {{value}} a week',
     },
     week: {
       this: 'This week',
