@@ -1,6 +1,8 @@
 import { memo, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EnvelopeSimpleIcon } from '@phosphor-icons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Delete02Icon } from '@hugeicons/core-free-icons'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -261,14 +263,15 @@ function MemberRow({
         {canRemove && (
           <Button
             type="button"
-            variant="outline"
+            variant="destructive"
             size="sm"
             onClick={() => setConfirming(true)}
             title={t('workspaceSettings.people.removeTitle', {
               name: member.name,
             })}
           >
-            {t('workspaceSettings.people.remove')}
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
+            <span>{t('workspaceSettings.people.remove')}</span>
           </Button>
         )}
       </div>

@@ -24,7 +24,9 @@ import { cn } from '@/lib'
  *   on their own (a link can't sit inside a link).
  * - an `action`: one button — the AI, a move, a destructive step. White with
  *   a border, or black when it is the card's point (`accent`); never grey.
- *   Labels are in sentence case. Never a submit: saving is automatic.
+ *   Labels are in sentence case. A destructive one is white with its
+ *   icon in the danger colour, so it always carries an icon. Never a
+ *   submit: saving is automatic.
  * - a `choice`: a selector that changes what the content shows (the period).
  * - an `aside`: a line of text in the qualifier's type (the dates and the day).
  * - `onDismiss`: the X that makes the card a notice.
@@ -66,6 +68,7 @@ export type CardAction = {
   disabled?: boolean
   /** The button's own spinner, while what it started is running. */
   loading?: boolean
+  /** White with the icon in the danger colour: give it an icon. */
   destructive?: boolean
 }
 

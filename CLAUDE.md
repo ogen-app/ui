@@ -137,6 +137,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   2026-11-19, replacing the old literal-capitals rule). Write the casing into
   the copy, never with an `uppercase` class. Labels elsewhere that are still in
   capitals move to sentence case as their screens join `ui/card`.
+- **A destructive button is red in its body or in its icon** — never grey, and
+  never a pale red tint. The way in (Danger Zone, Remove) is `destructive`:
+  white with a border and the icon in the danger colour, so it always has an
+  icon. The step that does it (a dialog's confirm) is `destructiveInverted`.
 - **Design harnesses live on `design/*` branches, never on `develop`.** A
   harness is a `/design/<feature>` route rendering every state of a component
   from fixtures, and it needs an exemption in `__root.tsx` `beforeLoad` to open

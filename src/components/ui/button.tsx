@@ -42,10 +42,14 @@ const buttonVariants = cva(
         tableRow:
           'bg-transparent text-secondary-foreground hover:text-primary-foreground hover:bg-primary ' +
           'data-[active=true]:text-primary-foreground data-[active=true]:bg-primary',
+        // A destructive button is red in its body (`destructiveInverted`, the
+        // step that does it) or in its icon (this one, the way in): `outline`
+        // with the glyph in the danger colour. Never tinted, and never without
+        // an icon — without one nothing on it says danger.
         destructive:
-          'bg-destructive/5 text-destructive ' +
-          'data-[active=true]:bg-destructive/10 ' +
-          'data-[loading]:text-destructive/5 [&_[data-spinner]]:bg-destructive/20 [&_[data-spinner]:before]:bg-destructive ',
+          'bg-transparent text-primary-foreground border hover:bg-quaternary hover:border-quaternary ' +
+          'data-[active=true]:bg-quaternary data-[active=true]:border-quaternary [&_svg]:text-destructive ' +
+          'data-[loading]:text-primary-foreground/0 [&_[data-spinner]]:bg-destructive/20 [&_[data-spinner]:before]:bg-destructive ',
         destructiveInverted:
           'bg-destructive text-primary hover:bg-destructive/80 ' +
           'data-[active=true]:bg-destructive/80 ' +
