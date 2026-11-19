@@ -138,14 +138,14 @@ const FEATURE_FLAGS = {
    * There is no API to wait for: articles live in the Sanity project
    * `getogen.com` already runs (schema: `studio/schemaTypes/helpArticle.ts` on
    * that repo's `alec/con-173-help-content`), and the app reads them from the
-   * public `production` dataset. Since 2026-11-19 the eleven starter articles
-   * are published there, the app's four origins are registered for CORS
-   * (without credentials), every deployed build reads it (`.env.production`),
-   * and the queries return exactly the fixtures' payload. What is missing:
-   * the Studio deployed with the help types (getogen.com's
-   * `alec/con-173-help-content`, so editors can open the articles), articles
-   * for the eight screens that have none, and a pass on app.dev with the flag
-   * forced. Then decide this flag's fate. See `docs/help-centre.md`.
+   * public `production` dataset. Since 2026-11-19 every screen has a
+   * published article there (first drafts, to be rewritten in the Studio),
+   * the app's four origins are registered for CORS (without credentials),
+   * every deployed build reads it (`.env.production`), and the queries return
+   * exactly the fixtures' payload. What is missing: the Studio deployed with
+   * the help types (getogen.com's `alec/con-173-help-content`, so editors can
+   * open the articles), and a pass on app.dev with the flag forced. Then
+   * decide this flag's fate. See `docs/help-centre.md`.
    */
   'help-center': false,
 

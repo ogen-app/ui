@@ -132,12 +132,12 @@ that repo's `alec/con-173-help-content`), read from the **public
 `production` dataset**, so everything published is world-readable. The read
 is `services/help/sanity.ts`, switched on by `VITE_SANITY_PROJECT_ID` in the
 committed `.env.production`, so every deployed build reads Sanity while
-`pnpm dev` and the tests serve `services/help/fixtures`. Since 2026-11-19 the
-eleven starter articles are published, the app's origins are registered for
-CORS (**without** credentials; localhost is not), and the queries return the
+`pnpm dev` and the tests serve `services/help/fixtures`. Since 2026-11-19
+every screen in `HELP_PAGES` has a published article (first drafts, to be
+rewritten in the Studio), the app's origins are registered for CORS
+(**without** credentials; localhost is not), and the queries return the
 fixtures' payload exactly. Still owed: the Studio deployed with the help types,
-articles for the eight screens without one, and a pass on app.dev with the
-flag forced. Three things to keep
+and a pass on app.dev with the flag forced. Three things to keep
 hold of. Help must **never** go through `services/api/http.ts` — Sanity is a
 third party, and the one bare `fetch` in `sanity.ts` omits credentials on
 purpose. An article is identified by a language-independent `key` and linked

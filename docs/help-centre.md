@@ -55,8 +55,11 @@ and are held to the Studio's rules by `services/help/help.test.ts`.
 
 The eleven starter articles were imported from those fixtures once, on
 2026-11-19, as `help-article-<key>` and `help-category-<key>` (published, in
-`production`). From then on the Studio is the source: an edit there is not
-copied back into the fixtures, and nothing should re-import over it.
+`production`), and the same day first drafts of the other eight screens'
+articles were published straight to Sanity, to be rewritten there — so the
+fixtures cover six screens and the dataset all fourteen. From then on the
+Studio is the source: an edit there is not copied back into the fixtures, and
+nothing should re-import over it.
 
 - `key` is the article's identity in every language, and what the app asks
   for. Never rename a published one. `slug` is only the website's URL.

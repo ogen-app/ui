@@ -30,8 +30,7 @@ export const HELP_TOPICS = [
 export type HelpTopic = (typeof HELP_TOPICS)[number]
 
 /**
- * Screens: each one has (or will have) a page article, which the header's help
- * button opens.
+ * Screens: each one has a page article, which Help in the top bar opens.
  *
  * **A screen is named for what it is, not for its level.** `ideas` is both
  * `/ideas` and `/campaigns/:id/ideas`, because the campaign level is the same
