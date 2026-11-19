@@ -9088,7 +9088,6 @@ export const en = {
     },
     /** The screen's own article, opened from Help in the top bar. */
     page: {
-      label: 'Help for this page',
       none: 'There’s no help for this page yet.',
     },
     /** A concept placed inside a page article, and the way to read it alone. */

@@ -121,13 +121,10 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
     >
       <Trail
         previousKey={previousKey}
-        // A page article's category is usually its own title
-        // ("Campaigns" over "Campaigns"), so it says where the article
-        // belongs instead: to the screen behind it.
+        // A page article is the screen's own, and its category is usually
+        // its own title ("Campaigns" over "Campaigns"), so it gets no line.
         category={
-          article?.kind === 'page'
-            ? t('help.page.label')
-            : article?.category.title
+          article?.kind === 'page' ? undefined : article?.category.title
         }
         onBack={back}
       />
@@ -171,12 +168,12 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
 }
 
 /**
- * The one line under the title: where you came from, or where you are.
+ * The line above the article: where you came from, or which category a
+ * concept is filed under. Nothing for the screen's own article.
  *
  * Back names the article it returns to instead of showing a bare arrow — in a
  * panel with no page transition, an unlabelled arrow gives the reader nothing
- * to predict. With no trail behind it the row falls back to the category, so
- * the header is the same height either way and the prose never jumps.
+ * to predict.
  */
 function Trail({
   previousKey,
@@ -202,9 +199,10 @@ function Trail({
       </button>
     )
   }
+  if (!category) return null
   return (
     <span className="text-tertiary-foreground truncate text-xs">
-      {category ?? ' '}
+      {category}
     </span>
   )
 }

@@ -7433,7 +7433,6 @@ export const es: Translation = {
       label: '¿Qué es esto?',
     },
     page: {
-      label: 'Ayuda sobre esta página',
       none: 'Todavía no hay ayuda para esta página.',
     },
     embed: {
