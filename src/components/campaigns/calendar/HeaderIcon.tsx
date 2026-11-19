@@ -20,19 +20,17 @@ export function HeaderIcon({ icon }: { icon: IconSvgElement }) {
 
 /**
  * `Calendar04Icon` with its body filled, for the unscheduled toggle while
- * posts wait: the free set has no solid weight. The rule under the rings is
- * drawn in the page's colour so the glyph keeps its header strip, as a solid
- * calendar does.
+ * posts wait: the free set has no solid weight. The rule under the rings goes
+ * — filled, the body is one block, and the count is centred in all of it
+ * rather than squeezed under a strip.
  */
-const CALENDAR_FILLED: IconSvgElement = Calendar04Icon.map(([tag, attrs]) => {
-  if (attrs.d === 'M3 10H21') {
-    return [tag, { ...attrs, stroke: 'var(--color-background)' }]
-  }
-  if (String(attrs.d).startsWith('M13 4H11')) {
-    return [tag, { ...attrs, fill: 'currentColor' }]
-  }
-  return [tag, attrs]
-}) as IconSvgElement
+const CALENDAR_FILLED: IconSvgElement = Calendar04Icon.filter(
+  ([, attrs]) => attrs.d !== 'M3 10H21',
+).map(([tag, attrs]) =>
+  String(attrs.d).startsWith('M13 4H11')
+    ? [tag, { ...attrs, fill: 'currentColor' }]
+    : [tag, attrs],
+) as IconSvgElement
 
 /**
  * The unscheduled toggle's calendar: filled while anything waits, outlined

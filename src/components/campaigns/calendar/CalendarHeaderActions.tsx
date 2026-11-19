@@ -107,9 +107,9 @@ function CalendarActions({
         <span className="relative flex size-[18px] shrink-0">
           <UnscheduledCalendarIcon filled={hasUnscheduled} />
           {hasUnscheduled && (
-            // Knocked out of the filled body in the page's colour; the 2px
-            // nudge centres it below the glyph's header strip.
-            <span className="absolute inset-0 flex translate-y-[2px] items-center justify-center text-[9px]/none font-semibold tabular-nums text-background">
+            // Knocked out of the filled body in the page's colour. The 1px
+            // nudge centres it on the body, which sits below the rings.
+            <span className="absolute inset-0 flex translate-y-[1px] items-center justify-center text-[10px]/none font-semibold tabular-nums text-background">
               {unscheduledCount}
             </span>
           )}
