@@ -8,10 +8,42 @@ import {
   SectionLink,
 } from '@/components/campaigns/overview/OverviewCard'
 import { useWorkspaceWarnings } from '@/hooks/useWorkspaceWarnings'
-import { counted, formatNumber } from '@/lib/intl'
+import { counted, formatList, formatNumber } from '@/lib/intl'
+import type { WorkspaceWarning } from '@/lib/workspaceWarnings'
 
 /** Rows shown before the rest fold behind SHOW MORE. */
 const SHOWN = 5
+
+type Row = WorkspaceWarning & { campaignNames: string[] }
+
+/**
+ * One row per problem, not per campaign it shows up in. A warning fixed in
+ * Workspace Settings — an inactive account, a channel with nothing connected —
+ * is about the workspace, and every campaign using that account reports it, so
+ * the same "Facebook's account is inactive" arrived once per campaign. Those
+ * fold into one row naming them all; one reconnect clears it everywhere. A
+ * warning fixed inside a campaign stays its own row, since its link goes there.
+ * The first occurrence keeps its place, so the list stays worst first.
+ */
+function mergeWorkspaceFixes(warnings: WorkspaceWarning[]): Row[] {
+  const rows: Row[] = []
+  const byProblem = new Map<string, Row>()
+  for (const w of warnings) {
+    const key =
+      w.item.fix === 'workspace-settings'
+        ? `${w.item.id}|${w.item.label}`
+        : null
+    const existing = key ? byProblem.get(key) : undefined
+    if (existing) {
+      existing.campaignNames.push(w.campaignName)
+      continue
+    }
+    const row = { ...w, campaignNames: [w.campaignName] }
+    rows.push(row)
+    if (key) byProblem.set(key, row)
+  }
+  return rows
+}
 
 /**
  * Activity's second column: what is wrong now, beside the record of what
@@ -37,8 +69,8 @@ export function NeedsYouCard() {
 
   if (isLoading) return null
 
-  const urgent = warnings.filter(
-    (w) => w.severity === 'alert' || w.severity === 'risk',
+  const urgent = mergeWorkspaceFixes(
+    warnings.filter((w) => w.severity === 'alert' || w.severity === 'risk'),
   )
 
   if (urgent.length === 0) {
@@ -82,7 +114,7 @@ export function NeedsYouCard() {
               label={w.item.label}
               // Several campaigns share this list, and the label is written
               // for a screen that is already inside one.
-              details={w.campaignName}
+              details={formatList(w.campaignNames)}
               trailing={
                 <span className="group-hover:text-primary-foreground">
                   {w.item.actionLabel}
