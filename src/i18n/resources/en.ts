@@ -5783,12 +5783,9 @@ export const en = {
       platformNoAccount: '{{platform}} — no account connected',
       platformAccountsLabel: '{{platform}}, {{accounts}}',
       platformNoAccountLabel: '{{platform}}, no account connected',
-      campaign: 'Campaign',
-      allCampaigns: 'All campaigns',
       control: {
         period: 'Period',
         platforms: 'Platforms',
-        campaign: 'Campaign',
       },
       assistantChanged: 'The assistant changed {{controls}}',
       otherCampaign: 'A campaign no longer listed',

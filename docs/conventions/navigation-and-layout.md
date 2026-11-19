@@ -180,9 +180,12 @@ keep it accurate when these rules change.
 
 - **A control in the corner says which cards it doesn't reach.** The
   top-right rule above says what *may* sit there, not that every view switch
-  must. Analytics' platforms, campaign and period are its header's actions
+  must. Analytics' platforms and period are its header's actions
   (`WorkspaceScopeBar`), and that header is pinned rather than scrolling
-  away, because it is what the page is steered with. The period does not
+  away, because it is what the page is steered with. Its campaign is the
+  switcher's like everywhere else — `/analytics?campaign_id=` redirects to
+  that campaign's Analytics — and one connected platform still shows its
+  mark, as a mark rather than a toggle. The period does not
   reach the all-time lessons card; what makes the corner safe anyway is that
   the cards answer back — `SectionCard`'s `scope` prints one line under the
   heading when the period does *not* reach it. A card silently ignoring a

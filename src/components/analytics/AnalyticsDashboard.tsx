@@ -21,23 +21,22 @@ import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { connectedAccounts } from '@/lib/platformDictionary.ts'
 import type { LearningsMetric, PerformerSort } from '@/types/analytics'
 import { useAssistantPage } from '@/hooks/useAssistantContext'
-import { useCampaigns } from '@/hooks/useCampaigns'
 import { searchPlatforms, type AnalyticsSearch } from '@/lib/analyticsSearch'
 
 /**
  * The analytics dashboard: what happened (CON-237), which posts did it
  * (CON-238), and what holds regardless (CON-239).
  *
- * One dashboard at both levels, because the campaign is a filter over it: the
- * workspace's page (`/analytics`) lets the reader pick the campaign in the
- * scope bar, and a campaign's Analytics tab is the same dashboard with the
- * campaign fixed by its address (`campaign`) and no picker. The overview and
+ * One dashboard at both levels, because the campaign is a filter over it, and
+ * that filter is the switcher's in the bar above: `/analytics` is every
+ * campaign, and a campaign's Analytics is the same dashboard with the campaign
+ * fixed by its address (`campaign`). The overview and
  * the board narrow to it on the server (`campaign_id`, CON-288); the lessons
  * card is the workspace's either way — the endpoint refuses a campaign — and
  * says so.
  *
  * **Controls in two places, because they are two different kinds of thing.**
- * The platforms, the campaign and the period are the page's, in its header
+ * The platforms and the period are the page's, in its header
  * (`WorkspaceScopeBar` as the header's actions). A card's own control sits in
  * that card's own header: the board chooses what "best" means, the lessons
  * card chooses what it mines on. Putting either up top would claim it governs
@@ -58,9 +57,9 @@ import { searchPlatforms, type AnalyticsSearch } from '@/lib/analyticsSearch'
  * follow-ups and sit side by side under it, stacking on a narrow page in that
  * order.
  *
- * The period, the platforms and — on the workspace's page — the campaign are
- * the address (CON-463), so the assistant can set them and a link carries
- * them; the page owns the address and hands it in.
+ * The period and the platforms are the address (CON-463), so the assistant can
+ * set them and a link carries them; the page owns the address and hands it
+ * in.
  */
 export function AnalyticsDashboard({
   title,
@@ -72,14 +71,14 @@ export function AnalyticsDashboard({
   title: string
   search: AnalyticsSearch
   onSearchChange: (next: AnalyticsSearch) => void
-  /** A campaign's tab: the campaign the dashboard is fixed to, with no picker. */
+  /** A campaign's Analytics: the campaign the dashboard is narrowed to. */
   campaign?: string
 }) {
   const range =
     search.from && search.to ? { from: search.from, to: search.to } : undefined
   const window = search.window ?? DEFAULT_OVERVIEW_WINDOW
   const period = range ?? { window }
-  const campaignId = campaign ?? search.campaign_id
+  const campaignId = campaign
   // Zernio's wire slugs, which since CON-292 are the one identifier both ends
   // understand: the dictionary that draws the marks is filed under them, and
   // all three reads narrow by them (CON-289). Empty is every platform, and is
@@ -92,9 +91,6 @@ export function AnalyticsDashboard({
     })
   const setWindow = (next: string) =>
     onSearchChange({ ...search, window: next, from: undefined, to: undefined })
-  const setCampaign = (next: string | undefined) =>
-    onSearchChange({ ...search, campaign_id: next })
-  const campaigns = useCampaigns().data ?? []
   // The board's own control, held here because it is a query parameter rather
   // than a view of what is already loaded — the server ranks and sends two
   // clamped ends, so re-ranking is a refetch.
@@ -206,13 +202,6 @@ export function AnalyticsDashboard({
             windows={OVERVIEW_WINDOWS}
             onWindowChange={setWindow}
             range={range}
-            {...(campaign
-              ? {}
-              : {
-                  campaigns: campaigns.map((c) => ({ id: c.id, name: c.name })),
-                  campaignId,
-                  onCampaignChange: setCampaign,
-                })}
           />
         }
       />

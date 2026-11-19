@@ -9,7 +9,7 @@ import { WorkspaceScopeBar } from './WorkspaceScopeBar'
  *
  * Worth testing rather than eyeballing because the states that matter are the
  * ones a developer's own workspace rarely has: one connected platform (where
- * the filter must not appear at all) and several (where any set of them can be
+ * the mark shows but is not a filter) and several (where any set of them can be
  * counted, and every one of them is the same state as none).
  */
 
@@ -46,7 +46,7 @@ const marks = () =>
   screen.queryAllByRole('button').filter((b) => b.hasAttribute('aria-pressed'))
 
 describe('WorkspaceScopeBar', () => {
-  it('offers no filter when there is nothing to filter', () => {
+  it('shows the one connected platform as a mark, not a filter', () => {
     setup({
       platforms: [
         { id: 'instagram', label: 'Instagram', accounts: 1 },
@@ -55,8 +55,10 @@ describe('WorkspaceScopeBar', () => {
     })
 
     // One connected platform means every state of the control shows the same
-    // numbers. The period survives, so the bar keeps its place either way.
+    // numbers, so there is nothing to press — but it is still named.
     expect(marks()).toHaveLength(0)
+    expect(screen.getByTitle(/Instagram/)).toBeInTheDocument()
+    expect(screen.queryByTitle(/LinkedIn/)).not.toBeInTheDocument()
     expect(screen.getByText('last 28 days')).toBeInTheDocument()
   })
 
@@ -167,26 +169,5 @@ describe('WorkspaceScopeBar', () => {
     expect(period.selectedOptions[0].textContent).toBe('Mar 1 – Mar 31')
     await userEvent.selectOptions(period, '7d')
     expect(onWindowChange).toHaveBeenCalledWith('7d')
-  })
-
-  it('narrows to a campaign, and back to the whole workspace', async () => {
-    const onCampaignChange = vi.fn()
-    setup({
-      campaigns: [{ id: 'c1', name: 'Spring reopening' }],
-      campaignId: 'c1',
-      onCampaignChange,
-    })
-    const campaign = screen.getByLabelText(/Campaign/) as HTMLSelectElement
-    expect(campaign.selectedOptions[0].textContent).toBe('Spring reopening')
-    await userEvent.selectOptions(campaign, 'all')
-    expect(onCampaignChange).toHaveBeenCalledWith(undefined)
-  })
-
-  it('keeps a campaign filter visible while there is no list to pick from', () => {
-    setup({ campaigns: [], campaignId: 'c1', onCampaignChange: vi.fn() })
-    const campaign = screen.getByLabelText(/Campaign/) as HTMLSelectElement
-    expect(campaign.selectedOptions[0].textContent).toBe(
-      'A campaign no longer listed',
-    )
   })
 })
