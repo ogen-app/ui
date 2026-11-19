@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
+  ArrowLeftIcon,
   ArrowUUpLeftIcon,
   CalendarPlusIcon,
   CalendarXIcon,
@@ -44,6 +45,8 @@ import type { PostStatus } from '@/types/posts'
 type Props = {
   campaignId: string
   postId: string
+  /** The title as typed, so the bar follows the field without a save. */
+  title: string
   status: PostStatus
   /** Autosave in flight — the pulsing cloud instead of the checkmark. */
   saving: boolean
@@ -71,10 +74,11 @@ type Props = {
  * The post's own bar, over the writing column and level with the side
  * column's tabs — the same 48px, so the two make one line across the page.
  *
- * On the left, where you are: back to the posts you came from, and the way to
- * the post before or after this one without going back. On the right, what
- * the post can do: its status, when it goes out, and the one move forward at
- * full strength, with the rest of its moves under the ⋮.
+ * On the left, where you are: back to the posts you came from, which post this
+ * is — by its title, since "Posts" said nothing the page did not — and the way
+ * to the post before or after it without going back. On the right, what the
+ * post can do: its status, when it goes out, the rest of its moves under the
+ * ⋮, and last, in the corner, the one move forward at full strength.
  *
  * Not in the bar over the page: that one is the app's (the campaign, Ask
  * Ogen), and a post's commit beside Ask Ogen fought it for the corner. Not at
@@ -84,6 +88,7 @@ type Props = {
 export function PostBar({
   campaignId,
   postId,
+  title,
   status,
   saving,
   buttons,
@@ -106,6 +111,7 @@ export function PostBar({
     <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-primary px-3 lg:px-6">
       <div className="flex min-w-0 items-center gap-1">
         <BackToPosts campaignId={campaignId} />
+        <PostTitle title={title} />
         <PostStepper campaignId={campaignId} postId={postId} />
         <SaveStatus saving={saving} />
       </div>
@@ -121,36 +127,12 @@ export function PostBar({
           className="text-sm text-primary-foreground"
         />
 
-        {primary ? (
-          <PrimaryAction
-            action={primary}
-            blocker={blocker}
-            pending={pending}
-            onBlocked={onBlocked}
-          />
-        ) : (
-          duplicate && (
-            <Button
-              type="button"
-              variant="defaultInverted"
-              size="sm"
-              className="h-8"
-              disabled={duplicate.running}
-              loading={duplicate.running}
-              onClick={duplicate.run}
-            >
-              <CopyIcon />
-              <span>{t('posts.duplicate.action')}</span>
-            </Button>
-          )
-        )}
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="ghost"
+              variant="outline"
               size="smIcon"
-              className="size-8"
+              className="size-8 border-border"
               aria-label={t('posts.editor.more')}
             >
               <DotsThreeVerticalIcon weight="bold" className="size-5" />
@@ -182,15 +164,42 @@ export function PostBar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {primary ? (
+          <PrimaryAction
+            action={primary}
+            blocker={blocker}
+            pending={pending}
+            onBlocked={onBlocked}
+          />
+        ) : (
+          duplicate && (
+            <Button
+              type="button"
+              variant="defaultInverted"
+              size="sm"
+              className="h-8"
+              disabled={duplicate.running}
+              loading={duplicate.running}
+              onClick={duplicate.run}
+            >
+              <CopyIcon />
+              <span>{t('posts.duplicate.action')}</span>
+            </Button>
+          )
+        )}
       </div>
     </div>
   )
 }
 
 /**
- * The one move forward, filled. When something blocks it the button still
- * presses — that opens Settings on the field to fix — and carries the warning
- * mark, with the reason on hover.
+ * The one move forward, filled, and always the last thing in the bar. When
+ * something blocks it the button still presses — that opens Settings on the
+ * field to fix — and carries the warning mark, with the reason on hover. The
+ * mark is drawn in the button's own ink: the orange is too dark to read on
+ * the black fill, and an orange button would be white text on orange, which
+ * is not legible either.
  */
 function PrimaryAction({
   action,
@@ -218,11 +227,7 @@ function PrimaryAction({
       aria-disabled={blocker ? true : undefined}
       onClick={() => runOrReport(action, onBlocked)}
     >
-      {blocker ? (
-        <WarningCircleIcon weight="fill" className="text-warning" />
-      ) : (
-        iconFor(action)
-      )}
+      {blocker ? <WarningCircleIcon weight="fill" /> : iconFor(action)}
       <span>{action.buttonLabel}</span>
     </Button>
   )
@@ -238,8 +243,8 @@ function PrimaryAction({
 }
 
 /**
- * "Posts", pointed at wherever the user was last reading this campaign's
- * posts — the week or month they had navigated to, or the table.
+ * ← back to wherever the user was last reading this campaign's posts — the
+ * week or month they had navigated to, or the table.
  *
  * Two branches because that is two different routes, and a `<Link>` gets its
  * param types from a literal `to`. A real anchor rather than `history.back()`,
@@ -250,24 +255,54 @@ function BackToPosts({ campaignId }: { campaignId: string }) {
   const { t } = useTranslation()
   const place = usePostsPlace(campaignId)
   const className =
-    'rounded-button px-1 text-sm font-medium text-primary-foreground outline-none hover:text-secondary-foreground focus-visible:ring-2 focus-visible:ring-ring'
-  const label = t('nav.campaign.posts')
-  return place.view === 'list' ? (
-    <Link
-      to="/campaigns/$campaignId/list"
-      params={{ campaignId }}
-      className={className}
+    'flex size-8 shrink-0 items-center justify-center rounded-button text-secondary-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring'
+  const label = t('posts.editor.back')
+  const icon = <ArrowLeftIcon className="size-4" />
+  const link =
+    place.view === 'list' ? (
+      <Link
+        to="/campaigns/$campaignId/list"
+        params={{ campaignId }}
+        aria-label={label}
+        className={className}
+      >
+        {icon}
+      </Link>
+    ) : (
+      <Link
+        to="/campaigns/$campaignId/calendar/$anchor/$view"
+        params={{ campaignId, anchor: place.anchor, view: place.view }}
+        aria-label={label}
+        className={className}
+      >
+        {icon}
+      </Link>
+    )
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+/**
+ * Which post this is, cut to one line. The field below is the one to edit it
+ * in; this is the name to recognise it by while the field is scrolled away.
+ */
+function PostTitle({ title }: { title: string }) {
+  const { t } = useTranslation()
+  const text = title.trim()
+  return (
+    <span
+      className={cn(
+        'min-w-0 truncate px-1 text-sm font-medium',
+        text ? 'text-primary-foreground' : 'text-tertiary-foreground',
+      )}
+      title={text || undefined}
     >
-      {label}
-    </Link>
-  ) : (
-    <Link
-      to="/campaigns/$campaignId/calendar/$anchor/$view"
-      params={{ campaignId, anchor: place.anchor, view: place.view }}
-      className={className}
-    >
-      {label}
-    </Link>
+      {text || t('posts.editor.untitled')}
+    </span>
   )
 }
 

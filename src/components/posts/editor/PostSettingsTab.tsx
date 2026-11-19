@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { FlagIcon } from '@phosphor-icons/react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TextSelect } from '@/components/ui/text-select'
 import { PostBrandSection } from '@/components/brand/PostBrandSection'
@@ -24,6 +25,7 @@ import { AccountSlot } from '../quickBar/AccountSlot'
 import { PlatformPicker, PostTypePicker } from '../quickBar/ChannelPickers'
 import { PublishMethodPicker } from '../quickBar/PublishMethodPicker'
 import { SchedulingDetails } from '../quickBar/SchedulingLine'
+import { Mark, SettingRow as Row } from '../quickBar/parts'
 import { awaiting } from '@/lib/fetched'
 
 type Props = {
@@ -65,11 +67,16 @@ const FRESH_MS = 500
  * fields that decide whether it can be published at all, which is why the tab
  * carries a mark while any of them blocks that (`PostSideColumn`).
  *
- * One labelled row per decision, every one of them editable in place and
- * autosaving through `changeDoc`. The pickers only offer what the campaign
- * allows, plus a deselect option, and a field that blocks publishing says so
- * on its own row. Below them, the three inputs to writing it that are not
- * about publishing: the campaign phase, the voice and audience, the format.
+ * One list, one labelled row per decision, every one of them editable in place
+ * and autosaving through `changeDoc`. Each value starts with a 16px mark — the
+ * platform's logo, the account's picture, an icon, or the warning standing in
+ * for a value that is missing — so every row's text starts at the same x. The
+ * pickers only offer what the campaign allows, plus a deselect option, and a
+ * field that blocks publishing says so with that warning on its own row.
+ *
+ * Above the rule, where and when it goes out. Below it, the inputs to writing
+ * it that are not about publishing: the campaign phase, the voice and
+ * audience, the format.
  *
  * Each control's own behaviour lives in `quickBar/`, which is what this tab
  * was before it was a tab — a two-line bar above the post.
@@ -230,7 +237,7 @@ export function PostSettingsTab({
           flashing && 'animate-attention',
         )}
       >
-        <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-3 text-sm">
+        <dl className={LIST}>
           <Row label={t('posts.editor.settings.platform')}>
             <PlatformPicker
               platform={platform}
@@ -298,8 +305,14 @@ export function PostSettingsTab({
               )}
             </Row>
           )}
+        </dl>
+
+        <dl className={cn(LIST, 'border-t border-border pt-5')}>
           {phases.length > 0 && (
             <Row label={t('posts.editor.settings.phase')}>
+              <Mark>
+                <FlagIcon />
+              </Mark>
               <TextSelect
                 variant="inline"
                 size="sm"
@@ -311,52 +324,21 @@ export function PostSettingsTab({
               />
             </Row>
           )}
-        </dl>
-
-        <Section title={t('posts.editor.settings.voice')}>
           <PostBrandSection post={doc} />
-        </Section>
-
-        {formatsEnabled && (
-          <Section title={t('posts.editor.settings.format')}>
+          {formatsEnabled && (
             <PostFormatSection post={doc} changeDoc={changeDoc} />
-          </Section>
-        )}
+          )}
+        </dl>
       </div>
     </div>
   )
 }
 
-function Row({
-  label,
-  help,
-  children,
-}: {
-  label: string
-  help?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <>
-      <dt className="flex items-center gap-1 text-tertiary-foreground">
-        {label}
-        {help}
-      </dt>
-      <dd className="flex min-w-0 items-center">{children}</dd>
-    </>
-  )
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2 border-t border-border pt-5">
-      <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
-        {title}
-      </h3>
-      {children}
-    </section>
-  )
-}
+/**
+ * The two lists' grid: the labels' column, then the values'. Shared so the
+ * values below the rule start where the ones above it do.
+ */
+const LIST = 'grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm'
 
 /**
  * Stands in for a platform with no connected post types — a shared frozen

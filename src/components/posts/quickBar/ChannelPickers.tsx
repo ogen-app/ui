@@ -1,4 +1,8 @@
-import { CaretDownIcon } from '@phosphor-icons/react'
+import {
+  CaretDownIcon,
+  CircleDashedIcon,
+  SquaresFourIcon,
+} from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import {
   DropdownMenu,
@@ -13,7 +17,7 @@ import type {
 } from '@/lib/platformDictionary'
 import { getPostTypeLabel } from '@/lib/platformDictionary'
 import { cn } from '@/lib'
-import { InfoRow, QuickBarTrigger, WarningHint } from './parts'
+import { InfoRow, Mark, Marked, QuickBarTrigger, WarningHint } from './parts'
 
 /**
  * Where this post goes, and as what.
@@ -56,36 +60,38 @@ export function PlatformPicker({
   const { t } = useTranslation()
 
   if (readOnly) {
-    return (
-      <span className="flex min-w-0 items-center gap-1.5">
-        {platform ? (
-          <>
-            <platform.icon size={16} weight="fill" color={platform.color} />
-            <span className="truncate">{platform.name}</span>
-          </>
-        ) : (
-          // No warning glyph: on a locked post there is nothing to fix, so the
-          // absence is reported the way the calendar card reports it.
-          <span className="truncate text-tertiary-foreground">
-            {t('posts.noPlatform')}
-          </span>
-        )}
-      </span>
+    return platform ? (
+      <Marked
+        mark={<platform.icon size={16} weight="fill" color={platform.color} />}
+      >
+        {platform.name}
+      </Marked>
+    ) : (
+      // No warning glyph: on a locked post there is nothing to fix, so the
+      // absence is reported the way the calendar card reports it.
+      <Marked mark={<CircleDashedIcon />} className="text-tertiary-foreground">
+        {t('posts.noPlatform')}
+      </Marked>
     )
   }
 
   return (
     <DropdownMenu>
-      <QuickBarTrigger label="Change platform" disabled={disabled}>
+      <QuickBarTrigger
+        label={t('posts.editor.settings.platformChange')}
+        disabled={disabled}
+      >
         {platform ? (
           <>
-            <platform.icon size={16} weight="fill" color={platform.color} />
+            <Mark>
+              <platform.icon size={16} weight="fill" color={platform.color} />
+            </Mark>
             <span>{platform.name}</span>
           </>
         ) : (
           <>
-            <WarningHint text="Pick the platform this post publishes to — it decides the available post types and the publishing account." />
-            <span>Select platform</span>
+            <WarningHint text={t('posts.editor.settings.platformPickHint')} />
+            <span>{t('posts.editor.settings.platformPick')}</span>
           </>
         )}
         <CaretDownIcon className="size-3 text-tertiary-foreground" />
@@ -104,13 +110,13 @@ export function PlatformPicker({
           </DropdownMenuItem>
         ))}
         {platforms.length === 0 && (
-          <InfoRow>No platforms on this campaign</InfoRow>
+          <InfoRow>{t('posts.editor.settings.platformNone')}</InfoRow>
         )}
         {platform && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => onSelect('')}>
-              <span>Deselect platform</span>
+              <span>{t('posts.editor.settings.platformDeselect')}</span>
             </DropdownMenuItem>
           </>
         )}
@@ -191,31 +197,45 @@ export function PostTypePicker({
 
   if (readOnly) {
     return (
-      <span className="truncate">
-        {selected ? (
-          getPostTypeLabel(platform, selected)
-        ) : (
-          <span className="text-tertiary-foreground">
-            {t('posts.noPostType')}
-          </span>
-        )}
-      </span>
+      <Marked
+        mark={<SquaresFourIcon />}
+        className={cn(!selected && 'text-tertiary-foreground')}
+      >
+        {selected
+          ? getPostTypeLabel(platform, selected)
+          : t('posts.noPostType')}
+      </Marked>
     )
   }
 
   return (
     <DropdownMenu>
-      <QuickBarTrigger label="Change post type" disabled={disabled}>
+      <QuickBarTrigger
+        label={t('posts.editor.settings.postTypeChange')}
+        disabled={disabled}
+      >
         {automatic ? (
-          <AutoLabel platform={platform} resolved={resolved ?? ''} />
+          <>
+            <Mark>
+              <SquaresFourIcon />
+            </Mark>
+            <AutoLabel platform={platform} resolved={resolved ?? ''} />
+          </>
         ) : selected ? (
-          <span>{getPostTypeLabel(platform, selected)}</span>
+          <>
+            <Mark>
+              <SquaresFourIcon />
+            </Mark>
+            <span>{getPostTypeLabel(platform, selected)}</span>
+          </>
         ) : (
           <>
             <WarningHint
-              text={`Pick the ${platform.name} post type — it sets the format this post publishes as.`}
+              text={t('posts.editor.settings.postTypePickHint', {
+                platform: platform.name,
+              })}
             />
-            <span>Select post type</span>
+            <span>{t('posts.editor.settings.postTypePick')}</span>
           </>
         )}
         <CaretDownIcon className="size-3 text-tertiary-foreground" />
@@ -234,23 +254,26 @@ export function PostTypePicker({
             <DropdownMenuSeparator />
           </>
         )}
-        {types.map((t) => (
-          <DropdownMenuItem key={t.slug} onSelect={() => onSelect(t.slug)}>
-            <span className={cn(t.slug === selected && 'font-medium')}>
-              {t.label}
+        {types.map((type) => (
+          <DropdownMenuItem
+            key={type.slug}
+            onSelect={() => onSelect(type.slug)}
+          >
+            <span className={cn(type.slug === selected && 'font-medium')}>
+              {type.label}
             </span>
             {/* Still offered: a campaign may plan for a type before the
                 account that publishes it is connected. The note is what keeps
                 that from looking like a working choice. */}
-            {!connectedSlugs.has(t.slug) && (
+            {!connectedSlugs.has(type.slug) && (
               <span className="ml-auto pl-4 text-xs text-tertiary-foreground">
-                Not connected
+                {t('posts.editor.settings.notConnected')}
               </span>
             )}
           </DropdownMenuItem>
         ))}
         {types.length === 0 && (
-          <InfoRow>No post types on this campaign</InfoRow>
+          <InfoRow>{t('posts.editor.settings.postTypeNone')}</InfoRow>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

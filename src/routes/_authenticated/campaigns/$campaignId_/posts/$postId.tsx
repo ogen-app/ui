@@ -808,6 +808,7 @@ function PostEditorSurface({
           <PostBar
             campaignId={campaignId}
             postId={doc.id}
+            title={titleDraft}
             status={doc.status}
             saving={saving}
             buttons={buttons}

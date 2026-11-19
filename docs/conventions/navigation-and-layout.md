@@ -163,11 +163,16 @@ keep it accurate when these rules change.
   using one leave `PAGE_ACTION_BAR_INSET` at the bottom of their content.
   **The post is the exception.** Its editor is a writing column beside a
   column of tabs (`PostSideColumn`), and its commit sits in its own 48px bar
-  over the writing column (`PostBar`), level with the tab strip: the way back
-  and ‹ n of N › on the left; publish timing, status, the one move forward and
-  a ⋮ for the rest on the right. Not in the bar over the page — that one is
-  the app's, and a post's SCHEDULE beside Ask Ogen fought it for the corner —
-  and not floating at the foot of the page over a fade.
+  over the writing column (`PostBar`), level with the tab strip: ←, the post's
+  title (never a bare "Posts", which said nothing) and ‹ n of N › on the left;
+  publish timing, status, a bordered ⋮ for the rest, and the one move forward
+  last, in the corner, on the right. Not in the bar over the page — that one
+  is the app's, and a post's SCHEDULE beside Ask Ogen fought it for the
+  corner — and not floating at the foot of the page over a fade. The tabs are
+  an icon over a one-word name: icon-only hid Notes and Quality from everyone
+  who did not hover. In the Settings tab every value starts with a 16px mark
+  (logo, picture, icon, or the warning in its place) so the column of values
+  reads straight down.
 
 - **A control that doesn't govern the whole page doesn't go in the corner.**
   The top-right rule above says what *may* sit there, not that every view

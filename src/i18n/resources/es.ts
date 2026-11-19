@@ -1336,8 +1336,6 @@ export const es: Translation = {
 
   formats: {
     none: 'Sin forma',
-    postHint:
-      'Opcional. Qué forma toma esta publicación, aparte del tipo de publicación de la plataforma.',
     'how-to': {
       label: 'Cómo se hace',
       hint: 'Pasos que alguien puede seguir para obtener un resultado.',
@@ -5085,6 +5083,8 @@ export const es: Translation = {
 
     editor: {
       titlePlaceholder: 'Título',
+      untitled: 'Publicación sin título',
+      back: 'Volver a las publicaciones',
       more: 'Más acciones',
       downloadMarkdown: 'Descargar como Markdown',
       delete: 'ELIMINAR PUBLICACIÓN',
@@ -5094,8 +5094,8 @@ export const es: Translation = {
       tabs: {
         label: 'Sobre esta publicación',
         settings: 'Ajustes',
-        preview: 'Vista previa',
-        checks: 'Comprobaciones',
+        preview: 'Vista',
+        checks: 'Revisión',
         quality: 'Calidad',
         sources: 'Fuentes',
         notes: 'Notas',
@@ -5111,8 +5111,65 @@ export const es: Translation = {
         publishing: 'Publicación',
         phase: 'Fase',
         noPhase: 'Sin fase',
-        voice: 'Voz y audiencia',
         format: 'Formato',
+        platformChange: 'Cambiar de plataforma',
+        platformPick: 'Elegir plataforma',
+        platformPickHint:
+          'Elige la plataforma en la que se publica: decide los tipos de publicación disponibles y la cuenta que publica.',
+        platformNone: 'Esta campaña no tiene plataformas',
+        platformDeselect: 'Quitar la plataforma',
+        postTypeChange: 'Cambiar el tipo de publicación',
+        postTypePick: 'Elegir tipo de publicación',
+        postTypePickHint:
+          'Elige el tipo de publicación de {{platform}}: fija el formato con el que se publica.',
+        postTypeNone: 'Esta campaña no tiene tipos de publicación',
+        notConnected: 'Sin conectar',
+        accountChange: 'Cambiar la cuenta con la que se publica',
+        accountNone: 'Ninguna cuenta conectada',
+        accountNoneHint:
+          'No hay ninguna cuenta de {{platform}} conectada, así que nada puede publicar esta publicación. Conecta una en los ajustes de plataformas.',
+        accountNotRecorded: 'Cuenta sin registrar',
+        accountDisconnected: '{{name}}: desconectada',
+        accountDisconnectedUnnamed: 'Cuenta desconectada',
+        accountGoneHint:
+          '{{name}} ya no está conectada a {{platform}}, así que esta publicación no puede salir con ella. Elige otra cuenta.',
+        accountGoneHintUnnamed:
+          'La cuenta con la que se publica ya no está conectada a {{platform}}. Elige otra.',
+        accountPick: 'Elegir cuenta',
+        accountPickHint_one:
+          'Este espacio de trabajo tiene {{count}} cuenta de {{platform}} conectada: elige con cuál se publica.',
+        accountPickHint_other:
+          'Este espacio de trabajo tiene {{count}} cuentas de {{platform}} conectadas: elige con cuál se publica.',
+        methodChange: 'Cambiar cómo se publica',
+        methodNotAllowed:
+          'No está permitido para {{platform}} en este espacio de trabajo: cámbialo en los ajustes del espacio de trabajo.',
+        methodNotAllowedUnnamed:
+          'No está permitido para esta plataforma en este espacio de trabajo: cámbialo en los ajustes del espacio de trabajo.',
+        methodNoAccount:
+          'No hay ninguna cuenta de {{platform}} conectada: se quedará en un recordatorio.',
+        methodNoAccountUnnamed:
+          'No hay ninguna cuenta para publicar conectada: se quedará en un recordatorio.',
+      },
+      schedule: {
+        setDate: 'Fijar la fecha de publicación',
+        pickDate: 'Elegir fecha de publicación',
+        time: 'Hora de publicación',
+        noDateHint:
+          'Esta publicación no tiene fecha, así que no se puede programar. Elige una fecha y una hora.',
+        pastHint:
+          'La fecha de publicación ya ha pasado. Para programarla hace falta una fecha futura: elige otra.',
+        unscheduling: 'Desprogramando…',
+        noDate: 'Sin fecha de publicación',
+        autoAt: 'Se publica sola el {{when}}',
+        manualAt: 'Publicación manual: aviso el {{when}}',
+        publishedAt: 'Publicada el {{when}}',
+        published: 'Publicada',
+        failedAt: 'No se pudo publicar: estaba programada para el {{when}}',
+        failed: 'No se pudo publicar',
+        notPublishedAt: 'Sin publicar: estaba prevista para el {{when}}',
+        notPublished: 'Sin publicar',
+        plannedAt: 'Prevista para el {{when}}',
+        notScheduled: 'Aún sin programar',
       },
       checks: {
         notAssessed: 'Aún sin evaluar.',

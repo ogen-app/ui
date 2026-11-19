@@ -1590,8 +1590,6 @@ export const en = {
    */
   formats: {
     none: 'No format',
-    postHint:
-      'Optional. What shape this post takes — separate from the platform’s post type.',
     'how-to': {
       label: 'How-to',
       hint: 'Steps somebody can follow and get a result.',
@@ -5886,6 +5884,9 @@ export const en = {
      */
     editor: {
       titlePlaceholder: 'Title',
+      /** The post's bar names it by its title; this when it has none. */
+      untitled: 'Post with no title',
+      back: 'Back to posts',
       more: 'More actions',
       downloadMarkdown: 'Download as Markdown',
       delete: 'DELETE POST',
@@ -5914,8 +5915,67 @@ export const en = {
         publishing: 'Publishing',
         phase: 'Phase',
         noPhase: 'No phase',
-        voice: 'Voice & audience',
         format: 'Format',
+        platformChange: 'Change platform',
+        platformPick: 'Select platform',
+        platformPickHint:
+          'Pick the platform this post publishes to — it decides the available post types and the publishing account.',
+        platformNone: 'No platforms on this campaign',
+        platformDeselect: 'Deselect platform',
+        postTypeChange: 'Change post type',
+        postTypePick: 'Select post type',
+        postTypePickHint:
+          'Pick the {{platform}} post type — it sets the format this post publishes as.',
+        postTypeNone: 'No post types on this campaign',
+        /** A post type the campaign plans for, with no account to publish it. */
+        notConnected: 'Not connected',
+        accountChange: 'Change the account this post publishes as',
+        accountNone: 'No account connected',
+        accountNoneHint:
+          'No {{platform}} account is connected, so nothing can publish this post. Connect one in Platform settings.',
+        accountNotRecorded: 'Account not recorded',
+        accountDisconnected: '{{name}} — disconnected',
+        accountDisconnectedUnnamed: 'Account disconnected',
+        accountGoneHint:
+          '{{name}} is no longer connected to {{platform}}, so this post can’t publish as it. Pick another account.',
+        accountGoneHintUnnamed:
+          'The account this post publishes as is no longer connected to {{platform}}. Pick another one.',
+        accountPick: 'Select account',
+        accountPickHint_one:
+          'This workspace has {{count}} {{platform}} account connected — pick the one this post publishes as.',
+        accountPickHint_other:
+          'This workspace has {{count}} {{platform}} accounts connected — pick the one this post publishes as.',
+        methodChange: 'Change how this post publishes',
+        methodNotAllowed:
+          'Not allowed for {{platform}} in this workspace — change it in Workspace Settings.',
+        methodNotAllowedUnnamed:
+          'Not allowed for this platform in this workspace — change it in Workspace Settings.',
+        methodNoAccount:
+          'No {{platform}} account is connected — this will fall back to a reminder.',
+        methodNoAccountUnnamed:
+          'No publishing account is connected — this will fall back to a reminder.',
+      },
+      /** The Settings tab's date row, and what it says once it is history. */
+      schedule: {
+        setDate: 'Set publish date',
+        pickDate: 'Select publish date',
+        time: 'Publish time',
+        noDateHint:
+          'This post has no publish date, so it can’t be scheduled. Pick a date and time to publish it.',
+        pastHint:
+          'The publish date is in the past. Scheduling needs a date in the future — pick a new one.',
+        unscheduling: 'Unscheduling…',
+        noDate: 'No publish date set',
+        autoAt: 'Auto-publishes {{when}}',
+        manualAt: 'Manual publish — reminder {{when}}',
+        publishedAt: 'Published {{when}}',
+        published: 'Published',
+        failedAt: 'Publish failed — was scheduled for {{when}}',
+        failed: 'Publish failed',
+        notPublishedAt: 'Not published — was planned for {{when}}',
+        notPublished: 'Not published',
+        plannedAt: 'Planned for {{when}}',
+        notScheduled: 'Not scheduled yet',
       },
       checks: {
         notAssessed: 'Not assessed yet.',

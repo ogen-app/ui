@@ -10,11 +10,6 @@ import {
   NotePencilIcon,
   type Icon,
 } from '@phosphor-icons/react'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { RailPanelEmbeddedProvider } from '@/components/page-primitives/RailPanel'
 import { POST_TABS, type PostTab } from '@/lib/postTabs'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -68,7 +63,7 @@ export function PostSideColumn({
       <div
         role="tablist"
         aria-label={t('posts.editor.tabs.label')}
-        className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3 lg:px-6"
+        className="grid h-12 shrink-0 grid-cols-7 items-center gap-0.5 border-b border-border px-2"
       >
         {POST_TABS.map((id) => (
           <TabButton
@@ -94,9 +89,10 @@ export function PostSideColumn({
 }
 
 /**
- * Icon-only, open or closed, with the name on hover and read aloud. The open
- * tab says what it is by its filled icon and its panel's own content — a
- * printed name only pushed the strip wider than the column.
+ * An icon over its name, small. Icon-only hid half the column: nobody goes
+ * looking for Notes or Quality behind a glyph they have to hover to read. The
+ * names are one short word each, so seven fit across the column at 12px and
+ * the strip stays the 48px of the post's bar beside it.
  */
 function TabButton({
   id,
@@ -118,7 +114,7 @@ function TabButton({
     ? t('posts.editor.tabs.withWarnings', { label, count: warn })
     : label
 
-  const button = (
+  return (
     <button
       type="button"
       role="tab"
@@ -126,29 +122,28 @@ function TabButton({
       aria-selected={selected}
       aria-controls={`post-tab-${id}`}
       aria-label={name}
+      title={name}
       onClick={onSelect}
       className={cn(
-        'relative flex size-9 shrink-0 items-center justify-center rounded-button text-sm outline-none transition-colors',
+        'relative flex h-10 min-w-0 flex-col items-center justify-center gap-0.5 rounded-button outline-none transition-colors',
         'focus-visible:ring-2 focus-visible:ring-ring',
         selected
           ? 'bg-secondary text-foreground'
           : 'text-tertiary-foreground hover:bg-secondary hover:text-foreground',
       )}
     >
-      <Glyph weight={selected ? 'fill' : 'regular'} className="size-5" />
-      {warn > 0 && (
-        <span
-          aria-hidden
-          className="absolute top-1 right-1 size-2 rounded-full bg-warning ring-2 ring-primary"
-        />
-      )}
+      <span className="relative flex">
+        <Glyph weight={selected ? 'fill' : 'regular'} className="size-4" />
+        {warn > 0 && (
+          <span
+            aria-hidden
+            className="absolute -top-0.5 -right-1 size-2 rounded-full bg-warning ring-2 ring-primary"
+          />
+        )}
+      </span>
+      <span className="max-w-full truncate px-0.5 text-[11px]/3.5">
+        {label}
+      </span>
     </button>
-  )
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent side="bottom">{name}</TooltipContent>
-    </Tooltip>
   )
 }
