@@ -1,14 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { CalendarBlankIcon, GearSixIcon } from '@phosphor-icons/react'
+import { Settings01Icon } from '@hugeicons/core-free-icons'
+import { HeaderIcon, UnscheduledCalendarIcon } from './HeaderIcon'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useCampaignPosts, useWorkspacePosts } from '@/hooks/usePosts'
 import type { Post } from '@/types/posts'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
-
-/** Every icon in the calendar's header row: 18px, regular weight. Kept in step with `CalendarHeader`'s. */
-const HEADER_ICON = 'size-[18px]'
 
 /**
  * The campaign calendar's header icons — the counter is that campaign's.
@@ -96,10 +94,7 @@ function CalendarActions({
         aria-label={t('calendar.settings')}
         aria-pressed={settingsActive}
       >
-        <GearSixIcon
-          weight={settingsActive ? 'fill' : 'regular'}
-          className={HEADER_ICON}
-        />
+        <HeaderIcon icon={Settings01Icon} />
       </Button>
       <Button
         variant="headerIcon"
@@ -110,22 +105,11 @@ function CalendarActions({
         aria-pressed={unscheduledActive}
       >
         <span className="relative flex size-[18px] shrink-0">
-          {/* Outlined like every other icon in the row, and filled only while
-              its panel is open — as the gear is. */}
-          <CalendarBlankIcon
-            weight={unscheduledActive ? 'fill' : 'regular'}
-            className={HEADER_ICON}
-          />
+          <UnscheduledCalendarIcon filled={hasUnscheduled} />
           {hasUnscheduled && (
-            // Inside the glyph's body: in the icon's own colour on the
-            // outline, knocked out in the page's when filled. The 2px nudge
-            // centres it below the header strip of the glyph.
-            <span
-              className={cn(
-                'absolute inset-0 flex translate-y-[2px] items-center justify-center text-[9px]/none font-semibold tabular-nums',
-                unscheduledActive ? 'text-background' : 'text-current',
-              )}
-            >
+            // Knocked out of the filled body in the page's colour; the 2px
+            // nudge centres it below the glyph's header strip.
+            <span className="absolute inset-0 flex translate-y-[2px] items-center justify-center text-[9px]/none font-semibold tabular-nums text-background">
               {unscheduledCount}
             </span>
           )}

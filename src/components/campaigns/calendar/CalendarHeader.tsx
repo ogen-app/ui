@@ -1,12 +1,13 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
-  CalendarDotIcon,
-  CalendarDotsIcon,
-  CaretLeftIcon,
-  CaretRightIcon,
-  PlusIcon,
-} from '@phosphor-icons/react'
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  Calendar02Icon,
+  Calendar03Icon,
+  PlusSignIcon,
+} from '@hugeicons/core-free-icons'
+import { HeaderIcon } from './HeaderIcon'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -33,9 +34,6 @@ import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 
 type Granularity = 'week' | 'month'
-
-/** Every icon in the row: 18px, regular weight, as `CalendarHeaderActions` draws its own. */
-const HEADER_ICON = 'size-[18px]'
 
 function formatWeekRange(weekStart: Date, locale: string): string {
   const weekEnd = addDays(weekStart, 6)
@@ -109,8 +107,9 @@ export function CalendarHeader({
 
   // Built per render so the names come from whichever language is loaded now.
   const views = [
-    { value: 'week', Icon: CalendarDotIcon, label: t('calendar.viewWeek') },
-    { value: 'month', Icon: CalendarDotsIcon, label: t('calendar.viewMonth') },
+    // A week's rows, a month's grid of days.
+    { value: 'week', icon: Calendar02Icon, label: t('calendar.viewWeek') },
+    { value: 'month', icon: Calendar03Icon, label: t('calendar.viewMonth') },
   ] as const
 
   /** One step of whatever the view shows — a week, or a month. */
@@ -154,7 +153,7 @@ export function CalendarHeader({
                 // screen-reader user.
                 aria-keyshortcuts="ArrowLeft"
               >
-                <CaretLeftIcon className={HEADER_ICON} />
+                <HeaderIcon icon={ArrowLeft01Icon} />
               </Button>
               <Button
                 variant="default"
@@ -172,7 +171,7 @@ export function CalendarHeader({
                 )}
                 aria-keyshortcuts="ArrowRight"
               >
-                <CaretRightIcon className={HEADER_ICON} />
+                <HeaderIcon icon={ArrowRight01Icon} />
               </Button>
             </div>
             <Tabs value={view}>
@@ -181,7 +180,7 @@ export function CalendarHeader({
                 size="excluded"
                 className="h-8 gap-0.5 p-0.5"
               >
-                {views.map(({ value, Icon, label }) => (
+                {views.map(({ value, icon, label }) => (
                   <Tooltip key={value}>
                     {/* The span is the tooltip's trigger, not the tab: both
                         primitives write `data-state`, and merged onto one
@@ -198,7 +197,7 @@ export function CalendarHeader({
                           onClick={() => handleViewSelect(value)}
                           className="h-7 w-7"
                         >
-                          <Icon className={HEADER_ICON} />
+                          <HeaderIcon icon={icon} />
                         </TabsTrigger>
                       </span>
                     </TooltipTrigger>
@@ -213,7 +212,7 @@ export function CalendarHeader({
                 size="sm"
                 onClick={gate.intent(() => addPost())}
               >
-                <PlusIcon />
+                <HeaderIcon icon={PlusSignIcon} />
                 <span>{t('calendar.addPost')}</span>
               </Button>
             )}
