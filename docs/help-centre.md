@@ -48,9 +48,15 @@ The list is `HELP_PAGES` in `src/lib/helpTopics.ts`. Wiring a new screen:
 ## Writing
 
 Articles are Studio-owned in Sanity — never seeded from `content/`, whose
-re-seed would overwrite Studio edits. While `VITE_SANITY_PROJECT_ID` is unset
-the app serves `src/services/help/fixtures` instead, which are the same payload
+re-seed would overwrite Studio edits. Deployed builds read them
+(`.env.production`); `pnpm dev` and the tests, with `VITE_SANITY_PROJECT_ID`
+unset, serve `src/services/help/fixtures` instead, which are the same payload
 and are held to the Studio's rules by `services/help/help.test.ts`.
+
+The eleven starter articles were imported from those fixtures once, on
+2026-11-19, as `help-article-<key>` and `help-category-<key>` (published, in
+`production`). From then on the Studio is the source: an edit there is not
+copied back into the fixtures, and nothing should re-import over it.
 
 - `key` is the article's identity in every language, and what the app asks
   for. Never rename a published one. `slug` is only the website's URL.

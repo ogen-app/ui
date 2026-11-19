@@ -12,9 +12,10 @@ import type { HelpArticle, HelpIndexRow } from '@/types/help'
  * schema is the source of truth and these are a typed copy of its shape, not
  * a shared package — two queries do not justify a cross-repo release.
  *
- * Only reached when `VITE_SANITY_PROJECT_ID` is set. Without it the service
- * serves fixtures, which is every environment today: the public `production`
- * dataset has no help articles in it yet.
+ * Only reached when `VITE_SANITY_PROJECT_ID` is set, which the committed
+ * `.env.production` does for every deployed build. `pnpm dev` and the tests
+ * leave it unset and serve the fixtures — the same payload, checked against
+ * the live dataset when the articles were first published (2026-11-19).
  */
 
 const API_VERSION = 'v2025-02-19'
@@ -40,8 +41,14 @@ const localised = (type: string, keyExpr: string, extra = '') =>
   `*[_type == "${type}" && key == ${keyExpr} && ${LANG} in [$lang, "en"]${extra}]` +
   ` | order(select(${LANG} == $lang => 0, 1) asc)[0]`
 
-/** A cross-link carries its target's key, never a document id. */
-const MARKS = `_type == "block" => { markDefs[]{ ..., _type == "articleLink" => { "target": article->key } } }`
+/**
+ * A cross-link carries its target's key, never a document id — the reference
+ * itself is left behind, so the payload is the fixtures' shape exactly.
+ */
+const MARKS = `_type == "block" => { markDefs[]{
+  _type == "articleLink" => { _key, _type, "target": article->key },
+  _type != "articleLink" => { ... }
+} }`
 
 /** One level of body: blocks and callouts, with their links projected. */
 const FLAT_BODY = `..., ${MARKS}, _type == "helpCallout" => { body[]{ ..., ${MARKS} } }`

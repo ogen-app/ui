@@ -130,11 +130,14 @@ for its topic**, and nothing about help reads Sanity while the flag is off.
 The content lives in the Sanity project `getogen.com` already runs (schema on
 that repo's `alec/con-173-help-content`), read from the **public
 `production` dataset**, so everything published is world-readable. The read
-is built (`services/help/sanity.ts`) and switches on with
-`VITE_SANITY_PROJECT_ID`; until then `services/help/fixtures` serves the same
-payload. Switching on is: deploy the schema, write and publish the articles,
-register the app's origins for CORS (**without** credentials), set the env and
-re-test — the GROQ has not yet run against the dataset. Three things to keep
+is `services/help/sanity.ts`, switched on by `VITE_SANITY_PROJECT_ID` in the
+committed `.env.production`, so every deployed build reads Sanity while
+`pnpm dev` and the tests serve `services/help/fixtures`. Since 2026-11-19 the
+eleven starter articles are published, the app's origins are registered for
+CORS (**without** credentials; localhost is not), and the queries return the
+fixtures' payload exactly. Still owed: the Studio deployed with the help types,
+articles for the eight screens without one, and a pass on app.dev with the
+flag forced. Three things to keep
 hold of. Help must **never** go through `services/api/http.ts` — Sanity is a
 third party, and the one bare `fetch` in `sanity.ts` omits credentials on
 purpose. An article is identified by a language-independent `key` and linked
