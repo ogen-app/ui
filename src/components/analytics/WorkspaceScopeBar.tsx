@@ -127,7 +127,7 @@ export function WorkspaceScopeBar({
       {connected.length > 0 && (
         <div
           className={cn(
-            'flex items-center gap-1.5 rounded-md transition-colors',
+            'flex items-center gap-2 rounded-md transition-colors',
             changed.has('platforms') &&
               'bg-accent/5 outline outline-1 outline-accent outline-offset-2',
           )}
@@ -199,13 +199,17 @@ function PlatformMark({
     platform: platform.label,
     accounts,
   })
+  // The period picker's box (`Picker`): 1px border, 6px/10px padding and a
+  // 16px line, so the two sit at one height in the header and read as one row
+  // of controls. The count rides inside rather than as a badge, as a button's
+  // label would.
   const shape =
-    'relative flex size-8 shrink-0 items-center justify-center rounded-md transition-colors'
+    'inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium tabular-nums transition-colors'
   const body = (
     <>
       {Icon ? (
         <Icon
-          className="size-[18px]"
+          className="size-4"
           weight="fill"
           // Brand hue only while it is being counted. A greyed logo is the
           // fastest way to say "not in these numbers" — it needs no legend.
@@ -213,23 +217,10 @@ function PlatformMark({
           aria-hidden
         />
       ) : (
-        <span className="text-xs font-medium">
-          {platform.label.slice(0, 2)}
-        </span>
+        <span>{platform.label.slice(0, 2)}</span>
       )}
-
-      {/* The count rides the mark rather than sitting in a summary line: it is
-          read at the same moment as the platform it qualifies. */}
-      <span
-        className={cn(
-          'absolute -top-1 -right-1 flex size-3.5 items-center justify-center rounded-full text-[9px] font-medium tabular-nums ring-2 ring-background',
-          on
-            ? 'bg-foreground text-primary'
-            : 'bg-quaternary text-tertiary-foreground',
-        )}
-      >
-        {platform.accounts}
-      </span>
+      {/* The count is read at the same moment as the platform it qualifies. */}
+      <span aria-hidden>{platform.accounts}</span>
       <span className="sr-only">
         {t('analytics.scopeBar.platformAccountsLabel', {
           platform: platform.label,
@@ -248,15 +239,18 @@ function PlatformMark({
       className={cn(
         shape,
         on
-          ? 'bg-secondary outline outline-1 outline-foreground'
-          : 'border border-border text-quaternary-foreground hover:bg-secondary',
+          ? 'border-border bg-primary text-foreground hover:bg-secondary'
+          : 'border-border bg-transparent text-quaternary-foreground hover:bg-secondary',
       )}
     >
       {body}
     </button>
   ) : (
     // The only network connected: in the numbers, with nothing to press.
-    <span title={title} className={shape}>
+    <span
+      title={title}
+      className={cn(shape, 'border-border bg-primary text-foreground')}
+    >
       {body}
     </span>
   )
