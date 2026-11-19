@@ -1569,9 +1569,9 @@ export const es: Translation = {
       addPost: 'AÑADIR PUBLICACIÓN',
     },
     stats: {
-      dayOf: 'Día {{day}} de {{total}}',
-      startsIn: 'Empieza {{when}}',
-      ended: 'Terminó {{when}}',
+      dayOf: 'día {{day}} de {{total}}',
+      startsIn: 'empieza {{when}}',
+      ended: 'terminó {{when}}',
       published: 'Publicadas',
       failed: 'Fallidas',
       untitledPost: 'Publicación sin título',
@@ -1585,7 +1585,7 @@ export const es: Translation = {
       ended: 'Terminada',
     },
     band: {
-      when: '{{range}}, {{where}}',
+      when: '{{range}} | {{where}}',
       phaseNow: 'Fase {{name}}, día {{day}} de {{total}}',
       published: '{{published}} de {{total}} publicadas',
       scheduled_one: '{{formatted}} programada',

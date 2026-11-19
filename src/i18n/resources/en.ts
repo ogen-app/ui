@@ -1958,12 +1958,12 @@ export const en = {
     },
     /** Shared by the band and the figures. */
     stats: {
-      /** Under the window while the campaign runs. */
-      dayOf: 'Day {{day}} of {{total}}',
-      /** `when` is a relative time, "in 5 days". */
-      startsIn: 'Starts {{when}}',
-      /** `when` is a relative time, "3 days ago". */
-      ended: 'Ended {{when}}',
+      /** After the dates on the progress card, so lower case. */
+      dayOf: 'day {{day}} of {{total}}',
+      /** `when` is a relative time, "in 5 days". After the dates. */
+      startsIn: 'starts {{when}}',
+      /** `when` is a relative time, "3 days ago". After the dates. */
+      ended: 'ended {{when}}',
       published: 'Published',
       failed: 'Failed',
       untitledPost: 'Untitled post',
@@ -1980,7 +1980,7 @@ export const en = {
     /** The progress card: where the campaign is in its own time. */
     band: {
       /** The dates, then the day or how far off the start or end is. */
-      when: '{{range}}, {{where}}',
+      when: '{{range}} | {{where}}',
       /** The campaign type's phase today. */
       phaseNow: '{{name}} phase, day {{day}} of {{total}}',
       /** Against the goal over the whole campaign. */
