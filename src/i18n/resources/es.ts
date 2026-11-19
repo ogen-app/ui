@@ -5170,6 +5170,34 @@ export const es: Translation = {
         sourceCount_other: '{{count}} fuentes',
         noSources: 'Sin fuentes',
         notGrounded: 'Sin fundamentar: escrita con conocimiento general',
+        problems: {
+          platform: 'Elige una plataforma.',
+          postType: 'Elige un tipo de publicación.',
+          videoUnsupported:
+            'Este tipo de publicación necesita vídeo, y la plataforma no lo publica.',
+          videoTitle: 'El vídeo necesita un título.',
+          titleOver_one: 'El título se pasa en {{count}} carácter.',
+          titleOver_other: 'El título se pasa en {{count}} caracteres.',
+          copy: 'La publicación necesita texto.',
+          copyEmpty: 'Aún no hay texto.',
+          lengthOver_one: 'Se pasa de largo en {{count}} carácter.',
+          lengthOver_other: 'Se pasa de largo en {{count}} caracteres.',
+          needVideo: 'La publicación necesita un vídeo.',
+          needImage: 'La publicación necesita una imagen.',
+          needFile: 'La publicación necesita un archivo.',
+          tooFew_one: 'La publicación necesita {{count}} archivo más.',
+          tooFew_other: 'La publicación necesita {{count}} archivos más.',
+          tooMany_one: 'Sobra un archivo: la plataforma admite {{max}}.',
+          tooMany_other:
+            'Sobran {{count}} archivos: la plataforma admite {{max}}.',
+          unwanted: 'Este tipo de publicación sale sin archivos.',
+          wrongKind_one:
+            '{{count}} archivo no puede salir con este tipo de publicación.',
+          wrongKind_other:
+            '{{count}} archivos no pueden salir con este tipo de publicación.',
+          altText_one: '{{count}} imagen no tiene texto alternativo.',
+          altText_other: '{{count}} imágenes no tienen texto alternativo.',
+        },
       },
       schedule: {
         setDate: 'Fijar la fecha de publicación',

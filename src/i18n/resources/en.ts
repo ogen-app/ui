@@ -5980,6 +5980,33 @@ export const en = {
         sourceCount_other: '{{count}} sources',
         noSources: 'No sources',
         notGrounded: 'Not grounded — written from general knowledge',
+        /** A failing check as one sentence (`CheckProblem` in lib/postValidation). */
+        problems: {
+          platform: 'Pick a platform.',
+          postType: 'Pick a post type.',
+          videoUnsupported:
+            'This post type needs video, which the platform doesn’t publish.',
+          videoTitle: 'The video needs a title.',
+          titleOver_one: 'The title is {{count}} character over.',
+          titleOver_other: 'The title is {{count}} characters over.',
+          copy: 'The post needs copy.',
+          copyEmpty: 'There’s no copy yet.',
+          lengthOver_one: 'Length is {{count}} character over.',
+          lengthOver_other: 'Length is {{count}} characters over.',
+          needVideo: 'The post needs a video.',
+          needImage: 'The post needs an image.',
+          needFile: 'The post needs a file.',
+          tooFew_one: 'The post needs {{count}} more file.',
+          tooFew_other: 'The post needs {{count}} more files.',
+          tooMany_one: 'One file too many — the platform takes {{max}}.',
+          tooMany_other:
+            '{{count}} files too many — the platform takes {{max}}.',
+          unwanted: 'This post type publishes without media.',
+          wrongKind_one: '{{count}} file can’t go out with this post type.',
+          wrongKind_other: '{{count}} files can’t go out with this post type.',
+          altText_one: '{{count}} image has no alt text.',
+          altText_other: '{{count}} images have no alt text.',
+        },
       },
       /** The publishing list's date row, and what it says once it is history. */
       schedule: {

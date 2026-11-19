@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import {
   CheckCircleIcon,
@@ -218,11 +219,8 @@ export function PostChecksSummary({
         problems.length > 0 && (
           <ul className="flex flex-col gap-0.5 text-sm">
             {problems.slice(0, SUMMARY_ROWS).map((check) => (
-              <li key={check.id} className="min-w-0">
-                <span className="text-foreground">{check.label}</span>
-                {check.detail && (
-                  <span className="text-warning"> — {check.detail}</span>
-                )}
+              <li key={check.id} className="min-w-0 text-foreground">
+                {problemSentence(t, check)}
               </li>
             ))}
             {more > 0 && (
@@ -240,6 +238,21 @@ export function PostChecksSummary({
       </SummaryLine>
     </SettingRow>
   )
+}
+
+/**
+ * A failing check as one plain sentence — "Length is 106 characters over." —
+ * falling back to its label and detail for a check that sets no problem.
+ */
+function problemSentence(t: TFunction, check: PostCheck): string {
+  const problem = check.problem
+  if (!problem)
+    return check.detail ? `${check.label}: ${check.detail}` : check.label
+  if ('text' in problem) return problem.text
+  return t(`posts.editor.overview.problems.${problem.key}`, {
+    count: problem.count ?? 1,
+    max: problem.max,
+  })
 }
 
 /**
