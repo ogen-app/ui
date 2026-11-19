@@ -11,15 +11,17 @@ import {
 import {
   type Column,
   type ColumnDef,
-  type ColumnFiltersState,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
   type Row,
+  rowSortingFeature,
+  sortFn_alphanumeric,
+  sortFn_datetime,
+  sortFn_text,
   type SortingState,
+  tableFeatures,
   type Updater,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area'
@@ -34,6 +36,26 @@ import { CaretDownIcon, CaretUpIcon } from '@phosphor-icons/react'
 import { FooterCell } from '@/components/tables/TableCells.tsx'
 import { TableEmptyState } from './TableEmptyState'
 
+/**
+ * What the table can do: sort, and nothing else. v9 registers features one by
+ * one, so this is the whole list. The three sort functions are the ones the
+ * `auto` sort picks between by looking at a column's values (dates, strings
+ * with numbers in them, plain strings); v8 shipped them built in, and without
+ * them every string column would sort by raw `<`, case first.
+ *
+ * Module scope because it must not change between renders.
+ */
+const features = tableFeatures({
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: {
+    alphanumeric: sortFn_alphanumeric,
+    text: sortFn_text,
+    datetime: sortFn_datetime,
+  },
+})
+type Features = typeof features
+
 function VirtualTableComponent<TData extends Record<string, unknown>>({
   data,
   columnConfigs,
@@ -42,8 +64,6 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   initialSorting = [],
   sorting: controlledSorting,
   onSortingChange,
-  enableFiltering = true,
-  enableGlobalFilter = true,
   estimatedRowHeight = 34,
   measureRows = false,
   overscan = 5,
@@ -74,8 +94,6 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
     },
     [sorting, onSortingChange],
   )
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [globalFilter, setGlobalFilter] = useState('')
   const [spacerHeight, setSpacerHeight] = useState(0)
   const [contentFitsInSpace, setContentFitsInSpace] = useState(false)
 
@@ -97,7 +115,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   )
 
   // Create TanStack Table columns from configs
-  const columns = useMemo<ColumnDef<TData>[]>(() => {
+  const columns = useMemo<ColumnDef<Features, TData>[]>(() => {
     const activeConfigs = activeColumns
       .map((columnId) => getColumnConfig(columnId))
       .filter(Boolean) as ColumnConfig<TData>[]
@@ -111,7 +129,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
       maxSize: config.isAutoSize ? undefined : config.maxSize,
       enableSorting: config.sortable !== false,
       sortUndefined: config.sortUndefined,
-      header: ({ column }: { column: Column<TData, unknown> }) => {
+      header: ({ column }: { column: Column<Features, TData, unknown> }) => {
         if (typeof config.header === 'function') {
           return config.header()
         }
@@ -175,7 +193,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
           </Button>
         )
       },
-      cell: ({ row }: { row: Row<TData> }) => {
+      cell: ({ row }: { row: Row<Features, TData> }) => {
         const value = config.accessorKey
           ? row.getValue(config.accessorKey as string)
           : row.getValue(config.id)
@@ -213,10 +231,8 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
       },
       footer: config.totals
         ? ({ table }) => {
-            const filteredRows = table
-              .getFilteredRowModel()
-              .rows.map((row) => row.original)
-            const result = calculateTotal(filteredRows, config)
+            const allRows = table.getRowModel().rows.map((row) => row.original)
+            const result = calculateTotal(allRows, config)
             const alignment = config.alignment || 'left'
             const cellClass = alignment === 'right' ? 'text-right' : 'text-left'
 
@@ -238,23 +254,15 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   }, [activeColumns, getColumnConfig, estimatedRowHeight, measureRows])
 
   // Create TanStack Table instance
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data,
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: enableFiltering ? setColumnFilters : undefined,
-    onGlobalFilterChange: enableGlobalFilter ? setGlobalFilter : undefined,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: enableFiltering ? getFilteredRowModel() : undefined,
     // A server-sorted table draws its rows in the order they came, and the
     // header only reports the click.
     manualSorting,
-    getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
-    state: {
-      sorting,
-      ...(enableFiltering && { columnFilters }),
-      ...(enableGlobalFilter && { globalFilter }),
-    },
+    state: { sorting },
   })
 
   const { rows } = table.getRowModel()
@@ -564,7 +572,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                       width: hasOverflow ? `${totalWidth}px` : '100%',
                     }}
                   >
-                    {row.getVisibleCells().map((cell) => {
+                    {row.getAllCells().map((cell) => {
                       const columnConfig = getColumnConfig(cell.column.id)
                       const isLeftSticky =
                         columnConfig?.isSticky &&
