@@ -9,8 +9,6 @@ import {
   ProgressHeader,
 } from '@/components/campaigns/overview/CampaignOverview.tsx'
 import { needsLines } from '@/components/campaigns/overview/needsLines'
-import { useFeatureFlag } from '@/config/featureFlags'
-import { placeLink, type PlaceId } from '@/lib/campaignScope'
 import { useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { campaignTypeInfo } from '@/lib/campaignTypeDictionary.ts'
@@ -39,17 +37,8 @@ import type { Campaign } from '@/types/campaigns.ts'
  * today's phase (the phase windows are `GET …/phases`) and the server's
  * calendar problems. The row shows the client's rules alone, and no phase.
  */
-export function CampaignCard({
-  campaign,
-  place = 'overview',
-}: {
-  campaign: Campaign
-  /** The section a click opens — the Overview unless the list is a picker. */
-  place?: PlaceId
-}) {
+export function CampaignCard({ campaign }: { campaign: Campaign }) {
   const { t } = useTranslation()
-  const workspaceCalendar = useFeatureFlag('workspace-calendar')
-  const link = placeLink(place, campaign.id, { workspaceCalendar })
   const summariesQuery = useCampaignSummaries()
   const platformViews = usePlatformViews()
 
@@ -75,8 +64,8 @@ export function CampaignCard({
     // The whole row is the link, named for what it opens rather than read out
     // as every figure and warning in one breath.
     <Link
-      to={link.to}
-      params={link.params}
+      to="/campaigns/$campaignId/overview"
+      params={{ campaignId: campaign.id }}
       aria-label={t('campaigns.list.open', {
         name: campaign.name.trim() || t('nav.untitledCampaign'),
       })}

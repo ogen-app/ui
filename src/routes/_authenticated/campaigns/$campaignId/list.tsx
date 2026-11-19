@@ -212,11 +212,7 @@ function CampaignListView() {
           busy={busy}
         />
       ) : (
-        <PostsToolbar
-          campaignId={campaignId}
-          view="list"
-          subheading={countLine}
-        />
+        <PostsToolbar campaignId={campaignId} subheading={countLine} />
       )}
       {/* Gate on the query, not on `!posts`: the backend answers a campaign
           with no posts with null, so truthiness can't tell "none" from "not

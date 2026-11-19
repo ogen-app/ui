@@ -5,7 +5,6 @@ import { PageContainer } from '@/components/page-primitives/PageContainer.tsx'
 import { PageLoader } from '@/components/page-primitives/PageLoader.tsx'
 import { PageError } from '@/components/page-primitives/PageError.tsx'
 import { PageHeader } from '@/components/page-primitives/PageHeader.tsx'
-import { CalendarHeaderActions } from '@/components/campaigns/calendar/CalendarHeaderActions.tsx'
 import { CalendarDrawer } from '@/components/campaigns/calendar/CalendarDrawer'
 import {
   SettingsSaveBar,
@@ -139,11 +138,13 @@ function CampaignShell() {
             <PageHeader title={title} scrollAway />
             {/* pt-4 is the shared 16px breath between a page header and its
                   first card — see the same value on Overview and Workspace
-                  Settings. */}
+                  Settings. Strategy is two columns, and `PageColumns` brings
+                  its own gutters, as on Strategy for all campaigns. */}
             <div
               key={section}
               className={cn(
-                'page-content-motion px-3 lg:px-6 pt-4',
+                'page-content-motion',
+                section === 'Settings' && 'px-3 lg:px-6 pt-4',
                 PAGE_ACTION_BAR_INSET,
               )}
             >
@@ -189,23 +190,20 @@ function CampaignShell() {
 
   // The calendar's drawer sits beside the whole column, header included, so
   // it runs from the bar over the page to the bottom and the header's icons
-  // stay with the grid they are about.
+  // stay with the grid they are about. The calendar draws its own header —
+  // its range and controls are the route's (`CalendarHeader`) — and its own
+  // gutters, since a header's hairline runs the column's full width.
+  const calendar = section === 'Calendar'
   return (
     <PageContainer variant={'fullFlex'} className={'flex-row'}>
       <div className={'flex-1 min-w-0 min-h-0 flex flex-col'}>
-        <PageHeader
-          title={title}
-          actions={
-            section === 'Calendar' ? (
-              <CalendarHeaderActions campaignId={campaignId} />
-            ) : undefined
-          }
-        />
+        {!calendar && <PageHeader title={title} />}
         <div
           key={section}
-          className={
-            'page-content-motion grid overflow-hidden h-full px-3 lg:px-6'
-          }
+          className={cn(
+            'page-content-motion grid overflow-hidden h-full',
+            !calendar && 'px-3 lg:px-6',
+          )}
         >
           <Outlet />
         </div>

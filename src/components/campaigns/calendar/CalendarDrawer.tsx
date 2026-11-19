@@ -8,7 +8,7 @@ import {
 import { useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
 
-const DRAWER_WIDTH = 'w-90'
+const DRAWER_WIDTH = 'w-100'
 
 /**
  * The calendar's drawer: its settings, or its unscheduled posts, at the right
