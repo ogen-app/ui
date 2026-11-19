@@ -296,9 +296,11 @@ keep it accurate when these rules change.
   never linked.
   **The dashboard's period, platforms and campaign are its address**
   (`lib/analyticsSearch`: `window` or `from`+`to`, `platform`,
-  `campaign_id`), which is what `set_window` lands on — from a campaign's
-  Analytics tab too, which has no window of its own, so that one opens the
-  dashboard narrowed to the campaign. The window the page sends carries the
+  `campaign_id`), which is what `set_window` lands on. A campaign's Analytics
+  tab is the same dashboard (`analytics/AnalyticsDashboard`) with the campaign
+  fixed by its path and no picker, its period and platforms in its own
+  address; a `set_window` from it still lands on `/analytics` narrowed to the
+  campaign. The window the page sends carries the
   campaign and the picker's `preset`, and is what the composer's chip and the
   thread's markers say on the dashboard, through one wording
   (`assistant/useWindowWords`): a window the page sent is named as sent (it

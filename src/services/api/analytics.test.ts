@@ -5,7 +5,6 @@ import {
   fetchLearnings,
   fetchPerformers,
   hasHistory,
-  isAnalyticsUnavailable,
 } from './analytics'
 import type {
   AnalyticsLearnings,
@@ -17,10 +16,8 @@ import type {
 /**
  * The executable statement of the CON-236–239 dashboard contract.
  *
- * These endpoints exist — they landed on the Go side on 2026-08-27 — but the
- * feature that reads them is still behind `campaign-analytics`, so nothing has
- * been exercised against a running server. What this file pins is what was read
- * off the handlers: the paths, the query-parameter *names* (`trend_window`, not
+ * These endpoints landed on the Go side on 2026-08-27. What this file pins is
+ * what was read off the handlers: the paths, the query-parameter *names* (`trend_window`, not
  * `trendWindow`), the envelope every one of them answers in, and the three
  * degradations a caller has to get right — `no_data`, a null multiplier, and a
  * learnings section that withdraws on its own.
@@ -398,11 +395,8 @@ describe('fetchLearnings', () => {
   })
 })
 
-describe('the two kinds of unavailable', () => {
-  it("keeps the /posts 503 apart from the dashboard's envelope", async () => {
-    // `/posts` is the only endpoint here that still says "no analytics
-    // database" with a status code. The dashboard says it in the body, at 200 —
-    // so a screen reading both has to ask two different questions.
+describe('unavailable', () => {
+  it('is an answer in the body at 200, not a failure', async () => {
     stubFetch(
       jsonResponse(200, {
         available: false,
@@ -414,6 +408,5 @@ describe('the two kinds of unavailable', () => {
     const envelope = await fetchAnalyticsOverview()
 
     expect(envelopeUnavailable(envelope)).toBe(true)
-    expect(isAnalyticsUnavailable(envelope)).toBe(false)
   })
 })

@@ -5,8 +5,6 @@ import { StatusBadge, type StatusTone } from '@/components/ui/status-badge.tsx'
 import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
 import { StatTile } from '@/components/campaigns/overview/StatTile.tsx'
 import { formatNumber } from '@/lib/intl'
-import { useFeatureFlag } from '@/config/featureFlags'
-import { placeLink, type PlaceId } from '@/lib/campaignScope'
 import { useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
@@ -45,19 +43,7 @@ const HEADLINE_TONE: Record<AttentionSeverity, StatusTone> = {
   info: 'neutral',
 }
 
-/**
- * `place` is the section a click opens — the campaign's Overview unless the
- * list is asking for a campaign on behalf of another row (`?pick=`).
- */
-export function CampaignCard({
-  campaign,
-  place = 'overview',
-}: {
-  campaign: Campaign
-  place?: PlaceId
-}) {
-  const workspaceCalendar = useFeatureFlag('workspace-calendar')
-  const link = placeLink(place, campaign.id, { workspaceCalendar })
+export function CampaignCard({ campaign }: { campaign: Campaign }) {
   // One query for the whole list, not one per card (CON-152). Every card
   // subscribes to the same key, so the request is fired once no matter how
   // many campaigns are on screen.
@@ -125,8 +111,8 @@ export function CampaignCard({
     // out as its own contents — every count, badge and stage name, in one
     // breath. The contents are still there to browse; this is just the name.
     <Link
-      to={link.to}
-      params={link.params}
+      to="/campaigns/$campaignId/overview"
+      params={{ campaignId: campaign.id }}
       aria-label={`Open ${title}`}
       className="group w-full rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0 cursor-pointer transition-shadow duration-150 hover:shadow-lg"
     >

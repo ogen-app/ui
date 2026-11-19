@@ -16,7 +16,6 @@ import { CreateCampaignDialog } from '@/components/campaigns/CreateCampaignDialo
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import { useCampaign, useCampaigns } from '@/hooks/useCampaigns'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { identityColorVar } from '@/lib/identity'
 import { cn } from '@/lib'
 import { formatDateRange, formatNumber } from '@/lib/intl'
@@ -39,7 +38,6 @@ import type { Campaign } from '@/types/campaigns'
 export function CampaignSwitcher() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const workspaceCalendar = useFeatureFlag('workspace-calendar')
   const { where, scope: campaignId, soleCampaignId } = useCampaignScope()
   const remember = useCampaignScopeStore((state) => state.setCampaignId)
   const { data: campaigns = [] } = useCampaigns()
@@ -51,7 +49,7 @@ export function CampaignSwitcher() {
 
   const go = (target: string | null) => {
     remember(target)
-    const link = scopeLink(where, target, { workspaceCalendar, soleCampaignId })
+    const link = scopeLink(where, target, { soleCampaignId })
     if (link) void navigate(link)
   }
 
