@@ -3,9 +3,8 @@
  *
  * These shapes are the contract with `getogen.com`'s Sanity schema
  * (`studio/schemaTypes/helpArticle.ts`), not an internal convenience: the
- * fixtures in `services/help` imitate them, and the GROQ in
- * `services/help/sanity.ts` produces them, so the renderer cannot tell the two
- * apart.
+ * GROQ in `services/help/sanity.ts` produces them, and the tests' articles
+ * (`src/test/helpArticles`) are written in them.
  *
  * Load-bearing projections, stated here rather than left to the query:
  *

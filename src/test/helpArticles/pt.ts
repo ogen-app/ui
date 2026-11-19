@@ -1,12 +1,12 @@
 import type { HelpArticle, HelpBlock } from '@/types/help'
 
 /**
- * A few lines of Portable Text shorthand for the fixtures.
+ * A few lines of Portable Text shorthand for the test articles.
  *
  * The output is the real payload — blocks, spans, `markDefs`, the three custom
  * nodes — so nothing downstream knows these were written by hand. The helpers
  * only exist so an article reads like an article in this file rather than like
- * forty lines of JSON per paragraph. They are fixture tooling, never imported
+ * forty lines of JSON per paragraph. They are test tooling, never imported
  * by the renderer.
  */
 

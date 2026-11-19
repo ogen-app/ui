@@ -48,18 +48,26 @@ The list is `HELP_PAGES` in `src/lib/helpTopics.ts`. Wiring a new screen:
 ## Writing
 
 Articles are Studio-owned in Sanity — never seeded from `content/`, whose
-re-seed would overwrite Studio edits. Deployed builds read them
-(`.env.production`); `pnpm dev` and the tests, with `VITE_SANITY_PROJECT_ID`
-unset, serve `src/services/help/fixtures` instead, which are the same payload
-and are held to the Studio's rules by `services/help/help.test.ts`.
+re-seed would overwrite Studio edits. **Every build reads them, `pnpm dev`
+included**: the project (`s5ikqvpd`) and dataset (`production`) are constants
+in `services/help/sanity.ts`, because both are public and no environment reads
+anything else. There are no stand-in articles, so what you see in dev is what
+the Studio holds, and a broken query or a missing article shows on the screen
+where it happens. The browser's origin has to be on the project's CORS list
+(`sanity cors add`, without credentials): the deployed app's origins are, and
+of localhost only `http://localhost:9010` — on any other port the panel says
+"Couldn’t load help".
 
-The eleven starter articles were imported from those fixtures once, on
-2026-11-19, as `help-article-<key>` and `help-category-<key>` (published, in
-`production`), and the same day first drafts of the other eight screens'
-articles were published straight to Sanity, to be rewritten there — so the
-fixtures cover six screens and the dataset all fourteen. From then on the
-Studio is the source: an edit there is not copied back into the fixtures, and
-nothing should re-import over it.
+The tests cannot reach the network, so they read `src/test/helpArticles`
+through a mocked `services/help`: six screens' articles in the payload's
+shape, a snapshot from when the dataset was first filled and not kept in step
+with it.
+
+The eleven starter articles were imported once, on 2026-11-19, as
+`help-article-<key>` and `help-category-<key>` (published, in `production`),
+and the same day first drafts of the other eight screens' articles were
+published straight to Sanity, to be rewritten there. The Studio is the
+source: nothing should re-import over it.
 
 - `key` is the article's identity in every language, and what the app asks
   for. Never rename a published one. `slug` is only the website's URL.

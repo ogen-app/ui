@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useHelpStore } from '@/stores/helpStore'
-import { postStatuses } from '@/services/help/fixtures/concepts'
-import { embed, p } from '@/services/help/fixtures/pt'
+import { postStatuses } from '@/test/helpArticles/concepts'
+import { embed, p } from '@/test/helpArticles/pt'
 import { HelpArticleBody } from './HelpArticleBody'
 
 // The app links need a router; nothing here follows one.

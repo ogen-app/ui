@@ -140,9 +140,9 @@ const FEATURE_FLAGS = {
    * `getogen.com` already runs (schema: `studio/schemaTypes/helpArticle.ts`,
    * deployed to the hosted Studio), and the app reads them from the public
    * `production` dataset. Every screen has a published article (first drafts,
-   * to be rewritten in the Studio), the app's four origins are registered for
-   * CORS (without credentials), and every deployed build reads it
-   * (`.env.production`). See `docs/help-centre.md`.
+   * to be rewritten in the Studio), and the app's four origins and
+   * `localhost:9010` are registered for CORS (without credentials). Every
+   * build reads it, dev included. See `docs/help-centre.md`.
    */
   'help-center': true,
 

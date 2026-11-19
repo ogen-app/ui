@@ -20,13 +20,17 @@ vi.mock('@/config/featureFlags', () => ({
   isFeatureEnabled: () => true,
 }))
 
-// The real fixtures behind spies, so a test can make one request fail.
+// The test articles behind spies, so a test can make one request fail — and
+// so nothing here reaches Sanity.
 vi.mock('@/services/help', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/help')>()
+  const { HELP_ARTICLES } = await import('@/test/helpArticles')
   return {
     ...actual,
-    fetchHelpArticle: vi.fn(actual.fetchHelpArticle),
-    fetchHelpIndex: vi.fn(actual.fetchHelpIndex),
+    fetchHelpArticle: vi.fn(async (key: string) => HELP_ARTICLES[key] ?? null),
+    fetchHelpIndex: vi.fn(async () =>
+      actual.buildHelpIndex(Object.values(HELP_ARTICLES)),
+    ),
   }
 })
 

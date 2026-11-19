@@ -1,17 +1,10 @@
-import { HELP_FIXTURES } from '@/services/help/fixtures'
-import {
-  queryHelpArticle,
-  queryHelpIndex,
-  sanityConfig,
-} from '@/services/help/sanity'
+import { queryHelpArticle, queryHelpIndex } from '@/services/help/sanity'
 import type { HelpArticle, HelpIndex, HelpIndexRow } from '@/types/help'
 
 /**
- * Reading help content — the seam the CMS lands behind (CON-173).
- *
- * Two sources with one shape: Sanity when `VITE_SANITY_PROJECT_ID` is set, the
- * fixtures otherwise. Both can miss, because one of them crosses a network and
- * the panel handles loading and not-found either way.
+ * Reading help content from Sanity (CON-173) — in every build, dev included,
+ * so a broken query or a missing article shows on the screen where it happens.
+ * A read can fail or come back empty, and the panel says which.
  *
  * **These calls must never go through `services/api/http.ts`.** Every request
  * in there carries `credentials: 'include'`; help content comes from Sanity, a
@@ -24,8 +17,7 @@ export async function fetchHelpArticle(
   key: string,
   locale: string,
 ): Promise<HelpArticle | null> {
-  if (sanityConfig()) return queryHelpArticle(key, locale)
-  return HELP_FIXTURES[key] ?? null
+  return queryHelpArticle(key, locale)
 }
 
 /**
@@ -36,10 +28,7 @@ export async function fetchHelpArticle(
  * screens that have nothing to do with help.
  */
 export async function fetchHelpIndex(): Promise<HelpIndex> {
-  const rows = sanityConfig()
-    ? await queryHelpIndex()
-    : Object.values(HELP_FIXTURES)
-  return buildHelpIndex(rows)
+  return buildHelpIndex(await queryHelpIndex())
 }
 
 /**

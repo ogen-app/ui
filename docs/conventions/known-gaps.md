@@ -132,13 +132,14 @@ a key that answers nothing, hands the reader to the assistant. A
 The content lives in the Sanity project `getogen.com` already runs (schema on
 that repo's `alec/con-173-help-content`), read from the **public
 `production` dataset**, so everything published is world-readable. The read
-is `services/help/sanity.ts`, switched on by `VITE_SANITY_PROJECT_ID` in the
-committed `.env.production`, so every deployed build reads Sanity while
-`pnpm dev` and the tests serve `services/help/fixtures`. Every screen in
-`HELP_PAGES` has a published article (first drafts, to be rewritten in the
-Studio, which is deployed with the help types), and the app's origins are
-registered for CORS (**without** credentials; localhost is not, so dev keeps
-the fixtures). Three things to keep
+is `services/help/sanity.ts`, and **every build reads it, dev included** —
+there are no stand-in articles, so a broken query or a missing article shows
+where it happens; only the tests read `src/test/helpArticles`, through a
+mocked `services/help`. Every screen in `HELP_PAGES` has a published article
+(first drafts, to be rewritten in the Studio, which is deployed with the help
+types). The app's origins are registered for CORS (**without** credentials),
+and of localhost only `http://localhost:9010`: a dev server on another port
+gets "Couldn’t load help". Three things to keep
 hold of. Help must **never** go through `services/api/http.ts` — Sanity is a
 third party, and the one bare `fetch` in `sanity.ts` omits credentials on
 purpose. An article is identified by a language-independent `key` and linked

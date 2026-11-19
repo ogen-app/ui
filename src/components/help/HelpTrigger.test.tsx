@@ -47,9 +47,8 @@ describe('HelpTrigger', () => {
     render(<HelpTrigger topic="post.status" />, { wrapper })
 
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
-    // The gate that matters on the day the fixtures are replaced by a GROQ
-    // query: these triggers sit in the post editor, so an unconditional read
-    // would open a cross-origin request to Sanity on a screen where the panel
+    // These triggers sit in the post editor, so an unconditional read would
+    // open a cross-origin request to Sanity on a screen where the panel
     // cannot be opened at all.
     expect(index).not.toHaveBeenCalled()
   })

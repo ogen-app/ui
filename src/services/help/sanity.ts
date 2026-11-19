@@ -12,22 +12,15 @@ import type { HelpArticle, HelpIndexRow } from '@/types/help'
  * schema is the source of truth and these are a typed copy of its shape, not
  * a shared package — two queries do not justify a cross-repo release.
  *
- * Only reached when `VITE_SANITY_PROJECT_ID` is set, which the committed
- * `.env.production` does for every deployed build. `pnpm dev` and the tests
- * leave it unset and serve the fixtures — the same payload, checked against
- * the live dataset when the articles were first published (2026-11-19).
+ * Every build reads the same place, dev included: getogen.com's project and
+ * its public `production` dataset, read token-free, so neither value is a
+ * secret or an environment's choice. The origin asking has to be on the
+ * project's CORS list — the deployed app's are, and `http://localhost:9010`.
  */
 
+const PROJECT_ID = 's5ikqvpd'
+const DATASET = 'production'
 const API_VERSION = 'v2025-02-19'
-
-export const sanityConfig = () => {
-  const projectId = import.meta.env.VITE_SANITY_PROJECT_ID
-  if (!projectId) return null
-  return {
-    projectId,
-    dataset: import.meta.env.VITE_SANITY_DATASET || 'production',
-  }
-}
 
 /** Published, meant for the app, and English unless it says otherwise. */
 const FOR_APP = `_type == "helpArticle" && (!defined(surfaces) || "app" in surfaces)`
@@ -43,7 +36,7 @@ const localised = (type: string, keyExpr: string, extra = '') =>
 
 /**
  * A cross-link carries its target's key, never a document id — the reference
- * itself is left behind, so the payload is the fixtures' shape exactly.
+ * itself is left behind, so the payload carries no document ids at all.
  */
 const MARKS = `_type == "block" => { markDefs[]{
   _type == "articleLink" => { _key, _type, "target": article->key },
@@ -90,10 +83,8 @@ const INDEX_QUERY = `*[${FOR_APP} && ${LANG} == "en"]{
 }`
 
 async function query<T>(groq: string, params: Record<string, string>) {
-  const config = sanityConfig()
-  if (!config) throw new Error('help: VITE_SANITY_PROJECT_ID is not set')
   const url = new URL(
-    `https://${config.projectId}.apicdn.sanity.io/${API_VERSION}/data/query/${config.dataset}`,
+    `https://${PROJECT_ID}.apicdn.sanity.io/${API_VERSION}/data/query/${DATASET}`,
   )
   url.searchParams.set('query', groq)
   url.searchParams.set('perspective', 'published')
