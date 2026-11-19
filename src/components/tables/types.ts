@@ -54,8 +54,6 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
    */
   sorting?: SortingState
   onSortingChange?: (next: SortingState) => void
-  enableFiltering?: boolean
-  enableGlobalFilter?: boolean
   estimatedRowHeight?: number
   /**
    * Rows take the height of their content, `estimatedRowHeight` at least, and
