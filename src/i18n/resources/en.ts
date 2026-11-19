@@ -5959,8 +5959,8 @@ export const en = {
       overview: {
         publishing: 'Publishing',
         health: 'Health',
-        notes_one: 'Notes · {{count}}',
-        notes_other: 'Notes · {{count}}',
+        quality: 'Quality',
+        notes: 'Notes',
         sources: 'Sources',
         writing: 'Writing',
         /** The tooltip on a line that opens another tab. */
@@ -5969,8 +5969,13 @@ export const en = {
         moreChecks_other: 'and {{count}} more',
         moreNotes_one: 'and {{count}} more note',
         moreNotes_other: 'and {{count}} more notes',
-        quality: 'Quality {{score}}',
-        notAssessed: 'Quality not assessed yet',
+        /** The Quality section's one row. */
+        score: 'Score',
+        notAssessed: 'Not assessed yet',
+        /** A note with no title, where its title would be the row's label. */
+        note: 'Note',
+        /** The Sources section's one row: what is attached to the post. */
+        attached: 'Attached',
         sourceCount_one: '{{count}} source',
         sourceCount_other: '{{count}} sources',
         noSources: 'No sources',

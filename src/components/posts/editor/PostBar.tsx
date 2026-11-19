@@ -108,8 +108,11 @@ export function PostBar({
   const blocker = primary?.blockers[0]?.message
 
   return (
-    <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-primary px-3 lg:px-6">
-      <div className="flex min-w-0 items-center gap-1">
+    // pl-4, like the bar over the page: with the back link 30px wide, the
+    // arrow sits on the campaign dot's centre and the title starts where the
+    // campaign's name does, so the two bars read as one column.
+    <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-primary pr-3 pl-4 lg:pr-6">
+      <div className="flex min-w-0 items-center gap-2.5">
         <BackToPosts campaignId={campaignId} />
         <PostTitle title={title} />
         <PostStepper campaignId={campaignId} postId={postId} />
@@ -254,10 +257,12 @@ function PrimaryAction({
 function BackToPosts({ campaignId }: { campaignId: string }) {
   const { t } = useTranslation()
   const place = usePostsPlace(campaignId)
+  // Drawn like the campaign switcher above it (`CHROME_ROW`): a 3.5 glyph in
+  // the tertiary ink, the tertiary fill on hover.
   const className =
-    'flex size-8 shrink-0 items-center justify-center rounded-button text-secondary-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring'
+    '-mr-2.5 flex h-9 w-[30px] shrink-0 items-center justify-center rounded-button text-tertiary-foreground outline-none transition-colors hover:bg-tertiary hover:text-primary-foreground focus-visible:inset-ring-2 focus-visible:inset-ring-ring'
   const label = t('posts.editor.back')
-  const icon = <ArrowLeftIcon className="size-4" />
+  const icon = <ArrowLeftIcon className="size-3.5" />
   const link =
     place.view === 'list' ? (
       <Link
@@ -296,7 +301,7 @@ function PostTitle({ title }: { title: string }) {
   return (
     <span
       className={cn(
-        'min-w-0 truncate px-1 text-sm font-medium',
+        'min-w-0 truncate text-sm font-medium',
         text ? 'text-primary-foreground' : 'text-tertiary-foreground',
       )}
       title={text || undefined}
@@ -324,15 +329,15 @@ function PostStepper({
   )
   if (!position) return null
   return (
-    <span className="ml-1 flex items-center text-sm text-tertiary-foreground">
+    <span className="flex shrink-0 items-center text-sm text-tertiary-foreground">
       <StepLink
         campaignId={campaignId}
         postId={previous?.id}
         label={t('posts.editor.previous')}
       >
-        <CaretLeftIcon className="size-4" />
+        <CaretLeftIcon className="size-3.5" />
       </StepLink>
-      <span className="px-1 tabular-nums">
+      <span className="px-0.5 tabular-nums">
         {t('posts.editor.position', {
           position: formatNumber(position),
           total: formatNumber(total),
@@ -343,7 +348,7 @@ function PostStepper({
         postId={next?.id}
         label={t('posts.editor.next')}
       >
-        <CaretRightIcon className="size-4" />
+        <CaretRightIcon className="size-3.5" />
       </StepLink>
     </span>
   )
@@ -361,7 +366,7 @@ function StepLink({
   children: ReactNode
 }) {
   const className =
-    'flex size-7 items-center justify-center rounded-button outline-none focus-visible:ring-2 focus-visible:ring-ring'
+    'flex size-6 items-center justify-center rounded-button outline-none focus-visible:inset-ring-2 focus-visible:inset-ring-ring'
   if (!postId)
     return (
       <span aria-hidden className={cn(className, 'opacity-40')}>
@@ -376,7 +381,7 @@ function StepLink({
       title={label}
       className={cn(
         className,
-        'text-secondary-foreground hover:bg-secondary hover:text-foreground',
+        'transition-colors hover:bg-tertiary hover:text-primary-foreground',
       )}
     >
       {children}

@@ -7,8 +7,8 @@ import type { PostCheck } from '@/lib/postValidation'
 import type { PostNote } from '@/services/api/postNotes'
 import type { PostEvaluation } from '@/types/quality'
 import { cn } from '@/lib'
-import { SummaryLine } from '../quickBar/parts'
-import { PostHealthSummary } from './PostChecksTab'
+import { SettingList, SettingRow, SummaryLine } from '../quickBar/parts'
+import { PostChecksSummary, PostQualitySummary } from './PostChecksTab'
 import { PublishingSettings, WritingSettings } from './PostSettings'
 
 /** How many notes the Overview quotes before pointing at the Notes tab. */
@@ -34,12 +34,14 @@ type Props = Parameters<typeof PublishingSettings>[0] & {
  * Quality to learn whether they should care about quality, and a note the
  * team left is only read by someone who already knew it was there. So the
  * answers come to this tab instead, each cut to what says whether to look
- * further, each a way into the tab with the rest:
+ * further, each a way into the tab with the rest. Every section is the same
+ * two columns (`SettingList`), so the values read straight down the tab:
  *
  *   - **Publishing** — where, when and how. The fields that can stop it going
  *     out, which is why this tab carries the warning mark and why a blocked
  *     SCHEDULE flashes this list.
- *   - **Health** — the requirements' verdict and the score (`PostHealthSummary`).
+ *   - **Health** — the requirements' verdict and the first few that fail.
+ *   - **Quality** — the score and its suggestions, or the offer to take one.
  *   - **Notes** — the first few, quoted; left out while there are none.
  *   - **Sources** — how many, or that it is written from general knowledge.
  *   - **Writing** — phase, voice, audience, format: set once, if at all, so last.
@@ -65,44 +67,58 @@ export function PostOverviewTab({
           <PublishingSettings {...publishing} />
         </Section>
 
-        <Section title={t('posts.editor.overview.health')}>
-          <PostHealthSummary
-            checks={checks}
-            status={doc.status}
-            assessment={assessment}
-            qualityUnavailable={qualityUnavailable}
-            assessing={assessing}
-            exhausted={exhausted}
-            onAssess={onAssess}
-            onOpenChecks={() => onOpenTab('checks')}
-            onOpenQuality={() => onOpenTab('quality')}
-          />
-        </Section>
+        {doc.status !== 'published' && (
+          <Section title={t('posts.editor.overview.health')}>
+            <SettingList>
+              <PostChecksSummary
+                checks={checks}
+                onOpen={() => onOpenTab('checks')}
+              />
+            </SettingList>
+          </Section>
+        )}
+
+        {!qualityUnavailable && (
+          <Section title={t('posts.editor.overview.quality')}>
+            <SettingList>
+              <PostQualitySummary
+                status={doc.status}
+                assessment={assessment}
+                assessing={assessing}
+                exhausted={exhausted}
+                onAssess={onAssess}
+                onOpen={() => onOpenTab('quality')}
+              />
+            </SettingList>
+          </Section>
+        )}
 
         {notes.length > 0 && (
-          <Section
-            title={t('posts.editor.overview.notes', { count: notes.length })}
-          >
+          <Section title={t('posts.editor.overview.notes')}>
             <NotesSummary notes={notes} onOpen={() => onOpenTab('notes')} />
           </Section>
         )}
 
         <Section title={t('posts.editor.overview.sources')}>
-          <SummaryLine
-            onOpen={() => onOpenTab('sources')}
-            label={t('posts.editor.tabs.sources')}
-          >
-            <BooksIcon className="size-4 shrink-0 text-tertiary-foreground" />
-            <span className="min-w-0 truncate text-sm">
-              {isNotGrounded(doc.grounding_mode)
-                ? t('posts.editor.overview.notGrounded')
-                : doc.used_asset_ids.length > 0
-                  ? t('posts.editor.overview.sourceCount', {
-                      count: doc.used_asset_ids.length,
-                    })
-                  : t('posts.editor.overview.noSources')}
-            </span>
-          </SummaryLine>
+          <SettingList>
+            <SettingRow label={t('posts.editor.overview.attached')}>
+              <SummaryLine
+                onOpen={() => onOpenTab('sources')}
+                label={t('posts.editor.tabs.sources')}
+              >
+                <BooksIcon className="size-4 shrink-0 text-tertiary-foreground" />
+                <span className="min-w-0 truncate">
+                  {isNotGrounded(doc.grounding_mode)
+                    ? t('posts.editor.overview.notGrounded')
+                    : doc.used_asset_ids.length > 0
+                      ? t('posts.editor.overview.sourceCount', {
+                          count: doc.used_asset_ids.length,
+                        })
+                      : t('posts.editor.overview.noSources')}
+                </span>
+              </SummaryLine>
+            </SettingRow>
+          </SettingList>
         </Section>
 
         <Section title={t('posts.editor.overview.writing')}>
@@ -114,9 +130,10 @@ export function PostOverviewTab({
 }
 
 /**
- * The first notes, quoted: the server puts the draft thesis first, which is
- * the one most worth reading before writing. The whole block opens the Notes
- * tab, where they are edited.
+ * The first notes, a row each: the note's title where the label goes, its
+ * text where the value goes. The server puts the draft thesis first, which is
+ * the one most worth reading before writing. Each opens the Notes tab, where
+ * they are edited.
  */
 function NotesSummary({
   notes,
@@ -127,33 +144,36 @@ function NotesSummary({
 }) {
   const { t } = useTranslation()
   const more = notes.length - NOTES_SHOWN
+  const open = t('posts.editor.overview.open', {
+    tab: t('posts.editor.tabs.notes'),
+  })
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      title={t('posts.editor.overview.open', {
-        tab: t('posts.editor.tabs.notes'),
-      })}
-      className="-mx-1.5 flex flex-col gap-2 rounded-button px-1.5 py-1 text-left text-sm outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
-    >
+    <SettingList>
       {notes.slice(0, NOTES_SHOWN).map((note) => (
-        <span key={note.id} className="flex min-w-0 flex-col">
-          {note.title && (
-            <span className="truncate font-medium text-foreground">
-              {note.title}
+        <SettingRow
+          key={note.id}
+          label={note.title || t('posts.editor.overview.note')}
+        >
+          <button
+            type="button"
+            onClick={onOpen}
+            title={open}
+            className="-mx-1.5 flex min-w-0 flex-1 rounded-button px-1.5 py-0.5 text-left outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+          >
+            <span className="line-clamp-2 text-secondary-foreground">
+              {note.body}
             </span>
-          )}
-          <span className="line-clamp-2 text-secondary-foreground">
-            {note.body}
-          </span>
-        </span>
+          </button>
+        </SettingRow>
       ))}
       {more > 0 && (
-        <span className="text-tertiary-foreground">
-          {t('posts.editor.overview.moreNotes', { count: more })}
-        </span>
+        <SettingRow label="">
+          <span className="text-tertiary-foreground">
+            {t('posts.editor.overview.moreNotes', { count: more })}
+          </span>
+        </SettingRow>
       )}
-    </button>
+    </SettingList>
   )
 }
 

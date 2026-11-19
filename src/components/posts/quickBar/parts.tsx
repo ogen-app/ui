@@ -22,12 +22,37 @@ import { cn } from '@/lib'
  */
 
 /**
+ * The two columns every section of the Overview is drawn in: the labels, then
+ * the values. One grid for all of them, so every value on the tab starts at
+ * the same x whichever section it is in.
+ */
+export function SettingList({
+  className,
+  children,
+}: {
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <dl
+      className={cn(
+        'grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm',
+        className,
+      )}
+    >
+      {children}
+    </dl>
+  )
+}
+
+/**
  * One row: the label, and beside it the value with its mark. Every value
  * starts with a 16px mark — the platform's logo, the account's picture, an
  * icon, or the warning that something is missing in its place — so the text
  * of every row starts at the same x and the column reads straight down.
  *
- * `note` is a quiet line under the value, indented to the value's text.
+ * `note` sits under the value, indented to the value's text: a quiet line by
+ * default, or whatever the row needs to say beneath it.
  */
 export function SettingRow({
   label,
@@ -42,8 +67,8 @@ export function SettingRow({
 }) {
   return (
     <>
-      <dt className="flex h-6 items-center gap-1 self-start text-tertiary-foreground">
-        {label}
+      <dt className="flex h-6 min-w-0 items-center gap-1 self-start text-tertiary-foreground">
+        <span className="truncate">{label}</span>
         {help}
       </dt>
       <dd className="flex min-w-0 flex-col gap-0.5">
@@ -51,7 +76,7 @@ export function SettingRow({
           {children}
         </div>
         {note && (
-          <p className="pl-5.5 text-xs text-tertiary-foreground">{note}</p>
+          <div className="pl-5.5 text-xs text-tertiary-foreground">{note}</div>
         )}
       </dd>
     </>

@@ -24,7 +24,7 @@ import { AccountSlot } from '../quickBar/AccountSlot'
 import { PlatformPicker, PostTypePicker } from '../quickBar/ChannelPickers'
 import { PublishMethodPicker } from '../quickBar/PublishMethodPicker'
 import { SchedulingDetails } from '../quickBar/SchedulingLine'
-import { Mark, SettingRow as Row } from '../quickBar/parts'
+import { Mark, SettingList, SettingRow as Row } from '../quickBar/parts'
 import { awaiting } from '@/lib/fetched'
 
 type Props = {
@@ -211,9 +211,8 @@ export function PublishingSettings({
     doc.status === 'draft' || doc.status === 'ready_for_publish'
 
   return (
-    <dl
+    <SettingList
       className={cn(
-        LIST,
         // Blocked-action feedback: shake, then the ring fades out. Defined in
         // index.css because the ring's colour is animated, and it uses
         // `outline` rather than `border` so nothing reflows.
@@ -284,7 +283,7 @@ export function PublishingSettings({
           )}
         </Row>
       )}
-    </dl>
+    </SettingList>
   )
 }
 
@@ -315,7 +314,7 @@ export function WritingSettings({
     })
 
   return (
-    <dl className={LIST}>
+    <SettingList>
       {phases.length > 0 && (
         <Row label={t('posts.editor.settings.phase')}>
           <Mark>
@@ -334,15 +333,9 @@ export function WritingSettings({
       )}
       <PostBrandSection post={doc} />
       {formatsEnabled && <PostFormatSection post={doc} changeDoc={changeDoc} />}
-    </dl>
+    </SettingList>
   )
 }
-
-/**
- * The lists' grid: the labels' column, then the values'. Shared so the values
- * of every section of the Overview start at the same x.
- */
-const LIST = 'grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm'
 
 /**
  * Stands in for a platform with no connected post types — a shared frozen

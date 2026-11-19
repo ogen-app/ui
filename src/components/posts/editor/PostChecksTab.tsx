@@ -23,7 +23,8 @@ import {
   suggestionCountLine,
 } from '@/lib/postQuality'
 import { BandTag } from '../quality/BandTag'
-import { SummaryLine } from '../quickBar/parts'
+import { SettingRow, SummaryLine } from '../quickBar/parts'
+import { formatNumber } from '@/lib/intl'
 import { QualityInlineSummary } from '../quality/QualityInlineSummary'
 import type { PostEvaluation } from '@/types/quality'
 import type { PostStatus } from '@/types/posts'
@@ -189,93 +190,113 @@ export function PostChecksTab({
 const SUMMARY_ROWS = 3
 
 /**
- * The Overview's health section: the Checks tab and the Quality tab, each cut
- * to the line that says whether anything needs doing.
+ * The Overview's Health row: the Checks tab cut to its verdict and the first
+ * few requirements that fail, the verdict opening the tab with the rest.
  *
- * It exists because nobody opens a tab called Quality to find out whether
- * they should care about quality. Shown on the tab the post opens on, the
- * answer comes to them: the requirements' verdict with the first few that
- * fail, and the score with its count of suggestions — each line a way into
- * the tab that has the rest. The same two halves stop applying at the same
- * moments as on the Checks tab (see `PostChecksTab`).
+ * It exists because nobody opens a tab to find out whether they should care
+ * what is in it. Gone once the post is `published`, as on the Checks tab:
+ * the requirements were a forecast, and publishing settled it.
  */
-export function PostHealthSummary({
+export function PostChecksSummary({
   checks,
-  status,
-  assessment,
-  qualityUnavailable,
-  assessing,
-  exhausted = false,
-  onAssess,
-  onOpenChecks,
-  onOpenQuality,
-}: Omit<Props, 'previousAssessment'> & { onOpenChecks: () => void }) {
+  onOpen,
+}: {
+  checks: PostCheck[]
+  onOpen: () => void
+}) {
   const { t } = useTranslation()
-  const showQuality = !qualityUnavailable
-  const showChecks = status !== 'published'
-  const canAssess = showQuality && !isSubmitted(status)
   const problems = awaitingPlatform(checks)
     ? []
     : checks.filter((c) => c.status === 'fail' || c.status === 'warn')
   const more = problems.length - SUMMARY_ROWS
+  const label = t('posts.editor.tabs.checks')
 
   return (
-    <div className="flex flex-col gap-2 text-sm">
-      {showChecks && (
-        <SummaryLine
-          onOpen={onOpenChecks}
-          label={t('posts.editor.tabs.checks')}
-        >
-          <StatusIcon status={worstStatus(checks)} />
-          <span className="min-w-0 truncate">{checksSummary(checks)}</span>
-        </SummaryLine>
-      )}
-      {showChecks && problems.length > 0 && (
-        <ul className="flex flex-col gap-1 pl-5.5">
-          {problems.slice(0, SUMMARY_ROWS).map((check) => (
-            <li key={check.id} className="min-w-0">
-              <span className="text-foreground">{check.label}</span>
-              {check.detail && (
-                <span className="text-warning"> — {check.detail}</span>
-              )}
-            </li>
-          ))}
-          {more > 0 && (
-            <li className="text-tertiary-foreground">
-              {t('posts.editor.overview.moreChecks', { count: more })}
-            </li>
-          )}
-        </ul>
-      )}
-
-      {showQuality &&
-        (assessment ? (
-          <SummaryLine
-            onOpen={onOpenQuality}
-            label={t('posts.editor.tabs.quality')}
-          >
-            <GaugeIcon className="size-4 shrink-0 text-tertiary-foreground" />
-            <QualityLine assessment={assessment} />
-          </SummaryLine>
-        ) : (
-          <div className="flex min-h-6 items-center gap-1.5">
-            <GaugeIcon className="size-4 shrink-0 text-tertiary-foreground" />
-            <span className="min-w-0 flex-1 truncate text-tertiary-foreground">
-              {assessment === null && !assessing
-                ? t('posts.editor.overview.notAssessed')
-                : t('posts.editor.tabs.quality')}
-            </span>
-            {canAssess && (
-              <AssessLink
-                assessment={assessment}
-                assessing={assessing}
-                exhausted={exhausted}
-                onAssess={onAssess}
-              />
+    <SettingRow
+      label={label}
+      note={
+        problems.length > 0 && (
+          <ul className="flex flex-col gap-0.5 text-sm">
+            {problems.slice(0, SUMMARY_ROWS).map((check) => (
+              <li key={check.id} className="min-w-0">
+                <span className="text-foreground">{check.label}</span>
+                {check.detail && (
+                  <span className="text-warning"> — {check.detail}</span>
+                )}
+              </li>
+            ))}
+            {more > 0 && (
+              <li className="text-tertiary-foreground">
+                {t('posts.editor.overview.moreChecks', { count: more })}
+              </li>
             )}
-          </div>
-        ))}
-    </div>
+          </ul>
+        )
+      }
+    >
+      <SummaryLine onOpen={onOpen} label={label}>
+        <StatusIcon status={worstStatus(checks)} />
+        <span className="min-w-0 truncate">{checksSummary(checks)}</span>
+      </SummaryLine>
+    </SettingRow>
+  )
+}
+
+/**
+ * The Overview's Quality row: the score, its band and how many suggestions it
+ * made — opening the Quality tab — or, before there is one, the offer to take
+ * it. The offer goes once the post is submitted, as on the Checks tab.
+ */
+export function PostQualitySummary({
+  status,
+  assessment,
+  assessing,
+  exhausted = false,
+  onAssess,
+  onOpen,
+}: {
+  status: PostStatus
+  assessment: PostEvaluation | null | undefined
+  assessing: boolean
+  exhausted?: boolean
+  onAssess: () => void
+  onOpen: () => void
+}) {
+  const { t } = useTranslation()
+  const label = t('posts.editor.overview.score')
+  const mark = (
+    <GaugeIcon className="size-4 shrink-0 text-tertiary-foreground" />
+  )
+
+  if (assessment) {
+    return (
+      <SettingRow label={label}>
+        <SummaryLine onOpen={onOpen} label={t('posts.editor.tabs.quality')}>
+          {mark}
+          <QualityLine assessment={assessment} />
+        </SummaryLine>
+      </SettingRow>
+    )
+  }
+  return (
+    <SettingRow label={label}>
+      {mark}
+      <span className="min-w-0 truncate text-tertiary-foreground">
+        {assessment === null && !assessing
+          ? t('posts.editor.overview.notAssessed')
+          : null}
+      </span>
+      {!isSubmitted(status) && (
+        <span className="ml-auto">
+          <AssessLink
+            assessment={assessment}
+            assessing={assessing}
+            exhausted={exhausted}
+            onAssess={onAssess}
+          />
+        </span>
+      )}
+    </SettingRow>
   )
 }
 
@@ -287,7 +308,7 @@ function QualityLine({ assessment }: { assessment: PostEvaluation }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
       <span className="font-medium tabular-nums text-foreground">
-        {t('posts.editor.overview.quality', { score: pct })}
+        {formatNumber(pct)}
       </span>
       <BandTag band={overallBand(pct)} />
       {suggestions.length > 0 && (
