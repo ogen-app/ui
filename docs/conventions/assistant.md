@@ -220,7 +220,7 @@ keep it accurate when these rules change.
   store's `restoreFinding`) write it at once. The ignored ones sit behind
   "N ignored on this campaign · SHOW", each with RESTORE, and a review never
   says the brief and posts agree when its findings were only ignored. **The
-  Overview's Needs attention card leads with the server's problems**
+  Overview's Warnings card carries the server's problems**
   (`useCampaignProblems`, read off `GET /api/campaigns/:id/overview`), and
   drops the client rules they cover (`post-type-dropped`,
   `scheduled-outside-window`, and since CON-468's `platform_not_targeted`
@@ -268,8 +268,8 @@ keep it accurate when these rules change.
   rest "or …" — sends `<fix>: <problem>` to the campaign's thread, never a raw
   key, which answers with that finding's fixes as offers; a fix that is only a
   post to open is a link, a problem with no fix offers IGNORE alone, and FIX
-  WITH ASSISTANT in the header asks for all of them. The server's problems are
-  never folded behind SHOW MORE; only the client's rules are capped.
+  WITH OGEN in the header asks for all of them. Nothing on the Overview is
+  folded behind SHOW MORE.
 
 - **The analytics pack's results are cards, and every card cites its
   filters** (CON-463, drawn as CON-479 has them). `complete.results.analytics`

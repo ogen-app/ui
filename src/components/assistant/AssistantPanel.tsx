@@ -162,36 +162,31 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
       // itself it is just a heading.
       onTitleClick={thread ? () => selectThread(null) : undefined}
       titleLabel={thread ? t('assistant.panel.back') : undefined}
-      // Solid across the 24px below the composer only — the whole 56px row is on
-      // the ramp. That is what puts a trace of the thread at the height of the
-      // placeholder: the field's own fill covers the words, so what shows is the
-      // gaps around it and between the buttons, and the input reads as sitting
-      // *in* the panel rather than on a plate laid over it. The ramp then runs
-      // 40px clear of the row, which is where the fade is actually watched — a
-      // short one ends too close to the row and reads as a cut. Chips make the
-      // footer a block of a depth this doesn't know, so it falls back to
-      // covering all of it.
-      footerSolid={chipsInFooter ? undefined : 24}
-      footerFade={96}
+      // The composer is its own 56px row — the header's band, at the foot —
+      // so the section adds no padding above or below it, and 8px at the
+      // sides: the field's focused fill runs to the section's edges, and the
+      // buttons sit just inside them.
+      footerClassName="px-2 py-0 lg:px-2"
       footer={
         thread && (
-          // No fill of its own: the panel's ramp is what the thread scrolls
-          // behind, and a solid block here would put the composer back on the
-          // slab the ramp exists to get rid of. Keyed by thread: openThread can
-          // swap the active thread without unmounting the panel, and the
-          // composer's local draft must not follow into the next conversation.
+          // Keyed by thread: openThread can swap the active thread without
+          // unmounting the panel, and the composer's local draft must not
+          // follow into the next conversation.
           <div
             key={thread.id}
             className={cn('flex flex-col gap-2', chipsInFooter && 'pt-3')}
           >
             {/* In an empty thread the chips are the body's, not the footer's. */}
             {chipsInFooter && (
-              <StarterChips
-                kind={thread.subject.kind}
-                onPick={pick}
-                disabled={running}
-                placement="footer"
-              />
+              // In from the section's 8px to the thread's own edge.
+              <div className="px-4">
+                <StarterChips
+                  kind={thread.subject.kind}
+                  onPick={pick}
+                  disabled={running}
+                  placement="footer"
+                />
+              </div>
             )}
             <ContextChip
               subject={thread.subject}

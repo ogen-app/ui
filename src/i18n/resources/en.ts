@@ -1951,45 +1951,144 @@ export const en = {
     openSettings: 'OPEN SETTINGS',
 
     /**
-     * Stands in the time column of a post row that has no timestamp. A post
-     * really can be published without one — see the note at the call site —
-     * and a blank cell reads as a bug rather than as the fact it is.
-     */
-    noDate: 'No date',
-
-    /** The Analytics card: the tab's first row, over its default period. */
-    analytics: {
-      nothingMeasured: 'Nothing measured yet',
-      emptyBody:
-        'Once this campaign’s posts go out and the platforms report back, what they earn shows up here.',
-      error: 'Couldn’t load analytics.',
-    },
-
-    /**
      * The calendar's problems, read from the server (CON-462). The fix is
      * asked of the campaign's assistant, which offers it to confirm.
      */
     problems: {
       ignore: 'IGNORE',
       ignoreFailed: 'Couldn’t ignore that problem. Try again.',
-      or: 'or {{fix}}',
       /** The card's header: every problem, to the campaign's assistant. */
-      fixAll: 'FIX WITH ASSISTANT',
+      fixAll: 'FIX WITH OGEN',
       askAll: 'Fix these with me.',
       /** Sent to the campaign's assistant: the fix, then the problem. */
       askFix: '{{fix}}: {{problem}}',
     },
-    /** The Needs attention card. */
-    attention: {
-      title: 'Needs attention',
-      /** Beside the title: "4 · 1 ignored". */
-      countIgnored_one: '{{total}} · {{formatted}} ignored',
-      countIgnored_other: '{{total}} · {{formatted}} ignored',
-      showMore_one: 'SHOW {{formatted}} MORE',
-      showMore_other: 'SHOW {{formatted}} MORE',
-      allSet: 'You’re all set',
-      allSetBody:
-        'Nothing is failing, overdue, or waiting on you right now. If something comes up, it’ll show up here.',
+    /** The Before-launch list's first post. */
+    todo: {
+      addPost: 'ADD POST',
+    },
+    /** Shared by the band and the figures. */
+    stats: {
+      /** After the dates on the progress card, so lower case. */
+      dayOf: 'day {{day}} of {{total}}',
+      /** `when` is a relative time, "in 5 days". After the dates. */
+      startsIn: 'starts {{when}}',
+      /** `when` is a relative time, "3 days ago". After the dates. */
+      ended: 'ended {{when}}',
+      published: 'Published',
+      failed: 'Failed',
+      untitledPost: 'Untitled post',
+    },
+    /** The campaign's stage, derived from its dates (lib/campaignOverview). */
+    stage: {
+      new: 'New',
+      planning: 'Planning',
+      launched: 'Just launched',
+      running: 'Running',
+      closing: 'Closing',
+      ended: 'Ended',
+    },
+    /** The progress card: where the campaign is in its own time. */
+    band: {
+      /** The dates, then the day or how far off the start or end is. */
+      when: '{{range}} | {{where}}',
+      /** The campaign type's phase today. */
+      phaseNow: '{{name}} phase, day {{day}} of {{total}}',
+      /** Figure names under the bar. With a goal, the whole campaign. */
+      scheduled: 'Scheduled',
+      /** With no goal: the last and the next `days` days. */
+      publishedRecent: 'Published, last {{days}} days',
+      scheduledRecent: 'Scheduled, next {{days}} days',
+      /** Published posts a week since the start. */
+      pace: 'Weekly pace',
+      /** Before the start: scheduled posts a week. */
+      pacePlanned: 'Planned weekly pace',
+    },
+    week: {
+      this: 'This week',
+      first: 'First week',
+      today: 'Today',
+      empty: 'Nothing goes out this week.',
+      /** Beside a post the user publishes by hand. */
+      manual: 'MANUAL',
+    },
+    results: {
+      title: 'Results',
+      publishedOf_one: 'Published of {{formatted}}',
+      publishedOf_other: 'Published of {{formatted}}',
+      neverPublished: 'Never went out',
+    },
+    figures: {
+      reach: 'Reach',
+      interactions: 'Interactions',
+      best: 'Best post',
+      reachOf: '{{reach}} reach',
+    },
+    /** The right-hand column: one list of what wants the user. */
+    needs: {
+      needsYou: 'Needs you',
+      beforeLaunch: 'Before launch',
+      wrapUp: 'Wrap up',
+      none: 'Nothing is waiting on you.',
+      /** After a problem standing for others of its kind. */
+      more_one: '+{{formatted}} like this',
+      more_other: '+{{formatted}} like this',
+      menu: 'More fixes',
+      firstPost: 'Add the first post',
+      coverageGaps_one:
+        '{{formatted}} publishing day in the first two weeks has nothing planned',
+      coverageGaps_other:
+        '{{formatted}} publishing days in the first two weeks have nothing planned',
+      readResults: 'Read how the campaign did',
+      archive: 'Archive the campaign',
+    },
+    /** A campaign with no dates: the three things that make one. */
+    /**
+     * A campaign with no dates: the three things that make one. Each step is
+     * done by hand (`action`) or asked of Ogen (`ask`, written into the
+     * campaign's composer — the send is the user's).
+     */
+    setup: {
+      title: 'Set up this campaign',
+      withOgen: 'DO IT WITH OGEN',
+      strategy: {
+        title: 'Dates and a post goal',
+        detail: 'When it runs and how often it publishes.',
+        action: 'SET DATES',
+        ask: 'Suggest dates and a post goal for this campaign.',
+      },
+      channels: {
+        title: 'Channels',
+        detail: 'Where it publishes, with an account connected.',
+        action: 'CHOOSE CHANNELS',
+        ask: 'Suggest which channels this campaign should publish on.',
+      },
+      posts: {
+        title: 'The first post',
+        detail: 'Write one yourself, or have Ogen draft a plan.',
+        action: 'ADD POST',
+        ask: 'Generate a content plan for this campaign.',
+      },
+    },
+    /** Beside the setup card: teaching only, the screen reads the same without it. */
+    learn: {
+      title: 'How a campaign works',
+      stages: {
+        title: 'Its dates set its stage',
+        detail:
+          'Planning before it starts, running while it runs, ended after. This page changes with it.',
+      },
+      goal: {
+        title: 'The goal is a rate',
+        detail:
+          'So many posts a week or a month. The total follows from the dates.',
+      },
+      ogen: {
+        title: 'Ogen works inside it',
+        detail:
+          'The assistant reads the campaign’s strategy and assets, so what it drafts fits the brief.',
+      },
+      more: 'LEARN MORE IN THE HELP CENTRE',
     },
   },
 
@@ -8505,6 +8604,55 @@ export const en = {
     },
     add: 'ADD CAMPAIGN',
     error: 'Failed to load campaigns',
+    /** The list's rows: the Overview in one row each, grouped by stage. */
+    list: {
+      group: {
+        live: 'Live',
+        planning: 'Planning',
+        new: 'New',
+        ended: 'Ended',
+      },
+      /** The row's link, named for what it opens. */
+      open: 'Open {{name}}',
+      noChannels: 'No channels yet',
+      /** The third column when nothing wants the user. */
+      goodShape: 'In good shape',
+      /**
+       * The progress column's line under the bar, one sentence per figure.
+       * `days` is the window either side of today the bar covers.
+       */
+      line: {
+        published_one: '{{formatted}} published in the last {{days}} days',
+        published_other: '{{formatted}} published in the last {{days}} days',
+        publishedTotal_one: '{{formatted}} published',
+        publishedTotal_other: '{{formatted}} published',
+        publishedOf_one: '{{formatted}} of {{goal}} published',
+        publishedOf_other: '{{formatted}} of {{goal}} published',
+        scheduledNext_one: '{{formatted}} scheduled in the next {{days}} days',
+        scheduledNext_other:
+          '{{formatted}} scheduled in the next {{days}} days',
+        scheduled_one: '{{formatted}} scheduled',
+        scheduled_other: '{{formatted}} scheduled',
+        pace_one: 'Pace {{formatted}} post a week',
+        pace_other: 'Pace {{formatted}} posts a week',
+        pacePlanned_one: 'Planned pace {{formatted}} post a week',
+        pacePlanned_other: 'Planned pace {{formatted}} posts a week',
+        nothingYet: 'Nothing published or scheduled yet',
+        failed_one: '{{formatted}} failed',
+        failed_other: '{{formatted}} failed',
+        neverPublished_one: '{{formatted}} never went out',
+        neverPublished_other: '{{formatted}} never went out',
+        reach: '{{formatted}} reach',
+        interactions_one: '{{formatted}} interaction',
+        interactions_other: '{{formatted}} interactions',
+      },
+      /** A campaign with no dates: the third column is its setup left. */
+      setUp: 'Set up',
+      /** A campaign with no dates, where the others have their window. */
+      notDated: 'No dates yet',
+      loadFailed:
+        'Couldn’t load the posts. The figures appear once they can be reached again.',
+    },
     untitled: 'this campaign',
     empty: {
       title: 'No campaigns yet',

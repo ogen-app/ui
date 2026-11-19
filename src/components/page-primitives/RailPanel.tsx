@@ -1,15 +1,6 @@
-import {
-  createContext,
-  useContext,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type Ref,
-} from 'react'
+import { createContext, useContext, type ReactNode, type Ref } from 'react'
 import { XIcon } from '@phosphor-icons/react'
 import { ZIndex } from '@/config/zIndex.ts'
-import { SurfaceFader } from '@/components/page-primitives/SurfaceFader'
 import { CHROME_BAR_H } from '@/components/layout/chrome'
 import { cn } from '@/lib'
 
@@ -53,20 +44,10 @@ type RailPanelProps = {
   /** Accessible name for the title button, when `onTitleClick` is set. */
   titleLabel?: string
   /**
-   * Solid panel from the bottom edge up, in px — set it to the middle of the
-   * footer's last row.
-   *
-   * Only worth setting when that row's height is known. Left off, the ramp falls
-   * back to covering the footer's whole box and overhanging it by `footerFade`,
-   * which is the safe shape for a footer of any depth.
+   * The footer section's padding, for a footer whose content brings its own
+   * (the assistant's composer is a 56px row, the header's band).
    */
-  footerSolid?: number
-  /**
-   * The ramp above `footerSolid`. Only the part of it clear of the footer's own
-   * box is visible: the scroll area stops at that top edge, so nothing is ever
-   * painted behind the footer for the rest of the ramp to work on.
-   */
-  footerFade?: number
+  footerClassName?: string
 }
 
 export function RailPanel({
@@ -82,29 +63,11 @@ export function RailPanel({
   titleAdornment,
   onTitleClick,
   titleLabel,
-  footerSolid,
-  footerFade = 32,
+  footerClassName,
 }: RailPanelProps) {
   const embedded = useContext(RailPanelEmbedded)
-  const footerRef = useRef<HTMLDivElement>(null)
-  // The footer overlays the scroll rather than sitting beside it, so the body
-  // needs to be told how much room to leave at the end. Measured, because the
-  // footer is whatever the panel put there — a composer, a button, chips over a
-  // composer — and it resizes as the user types.
-  const [footerHeight, setFooterHeight] = useState(0)
-  useLayoutEffect(() => {
-    const el = footerRef.current
-    if (!el) return
-    const observer = new ResizeObserver(() => setFooterHeight(el.offsetHeight))
-    observer.observe(el)
-    setFooterHeight(el.offsetHeight)
-    return () => observer.disconnect()
-  }, [footer])
-
   return (
-    // `relative`: the footer is positioned against this, not against the
-    // scroller — it has to stay put while the thread runs underneath it.
-    <div className={cn('relative h-full flex flex-col', className)}>
+    <div className={cn('h-full flex flex-col', className)}>
       <div ref={scrollRef} className="h-0 grow overflow-y-auto flex flex-col">
         {/* The header is the frame's 56px band (`CHROME_BAR_H`), opaque and
             ruled off across the panel's whole width, so its line runs on from
@@ -161,53 +124,24 @@ export function RailPanel({
         )}
         <div
           className={cn(
-            'px-3 lg:px-6 pt-4 flex flex-col gap-4',
-            // With a footer the room at the end is the spacer's job — it has to
-            // match the footer exactly, or the last line either hides under it
-            // or stops short of it.
-            footer ? null : 'pb-6',
+            'px-3 lg:px-6 pt-4 pb-6 flex flex-col gap-4',
             bodyClassName,
           )}
         >
           {children}
         </div>
-        {footer && (
-          <div
-            style={{ height: footerHeight }}
-            className="shrink-0"
-            aria-hidden
-          />
-        )}
       </div>
+      {/* The footer is the header's counterpart: a solid section ruled off
+          across the panel's whole width, under the scroll rather than over it,
+          so the body ends at a line instead of fading out behind a ramp. */}
       {footer && (
         <div
-          ref={footerRef}
-          className="absolute inset-x-0 bottom-0 px-3 lg:px-6 pb-6"
-          style={{ zIndex: ZIndex.pageHeader }}
+          className={cn(
+            'shrink-0 border-t border-border bg-primary px-3 py-4 lg:px-6',
+            footerClassName,
+          )}
         >
-          {/* A ramp off the bottom edge. `footerSolid` is
-              measured from that edge, so it is set to reach the middle of
-              whatever row the footer ends with — the composer, a button — and
-              the ramp climbs from there, up through the top of that row and out
-              over the scroll. Now that the thread runs underneath, the part of
-              the ramp crossing the row has something to fade: it shows in the
-              gaps the row's own fills leave. */}
-          <SurfaceFader
-            edge="bottom"
-            solid={
-              footerSolid === undefined
-                ? `calc(100% - ${footerFade}px)`
-                : `${footerSolid}px`
-            }
-            fade={footerFade}
-            className="bottom-0"
-            style={
-              footerSolid === undefined
-                ? { top: -footerFade }
-                : { height: footerSolid + footerFade }
-            }
-          />
-          <div className="relative">{footer}</div>
+          {footer}
         </div>
       )}
     </div>

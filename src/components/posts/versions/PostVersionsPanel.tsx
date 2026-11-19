@@ -180,7 +180,6 @@ export function PostVersionsPanel({ doc, onClose }: Props) {
       footer={
         locked ? undefined : <SaveVersionForm onSave={save} saving={saving} />
       }
-      footerFade={40}
     >
       {loading ? (
         <div className="flex flex-col gap-2">
@@ -478,7 +477,6 @@ function VersionReader({
           </div>
         ) : undefined
       }
-      footerFade={48}
     >
       <div className="flex items-center gap-2 min-w-0">
         {version ? (
