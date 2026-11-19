@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { EmptyChart, PostSeriesChart } from './charts'
 import { Segmented } from './ComparisonBar'
 import { InsightLine } from './ComparisonSections'
@@ -206,11 +207,11 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
 
   if (view.maturity === 'unpublished') {
     return (
-      <SectionCard title={t('analytics.post.overviewTitle')}>
+      <Card capped title={t('analytics.post.overviewTitle')}>
         <NotYet title={t('analytics.post.unpublishedTitle')}>
           {t('analytics.post.unpublishedBody')}
         </NotYet>
-      </SectionCard>
+      </Card>
     )
   }
 
@@ -223,7 +224,8 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
       // answer: forty minutes is why there is nothing to show. What is *not*
       // here is the publication date — that is on the card above, and a header
       // restating it is the same fact in two type sizes.
-      <SectionCard
+      <Card
+        capped
         title={t('analytics.post.overviewTitle')}
         qualifier={window_(t, view)}
       >
@@ -231,7 +233,7 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
           {t('analytics.post.silentBody')}
         </NotYet>
         <Freshness at={view.lastRefreshedAt} />
-      </SectionCard>
+      </Card>
     )
   }
 
@@ -249,7 +251,8 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
   const tiles = orderedMetrics(view.metrics)
 
   return (
-    <SectionCard
+    <Card
+      capped
       title={t('analytics.post.overviewTitle')}
       qualifier={window_(t, view)}
     >
@@ -292,7 +295,7 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
         <Basis>{maturityNote(t, view.maturity)}</Basis>
         <Freshness at={view.lastRefreshedAt} />
       </div>
-    </SectionCard>
+    </Card>
   )
 }
 

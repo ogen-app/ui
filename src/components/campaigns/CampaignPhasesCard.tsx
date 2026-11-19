@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { LineItem } from '@/components/ui/line-item'
 import { Skeleton } from '@/components/ui/skeleton'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import {
   useCampaignPhases,
   useResetPhasePlan,
@@ -69,20 +68,17 @@ export function CampaignPhasesCard({ campaignId, pending }: Props) {
     plan.status === 'ready' && plan.data.source === 'manual' && !pending
 
   return (
-    <SettingsCard
+    <Card
       title={t('campaigns.phases.title')}
-      actions={
-        resettable ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={busy}
-            onClick={() => reset.mutate(null)}
-          >
-            {t('campaigns.phases.reset')}
-          </Button>
-        ) : undefined
+      capped
+      action={
+        resettable
+          ? {
+              label: t('campaigns.phases.reset'),
+              disabled: busy,
+              onClick: () => reset.mutate(null),
+            }
+          : undefined
       }
     >
       {plan.status === 'pending' && (
@@ -104,7 +100,7 @@ export function CampaignPhasesCard({ campaignId, pending }: Props) {
           onMove={(next) => save.mutate(next)}
         />
       )}
-    </SettingsCard>
+    </Card>
   )
 }
 

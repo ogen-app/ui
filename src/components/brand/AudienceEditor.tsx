@@ -1,12 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   BrandEditorFrame,
   DangerCard,
-  EditorCard,
   EditorIntro,
   Field,
   ForkedNote,
@@ -124,7 +124,7 @@ export function AudienceEditor({
       {/* No `DefaultControl` here, and the voice editor has one. An audience
           has no workspace default to promote it to — the resolution stops at
           the campaign. See `resolveAudience` in `binding.ts`. */}
-      <EditorCard title={t('brand.audiences.editor.general')}>
+      <Card title={t('brand.audiences.editor.general')} capped>
         <Field label={t('brand.audiences.editor.name')}>
           <Input
             value={draft.name}
@@ -146,7 +146,7 @@ export function AudienceEditor({
             className="min-h-24"
           />
         </Field>
-      </EditorCard>
+      </Card>
 
       <ConsequencesCard
         draft={draft}
@@ -200,28 +200,25 @@ function ConsequencesCard({
     !draft.readsOn || !draft.scrollsPastWhen || !draft.believesWhen
 
   return (
-    <EditorCard
-      title={t('brand.audiences.editor.consequences')}
-      hint={
-        <>
-          {summary ? (
-            <span>
-              <span className="text-primary-foreground">
-                {t('brand.audiences.editor.readsAs')}
-              </span>{' '}
-              {summary}
-            </span>
-          ) : (
-            !incomplete && (
-              <span>{t('brand.audiences.editor.summaryPending')}</span>
-            )
-          )}
-          {incomplete && (
-            <span>{t('brand.audiences.editor.consequencesHint')}</span>
-          )}
-        </>
-      }
-    >
+    <Card title={t('brand.audiences.editor.consequences')} capped>
+      <div className="flex flex-col gap-1 text-sm text-secondary-foreground">
+        {summary ? (
+          <span>
+            <span className="text-primary-foreground">
+              {t('brand.audiences.editor.readsAs')}
+            </span>{' '}
+            {summary}
+          </span>
+        ) : (
+          !incomplete && (
+            <span>{t('brand.audiences.editor.summaryPending')}</span>
+          )
+        )}
+        {incomplete && (
+          <span>{t('brand.audiences.editor.consequencesHint')}</span>
+        )}
+      </div>
+
       {blank && (
         <p className="border-l-2 border-quaternary pl-3 text-sm leading-5 text-tertiary-foreground">
           {t('brand.audiences.editor.blank')}
@@ -258,7 +255,7 @@ function ConsequencesCard({
           placeholder={t('brand.audiences.editor.believesPlaceholder')}
         />
       </Field>
-    </EditorCard>
+    </Card>
   )
 }
 

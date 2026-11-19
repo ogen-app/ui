@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
-import { brandSectionCopy } from '@/lib/brandSections'
-import { BrandSection, ChipList, Gap } from './shell'
+import { Card } from '@/components/ui/card'
+import { brandSection, brandSectionCopy } from '@/lib/brandSections'
+import { ChipList, Gap, readByStatus } from './shell'
 import type { BrandLook } from './types'
 
 /**
@@ -22,30 +22,26 @@ import type { BrandLook } from './types'
 export function LookSection({
   look,
   onEdit,
-  variant,
 }: {
   look: BrandLook | null
   onEdit?: () => void
-  variant?: 'card' | 'page'
 }) {
   const { t } = useTranslation()
+  const { icon, tone } = brandSection('look')
   return (
-    <BrandSection
-      variant={variant}
+    <Card
+      icon={icon}
+      tone={tone}
       title={brandSectionCopy(t, 'look').label}
       // `images` is aspirational and marked as such by being the only entry:
       // the template compositor is the consumer, and it is prototype 6.
-      readBy={[]}
-      action={
-        // Only when there is somewhere for it to go: the route renders this
-        // without an editor to open (`/foundation/look`), and an EDIT that does
-        // nothing is worse than none.
-        look && onEdit ? (
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            {t('brand.look.edit')}
-          </Button>
-        ) : undefined
-      }
+      status={readByStatus(t, [])}
+      // Only when there is somewhere for it to go: the route renders this
+      // without an editor to open (`/foundation/look`), and an EDIT that does
+      // nothing is worse than none.
+      {...(look &&
+        onEdit && { action: { label: t('brand.look.edit'), onClick: onEdit } })}
+      capped
     >
       {!look ? (
         <Gap
@@ -146,7 +142,7 @@ export function LookSection({
           </div>
         </div>
       )}
-    </BrandSection>
+    </Card>
   )
 }
 

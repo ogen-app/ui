@@ -3,6 +3,7 @@ import { CaretLeftIcon } from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageError } from '@/components/page-primitives/PageError'
@@ -14,7 +15,7 @@ import {
   brandSectionCopy,
   type BrandSectionId,
 } from '@/lib/brandSections'
-import { BrandIntro } from './shell'
+import { readByStatus } from './shell'
 import type { BrandData } from './types'
 
 /**
@@ -53,11 +54,11 @@ import type { BrandData } from './types'
  *
  * It did — the section's label sat beside the caret, which is the ordinary
  * arrangement and was not wrong. What replaced it is better rather than
- * cheaper: the column now opens on a `BrandIntro` card carrying the same label
- * as a display heading *and* the two sentences saying what the section is for.
- * A header can only ever state the name. Naming the place twice, once in 15px
- * and once in 24px with the explanation attached, is the version where one of
- * them is redundant — so the smaller one went.
+ * cheaper: the column now opens on an intro card (`BrandSectionIntro`) carrying
+ * the same label as its title *and* the sentences saying what the section is
+ * for. A header can only ever state the name. Naming the place twice, once in
+ * the header and once on the card with the explanation attached, is the
+ * version where one of them is redundant — so the header's went.
  *
  * The post editor reaches the same arrangement from the other direction: no
  * title there either, because the name is in the document. Here the name is in
@@ -261,15 +262,22 @@ export function BrandSectionIntro({
   const info = brandSection(section)
   const copy = brandSectionCopy(t, section)
   return (
-    <BrandIntro
+    // `wide` spans the panel instead of the column: Templates is a platform
+    // rail beside a detail panel, edge to edge, and a capped card above it
+    // reads as a card belonging to some other screen.
+    <Card
+      heading="h1"
       icon={info.icon}
       tone={info.tone}
       title={copy.label}
-      body={copy.description}
-      missing={isSectionEmpty(section, data) ? copy.whenEmpty : undefined}
-      readBy={info.readBy}
-      wide={wide}
-    />
+      status={readByStatus(t, info.readBy)}
+      capped={!wide}
+    >
+      <p className="text-sm text-secondary-foreground">{copy.description}</p>
+      {isSectionEmpty(section, data) && (
+        <p className="text-sm text-secondary-foreground">{copy.whenEmpty}</p>
+      )}
+    </Card>
   )
 }
 

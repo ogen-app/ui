@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { TextSelect } from '@/components/ui/text-select'
 import {
   BrandEditorFrame,
   DangerCard,
-  EditorCard,
   EditorIntro,
   Field,
   useEditorSave,
@@ -129,7 +129,7 @@ export function SeriesEditor({
         body={t('series.editor.intro')}
       />
 
-      <EditorCard title={t('series.editor.identityCard')}>
+      <Card title={t('series.editor.identityCard')} capped>
         <Field
           label={t('series.editor.nameLabel')}
           hint={t('series.editor.nameHint')}
@@ -150,13 +150,13 @@ export function SeriesEditor({
             placeholder={t('series.editor.promisePlaceholder')}
           />
         </Field>
-      </EditorCard>
+      </Card>
 
       {/* The screen's subject, and the card it is built around. */}
-      <EditorCard
-        title={t('series.editor.recipeCard')}
-        hint={t('series.editor.recipeHint')}
-      >
+      <Card title={t('series.editor.recipeCard')} capped>
+        <p className="text-sm text-secondary-foreground">
+          {t('series.editor.recipeHint')}
+        </p>
         <Textarea
           value={recipe}
           onChange={(event) => setRecipe(event.target.value)}
@@ -167,9 +167,9 @@ export function SeriesEditor({
           className="min-h-40"
           aria-label={t('series.editor.recipeCard')}
         />
-      </EditorCard>
+      </Card>
 
-      <EditorCard title={t('series.editor.runningCard')}>
+      <Card title={t('series.editor.runningCard')} capped>
         <Field
           label={t('series.editor.supplyLabel')}
           hint={t('series.editor.supplyHint')}
@@ -204,7 +204,7 @@ export function SeriesEditor({
         >
           <RhythmPicker value={rhythm} onChange={setRhythm} />
         </Field>
-      </EditorCard>
+      </Card>
 
       {existing && onDelete ? (
         <DangerCard

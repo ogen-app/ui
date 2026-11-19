@@ -1,12 +1,13 @@
-import { Fragment, useEffect, useRef } from 'react'
+import { Fragment, forwardRef, useEffect, useRef } from 'react'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import {
-  CaretRightIcon,
   CheckCircleIcon,
   CheckIcon,
   CircleDashedIcon,
   DotsThreeIcon,
   PlusIcon,
+  type Icon,
+  type IconProps,
 } from '@phosphor-icons/react'
 import {
   Alert02Icon,
@@ -21,6 +22,7 @@ import { IgnoredList } from '@/components/assistant/FindingsBlock'
 import { GridCell, PageGrid } from '@/components/page-primitives/PageGrid'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge.tsx'
 import { Button } from '@/components/ui/button.tsx'
+import { Card as CardFrame } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +56,7 @@ import {
 } from '@/lib/intl'
 import { getPlatformByZernioId } from '@/lib/platformDictionary'
 import { stageTodoLabel, type NeedsLine } from './needsLines'
-import { SectionLink } from './OverviewCard.tsx'
+import { SectionLink, useSectionDoor } from './OverviewCard.tsx'
 
 /**
  * What the screen does when a row is acted on. The route wires these to the
@@ -119,7 +121,7 @@ export function CampaignOverview({
             />
           </GridCell>
           <GridCell span="narrow">
-            <LearnCard learnMore={handlers.learnMore} campaignId={campaignId} />
+            <LearnCard learnMore={handlers.learnMore} />
           </GridCell>
         </PageGrid>
       </div>
@@ -166,55 +168,26 @@ export function CampaignOverview({
 const SURFACE = 'rounded-md border border-border bg-primary'
 
 /**
- * Where a card's header goes: a section of the campaign, or something the
- * screen opens itself (the help centre's article).
- */
-type CardDoor = { target: OverviewTarget } | { open: () => void; label: string }
-
-/**
- * Every card on the page, built as Brand's section cards are: the glyph in its
- * section's hue, the title in the display face, and — when the card has
- * somewhere to go — a caret at the far end, the whole header being the way
- * there. The caret replaces the OPEN … buttons, which named a destination in
- * words on one card and not on the next.
- *
- * Only the header is the door, never the card: the rows inside are links and
- * buttons of their own. The 20px glyph and its gap put the title's first
- * letter on the same 28px the rows' labels start on (`LineItem`).
+ * The needs list's card: the glyph in its hue, the title in the display face,
+ * and a button opposite. Not the app's `Card` (`ui/card`), because the list
+ * scrolls inside it, edge to edge, under a header that stays — and its button
+ * carries Ogen's mark, which isn't an `Icon`. Every other card on the page is
+ * the app's.
  */
 function Card({
   glyph,
   title,
-  door,
   aside,
-  campaignId,
   className,
   children,
 }: {
   glyph: ReactNode
   title: ReactNode
-  door?: CardDoor
-  /** Opposite the title, for a card with no door: a count, an action. */
+  /** Opposite the title: a count, an action. */
   aside?: ReactNode
-  campaignId: string
   className?: string
   children?: ReactNode
 }) {
-  const head = (
-    <>
-      {glyph}
-      <span className="truncate">{title}</span>
-    </>
-  )
-  const caret = (
-    <CaretRightIcon
-      className="ml-auto size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-      weight="bold"
-      aria-hidden
-    />
-  )
-  const doorClass =
-    'group -m-1 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm p-1 text-left'
   return (
     <section className={cn(SURFACE, 'flex flex-col gap-4 p-6', className)}>
       {/* The title keeps its width and the aside goes under it when the two
@@ -222,40 +195,14 @@ function Card({
           would otherwise cut the title to its first word. */}
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
         <h2 className="flex max-w-full min-w-0 flex-[1_0_auto] items-center gap-2 font-display text-xl font-medium tracking-tight">
-          {!door ? (
-            head
-          ) : 'target' in door ? (
-            <TargetLink
-              target={door.target}
-              campaignId={campaignId}
-              className={doorClass}
-            >
-              {head}
-              {caret}
-            </TargetLink>
-          ) : (
-            <button
-              type="button"
-              className={doorClass}
-              onClick={door.open}
-              title={door.label}
-            >
-              {head}
-              {caret}
-            </button>
-          )}
+          {glyph}
+          <span className="truncate">{title}</span>
         </h2>
         {aside}
       </div>
       {children}
     </section>
   )
-}
-
-/** A campaign section's glyph in its hue, the one the rail draws. */
-function SectionGlyph({ section }: { section: 'calendar' | 'analytics' }) {
-  const meta = campaignSection(section)
-  return <Glyph icon={meta.icon} tone={meta.tone} />
 }
 
 function Glyph({ icon, tone }: { icon: IconSvgElement; tone?: string }) {
@@ -270,6 +217,36 @@ function Glyph({ icon, tone }: { icon: IconSvgElement; tone?: string }) {
     />
   )
 }
+
+/**
+ * A Hugeicons glyph in the shape `Card`'s `icon` takes (a Phosphor `Icon`),
+ * so the cards keep the glyphs the rail draws. The card sizes it and gives it
+ * its `tone` through `className` and `style`.
+ */
+function hugeGlyph(icon: IconSvgElement): Icon {
+  return forwardRef<SVGSVGElement, IconProps>(function HugeGlyph(
+    { className, style },
+    _ref,
+  ) {
+    return (
+      <HugeiconsIcon
+        icon={icon}
+        size={20}
+        strokeWidth={1.5}
+        className={className}
+        style={style}
+        aria-hidden
+      />
+    )
+  })
+}
+
+const CALENDAR = campaignSection('calendar')
+const ANALYTICS = campaignSection('analytics')
+const CalendarGlyph = hugeGlyph(CALENDAR.icon)
+const AnalyticsGlyph = hugeGlyph(ANALYTICS.icon)
+const SetupGlyph = hugeGlyph(Task01Icon)
+const LearnGlyph = hugeGlyph(BookOpen01Icon)
 
 // --- The progress card -----------------------------------------------------
 
@@ -535,14 +512,15 @@ function WeekBlock({
   now: Date
 }) {
   const { t, i18n } = useTranslation()
+  const door = useSectionDoor(campaignId)
   const empty = days.every((d) => d.posts.length === 0)
   const todayKey = now.toDateString()
   return (
-    <Card
-      glyph={<SectionGlyph section="calendar" />}
+    <CardFrame
+      icon={CalendarGlyph}
+      tone={CALENDAR.tone}
       title={t(`campaignOverview.week.${kind}`)}
-      door={{ target: 'calendar' }}
-      campaignId={campaignId}
+      door={door('calendar')}
     >
       {empty ? (
         <p className="text-sm text-tertiary-foreground">
@@ -584,7 +562,7 @@ function WeekBlock({
             ))}
         </ol>
       )}
-    </Card>
+    </CardFrame>
   )
 }
 
@@ -640,18 +618,19 @@ function ResultsBlock({
   campaignId: string
 }) {
   const { t } = useTranslation()
+  const door = useSectionDoor(campaignId)
   return (
-    <Card
-      glyph={<SectionGlyph section="analytics" />}
+    <CardFrame
+      icon={AnalyticsGlyph}
+      tone={ANALYTICS.tone}
       title={t('campaignOverview.results.title')}
-      door={{ target: 'analytics' }}
-      campaignId={campaignId}
+      door={door('analytics')}
     >
       <ResultsFigures results={results} />
       {results.performance?.best && (
         <BestPost best={results.performance.best} campaignId={campaignId} />
       )}
-    </Card>
+    </CardFrame>
   )
 }
 
@@ -868,7 +847,6 @@ function NeedsList({
             </Button>
           )
         }
-        campaignId={campaignId}
       >
         {/* The rows scroll under the header once the card is as tall as the
           screen; edge to edge, so the bar sits on the card's border. */}
@@ -1180,10 +1158,10 @@ function SetupCard({
   const { t } = useTranslation()
   const next = steps.find((s) => !s.done)?.id
   return (
-    <Card
-      glyph={<Glyph icon={Task01Icon} tone="var(--nav-overview)" />}
+    <CardFrame
+      icon={SetupGlyph}
+      tone="var(--nav-overview)"
       title={t('campaignOverview.setup.title')}
-      campaignId={campaignId}
     >
       <ol className="flex flex-col">
         {steps.map((step, i) => (
@@ -1242,7 +1220,7 @@ function SetupCard({
           </li>
         ))}
       </ol>
-    </Card>
+    </CardFrame>
   )
 }
 
@@ -1297,48 +1275,44 @@ function SetupAction({
 
 /**
  * The right column of a new campaign: what someone setting one up for the
- * first time would want explained, in three lines. Its header opens the help
- * centre's article when one serves the topic, and is only a title otherwise.
+ * first time would want explained, in three lines. The whole card opens the
+ * help centre's article when one serves the topic; otherwise it opens nothing.
  * Teaching only — the screen reads the same without it.
  */
-function LearnCard({
-  learnMore,
-  campaignId,
-}: {
-  learnMore?: () => void
-  campaignId: string
-}) {
+function LearnCard({ learnMore }: { learnMore?: () => void }) {
   const { t } = useTranslation()
   const points = ['stages', 'goal', 'ogen'] as const
-  return (
-    <Card
-      glyph={<Glyph icon={BookOpen01Icon} />}
-      title={t('campaignOverview.learn.title')}
-      door={
-        learnMore && {
-          open: learnMore,
-          label: t('campaignOverview.learn.more'),
-        }
-      }
-      campaignId={campaignId}
+  const title = t('campaignOverview.learn.title')
+  const list = (
+    <ul className="flex flex-col">
+      {points.map((p) => (
+        <li key={p} className={DIVIDED}>
+          <LineItem
+            variant="entry"
+            indicator={{ kind: 'notification', tone: 'neutral' }}
+            label={t(`campaignOverview.learn.${p}.title`)}
+            details={
+              <span className="text-secondary-foreground">
+                {t(`campaignOverview.learn.${p}.detail`)}
+              </span>
+            }
+          />
+        </li>
+      ))}
+    </ul>
+  )
+  return learnMore ? (
+    <CardFrame
+      icon={LearnGlyph}
+      title={title}
+      door={{ kind: 'card', onOpen: learnMore }}
     >
-      <ul className="flex flex-col">
-        {points.map((p) => (
-          <li key={p} className={DIVIDED}>
-            <LineItem
-              variant="entry"
-              indicator={{ kind: 'notification', tone: 'neutral' }}
-              label={t(`campaignOverview.learn.${p}.title`)}
-              details={
-                <span className="text-secondary-foreground">
-                  {t(`campaignOverview.learn.${p}.detail`)}
-                </span>
-              }
-            />
-          </li>
-        ))}
-      </ul>
-    </Card>
+      {list}
+    </CardFrame>
+  ) : (
+    <CardFrame icon={LearnGlyph} title={title}>
+      {list}
+    </CardFrame>
   )
 }
 

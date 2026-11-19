@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { SectionCard } from './shell'
+import { ScopeNote } from './shell'
 
 /**
- * The line under a card's heading saying which controls above it do not reach
+ * The line opening a card's body saying which controls above it do not reach
  * it.
  *
  * This is the whole defence of a dashboard whose cards obey different scopes:
@@ -11,23 +11,15 @@ import { SectionCard } from './shell'
  * control above it would be worse than not offering the control.
  */
 
-describe('SectionCard scope note', () => {
+describe('ScopeNote', () => {
   it('says nothing when the controls above reach the card', () => {
-    const { container } = render(
-      <SectionCard title="What happened">
-        <p>figures</p>
-      </SectionCard>,
-    )
+    const { container } = render(<ScopeNote scope="lens" />)
 
-    expect(container.querySelector('header p')).toBeNull()
+    expect(container).toBeEmptyDOMElement()
   })
 
   it('disclaims the period', () => {
-    render(
-      <SectionCard title="What we've learned" scope="all-time">
-        <p>lessons</p>
-      </SectionCard>,
-    )
+    render(<ScopeNote scope="all-time" />)
 
     expect(
       screen.getByText('All time — not affected by the period above'),

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { LibrarySelectionBar } from '@/components/brand/librarySelection'
 import {
   useLibrarySelection,
@@ -14,7 +15,6 @@ import {
   OriginLine,
   PlainActionCard,
   StarterCard,
-  StarterGroup,
 } from './shell'
 import { AUDIENCE_STARTERS, audienceStarterCopy } from './starters'
 import type { BrandAudience } from './types'
@@ -108,24 +108,26 @@ function AudiencesEmpty({
   const { t } = useTranslation()
   const { tone } = brandSection('audiences')
   return (
-    <StarterGroup
-      title={t('brand.audiences.starterGroupTitle')}
-      body={t('brand.audiences.starterGroupBody')}
-    >
-      {AUDIENCE_STARTERS.map((starter) => {
-        const copy = audienceStarterCopy(t, starter)
-        return (
-          <StarterCard
-            key={starter.id}
-            icon={starter.icon}
-            tone={tone}
-            title={copy.title}
-            body={copy.body}
-            onClick={onStart ? () => onStart(starter.id) : undefined}
-          />
-        )
-      })}
-    </StarterGroup>
+    <Card title={t('brand.audiences.starterGroupTitle')} capped>
+      <p className="text-sm text-secondary-foreground">
+        {t('brand.audiences.starterGroupBody')}
+      </p>
+      <div className="grid gap-3">
+        {AUDIENCE_STARTERS.map((starter) => {
+          const copy = audienceStarterCopy(t, starter)
+          return (
+            <StarterCard
+              key={starter.id}
+              icon={starter.icon}
+              tone={tone}
+              title={copy.title}
+              body={copy.body}
+              onClick={onStart ? () => onStart(starter.id) : undefined}
+            />
+          )
+        })}
+      </div>
+    </Card>
   )
 }
 

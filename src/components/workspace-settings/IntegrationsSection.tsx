@@ -2,7 +2,7 @@ import { memo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { ArrowSquareOutIcon, FigmaLogoIcon } from '@phosphor-icons/react'
 
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useFigmaConnections } from '@/hooks/useFigmaIntegration'
 import { useLocale } from '@/hooks/useLocale'
@@ -43,7 +43,7 @@ function IntegrationsSectionComponent() {
 
   return (
     <div id={INTEGRATIONS_SECTION_ID} className="scroll-mt-4">
-      <SettingsCard title={t('integrations.figma.settings.title')}>
+      <Card title={t('integrations.figma.settings.title')} capped>
         {awaiting(query) ? (
           <p className="text-sm text-tertiary-foreground">
             {t('common.loading')}
@@ -65,7 +65,7 @@ function IntegrationsSectionComponent() {
             ))}
           </ul>
         )}
-      </SettingsCard>
+      </Card>
     </div>
   )
 }

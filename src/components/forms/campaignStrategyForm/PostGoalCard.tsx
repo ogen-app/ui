@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 
 import { Explainer } from '@/components/page-primitives/Explainer'
-import { SettingsCard } from '@/components/settings/SettingsCard'
-import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextSelect } from '@/components/ui/text-select'
@@ -119,18 +118,18 @@ export function PostGoalCard({ campaignId }: { campaignId: string }) {
   }
 
   return (
-    <SettingsCard
+    <Card
       title="Goals"
-      actions={
-        // A button rather than a switch: this opens and closes a whole section
-        // of the card, so it is worth naming what the click does instead of
-        // asking the user to read a state off a pill.
-        <Button type="button" variant="outline" onClick={toggle}>
-          {/* Literal caps, not `uppercase` — the caps are the copy, same rule
-              the Danger Zone labels follow. */}
-          {enabled ? 'SWITCH OFF' : 'SWITCH ON'}
-        </Button>
-      }
+      capped
+      // A button rather than a switch: this opens and closes a whole section
+      // of the card, so it is worth naming what the click does instead of
+      // asking the user to read a state off a pill. Literal caps, not
+      // `uppercase` — the caps are the copy, same rule the Danger Zone
+      // labels follow.
+      action={{
+        label: enabled ? 'SWITCH OFF' : 'SWITCH ON',
+        onClick: toggle,
+      }}
     >
       <div className="flex flex-col">
         {/* Outside the Explainer on purpose: this is the state of the campaign,
@@ -236,6 +235,6 @@ export function PostGoalCard({ campaignId }: { campaignId: string }) {
           </div>
         </div>
       </div>
-    </SettingsCard>
+    </Card>
   )
 }

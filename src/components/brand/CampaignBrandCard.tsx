@@ -1,14 +1,13 @@
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { SettingsCard } from '@/components/settings/SettingsCard'
-import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { brandSection } from '@/lib/brandSections'
 import { cn } from '@/lib'
 import { campaignToPayload } from '@/lib/campaignPayload'
 import { useBrand } from '@/hooks/useBrand'
 import { useCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
 import type { UpdateCampaignPayload } from '@/types/campaigns'
 import type { BrandAudience, BrandVoice } from './types'
-import { BrandSectionGlyph } from './BrandSectionGlyph'
 
 /**
  * What this campaign draws on out of the workspace's Brand (§8, middle level).
@@ -56,6 +55,9 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
 
   if (isLoading || !brand || !campaign) return null
 
+  const voices = brandSection('voices')
+  const audiences = brandSection('audiences')
+
   const empty = brand.voices.length === 0 && brand.audiences.length === 0
   if (empty) return <NothingToPickFrom />
 
@@ -65,63 +67,66 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
   }
 
   return (
-    <SettingsCard
-      title={
-        <>
-          <BrandSectionGlyph id="voices" />
-          {t('brand.binding.voice')}
-        </>
-      }
-    >
-      <p className="text-sm text-tertiary-foreground">
-        {t('brand.binding.campaignVoiceHint')}
-      </p>
-      <div className="flex flex-col">
-        {brand.voices.map((voice) => (
-          <VoiceRow
-            key={voice.id}
-            voice={voice}
-            picked={campaign.brand_voice_id === voice.id}
-            // Clicking the chosen one again clears it, so "the workspace's
-            // default" stays reachable without a None row that would sit in the
-            // list pretending to be a voice.
-            onPick={() =>
-              set({
-                brand_voice_id:
-                  campaign.brand_voice_id === voice.id ? null : voice.id,
-              })
-            }
-          />
-        ))}
-      </div>
-
-      <div className="mt-2 flex items-center gap-2">
-        <BrandSectionGlyph id="audiences" />
-        <h3 className="text-xl font-display font-medium tracking-tight">
-          {t('brand.binding.audience')}
-        </h3>
-      </div>
-      <p className="text-sm text-tertiary-foreground">
-        {t('brand.binding.campaignAudienceHint')}
-      </p>
-      <div className="flex flex-col">
-        {brand.audiences.map((audience) => (
-          <AudienceRow
-            key={audience.id}
-            audience={audience}
-            picked={campaign.brand_audience_id === audience.id}
-            onPick={() =>
-              set({
-                brand_audience_id:
-                  campaign.brand_audience_id === audience.id
-                    ? null
-                    : audience.id,
-              })
-            }
-          />
-        ))}
-      </div>
-    </SettingsCard>
+    // Two cards, one per binding: each is its own question with its own
+    // section hue, and a second heading inside one card made the two read as
+    // a card with a footnote.
+    <>
+      <Card
+        icon={voices.icon}
+        tone={voices.tone}
+        title={t('brand.binding.voice')}
+        capped
+      >
+        <p className="text-sm text-tertiary-foreground">
+          {t('brand.binding.campaignVoiceHint')}
+        </p>
+        <div className="flex flex-col">
+          {brand.voices.map((voice) => (
+            <VoiceRow
+              key={voice.id}
+              voice={voice}
+              picked={campaign.brand_voice_id === voice.id}
+              // Clicking the chosen one again clears it, so "the workspace's
+              // default" stays reachable without a None row that would sit in the
+              // list pretending to be a voice.
+              onPick={() =>
+                set({
+                  brand_voice_id:
+                    campaign.brand_voice_id === voice.id ? null : voice.id,
+                })
+              }
+            />
+          ))}
+        </div>
+      </Card>
+      <Card
+        icon={audiences.icon}
+        tone={audiences.tone}
+        title={t('brand.binding.audience')}
+        capped
+      >
+        <p className="text-sm text-tertiary-foreground">
+          {t('brand.binding.campaignAudienceHint')}
+        </p>
+        <div className="flex flex-col">
+          {brand.audiences.map((audience) => (
+            <AudienceRow
+              key={audience.id}
+              audience={audience}
+              picked={campaign.brand_audience_id === audience.id}
+              onPick={() =>
+                set({
+                  brand_audience_id:
+                    campaign.brand_audience_id === audience.id
+                      ? null
+                      : audience.id,
+                })
+              }
+            />
+          ))}
+        </div>
+      </Card>
+    </>
   )
 }
 
@@ -134,21 +139,23 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
  */
 function NothingToPickFrom() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   return (
-    <SettingsCard title={t('brand.binding.emptyTitle')}>
+    <Card
+      title={t('brand.binding.emptyTitle')}
+      action={{
+        label: t('brand.binding.openBrand'),
+        onClick: () => void navigate({ to: '/foundation' }),
+      }}
+      capped
+    >
       <p className="text-sm text-tertiary-foreground">
         {t('brand.binding.emptyBody')}
       </p>
-      <div>
-        <Button asChild variant="secondary" size="sm">
-          <Link to="/foundation">{t('brand.binding.openBrand')}</Link>
-        </Button>
-      </div>
-    </SettingsCard>
+    </Card>
   )
 }
 
-/** Shared row chrome: the picked state is a surface, not a tick in a column. */
 const ROW =
   'flex items-start gap-3 border-b border-tertiary px-3 py-3 last:border-b-0 text-left w-full'
 

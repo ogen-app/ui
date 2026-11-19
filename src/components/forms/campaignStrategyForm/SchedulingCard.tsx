@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useFormContext } from 'react-hook-form'
 
 import { Explainer } from '@/components/page-primitives/Explainer'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextSelect } from '@/components/ui/text-select'
@@ -113,7 +113,7 @@ export function SchedulingCard() {
   const skipped = WEEKDAY_TOKENS.filter((t) => !enabledDays.has(t))
 
   return (
-    <SettingsCard title="Scheduling">
+    <Card title="Scheduling" capped>
       <Explainer id="campaign-scheduling-preferences">
         The assistant places every post at the publishing time, then nudges each
         one a little either side of it so a week of posts doesn&rsquo;t all land
@@ -225,6 +225,6 @@ export function SchedulingCard() {
             : `Skipping ${skipped.map((t) => DAY_NAMES[t]).join(', ')}.`}
         </p>
       </div>
-    </SettingsCard>
+    </Card>
   )
 }

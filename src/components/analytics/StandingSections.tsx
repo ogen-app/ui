@@ -6,10 +6,11 @@ import {
 } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import { Trans, useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib'
 import { formatDate, formatNumber } from '@/lib/intl'
 import { DecayCurve, Heatmap } from './charts'
-import { Basis, NotYet, SectionCard } from './shell'
+import { Basis, NotYet, ScopeNote } from './shell'
 import { formatCount, formatHours, supports } from './format'
 import type {
   NextView,
@@ -41,7 +42,8 @@ export function PatternsSection({ view }: { view: PatternsView }) {
     view.bestTimes && supports(view.bestTimes.sample, 'timing')
 
   return (
-    <SectionCard title={t('analytics.learned.title')} scope="all-time">
+    <Card capped title={t('analytics.learned.title')}>
+      <ScopeNote scope="all-time" />
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <CalendarBlankIcon
@@ -134,7 +136,7 @@ export function PatternsSection({ view }: { view: PatternsView }) {
           empty={t('analytics.learned.nothingFallen')}
         />
       </div>
-    </SectionCard>
+    </Card>
   )
 }
 
@@ -296,7 +298,8 @@ function PatternColumn({
 export function NextSection({ view }: { view: NextView }) {
   const { t } = useTranslation()
   return (
-    <SectionCard title={t('analytics.next.title')} scope="ahead">
+    <Card capped title={t('analytics.next.title')}>
+      <ScopeNote scope="ahead" />
       {view.pacing && <PacingBlock pacing={view.pacing} />}
 
       {view.actions.length === 0 ? (
@@ -327,7 +330,7 @@ export function NextSection({ view }: { view: NextView }) {
           ))}
         </ul>
       )}
-    </SectionCard>
+    </Card>
   )
 }
 

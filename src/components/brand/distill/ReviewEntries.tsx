@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { brandSection, brandSectionCopy } from '@/lib/brandSections'
@@ -30,7 +31,7 @@ import { Field } from '../editor'
 import { rulesLine } from '../format'
 import { SampleCard } from '../SampleCard'
 import { MIN_VOICE_SAMPLES } from '../types'
-import { KeepDrop, ReviewSection, SourceLabel } from './parts'
+import { KeepDrop, SourceLabel } from './parts'
 
 /**
  * The big items of a review — voices and audiences — each a card's worth, kept
@@ -67,7 +68,8 @@ export function VoicesReview({
   const { t } = useTranslation()
   const info = brandSection('voices')
   return (
-    <ReviewSection
+    <Card
+      capped
       icon={info.icon}
       tone={info.tone}
       title={brandSectionCopy(t, 'voices').label}
@@ -101,7 +103,7 @@ export function VoicesReview({
           ),
         )}
       </Stack>
-    </ReviewSection>
+    </Card>
   )
 }
 
@@ -355,7 +357,8 @@ export function AudiencesReview({
   const { t } = useTranslation()
   const info = brandSection('audiences')
   return (
-    <ReviewSection
+    <Card
+      capped
       icon={info.icon}
       tone={info.tone}
       title={brandSectionCopy(t, 'audiences').label}
@@ -384,7 +387,7 @@ export function AudiencesReview({
           ),
         )}
       </Stack>
-    </ReviewSection>
+    </Card>
   )
 }
 

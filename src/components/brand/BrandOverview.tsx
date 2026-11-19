@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import {
-  CaretRightIcon,
   ChatTeardropTextIcon,
   ClockCountdownIcon,
   ProhibitIcon,
@@ -13,9 +12,8 @@ import {
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { LineItem, type LineItemIndicator } from '@/components/ui/line-item'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { StatusBadge } from '@/components/ui/status-badge'
 import { formatDate, formatList } from '@/lib/intl'
 import { cn } from '@/lib'
 import type { Fetched } from '@/lib/fetched'
@@ -36,7 +34,7 @@ import {
   type BrandFact,
 } from './facts'
 import { defaultVoiceLabel, sampleCount, usageLine } from './format'
-import { DefaultStar, WholeBrandOffer } from './shell'
+import { DefaultStar, WholeBrandOffer, readByStatus } from './shell'
 import { OfferRoutes } from './distill/OfferRoutes'
 import { SavedCard } from './distill/SavedCard'
 import {
@@ -65,9 +63,9 @@ import {
  *
  * Three rules, and they came out of being told the first version was off-style:
  *
- * 1. **It is built from the app's own furniture** — `SettingsCard` for the
- *    block, `LineItem` for the rows, the same components Workspace Settings and
- *    the Campaign Overview are made of. The first version invented a card, and
+ * 1. **It is built from the app's own furniture** — `Card` for the block,
+ *    `LineItem` for the rows, the same components the rest of the app is made
+ *    of. The first version invented a card, and
  *    an invented card is how a new section announces that it was built by
  *    somebody who had not looked at the rest of the app.
  * 2. **It lists what is there, one row each, ticked when there is something
@@ -323,7 +321,7 @@ type BrandRow = {
  * is already on when it finishes reading the rows.
  *
  * It is deliberately the same gesture as a `LibraryCard` one level down: a
- * white block that lifts on hover, with a caret where the row of content ends.
+ * white block that lifts on hover, with a caret on the heading line.
  * Two levels of this screen open things the same way, so learning it once is
  * enough. Hover lifts rather than tints, for the reason `LibraryCard` gives.
  */
@@ -344,50 +342,29 @@ function SectionCard({
 }) {
   const { t } = useTranslation()
   const copy = brandSectionCopy(t, section.id)
-  const Icon = section.icon
-  const open = onOpen ? () => onOpen(section.id) : undefined
 
-  return (
-    <Opens onOpen={open}>
-      <SettingsCard
-        title={
-          <>
-            {/* The section's permanent hue, and the only colour on the card.
-                Five grey line glyphs down one page are five identical marks;
-                the hue is what makes the card you are looking for findable
-                without reading the headings. Same device as the campaign rail,
-                and the same glyph that titles the screen this card opens. */}
-            <Icon
-              className="size-5 shrink-0"
-              style={{ color: section.tone }}
-              aria-hidden
-            />
-            <span className="truncate">{copy.label}</span>
-            {/* The honesty rule (CON-226 §9) at index length. The section's own
-                screen still says it in a sentence; here it is three words,
-                because five sentences down one page is the noise that made this
-                screen read as an essay. */}
-            {section.readBy.length === 0 && (
-              <StatusBadge
-                tone="neutral"
-                label={t('brand.overview.nothingReads')}
-              />
-            )}
-          </>
-        }
-        actions={
-          open && (
-            <CaretRightIcon
-              className="size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-              weight="bold"
-              aria-hidden
-            />
-          )
-        }
-      >
-        <CardContents contents={contents} whenEmpty={copy.whenEmpty} />
-      </SettingsCard>
-    </Opens>
+  // The section's permanent hue on its glyph, and the only colour on the card:
+  // five grey line glyphs down one page are five identical marks, and the hue
+  // is what makes the card you are looking for findable without reading the
+  // headings. The honesty rule (CON-226 §9) rides on the title as a status.
+  //
+  // Unopenable when there is nowhere to go: the harness draws this screen with
+  // no navigation, and a `role="button"` that does nothing is a lie told to a
+  // screen reader.
+  const frame = {
+    icon: section.icon,
+    tone: section.tone,
+    title: copy.label,
+    status: readByStatus(t, section.readBy),
+    capped: true,
+  }
+  const body = <CardContents contents={contents} whenEmpty={copy.whenEmpty} />
+  return onOpen ? (
+    <Card {...frame} door={{ kind: 'card', onOpen: () => onOpen(section.id) }}>
+      {body}
+    </Card>
+  ) : (
+    <Card {...frame}>{body}</Card>
   )
 }
 
@@ -457,47 +434,6 @@ function CardContents({
         </li>
       ))}
     </ul>
-  )
-}
-
-/**
- * The card's clickability, wrapped around it rather than built into
- * `SettingsCard`.
- *
- * `SettingsCard` is the app's form furniture — it is what Workspace Settings
- * and Campaign Settings are made of — and a settings card that can be clicked
- * as a whole is not a thing this app has. Adding an `onClick` there would make
- * every one of those cards one prop away from becoming a link. So the gesture
- * lives here, in the one place that needs it.
- *
- * Renders the card unwrapped when there is nowhere to go: the harness draws
- * this screen with no navigation, and a `role="button"` that does nothing is a
- * lie told to a screen reader.
- */
-function Opens({
-  onOpen,
-  children,
-}: {
-  onOpen?: () => void
-  children: ReactNode
-}) {
-  if (!onOpen) return <>{children}</>
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onOpen()
-        }
-      }}
-      className="group w-full max-w-content cursor-pointer transition-shadow duration-150 hover:shadow-lg"
-    >
-      {children}
-    </div>
   )
 }
 

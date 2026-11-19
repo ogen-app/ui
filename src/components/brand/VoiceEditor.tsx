@@ -3,12 +3,14 @@ import {
   ArrowCounterClockwiseIcon,
   DotsThreeVerticalIcon,
   PlusIcon,
+  StarIcon,
   TrashIcon,
   UploadSimpleIcon,
 } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +23,6 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   BrandEditorFrame,
   DangerCard,
-  DefaultControl,
   EditorCard,
   EditorIntro,
   Field,
@@ -168,16 +169,30 @@ export function VoiceEditor({
         </ForkedNote>
       )}
 
-      <EditorCard
+      {/* Being the default is a state with an action, not a setting with a
+          switch: you can take it, and you cannot give it back, because a
+          library with no default sends every post through a choice nobody
+          asked for. So the card says which it is — the green star when it is
+          the default, the one way to make it so when it is not. Demotion
+          happens by another voice being promoted. */}
+      <Card
         title={t('brand.voices.editor.general')}
-        action={
-          <DefaultControl
-            isDefault={draft.isDefault}
-            onMakeDefault={() => set('isDefault', true)}
-            does={t('brand.voices.editor.defaultDoes')}
-            costs={t('brand.voices.editor.defaultCosts')}
-          />
-        }
+        capped
+        {...(draft.isDefault
+          ? {
+              status: {
+                label: t('brand.editor.default'),
+                icon: StarIcon,
+                tone: 'positive' as const,
+              },
+            }
+          : {
+              action: {
+                label: t('brand.editor.makeDefault'),
+                icon: StarIcon,
+                onClick: () => set('isDefault', true),
+              },
+            })}
       >
         <Field label={t('brand.voices.editor.name')}>
           <Input
@@ -200,7 +215,7 @@ export function VoiceEditor({
             placeholder={t('brand.voices.editor.descriptionPlaceholder')}
           />
         </Field>
-      </EditorCard>
+      </Card>
 
       <SamplesCard
         samples={draft.samples}
@@ -213,10 +228,10 @@ export function VoiceEditor({
         summary={samplesChanged ? null : voice?.summary || null}
       />
 
-      <EditorCard
-        title={t('brand.voices.editor.rules')}
-        hint={t('brand.voices.editor.rulesHint')}
-      >
+      <Card title={t('brand.voices.editor.rules')} capped>
+        <p className="text-sm text-secondary-foreground">
+          {t('brand.voices.editor.rulesHint')}
+        </p>
         {/* Two columns, and the only two on the screen. It is affordable
             here for the reason it was not when these were one-line
             controls: a stacked radio group is a block with a straight left
@@ -284,12 +299,12 @@ export function VoiceEditor({
             />
           </Field>
         </div>
-      </EditorCard>
+      </Card>
 
-      <EditorCard
-        title={t('brand.voices.editor.channels')}
-        hint={t('brand.voices.editor.channelsHint')}
-      >
+      <Card title={t('brand.voices.editor.channels')} capped>
+        <p className="text-sm text-secondary-foreground">
+          {t('brand.voices.editor.channelsHint')}
+        </p>
         {/* Collapsed to a placeholder on purpose. It was six inputs — one
             per platform — which is a lot of screen spent on a question
             nobody has answered yet: whether a per-channel note is a free
@@ -307,7 +322,7 @@ export function VoiceEditor({
         <p className="max-w-2xl text-sm leading-5 text-tertiary-foreground">
           {t('brand.voices.editor.channelsUnbuilt')}
         </p>
-      </EditorCard>
+      </Card>
 
       {voice && onDelete && (
         <DangerCard

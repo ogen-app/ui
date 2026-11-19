@@ -10,6 +10,7 @@ import { PlusIcon, XIcon } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { formatDate } from '@/lib/intl'
@@ -29,12 +30,11 @@ import { cn } from '@/lib'
 import {
   BrandEditorFrame,
   DangerCard,
-  EditorCard,
   EditorIntro,
   ForkedNote,
   useEditorSave,
 } from './editor'
-import { StarterCard, StarterGroup } from './shell'
+import { StarterCard } from './shell'
 import {
   GUARDRAIL_STARTERS,
   guardrailStarterCopy,
@@ -228,45 +228,47 @@ export function GuardrailsEditor({
       {/* Offered while the screen is still blank, and withdrawn by the first
           keystroke — see the note on starters above. */}
       {!guardrails && !dirty && (
-        <StarterGroup
-          title={t('brand.guardrails.starterGroupTitle')}
-          body={t('brand.guardrails.starterGroupBody')}
-        >
-          {GUARDRAIL_STARTERS.map((starter) => {
-            const starterCopy = guardrailStarterCopy(t, starter)
-            return (
-              <StarterCard
-                key={starter.id}
-                icon={starter.icon}
-                tone={info.tone}
-                title={starterCopy.title}
-                body={starterCopy.body}
-                onClick={() => {
-                  setDraft(draftFrom(t, null, starter))
-                  setForkedFrom(starter)
-                }}
-              />
-            )
-          })}
-        </StarterGroup>
+        <Card title={t('brand.guardrails.starterGroupTitle')} capped>
+          <p className="text-sm text-secondary-foreground">
+            {t('brand.guardrails.starterGroupBody')}
+          </p>
+          <div className="grid gap-3">
+            {GUARDRAIL_STARTERS.map((starter) => {
+              const starterCopy = guardrailStarterCopy(t, starter)
+              return (
+                <StarterCard
+                  key={starter.id}
+                  icon={starter.icon}
+                  tone={info.tone}
+                  title={starterCopy.title}
+                  body={starterCopy.body}
+                  onClick={() => {
+                    setDraft(draftFrom(t, null, starter))
+                    setForkedFrom(starter)
+                  }}
+                />
+              )
+            })}
+          </div>
+        </Card>
       )}
 
-      <EditorCard
-        title={t('brand.guardrails.mayClaim')}
-        hint={t('brand.guardrails.mayClaimHint')}
-      >
+      <Card title={t('brand.guardrails.mayClaim')} capped>
+        <p className="text-sm text-secondary-foreground">
+          {t('brand.guardrails.mayClaimHint')}
+        </p>
         <StatementList
           items={draft.mayClaim}
           onChange={(mayClaim) => set('mayClaim', mayClaim)}
           placeholder={t('brand.guardrails.mayClaimPlaceholder')}
           addLabel={t('brand.guardrails.addClaim')}
         />
-      </EditorCard>
+      </Card>
 
-      <EditorCard
-        title={t('brand.guardrails.neverClaim')}
-        hint={t('brand.guardrails.neverClaimHint')}
-      >
+      <Card title={t('brand.guardrails.neverClaim')} capped>
+        <p className="text-sm text-secondary-foreground">
+          {t('brand.guardrails.neverClaimHint')}
+        </p>
         {draft.neverClaim.length === 0 && (
           <p className="border-l-2 border-destructive pl-3 text-sm leading-5 text-tertiary-foreground">
             {t('brand.guardrails.neverClaimEmpty')}
@@ -279,29 +281,29 @@ export function GuardrailsEditor({
           addLabel={t('brand.guardrails.addRule')}
           tone="hard"
         />
-      </EditorCard>
+      </Card>
 
-      <EditorCard
-        title={t('brand.guardrails.bannedWords')}
-        hint={t('brand.guardrails.bannedWordsHint')}
-      >
+      <Card title={t('brand.guardrails.bannedWords')} capped>
+        <p className="text-sm text-secondary-foreground">
+          {t('brand.guardrails.bannedWordsHint')}
+        </p>
         <WordField
           words={draft.bannedWords}
           onChange={(bannedWords) => set('bannedWords', bannedWords)}
         />
-      </EditorCard>
+      </Card>
 
-      <EditorCard
-        title={t('brand.guardrails.disclaimer')}
-        hint={t('brand.guardrails.disclaimerHint')}
-      >
+      <Card title={t('brand.guardrails.disclaimer')} capped>
+        <p className="text-sm text-secondary-foreground">
+          {t('brand.guardrails.disclaimerHint')}
+        </p>
         <Textarea
           value={draft.disclaimer}
           onChange={(e) => set('disclaimer', e.target.value)}
           placeholder={t('brand.guardrails.disclaimerPlaceholder')}
           className="min-h-20"
         />
-      </EditorCard>
+      </Card>
 
       {guardrails && onDelete && (
         <DangerCard
@@ -346,10 +348,13 @@ function StanceCard() {
   const decided = stance?.none ?? false
 
   return (
-    <EditorCard
-      title="Nothing to restrict?"
-      hint="Some workspaces have no claims worth guarding — no regulated product, no figures, nothing a post could promise. Saying so is a different answer from leaving this empty, and the difference is what the rest of the app reads."
-    >
+    <Card title="Nothing to restrict?" capped>
+      <p className="text-sm text-secondary-foreground">
+        Some workspaces have no claims worth guarding — no regulated product, no
+        figures, nothing a post could promise. Saying so is a different answer
+        from leaving this empty, and the difference is what the rest of the app
+        reads.
+      </p>
       <div className="flex items-start gap-3">
         <Switch
           checked={decided}
@@ -368,7 +373,7 @@ function StanceCard() {
           </span>
         </div>
       </div>
-    </EditorCard>
+    </Card>
   )
 }
 

@@ -13,7 +13,7 @@ import { cn } from '@/lib'
  *
  * | Beat | Component | Owns | Never |
  * |---|---|---|---|
- * | Header | `SectionCard` | the name, the window it covers, and at most one control | a figure, a finding |
+ * | Header | `Card` (`ui/card`), `capped` | the name, the window it covers, and at most one control | a figure, a finding |
  * | Figures | `FigureGrid` / `FigureTile` | the numbers, their deltas, and which side of usual they fall on | anything the reader can't select or compare |
  * | Detail | the section's own chart or list | the shape behind the selected figure — drawn, not narrated | a restatement of the figure above it |
  * | Insight | `InsightLine` | what the picture can't say: where it came from, what moved it. **The only beat with a tone mark** | method, sample size, caveats |
@@ -30,9 +30,9 @@ import { cn } from '@/lib'
  * carrying one is claiming to be a finding while looking like a footnote, which
  * is how the foot of a card ends up out-weighing the list it was qualifying.
  *
- * `SectionCard` also carries one thing the campaign Overview's card does not: a
- * **scope note** saying whether the section obeys the date lens at the top of
- * the page. That distinction is the whole reason these surfaces aren't called
+ * A card here also carries one thing the campaign Overview's cards do not: a
+ * **scope note** (`ScopeNote`, the body's first line) saying whether the
+ * section obeys the date lens at the top of the page. That distinction is the whole reason these surfaces aren't called
  * Performance — "your posts land on Tuesday evenings" is not a fact about the
  * last 28 days, and a section that silently sits under a window control claims
  * it is.
@@ -55,6 +55,23 @@ function scopeNote(t: TFunction, scope: SectionScope): string | null {
   return null
 }
 
+/**
+ * The scope note, as the first line of a card's body — the card has nothing
+ * under its heading. Renders nothing for a card the period does reach.
+ */
+export function ScopeNote({ scope = 'lens' }: { scope?: SectionScope }) {
+  const { t } = useTranslation()
+  const note = scopeNote(t, scope)
+  if (!note) return null
+  return <p className="text-sm text-secondary-foreground">{note}</p>
+}
+
+/**
+ * The analytics card before the app's one `Card` (`ui/card`). Kept for the two
+ * post cards whose header control the new card has no slot for: the
+ * identity card's permalink (a link) and a measure card's reading switch (a
+ * segmented toggle).
+ */
 export function SectionCard({
   title,
   qualifier,

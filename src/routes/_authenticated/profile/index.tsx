@@ -6,8 +6,7 @@ import { TrashIcon } from '@phosphor-icons/react'
 
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
-import { Button } from '@/components/ui/button'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { LanguageSection } from '@/components/settings/LanguageSection'
 import {
   SettingsSaveBar,
@@ -89,23 +88,22 @@ function ProfilePage() {
               {emailPreferencesEnabled && (
                 <EmailPreferencesSection userId={user.id} />
               )}
-              <SettingsCard title={t('profile.dangerZone.title')}>
-                <div className="flex flex-col items-start gap-3">
-                  <p className="max-w-150 text-sm text-tertiary-foreground">
-                    {t('profile.dangerZone.body')}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="destructiveInverted"
-                    onClick={() => setDeleteOpen(true)}
-                  >
-                    <TrashIcon />
-                    {/* Literal caps in the catalogue, not an `uppercase` class —
-                        see CLAUDE.md. Every translation keeps them. */}
-                    <span>{t('profile.dangerZone.action')}</span>
-                  </Button>
-                </div>
-              </SettingsCard>
+              <Card
+                title={t('profile.dangerZone.title')}
+                action={{
+                  // Literal caps in the catalogue, not an `uppercase` class —
+                  // see CLAUDE.md. Every translation keeps them.
+                  label: t('profile.dangerZone.action'),
+                  icon: TrashIcon,
+                  onClick: () => setDeleteOpen(true),
+                  destructive: true,
+                }}
+                capped
+              >
+                <p className="max-w-150 text-sm text-tertiary-foreground">
+                  {t('profile.dangerZone.body')}
+                </p>
+              </Card>
             </div>
           </div>
           <SettingsSaveBar />

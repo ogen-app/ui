@@ -6,9 +6,9 @@ import {
   StackIcon,
   WarningIcon,
 } from '@phosphor-icons/react'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { useRequestDistill } from '@/hooks/useBrandDistill'
 import { formatDate } from '@/lib/intl'
 import { pagePath, runRoute, type RunRoute } from '@/lib/brandDistill'
@@ -51,22 +51,32 @@ export function FailedRun({ run }: { run: DistillRun }) {
   }
 
   return (
-    <section className="flex w-full max-w-content flex-col gap-4 bg-primary px-6 py-6">
-      <header className="flex flex-col gap-2">
-        <h2 className="flex items-center gap-2 font-display text-lg font-medium leading-6 tracking-tight">
-          <WarningIcon aria-hidden className="size-5 shrink-0 text-warning" />
-          {nothingToRead
-            ? t(`brand.distill.failed.nothingTitle.${route}` as const)
-            : t('brand.distill.failed.title')}
-        </h2>
-        <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
-          {nothingToRead
-            ? t(`brand.distill.failed.nothingBody.${route}` as const, {
-                count: run.sources.length,
-              })
-            : t(failureKey(run.failure?.code))}
-        </p>
-      </header>
+    <Card
+      icon={WarningIcon}
+      tone="var(--warning)"
+      title={
+        nothingToRead
+          ? t(`brand.distill.failed.nothingTitle.${route}` as const)
+          : t('brand.distill.failed.title')
+      }
+      // With nothing usable to read, asking again reads the same nothing: the
+      // way on is one of the other routes, offered below instead.
+      {...(!nothingToRead && {
+        action: {
+          label: t('brand.distill.failed.tryAgain'),
+          onClick: retry,
+          loading: request.isPending,
+        },
+      })}
+      capped
+    >
+      <p className="text-sm text-secondary-foreground">
+        {nothingToRead
+          ? t(`brand.distill.failed.nothingBody.${route}` as const, {
+              count: run.sources.length,
+            })
+          : t(failureKey(run.failure?.code))}
+      </p>
 
       {nothingToRead && run.sources.length > 0 && (
         <ul className="flex flex-col border-t border-quaternary">
@@ -97,22 +107,13 @@ export function FailedRun({ run }: { run: DistillRun }) {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-end gap-2">
-          {refusal && (
-            <p role="alert" className="text-xs text-destructive">
-              {t(`brand.distill.refusal.${refusal}`)}
-            </p>
-          )}
-          <Button
-            variant="defaultInverted"
-            loading={request.isPending}
-            onClick={retry}
-          >
-            {t('brand.distill.failed.tryAgain')}
-          </Button>
-        </div>
+        refusal && (
+          <p role="alert" className="text-xs text-destructive">
+            {t(`brand.distill.refusal.${refusal}`)}
+          </p>
+        )
       )}
-    </section>
+    </Card>
   )
 }
 
@@ -177,6 +178,7 @@ function outcomeOf(
  */
 export function ClosedRun({ run }: { run: DistillRun }) {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const committed = run.status === 'committed'
   const when =
     committed && run.committedAt
@@ -188,28 +190,24 @@ export function ClosedRun({ run }: { run: DistillRun }) {
       : null
 
   return (
-    <section className="flex w-full max-w-content flex-col gap-3 bg-primary px-6 py-6">
-      <h2 className="flex items-center gap-2 font-display text-lg font-medium leading-6 tracking-tight">
-        {committed && (
-          <CheckCircleIcon
-            weight="fill"
-            aria-hidden
-            className="size-5 shrink-0 text-positive"
-          />
-        )}
-        {t(`brand.distill.closed.${closedKind(run)}.title` as const)}
-      </h2>
-      <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
+    <Card
+      {...(committed && {
+        icon: CheckCircleIcon,
+        tone: 'var(--positive)',
+      })}
+      title={t(`brand.distill.closed.${closedKind(run)}.title` as const)}
+      action={{
+        label: t('brand.distill.closed.back'),
+        onClick: () => void navigate({ to: '/foundation' }),
+      }}
+      capped
+    >
+      <p className="text-sm text-secondary-foreground">
         {committed && when
           ? t('brand.distill.closed.committed.bodyOn', { date: when })
           : t(`brand.distill.closed.${closedKind(run)}.body` as const)}
       </p>
-      <div>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/foundation">{t('brand.distill.closed.back')}</Link>
-        </Button>
-      </div>
-    </section>
+    </Card>
   )
 }
 

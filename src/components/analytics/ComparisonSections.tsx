@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib'
 import {
   ColumnChart,
@@ -11,7 +12,7 @@ import {
   TrendChart,
 } from './charts'
 import { DeltaChip, MeasureTile } from './MeasureTile'
-import { Basis, FigureGrid, NotYet, SectionCard } from './shell'
+import { Basis, FigureGrid, NotYet } from './shell'
 import {
   accumulate,
   delta,
@@ -63,11 +64,7 @@ export function NowSection({
   // later.
   if (view.coverage.measured === 0) {
     return (
-      <SectionCard
-        title={t('analytics.now.title')}
-        qualifier={window}
-        scope="lens"
-      >
+      <Card capped title={t('analytics.now.title')} qualifier={window}>
         <EmptyChart />
         <p className="text-[13px] text-secondary-foreground">
           {view.coverage.published === 0
@@ -77,7 +74,7 @@ export function NowSection({
               })}
         </p>
         <Freshness at={view.coverage.lastRefreshedAt} />
-      </SectionCard>
+      </Card>
     )
   }
 
@@ -118,11 +115,7 @@ export function NowSection({
         : reading.previousSeries
 
   return (
-    <SectionCard
-      title={t('analytics.now.title')}
-      qualifier={window}
-      scope="lens"
-    >
+    <Card capped title={t('analytics.now.title')} qualifier={window}>
       <FigureGrid>
         {view.readings.map((r) => (
           <MeasureTile
@@ -199,7 +192,7 @@ export function NowSection({
       )}
 
       <Freshness at={view.coverage.lastRefreshedAt} />
-    </SectionCard>
+    </Card>
   )
 }
 
@@ -334,24 +327,18 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
 
   if (rows.length < 2) {
     return (
-      <SectionCard title={t('analytics.sideBySide.title')} scope="lens">
+      <Card capped title={t('analytics.sideBySide.title')}>
         <NotYet title={t('analytics.sideBySide.nothingTitle')}>
           {t('analytics.sideBySide.nothingBody', {
             dimension: t(`analytics.sleeves.${view.dimension}` as const),
           })}
         </NotYet>
-      </SectionCard>
+      </Card>
     )
   }
 
   return (
-    <SectionCard
-      title={t('analytics.sideBySide.title')}
-      scope="lens"
-      status={
-        <span className="text-xs text-secondary-foreground">{copy.label}</span>
-      }
-    >
+    <Card capped title={t('analytics.sideBySide.title')} qualifier={copy.label}>
       <ul className="flex flex-col">
         <li className="flex items-center gap-3 border-b border-border pb-1.5 text-xs text-tertiary-foreground">
           <span className="flex-1">
@@ -458,6 +445,6 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
           })}
         </Basis>
       )}
-    </SectionCard>
+    </Card>
   )
 }

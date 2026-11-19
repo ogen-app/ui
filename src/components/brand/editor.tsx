@@ -7,21 +7,12 @@ import {
   type ReactNode,
 } from 'react'
 import { useBlocker } from '@tanstack/react-router'
-import {
-  StarIcon,
-  TrashIcon,
-  WarningCircleIcon,
-  type Icon,
-} from '@phosphor-icons/react'
+import { TrashIcon, WarningCircleIcon, type Icon } from '@phosphor-icons/react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { ModalContainer } from '@/components/ui/modal'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import {
   PAGE_ACTION_BAR_INSET,
   PageActionBar,
@@ -30,7 +21,7 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { SaveStatus } from '@/components/page-primitives/SaveStatus'
 import { brandSection, type BrandSectionId } from '@/lib/brandSections'
 import { cn } from '@/lib'
-import { BrandIntro, COLUMN } from './shell'
+import { COLUMN, readByStatus } from './shell'
 
 /**
  * What every Brand editor is made of.
@@ -368,8 +359,8 @@ export function BrandEditorFrame({
  * for it). That leaves the screen opening on a card headed "What it is", which
  * answers a question nobody has been given yet.
  *
- * So an editor opens the way a section does: `BrandIntro`, with the section's
- * glyph in its hue. `title` is the **saved** name and the kind — `Dry British
+ * So an editor opens the way a section does: a card with the section's glyph
+ * in its hue. `title` is the **saved** name and the kind — `Dry British
  * Voice` — never the draft's, because reading it off the field two inches below
  * would make the heading spell itself out letter by letter.
  *
@@ -395,16 +386,22 @@ export function EditorIntro({
    */
   missing?: string
 }) {
+  const { t } = useTranslation()
   const { icon, tone, readBy } = brandSection(section)
   return (
-    <BrandIntro
+    <Card
+      heading="h1"
       icon={icon}
       tone={tone}
       title={title}
-      body={body}
-      missing={missing}
-      readBy={readBy}
-    />
+      status={readByStatus(t, readBy)}
+      capped
+    >
+      <p className="text-sm text-secondary-foreground">{body}</p>
+      {missing && (
+        <p className="text-sm text-secondary-foreground">{missing}</p>
+      )}
+    </Card>
   )
 }
 
@@ -565,17 +562,17 @@ export function DangerCard({
   const [confirming, setConfirming] = useState(false)
 
   return (
-    <EditorCard title={t('brand.editor.danger.title')} hint={cost}>
-      <div>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => setConfirming(true)}
-        >
-          <TrashIcon />
-          <span>{t('brand.editor.danger.delete', { noun })}</span>
-        </Button>
-      </div>
+    <Card
+      title={t('brand.editor.danger.title')}
+      action={{
+        label: t('brand.editor.danger.delete', { noun }),
+        icon: TrashIcon,
+        onClick: () => setConfirming(true),
+        destructive: true,
+      }}
+      capped
+    >
+      <p className="text-sm text-secondary-foreground">{cost}</p>
 
       <ModalContainer
         isOpen={confirming}
@@ -609,106 +606,6 @@ export function DangerCard({
           </div>
         </div>
       </ModalContainer>
-    </EditorCard>
-  )
-}
-
-/**
- * Whether the app falls back to this entry — **a state with an action, not a
- * setting with a switch.**
- *
- * It was a labelled `Switch` with two sentences under it, and the sentences
- * were the tell. Being the default is not symmetrical: you can *take* it, and
- * you cannot give it back, because a library with no default at all sends every
- * post that follows through a choice nobody asked for. A switch promises the
- * second half of a pair that does not exist, so it had to spend a line of
- * tertiary copy explaining that it only goes one way — a control that needs a
- * footnote to say which of its two states is reachable is the wrong control.
- *
- * So: one thing, in the card's top-right corner, and which thing it is *is* the
- * state.
- *
- * - **Not the default** — a ghost `MAKE DEFAULT` with a hollow star. An offer,
- *   and a quiet one: it sits on the heading line of a card whose heading is the
- *   loudest thing on it, and an outline button there read as the card's main
- *   action.
- * - **The default** — a filled star and the word, inert. The tooltip carries
- *   what the two removed sentences were for: what being the default actually
- *   does. Repeating the label back ("this is the default voice") would leave
- *   the meaning of the word unsaid, which was the only thing worth saying.
- *
- * **Both states are 32px tall and padded like the button**, which is not a
- * detail: the first cut swapped a `size="sm"` button for a bare inline span, so
- * taking the default shrank the card's header by twelve pixels and jumped every
- * field below it up the screen. A control that changes shape when you press it
- * has to keep its footprint, or the press moves the page under the cursor.
- *
- * Green rather than the section's hue, matching `DefaultStar` on the library
- * cards and the Overview: the hue means which section this is, and green is
- * this app's word for *fine and working*, which is the claim.
- *
- * **Here rather than in `VoiceEditor`, because audiences have a default now
- * too.** It moved the moment the second section grew one — the two differ by a
- * noun and by nothing else, and two copies of a control whose whole job is to
- * make one fact look the same everywhere is the joke telling itself.
- *
- * Demotion still happens the way it always did — by another entry being
- * promoted — and that is stated on the offer rather than on the state, because
- * it is a consequence of clicking, not a fact about an entry that already has
- * it.
- */
-export function DefaultControl({
-  isDefault,
-  onMakeDefault,
-  /** What posts do with this entry, in the state's tooltip. */
-  does,
-  /** What promoting this one costs, on the offer's tooltip. */
-  costs,
-}: {
-  isDefault: boolean
-  onMakeDefault: () => void
-  does: string
-  costs: string
-}) {
-  const { t } = useTranslation()
-
-  if (isDefault) {
-    return (
-      <Tooltip>
-        {/* A span, not a disabled button: there is nothing to press. A disabled
-            button says "you may not do this", and what is true here is that
-            this is already done. */}
-        <TooltipTrigger asChild>
-          <span
-            tabIndex={0}
-            // `h-8`, `px-3`, the button's own type — and `pt-1` for the two
-            // pixels its optical top padding puts on a label. The whole point
-            // of this branch is that pressing the other one does not move
-            // anything, including itself.
-            className="flex h-8 shrink-0 items-center gap-2 px-3 pt-1 text-[13px]/4 font-medium text-secondary-foreground"
-          >
-            <StarIcon
-              weight="fill"
-              className="size-4 text-positive"
-              aria-hidden
-            />
-            {t('brand.editor.default')}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>{does}</TooltipContent>
-      </Tooltip>
-    )
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button variant="ghost" size="sm" onClick={onMakeDefault}>
-          <StarIcon />
-          <span>{t('brand.editor.makeDefault')}</span>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{costs}</TooltipContent>
-    </Tooltip>
+    </Card>
   )
 }

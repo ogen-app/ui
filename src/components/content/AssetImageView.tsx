@@ -10,6 +10,7 @@ import {
 import { AssetIngestState } from '@/components/content/AssetIngestState'
 import { AssetStateFrame } from '@/components/content/AssetStateFrame'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -208,46 +209,33 @@ function ImageForm({ asset, onChange, onDirty }: Props) {
     <div className="flex w-full flex-col gap-8">
       {/* The picture is stored either way; what failed or stopped short is
           the reading of it. Named above the picture, with the way to try
-          again, rather than instead of it — and laid out as the campaign
-          overview's cards are: a marked heading saying what happened, the
-          reason under it, the action in the header's corner. */}
+          again, rather than instead of it — a notice card: a marked heading
+          saying what happened, the reason under it, the action in the
+          header's corner. */}
       {(asset.status === 'failed' || asset.status === 'partial') && (
-        <section className="flex flex-col gap-2 rounded-md border border-quaternary p-5">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="flex w-4 shrink-0 items-center justify-center">
-              <WarningIcon
-                className={cn(
-                  'size-5',
-                  asset.status === 'failed'
-                    ? 'text-destructive'
-                    : 'text-warning',
-                )}
-                aria-hidden
-              />
-            </span>
-            <h2 className="font-display text-base font-medium">
-              {asset.status === 'failed'
-                ? t('content.image.failedTitle')
-                : t('content.image.partialTitle')}
-            </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto shrink-0"
-              onClick={() => reextract.mutate()}
-              loading={reextract.isPending}
-            >
-              <ArrowsClockwiseIcon />
-              <span>{t('content.image.reextract')}</span>
-            </Button>
-          </div>
-          {/* Indented to the heading's first letter: 16px mark plus the gap. */}
-          <p className="pl-7 text-sm text-secondary-foreground">
+        <Card
+          icon={WarningIcon}
+          tone={
+            asset.status === 'failed' ? 'var(--destructive)' : 'var(--warning)'
+          }
+          title={
+            asset.status === 'failed'
+              ? t('content.image.failedTitle')
+              : t('content.image.partialTitle')
+          }
+          action={{
+            label: t('content.image.reextract'),
+            icon: ArrowsClockwiseIcon,
+            onClick: () => reextract.mutate(),
+            loading: reextract.isPending,
+          }}
+        >
+          <p className="text-sm text-secondary-foreground">
             {asset.status === 'failed'
               ? ingestFailureMessage(t, asset)
               : t('content.image.partial')}
           </p>
-        </section>
+        </Card>
       )}
 
       <Picture asset={asset} />

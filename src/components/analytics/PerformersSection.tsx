@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import { formatNumber } from '@/lib/intl'
 import { PaceBar, RankBar } from './charts'
 import { InsightLine } from './ComparisonSections'
-import { Picker } from './ComparisonBar'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import {
   availableCriteria,
@@ -15,7 +15,7 @@ import {
   placeAgainstTypical,
   type Criterion,
 } from './criteria'
-import { Basis, NotYet, SectionCard } from './shell'
+import { Basis, NotYet } from './shell'
 import { formatCount, periodPhrase } from './format'
 import type { PerformerCriterionId, PerformersView, RankedPost } from './types'
 
@@ -50,17 +50,17 @@ export function PerformersSection({ view }: { view: PerformersView }) {
 
   if (view.posts.length === 0 || criteria.length === 0) {
     return (
-      <SectionCard
+      <Card
+        capped
         title={t('analytics.performers.title')}
         qualifier={periodPhrase(t, view.period)}
-        scope="lens"
       >
         <NotYet title={t('analytics.performers.nothingTitle')}>
           {view.posts.length === 0
             ? t('analytics.performers.nothingPublishedBody')
             : t('analytics.performers.nothingReportedBody')}
         </NotYet>
-      </SectionCard>
+      </Card>
     )
   }
 
@@ -93,21 +93,19 @@ export function PerformersSection({ view }: { view: PerformersView }) {
   const worst = Math.min(5, ranked.length - best)
 
   return (
-    <SectionCard
+    <Card
+      capped
       title={t('analytics.performers.title')}
       qualifier={periodPhrase(t, view.period)}
-      scope="lens"
-      status={
-        <Picker
-          label={t('analytics.performers.by')}
-          value={criterionLabel(t, criterion, corrected)}
-          options={criteria.map((c) => ({
-            value: c.id,
-            label: criterionLabel(t, c, corrected),
-          }))}
-          onChange={(v) => setPicked(v as PerformerCriterionId)}
-        />
-      }
+      choice={{
+        label: t('analytics.performers.by'),
+        value: criterion.id,
+        options: criteria.map((c) => ({
+          id: c.id,
+          displayValue: criterionLabel(t, c, corrected),
+        })),
+        onChange: (v) => setPicked(v as PerformerCriterionId),
+      }}
     >
       {split ? (
         <>
@@ -168,7 +166,7 @@ export function PerformersSection({ view }: { view: PerformersView }) {
           ? t('analytics.performers.curveBasis', { count: view.curve.sample })
           : t('analytics.performers.noCurveBasis')}
       </Basis>
-    </SectionCard>
+    </Card>
   )
 }
 

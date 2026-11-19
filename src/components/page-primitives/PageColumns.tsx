@@ -12,7 +12,7 @@ const sideBySide = (row: HTMLElement) =>
  * keeps a preset width beside it. When the page is too narrow for both, the
  * second goes under the main one. Either way the content takes its column's
  * full width — inside these columns the column is the measure, so
- * `max-w-content` (`SettingsCard`, the hub's cards) means 100% here.
+ * `max-w-content` (a `capped` Card, the hub's cards) means 100% here.
  *
  * The switch follows the page's own width (a container query), not the
  * window's, because the right rail takes its width out of the page.

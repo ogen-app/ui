@@ -1,6 +1,6 @@
-import { CheckCircleIcon, XIcon } from '@phosphor-icons/react'
+import { CheckCircleIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { savedSentence } from '@/lib/brandDistillCopy'
 import { useBrandDistillStore } from '@/stores/brandDistillStore'
 
@@ -21,27 +21,16 @@ export function SavedCard() {
   if (!saved) return null
 
   return (
-    <section className="relative flex w-full max-w-content flex-col gap-2 bg-primary px-6 py-5">
-      <Button
-        variant="ghost"
-        size="smIcon"
-        className="absolute top-3 right-3"
-        aria-label={t('brand.distill.saved.dismiss')}
-        onClick={() => setSaved(null)}
-      >
-        <XIcon />
-      </Button>
-      <h2 className="flex items-center gap-2 pr-10 font-display text-lg font-medium leading-6 tracking-tight">
-        <CheckCircleIcon
-          weight="fill"
-          aria-hidden
-          className="size-5 shrink-0 text-positive"
-        />
-        {t('brand.distill.saved.title')}
-      </h2>
-      <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
+    <Card
+      icon={CheckCircleIcon}
+      tone="var(--positive)"
+      title={t('brand.distill.saved.title')}
+      onDismiss={() => setSaved(null)}
+      capped
+    >
+      <p className="text-sm text-secondary-foreground">
         {savedSentence(t, saved, i18n.language)}
       </p>
-    </section>
+    </Card>
   )
 }

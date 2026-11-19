@@ -4,7 +4,7 @@ import { usePlatformViews } from '@/hooks/usePlatforms'
 import { useZernioHealth } from '@/hooks/useZernio'
 import { connectedAccounts, type PlatformView } from '@/lib/platformDictionary'
 import { cn } from '@/lib'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { LockedBadge } from '@/components/entitlements/LockedBadge'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
@@ -52,7 +52,7 @@ function ConnectPlatformsSectionComponent({
   const integrationOff = health?.state === 'disabled'
 
   return (
-    <SettingsCard title={t('workspaceSettings.connect.title')}>
+    <Card title={t('workspaceSettings.connect.title')} capped>
       {integrationOff && (
         <p className="text-sm text-tertiary-foreground">
           {t('workspaceSettings.connect.integrationOff')}
@@ -88,7 +88,7 @@ function ConnectPlatformsSectionComponent({
       )}
       {modal}
       <UpgradeDialog gate={gate} />
-    </SettingsCard>
+    </Card>
   )
 }
 

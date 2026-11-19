@@ -5,11 +5,12 @@ import {
   PencilSimpleIcon,
   PlusIcon,
   StarIcon,
-  XIcon,
   type Icon,
 } from '@phosphor-icons/react'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card, type CardStatus } from '@/components/ui/card'
 import { TickBox } from '@/components/ui/tick-box'
 import { cn } from '@/lib'
 import { formatList } from '@/lib/intl'
@@ -35,121 +36,30 @@ import type { BrandConsumer, BrandOrigin } from './types'
  * 3. **A section says who reads it.** CON-226 §9: material nothing reads is
  *    worse than no material, because it teaches people the app ignores what
  *    they tell it. Five equal-looking sections where only two are wired is the
- *    screen lying quietly, so `ReadBy` is mandatory and its honest value today
- *    is usually "nothing yet".
- *
- * Deliberately *not* `SettingsCard`. The two look close on purpose — same
- * column, same block — but this one carries the two beats settings has no use
- * for (the reader line and the gap), and sharing the component would have meant
- * adding both to a card whose whole job elsewhere is a form.
+ *    screen lying quietly, so every section card carries `readByStatus` and its
+ *    honest value today is usually "nothing yet".
  */
-export function BrandSection({
-  title,
-  /** The rest of the heading, set back — usually a count. */
-  qualifier,
-  readBy,
-  action,
-  children,
-  className,
-  variant = 'card',
-}: {
-  title: string
-  qualifier?: ReactNode
-  /**
-   * Which parts of the app read this. Required, and `[]` is a real answer that
-   * renders as such — see the rule above.
-   */
-  readBy: BrandConsumer[]
-  action?: ReactNode
-  children: ReactNode
-  className?: string
-  /**
-   * `card` — one of several sections stacked on the Overview.
-   * `page` — the section *is* the screen, opened from the Overview.
-   *
-   * The page variant drops the card chrome, the heading and the reader line,
-   * because the section's intro card says all three above it and a card drawn
-   * on an otherwise empty page is a card pretending to be a screen. Only the
-   * action survives: that one is the section's, not the card's.
-   *
-   * The measure is deliberately unchanged between the two. Giving a section a
-   * screen of its own is a navigation decision, and widening what it reads at
-   * is a separate one that has not been made — keeping `max-w-content` here
-   * means the move changes where things live without quietly changing how they
-   * look.
-   */
-  variant?: 'card' | 'page'
-}) {
-  const isPage = variant === 'page'
-
-  return (
-    <section
-      className={cn(
-        'flex w-full max-w-content flex-col gap-4',
-        !isPage && 'rounded-lg bg-primary p-5',
-        className,
-      )}
-    >
-      {/* Nothing left to draw on a page-variant section with no action: the
-          intro card at the top of the screen carries both the heading and the
-          honesty line, and an empty header still spends the stack's `gap`. */}
-      {(!isPage || action) && (
-        <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-          <div className="flex flex-col gap-1">
-            {!isPage && (
-              <>
-                <h2 className="font-display text-lg font-medium leading-6">
-                  {title}
-                  {qualifier != null && (
-                    <span className="font-normal text-tertiary-foreground">
-                      {' '}
-                      {qualifier}
-                    </span>
-                  )}
-                </h2>
-                <ReadBy consumers={readBy} />
-              </>
-            )}
-          </div>
-          {action}
-        </header>
-      )}
-      {children}
-    </section>
-  )
-}
 
 /**
- * The honesty line. Written as a sentence rather than a row of badges because a
- * badge saying "unused" is decoration, and this has to be legible enough to
- * embarrass us into wiring the section up.
+ * The honesty mark, as a card's `status`.
  *
- * **It only appears when the answer is "nothing".** It used to run on every
- * section, and on a wired one it said "Read when a content plan is generated
- * and when a post is written" — a caption above the library stating that the
- * feature works, which is what the user should be able to assume. That is the
- * difference between honesty and narration: a section nothing reads is a fact
- * the screen is otherwise hiding, and a section that behaves as advertised has
- * nothing to disclose. Three of the five sections still show this line today,
- * which is the point of keeping it.
+ * **It only appears when the answer is "nothing".** On a wired section it
+ * would be a caption stating that the feature works, which is what the user
+ * should be able to assume. A section nothing reads is a fact the screen is
+ * otherwise hiding; a section that behaves as advertised has nothing to
+ * disclose.
  *
  * The list stays on the signature rather than collapsing to a boolean: the
  * caller's answer is *which* parts read it, and the day one is partly wired
- * this component is where that sentence gets written.
+ * this is where that gets written.
  */
-export function ReadBy({ consumers }: { consumers: BrandConsumer[] }) {
-  const { t } = useTranslation()
-  if (consumers.length > 0) return null
-
-  // Set at the card's own measure rather than in micro-type. It was 12px, and
-  // a sentence saying the section does not work yet is not a caption — small
-  // type is how a screen signals "detail, skip this", which is the opposite of
-  // what this line is for. Dimmer than the description above it, same size.
-  return (
-    <p className="max-w-2xl text-sm leading-5 text-tertiary-foreground">
-      {t('brand.shell.readByNothing')}
-    </p>
-  )
+export function readByStatus(
+  t: TFunction,
+  consumers: BrandConsumer[],
+): CardStatus | undefined {
+  return consumers.length > 0
+    ? undefined
+    : { label: t('brand.overview.nothingReads') }
 }
 
 /**
@@ -239,8 +149,8 @@ const OFFER_NOTE_ID = 'brand-read-from-website'
  * 24px display heading it read as the most important thing on a screen whose
  * actual content is the six sections under it, and it was the one card carrying
  * nothing you can do today. What it is, exactly, is *a set of routes into
- * filling this in* — which is the thing `StarterGroup` already draws, one
- * heading and a stack of tiles, on both empty sections. Same object, same
+ * filling this in* — which is what the empty sections' starter cards already
+ * draw, one heading and a stack of tiles. Same object, same
  * furniture: the eye reads it as an offer rather than as an announcement, and
  * the screen has one fewer card shape in it.
  *
@@ -279,43 +189,27 @@ export function WholeBrandOffer({
 
   if (fills.length === 0 || dismissed) return null
 
+  // A notice: the dismiss X is the only control in its header.
   return (
-    <section
-      className={cn(
-        COLUMN,
-        'relative flex flex-col gap-3 bg-primary px-6 py-5',
-      )}
+    <Card
+      title={t('brand.shell.offer.title')}
+      onDismiss={() => dismissNote(OFFER_NOTE_ID)}
+      dismissLabel={t('brand.shell.offer.dismiss')}
+      capped
     >
-      {/* Parked in the corner. It is the only control on the card, and the
-          corner is where a dismissal belongs. */}
-      <Button
-        variant="ghost"
-        size="smIcon"
-        className="absolute top-3 right-3"
-        aria-label={t('brand.shell.offer.dismiss')}
-        onClick={() => dismissNote(OFFER_NOTE_ID)}
-      >
-        <XIcon />
-      </Button>
-
-      <header className="flex max-w-2xl flex-col gap-1 pr-10">
-        <h3 className="font-display text-lg font-medium leading-6 tracking-tight">
-          {t('brand.shell.offer.title')}
-        </h3>
-        {/* The list is joined by `Intl`, not by this file: the conjunction and
-            the serial comma are the language's, and `a, b and c` is an English
-            rule that Spanish does not follow. `i18n.language` is passed rather
-            than read inside, so the switch that re-renders this component is
-            the same one that changes the join. */}
-        <p className="text-sm leading-5 text-secondary-foreground">
-          {t('brand.shell.offer.body', {
-            fills: formatList(fills, 'conjunction', i18n.language),
-          })}
-        </p>
-      </header>
+      {/* The list is joined by `Intl`, not by this file: the conjunction and
+          the serial comma are the language's, and `a, b and c` is an English
+          rule that Spanish does not follow. `i18n.language` is passed rather
+          than read inside, so the switch that re-renders this component is
+          the same one that changes the join. */}
+      <p className="text-sm text-secondary-foreground">
+        {t('brand.shell.offer.body', {
+          fills: formatList(fills, 'conjunction', i18n.language),
+        })}
+      </p>
 
       {children}
-    </section>
+    </Card>
   )
 }
 
@@ -612,146 +506,6 @@ export function AddEntryCard({
 }
 
 /**
- * The card a section opens with, and **the page's title** — not an
- * introduction to one.
- *
- * The section screens carry no heading in the page header: the header is a back
- * caret and nothing else, the way the post editor's is. That is not a saving of
- * chrome, it is where the name went. A page header states a name in a line; this
- * states it in the one card that can also say what the thing is, which on a
- * section somebody has opened once and not since is the more useful half.
- *
- * Same anatomy as `WholeBrandOffer` — the glyph in the section's hue, a display
- * heading, and the sentences under it — because they are the same kind of
- * object: a white card at the top of the column that explains rather than
- * lists. Both were arrived at separately and looked it, which is the usual sign
- * that one of them is a copy of the other with different padding.
- *
- * It began as the first of the **three cards an empty library is** (what is
- * missing, the ones we offer, the blank form) and was shown only while the
- * section had nothing in it. Promoting it to always-on cost nothing and settled
- * two things at once: the page got its name back, and the empty state stopped
- * being a different kind of screen that resolves into a list later. It is now
- * the same screen with the same first card, which gains one line while the
- * section is empty and loses it when the section is not.
- *
- * Deliberately **no faded body copy**. The old empty state set its explanation
- * in tertiary, which is the tone the app uses for asides, and an aside is
- * exactly what this is not: on an empty section the explanation is the entire
- * content of the screen, and setting the only thing on the page in the quietest
- * colour available reads as the screen apologising for itself.
- */
-export function BrandIntro({
-  icon: Glyph,
-  tone,
-  title,
-  body,
-  missing,
-  readBy,
-  heading = 'h1',
-  wide,
-}: {
-  icon: Icon
-  /** The section's hue (`BrandSectionInfo.tone`) — see `brandSections`. */
-  tone?: string
-  title: string
-  body: string
-  /**
-   * The cost of the section being empty, given only while it is. Set below the
-   * description rather than in place of it: what a voice is does not stop being
-   * worth saying once there is one.
-   */
-  missing?: string
-  /**
-   * `h2`, for the one place this card is not the page's own title: the
-   * Foundation hub keeps a titled page header, and a second `h1` under it is
-   * two documents in one screen as far as anything reading the outline is
-   * concerned.
-   */
-  heading?: 'h1' | 'h2'
-  /**
-   * The honesty line's answer — see `ReadBy`.
-   *
-   * Optional, for the one card that is not a section: the Foundation hub's own
-   * leading card explains the whole screen, and "nothing reads this yet" under
-   * it would be a claim about six sections at once, three of which it would be
-   * wrong about.
-   */
-  readBy?: BrandConsumer[]
-  /**
-   * Span the panel instead of the column.
-   *
-   * The card takes the measure of whatever is under it, and one section's
-   * content is not on the column: Templates is a platform rail beside a detail
-   * panel, edge to edge. A `max-w-content` card floating above that reads as a
-   * card belonging to some other screen.
-   */
-  wide?: boolean
-}) {
-  const Heading = heading
-  return (
-    <div
-      className={cn(
-        wide ? 'w-full' : COLUMN,
-        'flex flex-col gap-3 bg-primary px-6 py-6',
-      )}
-    >
-      <span className="flex size-10 items-center justify-center rounded-md bg-secondary">
-        <Glyph className="size-6" style={{ color: tone }} />
-      </span>
-      {/* The measure is on the text, never on the card: every card in the
-          column shares one edge, and one that stops short of it reads as a
-          different kind of card rather than as a shorter one. */}
-      <Heading className="max-w-2xl font-display text-2xl font-medium leading-8 tracking-tight">
-        {title}
-      </Heading>
-      <p className="max-w-2xl text-sm leading-5">{body}</p>
-      {missing && (
-        <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
-          {missing}
-        </p>
-      )}
-      {/* Renders nothing on a wired section, and costs no gap when it does:
-          `ReadBy` returns null rather than an empty node. */}
-      {readBy && <ReadBy consumers={readBy} />}
-    </div>
-  )
-}
-
-/**
- * The second card: the ones we offer, under a heading of their own.
- *
- * The heading is *on* the card rather than floating above it, and it is a
- * heading rather than a label — this is a group of things you choose between,
- * and a bare row of tiles under a section that has already finished explaining
- * itself does not say what the tiles are for. It takes the same
- * display-heading-plus-secondary-line shape every entry card uses on the filled
- * screen, so the two states are built from one grammar.
- */
-export function StarterGroup({
-  title,
-  body,
-  children,
-}: {
-  title: string
-  /** One line: what picking one actually does. */
-  body: string
-  children: ReactNode
-}) {
-  return (
-    <div className={cn(COLUMN, 'flex flex-col gap-4 bg-primary px-6 py-6')}>
-      <header className="flex max-w-2xl flex-col gap-1">
-        <h3 className="font-display text-lg font-medium leading-6 tracking-tight">
-          {title}
-        </h3>
-        <p className="text-sm leading-5 text-secondary-foreground">{body}</p>
-      </header>
-      <div className="grid gap-3">{children}</div>
-    </div>
-  )
-}
-
-/**
  * The third card: one action, no heading and **no description**.
  *
  * Its plainness is the design. Two cards above it have spent the screen
@@ -893,26 +647,6 @@ export function StarterCard({
     >
       {inner}
     </button>
-  )
-}
-
-/**
- * The `ADD …` control a library section carries in its header. Disabled while
- * no handler is wired — an active-looking button that does nothing is worse
- * than one that says it can't yet.
- */
-export function AddButton({
-  label,
-  onClick,
-}: {
-  label: string
-  onClick?: () => void
-}) {
-  return (
-    <Button variant="outline" size="sm" onClick={onClick} disabled={!onClick}>
-      <PlusIcon />
-      <span>{label}</span>
-    </Button>
   )
 }
 

@@ -3,7 +3,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { PasswordIcon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { SettingsRow } from '@/components/workspace-settings/SettingsRow'
 import { GoogleMark } from '@/components/auth/GoogleMark'
 import { useRequestPasswordReset } from '@/hooks/useAuth'
@@ -76,7 +76,7 @@ export function SignInMethodsSection() {
     disconnect.error.code === 'last_sign_in_method'
 
   return (
-    <SettingsCard title={t('profile.signInMethods.title')}>
+    <Card title={t('profile.signInMethods.title')} capped>
       {methods.isPending ? (
         <p className="text-sm text-tertiary-foreground">
           {t('common.loading')}
@@ -190,7 +190,7 @@ export function SignInMethodsSection() {
           )}
         </ul>
       )}
-    </SettingsCard>
+    </Card>
   )
 }
 

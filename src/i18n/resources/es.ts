@@ -1674,7 +1674,6 @@ export const es: Translation = {
         detail:
           'El asistente lee la estrategia y los recursos de la campaña, así que lo que redacta encaja con el brief.',
       },
-      more: 'MÁS EN EL CENTRO DE AYUDA',
     },
   },
 
@@ -6237,8 +6236,6 @@ export const es: Translation = {
     },
 
     shell: {
-      readByNothing:
-        'Todavía nada lee esto: puedes rellenarlo, pero no cambiará lo que sale.',
       default: 'predeterminada',
       chipMore: '+{{count}} más',
       origin: {
@@ -6540,7 +6537,6 @@ export const es: Translation = {
       },
       saved: {
         title: 'Guardado en tus Fundamentos',
-        dismiss: 'Cerrar',
         nothing: 'nada nuevo',
         fromWebsite: '{{what}}, leído de {{site}}.',
         fromDocument: '{{what}}, sacado de {{title}}.',
@@ -6770,10 +6766,6 @@ export const es: Translation = {
         forkedNote:
           'Todavía no se ha guardado nada y los ejemplos están vacíos: esa es la mitad que una plantilla no puede darte, y la que hace el trabajo.',
         general: 'General',
-        defaultDoes:
-          'Las publicaciones empiezan con esta voz salvo que se elija otra.',
-        defaultCosts:
-          'Le quita el valor predeterminado a la voz que lo tenga ahora.',
         name: 'Nombre',
         namePlaceholder: 'Fundador, sin filtro',
         description: 'Descripción',
@@ -6938,7 +6930,6 @@ export const es: Translation = {
     },
 
     templates: {
-      count: '· {{count}}',
       add: 'AÑADIR PLANTILLA',
       gap: 'Las imágenes salen desnudas. Nada marca una imagen como tuya una vez que ha salido de la aplicación.',
       gapScreen:

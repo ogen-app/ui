@@ -1,17 +1,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/lib'
+import type { TFunction } from 'i18next'
+import { Card, type CardStatus } from '@/components/ui/card'
 import { RankBar, TrendChart } from './charts'
 import { InsightLine } from './ComparisonSections'
 import { DeltaChip } from './MeasureTile'
-import {
-  Basis,
-  FigureGrid,
-  FigureTile,
-  NotYet,
-  SectionCard,
-  Todos,
-} from './shell'
+import { Basis, FigureGrid, FigureTile, NotYet, Todos } from './shell'
 import { accumulate, formatCount } from './format'
 import type { Goal, GoalSignal, OutcomesView } from './types'
 
@@ -44,12 +38,12 @@ export function OutcomesSection({ view }: { view: OutcomesView }) {
 
   if (!goal) {
     return (
-      <SectionCard title={t('analytics.outcomes.title')} scope="lens">
+      <Card capped title={t('analytics.outcomes.title')}>
         <NotYet title={t('analytics.outcomes.noGoalTitle')}>
           {t('analytics.outcomes.noGoalBody')}
         </NotYet>
         {view.upgrade && <UpgradeNote upgrade={view.upgrade} />}
-      </SectionCard>
+      </Card>
     )
   }
 
@@ -73,10 +67,10 @@ export function OutcomesSection({ view }: { view: OutcomesView }) {
   )
 
   return (
-    <SectionCard
+    <Card
+      capped
       title={t('analytics.outcomes.title')}
-      scope="lens"
-      status={<SignalBadge signal={view.bestAvailableSignal} />}
+      status={signalStatus(t, view.bestAvailableSignal)}
     >
       <FigureGrid>
         {view.goals.map((g) => (
@@ -101,7 +95,7 @@ export function OutcomesSection({ view }: { view: OutcomesView }) {
           above, not a finding — it belongs down here with the provenance. */}
       {view.basis && <Basis>{view.basis}</Basis>}
       {view.upgrade && <Basis>{view.upgrade.detail}</Basis>}
-    </SectionCard>
+    </Card>
   )
 }
 
@@ -255,26 +249,18 @@ function GoalDetail({ goal }: { goal: Goal }) {
  *
  * "Visits tracked" was the earlier copy and it answered nothing: visits to
  * what, tracked by whom, and is that good? Naming the connection instead makes
- * the badge self-explaining and makes the missing rung obvious.
+ * the mark self-explaining and makes the missing rung obvious.
  */
-function SignalBadge({ signal }: { signal: GoalSignal }) {
-  const { t } = useTranslation()
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-secondary-foreground">
-      <span
-        className={cn(
-          'size-1.5 rounded-full',
-          signal === 'conversions'
-            ? 'bg-positive'
-            : signal === 'unmeasured'
-              ? 'bg-quinary-foreground'
-              : 'bg-warning',
-        )}
-        aria-hidden
-      />
-      {t(`analytics.outcomes.signalBadge.${signal}` as const)}
-    </span>
-  )
+function signalStatus(t: TFunction, signal: GoalSignal): CardStatus {
+  return {
+    label: t(`analytics.outcomes.signalBadge.${signal}` as const),
+    tone:
+      signal === 'conversions'
+        ? 'positive'
+        : signal === 'unmeasured'
+          ? 'neutral'
+          : 'warn',
+  }
 }
 
 /** What the next rung would buy, stated as a gain rather than a lack. */

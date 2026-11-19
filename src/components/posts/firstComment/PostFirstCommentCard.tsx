@@ -3,9 +3,8 @@ import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import { PlusIcon, WarningCircleIcon } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { StatusBadge } from '@/components/ui/status-badge'
 import { Textarea } from '@/components/ui/textarea'
 import { TextSelect } from '@/components/ui/text-select'
 import { cn } from '@/lib'
@@ -33,7 +32,6 @@ type Props = {
   target: string
   /** The post has left Ogen (CON-251): the card is the record, not a field. */
   locked: boolean
-  className?: string
 }
 
 const POSTED_AT_FORMAT: Intl.DateTimeFormatOptions = {
@@ -65,7 +63,6 @@ export function PostFirstCommentCard({
   limit,
   target,
   locked,
-  className,
 }: Props) {
   const { t } = useTranslation()
   const stored = post.first_comment
@@ -88,34 +85,13 @@ export function PostFirstCommentCard({
 
   if (locked) {
     if (!stored.trim()) return null
+    // Keyed by status, so the clock in it starts from the moment a comment
+    // became pending rather than from when the card opened.
     return (
-      <div
-        className={cn('flex flex-col gap-4 bg-primary px-10 py-6', className)}
-      >
-        <div className="flex items-start justify-between gap-4 min-w-0">
-          <h2 className="text-xl font-display font-medium tracking-tight">
-            {t('posts.firstComment.heading')}
-          </h2>
-          {/* Keyed by status, so the clock below starts from the moment a
-              comment became pending rather than from when the card opened. */}
-          <FirstCommentStatus
-            key={post.first_comment_status ?? 'none'}
-            post={post}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <p className="whitespace-pre-wrap break-words border-b border-border pb-3 text-sm">
-            {stored}
-          </p>
-          <p className="text-sm text-tertiary-foreground">
-            {post.first_comment_delay_minutes === 0
-              ? t('posts.firstComment.timing.withPost')
-              : t('posts.firstComment.timing.after', {
-                  count: post.first_comment_delay_minutes,
-                })}
-          </p>
-        </div>
-      </div>
+      <LockedFirstComment
+        key={post.first_comment_status ?? 'none'}
+        post={post}
+      />
     )
   }
 
@@ -152,28 +128,19 @@ export function PostFirstCommentCard({
   }))
 
   return (
-    <div className={cn('flex flex-col gap-4 bg-primary px-10 py-6', className)}>
-      <div className="flex items-center justify-between gap-4 min-w-0">
-        <h2 className="text-xl font-display font-medium tracking-tight">
-          {t('posts.firstComment.heading')}
-        </h2>
-        {open ? (
-          <Button type="button" variant="ghost" size="sm" onClick={remove}>
-            <span>{t('posts.firstComment.remove')}</span>
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setComposing(true)}
-          >
-            <PlusIcon />
-            <span>{t('posts.firstComment.add')}</span>
-          </Button>
-        )}
-      </div>
-      <p className="text-sm text-tertiary-foreground">
+    <Card
+      title={t('posts.firstComment.heading')}
+      action={
+        open
+          ? { label: t('posts.firstComment.remove'), onClick: remove }
+          : {
+              label: t('posts.firstComment.add'),
+              icon: PlusIcon,
+              onClick: () => setComposing(true),
+            }
+      }
+    >
+      <p className="text-sm text-secondary-foreground">
         {t('posts.firstComment.helper')}
       </p>
 
@@ -239,16 +206,18 @@ export function PostFirstCommentCard({
           )}
         </>
       )}
-    </div>
+    </Card>
   )
 }
 
 /**
- * What became of the comment, beside the heading of a locked card. Ticks every
- * half minute while the comment is waiting out its delay, so "~3 min" counts down
- * between the editor's polls rather than standing still until one lands.
+ * The record of a comment that has left Ogen (CON-251): the text as it went
+ * (or will go) out, when, and — as the heading's status — what became of it.
+ * Ticks every half minute while the comment is waiting out its delay, so
+ * "~3 min" counts down between the editor's polls rather than standing still
+ * until one lands.
  */
-function FirstCommentStatus({ post }: { post: Post }) {
+function LockedFirstComment({ post }: { post: Post }) {
   const { t } = useTranslation()
   const pending = post.first_comment_status === 'pending'
   const [now, setNow] = useState(() => Date.now())
@@ -259,23 +228,36 @@ function FirstCommentStatus({ post }: { post: Post }) {
   }, [pending])
 
   const line = firstCommentStatusLine(post, now)
-  if (!line) return null
   return (
-    <span className="flex flex-wrap items-center justify-end gap-x-2 text-right">
-      <StatusBadge
-        label={statusLabel(line, t)}
-        tone={line.tone}
-        className="text-sm text-primary-foreground"
-      />
-      {line.key === 'failed' && line.reconnect && (
-        <Link
-          to="/workspace-settings"
-          className="text-sm text-primary-foreground underline underline-offset-2"
-        >
-          {t('posts.firstComment.status.reconnect')}
-        </Link>
-      )}
-    </span>
+    <Card
+      title={t('posts.firstComment.heading')}
+      status={
+        line ? { label: statusLabel(line, t), tone: line.tone } : undefined
+      }
+    >
+      <div className="flex flex-col gap-2">
+        <p className="whitespace-pre-wrap break-words border-b border-border pb-3 text-sm">
+          {post.first_comment}
+        </p>
+        <p className="text-sm text-tertiary-foreground">
+          {post.first_comment_delay_minutes === 0
+            ? t('posts.firstComment.timing.withPost')
+            : t('posts.firstComment.timing.after', {
+                count: post.first_comment_delay_minutes,
+              })}
+        </p>
+        {/* Under the record rather than beside the status: the heading holds
+            no links. */}
+        {line?.key === 'failed' && line.reconnect && (
+          <Link
+            to="/workspace-settings"
+            className="self-start text-sm text-primary-foreground underline underline-offset-2"
+          >
+            {t('posts.firstComment.status.reconnect')}
+          </Link>
+        )}
+      </div>
+    </Card>
   )
 }
 

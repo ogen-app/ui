@@ -19,7 +19,7 @@ import {
   type PlatformView,
 } from '@/lib/platformDictionary'
 import { usePlatformViews } from '@/hooks/usePlatforms'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib'
 import { AutoPublishControl } from './AutoPublishControl'
 import { useConnectPlatform } from './connectPlatform'
@@ -49,7 +49,7 @@ function PlatformsSectionComponent({
   const focused = focusedAccount(connected, focus)
 
   return (
-    <SettingsCard title={t('workspaceSettings.platforms.title')}>
+    <Card title={t('workspaceSettings.platforms.title')} capped>
       {connected.length === 0 ? (
         <p className="text-sm text-tertiary-foreground">
           {t('workspaceSettings.platforms.empty')}
@@ -72,7 +72,7 @@ function PlatformsSectionComponent({
         </ul>
       )}
       {modal}
-    </SettingsCard>
+    </Card>
   )
 }
 

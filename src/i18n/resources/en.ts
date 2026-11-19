@@ -2089,7 +2089,6 @@ export const en = {
         detail:
           'The assistant reads the campaign’s strategy and assets, so what it drafts fits the brief.',
       },
-      more: 'LEARN MORE IN THE HELP CENTRE',
     },
   },
 
@@ -7623,8 +7622,6 @@ export const en = {
 
     /** The furniture every Brand screen is built from — `shell.tsx`. */
     shell: {
-      readByNothing:
-        "Nothing reads this yet — you can fill it in, but it won't change what comes out.",
       /** The word beside the star. Lower case is deliberate — it sits in a row of facts. */
       default: 'default',
       chipMore: '+{{count}} more',
@@ -7934,7 +7931,6 @@ export const en = {
       },
       saved: {
         title: 'Saved to your Foundation',
-        dismiss: 'Close',
         nothing: 'nothing new',
         fromWebsite: '{{what}}, read off {{site}}.',
         fromDocument: '{{what}}, taken from {{title}}.',
@@ -8207,8 +8203,6 @@ export const en = {
         forkedNote:
           'Nothing is saved yet, and the samples are empty: that is the half a template cannot give you, and the half that does the work.',
         general: 'General',
-        defaultDoes: 'Posts start in this voice unless another one is picked.',
-        defaultCosts: 'Takes the default off whichever voice has it now.',
         name: 'Name',
         namePlaceholder: 'Founder, off the cuff',
         description: 'Description',
@@ -8389,7 +8383,6 @@ export const en = {
 
     /** The frames — `TemplatesSection.tsx` and `TemplatesScreen.tsx`. */
     templates: {
-      count: '· {{count}}',
       add: 'ADD TEMPLATE',
       gap: 'Images go out bare. Nothing marks a picture as yours once it has left the app.',
       gapScreen:

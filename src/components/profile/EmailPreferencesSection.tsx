@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import {
   useEmailPreferences,
   useSetMarketingEmails,
@@ -25,7 +25,7 @@ export function EmailPreferencesSection({ userId }: { userId: string }) {
   const { mutate, isPending: saving } = useSetMarketingEmails(userId)
 
   return (
-    <SettingsCard title="Email">
+    <Card title="Email" capped>
       <div className="flex items-start justify-between gap-6">
         <div className="flex max-w-150 flex-col gap-1">
           <p className="text-sm font-medium">Marketing emails</p>
@@ -65,6 +65,6 @@ export function EmailPreferencesSection({ userId }: { userId: string }) {
           delivery again; clearing the block on this one needs support.
         </p>
       )}
-    </SettingsCard>
+    </Card>
   )
 }

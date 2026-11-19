@@ -1,8 +1,9 @@
-import { CheckIcon } from '@phosphor-icons/react'
+import { CheckIcon, PlusIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
-import { brandSectionCopy } from '@/lib/brandSections'
-import { formatList } from '@/lib/intl'
-import { AddButton, BrandSection, EntryCard, Gap, OriginLine } from './shell'
+import { Card } from '@/components/ui/card'
+import { brandSection, brandSectionCopy } from '@/lib/brandSections'
+import { formatList, formatNumber } from '@/lib/intl'
+import { EntryCard, Gap, OriginLine, readByStatus } from './shell'
 import { EXPECTED_RATIOS, type BrandTemplate } from './types'
 
 /**
@@ -32,20 +33,25 @@ export function TemplatesSection({
   onOpen?: (id: string) => void
 }) {
   const { t } = useTranslation()
+  const { icon, tone } = brandSection('templates')
   return (
-    <BrandSection
+    <Card
+      icon={icon}
+      tone={tone}
       title={brandSectionCopy(t, 'templates').label}
       qualifier={
-        templates.length > 0
-          ? t('brand.templates.count', { count: templates.length })
-          : undefined
+        templates.length > 0 ? formatNumber(templates.length) : undefined
       }
-      readBy={[]}
-      action={
-        templates.length > 0 ? (
-          <AddButton label={t('brand.templates.add')} onClick={onAdd} />
-        ) : undefined
-      }
+      status={readByStatus(t, [])}
+      {...(templates.length > 0 && {
+        action: {
+          label: t('brand.templates.add'),
+          icon: PlusIcon,
+          onClick: () => onAdd?.(),
+          disabled: !onAdd,
+        },
+      })}
+      capped
     >
       {templates.length === 0 ? (
         <Gap
@@ -69,7 +75,7 @@ export function TemplatesSection({
           ))}
         </div>
       )}
-    </BrandSection>
+    </Card>
   )
 }
 

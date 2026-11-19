@@ -19,6 +19,7 @@ import {
   WarningIcon,
   WarningOctagonIcon,
 } from '@phosphor-icons/react'
+import { Card } from '@/components/ui/card'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
@@ -305,13 +306,9 @@ function DayCard({
   const dayLabel = useDayLabel()
 
   return (
-    <article className="w-full max-w-content rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0">
-      {/* The day is the card's whole title. No second line: what happened is
-          the sections' job, and a summary above them would say it twice. */}
-      <h2 className="font-display text-base/6 font-medium truncate">
-        {dayLabel(date, now)}
-      </h2>
-
+    // The day is the card's whole title. No second line: what happened is the
+    // sections' job, and a summary above them would say it twice.
+    <Card capped title={dayLabel(date, now)}>
       <div className="flex flex-col">
         {entries.map((entry) => {
           const divided = entry.id === dividerBefore
@@ -330,7 +327,7 @@ function DayCard({
           )
         })}
       </div>
-    </article>
+    </Card>
   )
 }
 
