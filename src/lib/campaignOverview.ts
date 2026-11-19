@@ -314,6 +314,44 @@ export function overviewPace(input: {
   return { perWeek: (published * 7) / Math.max(7, elapsedDays), planned: false }
 }
 
+/** The Campaigns list's groups: the stages a reader steers by. */
+export type CampaignGroupId = 'live' | 'planning' | 'new' | 'ended'
+
+const GROUP_OF: Record<OverviewStage, CampaignGroupId> = {
+  new: 'new',
+  planning: 'planning',
+  launched: 'live',
+  running: 'live',
+  closing: 'live',
+  ended: 'ended',
+}
+const GROUP_ORDER: CampaignGroupId[] = ['live', 'planning', 'new', 'ended']
+/** Inside Live, the nearest the end first: it is the one with least time. */
+const LIVE_ORDER: Partial<Record<OverviewStage, number>> = {
+  closing: 0,
+  running: 1,
+  launched: 2,
+}
+
+/**
+ * The Campaigns list grouped by stage, on `now`: what is out, then what is
+ * coming, then what isn't set up, then what is over. Empty groups are left
+ * out; inside a group the list keeps its order, Live aside.
+ */
+export function campaignGroups<C extends Campaign>(
+  campaigns: C[],
+  now: Date,
+): { id: CampaignGroupId; campaigns: C[] }[] {
+  const staged = campaigns.map((c) => ({ c, stage: overviewStage(c, now) }))
+  return GROUP_ORDER.map((id) => ({
+    id,
+    campaigns: staged
+      .filter((s) => GROUP_OF[s.stage] === id)
+      .sort((a, b) => (LIVE_ORDER[a.stage] ?? 0) - (LIVE_ORDER[b.stage] ?? 0))
+      .map((s) => s.c),
+  })).filter((g) => g.campaigns.length > 0)
+}
+
 export function overviewModel(input: OverviewInput): OverviewModel {
   const { campaign, posts, now } = input
   const stage = overviewStage(campaign, now)
@@ -549,6 +587,18 @@ export function overviewModel(input: OverviewInput): OverviewModel {
 }
 
 const WEEKDAY_TOKENS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+
+/** A campaign's channels as the screens draw them — the Campaigns list's row. */
+export function overviewPlatforms(
+  campaign: Campaign,
+  views: PlatformView[],
+): OverviewPlatform[] {
+  const zernioOf = platformLookup(views)
+  return campaign.target_platforms.map((p) => ({
+    id: p.id,
+    zernioId: zernioOf(p.id),
+  }))
+}
 
 function platformLookup(views: PlatformView[]) {
   const byId = new Map(views.map((v) => [v.platform.id, v.info.zernioId]))

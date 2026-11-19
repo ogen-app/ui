@@ -1619,6 +1619,8 @@ export const es: Translation = {
       none: 'Nada espera por ti.',
       more_one: '+{{formatted}} similar',
       more_other: '+{{formatted}} similares',
+      moreRows_one: '+{{formatted}} más',
+      moreRows_other: '+{{formatted}} más',
       menu: 'Más soluciones',
       firstPost: 'Añade la primera publicación',
       coverageGaps_one:
@@ -6919,6 +6921,20 @@ export const es: Translation = {
     },
     add: 'AÑADIR CAMPAÑA',
     error: 'No se pudieron cargar las campañas',
+    list: {
+      group: {
+        live: 'En curso',
+        planning: 'En preparación',
+        new: 'Nuevas',
+        ended: 'Terminadas',
+      },
+      open: 'Abrir {{name}}',
+      noChannels: 'Sin canales todavía',
+      setUp: 'Por configurar',
+      notDated: 'Sin fechas todavía',
+      loadFailed:
+        'No se pudieron cargar las publicaciones. Las cifras aparecerán en cuanto se pueda volver a acceder a ellas.',
+    },
     untitled: 'esta campaña',
     empty: {
       title: 'Todavía no hay campañas',

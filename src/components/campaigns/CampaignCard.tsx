@@ -1,272 +1,221 @@
 import { Link } from '@tanstack/react-router'
 import { CaretRightIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
-import { StatusBadge, type StatusTone } from '@/components/ui/status-badge.tsx'
 import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
-import { StatTile } from '@/components/campaigns/overview/StatTile.tsx'
-import { formatNumber } from '@/lib/intl'
+import {
+  NeedsPreview,
+  PlatformMark,
+  PostsBar,
+  ProgressHeader,
+  ResultsFigures,
+} from '@/components/campaigns/overview/CampaignOverview.tsx'
+import { needsLines } from '@/components/campaigns/overview/needsLines'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { placeLink, type PlaceId } from '@/lib/campaignScope'
 import { useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
 import { campaignTypeInfo } from '@/lib/campaignTypeDictionary.ts'
+import { attentionItems } from '@/lib/campaignReadiness.ts'
 import {
-  attentionItems,
-  contentSnapshot,
-  setupChecks,
-  SCHEDULED_STATUSES,
-  type AttentionSeverity,
-} from '@/lib/campaignReadiness.ts'
+  overviewModel,
+  overviewPlatforms,
+  type OverviewModel,
+  type OverviewPlatform,
+} from '@/lib/campaignOverview'
+import { cn } from '@/lib'
 import type { Campaign } from '@/types/campaigns.ts'
-import type { PostSummary } from '@/types/posts.ts'
 
 /**
- * One campaign on the Campaigns list: who it is, how it is doing, how it is
- * set up.
+ * One campaign on the Campaigns list, as the campaign's Overview in one row:
+ * what it is, where it is in its own time, and what wants the user — three
+ * columns, so a wide page is used across rather than stretched.
  *
- * The identity block is the same one the sidebar shows — same coloured mark,
- * same abbreviation — so a campaign is recognised the same way wherever it
- * appears. Below it, the widget row is the Overview's Content module verbatim
- * (`StatTile`): the list is for comparing campaigns, and equal-width counts
- * compare, while prose doesn't. The setup line under that is the campaign's
- * configuration, not its progress, so it stays quiet.
- *
- * Every number comes from `lib/campaignReadiness` — the Overview's rules are
- * the contract (docs/attention-rules.md), and a list that scored campaigns its
- * own way would quietly disagree with the screen behind it.
- */
-
-/** The header verdict takes the colour of the campaign's worst open item. */
-const HEADLINE_TONE: Record<AttentionSeverity, StatusTone> = {
-  alert: 'destructive',
-  risk: 'warn',
-  todo: 'warn',
-  info: 'neutral',
-}
-
-/**
- * `place` is the section a click opens — the campaign's Overview unless the
- * list is asking for a campaign on behalf of another row (`?pick=`).
+ * Every figure and every warning is `overviewModel`'s, run over the
+ * workspace's post summaries — one query for the whole list, never one per
+ * card (CON-152) — so the row and the Overview behind it can't disagree. Two
+ * things the Overview has that the row can't without a read per campaign:
+ * today's phase (the phase windows are `GET …/phases`) and the server's
+ * calendar problems. The row shows the client's rules alone, and no phase.
  */
 export function CampaignCard({
   campaign,
   place = 'overview',
 }: {
   campaign: Campaign
+  /** The section a click opens — the Overview unless the list is a picker. */
   place?: PlaceId
 }) {
+  const { t } = useTranslation()
   const workspaceCalendar = useFeatureFlag('workspace-calendar')
   const link = placeLink(place, campaign.id, { workspaceCalendar })
-  // One query for the whole list, not one per card (CON-152). Every card
-  // subscribes to the same key, so the request is fired once no matter how
-  // many campaigns are on screen.
   const summariesQuery = useCampaignSummaries()
   const platformViews = usePlatformViews()
 
-  const title = campaign.name.trim() || 'Untitled campaign'
-  const typeName = campaign.campaign_type?.name
-  const typeLabel = typeName ? campaignTypeInfo(typeName).label : null
-  const dates = setupChecks(campaign, platformViews).find(
-    (c) => c.id === 'dates',
-  )!
-  // Only a complete range describes the campaign; a half-set one is a gap, and
-  // the attention badge already carries it.
-  const properties = [typeLabel, dates.ok ? dates.detail : null]
-    .filter(Boolean)
-    .join(' · ')
-
-  // The counts are claims about the posts, so they wait for them — scoring a
-  // campaign against an empty list would flash a row of zeroes at a campaign
-  // that has failures. A *failed* query is not an empty campaign either:
-  // rendering "All clear" off an error would be a lie, so the verdict and the
-  // tiles only draw from a successful fetch.
-  //
-  // Load state comes from the query, never from the presence of this
-  // campaign's entry: the server omits campaigns with no posts, so an absent
-  // id means "none", not "not yet".
-  const settled = summariesQuery.isSuccess
-  const failed = summariesQuery.isError
-  const posts = summariesQuery.data?.[campaign.id] ?? []
-  // Time-based rules are recomputed per render against the current clock,
-  // exactly as the Overview screen does it.
-  const items = settled
-    ? attentionItems(campaign, posts, platformViews, new Date())
-    : []
-  const snapshot = contentSnapshot(posts)
-
-  // A count, not a roster. Which channels a campaign runs on is settings'
-  // business; here it only has to say whether it can publish at all, and six
-  // channel names would crowd the stage off the line they share.
-  const platformCount = campaign.target_platforms.length
-  const platformSummary =
-    platformCount === 0
-      ? 'No platforms connected'
-      : `${platformCount} platform${platformCount === 1 ? '' : 's'}`
-  // Gated like the tiles: the stage is read off the posts, and an empty list
-  // — which is what loading and failure both look like here — reads as every
-  // phase finished, so the card would claim the final stage while the query
-  // is still out.
-  const stage = settled ? currentStage(campaign, posts) : null
-  const advanced = advancedSummary(campaign)
-  // Same construction and separator as `properties` above, because it is the
-  // same kind of line: facts about how the campaign is set up, not its
-  // progress.
-  const facts = [platformSummary, stage].filter(Boolean).join(' · ')
+  // Load state comes from the query, never from this campaign's entry: the
+  // server omits campaigns with no posts, so an absent id means "none". A
+  // failed read is not an empty campaign either, so it scores nothing.
+  const posts = summariesQuery.isSuccess
+    ? (summariesQuery.data?.[campaign.id] ?? [])
+    : null
+  const now = new Date()
+  const model = overviewModel({
+    campaign,
+    posts,
+    platformViews,
+    phases: null,
+    attention: posts ? attentionItems(campaign, posts, platformViews, now) : [],
+    problems: null,
+    total: null,
+    now,
+  })
 
   return (
-    // The whole card is the link — there is nothing else to click on it, so a
-    // hit area smaller than the card was only ever a target to miss. The lift
-    // on hover is the affordance that replaces the header's tint: it says the
-    // card as a whole is the thing that responds. `group` is on the card too,
-    // so the caret answers to a hover anywhere on it.
-    //
-    // `aria-label` names the link "Open <campaign>" instead of letting it read
-    // out as its own contents — every count, badge and stage name, in one
-    // breath. The contents are still there to browse; this is just the name.
+    // The whole row is the link, named for what it opens rather than read out
+    // as every figure and warning in one breath.
     <Link
       to={link.to}
       params={link.params}
-      aria-label={`Open ${title}`}
-      className="group w-full rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0 cursor-pointer transition-shadow duration-150 hover:shadow-lg"
+      aria-label={t('campaigns.list.open', {
+        name: campaign.name.trim() || t('nav.untitledCampaign'),
+      })}
+      className="block min-w-0"
     >
-      <div className="flex items-center gap-3 min-w-0">
-        {/* 40px of mark against 40px of text — the two lines below set the
-            height, and the icon spans both rather than hanging off the title. */}
-        <CampaignIcon
-          abbr={identityAbbr(title)}
-          color={identityColorVar(campaign.id)}
-          className="size-10 shrink-0"
-        />
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="font-display text-base/6 font-medium truncate">
-            {title}
-          </span>
-          {properties && (
-            <span className="text-xs/4 text-tertiary-foreground truncate">
-              {properties}
-            </span>
-          )}
-        </span>
-        {settled &&
-          (items.length === 0 ? (
-            <StatusBadge
-              tone="positive"
-              label="All clear"
-              className="shrink-0"
-            />
-          ) : (
-            <StatusBadge
-              tone={HEADLINE_TONE[items[0].severity]}
-              label={`${items.length} item${items.length === 1 ? '' : 's'} to review`}
-              className="shrink-0"
-            />
-          ))}
-        <CaretRightIcon
-          className="size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-          weight="bold"
-          aria-hidden
-        />
-      </div>
-
-      {failed ? (
-        <p className="text-sm text-tertiary-foreground">
-          Couldn’t load post counts — they’ll appear once they’re reachable
-          again.
-        </p>
-      ) : settled ? (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          <StatTile
-            value={plannedToday(posts, new Date())}
-            label="Planned for today"
-          />
-          <StatTile value={snapshot.readyToGo} label="Ready to go" />
-          <StatTile value={snapshot.notReady} label="Still drafting" />
-          <StatTile
-            value={snapshot.byStatus.failed}
-            label="Failed"
-            tone={snapshot.byStatus.failed > 0 ? 'alert' : 'default'}
-          />
-          {/* Just the total: the campaign's post target is being reworked into
-              a goal (CON-156), and until it is, "of 40 planned" would be
-              measuring against a number nothing maintains. */}
-          <StatTile value={snapshot.total} label="Total" />
-        </div>
-      ) : (
-        <Skeleton className="h-16 w-full" />
-      )}
-
-      {/* One voice for everything that describes the setup — these lines and
-          the properties line under the title are the same kind of statement, so
-          they are the same size and colour rather than three shades of quiet.
-          What separates them is position, not styling. */}
-      <div className="flex flex-col gap-1.5 min-w-0 text-xs/4 text-tertiary-foreground">
-        <div className="truncate">{facts}</div>
-        {/* Advanced settings take their own line: they are the exception, so
-            they must not push the channels — which every campaign has — off
-            the end of theirs. */}
-        {advanced && <div className="truncate">{advanced}</div>}
-      </div>
+      <CampaignRow
+        campaign={campaign}
+        model={model}
+        platforms={overviewPlatforms(campaign, platformViews)}
+        loading={posts === null && !summariesQuery.isError}
+        failed={summariesQuery.isError}
+      />
     </Link>
   )
 }
 
-/** Posts due to go out inside today's local calendar day, still unpublished. */
-function plannedToday(posts: PostSummary[], now: Date): number {
-  const start = new Date(now)
-  start.setHours(0, 0, 0, 0)
-  const end = start.getTime() + 24 * 60 * 60 * 1000
-  return posts.filter((p) => {
-    if (!p.scheduled_at || !SCHEDULED_STATUSES.includes(p.status)) return false
-    const at = Date.parse(p.scheduled_at)
-    return at >= start.getTime() && at < end
-  }).length
-}
-
 /**
- * Where the campaign is in its plan, as a spelled-out sentence rather than a
- * bare ordinal: "Stage 2 of 3: Distribute & Cross-Link".
- *
- * Every system campaign type ships phases — evergreen included — so the API is
- * taken at its word and any type with phases gets a stage.
- *
- * Phases carry a sequence but no dates, so "current" is read off the work
- * rather than off the clock: the earliest phase that still has posts to
- * finish is what the campaign is working on. Once every phase is done the
- * last one stands as where it ended up.
+ * The row itself, from a model — split from the reads so the design harness
+ * can draw every stage from fixtures. It sits inside the link the list wraps
+ * it in, so nothing in it is a link or a button.
  */
-function currentStage(campaign: Campaign, posts: PostSummary[]): string | null {
-  const phases = [...(campaign.campaign_type?.phases ?? [])].sort(
-    (a, b) => a.sequence - b.sequence,
-  )
-  if (phases.length === 0) return null
+export function CampaignRow({
+  campaign,
+  model,
+  platforms,
+  loading = false,
+  failed = false,
+}: {
+  campaign: Campaign
+  model: OverviewModel
+  platforms: OverviewPlatform[]
+  /** The posts are still on their way: the figures wait for them. */
+  loading?: boolean
+  /** The posts couldn't be read: say so rather than score an empty list. */
+  failed?: boolean
+}) {
+  const { t } = useTranslation()
+  const title = campaign.name.trim() || t('nav.untitledCampaign')
+  const typeName = campaign.campaign_type?.name
+  const typeLabel = typeName ? campaignTypeInfo(typeName).label : null
+  // A campaign with no dates has steps rather than warnings: what is left of
+  // its setup is what wants the user.
+  const needs =
+    model.stage === 'new'
+      ? {
+          title: t('campaigns.list.setUp'),
+          lines: (model.setup ?? [])
+            .filter((s) => !s.done)
+            .map((s) => ({
+              id: s.id,
+              mark: 'todo' as const,
+              label: t(`campaignOverview.setup.${s.id}.title`),
+            })),
+        }
+      : {
+          title: t(`campaignOverview.needs.${model.needsTitle}`),
+          lines:
+            loading || model.needs === null ? null : needsLines(t, model.needs),
+        }
 
-  const openPhaseIds = new Set(
-    posts
-      .filter((p) => p.status !== 'published' && p.status !== 'not_published')
-      .map((p) => p.campaign_type_phase_id)
-      .filter((id): id is string => id !== null),
-  )
-  const index = phases.findIndex((ph) => openPhaseIds.has(ph.id))
-  const current = index === -1 ? phases.length - 1 : index
-  return `Stage ${current + 1} of ${phases.length}: ${phases[current].name}`
-}
+  return (
+    // The columns answer to the row's own width: three across on a wide page;
+    // narrower, the name over the other two; narrowest, one under another.
+    <div className="@container group rounded-md border border-border bg-primary p-5 transition-shadow duration-150 hover:shadow-lg">
+      <div className="grid gap-5 @min-[40rem]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] @min-[40rem]:gap-x-0 @min-[64rem]:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] @min-[64rem]:gap-y-0">
+        {/* What it is: the sidebar's mark and name, its type and channels. */}
+        <div className="flex min-w-0 flex-col gap-3 @min-[40rem]:col-span-2 @min-[64rem]:col-span-1 @min-[64rem]:pr-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <CampaignIcon
+              abbr={identityAbbr(title)}
+              color={identityColorVar(campaign.id)}
+              className="size-10 shrink-0"
+            />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="font-display text-base/6 font-medium truncate">
+                {title}
+              </span>
+              {typeLabel && (
+                <span className="text-sm truncate">{typeLabel}</span>
+              )}
+            </span>
+            <CaretRightIcon
+              className="size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
+              weight="bold"
+              aria-hidden
+            />
+          </div>
+          {platforms.length > 0 ? (
+            <span className="flex flex-wrap items-center gap-2">
+              {platforms.map((p) => (
+                <PlatformMark key={p.id} platform={p} />
+              ))}
+            </span>
+          ) : (
+            <span className="text-sm">{t('campaigns.list.noChannels')}</span>
+          )}
+        </div>
 
-/**
- * The advanced settings, if any were filled in. Written as a sentence rather
- * than a label grid — this is a footnote on a list card, and a campaign with
- * none of it set should cost no space at all.
- */
-function advancedSummary(campaign: Campaign): string | null {
-  const parts: string[] = []
-  if (campaign.budget != null && campaign.budget > 0) {
-    parts.push(
-      `Budget ${formatNumber(campaign.budget)} ${campaign.currency}`.trim(),
-    )
-  }
-  const language = campaign.language.trim()
-  if (language) {
-    parts.push(`Language: ${language.toUpperCase()}`)
-  }
-  return parts.length > 0 ? parts.join(' · ') : null
+        {/* Where it is in its own time: the Overview's progress card. */}
+        <div
+          className={cn(
+            'flex min-w-0 flex-col gap-4 @min-[40rem]:pr-6',
+            '@min-[64rem]:border-l @min-[64rem]:border-border @min-[64rem]:pl-6',
+          )}
+        >
+          {failed ? (
+            <>
+              <ProgressHeader
+                stage={model.stage}
+                band={model.band}
+                size="row"
+              />
+              <p className="text-sm">{t('campaigns.list.loadFailed')}</p>
+            </>
+          ) : loading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : (
+            <>
+              <ProgressHeader
+                stage={model.stage}
+                band={model.band}
+                size="row"
+              />
+              {model.stage === 'new' ? (
+                <p className="text-sm">{t('campaigns.list.notDated')}</p>
+              ) : model.results ? (
+                <ResultsFigures results={model.results} />
+              ) : (
+                model.band && <PostsBar band={model.band} />
+              )}
+            </>
+          )}
+        </div>
+
+        {/* What wants the user: the Overview's list, short. */}
+        <div className="min-w-0 @min-[40rem]:border-l @min-[40rem]:border-border @min-[40rem]:pl-6">
+          {!failed && <NeedsPreview title={needs.title} lines={needs.lines} />}
+        </div>
+      </div>
+    </div>
+  )
 }

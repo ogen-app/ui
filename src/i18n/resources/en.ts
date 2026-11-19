@@ -2022,6 +2022,9 @@ export const en = {
       /** After a problem standing for others of its kind. */
       more_one: '+{{formatted}} like this',
       more_other: '+{{formatted}} like this',
+      /** Under a short list — the Campaigns list's — the rows not shown. */
+      moreRows_one: '+{{formatted}} more',
+      moreRows_other: '+{{formatted}} more',
       menu: 'More fixes',
       firstPost: 'Add the first post',
       coverageGaps_one:
@@ -8378,6 +8381,24 @@ export const en = {
     },
     add: 'ADD CAMPAIGN',
     error: 'Failed to load campaigns',
+    /** The list's rows: the Overview in one row each, grouped by stage. */
+    list: {
+      group: {
+        live: 'Live',
+        planning: 'Planning',
+        new: 'New',
+        ended: 'Ended',
+      },
+      /** The row's link, named for what it opens. */
+      open: 'Open {{name}}',
+      noChannels: 'No channels yet',
+      /** A campaign with no dates: the third column is its setup left. */
+      setUp: 'Set up',
+      /** A campaign with no dates, where the others have their window. */
+      notDated: 'No dates yet',
+      loadFailed:
+        'Couldn’t load the posts. The figures appear once they can be reached again.',
+    },
     untitled: 'this campaign',
     empty: {
       title: 'No campaigns yet',

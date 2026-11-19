@@ -3,6 +3,7 @@ import type { AttentionItem } from '@/lib/campaignReadiness'
 import type { CalendarFinding } from '@/types/assistant'
 import type { Campaign } from '@/types/campaigns'
 import {
+  campaignGroups,
   overviewModel,
   overviewPace,
   overviewStage,
@@ -324,5 +325,49 @@ describe('overviewPace', () => {
         plannedDays: 1,
       }),
     ).toBeNull()
+  })
+})
+
+describe('campaignGroups', () => {
+  // Oct 1 – Nov 30 is closing from Nov 17, running before, launched to Oct 7.
+  const dated = (id: string, start: string, end: string) =>
+    campaign({
+      id,
+      start_date: `${start}T00:00:00Z`,
+      end_date: `${end}T00:00:00Z`,
+    })
+
+  it('orders live, planning, new, ended, and leaves out empty groups', () => {
+    const groups = campaignGroups(
+      [
+        dated('over', '2026-08-01', '2026-09-30'),
+        campaign({ id: 'undated', start_date: null, end_date: null }),
+        dated('soon', '2026-12-01', '2026-12-31'),
+        dated('mid', '2026-10-01', '2026-11-30'),
+      ],
+      day(11, 1),
+    )
+    expect(groups.map((g) => [g.id, g.campaigns.map((c) => c.id)])).toEqual([
+      ['live', ['mid']],
+      ['planning', ['soon']],
+      ['new', ['undated']],
+      ['ended', ['over']],
+    ])
+  })
+
+  it('puts the campaign nearest its end first inside Live', () => {
+    const [live] = campaignGroups(
+      [
+        dated('launched', '2026-10-28', '2026-12-31'),
+        dated('running', '2026-09-01', '2026-12-31'),
+        dated('closing', '2026-10-01', '2026-11-05'),
+      ],
+      day(11, 1),
+    )
+    expect(live.campaigns.map((c) => c.id)).toEqual([
+      'closing',
+      'running',
+      'launched',
+    ])
   })
 })

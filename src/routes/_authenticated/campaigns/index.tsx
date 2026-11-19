@@ -13,6 +13,8 @@ import { CampaignCard } from '@/components/campaigns/CampaignCard.tsx'
 import { CreateCampaignDialog } from '@/components/campaigns/CreateCampaignDialog.tsx'
 import { campaignsQuery, useCampaigns } from '@/hooks/useCampaigns.ts'
 import { awaiting } from '@/lib/fetched'
+import { campaignGroups } from '@/lib/campaignOverview'
+import { formatNumber } from '@/lib/intl'
 import { queryClient } from '@/lib/queryClient'
 import { isPickPlace, placeLink, type PickPlace } from '@/lib/campaignScope'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog.tsx'
@@ -106,13 +108,27 @@ function Campaigns() {
           }
         />
         {hasCampaigns ? (
-          <ul className="flex flex-col gap-3 px-3 lg:px-6 pt-4">
-            {campaigns!.map((campaign) => (
-              <li key={campaign.id}>
-                <CampaignCard campaign={campaign} place={pick} />
-              </li>
+          // Grouped by stage, as the Overview names them: what is out, what
+          // is coming, what isn't set up, what is over.
+          <div className="flex flex-col gap-6 px-3 lg:px-6 pt-4">
+            {campaignGroups(campaigns!, new Date()).map((group) => (
+              <section key={group.id} className="flex flex-col gap-3">
+                <h2 className="font-display text-base font-medium">
+                  {t(`campaigns.list.group.${group.id}`)}
+                  <span className="ml-2 font-sans text-sm font-normal text-tertiary-foreground tabular-nums">
+                    {formatNumber(group.campaigns.length)}
+                  </span>
+                </h2>
+                <ul className="flex flex-col gap-3">
+                  {group.campaigns.map((campaign) => (
+                    <li key={campaign.id}>
+                      <CampaignCard campaign={campaign} place={pick} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         ) : (
           <div className="grow grid px-3 lg:px-6 pb-6">
             <PageGridEmptyState

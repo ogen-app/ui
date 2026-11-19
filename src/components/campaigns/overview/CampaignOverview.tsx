@@ -15,7 +15,6 @@ import {
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Logo } from '@/components/Logo'
 import { IgnoredList } from '@/components/assistant/FindingsBlock'
@@ -54,6 +53,7 @@ import {
   formatRelative,
 } from '@/lib/intl'
 import { getPlatformByZernioId } from '@/lib/platformDictionary'
+import { stageTodoLabel, type NeedsLine } from './needsLines'
 import { SectionLink } from './OverviewCard.tsx'
 
 /**
@@ -287,40 +287,72 @@ export function ProgressCard({
   stage: OverviewModel['stage']
   band: OverviewBand
 }) {
-  const { t, i18n } = useTranslation()
-  const where =
-    band.startsIn != null
-      ? t('campaignOverview.stats.startsIn', {
-          when: formatRelative(band.startsIn, 'day', i18n.language),
-        })
-      : band.endedAgo != null
-        ? t('campaignOverview.stats.ended', {
-            when: formatRelative(-band.endedAgo, 'day', i18n.language),
-          })
-        : t('campaignOverview.stats.dayOf', {
-            day: formatNumber(band.day),
-            total: formatNumber(band.days),
-          })
-  // Only today's phase; none before the start, between phases or after.
-  const phase = band.phases.find((p) => p.current)
-
   return (
     <section className={cn(SURFACE, 'flex flex-col gap-4 p-6')}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <div className="flex flex-col gap-1">
-          <h2 className="font-display text-xl font-medium tracking-tight">
-            {t(`campaignOverview.stage.${stage}`)}
-          </h2>
-          {phase?.day != null && (
-            <p className="text-sm">
-              {t('campaignOverview.band.phaseNow', {
-                name: phase.name,
-                day: formatNumber(phase.day),
-                total: formatNumber(phase.days),
-              })}
-            </p>
+      <ProgressHeader stage={stage} band={band} />
+      <PostsBar band={band} />
+    </section>
+  )
+}
+
+/**
+ * The progress card's first line: the stage and today's phase on the left,
+ * the dates and the day on the right. `row` is the Campaigns list's size,
+ * where the campaign's name is the largest thing and the stage sits under
+ * it as a column head. Without a band — a campaign with no dates — the stage
+ * alone.
+ */
+export function ProgressHeader({
+  stage,
+  band,
+  size = 'card',
+}: {
+  stage: OverviewModel['stage']
+  band: OverviewBand | null
+  size?: 'card' | 'row'
+}) {
+  const { t, i18n } = useTranslation()
+  const where =
+    band == null
+      ? null
+      : band.startsIn != null
+        ? t('campaignOverview.stats.startsIn', {
+            when: formatRelative(band.startsIn, 'day', i18n.language),
+          })
+        : band.endedAgo != null
+          ? t('campaignOverview.stats.ended', {
+              when: formatRelative(-band.endedAgo, 'day', i18n.language),
+            })
+          : t('campaignOverview.stats.dayOf', {
+              day: formatNumber(band.day),
+              total: formatNumber(band.days),
+            })
+  // Only today's phase; none before the start, between phases or after.
+  const phase = band?.phases.find((p) => p.current)
+  const Heading = size === 'row' ? 'h3' : 'h2'
+
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <div className="flex flex-col gap-1">
+        <Heading
+          className={cn(
+            'font-display font-medium',
+            size === 'row' ? 'text-base' : 'text-xl tracking-tight',
           )}
-        </div>
+        >
+          {t(`campaignOverview.stage.${stage}`)}
+        </Heading>
+        {phase?.day != null && (
+          <p className="text-sm">
+            {t('campaignOverview.band.phaseNow', {
+              name: phase.name,
+              day: formatNumber(phase.day),
+              total: formatNumber(phase.days),
+            })}
+          </p>
+        )}
+      </div>
+      {band && where && (
         <span className="ml-auto text-sm">
           {t('campaignOverview.band.when', {
             range: formatDateRange(
@@ -332,9 +364,8 @@ export function ProgressCard({
             where,
           })}
         </span>
-      </div>
-      <PostsBar band={band} />
-    </section>
+      )}
+    </div>
   )
 }
 
@@ -345,7 +376,7 @@ export function ProgressCard({
  * when there is neither. Under it, the same figures as the other cards, the
  * pace last.
  */
-function PostsBar({ band }: { band: OverviewBand }) {
+export function PostsBar({ band }: { band: OverviewBand }) {
   const { t } = useTranslation()
   const { goal, pace } = band
   const { published, scheduled } = goal != null ? band : band.recent
@@ -579,45 +610,54 @@ function ResultsBlock({
       door={{ target: 'analytics' }}
       campaignId={campaignId}
     >
-      <Figures
-        figures={[
-          {
-            label:
-              results.goal != null
-                ? t(
-                    'campaignOverview.results.publishedOf',
-                    counted(results.goal),
-                  )
-                : t('campaignOverview.stats.published'),
-            value: results.published,
-          },
-          {
-            label: t('campaignOverview.stats.failed'),
-            value: results.failed,
-            alert: results.failed > 0,
-          },
-          {
-            label: t('campaignOverview.results.neverPublished'),
-            value: results.neverPublished,
-          },
-          ...(results.performance
-            ? [
-                {
-                  label: t('campaignOverview.figures.reach'),
-                  value: results.performance.reach,
-                },
-                {
-                  label: t('campaignOverview.figures.interactions'),
-                  value: results.performance.interactions,
-                },
-              ]
-            : []),
-        ]}
-      />
+      <ResultsFigures results={results} />
       {results.performance?.best && (
         <BestPost best={results.performance.best} campaignId={campaignId} />
       )}
     </Card>
+  )
+}
+
+/** What an ended campaign came to: out, failed, never out, and the reach. */
+export function ResultsFigures({
+  results,
+}: {
+  results: NonNullable<OverviewModel['results']>
+}) {
+  const { t } = useTranslation()
+  return (
+    <Figures
+      figures={[
+        {
+          label:
+            results.goal != null
+              ? t('campaignOverview.results.publishedOf', counted(results.goal))
+              : t('campaignOverview.stats.published'),
+          value: results.published,
+        },
+        {
+          label: t('campaignOverview.stats.failed'),
+          value: results.failed,
+          alert: results.failed > 0,
+        },
+        {
+          label: t('campaignOverview.results.neverPublished'),
+          value: results.neverPublished,
+        },
+        ...(results.performance
+          ? [
+              {
+                label: t('campaignOverview.figures.reach'),
+                value: results.performance.reach,
+              },
+              {
+                label: t('campaignOverview.figures.interactions'),
+                value: results.performance.interactions,
+              },
+            ]
+          : []),
+      ]}
+    />
   )
 }
 
@@ -970,19 +1010,67 @@ function runAction(action: NeedsAction, handlers: OverviewHandlers) {
   // `section` and `post` are links, rendered as links by the caller.
 }
 
-function stageTodoLabel(t: TFunction, todo: NeedsRow['todo']): string {
-  switch (todo?.kind) {
-    case 'first-post':
-      return t('campaignOverview.needs.firstPost')
-    case 'coverage-gaps':
-      return t('campaignOverview.needs.coverageGaps', counted(todo.days))
-    case 'read-results':
-      return t('campaignOverview.needs.readResults')
-    case 'archive':
-      return t('campaignOverview.needs.archive')
-    default:
-      return ''
-  }
+/**
+ * The list, short: its title and count, the first `limit` rows as sentences,
+ * and how many more. The Campaigns list's third column — a row there is one
+ * link to the Overview, so these are words and not doors, and the fixes are
+ * the Overview's. `lines` null is still loading.
+ */
+export function NeedsPreview({
+  title,
+  lines,
+  limit = 3,
+}: {
+  title: string
+  lines: NeedsLine[] | null
+  limit?: number
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      <h3 className="font-display text-base font-medium">
+        {title}
+        {lines && lines.length > 0 && (
+          <span className="ml-2 font-sans text-sm font-normal text-tertiary-foreground tabular-nums">
+            {formatNumber(lines.length)}
+          </span>
+        )}
+      </h3>
+      {lines === null ? (
+        <Skeleton className="h-10 w-full" />
+      ) : lines.length === 0 ? (
+        <p className="flex items-center gap-2 text-sm text-secondary-foreground">
+          <CheckIcon className="size-4 text-positive" aria-hidden />
+          {t('campaignOverview.needs.none')}
+        </p>
+      ) : (
+        <ul className="flex flex-col">
+          {lines.slice(0, limit).map((line) => (
+            <li key={line.id}>
+              <LineItem
+                className="hover:bg-transparent"
+                indicator={MARK[line.mark]}
+                chevron={false}
+                label={
+                  <span className="truncate" title={line.label}>
+                    {line.label}
+                  </span>
+                }
+              />
+            </li>
+          ))}
+          {lines.length > limit && (
+            <li className="pl-7 text-sm text-secondary-foreground">
+              {t(
+                'campaignOverview.needs.moreRows',
+                counted(lines.length - limit),
+              )}
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 /** `SectionLink`, plus the campaign's Settings, where archiving lives. */
@@ -1208,7 +1296,7 @@ function LearnCard({
  * The platform's mark, drawn as the calendar draws it: filled, in the
  * network's colour, a dashed circle where the build doesn't know it.
  */
-function PlatformMark({ platform }: { platform: OverviewPlatform }) {
+export function PlatformMark({ platform }: { platform: OverviewPlatform }) {
   const info = platform.zernioId
     ? getPlatformByZernioId(platform.zernioId)
     : undefined
