@@ -85,8 +85,7 @@ export function AssistantComposer({
 
   return (
     // No fill of its own: the panel's footer section is the surface. No side
-    // padding either — the section's is the body's, so the row runs as wide
-    // as the thread above it.
+    // padding either — the section's 8px is the row's.
     <div className="relative flex items-end gap-2 py-3">
       {/* The field's fill. First in the DOM and the only absolute box here, so
           every (position: relative) button above paints over it. At rest it
@@ -98,9 +97,10 @@ export function AssistantComposer({
         className={cn(
           'absolute bg-tertiary transition-[top,right,bottom,left] duration-200 ease-out',
           // At rest the fill is exactly the row — the same band as the
-          // buttons, 4px into the gap beside each. Open, it bleeds 4px past
-          // the row on every side.
-          active ? 'inset-y-2 -left-1 -right-1' : 'inset-y-3 left-9 right-9',
+          // buttons, 4px into the gap beside each. Open, it takes the whole
+          // footer section: its full height, and out through the section's
+          // 8px to both edges.
+          active ? 'inset-y-0 -left-2 -right-2' : 'inset-y-3 left-9 right-9',
         )}
       />
 

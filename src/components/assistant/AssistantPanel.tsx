@@ -163,8 +163,10 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
       onTitleClick={thread ? () => selectThread(null) : undefined}
       titleLabel={thread ? t('assistant.panel.back') : undefined}
       // The composer is its own 56px row — the header's band, at the foot —
-      // so the section adds no padding of its own above or below it.
-      footerClassName="py-0"
+      // so the section adds no padding above or below it, and 8px at the
+      // sides: the field's focused fill runs to the section's edges, and the
+      // buttons sit just inside them.
+      footerClassName="px-2 py-0 lg:px-2"
       footer={
         thread && (
           // Keyed by thread: openThread can swap the active thread without
@@ -176,12 +178,15 @@ export function AssistantPanel({ onClose }: { onClose?: () => void }) {
           >
             {/* In an empty thread the chips are the body's, not the footer's. */}
             {chipsInFooter && (
-              <StarterChips
-                kind={thread.subject.kind}
-                onPick={pick}
-                disabled={running}
-                placement="footer"
-              />
+              // In from the section's 8px to the thread's own edge.
+              <div className="px-4">
+                <StarterChips
+                  kind={thread.subject.kind}
+                  onPick={pick}
+                  disabled={running}
+                  placement="footer"
+                />
+              </div>
             )}
             <ContextChip
               subject={thread.subject}
