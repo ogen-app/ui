@@ -46,16 +46,12 @@ const BAND: PlaceId[] = ['activity', 'settings']
 export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
   const { t } = useTranslation()
   const { where, scope, soleCampaignId } = useCampaignScope()
-  const workspaceCalendar = useFeatureFlag('workspace-calendar')
   const inboxEnabled = useFeatureFlag('tasks')
   const undecided = useUndecidedIdeaCount()
   const unread = useNotificationUnreadCount()
 
   const row = (place: PlaceId) => {
-    const link = placeLink(place, scope, {
-      workspaceCalendar,
-      soleCampaignId,
-    })
+    const link = placeLink(place, scope, { soleCampaignId })
     const { icon, tone } = placeGlyph(place)
     const label =
       place === 'inbox' ? t('nav.inbox') : t(campaignSection(place).labelKey)
@@ -81,7 +77,6 @@ export function NavPlaces({ isCollapsed }: { isCollapsed: boolean }) {
         isActive={where.place === place}
         to={link.to}
         params={link.params}
-        search={link.search}
         counts={counts}
         countLabel={countLabel}
       />

@@ -18,10 +18,7 @@ export function useCampaignScope(): {
   soleCampaignId: string | null
 } {
   const pathname = useLocation({ select: (location) => location.pathname })
-  const pick = useLocation({
-    select: (location) => (location.search as { pick?: unknown }).pick,
-  })
-  const where = whereOf(pathname, pick)
+  const where = whereOf(pathname)
 
   const remembered = useCampaignScopeStore((state) => state.campaignId)
   const setRemembered = useCampaignScopeStore((state) => state.setCampaignId)

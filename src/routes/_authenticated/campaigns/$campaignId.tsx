@@ -139,11 +139,13 @@ function CampaignShell() {
             <PageHeader title={title} scrollAway />
             {/* pt-4 is the shared 16px breath between a page header and its
                   first card — see the same value on Overview and Workspace
-                  Settings. */}
+                  Settings. Strategy is two columns, and `PageColumns` brings
+                  its own gutters, as on Strategy for all campaigns. */}
             <div
               key={section}
               className={cn(
-                'page-content-motion px-3 lg:px-6 pt-4',
+                'page-content-motion',
+                section === 'Settings' && 'px-3 lg:px-6 pt-4',
                 PAGE_ACTION_BAR_INSET,
               )}
             >

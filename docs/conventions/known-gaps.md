@@ -23,8 +23,8 @@ once the client was re-tested against the shipped API (CON-147) ·
 dark mode is scaffolded but empty · **a calendar card's picture is a
 15-minute presigned `cover_url`** on the list row (CON-247, signed by CON-368),
 so the post lists refetch inside the window and a cover that fails is dropped
-rather than drawn broken; `calendar-card-images` is on and waits to be deleted
-(`docs/technical-decisions.md#calendar-card-media`) ·
+rather than drawn broken; the `calendar-card-images` flag was deleted
+2026-11-18 (`docs/technical-decisions.md#calendar-card-media`) ·
 **a Content-Bank image has no thumbnail** —
 images upload, store as `IMG` and open on their own screen (CON-246), but the
 server renders no smaller copy, so the list's preview cell draws the full file
@@ -55,10 +55,10 @@ still hard-coded English (CON-174) · **English is the only released language**:
 translated and tested but gated by `enabled: false` in `i18n/config.ts`, so the
 picker shows one option.
 
-**The workspace calendar is on** (`workspace-calendar`, switched on 2026-11-16
-so Calendar under "All campaigns" is a calendar rather than a request to pick
-one; the paragraph's last sentences are why it was off, and the range is still
-what it lacks). It
+**The workspace calendar is unflagged** (`workspace-calendar` was switched on
+2026-11-16 so Calendar under "All campaigns" is a calendar rather than a
+request to pick one, and deleted 2026-11-18 along with the `?pick=` list it
+fell back to; it still lacks a range). It
 is the campaign's calendar with the filter taken off, and deliberately the same
 components: both grids, the card, the rung ladder and the toolbar take the
 campaign as an argument, and `null` is what says there isn't one. Three things
@@ -70,10 +70,9 @@ segment because the table is a campaign's. Its rows come from
 `useAssetUsage` and the auto-publish allowlist already read, under a key every
 post write invalidates. What it waits on is a **range**: that endpoint takes no
 parameters, so the grid pulls the whole workspace's hydrated posts however few
-weeks are showing (`docs/open-questions.md` P4). Not a correctness problem and
-not why the flag is off — the flag is off because a calendar that opens slowly
-is worse than one that isn't offered, and nobody has tried it on a large
-workspace yet.
+weeks are showing (`docs/open-questions.md` P4). Not a correctness problem,
+but nobody has tried it on a large workspace yet, and a calendar that opens
+slowly is the first thing that would show it.
 
 **Brand from what you have is live, unflagged** (CON-400; the
 `brand-distill` flag was deleted 2026-10-23). The hub's offer reads a brand off the website, a document or seven

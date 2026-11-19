@@ -94,11 +94,7 @@ export function PageHeader({
   }, [scrollAway, title, show, hide])
 
   const place = useRouterState({
-    select: (s) =>
-      whereOf(
-        s.location.pathname,
-        (s.location.search as { pick?: unknown }).pick,
-      ).place,
+    select: (s) => whereOf(s.location.pathname).place,
   })
   const glyph = !back && place ? placeGlyph(place) : null
 

@@ -1946,6 +1946,14 @@ export const en = {
      */
     noDate: 'No date',
 
+    /** The Analytics card: the tab's first row, over its default period. */
+    analytics: {
+      nothingMeasured: 'Nothing measured yet',
+      emptyBody:
+        'Once this campaign’s posts go out and the platforms report back, what they earn shows up here.',
+      error: 'Couldn’t load analytics.',
+    },
+
     /**
      * The calendar's problems, read from the server (CON-462). The fix is
      * asked of the campaign's assistant, which offers it to confirm.
@@ -8338,8 +8346,6 @@ export const en = {
      */
     phases: {
       title: 'Phases',
-      explainer:
-        'A campaign type moves through its phases in order, and generated posts are planned into the phase whose dates they fall on. Move the day a phase ends to give it more or less of the campaign.',
       derived: 'Split evenly across the campaign dates.',
       manual: 'Dates set by hand.',
       reset: 'Split evenly again',
@@ -8352,12 +8358,9 @@ export const en = {
       pendingType: 'Save the new type to see its phases.',
       empty: 'This campaign type has no phases.',
       loadError: "The phases couldn't be loaded.",
-      window: '{{start}} – {{end}}',
-      days_one: '{{count}} day',
-      days_other: '{{count}} days',
+      meta: '{{range}} · {{posts}}',
       posts_one: '{{count}} post',
       posts_other: '{{count}} posts',
-      ends: 'Ends',
       endsLabel: 'When {{phase}} ends',
       saveError: 'Unable to save the phase dates',
       resetError: 'Unable to split the phases evenly again',
