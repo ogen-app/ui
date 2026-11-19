@@ -1979,6 +1979,8 @@ export const en = {
     },
     /** The progress card: where the campaign is in its own time. */
     band: {
+      /** The dates, then the day or how far off the start or end is. */
+      when: '{{range}}, {{where}}',
       /** The campaign type's phase today. */
       phaseNow: '{{name}} phase, day {{day}} of {{total}}',
       /** Against the goal over the whole campaign. */

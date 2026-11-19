@@ -1585,6 +1585,7 @@ export const es: Translation = {
       ended: 'Terminada',
     },
     band: {
+      when: '{{range}}, {{where}}',
       phaseNow: 'Fase {{name}}, día {{day}} de {{total}}',
       published: '{{published}} de {{total}} publicadas',
       scheduled_one: '{{formatted}} programada',

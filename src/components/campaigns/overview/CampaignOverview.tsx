@@ -300,7 +300,7 @@ export function ProgressCard({
 
   return (
     <section className={cn(SURFACE, 'flex flex-col gap-4 p-6')}>
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex flex-col gap-1">
           <h2 className="font-display text-xl font-medium tracking-tight">
             {t(`campaignOverview.stage.${stage}`)}
@@ -315,17 +315,17 @@ export function ProgressCard({
             </p>
           )}
         </div>
-        <div className="ml-auto flex flex-col items-end gap-1 text-right text-sm">
-          <span>{where}</span>
-          <span>
-            {formatDateRange(
+        <span className="ml-auto text-sm">
+          {t('campaignOverview.band.when', {
+            range: formatDateRange(
               band.start,
               band.end,
               { month: 'short', day: 'numeric', year: 'numeric' },
               i18n.language,
-            )}
-          </span>
-        </div>
+            ),
+            where,
+          })}
+        </span>
       </div>
       <PostsBar band={band} />
     </section>
