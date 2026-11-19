@@ -1,4 +1,4 @@
-import { CheckCircleIcon } from '@phosphor-icons/react'
+import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/card'
 import { savedSentence } from '@/lib/brandDistillCopy'
@@ -22,7 +22,7 @@ export function SavedCard() {
 
   return (
     <Card
-      icon={CheckCircleIcon}
+      icon={CheckmarkCircle02Icon}
       tone="var(--positive)"
       title={t('brand.distill.saved.title')}
       onDismiss={() => setSaved(null)}

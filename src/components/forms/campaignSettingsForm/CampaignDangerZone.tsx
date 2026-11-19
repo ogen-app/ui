@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { ArchiveIcon, TrashIcon } from '@phosphor-icons/react'
+import { Archive02Icon, Delete02Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
@@ -86,7 +87,7 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
               variant="destructive"
               onClick={() => setPending('archive')}
             >
-              <ArchiveIcon />
+              <HugeiconsIcon icon={Archive02Icon} strokeWidth={1.5} />
               <span>{t('campaigns.dangerZone.archive.action')}</span>
             </Button>
             <Button
@@ -95,9 +96,7 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
               variant="destructive"
               onClick={() => setPending('delete')}
             >
-              <TrashIcon />
-              {/* Literal caps in every language — see CLAUDE.md on
-                  destructive labels. */}
+              <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
               <span>{t('campaigns.dangerZone.delete.action')}</span>
             </Button>
           </div>

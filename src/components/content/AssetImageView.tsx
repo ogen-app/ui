@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  ArrowsClockwiseIcon,
-  ImageBrokenIcon,
-  SparkleIcon,
-  WarningIcon,
-} from '@phosphor-icons/react'
+import { ImageBrokenIcon, SparkleIcon } from '@phosphor-icons/react'
+import { Alert02Icon, RefreshIcon } from '@hugeicons/core-free-icons'
 import { AssetIngestState } from '@/components/content/AssetIngestState'
 import { AssetStateFrame } from '@/components/content/AssetStateFrame'
 import { Button } from '@/components/ui/button'
@@ -214,7 +210,7 @@ function ImageForm({ asset, onChange, onDirty }: Props) {
           header's corner. */}
       {(asset.status === 'failed' || asset.status === 'partial') && (
         <Card
-          icon={WarningIcon}
+          icon={Alert02Icon}
           tone={
             asset.status === 'failed' ? 'var(--destructive)' : 'var(--warning)'
           }
@@ -225,7 +221,7 @@ function ImageForm({ asset, onChange, onDirty }: Props) {
           }
           action={{
             label: t('content.image.reextract'),
-            icon: ArrowsClockwiseIcon,
+            icon: RefreshIcon,
             onClick: () => reextract.mutate(),
             loading: reextract.isPending,
           }}

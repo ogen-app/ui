@@ -1,5 +1,6 @@
 import { useFormContext } from 'react-hook-form'
-import { SparkleIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
+import { SparklesIcon } from '@hugeicons/core-free-icons'
 
 import { Card, type CardAction } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -87,6 +88,7 @@ export function MessagingCard({ campaign }: { campaign: Campaign }) {
  * of an assistant turn along with the fields it would rewrite.
  */
 function useGenerateBriefAction(campaign: Campaign): CardAction {
+  const { t } = useTranslation()
   const askFor = useAssistantStore((s) => s.askFor)
   const openRightPanel = useSettingsStore((s) => s.openRightPanel)
   // The ask names the fields still missing, so it must not ask for the two
@@ -103,8 +105,11 @@ function useGenerateBriefAction(campaign: Campaign): CardAction {
   }
 
   return {
-    label: posture.state === 'complete' ? 'IMPROVE BRIEF' : 'GENERATE BRIEF',
-    icon: SparkleIcon,
+    label:
+      posture.state === 'complete'
+        ? t('campaigns.strategy.messaging.improveBrief')
+        : t('campaigns.strategy.messaging.generateBrief'),
+    icon: SparklesIcon,
     onClick: ask,
   }
 }

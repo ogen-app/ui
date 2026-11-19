@@ -189,7 +189,16 @@ export function ReviewBar({
       }}
     >
       <Button
-        variant="ghost"
+        size="sm"
+        variant="defaultInverted"
+        loading={commit.isPending}
+        disabled={commitIsEmpty(body) || discard.isPending}
+        onClick={save}
+      >
+        {t('brand.distill.review.save')}
+      </Button>
+      <Button
+        variant="outline"
         size="sm"
         loading={discard.isPending}
         disabled={commit.isPending}
@@ -200,15 +209,6 @@ export function ReviewBar({
         }
       >
         {t('brand.distill.review.discard')}
-      </Button>
-      <Button
-        size="sm"
-        variant="defaultInverted"
-        loading={commit.isPending}
-        disabled={commitIsEmpty(body) || discard.isPending}
-        onClick={save}
-      >
-        {t('brand.distill.review.save')}
       </Button>
     </PageActionBar>
   )

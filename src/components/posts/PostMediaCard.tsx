@@ -223,7 +223,7 @@ export function PostMediaCard({
       // below are how media is added and the constraints say what fits.
       action={
         collapsed
-          ? { label: 'ADD MEDIA', onClick: () => setRevealed(true) }
+          ? { label: t('posts.media.add'), onClick: () => setRevealed(true) }
           : undefined
       }
     >

@@ -1,10 +1,6 @@
 import { useState } from 'react'
-import {
-  CheckIcon,
-  PlugsConnectedIcon,
-  PlusIcon,
-  WarningCircleIcon,
-} from '@phosphor-icons/react'
+import { CheckIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { Plug01Icon, PlusSignIcon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -328,7 +324,7 @@ function Detail({
         title={t('brand.templates.everywhere')}
         action={{
           label: t('brand.templates.add'),
-          icon: PlusIcon,
+          icon: PlusSignIcon,
           onClick: () => onAdd?.(),
           disabled: !onAdd,
         }}
@@ -367,7 +363,7 @@ function Detail({
       // and nagging here would be nagging in the wrong place.
       status={
         connected
-          ? { label: t('brand.templates.connected'), icon: PlugsConnectedIcon }
+          ? { label: t('brand.templates.connected'), icon: Plug01Icon }
           : { label: t('brand.templates.notConnected') }
       }
       // Disabled until a caller wires the flow — the route renders this

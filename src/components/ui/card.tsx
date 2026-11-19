@@ -1,7 +1,9 @@
-import type { ComponentType, MouseEvent, ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CaretRightIcon, XIcon, type Icon } from '@phosphor-icons/react'
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
+import { ArrowRight01Icon, Cancel01Icon } from '@hugeicons/core-free-icons'
 
+import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import type { StatusTone } from '@/components/ui/status-badge'
 import { TextSelect } from '@/components/ui/text-select'
@@ -20,13 +22,15 @@ import { cn } from '@/lib'
  * - a `door`: the card is read here and worked on elsewhere. The whole card is
  *   the door and lifts on hover, or only the heading is, when rows inside open
  *   on their own (a link can't sit inside a link).
- * - an `action`: one real, filled button — the AI, a move, a destructive step.
- *   Never a submit: saving is automatic.
+ * - an `action`: one button — the AI, a move, a destructive step. White with
+ *   a border, or black when it is the card's point (`accent`); never grey.
+ *   Labels are in sentence case. Never a submit: saving is automatic.
  * - a `choice`: a selector that changes what the content shows (the period).
  * - an `aside`: a line of text in the qualifier's type (the dates and the day).
  * - `onDismiss`: the X that makes the card a notice.
  *
- * `icon` + `tone` is a prop on every card, never a kind of its own.
+ * `icon` + `tone` is a prop on every card, never a kind of its own. Every
+ * glyph a card draws is a Hugeicon, at the rail's 1.5 stroke.
  */
 export type CardDoor = {
   kind: 'header' | 'card'
@@ -54,13 +58,14 @@ function follow(door: CardDoor) {
 
 export type CardAction = {
   label: string
-  /** A Phosphor glyph, or Ogen's mark when the action is Ogen's. */
-  icon?: ComponentType
+  /** A Hugeicon, or `'ogen'` for Ogen's mark when the action is Ogen's. */
+  icon?: IconSvgElement | 'ogen'
+  /** Black rather than white: the one action the card is for. */
+  accent?: boolean
   onClick: () => void
   disabled?: boolean
   /** The button's own spinner, while what it started is running. */
   loading?: boolean
-  /** Copy for a destructive action is written in capitals (CLAUDE.md). */
   destructive?: boolean
 }
 
@@ -71,7 +76,11 @@ export type CardChoice = {
   onChange: (value: string) => void
 }
 
-export type CardStatus = { label: string; tone?: StatusTone; icon?: Icon }
+export type CardStatus = {
+  label: string
+  tone?: StatusTone
+  icon?: IconSvgElement
+}
 
 const TONE_DOT: Record<StatusTone, string> = {
   neutral: 'bg-tertiary-foreground',
@@ -94,16 +103,15 @@ const TONE_INK: Record<StatusTone, string> = {
 }
 
 /** Inline in the title run, so it shares its baseline rather than its centre. */
-function StatusMark({ label, tone = 'neutral', icon: Glyph }: CardStatus) {
+function StatusMark({ label, tone = 'neutral', icon }: CardStatus) {
   return (
     <span className="ml-4 whitespace-nowrap text-tertiary-foreground">
-      {Glyph ? (
-        <Glyph
-          weight="fill"
-          className={cn(
-            'mr-1.5 inline size-4 align-[-0.125em]',
-            TONE_INK[tone],
-          )}
+      {icon ? (
+        <HugeiconsIcon
+          icon={icon}
+          size={16}
+          strokeWidth={1.5}
+          className={cn('mr-1.5 inline align-[-0.125em]', TONE_INK[tone])}
           aria-hidden
         />
       ) : (
@@ -122,8 +130,8 @@ function StatusMark({ label, tone = 'neutral', icon: Glyph }: CardStatus) {
 
 export type CardProps = {
   id?: string
-  /** Always drawn at 20px, so every card's title starts on the same line. */
-  icon?: Icon
+  /** A Hugeicon, always drawn at 20px, so every title starts on one line. */
+  icon?: IconSvgElement
   /** A CSS colour — a section hue (`var(--brand-voices)`) or a status token. */
   tone?: string
   title: ReactNode
@@ -193,9 +201,11 @@ export type CardProps = {
 )
 
 const Caret = () => (
-  <CaretRightIcon
-    className="ml-auto size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-    weight="bold"
+  <HugeiconsIcon
+    icon={ArrowRight01Icon}
+    size={16}
+    strokeWidth={2}
+    className="ml-auto shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
     aria-hidden
   />
 )
@@ -215,24 +225,24 @@ function End({
 }) {
   const { t } = useTranslation()
   if (action) {
-    const {
-      label,
-      icon: Glyph,
-      onClick,
-      disabled,
-      loading,
-      destructive,
-    } = action
+    const { label, icon, accent, onClick, disabled, loading, destructive } =
+      action
     return (
       <Button
         type="button"
         size="sm"
-        variant={destructive ? 'destructive' : 'neutral'}
+        variant={
+          destructive ? 'destructive' : accent ? 'defaultInverted' : 'outline'
+        }
         onClick={onClick}
         disabled={disabled}
         loading={loading}
       >
-        {Glyph && <Glyph />}
+        {icon === 'ogen' ? (
+          <Logo variant="mark" />
+        ) : (
+          icon && <HugeiconsIcon icon={icon} strokeWidth={1.5} />
+        )}
         <span>{label}</span>
       </Button>
     )
@@ -263,7 +273,7 @@ function End({
         aria-label={dismissLabel ?? t('common.close')}
         className="-m-1 cursor-pointer p-1 text-tertiary-foreground hover:text-foreground"
       >
-        <XIcon className="size-4" />
+        <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.5} />
       </button>
     )
   return null
@@ -271,7 +281,7 @@ function End({
 
 export function Card({
   id,
-  icon: Glyph,
+  icon,
   tone,
   title,
   qualifier,
@@ -289,9 +299,12 @@ export function Card({
 }: CardProps) {
   const heading = (
     <>
-      {Glyph && (
-        <Glyph
-          className="size-5 shrink-0"
+      {icon && (
+        <HugeiconsIcon
+          icon={icon}
+          size={20}
+          strokeWidth={1.5}
+          className="shrink-0"
           style={tone ? { color: tone } : undefined}
           aria-hidden
         />

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { TextSelect } from '@/components/ui/text-select'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import {
@@ -115,7 +115,7 @@ function PeopleSectionComponent() {
   )
 
   return (
-    <SettingsCard title={t('workspaceSettings.people.title')}>
+    <Card title={t('workspaceSettings.people.title')} capped>
       {!workspace || membersLoading ? (
         <p className="text-sm text-tertiary-foreground">
           {t('common.loading')}
@@ -165,7 +165,7 @@ function PeopleSectionComponent() {
           )}
         </div>
       )}
-    </SettingsCard>
+    </Card>
   )
 }
 
@@ -370,7 +370,6 @@ function RemoveMemberDialog({
             disabled={!matches || isPending}
             loading={isPending}
           >
-            {/* Literal caps, not `uppercase` — see CLAUDE.md on destructive labels. */}
             <span>{t('workspaceSettings.people.removeConfirm')}</span>
           </Button>
         </div>

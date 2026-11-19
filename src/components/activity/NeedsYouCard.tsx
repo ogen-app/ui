@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircleIcon, WarningIcon } from '@phosphor-icons/react'
+import { Alert02Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -75,7 +75,7 @@ export function NeedsYouCard() {
     return (
       <Card
         capped
-        icon={CheckCircleIcon}
+        icon={CheckmarkCircle02Icon}
         tone="var(--positive)"
         title={t('activity.needsYou.allSet')}
       >
@@ -94,7 +94,7 @@ export function NeedsYouCard() {
   return (
     <Card
       capped
-      icon={WarningIcon}
+      icon={Alert02Icon}
       tone="var(--warning)"
       title={t('activity.needsYou.title')}
       status={{ label: formatNumber(urgent.length), tone: 'warn' }}

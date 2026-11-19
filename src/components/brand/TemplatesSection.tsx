@@ -1,4 +1,5 @@
-import { CheckIcon, PlusIcon } from '@phosphor-icons/react'
+import { CheckIcon } from '@phosphor-icons/react'
+import { PlusSignIcon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/card'
 import { brandSection, brandSectionCopy } from '@/lib/brandSections'
@@ -46,7 +47,7 @@ export function TemplatesSection({
       {...(templates.length > 0 && {
         action: {
           label: t('brand.templates.add'),
-          icon: PlusIcon,
+          icon: PlusSignIcon,
           onClick: () => onAdd?.(),
           disabled: !onAdd,
         },

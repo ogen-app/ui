@@ -88,6 +88,7 @@ const CADENCE_OPTIONS = [
  * it is and everything below it only exists once there is a goal to describe.
  */
 export function PostGoalCard({ campaignId }: { campaignId: string }) {
+  const { t } = useTranslation()
   const form = useFormContext<StrategyFormValues>()
   const count = form.watch('estimated_post_count')
   const cadence = form.watch('goal_cadence')
@@ -123,11 +124,11 @@ export function PostGoalCard({ campaignId }: { campaignId: string }) {
       capped
       // A button rather than a switch: this opens and closes a whole section
       // of the card, so it is worth naming what the click does instead of
-      // asking the user to read a state off a pill. Literal caps, not
-      // `uppercase` — the caps are the copy, same rule the Danger Zone
-      // labels follow.
+      // asking the user to read a state off a pill.
       action={{
-        label: enabled ? 'SWITCH OFF' : 'SWITCH ON',
+        label: enabled
+          ? t('campaigns.strategy.goals.switchOff')
+          : t('campaigns.strategy.goals.switchOn'),
         onClick: toggle,
       }}
     >

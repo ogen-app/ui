@@ -1,21 +1,17 @@
-import { Fragment, forwardRef, useEffect, useRef } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 import type { ReactElement, ReactNode, RefObject } from 'react'
-import {
-  CheckCircleIcon,
-  CheckIcon,
-  CircleDashedIcon,
-  DotsThreeIcon,
-  PlusIcon,
-  type Icon,
-  type IconProps,
-} from '@phosphor-icons/react'
+import { CircleDashedIcon } from '@phosphor-icons/react'
 import {
   Alert02Icon,
   BookOpen01Icon,
+  CheckmarkCircle02Icon,
+  Flag02Icon,
+  MoreHorizontalIcon,
+  PlusSignIcon,
   Task01Icon,
-  TimelineIcon,
+  Tick02Icon,
 } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Logo } from '@/components/Logo'
@@ -162,39 +158,8 @@ export function CampaignOverview({
   )
 }
 
-/**
- * A Hugeicons glyph in the shape `Card`'s `icon` takes (a Phosphor `Icon`),
- * so the cards keep the glyphs the rail draws. The card sizes it and gives it
- * its `tone` through `className` and `style`.
- */
-function hugeGlyph(icon: IconSvgElement): Icon {
-  return forwardRef<SVGSVGElement, IconProps>(function HugeGlyph(
-    { className, style },
-    _ref,
-  ) {
-    return (
-      <HugeiconsIcon
-        icon={icon}
-        size={20}
-        strokeWidth={1.5}
-        className={className}
-        style={style}
-        aria-hidden
-      />
-    )
-  })
-}
-
 const CALENDAR = campaignSection('calendar')
 const ANALYTICS = campaignSection('analytics')
-const CalendarGlyph = hugeGlyph(CALENDAR.icon)
-const AnalyticsGlyph = hugeGlyph(ANALYTICS.icon)
-const SetupGlyph = hugeGlyph(Task01Icon)
-const LearnGlyph = hugeGlyph(BookOpen01Icon)
-const ProgressGlyph = hugeGlyph(TimelineIcon)
-const NeedsGlyph = hugeGlyph(Alert02Icon)
-/** Ogen's mark, in the shape a card action's `icon` takes. */
-const OgenMark = () => <Logo variant="mark" />
 
 // --- The progress card -----------------------------------------------------
 
@@ -217,7 +182,7 @@ export function ProgressCard({
   const { phase, when } = useBandLines(band)
   return (
     <Card
-      icon={ProgressGlyph}
+      icon={Flag02Icon}
       tone="var(--nav-overview)"
       title={t(`campaignOverview.stage.${stage}`)}
       qualifier={phase}
@@ -465,7 +430,7 @@ function WeekBlock({
   const todayKey = now.toDateString()
   return (
     <Card
-      icon={CalendarGlyph}
+      icon={CALENDAR.icon}
       tone={CALENDAR.tone}
       title={t(`campaignOverview.week.${kind}`)}
       door={door('calendar')}
@@ -569,7 +534,7 @@ function ResultsBlock({
   const door = useSectionDoor(campaignId)
   return (
     <Card
-      icon={AnalyticsGlyph}
+      icon={ANALYTICS.icon}
       tone={ANALYTICS.tone}
       title={t('campaignOverview.results.title')}
       door={door('analytics')}
@@ -776,7 +741,7 @@ function NeedsList({
       >
         <Card
           scrolls
-          icon={NeedsGlyph}
+          icon={Alert02Icon}
           tone="var(--nav-overview)"
           title={t(`campaignOverview.needs.${model.needsTitle}`)}
           qualifier={
@@ -786,7 +751,7 @@ function NeedsList({
             askable
               ? {
                   label: t('campaignOverview.problems.fixAll'),
-                  icon: OgenMark,
+                  icon: 'ogen',
                   onClick: handlers.askAll,
                 }
               : undefined
@@ -799,7 +764,13 @@ function NeedsList({
             </>
           ) : rows.length === 0 ? (
             <p className="flex items-center gap-2 text-sm text-secondary-foreground">
-              <CheckIcon className="size-4 text-positive" aria-hidden />
+              <HugeiconsIcon
+                icon={Tick02Icon}
+                size={16}
+                strokeWidth={1.5}
+                className="text-positive"
+                aria-hidden
+              />
               {t('campaignOverview.needs.none')}
             </p>
           ) : (
@@ -901,7 +872,7 @@ function NeedsRowView({
       </Button>
     ) : action?.kind === 'add-post' ? (
       <Button variant="outline" size="sm" onClick={handlers.addPost}>
-        <PlusIcon />
+        <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
         <span>{t('campaignOverview.todo.addPost')}</span>
       </Button>
     ) : null
@@ -914,7 +885,7 @@ function NeedsRowView({
             size="smIcon"
             aria-label={t('campaignOverview.needs.menu')}
           >
-            <DotsThreeIcon />
+            <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={1.5} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
@@ -995,9 +966,11 @@ export function NeedsPreview({
   if (lines && lines.length === 0)
     return (
       <p className="font-display text-base font-medium">
-        <CheckCircleIcon
-          weight="fill"
-          className="mr-1.5 inline size-5 align-[-0.3em] text-positive"
+        <HugeiconsIcon
+          icon={CheckmarkCircle02Icon}
+          size={20}
+          strokeWidth={1.5}
+          className="mr-1.5 inline align-[-0.3em] text-positive"
           aria-hidden
         />
         {t('campaigns.list.goodShape')}
@@ -1100,7 +1073,7 @@ function SetupCard({
   const next = steps.find((s) => !s.done)?.id
   return (
     <Card
-      icon={SetupGlyph}
+      icon={Task01Icon}
       tone="var(--nav-overview)"
       title={t('campaignOverview.setup.title')}
     >
@@ -1171,7 +1144,14 @@ const DIVIDED = 'border-t border-border pt-2 first:border-t-0 first:pt-0'
 /** A step's number in a ring, or the tick once it is done — 16px, the row's slot. */
 function StepMark({ n, done }: { n: number; done: boolean }) {
   if (done) {
-    return <CheckCircleIcon weight="fill" className="size-4 text-positive" />
+    return (
+      <HugeiconsIcon
+        icon={CheckmarkCircle02Icon}
+        size={16}
+        strokeWidth={1.5}
+        className="text-positive"
+      />
+    )
   }
   return (
     <span className="flex size-4 items-center justify-center rounded-full border border-border text-[10px] leading-none font-semibold text-secondary-foreground tabular-nums">
@@ -1200,7 +1180,7 @@ function SetupAction({
   if (step === 'posts') {
     return (
       <Button variant={variant} size="sm" onClick={handlers.addPost}>
-        <PlusIcon />
+        <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
         <span>{t('campaignOverview.setup.posts.action')}</span>
       </Button>
     )
@@ -1244,14 +1224,14 @@ function LearnCard({ learnMore }: { learnMore?: () => void }) {
   )
   return learnMore ? (
     <Card
-      icon={LearnGlyph}
+      icon={BookOpen01Icon}
       title={title}
       door={{ kind: 'card', onOpen: learnMore }}
     >
       {list}
     </Card>
   ) : (
-    <Card icon={LearnGlyph} title={title}>
+    <Card icon={BookOpen01Icon} title={title}>
       {list}
     </Card>
   )

@@ -7,7 +7,9 @@ import {
   type ReactNode,
 } from 'react'
 import { useBlocker } from '@tanstack/react-router'
-import { TrashIcon, WarningCircleIcon, type Icon } from '@phosphor-icons/react'
+import { type Icon } from '@phosphor-icons/react'
+import { AlertCircleIcon, Delete02Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -281,23 +283,8 @@ export function BrandEditorFrame({
       {create ? (
         <PageActionBar contentKey="create" blocker={blocker}>
           <Button
-            variant="ghost"
+            variant="defaultInverted"
             size="sm"
-            onClick={() => {
-              leaving.current = true
-              create.onCancel()
-            }}
-          >
-            <span className="uppercase">{t('brand.editor.cancel')}</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            // The ghost variant has no disabled ink of its own — it only stops
-            // taking clicks — and the strong `text-primary-foreground` here is
-            // exactly what makes a dead button look live. `senary` is the ink
-            // the default variant fades to.
-            className="text-primary-foreground disabled:text-senary-foreground"
             disabled={Boolean(blocker)}
             onClick={() => {
               leaving.current = true
@@ -306,13 +293,28 @@ export function BrandEditorFrame({
               })
             }}
           >
-            <span className="uppercase">{create.label}</span>
+            {create.label}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              leaving.current = true
+              create.onCancel()
+            }}
+          >
+            {t('brand.editor.cancel')}
           </Button>
         </PageActionBar>
       ) : blocker ? (
         <PageActionBar contentKey="blocked">
           <span className="flex items-center gap-1.5 px-2 text-xs text-secondary-foreground">
-            <WarningCircleIcon className="size-4 shrink-0" />
+            <HugeiconsIcon
+              icon={AlertCircleIcon}
+              size={16}
+              strokeWidth={1.5}
+              className="shrink-0"
+            />
             {blocker}
           </span>
         </PageActionBar>
@@ -548,10 +550,8 @@ export function DangerCard({
   onDelete,
 }: {
   /**
-   * `VOICE`, `AUDIENCE` — in capitals, because it is spliced into labels that
-   * are written in capitals. The caps are part of the copy: they survive
-   * copy/paste, screen readers and any restyle, which a `uppercase` class does
-   * not.
+   * `voice`, `audience` — in lower case, because it is spliced into the
+   * sentence-case labels of a card's buttons (`Delete voice`).
    */
   noun: string
   name: string
@@ -566,7 +566,7 @@ export function DangerCard({
       title={t('brand.editor.danger.title')}
       action={{
         label: t('brand.editor.danger.delete', { noun }),
-        icon: TrashIcon,
+        icon: Delete02Icon,
         onClick: () => setConfirming(true),
         destructive: true,
       }}

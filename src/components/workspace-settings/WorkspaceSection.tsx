@@ -1,7 +1,7 @@
 import { memo, useCallback, useId, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowsLeftRightIcon } from '@phosphor-icons/react'
+import { ArrowDataTransferHorizontalIcon } from '@hugeicons/core-free-icons'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
@@ -38,7 +38,7 @@ function WorkspaceSectionComponent() {
       // so the other ones belong behind a single move.
       action={{
         label: t('workspaceSettings.workspace.switch'),
-        icon: ArrowsLeftRightIcon,
+        icon: ArrowDataTransferHorizontalIcon,
         onClick: () => void navigate({ to: '/workspaces' }),
       }}
       capped

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { TrashIcon } from '@phosphor-icons/react'
+import { Delete02Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -91,9 +91,8 @@ export function DeleteWorkspaceCard() {
       <Card
         title={t('workspaceSettings.dangerZone.title')}
         action={{
-          // Literal caps in every language — see CLAUDE.md on destructive labels.
           label: t('workspaceSettings.dangerZone.action'),
-          icon: TrashIcon,
+          icon: Delete02Icon,
           onClick: () => setOpen(true),
           disabled: isLast,
           destructive: true,

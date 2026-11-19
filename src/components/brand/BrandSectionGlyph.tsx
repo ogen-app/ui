@@ -1,3 +1,4 @@
+import { HugeiconsIcon } from '@hugeicons/react'
 import { brandSection, type BrandSectionId } from '@/lib/brandSections'
 
 /**
@@ -8,10 +9,12 @@ import { brandSection, type BrandSectionId } from '@/lib/brandSections'
  */
 export function BrandSectionGlyph({ id }: { id: BrandSectionId }) {
   const section = brandSection(id)
-  const Icon = section.icon
   return (
-    <Icon
-      className="size-5 shrink-0"
+    <HugeiconsIcon
+      icon={section.icon}
+      size={20}
+      strokeWidth={1.5}
+      className="shrink-0"
       style={{ color: section.tone }}
       aria-hidden
     />

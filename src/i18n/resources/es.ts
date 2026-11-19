@@ -1257,7 +1257,7 @@ export const es: Translation = {
       empty:
         'Esta campaña no ejecuta ninguna. Añade una y reservará sus huecos en cada período automáticamente.',
       addPlaceholder: 'Añadir una serie',
-      writeOne: 'ESCRIBIR UNA',
+      writeOne: 'Escribir una',
       localOnly: 'solo esta campaña',
       promote: 'A la biblioteca',
       promoteHint:
@@ -1302,8 +1302,8 @@ export const es: Translation = {
       rhythmHint:
         'Un punto de partida cuando una campaña la adopta. Cada campaña define el suyo, así que dos pueden ejecutarla a ritmos distintos.',
       needsName: 'Ponle nombre a la serie',
-      create: 'CREAR SERIE',
-      dangerNoun: 'SERIE',
+      create: 'Crear serie',
+      dangerNoun: 'serie',
       deleteCost:
         'Las publicaciones ya escritas conservan su texto. Todas las campañas que la ejecutan se detienen y el plan recupera sus huecos.',
     },
@@ -1568,7 +1568,7 @@ export const es: Translation = {
     problems: {
       ignore: 'IGNORAR',
       ignoreFailed: 'No se pudo ignorar ese problema. Inténtalo de nuevo.',
-      fixAll: 'ARREGLAR CON OGEN',
+      fixAll: 'Arreglar con Ogen',
       askAll: 'Arreglemos esto juntos.',
       askFix: '{{fix}}: {{problem}}',
     },
@@ -4100,7 +4100,7 @@ export const es: Translation = {
     dangerZone: {
       title: 'Zona de peligro',
       body: 'Salir de este espacio te quita el acceso y elimina todo lo que creaste en él — para todos. Tu cuenta de acceso y tus otros espacios no se tocan. Esto no se puede deshacer.',
-      action: 'SALIR DE ESTE ESPACIO',
+      action: 'Salir de este espacio',
     },
     leave: {
       title: '¿Salir de {{workspace}}?',
@@ -4125,7 +4125,7 @@ export const es: Translation = {
       slugLabel: 'Identificador',
       slugNote:
         'Se genera a partir del nombre al crearlo; cambiar el nombre del espacio no lo modifica.',
-      switch: 'CAMBIAR',
+      switch: 'Cambiar',
       timeZoneLabel: 'Zona horaria',
       timeZoneNote:
         'Por ahora todo se programa en UTC; las zonas horarias por espacio llegan con CON-94.',
@@ -4141,10 +4141,10 @@ export const es: Translation = {
       emailLabel: 'Correo electrónico',
       emailPlaceholder: 'nombre@empresa.com',
       roleLabel: 'Rol',
-      invite: 'INVITAR',
-      remove: 'ELIMINAR',
-      resend: 'REENVIAR',
-      cancel: 'CANCELAR',
+      invite: 'Invitar',
+      remove: 'Eliminar',
+      resend: 'Reenviar',
+      cancel: 'Cancelar',
       cancelInvitation: 'Cancelar la invitación a {{email}}',
       // Agrees with the (elided) "invitación", never with the person — the
       // invitee's gender is unknown.
@@ -4171,15 +4171,15 @@ export const es: Translation = {
         'Esto elimina a {{name}} del espacio y borra todo lo que creó en él — sus campañas, las publicaciones de esas campañas y los archivos que subió — para todo el mundo. Su cuenta de acceso y sus otros espacios no se tocan. Las publicaciones ya enviadas siguen activas en las redes sociales. No se puede deshacer.',
       removeConfirmLabel: 'Escribe su correo electrónico para confirmar',
       // No clitic pronoun: "MANTENERLA/LO" would gender the member being kept.
-      removeDismiss: 'NO ELIMINAR',
-      removeConfirm: 'ELIMINAR DE ESTE ESPACIO',
+      removeDismiss: 'No eliminar',
+      removeConfirm: 'Eliminar de este espacio',
     },
     dangerZone: {
       title: 'Zona de peligro',
       body: 'Eliminar este espacio elimina sus campañas, publicaciones, recursos y cuentas sociales conectadas, y todos los miembros pierden el acceso. Las publicaciones ya enviadas siguen activas en las redes sociales. No puedes deshacerlo tú mismo — recuperar un espacio eliminado es una solicitud manual a soporte.',
       lastWorkspace:
         'Este es tu único espacio. Eliminarlo te deja sin ningún sitio donde trabajar — crea otro primero.',
-      action: 'ELIMINAR ESPACIO',
+      action: 'Eliminar espacio',
       confirmTitle: '¿Eliminar {{name}}?',
       confirmBody:
         'Todo lo que hay en este espacio se elimina, para todos los miembros, y no puedes restaurarlo tú mismo. Escribe <strong>{{name}}</strong> para confirmar.',
@@ -5333,6 +5333,8 @@ export const es: Translation = {
      * Adjuntar una imagen de Recursos a una publicación (CON-290).
      */
     media: {
+      /** The shut media card's one action. */
+      add: 'Añadir medios',
       fromAssets: {
         tile: 'Desde Recursos',
         title: 'Añadir imágenes desde Recursos',
@@ -5665,8 +5667,8 @@ export const es: Translation = {
       heading: 'Primer comentario',
       helper:
         'Ideal para enlaces: LinkedIn e Instagram favorecen las publicaciones sin enlaces en el texto.',
-      add: 'AÑADIR PRIMER COMENTARIO',
-      remove: 'QUITAR',
+      add: 'Añadir primer comentario',
+      remove: 'Quitar',
       fieldLabel: 'Primer comentario',
       placeholder: 'Un enlace, una fuente o el resto de la historia',
       delayLabel: 'Publicarlo',
@@ -6532,8 +6534,8 @@ export const es: Translation = {
         openFile: 'Abrir el archivo',
         kept: '{{kept}} de {{count}} conservados',
         keptShort: '{{kept}}/{{count}}',
-        discard: 'DESCARTAR',
-        save: 'GUARDAR EN FUNDAMENTOS',
+        discard: 'Descartar',
+        save: 'Guardar en Fundamentos',
       },
       saved: {
         title: 'Guardado en tus Fundamentos',
@@ -6598,10 +6600,10 @@ export const es: Translation = {
           internal:
             'Algo falló por nuestra parte. No se propuso nada y esta lectura no cuenta en tu asignación.',
         },
-        tryAgain: 'VOLVER A INTENTARLO',
+        tryAgain: 'Volver a intentarlo',
       },
       closed: {
-        back: 'VOLVER A FUNDAMENTOS',
+        back: 'Volver a Fundamentos',
         committed: {
           title: 'Guardado en tus Fundamentos',
           body: 'Lo que se conservó de esta lectura ya está en tus Fundamentos, y cada elemento dice de dónde se leyó.',
@@ -6667,7 +6669,7 @@ export const es: Translation = {
     },
 
     look: {
-      edit: 'EDITAR',
+      edit: 'Editar',
       gap: 'Sin logotipo, sin colores, sin tipografía. Todo lo que se genere con una imagen parecerá de banco de imágenes.',
       uploadLogo: 'Subir un logotipo',
       best: 'lo mejor',
@@ -6834,7 +6836,7 @@ export const es: Translation = {
             long: 'larga',
           },
         },
-        noun: 'VOZ',
+        noun: 'voz',
         deleteCostPublished_one:
           'Se escribió {{count}} publicación publicada con esta voz. Al eliminarla, esa publicación se queda tal cual está —su texto se escribió y sigue en pie—, pero no se podrá generar nada nuevo con ella, y cualquier campaña que apunte aquí se quedará sin voz.',
         deleteCostPublished_other:
@@ -6915,7 +6917,7 @@ export const es: Translation = {
         believesHint:
           'Qué tiene que acompañar a una afirmación para que la acepten.',
         believesPlaceholder: 'La cifra viene con el periodo en el que se midió',
-        noun: 'AUDIENCIA',
+        noun: 'audiencia',
         deleteCostPublished_one:
           'Se escribió {{count}} publicación publicada para esta audiencia. Al eliminarla, esa publicación se queda tal cual está —su texto se escribió y sigue en pie—, pero no se podrá escribir nada nuevo para ella, y cualquier campaña que apunte aquí se quedará sin audiencia.',
         deleteCostPublished_other:
@@ -6930,7 +6932,7 @@ export const es: Translation = {
     },
 
     templates: {
-      add: 'AÑADIR PLANTILLA',
+      add: 'Añadir plantilla',
       gap: 'Las imágenes salen desnudas. Nada marca una imagen como tuya una vez que ha salido de la aplicación.',
       gapScreen:
         'Las imágenes salen desnudas. Nada marca una imagen como tuya una vez que ha salido de la aplicación, y aquí todavía no hay nada por plataforma, así que no hay marco de story de Instagram ni cierre de LinkedIn.',
@@ -7011,7 +7013,7 @@ export const es: Translation = {
       removeLine: 'Quitar esta línea',
       keyboardHint:
         'Intro empieza la siguiente. Pega una lista para añadirla entera de una vez.',
-      noun: 'LÍMITES',
+      noun: 'límites',
       dangerName: 'Límites',
       deleteCost:
         'La sección vuelve a quedarse vacía: ningún dato indicado, nada autorizado y nada prohibido, para todas las voces del espacio de trabajo. Las publicaciones ya publicadas no se tocan: su texto se escribió y sigue en pie.',
@@ -7082,13 +7084,13 @@ export const es: Translation = {
         'Partió de <name>{{name}}</name>, y se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
       danger: {
         title: 'Zona de peligro',
-        delete: 'ELIMINAR {{noun}}',
-        keep: 'CONSERVAR {{noun}}',
+        delete: 'Eliminar {{noun}}',
+        keep: 'Conservar {{noun}}',
         confirmTitle: '¿Eliminar «{{name}}»?',
         confirmBody: '{{cost}} Esto no se puede deshacer.',
       },
       default: 'Predeterminada',
-      makeDefault: 'HACER PREDETERMINADA',
+      makeDefault: 'Hacer predeterminada',
     },
   },
 
@@ -7171,6 +7173,16 @@ export const es: Translation = {
       spend: 'Presupuesto e idioma',
       removedByAssistant: '{{what}} quitado por el asistente',
       undoInThread: 'DESHACER está en la conversación',
+      /** The Goals card's one action: it opens or closes the section. */
+      goals: {
+        switchOn: 'Activar',
+        switchOff: 'Desactivar',
+      },
+      /** The Messaging card's one action, which asks the assistant. */
+      messaging: {
+        generateBrief: 'Generar briefing',
+        improveBrief: 'Mejorar briefing',
+      },
       campaigns: {
         title: 'Campañas',
         empty: 'Todavía no hay campañas.',
@@ -7230,20 +7242,20 @@ export const es: Translation = {
       title: 'Zona de peligro',
       body: 'Dos maneras de dejar de ejecutar esta campaña. Archivarla lo conserva todo y se puede deshacer; eliminarla borra la campaña y sus publicaciones para siempre.',
       archive: {
-        action: 'ARCHIVAR CAMPAÑA',
+        action: 'Archivar campaña',
         confirmTitle: '¿Archivar {{name}}?',
         confirmBody:
           'La campaña sale de la lista de campañas y deja de ofrecerse allí donde se archiva trabajo nuevo. No se borra nada. Sus publicaciones, su calendario, su brief y su contenido siguen tal cual, y puedes recuperarla desde el archivo cuando quieras.',
-        keep: 'MANTENERLA ACTIVA',
-        confirm: 'ARCHIVAR CAMPAÑA',
+        keep: 'Mantenerla activa',
+        confirm: 'Archivar campaña',
       },
       delete: {
-        action: 'ELIMINAR CAMPAÑA',
+        action: 'Eliminar campaña',
         confirmTitle: '¿Eliminar {{name}}?',
         confirmBody:
           'Se borran la campaña, sus publicaciones y su calendario, y nada en la aplicación puede recuperarlos. Las publicaciones ya publicadas siguen activas en las redes sociales. Archívala si solo quieres quitarla de la lista.',
-        keep: 'MANTENER CAMPAÑA',
-        confirm: 'ELIMINAR CAMPAÑA',
+        keep: 'Mantener campaña',
+        confirm: 'Eliminar campaña',
       },
     },
   },

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { TrashIcon } from '@phosphor-icons/react'
+import { Delete02Icon } from '@hugeicons/core-free-icons'
 
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
@@ -91,10 +91,8 @@ function ProfilePage() {
               <Card
                 title={t('profile.dangerZone.title')}
                 action={{
-                  // Literal caps in the catalogue, not an `uppercase` class —
-                  // see CLAUDE.md. Every translation keeps them.
                   label: t('profile.dangerZone.action'),
-                  icon: TrashIcon,
+                  icon: Delete02Icon,
                   onClick: () => setDeleteOpen(true),
                   destructive: true,
                 }}

@@ -1,11 +1,10 @@
 import {
   ChatCircleTextIcon,
-  CheckCircleIcon,
   GlobeIcon,
   ProhibitIcon,
   StackIcon,
-  WarningIcon,
 } from '@phosphor-icons/react'
+import { Alert02Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/card'
@@ -52,7 +51,7 @@ export function FailedRun({ run }: { run: DistillRun }) {
 
   return (
     <Card
-      icon={WarningIcon}
+      icon={Alert02Icon}
       tone="var(--warning)"
       title={
         nothingToRead
@@ -192,7 +191,7 @@ export function ClosedRun({ run }: { run: DistillRun }) {
   return (
     <Card
       {...(committed && {
-        icon: CheckCircleIcon,
+        icon: CheckmarkCircle02Icon,
         tone: 'var(--positive)',
       })}
       title={t(`brand.distill.closed.${closedKind(run)}.title` as const)}

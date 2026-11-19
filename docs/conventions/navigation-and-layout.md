@@ -115,7 +115,7 @@ keep it accurate when these rules change.
 
 - **There are no centred columns.** The content column is `max-w-content`
   (740px) against the page's left gutter, under the header's title — never
-  `mx-auto`. `PageActionBar` centres itself on that column, not on the page.
+  `mx-auto`. `PageActionBar` spans that column, not the page.
   Full-screen flows outside the app frame (auth, `/plans`, checkout) are the
   exception.
 
@@ -166,10 +166,13 @@ keep it accurate when these rules change.
   Top-right: **views only** — anything that opens or switches a representation,
   never anything that changes the document. Top-centre (`PageHeader`'s `center`
   slot): passive status, in practice just `SaveStatus`, non-interactive by
-  rule. Bottom-centre: the commit, on `PageActionBar`. The assistant is not a
+  rule. Bottom: the commit, on `PageActionBar` — a white 56px band with a
+  rule on top, the height of the rail's account row so the two read as one
+  band, its buttons on the left and the main one black (`defaultInverted`),
+  the others `outline`. The assistant is not a
   corner of the page: it opens from Work with Ogen at the far end of the top bar
   (`TopBar`), which belongs to the app rather than the page — the floating
-  bottom-right trigger is gone. Bottom-left and bottom-right stay empty. A bar
+  bottom-right trigger is gone. A bar
   belongs to **editor** screens only (asset, brief, settings) — a list has creation, not
   commit, so `ADD CAMPAIGN` stays top-right, and so do the Assets list's ADD
   and the posts list's `ADD POST`. The bar must anchor to the

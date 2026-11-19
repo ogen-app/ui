@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
-import { PlusIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { WarningCircleIcon } from '@phosphor-icons/react'
+import { PlusSignIcon } from '@hugeicons/core-free-icons'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -135,7 +136,7 @@ export function PostFirstCommentCard({
           ? { label: t('posts.firstComment.remove'), onClick: remove }
           : {
               label: t('posts.firstComment.add'),
-              icon: PlusIcon,
+              icon: PlusSignIcon,
               onClick: () => setComposing(true),
             }
       }
