@@ -53,7 +53,15 @@ keep it accurate when these rules change.
   rather than appearing deleted.
   **Archive and delete sit together in one Danger Zone**, and the card's copy
   is general — each button opens a modal carrying its own consequences, which
-  is where someone about to act will actually read them.
+  is where someone about to act will actually read them. **The same two, and
+  the way to Settings, also end the campaign's menu in the top bar**
+  (`CampaignSwitcher`): someone who has opened a test campaign and wants rid of
+  it reads the campaign's name, not the gear at the foot of the rail, and the
+  Danger Zone is a scroll below that. **And each row of the Campaigns list
+  has them behind three dots** (`CampaignCard`), laid over the row's corner
+  as a sibling of its link, since a test campaign is most often got rid of
+  from the list it clutters. All three open `useEndCampaign`'s modals, so the
+  consequences are written once.
 
 - **The campaign's `estimated_post_count` is a rate, not a total.** Since
   CON-182 it means "this many posts per `goal_cadence` period" (`week`/`month`),
@@ -154,3 +162,10 @@ rewrite.
   takes more than a glance belongs on the page the row links to. The columns
   answer to the page's width through a container query, and on a narrow page
   the list comes last.
+  **The wide column ends with a door to every other place**, straight under
+  the cards (`OverviewDoors`, from `lib/campaignDoors`) — no card is stretched
+  to the list's height any more: the rail's glyph and name, and one line saying whether
+  that part is set — a tick, an open ring for what wants something first, no
+  mark where there is nothing to finish. Read across it is the campaign's
+  checklist; it reads only what the Overview already holds, plus one count of
+  the campaign's waiting ideas. Settings rides on its heading row.

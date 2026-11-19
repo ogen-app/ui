@@ -110,6 +110,20 @@ export function useUndecidedIdeaCount(): number {
 }
 
 /**
+ * The same count for one campaign — the Overview's Ideas door. `null` until
+ * it answers, so the door says it is counting rather than "nothing waiting".
+ */
+export function useCampaignUndecidedIdeaCount(
+  campaignId: string,
+): number | null {
+  const query = useQuery({
+    ...ideaCountQuery({ scope_campaign: campaignId, pile: 'waiting' }),
+    staleTime: 30_000,
+  })
+  return query.data ?? null
+}
+
+/**
  * The writes, against every loaded list at once.
  *
  * **Every write is optimistic, and that is the feature rather than a polish
