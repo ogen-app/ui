@@ -1954,6 +1954,57 @@ export const en = {
     openSettings: 'OPEN SETTINGS',
 
     /**
+     * The row of doors at the foot of the Overview: one per place in the
+     * campaign, each with the one thing to know before opening it — whether
+     * that part is set, and if not what is missing first (`lib/campaignDoors`).
+     */
+    doors: {
+      title: 'Everything in this campaign',
+      loading: 'Counting…',
+      strategy: {
+        set_one: 'Dates, goal and {{formatted}} channel',
+        set_other: 'Dates, goal and {{formatted}} channels',
+        noDates: 'No dates yet',
+        noGoal: 'No post goal yet',
+        noChannels: 'No channels yet',
+        notConnected: 'No account to publish through',
+      },
+      ideas: {
+        waiting_one: '{{formatted}} idea waiting for a decision',
+        waiting_other: '{{formatted}} ideas waiting for a decision',
+        none: 'Nothing waiting for a decision',
+      },
+      assets: {
+        all: 'Every document in the workspace',
+        some_one: '{{formatted}} document',
+        some_other: '{{formatted}} documents',
+        none: 'None yet — Ogen writes from the brief',
+      },
+      posts: {
+        none: 'No posts yet',
+        some_one: '{{formatted}} post',
+        some_other: '{{formatted}} posts',
+        /** Joined after `some` when any are still plans or drafts. */
+        drafts_one: '{{formatted}} still a draft',
+        drafts_other: '{{formatted}} still drafts',
+      },
+      calendar: {
+        next_one: '{{formatted}} scheduled, next on {{date}}',
+        next_other: '{{formatted}} scheduled, next on {{date}}',
+        some_one: '{{formatted}} scheduled',
+        some_other: '{{formatted}} scheduled',
+        none: 'Nothing scheduled',
+        over: 'Nothing left to go out',
+      },
+      analytics: {
+        some_one: '{{formatted}} post published',
+        some_other: '{{formatted}} posts published',
+        none: 'Results once a post goes out',
+      },
+      settings: 'Name, type, archive or delete',
+    },
+
+    /**
      * The calendar's problems, read from the server (CON-462). The fix is
      * asked of the campaign's assistant, which offers it to confirm.
      */

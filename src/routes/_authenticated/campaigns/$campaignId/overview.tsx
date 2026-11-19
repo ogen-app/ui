@@ -23,6 +23,8 @@ import {
   useCampaignProblems,
 } from '@/hooks/useCampaignProblems'
 import { useAddPost, useCampaignPosts } from '@/hooks/usePosts.ts'
+import { useCampaignUndecidedIdeaCount } from '@/hooks/useIdeaList'
+import { overviewDoors } from '@/lib/campaignDoors'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
 import { overviewModel, type OverviewPost } from '@/lib/campaignOverview'
 import { attentionItems } from '@/lib/campaignReadiness.ts'
@@ -55,6 +57,7 @@ function CampaignOverviewScreen() {
   const problemsQuery = useCampaignProblems(campaignId)
   const problems = problemsQuery.isError ? undefined : problemsQuery.data
   const { handlers, dialogs } = useOverviewHandlers(campaignId)
+  const ideasWaiting = useCampaignUndecidedIdeaCount(campaignId)
 
   // The layout normally hands this screen the campaign already (`useCampaign`
   // seeds itself from the sidebar's list), so this is rare.
@@ -120,6 +123,13 @@ function CampaignOverviewScreen() {
         handlers={handlers}
         now={now}
         analytics={<CampaignAnalytics campaignId={campaignId} />}
+        doors={overviewDoors({
+          campaign,
+          posts,
+          platformViews,
+          ideasWaiting,
+          now,
+        })}
       />
       {dialogs}
     </>

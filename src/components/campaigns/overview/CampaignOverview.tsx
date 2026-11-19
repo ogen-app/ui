@@ -55,6 +55,8 @@ import {
 import { getPlatformByZernioId } from '@/lib/platformDictionary'
 import { stageTodoLabel, type NeedsLine } from './needsLines'
 import { SectionLink } from './OverviewCard.tsx'
+import { OverviewDoors } from './OverviewDoors.tsx'
+import type { OverviewDoor } from '@/lib/campaignDoors'
 
 /**
  * What the screen does when a row is acted on. The route wires these to the
@@ -95,6 +97,7 @@ export function CampaignOverview({
   handlers,
   now,
   analytics,
+  doors,
 }: {
   model: OverviewModel
   campaignId: string
@@ -106,7 +109,17 @@ export function CampaignOverview({
    * slot rather than a read here, so the harness can hand it fixtures.
    */
   analytics?: ReactNode
+  /**
+   * The row of doors at the foot of the page (`lib/campaignDoors`): every
+   * other place in the campaign, and whether it is set.
+   */
+  doors?: OverviewDoor[]
 }) {
+  const footer = doors && (
+    <GridCell span="full">
+      <OverviewDoors doors={doors} campaignId={campaignId} />
+    </GridCell>
+  )
   if (model.stage === 'new') {
     return (
       <div className="pb-10">
@@ -121,6 +134,7 @@ export function CampaignOverview({
           <GridCell span="narrow">
             <LearnCard learnMore={handlers.learnMore} campaignId={campaignId} />
           </GridCell>
+          {footer}
         </PageGrid>
       </div>
     )
@@ -154,6 +168,7 @@ export function CampaignOverview({
             pinned={column.length > 0}
           />
         </GridCell>
+        {footer}
       </PageGrid>
     </div>
   )

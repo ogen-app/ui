@@ -1567,6 +1567,51 @@ export const es: Translation = {
     openStrategy: 'ABRIR ESTRATEGIA',
     openAssets: 'ABRIR RECURSOS',
     openSettings: 'ABRIR AJUSTES',
+
+    doors: {
+      title: 'Todo lo de esta campaña',
+      loading: 'Contando…',
+      strategy: {
+        set_one: 'Fechas, objetivo y {{formatted}} canal',
+        set_other: 'Fechas, objetivo y {{formatted}} canales',
+        noDates: 'Todavía sin fechas',
+        noGoal: 'Todavía sin objetivo de publicaciones',
+        noChannels: 'Todavía sin canales',
+        notConnected: 'Ninguna cuenta con la que publicar',
+      },
+      ideas: {
+        waiting_one: '{{formatted}} idea esperando una decisión',
+        waiting_other: '{{formatted}} ideas esperando una decisión',
+        none: 'Nada esperando una decisión',
+      },
+      assets: {
+        all: 'Todos los documentos del espacio de trabajo',
+        some_one: '{{formatted}} documento',
+        some_other: '{{formatted}} documentos',
+        none: 'Ninguno todavía: Ogen escribe a partir del brief',
+      },
+      posts: {
+        none: 'Todavía sin publicaciones',
+        some_one: '{{formatted}} publicación',
+        some_other: '{{formatted}} publicaciones',
+        drafts_one: '{{formatted}} todavía en borrador',
+        drafts_other: '{{formatted}} todavía en borrador',
+      },
+      calendar: {
+        next_one: '{{formatted}} programada, la próxima el {{date}}',
+        next_other: '{{formatted}} programadas, la próxima el {{date}}',
+        some_one: '{{formatted}} programada',
+        some_other: '{{formatted}} programadas',
+        none: 'Nada programado',
+        over: 'No queda nada por salir',
+      },
+      analytics: {
+        some_one: '{{formatted}} publicación publicada',
+        some_other: '{{formatted}} publicaciones publicadas',
+        none: 'Resultados cuando salga una publicación',
+      },
+      settings: 'Nombre, tipo, archivar o eliminar',
+    },
     problems: {
       ignore: 'IGNORAR',
       ignoreFailed: 'No se pudo ignorar ese problema. Inténtalo de nuevo.',
