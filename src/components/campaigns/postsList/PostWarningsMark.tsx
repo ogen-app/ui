@@ -1,35 +1,17 @@
-import { WarningCircleIcon, WarningIcon } from '@phosphor-icons/react'
+import { WarningIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib'
-import {
-  worstWarning,
-  type PostWarning,
-  type PostWarningLevel,
-} from '@/lib/postWarnings'
+import { worstWarning, type PostWarning } from '@/lib/postWarnings'
 
 /**
- * One glyph per level, so the column reads at a glance: red where the post
- * will not go out as it stands, amber where it will but something is off, and
- * a quieter amber outline for what is only worth knowing.
+ * Every warning wears the same orange triangle, whatever its level — the
+ * column is one signal, "something here needs a look", and the drawer says
+ * how much. The level only orders the drawer's list.
  */
-export function WarningGlyph({
-  level,
-  className,
-}: {
-  level: PostWarningLevel
-  className?: string
-}) {
-  if (level === 'blocking')
-    return (
-      <WarningCircleIcon
-        aria-hidden
-        weight="fill"
-        className={cn('size-4.5 text-destructive', className)}
-      />
-    )
+export function WarningGlyph({ className }: { className?: string }) {
   return (
     <WarningIcon
       aria-hidden
-      weight={level === 'warning' ? 'fill' : 'bold'}
+      weight="fill"
       className={cn('size-4.5 text-warning', className)}
     />
   )
@@ -52,8 +34,7 @@ export function PostWarningsMark({
   pressed: boolean
   onPress: () => void
 }) {
-  const level = worstWarning(warnings)
-  if (!level) return null
+  if (!worstWarning(warnings)) return null
   return (
     <button
       type="button"
@@ -69,7 +50,7 @@ export function PostWarningsMark({
         pressed && 'bg-secondary',
       )}
     >
-      <WarningGlyph level={level} />
+      <WarningGlyph />
     </button>
   )
 }

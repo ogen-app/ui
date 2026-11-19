@@ -75,7 +75,7 @@ export function PostWarningsPanel({
               key={w.kind}
               className="flex gap-3 rounded-sm bg-secondary px-3 py-2.5"
             >
-              <WarningGlyph level={w.level} className="mt-0.5 shrink-0" />
+              <WarningGlyph className="mt-0.5 shrink-0" />
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-sm font-medium text-foreground">
                   {t(`postsTable.warnings.kind.${w.kind}.title`)}
