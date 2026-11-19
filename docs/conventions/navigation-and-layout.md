@@ -103,6 +103,9 @@ keep it accurate when these rules change.
   takes over its title after the switcher — "Strategy", which scrolls back
   up (`stores/pageCrumbStore`). Only the title: the bar deliberately does not
   follow which card is being read.
+  **The calendar is the one exception:** its heading is the range on screen
+  ("16–22 November 2026"), with its controls on the same row
+  (`calendar/CalendarHeader`) — the grid already says it is a calendar.
 
 - **There are no centred columns.** The content column is `max-w-content`
   (740px) against the page's left gutter, under the header's title — never

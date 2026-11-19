@@ -7,6 +7,9 @@ import type { Post } from '@/types/posts'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
 
+/** Every icon in the calendar's header row: 18px, regular weight. Kept in step with `CalendarHeader`'s. */
+const HEADER_ICON = 'size-[18px]'
+
 /**
  * The campaign calendar's header icons — the counter is that campaign's.
  */
@@ -95,7 +98,7 @@ function CalendarActions({
       >
         <GearSixIcon
           weight={settingsActive ? 'fill' : 'regular'}
-          className="size-5"
+          className={HEADER_ICON}
         />
       </Button>
       <Button
@@ -106,16 +109,23 @@ function CalendarActions({
         aria-label={t('calendar.unscheduledPosts')}
         aria-pressed={unscheduledActive}
       >
-        <span className="relative flex size-5 shrink-0">
+        <span className="relative flex size-[18px] shrink-0">
+          {/* Outlined like every other icon in the row, and filled only while
+              its panel is open — as the gear is. */}
           <CalendarBlankIcon
-            weight={unscheduledActive || hasUnscheduled ? 'fill' : 'regular'}
-            className="size-5"
+            weight={unscheduledActive ? 'fill' : 'regular'}
+            className={HEADER_ICON}
           />
           {hasUnscheduled && (
-            // Knocked out of the filled icon in the page background color; the
-            // 2px nudge centers it optically in the calendar body below the
-            // header strip of the glyph.
-            <span className="absolute inset-0 flex translate-y-[2px] items-center justify-center text-[10px]/none font-medium tabular-nums text-background">
+            // Inside the glyph's body: in the icon's own colour on the
+            // outline, knocked out in the page's when filled. The 2px nudge
+            // centres it below the header strip of the glyph.
+            <span
+              className={cn(
+                'absolute inset-0 flex translate-y-[2px] items-center justify-center text-[9px]/none font-semibold tabular-nums',
+                unscheduledActive ? 'text-background' : 'text-current',
+              )}
+            >
               {unscheduledCount}
             </span>
           )}

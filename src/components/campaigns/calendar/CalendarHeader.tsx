@@ -34,6 +34,9 @@ import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 
 type Granularity = 'week' | 'month'
 
+/** Every icon in the row: 18px, regular weight, as `CalendarHeaderActions` draws its own. */
+const HEADER_ICON = 'size-[18px]'
+
 function formatWeekRange(weekStart: Date, locale: string): string {
   const weekEnd = addDays(weekStart, 6)
   const startMonth = formatDate(weekStart, { month: 'long' }, locale)
@@ -50,8 +53,8 @@ function formatWeekRange(weekStart: Date, locale: string): string {
 }
 
 /**
- * The calendar's one header row, for both calendars: the title with the range
- * it is showing beside it, then the controls — the week or month's arrows and
+ * The calendar's one header row, for both calendars: the range it is showing
+ * as the heading — no "Calendar", the grid says that — then the controls — the week or month's arrows and
  * TODAY, the WEEK / MONTH switch, ADD POST on a campaign's, and the drawer's
  * two toggles last, settings then the unscheduled posts.
  *
@@ -131,7 +134,9 @@ export function CalendarHeader({
   return (
     <>
       <PageHeader
-        title={t('nav.calendar')}
+        // The dates are the heading: the grid already says it is a calendar,
+        // and the rail's highlighted row names the place.
+        title={range ?? undefined}
         actions={
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-0.5">
@@ -149,7 +154,7 @@ export function CalendarHeader({
                 // screen-reader user.
                 aria-keyshortcuts="ArrowLeft"
               >
-                <CaretLeftIcon />
+                <CaretLeftIcon className={HEADER_ICON} />
               </Button>
               <Button
                 variant="default"
@@ -167,7 +172,7 @@ export function CalendarHeader({
                 )}
                 aria-keyshortcuts="ArrowRight"
               >
-                <CaretRightIcon />
+                <CaretRightIcon className={HEADER_ICON} />
               </Button>
             </div>
             <Tabs value={view}>
@@ -193,10 +198,7 @@ export function CalendarHeader({
                           onClick={() => handleViewSelect(value)}
                           className="h-7 w-7"
                         >
-                          {/* Bold: at this size the regular weight goes
-                              spindly, and the dots that tell the two
-                              calendars apart stop reading. */}
-                          <Icon weight="bold" />
+                          <Icon className={HEADER_ICON} />
                         </TabsTrigger>
                       </span>
                     </TooltipTrigger>
@@ -224,11 +226,7 @@ export function CalendarHeader({
             </div>
           </div>
         }
-      >
-        <span className="ml-2 truncate text-lg font-medium text-tertiary-foreground tabular-nums">
-          {range}
-        </span>
-      </PageHeader>
+      />
       <UpgradeDialog gate={gate} />
     </>
   )
