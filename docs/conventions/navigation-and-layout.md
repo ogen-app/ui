@@ -81,7 +81,10 @@ keep it accurate when these rules change.
   choice. New panels go in `PANEL_SCOPE` (`lib/rightPanel.ts`), which won't
   compile until they say which screen they belong to. The assistant is the
   rail's floor — open on first run, closing another panel reveals it rather
-  than collapsing the rail, and navigating never closes it. See
+  than collapsing the rail, and navigating never closes it. **Help is the
+  other panel every screen has** (CON-173): opened from Help beside Work with
+  Ogen, it goes on top of whatever the rail was showing and closing it gives
+  that back (`helpOpen`), and its article follows the page. See
   `docs/technical-decisions.md#panel-memory`. **The calendar's settings and
   unscheduled posts are not rail panels**: they are the calendar's own drawer
   (`CalendarDrawer`, `settingsStore.calendarDrawer`), rendered by the two
@@ -161,7 +164,7 @@ keep it accurate when these rules change.
   never anything that changes the document. Top-centre (`PageHeader`'s `center`
   slot): passive status, in practice just `SaveStatus`, non-interactive by
   rule. Bottom-centre: the commit, on `PageActionBar`. The assistant is not a
-  corner of the page: it opens from Ask Ogen at the far end of the top bar
+  corner of the page: it opens from Work with Ogen at the far end of the top bar
   (`TopBar`), which belongs to the app rather than the page — the floating
   bottom-right trigger is gone. Bottom-left and bottom-right stay empty. A bar
   belongs to **editor** screens only (post, asset, brief, settings) — a list has creation, not

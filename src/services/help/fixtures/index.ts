@@ -13,7 +13,7 @@ import { PAGES } from './pages'
  * arrives.
  *
  * English only, which is also the real dataset's starting point: an article
- * with no translation falls back to English, and the drawer says so.
+ * with no translation falls back to English, and the panel says so.
  */
 export const HELP_FIXTURES: Record<string, HelpArticle> = Object.fromEntries(
   [...CONCEPTS, ...PAGES].map((article) => [article.key, article]),

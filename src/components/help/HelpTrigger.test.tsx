@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as help from '@/services/help'
 import { useHelpStore } from '@/stores/helpStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { HelpTrigger } from './HelpTrigger'
 
 /**
@@ -12,13 +13,14 @@ import { HelpTrigger } from './HelpTrigger'
  * screen it appears on.
  *
  * Two of these three are the same rule seen from different sides: the trigger
- * is the feature's only presence outside the drawer, so it is where a flag that
+ * is the feature's only presence outside the panel, so it is where a flag that
  * is off has to be invisible *and* free. The third is the rule that lets
  * triggers be committed before anyone has written the article.
  */
 
 vi.mock('@/config/featureFlags', () => ({
   useFeatureFlag: vi.fn(() => false),
+  isFeatureEnabled: () => true,
 }))
 
 const { useFeatureFlag } = await import('@/config/featureFlags')
@@ -31,7 +33,7 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 beforeEach(() => {
-  useHelpStore.setState({ isOpen: false, history: [] })
+  useHelpStore.setState({ history: [] })
 })
 
 afterEach(() => {
@@ -47,7 +49,7 @@ describe('HelpTrigger', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     // The gate that matters on the day the fixtures are replaced by a GROQ
     // query: these triggers sit in the post editor, so an unconditional read
-    // would open a cross-origin request to Sanity on a screen where the drawer
+    // would open a cross-origin request to Sanity on a screen where the panel
     // cannot be opened at all.
     expect(index).not.toHaveBeenCalled()
   })
@@ -79,8 +81,9 @@ describe('HelpTrigger', () => {
     render(<HelpTrigger topic="post.status" />, { wrapper })
     await userEvent.click(await screen.findByRole('button'))
 
-    // Opening from a trigger starts a fresh trail rather than resuming one.
-    expect(useHelpStore.getState().isOpen).toBe(true)
+    // Opening from a trigger shows help in the rail, on a fresh trail rather
+    // than resuming one.
+    expect(useSettingsStore.getState().panelMemory.helpOpen).toBe(true)
     expect(useHelpStore.getState().history).toEqual(['post-statuses'])
   })
 })

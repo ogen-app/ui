@@ -17,8 +17,8 @@ import type { HelpBlock, HelpEmbeddedArticle } from '@/types/help'
  * The four custom nodes are the reason help content is not markdown:
  *
  * - **`articleLink`** carries the target's *key*, so following it stays inside
- *   the drawer and lands on the reader's own language.
- * - **`appLink`** navigates the app underneath without closing the drawer —
+ *   the panel and lands on the reader's own language.
+ * - **`appLink`** navigates the app underneath without closing the panel —
  *   help you read while working is the whole point.
  * - **`helpCallout`** is set apart from the prose it interrupts.
  * - **`helpEmbed`** places a whole concept inside the article — written once,
@@ -107,7 +107,7 @@ function Embed({ value }: { value: HelpBlock }) {
   )
 }
 
-/** Follow a cross-link without leaving the drawer. */
+/** Follow a cross-link without leaving the panel. */
 function ArticleLink({
   value,
   children,
@@ -129,7 +129,7 @@ function ArticleLink({
   )
 }
 
-/** Navigate the app behind the drawer, leaving the drawer open. */
+/** Navigate the app behind the panel, leaving the panel open. */
 function AppLink({
   value,
   children,

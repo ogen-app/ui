@@ -59,7 +59,7 @@ export type HelpArticle = {
   /**
    * The language this copy is in. Differs from the reader's when the article
    * has no translation yet and the query fell back to English — which the
-   * drawer says, rather than silently switching language mid-app.
+   * panel says, rather than silently switching language mid-app.
    */
   language: string
   category: { key: string; title: string }

@@ -10,7 +10,7 @@ import { HelpArticleBody } from './HelpArticleBody'
 vi.mock('@tanstack/react-router', () => ({ useRouter: () => ({}) }))
 
 beforeEach(() => {
-  useHelpStore.setState({ isOpen: true, history: ['page-posts'] })
+  useHelpStore.setState({ history: ['page-posts'] })
 })
 
 describe('HelpArticleBody — embedded concepts', () => {

@@ -131,9 +131,9 @@ const FEATURE_FLAGS = {
   'post-version-delete': false,
 
   /**
-   * The help centre (CON-173) — the drawer, the "?" in every page header, the
-   * contextual triggers and the `#help/<key>` deep link. **Off — waiting on
-   * content, not on an endpoint.**
+   * The help centre (CON-173) — Help in the top bar and the rail panel it
+   * opens, the contextual triggers and the `#help/<key>` deep link. **Off —
+   * waiting on content, not on an endpoint.**
    *
    * There is no API to wait for: articles live in the Sanity project
    * `getogen.com` already runs (schema: `studio/schemaTypes/helpArticle.ts` on
@@ -143,7 +143,7 @@ const FEATURE_FLAGS = {
    * the fixtures in `services/help/fixtures`. What is missing: the schema
    * deployed, the articles written and published to `production`, and the
    * app's origins registered for CORS (without credentials). Then set the env,
-   * re-test the drawer against the real dataset — the queries have not yet run
+   * re-test the panel against the real dataset — the queries have not yet run
    * against it — and decide this flag's fate. See `docs/help-centre.md`.
    */
   'help-center': false,

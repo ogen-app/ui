@@ -42,7 +42,7 @@ export function useHelpArticle(articleKey: string | null) {
  * inside this hook because the flag belongs to the call site. It matters more
  * than it looks: the triggers sit on ordinary screens, so with the flag off and
  * this query unconditional every screen would open a cross-origin request to
- * Sanity for a drawer that cannot be opened.
+ * Sanity for a panel that cannot be opened.
  */
 export function useHelpIndex({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery<HelpIndex>({

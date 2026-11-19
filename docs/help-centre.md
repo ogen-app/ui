@@ -19,7 +19,7 @@ every screen, and later the website, reads the fix.
 | | Page | Concept |
 | -- | -- | -- |
 | Answers | "What is this screen and what do I do here?" | "What does this idea mean?" |
-| Opened by | The "?" at the end of the page header | A cross-link, a `<HelpTrigger>`, or "Open" on an embed |
+| Opened by | Help in the top bar, on that screen | A cross-link, a `<HelpTrigger>`, or "Open" on an embed |
 | Claims | `pages` — screen keys from `HELP_PAGES` | `topics` — trigger keys from `HELP_TOPICS` (optional) |
 | May mention the screen | Yes ("the button at the top right") | **Never** — that is what lets it sit inside any page |
 | May embed | Concepts | Nothing (embeds go one level deep) |
@@ -40,8 +40,10 @@ The list is `HELP_PAGES` in `src/lib/helpTopics.ts`. Wiring a new screen:
 1. Add its key to `HELP_PAGES`.
 2. Set `staticData: { help: '<key>' }` on its route. The deepest matched route
    that names one wins, so a layout (`foundation.tsx`) covers its children.
-3. Nothing else. `PageHeader` already renders the "?", and it stays hidden
-   until an article claims the key.
+3. Nothing else. Help in the top bar opens the screen's article in the right
+   rail, in the assistant's place, and follows the reader from screen to
+   screen; a screen whose key no article claims yet says there is no help for
+   it.
 
 ## Writing
 
@@ -55,7 +57,7 @@ and are held to the Studio's rules by `services/help/help.test.ts`.
 - Link with *Link to a help article* (a reference), never a pasted URL, so a
   renamed article cannot break the link.
 - *Link into the app* takes a path such as `/campaigns`; the app navigates
-  behind the drawer and the website shows the words without a link.
+  beside the panel and the website shows the words without a link.
 - Untick *On the website* for help about controls that mean nothing outside
   the app.
 - Everything published to `production` is public. Help for a feature behind a

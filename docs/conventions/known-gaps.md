@@ -113,17 +113,19 @@ CON-173; [`docs/help-centre.md`](../help-centre.md)). **Every screen has a
 page article, and shared ideas are written once.** A route names the screen it
 is with `staticData: { help: '<page>' }` (`HELP_PAGES` in `lib/helpTopics`;
 deepest match wins, and `ideas` is both levels' Ideas, by the nav rule), and
-`PageHeader` carries the "?" that opens that screen's article — so a new
-screen gets help by declaring its key, never by placing a button. An article is
+**Help** in the top bar, beside Work with Ogen, opens that screen's article in
+the right rail — so a new screen gets help by declaring its key, never by
+placing a button. An article is
 a **page** (explains one screen, may talk about it) or a **concept** (one idea
 several screens share, never mentions a screen); page articles **embed**
 concepts whole through a `helpEmbed` block, which is how post statuses read the
 same on the Posts list, the calendar and the post editor — and later on the
-website — without a copy. Embeds go one level deep. The drawer follows the page
-while it shows that page's help and the reader has not gone anywhere of their
-own. Every "?" **renders nothing while nothing is written for it**, and reads
-nothing while the flag is off — `PageHelpButton` checks the flag before it
-touches the Query client, because `PageHeader` is in a great many tests.
+website — without a copy. Embeds go one level deep. **Help is a rail panel
+that takes the assistant's place** (`helpOpen` in `lib/rightPanel`: on top of
+whatever was showing, and closing it gives that back), and it follows the page
+while the reader has not followed a link of their own; a screen with nothing
+written says so. A `<HelpTrigger>` **renders nothing while nothing is written
+for its topic**, and nothing about help reads Sanity while the flag is off.
 
 The content lives in the Sanity project `getogen.com` already runs (schema on
 that repo's `alec/con-173-help-content`), read from the **public
@@ -138,7 +140,7 @@ third party, and the one bare `fetch` in `sanity.ts` omits credentials on
 purpose. An article is identified by a language-independent `key` and linked
 and embedded by reference, so a translation cannot break a link; an
 untranslated article falls back to English and says so. And the catalogue holds
-only the drawer's chrome (`help.*`), because prose is content.
+only the panel's chrome (`help.*`), because prose is content.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's

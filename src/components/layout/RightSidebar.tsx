@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { AssistantPanel } from '@/components/assistant/AssistantPanel'
+import { HelpPanel } from '@/components/help/HelpPanel'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
 
@@ -60,12 +62,13 @@ function PanelLayer({
 }
 
 /**
- * The app's right sidebar: a single slide-in container hosting the AI assistant
- * and the post editor's four panels. One panel shows at a time and the
- * container stays open while they swap. The calendar's settings and
- * unscheduled posts are not here: they are the calendar's own drawer
- * (`CalendarDrawer`), so opening one never puts the assistant away. The assistant opens from Ask Ogen
- * in the bar over the page (`TopBar`).
+ * The app's right sidebar: a single slide-in container hosting the AI
+ * assistant, the help centre and the post editor's four panels. One panel
+ * shows at a time and the container stays open while they swap. The calendar's
+ * settings and unscheduled posts are not here: they are the calendar's own
+ * drawer (`CalendarDrawer`), so opening one never puts the assistant away. The
+ * assistant opens from Work with Ogen in the bar over the page (`TopBar`), and
+ * help from the button beside it, on top of whatever was showing.
  *
  * What shows is *derived*, never stored: the settings store remembers one
  * choice per screen, and `selectActivePanel` picks the one this screen can
@@ -76,6 +79,7 @@ function PanelLayer({
 export function RightSidebar() {
   const activePanel = useSettingsStore(selectActivePanel)
   const close = useSettingsStore((s) => s.closeRightPanel)
+  const helpEnabled = useFeatureFlag('help-center')
 
   const isOpen = activePanel !== null
   const assistantActive = activePanel === 'assistant'
@@ -95,6 +99,11 @@ export function RightSidebar() {
             <PanelLayer active={assistantActive}>
               <AssistantPanel onClose={close} />
             </PanelLayer>
+            {helpEnabled && (
+              <PanelLayer active={activePanel === 'help'}>
+                <HelpPanel onClose={close} />
+              </PanelLayer>
+            )}
             <PanelLayer active={activePanel === 'postSettings'}>
               <div id={POST_SETTINGS_PORTAL_ID} className="h-full" />
             </PanelLayer>

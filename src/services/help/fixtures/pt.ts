@@ -23,9 +23,9 @@ type Part =
 
 /** Bold. */
 export const b = (text: string): Part => ({ strong: text })
-/** A cross-link to another article, by key — it stays inside the drawer. */
+/** A cross-link to another article, by key — it stays inside the panel. */
 export const see = (text: string, article: string): Part => ({ text, article })
-/** A link into the app — the drawer stays open while the app moves. */
+/** A link into the app — the panel stays open while the app moves. */
 export const go = (text: string, path: string): Part => ({ text, path })
 
 function inline(parts: Part[]) {

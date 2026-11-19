@@ -7,7 +7,7 @@ import type { HelpBlock, HelpEmbeddedArticle } from '@/types/help'
 /**
  * The fixtures stand in for the CMS, so they are held to what the Studio would
  * enforce: a reference cannot point at nothing, and an embed can only point at
- * a concept. A broken fixture would otherwise hide in the drawer as a link that
+ * a concept. A broken fixture would otherwise hide in the panel as a link that
  * goes nowhere — exactly the rot references were chosen to prevent.
  */
 
@@ -80,7 +80,7 @@ describe('help fixtures', () => {
 
   it('keep embeds one level deep', () => {
     // The query does not follow an embed inside an embedded concept, so a
-    // concept that embeds would read differently in the drawer and the Studio.
+    // concept that embeds would read differently in the panel and the Studio.
     for (const article of articles.filter((a) => a.kind === 'concept'))
       expect(embedsOf(article.body)).toEqual([])
   })

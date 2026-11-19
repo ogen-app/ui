@@ -19,6 +19,7 @@ import {
   type PanelScope,
   type RightPanel,
 } from '@/lib/rightPanel'
+import { isFeatureEnabled } from '@/config/featureFlags'
 import { isCalendarDrawer, type CalendarDrawer } from '@/lib/calendarDrawer'
 import {
   rememberVisit,
@@ -202,7 +203,14 @@ const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null }
 export const selectActivePanel = (state: SettingsState): RightPanel | null =>
   state.rightRailHidden
     ? null
-    : resolveActivePanel(state.panelMemory, state.scope)
+    : resolveActivePanel(
+        // Help remembered open in a build (or a browser) where it is off would
+        // open the rail onto a layer nothing renders.
+        isFeatureEnabled('help-center')
+          ? state.panelMemory
+          : { ...state.panelMemory, helpOpen: false },
+        state.scope,
+      )
 
 /**
  * The raw entry for one campaign, or `undefined` — the identity is what makes

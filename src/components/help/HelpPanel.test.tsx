@@ -1,0 +1,92 @@
+import type { ReactNode } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { EMPTY_PANEL_MEMORY } from '@/lib/rightPanel'
+import { useHelpStore } from '@/stores/helpStore'
+import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
+import { HelpPanel } from './HelpPanel'
+
+/**
+ * Help shows the page you are on, follows you to the next one — until you
+ * have gone somewhere of your own — and sits in the rail in the assistant's
+ * place.
+ */
+
+vi.mock('@/config/featureFlags', () => ({
+  useFeatureFlag: () => true,
+  isFeatureEnabled: () => true,
+}))
+
+function wrapper({ children }: { children: ReactNode }) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  })
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
+}
+
+const navigateTo = (page: 'posts' | 'calendar' | 'analytics') =>
+  act(() => useHelpStore.getState().setPage(page))
+
+beforeEach(() => {
+  window.location.hash = ''
+  useHelpStore.setState({ history: [], page: 'posts' })
+  useSettingsStore.setState({
+    panelMemory: { ...EMPTY_PANEL_MEMORY, assistantOpen: true },
+    rightRailHidden: false,
+  })
+})
+
+describe('HelpPanel', () => {
+  it('opens in the assistant’s place, and closing it gives the assistant back', () => {
+    act(() => useHelpStore.getState().open('page-posts'))
+    expect(selectActivePanel(useSettingsStore.getState())).toBe('help')
+    act(() => useSettingsStore.getState().closeRightPanel())
+    expect(selectActivePanel(useSettingsStore.getState())).toBe('assistant')
+  })
+
+  it('moves the page’s help along with the page', async () => {
+    render(<HelpPanel onClose={() => {}} />, { wrapper })
+    act(() => useHelpStore.getState().open('page-posts'))
+    expect(await screen.findByRole('heading', { name: 'Posts' })).toBeVisible()
+
+    navigateTo('calendar')
+    await waitFor(() =>
+      expect(useHelpStore.getState().history).toEqual(['page-calendar']),
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'Calendar' }),
+    ).toBeVisible()
+
+    // A screen with nothing written says so, rather than keeping help for a
+    // place the reader has left.
+    navigateTo('analytics')
+    await waitFor(() => expect(useHelpStore.getState().history).toEqual([]))
+    expect(
+      await screen.findByText('There’s no help for this page yet.'),
+    ).toBeVisible()
+  })
+
+  it('catches up with an index that lands after Help was pressed', async () => {
+    // Pressed before the index arrived: nothing to show yet.
+    act(() => useHelpStore.getState().open(null))
+    render(<HelpPanel onClose={() => {}} />, { wrapper })
+    await waitFor(() =>
+      expect(useHelpStore.getState().history).toEqual(['page-posts']),
+    )
+  })
+
+  it('leaves a trail the reader made alone', async () => {
+    render(<HelpPanel onClose={() => {}} />, { wrapper })
+    act(() => useHelpStore.getState().open('page-posts'))
+    await screen.findByRole('heading', { name: 'Posts' })
+    act(() => useHelpStore.getState().push('post-statuses'))
+
+    navigateTo('calendar')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(useHelpStore.getState().history).toEqual([
+      'page-posts',
+      'post-statuses',
+    ])
+  })
+})

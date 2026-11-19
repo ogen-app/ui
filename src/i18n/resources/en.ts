@@ -419,7 +419,8 @@ export const en = {
     workspaceMenu: 'Workspace menu',
     yourWorkspaces: 'Your workspaces',
     accountMenu: 'Account menu',
-    askOgen: 'Ask Ogen',
+    openHelp: 'Help',
+    workWithOgen: 'Work with Ogen',
     assistantFinished: 'The assistant has finished',
     /** A campaign with no start or end date, in the rail's window line. */
     campaignNoWindow: 'No dates set',
@@ -9082,13 +9083,13 @@ export const en = {
     back: 'Back',
     related: 'Related',
     notFound: "We haven't written this one yet.",
-    resize: 'Resize the help panel',
     trigger: {
       label: 'What is this?',
     },
-    /** The "?" at the end of every page header: the screen's own article. */
+    /** The screen's own article, opened from Help in the top bar. */
     page: {
       label: 'Help for this page',
+      none: 'There’s no help for this page yet.',
     },
     /** A concept placed inside a page article, and the way to read it alone. */
     embed: {

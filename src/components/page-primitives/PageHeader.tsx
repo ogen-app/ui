@@ -11,7 +11,6 @@ import { findScrollParent } from '@/lib/scrollParent'
 import { Button } from '@/components/ui/button.tsx'
 import { useIsMobile } from '@/hooks/use-mobile.ts'
 import { usePageCrumbStore } from '@/stores/pageCrumbStore'
-import { PageHelpButton } from '@/components/help/PageHelpButton'
 
 type PageHeaderProps = {
   /** The place's name — "Strategy", "Posts". The campaign is the switcher's. */
@@ -146,17 +145,11 @@ export function PageHeader({
             <div className="flex items-center">{center}</div>
           </div>
         )}
-        {/* Always rendered, because the help button is always a candidate:
-            it is the screen's, not the caller's, and renders nothing itself
-            when the screen has no article — an empty flex group takes no
-            room. Last in the group, so the page's own views keep their places
-            whether or not help is there. */}
-        <div
-          className="relative flex shrink-0 items-center gap-2"
-        >
-          {actions}
-          <PageHelpButton />
-        </div>
+        {actions && (
+          <div className="relative flex shrink-0 items-center gap-2">
+            {actions}
+          </div>
+        )}
       </div>
       <div aria-hidden className="relative mt-2 h-px bg-border" />
     </div>

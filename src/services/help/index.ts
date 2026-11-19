@@ -11,7 +11,7 @@ import type { HelpArticle, HelpIndex, HelpIndexRow } from '@/types/help'
  *
  * Two sources with one shape: Sanity when `VITE_SANITY_PROJECT_ID` is set, the
  * fixtures otherwise. Both can miss, because one of them crosses a network and
- * the drawer handles loading and not-found either way.
+ * the panel handles loading and not-found either way.
  *
  * **These calls must never go through `services/api/http.ts`.** Every request
  * in there carries `credentials: 'include'`; help content comes from Sanity, a

@@ -335,7 +335,8 @@ export const es: Translation = {
     workspaceMenu: 'Menú del espacio de trabajo',
     yourWorkspaces: 'Tus espacios de trabajo',
     accountMenu: 'Menú de la cuenta',
-    askOgen: 'Preguntar a Ogen',
+    openHelp: 'Ayuda',
+    workWithOgen: 'Trabajar con Ogen',
     assistantFinished: 'El asistente ha terminado',
     campaignNoWindow: 'Sin fechas',
     campaign: {
@@ -7428,12 +7429,12 @@ export const es: Translation = {
     back: 'Atrás',
     related: 'Relacionado',
     notFound: 'Todavía no hemos escrito este artículo.',
-    resize: 'Cambiar el ancho del panel de ayuda',
     trigger: {
       label: '¿Qué es esto?',
     },
     page: {
       label: 'Ayuda sobre esta página',
+      none: 'Todavía no hay ayuda para esta página.',
     },
     embed: {
       open: 'Abrir',
