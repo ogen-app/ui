@@ -376,7 +376,14 @@ export function ProgressHeader({
  * when there is neither. Under it, the same figures as the other cards, the
  * pace last.
  */
-export function PostsBar({ band }: { band: OverviewBand }) {
+export function PostsBar({
+  band,
+  size = 'card',
+}: {
+  band: OverviewBand
+  /** `row` is the Campaigns list's: the figures on one line, in its text. */
+  size?: 'card' | 'row'
+}) {
   const { t } = useTranslation()
   const { goal, pace } = band
   const { published, scheduled } = goal != null ? band : band.recent
@@ -394,11 +401,15 @@ export function PostsBar({ band }: { band: OverviewBand }) {
     ...(published > 0 || goal != null || band.startsIn == null
       ? [
           {
+            // On one line the goal reads as a fraction: "Published 40/48".
             label:
-              goal != null
-                ? t('campaignOverview.results.publishedOf', counted(goal))
-                : t('campaignOverview.band.publishedRecent', { days }),
+              goal == null
+                ? t('campaignOverview.band.publishedRecent', { days })
+                : size === 'row'
+                  ? t('campaignOverview.stats.published')
+                  : t('campaignOverview.results.publishedOf', counted(goal)),
             value: published,
+            ...(size === 'row' && goal != null ? { of: goal } : {}),
             dot: 'bg-positive',
           },
         ]
@@ -429,12 +440,12 @@ export function PostsBar({ band }: { band: OverviewBand }) {
   // Nothing at all: the grey track alone.
   const empty = published === 0 && scheduled === 0 && !pace && goal == null
   return (
-    <div className="flex flex-col gap-4">
+    <div className={cn('flex flex-col', size === 'row' ? 'gap-3' : 'gap-4')}>
       <div className="flex h-1.5 overflow-hidden rounded-full bg-secondary">
         <div className="bg-positive" style={{ width: of(published) }} />
         <div className="bg-positive/35" style={{ width: of(shown) }} />
       </div>
-      {!empty && <Figures figures={figures} />}
+      {!empty && <Figures figures={figures} inline={size === 'row'} />}
     </div>
   )
 }
@@ -621,19 +632,25 @@ function ResultsBlock({
 /** What an ended campaign came to: out, failed, never out, and the reach. */
 export function ResultsFigures({
   results,
+  size = 'card',
 }: {
   results: NonNullable<OverviewModel['results']>
+  size?: 'card' | 'row'
 }) {
   const { t } = useTranslation()
   return (
     <Figures
+      inline={size === 'row'}
       figures={[
         {
           label:
-            results.goal != null
+            results.goal != null && size === 'card'
               ? t('campaignOverview.results.publishedOf', counted(results.goal))
               : t('campaignOverview.stats.published'),
           value: results.published,
+          ...(size === 'row' && results.goal != null
+            ? { of: results.goal }
+            : {}),
         },
         {
           label: t('campaignOverview.stats.failed'),
@@ -665,12 +682,53 @@ type FigureRow = {
   label: string
   value: number
   alert?: boolean
+  /** What it is out of, written after it on a line of `inline` figures. */
+  of?: number
   /** The colour it has in a bar above, as a dot before its name. */
   dot?: string
 }
 
-/** A row of figures, the number large and its name under it. */
-function Figures({ figures }: { figures: FigureRow[] }) {
+/**
+ * A row of figures, the number large and its name under it — or, `inline`,
+ * each figure one line of body text, its name then its number, for a row on
+ * the Campaigns list where every column reads in the same size.
+ */
+function Figures({
+  figures,
+  inline = false,
+}: {
+  figures: FigureRow[]
+  inline?: boolean
+}) {
+  const value = (f: FigureRow) =>
+    formatNumber(f.value, {
+      notation: f.value >= 10_000 ? 'compact' : 'standard',
+    })
+  if (inline)
+    return (
+      <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+        {figures.map((f) => (
+          <div key={f.label} className="flex items-center gap-1.5">
+            {f.dot && <Dot className={f.dot} />}
+            <dt>{f.label}</dt>
+            <dd
+              className={cn(
+                'font-medium tabular-nums text-primary-foreground',
+                f.alert && 'text-destructive',
+                f.value === 0 && !f.alert && 'text-tertiary-foreground',
+              )}
+            >
+              {value(f)}
+              {f.of != null && (
+                <span className="font-normal text-tertiary-foreground">
+                  /{formatNumber(f.of)}
+                </span>
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    )
   return (
     <dl className="flex flex-wrap gap-x-8 gap-y-3">
       {figures.map((f) => (
@@ -686,9 +744,7 @@ function Figures({ figures }: { figures: FigureRow[] }) {
               f.value === 0 && !f.alert && 'text-tertiary-foreground',
             )}
           >
-            {formatNumber(f.value, {
-              notation: f.value >= 10_000 ? 'compact' : 'standard',
-            })}
+            {value(f)}
           </dd>
         </div>
       ))}
@@ -1011,10 +1067,14 @@ function runAction(action: NeedsAction, handlers: OverviewHandlers) {
 }
 
 /**
- * The list, short: its title and count, the first `limit` rows as sentences,
- * and how many more. The Campaigns list's third column — a row there is one
- * link to the Overview, so these are words and not doors, and the fixes are
- * the Overview's. `lines` null is still loading.
+ * The list, short: its title and count, the first `limit` rows as one line
+ * each, and how many more. The Campaigns list's third column — a row there is
+ * one link to the Overview, so these are words and not doors, and the fixes
+ * are the Overview's. With nothing in it, one line saying so where the title
+ * would be. `lines` null is still loading.
+ *
+ * Two children, the title and the rows, so the row's grid can put the title
+ * on the line the other columns' heads share.
  */
 export function NeedsPreview({
   title,
@@ -1026,11 +1086,22 @@ export function NeedsPreview({
   limit?: number
 }) {
   const { t } = useTranslation()
+  if (lines && lines.length === 0)
+    return (
+      <p className="font-display text-base font-medium">
+        <CheckCircleIcon
+          weight="fill"
+          className="mr-1.5 inline size-5 align-[-0.3em] text-positive"
+          aria-hidden
+        />
+        {t('campaigns.list.goodShape')}
+      </p>
+    )
   return (
-    <div className="flex min-w-0 flex-col gap-2">
+    <>
       <h3 className="font-display text-base font-medium">
         {title}
-        {lines && lines.length > 0 && (
+        {lines && (
           <span className="ml-2 font-sans text-sm font-normal text-tertiary-foreground tabular-nums">
             {formatNumber(lines.length)}
           </span>
@@ -1038,29 +1109,24 @@ export function NeedsPreview({
       </h3>
       {lines === null ? (
         <Skeleton className="h-10 w-full" />
-      ) : lines.length === 0 ? (
-        <p className="flex items-center gap-2 text-sm text-secondary-foreground">
-          <CheckIcon className="size-4 text-positive" aria-hidden />
-          {t('campaignOverview.needs.none')}
-        </p>
       ) : (
-        <ul className="flex flex-col">
+        <ul className="flex min-w-0 flex-col gap-1 text-sm">
           {lines.slice(0, limit).map((line) => (
-            <li key={line.id}>
-              <LineItem
-                className="hover:bg-transparent"
-                indicator={MARK[line.mark]}
-                chevron={false}
-                label={
-                  <span className="truncate" title={line.label}>
-                    {line.label}
-                  </span>
-                }
+            <li key={line.id} className="flex min-w-0 items-center gap-2">
+              <span
+                className={cn(
+                  'size-1.5 shrink-0 rounded-full',
+                  PREVIEW_DOT[line.mark],
+                )}
+                aria-hidden
               />
+              <span className="truncate" title={line.label}>
+                {line.label}
+              </span>
             </li>
           ))}
           {lines.length > limit && (
-            <li className="pl-7 text-sm text-secondary-foreground">
+            <li className="pl-3.5 text-tertiary-foreground">
               {t(
                 'campaignOverview.needs.moreRows',
                 counted(lines.length - limit),
@@ -1069,8 +1135,15 @@ export function NeedsPreview({
           )}
         </ul>
       )}
-    </div>
+    </>
   )
+}
+
+/** The preview's marks: the list's colours, a hollow dot for a step to do. */
+const PREVIEW_DOT: Record<NeedsLine['mark'], string> = {
+  broken: 'bg-destructive',
+  risk: 'bg-warning',
+  todo: 'border border-tertiary-foreground',
 }
 
 /** `SectionLink`, plus the campaign's Settings, where archiving lives. */
@@ -1296,7 +1369,13 @@ function LearnCard({
  * The platform's mark, drawn as the calendar draws it: filled, in the
  * network's colour, a dashed circle where the build doesn't know it.
  */
-export function PlatformMark({ platform }: { platform: OverviewPlatform }) {
+export function PlatformMark({
+  platform,
+  className,
+}: {
+  platform: OverviewPlatform
+  className?: string
+}) {
   const info = platform.zernioId
     ? getPlatformByZernioId(platform.zernioId)
     : undefined
@@ -1304,7 +1383,11 @@ export function PlatformMark({ platform }: { platform: OverviewPlatform }) {
   return (
     <Mark
       weight="fill"
-      className={cn('size-4 shrink-0', !info && 'text-tertiary-foreground')}
+      className={cn(
+        'size-4 shrink-0',
+        !info && 'text-tertiary-foreground',
+        className,
+      )}
       style={info ? { color: info.color } : undefined}
       aria-label={info?.name}
     />

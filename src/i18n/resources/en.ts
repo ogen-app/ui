@@ -8392,6 +8392,8 @@ export const en = {
       /** The row's link, named for what it opens. */
       open: 'Open {{name}}',
       noChannels: 'No channels yet',
+      /** The third column when nothing wants the user. */
+      goodShape: 'In good shape',
       /** A campaign with no dates: the third column is its setup left. */
       setUp: 'Set up',
       /** A campaign with no dates, where the others have their window. */

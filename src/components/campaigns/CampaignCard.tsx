@@ -1,8 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import { CaretRightIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
-import { CampaignIcon } from '@/components/layout/CampaignIcon.tsx'
 import {
   NeedsPreview,
   PlatformMark,
@@ -15,7 +13,6 @@ import { useFeatureFlag } from '@/config/featureFlags'
 import { placeLink, type PlaceId } from '@/lib/campaignScope'
 import { useCampaignSummaries } from '@/hooks/useCampaigns.ts'
 import { usePlatformViews } from '@/hooks/usePlatforms.ts'
-import { identityAbbr, identityColorVar } from '@/lib/identity.ts'
 import { campaignTypeInfo } from '@/lib/campaignTypeDictionary.ts'
 import { attentionItems } from '@/lib/campaignReadiness.ts'
 import {
@@ -137,82 +134,88 @@ export function CampaignRow({
             loading || model.needs === null ? null : needsLines(t, model.needs),
         }
 
+  // Each column is a head and a body. From 40rem the columns are subgrids of
+  // the row's two lines, so their heads share one baseline whatever their
+  // size, and the bodies start level under them.
+  const column = '@min-[40rem]:grid-rows-subgrid grid content-start gap-3'
+
   return (
     // The columns answer to the row's own width: three across on a wide page;
     // narrower, the name over the other two; narrowest, one under another.
-    <div className="@container group rounded-md border border-border bg-primary p-5 transition-shadow duration-150 hover:shadow-lg">
-      <div className="grid gap-5 @min-[40rem]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] @min-[40rem]:gap-x-0 @min-[64rem]:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] @min-[64rem]:gap-y-0">
-        {/* What it is: the sidebar's mark and name, its type and channels. */}
-        <div className="flex min-w-0 flex-col gap-3 @min-[40rem]:col-span-2 @min-[64rem]:col-span-1 @min-[64rem]:pr-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <CampaignIcon
-              abbr={identityAbbr(title)}
-              color={identityColorVar(campaign.id)}
-              className="size-10 shrink-0"
-            />
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="font-display text-base/6 font-medium truncate">
-                {title}
-              </span>
-              {typeLabel && (
-                <span className="text-sm truncate">{typeLabel}</span>
-              )}
-            </span>
-            <CaretRightIcon
-              className="size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-              weight="bold"
-              aria-hidden
-            />
-          </div>
-          {platforms.length > 0 ? (
-            <span className="flex flex-wrap items-center gap-2">
-              {platforms.map((p) => (
-                <PlatformMark key={p.id} platform={p} />
-              ))}
-            </span>
-          ) : (
-            <span className="text-sm">{t('campaigns.list.noChannels')}</span>
+    <div className="@container rounded-md border border-border bg-primary p-5 transition-shadow duration-150 hover:shadow-lg">
+      <div
+        className={cn(
+          'grid gap-y-5',
+          '@min-[40rem]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] @min-[40rem]:grid-rows-[auto_auto_auto_1fr]',
+          '@min-[64rem]:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] @min-[64rem]:grid-rows-[auto_1fr]',
+        )}
+      >
+        {/* What it is: its name, its type, and the channels it posts to. */}
+        <div
+          className={cn(
+            column,
+            '@min-[40rem]:[grid-area:1/1/span_2/-1]',
+            '@min-[64rem]:[grid-area:1/1/span_2/2] @min-[64rem]:pr-6',
           )}
+        >
+          <h3 className="self-baseline truncate font-display text-xl font-medium tracking-tight">
+            {title}
+          </h3>
+          <div
+            className={cn(
+              'flex min-w-0 flex-col items-start gap-3',
+              // Under the name across the row: the type left, the channels right.
+              '@min-[40rem]:flex-row @min-[40rem]:items-center @min-[40rem]:justify-between',
+              // In its own column: the type at the top, the channels at the foot.
+              '@min-[64rem]:flex-col @min-[64rem]:items-start',
+            )}
+          >
+            {typeLabel && <p className="truncate text-sm">{typeLabel}</p>}
+            {platforms.length > 0 ? (
+              <span className="flex flex-wrap items-center gap-2.5">
+                {platforms.map((p) => (
+                  <PlatformMark key={p.id} platform={p} className="size-6" />
+                ))}
+              </span>
+            ) : (
+              <span className="text-sm">{t('campaigns.list.noChannels')}</span>
+            )}
+          </div>
         </div>
 
         {/* Where it is in its own time: the Overview's progress card. */}
         <div
           className={cn(
-            'flex min-w-0 flex-col gap-4 @min-[40rem]:pr-6',
-            '@min-[64rem]:border-l @min-[64rem]:border-border @min-[64rem]:pl-6',
+            column,
+            '@min-[40rem]:[grid-area:3/1/span_2/2] @min-[40rem]:pr-6',
+            '@min-[64rem]:[grid-area:1/2/span_2/3] @min-[64rem]:border-l @min-[64rem]:border-border @min-[64rem]:pl-6',
           )}
         >
+          <div className="self-baseline">
+            <ProgressHeader stage={model.stage} band={model.band} size="row" />
+          </div>
           {failed ? (
-            <>
-              <ProgressHeader
-                stage={model.stage}
-                band={model.band}
-                size="row"
-              />
-              <p className="text-sm">{t('campaigns.list.loadFailed')}</p>
-            </>
+            <p className="text-sm">{t('campaigns.list.loadFailed')}</p>
           ) : loading ? (
-            <Skeleton className="h-24 w-full" />
-          ) : (
-            <>
-              <ProgressHeader
-                stage={model.stage}
-                band={model.band}
-                size="row"
-              />
-              {model.stage === 'new' ? (
-                <p className="text-sm">{t('campaigns.list.notDated')}</p>
-              ) : model.results ? (
-                <ResultsFigures results={model.results} />
-              ) : (
-                model.band && <PostsBar band={model.band} />
-              )}
-            </>
-          )}
+            <Skeleton className="h-10 w-full" />
+          ) : model.stage === 'new' ? (
+            <p className="text-sm">{t('campaigns.list.notDated')}</p>
+          ) : model.results ? (
+            <ResultsFigures results={model.results} size="row" />
+          ) : model.band ? (
+            <PostsBar band={model.band} size="row" />
+          ) : null}
         </div>
 
         {/* What wants the user: the Overview's list, short. */}
-        <div className="min-w-0 @min-[40rem]:border-l @min-[40rem]:border-border @min-[40rem]:pl-6">
+        <div
+          className={cn(
+            column,
+            '[&>:first-child]:self-baseline',
+            '@min-[40rem]:[grid-area:3/2/span_2/3] @min-[40rem]:border-l @min-[40rem]:border-border @min-[40rem]:pl-6',
+            '@min-[64rem]:[grid-area:1/3/span_2/4]',
+          )}
+        >
           {!failed && <NeedsPreview title={needs.title} lines={needs.lines} />}
         </div>
       </div>

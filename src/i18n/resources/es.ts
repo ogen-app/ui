@@ -6930,6 +6930,7 @@ export const es: Translation = {
       },
       open: 'Abrir {{name}}',
       noChannels: 'Sin canales todavía',
+      goodShape: 'Todo en orden',
       setUp: 'Por configurar',
       notDated: 'Sin fechas todavía',
       loadFailed:
