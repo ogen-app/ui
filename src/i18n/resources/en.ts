@@ -5881,11 +5881,46 @@ export const en = {
     },
 
     /**
-     * The post editor's back arrow. Names the destination generically because
-     * it is not always the same one — it returns to whichever arrangement of
-     * the campaign's posts the user came from, calendar or table.
+     * The post editor (`components/posts/editor`): its part of the bar over
+     * the page, and the side column's tabs.
      */
-    backToPosts: 'Back to posts',
+    editor: {
+      titlePlaceholder: 'Title',
+      more: 'More actions',
+      downloadMarkdown: 'Download as Markdown',
+      delete: 'DELETE POST',
+      previous: 'Previous post',
+      next: 'Next post',
+      /** The post's place in the campaign's timeline: "3 of 21". */
+      position: '{{position}} of {{total}}',
+      tabs: {
+        label: 'About this post',
+        settings: 'Settings',
+        preview: 'Preview',
+        checks: 'Checks',
+        quality: 'Quality',
+        sources: 'Sources',
+        notes: 'Notes',
+        history: 'History',
+        /** A closed tab's name while something on it needs a look. */
+        withWarnings_one: '{{label}} — 1 thing to look at',
+        withWarnings_other: '{{label}} — {{count}} things to look at',
+      },
+      settings: {
+        platform: 'Platform',
+        postType: 'Post type',
+        account: 'Account',
+        date: 'Publish',
+        publishing: 'Publishing',
+        phase: 'Phase',
+        noPhase: 'No phase',
+        voice: 'Voice & audience',
+        format: 'Format',
+      },
+      checks: {
+        notAssessed: 'Not assessed yet.',
+      },
+    },
 
     /**
      * The card's warning mark. What is wrong is in the post itself — the mark

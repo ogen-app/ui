@@ -9,17 +9,17 @@ import { persist } from 'zustand/middleware'
  * outlives the session. Persisting the rest would reopen the drawer on every
  * page load.
  *
- * Deliberately **not** part of the right rail's `panelMemory`. The drawer is
- * not a panel: it sits above the app rather than beside it, it never takes the
- * assistant's place, and navigating does not close it.
+ * Deliberately **not** the right rail. The drawer is not a panel: it sits
+ * above the app rather than beside it, it never takes the assistant's place,
+ * and navigating does not close it.
  */
 
 /**
  * Narrower than a phone is useless; wider than this covers the work.
  *
  * The default is deliberately wider than the right rail's 480px (`w-120` in
- * `RightSidebar`): the rail holds controls, this holds prose, and a column of
- * running text wants more room than a column of switches.
+ * `RightSidebar`): the rail holds a conversation in short turns, this holds
+ * articles, and a column of running text wants more room than a chat.
  */
 export const HELP_MIN_WIDTH = 320
 export const HELP_MAX_WIDTH = 880

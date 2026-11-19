@@ -99,7 +99,7 @@ Two deliberate asymmetries:
 (`schedule`), `lib/postStatusMachine.ts` (`mechanism: 'schedule'`,
 `getTransitionBlockers`, `canEditScheduledAt`),
 `components/campaigns/calendar/PostCard.tsx` / `WeeklyCalendar.tsx`,
-`components/forms/postSettingsForm/PostSettingsForm.tsx`. Server:
+`components/posts/editor/PostSettingsTab.tsx`. Server:
 `src/handlers/posts.go` (`Schedule`), `src/post_actions/schedule/schedule.go`.
 
 ## The Query cache doubles as the post editor's document store
@@ -287,68 +287,50 @@ first and the PUT is debounced 500ms behind them — flipping six day switches
 costs one request — with a flush on unmount, the same shape as the post
 editor's autosave.
 
-## The right sidebar remembers a choice per screen, and derives what's open {#panel-memory}
+## The right rail holds only the assistant {#panel-memory}
 
-**Decision.** `settingsStore` persists `panelMemory` — `{ assistantOpen,
-scoped: { post? } }` — to localStorage, and **never** persists which
-panel is open. What's on screen is computed on every read by
-`resolveActivePanel(memory, scope)`: the panel remembered for the screen you're
-on, else the assistant, else closed. Routes declare their screen with
-`usePanelScope('post')`; that is the only thing navigation is allowed to
-write.
+**Decision.** The right rail (`RightSidebar`) hosts the assistant and nothing
+else. Its whole state is one persisted boolean, `settingsStore.assistantOpen`,
+written only by clicks — Ask Ogen, `o`, `]`, the panel's X, and the buttons
+that hand the assistant a task. Components ask
+`selectActivePanel(state) === 'assistant'`.
 
-**The calendar's two panels left the rail** (2026-11). Its settings and its
-unscheduled posts were `calendar`-scoped panels here, so opening either put the
-assistant away. They are about the grid in front of you and the assistant is
-about the work, so they are now the calendar's own drawer
-(`CalendarDrawer`, `settingsStore.calendarDrawer`): beside the column, under
-the bar over the page, one choice shared by every calendar, and open alongside
-the assistant. Rehydration drops a stored `calendar` entry like any other
-scope this build no longer has.
+**Screen panels left the rail** (2026-11). The rail used to host panels that
+belonged to one screen: the calendar's settings and unscheduled posts, and the
+post editor's settings, preview, quality and version history, portalled in
+from the post route. That took a model of its own — a remembered choice per
+screen (`panelMemory`), a route declaring which screen was under the rail
+(`usePanelScope`), and a resolver that fell back to the assistant when the
+remembered panel had nowhere to render. It worked, but every one of those
+panels put the assistant away to show something about the page in front of
+you, and the assistant is about the work. So the calendar's two became its own
+drawer (`CalendarDrawer`, `settingsStore.calendarDrawer`), and the post
+editor's became tabs in the editor's own side column — settings, preview,
+checks, quality, sources, notes and history (`components/posts/editor/PostSideColumn`,
+the tab remembered in `settingsStore.postTab`, one choice for every post).
+Both sit beside the page and open alongside the assistant. With one panel left
+the model had nothing to resolve, and it went.
 
-**Why.** The panels aren't peers. `assistant` renders anywhere; the post
-editor's four are portal targets that only exist on one route.
-Persisting a single `activeRightPanel` would restore a fact about one screen
-onto whichever screen you reloaded on — `postQuality` remembered, campaign list
-open, and the rail slides out 480px wide hosting an empty `<div>`. Deriving
-instead makes that unrepresentable: a remembered panel the current screen can't
-serve simply falls through to the assistant.
+**The assistant is open on first run.** It is the product, and hiding it
+behind a button in the corner buries the thing the app is for. A default, not
+a rule — close it once and that sticks, everywhere. Navigating never closes
+it: following a thread's "open the post" link asks to see the post, not to
+dismiss the assistant that wrote it. Closing only collapses the column; the
+assistant stays mounted, so a running thread keeps working.
 
-The second half matters as much. Before this, leaving the post editor or the
-calendar ran a cleanup effect that closed the route's panels by hand
-(`$postId.tsx`, `CalendarHeaderActions.tsx`). Those are gone. They had to be:
-persisting a value that navigation itself rewrites means saving the *side
-effects of moving around* rather than the user's choice, so going away and
-coming back could never be a no-op. Now memory is written by clicks alone.
+**`]` is the same toggle as Ask Ogen.** It used to hide the rail with a flag
+of its own (`rightRailHidden`), so it could bring back whichever panel had
+been showing. With one panel, hidden and closed are the same thing.
 
-**The assistant is the floor, not one more panel.** Every other panel is an
-overlay on top of it, so closing one drops back to the assistant rather than
-collapsing the rail, and only closing the assistant shuts it. This is a
-behaviour change: toggling a post panel off used to close the sidebar and now
-reveals the assistant underneath. It also means "open the assistant" has to
-clear the current screen's overlay — otherwise the assistant is recorded as
-open beneath something still covering it and the trigger looks broken.
+**Rehydration reads the old shape once.** A blob saved before this change
+holds `panelMemory: { assistantOpen, scoped }` and perhaps `rightRailHidden`.
+The store's `merge` turns that into `assistantOpen` — closed if it was closed
+or put away with `]` — and drops the old keys, so nobody who had closed the
+assistant finds it open again.
 
-It is also **open on first run** (`DEFAULT_PANEL_MEMORY`): the assistant is the
-product, and hiding it behind a small mark in the corner buries the thing the
-app is for. A default, not a rule — close it once and that sticks, everywhere.
-Following a thread's "open the post" link does *not* close it: you asked to see
-the post, not to dismiss the assistant that wrote it.
-
-**Rehydration distrusts the blob.** `sanitizePanelMemory` rebuilds the memory
-from scratch on load, dropping any panel id this build doesn't have and any
-panel filed under a screen that doesn't own it. Persisted enum values outlive
-the code that named them; without this, renaming a panel reintroduces the empty
-rail through the back door.
-
-**Where.** `lib/rightPanel.ts` holds the model and every state transition as
-pure functions (`rightPanel.test.ts` covers them); `stores/settingsStore.ts`
-holds them behind `openRightPanel` / `toggleRightPanel` / `closeRightPanel` and
-exports `selectActivePanel`, which is how components ask what's open —
-`panelMemory` is never read directly. `hooks/usePanelScope.ts` runs as a
-*layout* effect so a reload straight into a post paints the restored panel
-rather than opening it a frame later. The scope is session-only: where you
-are is not a preference.
+**Where.** `stores/settingsStore.ts` (`assistantOpen`, `toggleRightPanel` /
+`openRightPanel` / `closeRightPanel`, `selectActivePanel`, the rehydration)
+and `components/layout/RightSidebar.tsx`.
 
 ## A campaign remembers where you were in its posts {#posts-place}
 
@@ -393,7 +375,7 @@ answer than where the user came from.
 
 **Where.** `lib/postsPlace.ts` (pure, with `postsPlace.test.ts`),
 `hooks/usePostsPlace.ts`, `stores/settingsStore.ts` (`rememberPostsPlace`),
-recorded by the two views and read by `PostDetailsHeader`, `AppSidebar`,
+recorded by the two views and read by `PostBar`, `AppSidebar`,
 `OverviewCard` and the bare-calendar redirect.
 
 ## The posts table's sort order follows the user, not the device {#posts-table-sort}
@@ -413,8 +395,8 @@ therefore maps `null → undefined` in its accessor so TanStack's
 `sortUndefined: 'last'` can take it.
 
 **Why the server, when the right sidebar's memory is in localStorage.** These
-look like the same problem and aren't. Panel memory is about the shape of one
-window — it is display noise, it is genuinely per-device, and putting it in the
+look like the same problem and aren't. Whether the rail is open is about the
+shape of one window — it is display noise, it is genuinely per-device, and putting it in the
 tenant-wide settings table would broadcast it to the workspace for no gain
 ([#panel-memory](#panel-memory)). A sort order is a working habit: someone who
 reads this table newest-first wants that on their laptop and their desktop, and

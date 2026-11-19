@@ -37,7 +37,7 @@ a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n converts whole screens in some
 places and only islands in others.** Converted whole: the auth screens,
 sidebar, Profile, Workspace Settings, the campaign calendar (its week, month
-and list views, the cards, both rail panels and the posts table), the
+and list views, the cards, both drawer panels and the posts table), the
 analytics surfaces (the workspace dashboard, the campaign composition, a
 post's own numbers and the three view mappers behind them), Brand (the
 Overview, all five sections, the three editors and the routes — plus the two

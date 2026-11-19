@@ -5083,7 +5083,41 @@ export const es: Translation = {
       },
     },
 
-    backToPosts: 'Volver a las publicaciones',
+    editor: {
+      titlePlaceholder: 'Título',
+      more: 'Más acciones',
+      downloadMarkdown: 'Descargar como Markdown',
+      delete: 'ELIMINAR PUBLICACIÓN',
+      previous: 'Publicación anterior',
+      next: 'Publicación siguiente',
+      position: '{{position}} de {{total}}',
+      tabs: {
+        label: 'Sobre esta publicación',
+        settings: 'Ajustes',
+        preview: 'Vista previa',
+        checks: 'Comprobaciones',
+        quality: 'Calidad',
+        sources: 'Fuentes',
+        notes: 'Notas',
+        history: 'Historial',
+        withWarnings_one: '{{label}}: 1 cosa por revisar',
+        withWarnings_other: '{{label}}: {{count}} cosas por revisar',
+      },
+      settings: {
+        platform: 'Plataforma',
+        postType: 'Tipo',
+        account: 'Cuenta',
+        date: 'Publicar',
+        publishing: 'Publicación',
+        phase: 'Fase',
+        noPhase: 'Sin fase',
+        voice: 'Voz y audiencia',
+        format: 'Formato',
+      },
+      checks: {
+        notAssessed: 'Aún sin evaluar.',
+      },
+    },
 
     hasProblem: 'Esta publicación tiene un problema',
     outsideCampaign: {

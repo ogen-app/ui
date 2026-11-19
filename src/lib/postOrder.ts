@@ -46,6 +46,10 @@ export type PostNeighbours = {
   previous: Post | null
   /** The next post forward, or null at the end. */
   next: Post | null
+  /** This post's place in that order, from 1; 0 when it isn't in the list. */
+  position: number
+  /** How many posts the order holds. */
+  total: number
 }
 
 /** Who sits either side of this post in the campaign's order. */
@@ -55,9 +59,12 @@ export function postNeighbours(posts: Post[], postId: string): PostNeighbours {
   // The post isn't in the list — a stale id, or a list that hasn't arrived
   // yet. No neighbours means the keys stay unbound rather than jumping
   // somewhere arbitrary.
-  if (index === -1) return { previous: null, next: null }
+  if (index === -1)
+    return { previous: null, next: null, position: 0, total: ordered.length }
   return {
     previous: ordered[index - 1] ?? null,
     next: ordered[index + 1] ?? null,
+    position: index + 1,
+    total: ordered.length,
   }
 }

@@ -829,7 +829,7 @@ function scopeMeta(
 /**
  * A post's history (CON-480): what on the left, when on the right in the
  * workspace's zone, who under it, a version as a tag; failures amber. On the
- * post itself, VERSIONS opens its versions panel. Where versions predate
+ * post itself, VERSIONS opens the editor's History tab. Where versions predate
  * people being recorded, a note says so at the point it starts to apply.
  */
 function HistoryCard({ history: h }: { history: PostHistory }) {
@@ -837,7 +837,7 @@ function HistoryCard({ history: h }: { history: PostHistory }) {
   const by = useEntryBy()
   const tz = h.timezone || 'UTC'
   const focus = useViewContextStore((s) => s.location.focus)
-  const openPanel = useSettingsStore((s) => s.openRightPanel)
+  const openHistory = useSettingsStore((s) => s.setPostTab)
   const onPost = focus?.kind === 'post' && focus.id === h.postId
   const cutoff = h.unrecordedBefore ? Date.parse(h.unrecordedBefore) : NaN
   const noteAt = Number.isNaN(cutoff)
@@ -855,7 +855,7 @@ function HistoryCard({ history: h }: { history: PostHistory }) {
       meta={scopeMeta(t, h.scope)}
       action={
         onPost ? (
-          <TextAction onClick={() => openPanel('postVersions')}>
+          <TextAction onClick={() => openHistory('history')}>
             {t('assistant.workspace.history.versions')}
           </TextAction>
         ) : undefined

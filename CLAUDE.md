@@ -162,7 +162,7 @@ Loaded automatically in `src/components/layout`, `src/components/page-primitives
 - The nav is one menu, and the campaign is a filter over it.
 - Posts is a list and the Calendar is a calendar — they are two destinations, not three views of one.
 - Documents are Assets, and Assets is a module rather than a section of Foundation.
-- The right sidebar never stores which panel is open.
+- The right rail is the assistant's alone.
 - Explanatory copy goes in `<Explainer>`.
 - A page header names the place, and the switcher names the scope.
 - There are no centred columns.

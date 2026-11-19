@@ -1,4 +1,6 @@
 import {
+  createContext,
+  useContext,
   useLayoutEffect,
   useRef,
   useState,
@@ -10,6 +12,15 @@ import { ZIndex } from '@/config/zIndex.ts'
 import { SurfaceFader } from '@/components/page-primitives/SurfaceFader'
 import { CHROME_BAR_H } from '@/components/layout/chrome'
 import { cn } from '@/lib'
+
+/**
+ * Set by a host that already names the panel — the post editor's tabs. Inside
+ * it a panel drops its 56px title band and its close button; what the band
+ * carried besides the title (a count, its actions) stays, on a slim row at the
+ * top of the body, because a version's RESTORE has nowhere else to go.
+ */
+const RailPanelEmbedded = createContext(false)
+export const RailPanelEmbeddedProvider = RailPanelEmbedded.Provider
 
 type RailPanelProps = {
   title: string
@@ -74,6 +85,7 @@ export function RailPanel({
   footerSolid,
   footerFade = 32,
 }: RailPanelProps) {
+  const embedded = useContext(RailPanelEmbedded)
   const footerRef = useRef<HTMLDivElement>(null)
   // The footer overlays the scroll rather than sitting beside it, so the body
   // needs to be told how much room to leave at the end. Measured, because the
@@ -99,40 +111,54 @@ export function RailPanel({
             the bar over the page and the body scrolls under a line, not into
             a fade. One line only: anything a panel says under its title is
             the body's first row. */}
-        <div
-          className={cn(
-            'sticky top-0 shrink-0 flex items-center justify-between gap-3 bg-primary border-b border-border px-3 lg:px-6',
-            CHROME_BAR_H,
-          )}
-          style={{ zIndex: ZIndex.pageHeader }}
-        >
-          {/* The whole block is the affordance when it has somewhere to go —
-              mark, title and adornment. They describe one thing, so they are
-              one target rather than a link with decoration around it. */}
-          <TitleBlock
-            onClick={onTitleClick}
-            label={titleLabel}
-            leading={leading}
-          >
-            <h2 className="shrink-0 text-lg font-medium font-display tracking-tight text-foreground">
-              {title}
-            </h2>
-            {titleAdornment}
-          </TitleBlock>
-          <div className="flex shrink-0 items-center gap-2">
-            {actions}
-            {onClose && (
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-                className="flex items-center justify-center size-6 text-secondary-foreground hover:text-foreground cursor-pointer"
-              >
-                <XIcon className="size-5" />
-              </button>
+        {embedded ? (
+          (titleAdornment || actions) && (
+            <div className="flex shrink-0 items-center justify-between gap-3 px-3 pt-4 lg:px-6">
+              <div className="flex min-w-0 items-baseline gap-2">
+                <h3 className="truncate text-sm font-medium text-foreground">
+                  {title}
+                </h3>
+                {titleAdornment}
+              </div>
+              <div className="flex shrink-0 items-center gap-2">{actions}</div>
+            </div>
+          )
+        ) : (
+          <div
+            className={cn(
+              'sticky top-0 shrink-0 flex items-center justify-between gap-3 bg-primary border-b border-border px-3 lg:px-6',
+              CHROME_BAR_H,
             )}
+            style={{ zIndex: ZIndex.pageHeader }}
+          >
+            {/* The whole block is the affordance when it has somewhere to go —
+                mark, title and adornment. They describe one thing, so they are
+                one target rather than a link with decoration around it. */}
+            <TitleBlock
+              onClick={onTitleClick}
+              label={titleLabel}
+              leading={leading}
+            >
+              <h2 className="shrink-0 text-lg font-medium font-display tracking-tight text-foreground">
+                {title}
+              </h2>
+              {titleAdornment}
+            </TitleBlock>
+            <div className="flex shrink-0 items-center gap-2">
+              {actions}
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="flex items-center justify-center size-6 text-secondary-foreground hover:text-foreground cursor-pointer"
+                >
+                  <XIcon className="size-5" />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
         <div
           className={cn(
             'px-3 lg:px-6 pt-4 flex flex-col gap-4',

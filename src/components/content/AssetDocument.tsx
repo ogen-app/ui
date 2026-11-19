@@ -124,9 +124,6 @@ export function AssetDocument({
       renameThread(threadId, campaignName.trim(), campaignName.trim())
   }, [renameThread, threadId, campaignName])
 
-  // No `usePanelScope` on purpose: this screen hosts no panels of its own, and
-  // an undeclared scope is exactly what resolves the rail to the assistant.
-
   const markDirty = useCallback(() => {
     editVersionRef.current += 1
     setEditVersion(editVersionRef.current)

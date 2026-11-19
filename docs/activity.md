@@ -246,8 +246,7 @@ unread counter.
 
 Not the top-right, and not the right rail. The corner contract (CON-178)
 reserves top-right for *views only* — things that switch a representation of the
-object on screen — and the right rail is panel-scoped per screen with the
-assistant as its floor ([`technical-decisions.md#panel-memory`](./technical-decisions.md#panel-memory)).
+object on screen — and the right rail is the assistant's alone ([`technical-decisions.md#panel-memory`](./technical-decisions.md#panel-memory)).
 Activity is global and cross-object, so it belongs where the other global
 destinations are.
 
