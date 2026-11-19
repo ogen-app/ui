@@ -336,10 +336,11 @@ export function ProgressCard({
  * The posts against the goal, scheduled stacked after the published. With no
  * goal — the common case — the last 30 days' published against the next 30
  * days' scheduled, so the bar is the proportion done; an empty grey track
- * when there is neither. The pace sits under its right end.
+ * when there is neither. Under it, the same figures as the other cards, the
+ * pace last.
  */
 function PostsBar({ band }: { band: OverviewBand }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { goal, pace } = band
   const { published, scheduled } = goal != null ? band : band.recent
   // With a goal, scheduled only fills what the published leave of it.
@@ -351,59 +352,52 @@ function PostsBar({ band }: { band: OverviewBand }) {
   const of = (n: number) =>
     `${track > 0 ? Math.min(100, (n / track) * 100) : 0}%`
   const days = formatNumber(RECENT_DAYS)
+  const figures: FigureRow[] = [
+    // Before the start nothing can be out; with a goal, the count still reads.
+    ...(published > 0 || goal != null || band.startsIn == null
+      ? [
+          {
+            label:
+              goal != null
+                ? t('campaignOverview.results.publishedOf', counted(goal))
+                : t('campaignOverview.band.publishedRecent', { days }),
+            value: published,
+            dot: 'bg-positive',
+          },
+        ]
+      : []),
+    ...(scheduled > 0
+      ? [
+          {
+            label:
+              goal != null
+                ? t('campaignOverview.band.scheduled')
+                : t('campaignOverview.band.scheduledRecent', { days }),
+            value: scheduled,
+            dot: 'bg-positive/35',
+          },
+        ]
+      : []),
+    ...(pace
+      ? [
+          {
+            label: pace.planned
+              ? t('campaignOverview.band.pacePlanned')
+              : t('campaignOverview.band.pace'),
+            value: Math.round(pace.perWeek * 10) / 10,
+          },
+        ]
+      : []),
+  ]
+  // Nothing at all: the grey track alone.
+  const empty = published === 0 && scheduled === 0 && !pace && goal == null
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
       <div className="flex h-1.5 overflow-hidden rounded-full bg-secondary">
         <div className="bg-positive" style={{ width: of(published) }} />
         <div className="bg-positive/35" style={{ width: of(shown) }} />
       </div>
-      {(published > 0 || scheduled > 0 || goal != null || pace) && (
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
-          <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {(published > 0 || goal != null) && (
-              <span className="flex items-center gap-1.5">
-                <Dot className="bg-positive" />
-                {goal != null
-                  ? t('campaignOverview.band.published', {
-                      published: formatNumber(published),
-                      total: formatNumber(goal),
-                    })
-                  : t('campaignOverview.band.publishedRecent', {
-                      ...counted(published),
-                      days,
-                    })}
-              </span>
-            )}
-            {scheduled > 0 && (
-              <span className="flex items-center gap-1.5">
-                <Dot className="bg-positive/35" />
-                {goal != null
-                  ? t('campaignOverview.band.scheduled', counted(scheduled))
-                  : t('campaignOverview.band.scheduledRecent', {
-                      ...counted(scheduled),
-                      days,
-                    })}
-              </span>
-            )}
-          </p>
-          {pace && (
-            <span className="ml-auto">
-              {t(
-                pace.planned
-                  ? 'campaignOverview.band.pacePlanned'
-                  : 'campaignOverview.band.pace',
-                {
-                  value: formatNumber(
-                    pace.perWeek,
-                    { maximumFractionDigits: 1 },
-                    i18n.language,
-                  ),
-                },
-              )}
-            </span>
-          )}
-        </div>
-      )}
+      {!empty && <Figures figures={figures} />}
     </div>
   )
 }
@@ -666,17 +660,24 @@ function ResultsBlock({
   )
 }
 
+type FigureRow = {
+  label: string
+  value: number
+  alert?: boolean
+  /** The colour it has in a bar above, as a dot before its name. */
+  dot?: string
+}
+
 /** A row of figures, the number large and its name under it. */
-function Figures({
-  figures,
-}: {
-  figures: { label: string; value: number; alert?: boolean }[]
-}) {
+function Figures({ figures }: { figures: FigureRow[] }) {
   return (
     <dl className="flex flex-wrap gap-x-8 gap-y-3">
       {figures.map((f) => (
         <div key={f.label} className="flex flex-col-reverse">
-          <dt className="text-xs text-tertiary-foreground">{f.label}</dt>
+          <dt className="flex items-center gap-1.5 text-xs text-tertiary-foreground">
+            {f.dot && <Dot className={f.dot} />}
+            {f.label}
+          </dt>
           <dd
             className={cn(
               'font-display text-2xl font-medium leading-7 tabular-nums',

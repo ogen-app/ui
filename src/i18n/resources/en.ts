@@ -1983,19 +1983,15 @@ export const en = {
       when: '{{range}} | {{where}}',
       /** The campaign type's phase today. */
       phaseNow: '{{name}} phase, day {{day}} of {{total}}',
-      /** Against the goal over the whole campaign. */
-      published: '{{published}} of {{total}} published',
-      scheduled_one: '{{formatted}} scheduled',
-      scheduled_other: '{{formatted}} scheduled',
+      /** Figure names under the bar. With a goal, the whole campaign. */
+      scheduled: 'Scheduled',
       /** With no goal: the last and the next `days` days. */
-      publishedRecent_one: '{{formatted}} published, last {{days}} days',
-      publishedRecent_other: '{{formatted}} published, last {{days}} days',
-      scheduledRecent_one: '{{formatted}} scheduled, next {{days}} days',
-      scheduledRecent_other: '{{formatted}} scheduled, next {{days}} days',
+      publishedRecent: 'Published, last {{days}} days',
+      scheduledRecent: 'Scheduled, next {{days}} days',
       /** Published posts a week since the start. */
-      pace: 'Pace {{value}} a week',
+      pace: 'Weekly pace',
       /** Before the start: scheduled posts a week. */
-      pacePlanned: 'Planned pace {{value}} a week',
+      pacePlanned: 'Planned weekly pace',
     },
     week: {
       this: 'This week',

@@ -1587,16 +1587,11 @@ export const es: Translation = {
     band: {
       when: '{{range}} | {{where}}',
       phaseNow: 'Fase {{name}}, día {{day}} de {{total}}',
-      published: '{{published}} de {{total}} publicadas',
-      scheduled_one: '{{formatted}} programada',
-      scheduled_other: '{{formatted}} programadas',
-      publishedRecent_one: '{{formatted}} publicada, últimos {{days}} días',
-      publishedRecent_other: '{{formatted}} publicadas, últimos {{days}} días',
-      scheduledRecent_one: '{{formatted}} programada, próximos {{days}} días',
-      scheduledRecent_other:
-        '{{formatted}} programadas, próximos {{days}} días',
-      pace: 'Ritmo {{value}} a la semana',
-      pacePlanned: 'Ritmo previsto {{value}} a la semana',
+      scheduled: 'Programadas',
+      publishedRecent: 'Publicadas, últimos {{days}} días',
+      scheduledRecent: 'Programadas, próximos {{days}} días',
+      pace: 'Ritmo semanal',
+      pacePlanned: 'Ritmo semanal previsto',
     },
     week: {
       this: 'Esta semana',
