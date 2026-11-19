@@ -6,8 +6,10 @@ keep it accurate when these rules change.
 
 - **The Campaigns list reads one batched query, never one per card.**
   `useCampaignSummaries` (`["campaigns","summaries"]`) returns a slim
-  `PostSummary` per post for the whole workspace; `CampaignCard` runs the same
-  `lib/campaignReadiness` rules over it. Never reintroduce a per-card fetch —
+  `PostSummary` per post for the whole workspace; `CampaignCard` runs
+  `overviewModel` over it — the Overview's own stage, figures and rules, so a
+  row can't disagree with the screen it opens. What the Overview reads per
+  campaign (phase windows, the server's problems) the row goes without. Never reintroduce a per-card fetch —
   that was the N+1 CON-152 removed. See
   `docs/technical-decisions.md#batched-summaries`.
 

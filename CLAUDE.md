@@ -221,6 +221,7 @@ Loaded automatically in `src/components/campaigns`, `src/components/strategy`, `
 - A campaign's phase windows are the server's, and the type locks once they are used.
 - Series and content formats are two flags, and the split is the design.
 - Series are backed by the API; a campaign's runs are attached, detached and re-rhythmed one at a time, never restated.
+- The campaign Overview is its time cards, with one list beside them.
 
 ### Internationalisation — [`docs/conventions/i18n.md`](./docs/conventions/i18n.md)
 

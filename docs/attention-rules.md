@@ -1,29 +1,32 @@
 # Attention rules
 
-The rule set behind the **"Needs attention"** rail on the Campaign Overview
-screen (CON-120). This file is the contract: a rule exists here before it exists
-in code, and `src/lib/campaignReadiness.ts` implements exactly what is listed
-below — nothing more, nothing else.
+The rule set behind the right-hand column of the Campaign Overview screen
+(CON-120): the **Warnings** card and the **To do** card. This file is the
+contract: a rule exists here before it exists in code, and
+`src/lib/campaignReadiness.ts` implements exactly what is listed below —
+nothing more, nothing else.
 
-## What the rail is for
+## What the column is for
+
+The Overview is two columns. The left one is **stats** — what the campaign is
+and where it stands, as figures, with nothing to act on. The right one is
+**what wants a person**, and these rules are all of it.
 
 One glance, one question: *what does this campaign need from me right now?*
 
+- **Severity decides the card.** `alert` and `risk` rows go to **Warnings**,
+  beside the server's calendar problems (CON-462), each with a coloured dot.
+  `todo` and `info` rows go to **To do**, each as an empty box.
 - It is a **to-do list, not a report.** Every item names something the user can
   act on, and links to the one place where they can act.
-- **Absence is the reward.** No items → the card keeps its place, but it is
-  retitled for the verdict rather than the section: *"You're all set"* and one
-  line of body copy — no badge, the title is the status. Reaching zero is an
-  achievement and
-  should read like one, not like an empty table. Never fill it with per-area
-  "all good" rows — the empty state is one card, not a checklist of things that
-  are fine.
+- **Absence is the reward.** Each card keeps its place when empty and says so in
+  one line — *"Nothing is failing, overdue or at risk."*, *"Nothing is waiting
+  on you."* A card that disappears reads as "not loaded yet". Never fill it
+  with per-area "all good" rows.
 - It **aggregates**: `"3 posts failed to publish"`, never three rows of one post
-  each. The rail says how much and where; the section says which.
-- It **does not duplicate a module.** If the whole story is already legible in
-  the Brief/Content/Setup card, it does not also need a rail row — a rail row
-  earns its place by being time-sensitive or by pointing somewhere the user
-  would not otherwise look.
+  each. The row says how much and where; the section says which.
+- It **does not restate a figure.** A number that is true most of the time
+  belongs in the stats column; a row earns its place by being something to do.
 
 ## Classification
 
@@ -201,9 +204,9 @@ phase the current type doesn't have is broken data, not a choice.
 
 **Not a rule: progress against the target.** *"12 of 20 planned posts"* is a
 number, not a task — there is nothing to fix, and it would fire on nearly every
-healthy campaign. It lives in the Content module's total tile instead. Same test
+healthy campaign. It lives in the Strategy card's goal bar instead. Same test
 for any future candidate: if the row would be true most of the time, it belongs
-in a module, not the rail.
+in the stats column, not in a card of things to do.
 
 ### Hygiene — quality nudges
 
@@ -221,15 +224,10 @@ in a module, not the rail.
 2. **Mutual exclusion is explicit.** Escalation pairs (`channel-dropped*`) and
    suppression parents (`no-posts`, `channels`) are named in the catalogue. A
    new rule must state which existing rule it defers to, if any.
-3. **Cap the list.** Show at most 6 rows; if more fire, keep the highest
-   severities and add a trailing *"SHOW N MORE"* row that expands the rest.
-   `info` rows are cut first. **Collapsing must save at least two rows** — the
-   button occupies a row itself, so a seventh item is simply rendered rather
-   than hidden behind a "show 1 more". The button is the last row of the list,
-   on the same 40px band, so it costs exactly what it replaces.
-   With **no rows at all the card stays and says so** — see *Absence is the
-   reward* above. A card that disappears reads as "not loaded yet", and the
-   all-clear is the one answer the user came to this screen for.
+3. **Nothing is capped.** The right-hand column holds only these two cards,
+   so there is no screen beneath them to protect, and every rule aggregates —
+   the list is bounded by the catalogue. With **no rows at all each card stays
+   and says so** — see *Absence is the reward* above.
 4. **Labels are statements, actions are imperatives.** The label says what is
    true (*"3 posts failed to publish"*), the action says what to do
    (*"Review posts"*). Neither ends with a period. Counts are always written

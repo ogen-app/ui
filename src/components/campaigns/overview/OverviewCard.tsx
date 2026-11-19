@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { CaretRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button.tsx'
 import { useCalendarPlace } from '@/hooks/usePostsPlace'
 import { cn } from '@/lib'
@@ -26,15 +25,14 @@ export type CardLink = {
 }
 
 /**
- * One module card on the Campaign Overview screen, and the shape of a
- * dashboard card anywhere: glyph, title, status, then the way in on the right.
- * Capped at the shared content-column width on its own; in a `PageGrid` cell
- * it takes the cell, height included.
+ * One card on the Campaign Overview and on the campaign's Analytics panel,
+ * and the shape of a dashboard card anywhere: glyph, title, status, then the
+ * way in on the right. Capped at the shared content-column width on its own;
+ * in a `PageGrid` cell it takes the cell, height included.
  *
  * A card that has somewhere to go says so with a button, not with a header that
  * lights up: a tinted header row is a hit area you have to discover by sweeping
- * the card, and it competes with the card-wide hover the good-news form uses
- * (`CollapsedCard`). One rule across the screen — a header is never a control.
+ * the card. One rule across the screen — a header is never a control.
  */
 export function OverviewCard({
   section,
@@ -44,6 +42,7 @@ export function OverviewCard({
   link,
   children,
   className,
+  bare = false,
 }: {
   /** Sets the card's title, glyph and open-button label from one table. */
   section?: CampaignSectionId
@@ -61,6 +60,11 @@ export function OverviewCard({
   link?: CardLink
   children?: ReactNode
   className?: string
+  /**
+   * The header and body without the card around them, for a section that
+   * shares a surface with others — the Overview's right-hand panel.
+   */
+  bare?: boolean
 }) {
   const { t } = useTranslation()
   const meta = section ? campaignSection(section) : undefined
@@ -70,7 +74,8 @@ export function OverviewCard({
   return (
     <section
       className={cn(
-        'w-full max-w-content rounded-md bg-primary p-5 flex flex-col gap-4 min-w-0',
+        'flex flex-col gap-4 min-w-0',
+        !bare && 'w-full max-w-content mx-auto rounded-md bg-primary p-5',
         className,
       )}
     >
@@ -223,64 +228,4 @@ export function SectionLink({
         </Link>
       )
   }
-}
-
-/**
- * The short form of a module that's in good shape: nothing to do, so nothing to
- * act on — the whole card is the link, exactly as a campaign on the Campaigns
- * list is. The lift on hover is the affordance; there is no tint, because a
- * card that fills with grey reads as selected rather than as clickable.
- *
- * `aria-label` names the link "OPEN STRATEGY" instead of letting it read out as
- * its own contents — title, badge and summary line in one breath. The contents
- * are still there to browse; this is just the name.
- */
-export function CollapsedCard({
-  section,
-  target,
-  campaignId,
-  status,
-  children,
-}: CardLink & {
-  section: CampaignSectionId
-  /** Sits in the header beside the title — normally a `StatusBadge`. */
-  status?: ReactNode
-  /** The summary line: what this module currently holds. */
-  children: ReactNode
-}) {
-  const { t } = useTranslation()
-  const { icon: Glyph, tone, labelKey, openKey } = campaignSection(section)
-
-  return (
-    <SectionLink
-      target={target}
-      campaignId={campaignId}
-      className="group w-full max-w-content rounded-md bg-primary px-5 py-4 flex flex-col gap-2 min-w-0 cursor-pointer transition-shadow duration-150 hover:shadow-lg"
-      label={t(openKey)}
-    >
-      <div className="flex items-center gap-3 min-w-0">
-        <CardGlyph>
-          <HugeiconsIcon
-            icon={Glyph}
-            size={20}
-            strokeWidth={1.5}
-            style={{ color: tone }}
-            aria-hidden
-          />
-        </CardGlyph>
-        <h2 className="font-display text-base font-medium shrink-0">
-          {t(labelKey)}
-        </h2>
-        {status}
-        <CaretRightIcon
-          className="ml-auto size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-          weight="bold"
-          aria-hidden
-        />
-      </div>
-      <div className="flex items-center gap-3 min-w-0 text-sm text-secondary-foreground">
-        {children}
-      </div>
-    </SectionLink>
-  )
 }

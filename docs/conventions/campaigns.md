@@ -137,3 +137,20 @@ is what documents just did and what the nav rule would prefer over a card on
 Strategy. `CampaignSeriesCard` takes a campaign and nothing else, so making
 that move is a re-parent plus one place in `lib/campaignScope` rather than a
 rewrite.
+
+- **The campaign Overview is its time cards, with one list beside them.** The
+  wide column holds the progress card from planning to closing — the stage
+  and today's phase on the left, the day and the dates on the right, then a
+  bar of published against scheduled (the last and next 30 days; the whole
+  campaign against its goal when one is set, which is the lesser case) with
+  the pace under its end, in the cards' own figures — then what goes out
+  (this week; the first week while planning; the results once it is over)
+  and, while it runs, the analytics page's own overview card narrowed to the
+  campaign: reused, never a second set of stats drawn for the Overview. The
+  narrow column is the one list of what wants the user, the server's problems
+  and the client's rules together, held on screen while the time cards are
+  read and scrolling inside itself when it is longer than the screen. A
+  figure goes in a time card, a thing to do in the list, and anything that
+  takes more than a glance belongs on the page the row links to. The columns
+  answer to the page's width through a container query, and on a narrow page
+  the list comes last.
