@@ -2,10 +2,8 @@ import { useMemo } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
-import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
-import { PostsToolbar } from '@/components/campaigns/PostsToolbar'
-import { WorkspaceCalendarHeaderActions } from '@/components/campaigns/calendar/CalendarHeaderActions'
+import { CalendarHeader } from '@/components/campaigns/calendar/CalendarHeader'
 import { CalendarDrawer } from '@/components/campaigns/calendar/CalendarDrawer'
 import { MonthlyCalendar } from '@/components/campaigns/calendar/MonthlyCalendar'
 import { WeeklyCalendar } from '@/components/campaigns/calendar/WeeklyCalendar'
@@ -132,18 +130,14 @@ function WorkspaceCalendarView() {
   return (
     <PageContainer variant="fullFlex" className="flex-row">
       <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-        <PageHeader
-          title={t('nav.calendar')}
-          actions={<WorkspaceCalendarHeaderActions />}
+        <CalendarHeader
+          campaignId={null}
+          view={granularity}
+          anchor={anchorDate}
+          onAnchorChange={handleAnchorChange}
         />
-        <div className="page-content-motion grid overflow-hidden h-full px-3 lg:px-6">
+        <div className="page-content-motion grid overflow-hidden h-full px-3 lg:px-6 pt-3">
           <div className="flex flex-col h-full min-h-0 min-w-0">
-            <PostsToolbar
-              campaignId={null}
-              view={granularity}
-              anchor={anchorDate}
-              onAnchorChange={handleAnchorChange}
-            />
             {settingsPending ? null : postsFailed ? (
               <p className="px-6 py-8 text-sm text-tertiary-foreground">
                 {t('calendar.loadFailed')}

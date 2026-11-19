@@ -34,9 +34,9 @@ export function WorkspaceCalendarHeaderActions() {
  * grid (`CalendarDrawer`), apart from the assistant's rail; these buttons only
  * switch what it shows. The active icon renders filled in the accent color.
  *
- * The counter comes first because it is about the posts and settings is about
- * the view — the same order the rest of the app puts them in, work before
- * preferences, and it keeps the gear last where a gear is always looked for.
+ * Settings comes first and the counter takes the corner: the counter is the
+ * one that changes — its word slides open and shut with what is waiting — and
+ * at the row's end that never moves the gear.
  */
 function CalendarActions({
   posts,
@@ -88,6 +88,19 @@ function CalendarActions({
       <Button
         variant="headerIcon"
         size="excluded"
+        className={cn(settingsActive && 'text-accent hover:text-accent')}
+        onClick={() => toggle('calendarSettings')}
+        aria-label={t('calendar.settings')}
+        aria-pressed={settingsActive}
+      >
+        <GearSixIcon
+          weight={settingsActive ? 'fill' : 'regular'}
+          className="size-5"
+        />
+      </Button>
+      <Button
+        variant="headerIcon"
+        size="excluded"
         className={cn(unscheduledActive && 'text-accent hover:text-accent')}
         onClick={() => toggle('notScheduled')}
         aria-label={t('calendar.unscheduledPosts')}
@@ -134,19 +147,6 @@ function CalendarActions({
             {t('calendar.unscheduled')}
           </span>
         </span>
-      </Button>
-      <Button
-        variant="headerIcon"
-        size="excluded"
-        className={cn(settingsActive && 'text-accent hover:text-accent')}
-        onClick={() => toggle('calendarSettings')}
-        aria-label={t('calendar.settings')}
-        aria-pressed={settingsActive}
-      >
-        <GearSixIcon
-          weight={settingsActive ? 'fill' : 'regular'}
-          className="size-5"
-        />
       </Button>
     </div>
   )
