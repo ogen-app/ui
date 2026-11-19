@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { CaretUpDownIcon, PlusIcon } from '@phosphor-icons/react'
+import {
+  ArchiveIcon,
+  CaretUpDownIcon,
+  PlusIcon,
+  TrashIcon,
+} from '@phosphor-icons/react'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -12,7 +17,10 @@ import {
   ChromeMenuItem,
   ChromeMenuRule,
 } from '@/components/layout/chrome'
+import { NavIcon } from '@/components/layout/nav/NavIcon'
+import { placeGlyph } from '@/components/layout/nav/placeGlyph'
 import { CreateCampaignDialog } from '@/components/campaigns/CreateCampaignDialog'
+import { useEndCampaign } from '@/components/campaigns/useEndCampaign'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
 import { useUpgradeGate } from '@/components/entitlements/useUpgradeGate'
 import { useCampaign, useCampaigns } from '@/hooks/useCampaigns'
@@ -34,6 +42,14 @@ import type { Campaign } from '@/types/campaigns'
  *
  * The list ends with NEW CAMPAIGN, behind the same allowance as the Campaigns
  * page's button: starting one is the other answer to "which campaign".
+ *
+ * With a campaign chosen, the menu ends with what can be done to it: its
+ * settings, and the two ways to stop it (`useEndCampaign`, the same modals as
+ * the Danger Zone). The bar is where a campaign is named on every one of its
+ * pages, so it is where someone looks for the campaign itself — the gear at
+ * the foot of the rail reads as the app's, and the Danger Zone is a scroll
+ * below that. Archive is left out for an archived campaign, which can still
+ * be opened by address.
  */
 export function CampaignSwitcher() {
   const { t } = useTranslation()
@@ -46,6 +62,8 @@ export function CampaignSwitcher() {
   const { data: current } = useCampaign(campaignId ?? '')
   const [creating, setCreating] = useState(false)
   const gate = useUpgradeGate('active_campaigns')
+  const chosen = campaignId ? current : undefined
+  const end = useEndCampaign(chosen)
 
   const go = (target: string | null) => {
     remember(target)
@@ -114,6 +132,42 @@ export function CampaignSwitcher() {
             <PlusIcon className="size-3.5 shrink-0" />
             {t('nav.scope.newCampaign')}
           </ChromeMenuItem>
+          {chosen && (
+            <>
+              <ChromeMenuRule />
+              <ChromeMenuItem
+                className="text-secondary-foreground"
+                onSelect={() =>
+                  void navigate({
+                    to: '/campaigns/$campaignId/settings',
+                    params: { campaignId: chosen.id },
+                  })
+                }
+              >
+                {/* The rail's own gear, so the two read as one place. */}
+                <NavIcon icon={placeGlyph('settings').icon} size={14} />
+                {t('nav.scope.settings')}
+              </ChromeMenuItem>
+              {!chosen.archived_at && (
+                <ChromeMenuItem
+                  className="text-destructive"
+                  onSelect={() => end.ask('archive')}
+                >
+                  <ArchiveIcon className="size-3.5 shrink-0" />
+                  {t('campaigns.dangerZone.archive.action')}
+                </ChromeMenuItem>
+              )}
+              <ChromeMenuItem
+                className="text-destructive"
+                onSelect={() => end.ask('delete')}
+              >
+                <TrashIcon className="size-3.5 shrink-0" />
+                {/* Literal caps in every language — see CLAUDE.md on
+                    destructive labels. */}
+                {t('campaigns.dangerZone.delete.action')}
+              </ChromeMenuItem>
+            </>
+          )}
         </ChromeMenuContent>
       </DropdownMenu>
       <CreateCampaignDialog
@@ -121,6 +175,7 @@ export function CampaignSwitcher() {
         onClose={() => setCreating(false)}
       />
       <UpgradeDialog gate={gate} />
+      {end.dialogs}
     </>
   )
 }

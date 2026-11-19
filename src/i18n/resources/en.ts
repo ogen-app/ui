@@ -411,6 +411,7 @@ export const en = {
       all: 'All campaigns',
       switch: 'Switch campaign',
       newCampaign: 'New campaign',
+      settings: 'Campaign settings',
     },
     /**
      * Heads the workspace's destinations where they appear inside the account
