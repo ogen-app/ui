@@ -37,7 +37,7 @@ a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n converts whole screens in some
 places and only islands in others.** Converted whole: the auth screens,
 sidebar, Profile, Workspace Settings, the campaign calendar (its week, month
-and list views, the cards, both rail panels and the posts table), the
+and list views, the cards, both drawer panels and the posts table), the
 analytics surfaces (the workspace dashboard, the campaign composition, a
 post's own numbers and the three view mappers behind them), Brand (the
 Overview, all five sections, the three editors and the routes — plus the two
@@ -121,7 +121,7 @@ several screens share, never mentions a screen); page articles **embed**
 concepts whole through a `helpEmbed` block, which is how post statuses read the
 same on the Posts list, the calendar and the post editor — and later on the
 website — without a copy. Embeds go one level deep. **Help is a rail panel
-that takes the assistant's place** (`helpOpen` in `lib/rightPanel`: on top of
+that takes the assistant's place** (`settingsStore.helpOpen`: on top of
 whatever was showing, and closing it gives that back), and it follows the page
 while the reader has not followed a link of their own. **With nothing to show
 it says why**: help that could not be fetched offers to try again — never

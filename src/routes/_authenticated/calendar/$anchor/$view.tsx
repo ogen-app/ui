@@ -68,12 +68,11 @@ export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
  * to wrap one child.
  *
  * One seam worth knowing about: opening a post from here and pressing the
- * editor's back arrow lands on that post's *campaign* calendar, not back here.
- * The arrow means "back to this campaign's posts" and reads the campaign's own
- * remembered place (`PostDetailsHeader`); teaching it that a post can be
- * arrived at from somewhere with no campaign would mean recording where the
- * user came from, which is exactly the navigation-writes-memory rule that
- * `usePanelScope` exists to avoid.
+ * editor's Posts link lands on that post's *campaign* calendar, not back here.
+ * The link means "back to this campaign's posts" and reads the campaign's own
+ * remembered place (`PostBar`); teaching it that a post can be arrived at
+ * from somewhere with no campaign would mean recording where the user came
+ * from, which navigation is not allowed to write.
  */
 function WorkspaceCalendarView() {
   const { anchor, view } = Route.useParams()

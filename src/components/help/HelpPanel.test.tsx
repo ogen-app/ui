@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { EMPTY_PANEL_MEMORY } from '@/lib/rightPanel'
 import { fetchHelpArticle, fetchHelpIndex } from '@/services/help'
 import { useHelpStore } from '@/stores/helpStore'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
@@ -48,8 +47,8 @@ beforeEach(() => {
   window.location.hash = ''
   useHelpStore.setState({ history: [], page: 'posts' })
   useSettingsStore.setState({
-    panelMemory: { ...EMPTY_PANEL_MEMORY, assistantOpen: true },
-    rightRailHidden: false,
+    assistantOpen: true,
+    helpOpen: false,
   })
 })
 

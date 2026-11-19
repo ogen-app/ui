@@ -34,7 +34,7 @@ src/
     tables/        VirtualTable engine + postsTable / docsTable + column-width solver.
     forms/         Feature forms (campaign, post, auth) — see Forms.
     assistant/ campaigns/ posts/ content/ brand/ uploads/ workspace-settings/ profile/ settings/
-  hooks/           TanStack Query hooks + UI hooks (useOverlay, usePanelScope).
+  hooks/           TanStack Query hooks + UI hooks (useOverlay, useHotkeys).
   services/api/    The API client: base + http helpers + one module per resource.
   stores/          Zustand stores (assistant, auth, eventStream, settings, toast, upload).
   lib/             Framework-free domain logic (post status machine, platforms, asset rules).
@@ -180,7 +180,7 @@ use `devtools`; persisted ones add `persist` with keys centralized in
 | `assistantStore` | no (threads come from the API) | Assistant threads, the active thread, per-thread run status and unread marks. |
 | `eventStreamStore` | no | The SSE hub connection and per-subject local-run muting. |
 | `toastStore` | no | The imperative toast queue behind `toast(...)`. |
-| `settingsStore` | yes (minus transient) | `sidebarCollapsed`, `panelMemory` (right-sidebar choices), last-opened modals, dismissed explainers, asset selections. |
+| `settingsStore` | yes (minus transient) | `sidebarCollapsed`, `assistantOpen` (the right rail), `postTab` (the post editor's side tab), last-opened modals, dismissed explainers, asset selections. |
 | `uploadStore` | no | In-flight uploads with an `uploading → processing → ready\|partial\|failed` phase machine. |
 
 ## Contextual UI: modals and the right sidebar
@@ -207,10 +207,10 @@ continues the bar over the page; the body scrolls under the line, not into a
 fade. A panel with something to say under its title says it as the body's
 first row.
 
-What's open is **derived, not stored**: `settingsStore.panelMemory` persists one
-remembered choice per screen, a route declares which screen it is with
-`usePanelScope`, and `selectActivePanel` resolves the two. The assistant is the
-fallback and the rail's floor. See
+The rail holds the assistant and nothing else: `settingsStore.assistantOpen`
+is its whole state. What used to open there for one screen lives on that
+screen — the post editor's settings, preview, checks, quality and history are
+tabs in its side column (`PostSideColumn`, `settingsStore.postTab`). See
 [`technical-decisions.md#panel-memory`](./technical-decisions.md#panel-memory).
 
 ## Forms — react-hook-form + Zod

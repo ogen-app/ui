@@ -15,6 +15,9 @@ import { PageError } from '@/components/page-primitives/PageError'
 import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { useAtScrollEnd } from '@/components/page-primitives/useAtScrollEnd'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
+import { HeaderTabs } from '@/components/page-primitives/listCards'
+import { formatNumber } from '@/lib/intl'
+import { UndecidedIdeas } from './AssetViewBar'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -61,6 +64,7 @@ import {
   SaveGroupDialog,
   SavedViewsMenu,
 } from '@/components/smartFilter/SavedViewsMenu'
+import { OpenView } from '@/components/smartFilter/ListStrip'
 import { useSavedViewWriter, useSavedViews } from '@/hooks/useSavedViews'
 import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -138,7 +142,7 @@ export function ContentPage({
   addSource?: AddSourceOpen
   onAddSourceOpened?: () => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const createAsset = useCreateAsset()
   const deleteAssets = useDeleteAssets()
@@ -536,8 +540,7 @@ export function ContentPage({
       onDrop={handleDrop}
     >
       {/* The post page's scroll frame (CON-392): the header sticky inside the
-          one scroller, carrying its own 80px fade; the content scrolls under
-          it; `PageBottomFader` along the bottom, a sibling after the scroll
+          one scroller; the content scrolls under it; `PageBottomFader` along the bottom, a sibling after the scroll
           area so it covers the content without scrolling away. */}
       <div className="relative flex min-h-0 flex-1">
         <ScrollArea
@@ -594,15 +597,55 @@ export function ContentPage({
                 </DropdownMenuContent>
               </DropdownMenu>
             }
-          />
+          >
+            {/* The documents' tab — the only count on the page, of the
+                match while a filter narrows it — and the ideas they hold
+                that are still to be answered. */}
+            {!awaiting(list.query) && list.query.data && (
+              <>
+                <HeaderTabs
+                  tabs={[
+                    {
+                      id: 'documents',
+                      label: t('content.list.label'),
+                      count: narrowed
+                        ? t('content.filter.count', {
+                            count: list.total,
+                            shown: formatNumber(list.total, {}, i18n.language),
+                            total: formatNumber(
+                              list.totalUnfiltered,
+                              {},
+                              i18n.language,
+                            ),
+                          })
+                        : formatNumber(list.totalUnfiltered, {}, i18n.language),
+                    },
+                  ]}
+                  current="documents"
+                />
+                <UndecidedIdeas
+                  undecided={list.ideasUndecidedTotal}
+                  documents={list.total}
+                  ideasLink={
+                    campaignId
+                      ? {
+                          to: '/campaigns/$campaignId/ideas',
+                          params: { campaignId },
+                        }
+                      : { to: '/ideas' }
+                  }
+                />
+              </>
+            )}
+          </PageHeader>
 
-          {/* Under the header, everything scrolls together: the sentence, the
-              Group by line and the list, whose bands pin at the header's foot. */}
+          {/* Under the header, everything scrolls together: the list, whose
+              head pins at the header's foot. */}
           <div className="px-3 lg:px-6">
             {/* The assistant opened this page for a source (CON-484): it says
                 so, and BACK takes the rail's way back — the same UNDO. */}
             {sourceRequest && (
-              <p className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-accent bg-accent/5 px-3 py-2 text-sm text-foreground">
+              <p className="mt-3 mb-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border border-accent bg-accent/5 px-3 py-2 text-sm text-foreground">
                 {t('content.page.openedForSource')}
                 <TextAction
                   onClick={() =>
@@ -644,9 +687,10 @@ export function ContentPage({
                 campaignId={campaignId}
                 list={list}
                 vocabulary={vocabulary}
-                sentenceLeading={
+                views={
                   groupsOn && (
                     <SavedViewsMenu
+                      trigger="tab"
                       views={views.data ?? []}
                       allLabel={t('savedViews.all.assets')}
                       countName="total"
@@ -673,7 +717,16 @@ export function ContentPage({
                     />
                   )
                 }
-                sentenceTrailing={
+                openView={
+                  active && (
+                    <OpenView
+                      view={active}
+                      edited={edited}
+                      onClose={() => openView(null)}
+                    />
+                  )
+                }
+                pillsTrailing={
                   !groupsOn
                     ? null
                     : active
@@ -692,18 +745,18 @@ export function ContentPage({
                           />
                         )
                       : narrowed && (
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <button
+                            type="button"
                             onClick={() => setSaving({ mode: 'new' })}
+                            className="cursor-pointer font-medium text-accent outline-none hover:underline focus-visible:underline"
                           >
                             {t('savedViews.saveAs')}
-                          </Button>
+                          </button>
                         )
                 }
                 groupNotice={
                   active && !active.valid ? (
-                    <p className="flex items-center gap-2 pl-5 text-sm text-destructive">
+                    <p className="flex items-center gap-2 pb-3 text-xs/4 text-destructive">
                       {t('savedViews.invalid')}
                       {active.canEdit && (
                         <Button

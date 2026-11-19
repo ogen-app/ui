@@ -1,4 +1,6 @@
+import { ShapesIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
+import { Mark, SettingRow } from '@/components/posts/quickBar/parts'
 import { isSubmitted } from '@/lib/postStatusMachine'
 import type { Post } from '@/types/posts'
 import { FormatPicker } from './FormatPicker'
@@ -23,6 +25,9 @@ import { FormatPicker } from './FormatPicker'
  * CON-251 content lock): the shape a post took is a fact about what went out,
  * not an input to the next generation. So the picker is disabled there, the
  * same as the post type beside it — unscheduling is how it is changed.
+ *
+ * One row of the post's Settings list, so it renders inside that list's
+ * `<dl>`.
  */
 export function PostFormatSection({
   post,
@@ -32,12 +37,18 @@ export function PostFormatSection({
   changeDoc: (fn: (p: Post) => void) => void
 }) {
   const { t } = useTranslation()
+  const label = t('posts.editor.settings.format')
 
   return (
-    <div className="flex flex-col gap-2 pt-2 pb-4">
+    <SettingRow label={label}>
+      <Mark>
+        <ShapesIcon />
+      </Mark>
       <FormatPicker
         id="post-content-format"
-        variant="default"
+        variant="inline"
+        size="sm"
+        ariaLabel={label}
         value={post.content_format}
         disabled={isSubmitted(post.status)}
         onChange={(next) => {
@@ -46,9 +57,6 @@ export function PostFormatSection({
           })
         }}
       />
-      <p className="text-xs text-tertiary-foreground">
-        {t('formats.postHint')}
-      </p>
-    </div>
+    </SettingRow>
   )
 }

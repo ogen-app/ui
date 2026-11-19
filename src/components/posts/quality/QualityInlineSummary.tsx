@@ -1,4 +1,3 @@
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import {
@@ -12,8 +11,9 @@ import {
   radarScore,
   scoreDelta,
   staleReason,
+  suggestionCountLine,
 } from '@/lib/postQuality.ts'
-import type { PostEvaluation, QualitySuggestion } from '@/types/quality'
+import type { PostEvaluation } from '@/types/quality'
 import { Button } from '@/components/ui/button.tsx'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { BandTag } from './BandTag.tsx'
@@ -27,21 +27,20 @@ type Props = {
 }
 
 /**
- * The quality score as it appears inside the expanded checks bar (CON-183,
+ * The quality score as it appears on the post editor's Checks tab (CON-183,
  * reworked in CON-440).
  *
- * Three columns: the overall beside the radar's shape, the four scores — each
- * with a glyph naming its corner of that shape — and how many suggestions are
- * waiting, with the way to them. A glance here says whether there is work to
- * do, not only how it went; the rail says what the work is.
+ * Stacked for the side column: the overall beside the radar's shape, the four
+ * scores — each with a glyph naming its corner of that shape — and how many
+ * suggestions are waiting, with the way to them. A glance here says whether
+ * there is work to do, not only how it went; the Quality tab says what the
+ * work is.
  *
  * A digest, not a second panel. The verdicts and the suggestions themselves
- * stay in the rail, which this links to. Two full breakdowns would be two things to
- * keep in step and twice the height above the editor.
+ * stay on the Quality tab, which this links to.
  *
  * Only ever rendered against a stored assessment. The states around one —
- * never scored, running, failed, switched off — belong to the bar's header,
- * where they stay reachable without expanding anything.
+ * never scored, running, failed, switched off — belong to the tab around it.
  */
 export function QualityInlineSummary({
   assessment,
@@ -57,18 +56,8 @@ export function QualityInlineSummary({
   const suggestions = postSuggestions(assessment)
 
   return (
-    // The rule and the space around it are what separate this from the
-    // requirements list above — matching the `pt-5` that opens that one, so
-    // both sections stand off their neighbours by the same amount.
-    <section className="mt-5 flex flex-col gap-4 border-t border-border pt-5">
-      {/* The app's section-label typography — `AppSidebar`'s `SectionLabel`
-          recipe. This region sits inside a bar that is already about the post,
-          so it needs to say which of the two questions it answers. */}
-      <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
-        {t('posts.quality.inlineHeading')}
-      </h3>
-
-      <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.3fr)]">
+    <section className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-y-5">
         <div className="flex items-center gap-4">
           <QualityRadarMini evaluation={assessment} previous={previous} />
           <div className="flex flex-col items-start gap-1.5">
@@ -124,7 +113,7 @@ export function QualityInlineSummary({
           })}
         </ul>
 
-        <div className="flex flex-col justify-center gap-1 md:border-l md:border-border md:pl-8">
+        <div className="flex flex-col justify-center gap-1">
           {/* A count, not the advice itself (CON-443): quoted whole, two
               suggestions ran to eight lines each and made the bar taller than
               the editor area it summarises. This still says whether there is
@@ -168,19 +157,4 @@ export function QualityInlineSummary({
       )}
     </section>
   )
-}
-
-/**
- * "5 suggestions, 2 of them high." — one whole sentence per case rather than a
- * count with a clause bolted on, so each language words all three its own way.
- */
-function suggestionCountLine(
-  t: TFunction,
-  suggestions: QualitySuggestion[],
-): string {
-  const count = suggestions.length
-  const high = suggestions.filter((s) => s.severity === 'high').length
-  if (high === 0) return t('posts.quality.inline.countNoneHigh', { count })
-  if (high === count) return t('posts.quality.inline.countAllHigh', { count })
-  return t('posts.quality.inline.countSomeHigh', { count, high })
 }

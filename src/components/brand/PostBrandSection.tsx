@@ -1,8 +1,14 @@
-import { ArrowCounterClockwiseIcon } from '@phosphor-icons/react'
+import {
+  ArrowCounterClockwiseIcon,
+  MegaphoneSimpleIcon,
+  UsersThreeIcon,
+} from '@phosphor-icons/react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TextSelect } from '@/components/ui/text-select'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Mark, Marked, SettingRow } from '@/components/posts/quickBar/parts'
 import { useBrand, useSetPostBrand } from '@/hooks/useBrand'
 import { useCampaign } from '@/hooks/useCampaigns'
 import type { Post } from '@/types/posts'
@@ -40,6 +46,9 @@ import type { CampaignBrand, PostBrand } from './types'
  * those. It is an input to the next generation, so setting it on a published
  * post is how you say *write the next one like this*, and the server's own
  * `/brand` endpoint runs no publish gate for the same reason.
+ *
+ * Drawn as two rows of the post's Settings list (`SettingRow`), so it must be
+ * rendered inside that list's `<dl>`.
  */
 export function PostBrandSection({ post }: { post: Post }) {
   const { t } = useTranslation()
@@ -48,14 +57,23 @@ export function PostBrandSection({ post }: { post: Post }) {
   const { mutate: save } = useSetPostBrand(post.id)
 
   if (isLoading || !brand) {
-    return <Skeleton className="h-10 w-full" />
+    return (
+      <SettingRow label={t('brand.binding.voice')}>
+        <Skeleton className="h-4 w-28" />
+      </SettingRow>
+    )
   }
 
   if (brand.voices.length === 0 && brand.audiences.length === 0) {
     return (
-      <p className="text-xs text-tertiary-foreground">
-        {t('brand.binding.emptyShort')}
-      </p>
+      <SettingRow label={t('brand.binding.voice')}>
+        <Marked
+          mark={<MegaphoneSimpleIcon />}
+          className="text-tertiary-foreground"
+        >
+          {t('brand.binding.emptyShort')}
+        </Marked>
+      </SettingRow>
     )
   }
 
@@ -96,15 +114,18 @@ export function PostBrandSection({ post }: { post: Post }) {
   }))
 
   return (
-    <div className="flex flex-col gap-4">
+    <>
       <Field
         label={t('brand.binding.voice')}
+        mark={<MegaphoneSimpleIcon />}
         source={voice.source}
         overridden={bound.voiceId != null}
         onReset={() => save({ brand_voice_id: null })}
       >
         <TextSelect
-          variant="default"
+          variant="inline"
+          size="sm"
+          ariaLabel={t('brand.binding.voice')}
           value={voice.voice?.id ?? ''}
           onValueChange={(id) => save({ brand_voice_id: id })}
           elements={voiceOptions}
@@ -115,12 +136,15 @@ export function PostBrandSection({ post }: { post: Post }) {
 
       <Field
         label={t('brand.binding.audience')}
+        mark={<UsersThreeIcon />}
         source={audience.source}
         overridden={bound.audienceId != null}
         onReset={() => save({ brand_audience_id: null })}
       >
         <TextSelect
-          variant="default"
+          variant="inline"
+          size="sm"
+          ariaLabel={t('brand.binding.audience')}
           value={audience.audience?.id ?? ''}
           onValueChange={(id) => save({ brand_audience_id: id })}
           elements={audienceOptions}
@@ -128,7 +152,7 @@ export function PostBrandSection({ post }: { post: Post }) {
           disabled={audienceOptions.length === 0}
         />
       </Field>
-    </div>
+    </>
   )
 }
 
@@ -148,41 +172,46 @@ const SOURCE_LINE = {
   none: null,
 } as const satisfies Record<BindingSource, string | null>
 
+/**
+ * One row: the mark, the picker, and — only while this post pinned its own
+ * value — the way back to the inherited one, at the row's end. Where the value
+ * came from is the row's note.
+ */
 function Field({
   label,
+  mark,
   source,
   overridden,
   onReset,
   children,
 }: {
   label: string
+  mark: ReactNode
   source: BindingSource
   /** Whether this post pinned the value, which is the only undoable state. */
   overridden: boolean
   onReset: () => void
-  children: React.ReactNode
+  children: ReactNode
 }) {
   const { t } = useTranslation()
   const line = SOURCE_LINE[source]
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <label className="text-sm font-medium">{label}</label>
-        {overridden && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onReset}
-            title={t('brand.binding.resetHint')}
-          >
-            <ArrowCounterClockwiseIcon className="size-3.5" />
-            <span>{t('brand.binding.reset')}</span>
-          </Button>
-        )}
-      </div>
-      {children}
-      {line && <p className="text-xs text-tertiary-foreground">{t(line)}</p>}
-    </div>
+    <SettingRow label={label} note={line ? t(line) : undefined}>
+      <Mark>{mark}</Mark>
+      <span className="flex min-w-0">{children}</span>
+      {overridden && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="smIcon"
+          className="ml-auto size-6"
+          onClick={onReset}
+          title={t('brand.binding.resetHint')}
+          aria-label={t('brand.binding.reset')}
+        >
+          <ArrowCounterClockwiseIcon className="size-3.5" />
+        </Button>
+      )}
+    </SettingRow>
   )
 }

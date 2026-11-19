@@ -157,9 +157,16 @@ function CampaignShell() {
   // something there (add *to this campaign*) and the page is one big drop
   // target, neither of which a shared header sitting outside it could do.
   // Ideas too, for its scroll frame: its header is sticky inside the one
-  // scroller its list's bands pin under (CON-392). Analytics, because its
+  // scroller its list's bands pin under (CON-392). Posts for both reasons
+  // Assets gives: ADD POST in its header, and a warnings drawer that squeezes
+  // the header along with the table (`PostsListFrame`). Analytics, because its
   // header carries the dashboard's period and platforms.
-  if (section === 'Assets' || section === 'Ideas' || section === 'Analytics') {
+  if (
+    section === 'Assets' ||
+    section === 'Ideas' ||
+    section === 'Posts' ||
+    section === 'Analytics'
+  ) {
     return (
       <PageContainer variant={'fullFlex'}>
         <Outlet />

@@ -12,6 +12,7 @@ import {
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
+import { BAND_TOP } from '@/components/page-primitives/pinnedBands'
 import { i18next, loadLocaleResources } from '@/i18n'
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { AssetGrouping } from '@/lib/assetFilter'
@@ -31,6 +32,7 @@ vi.mock('@/services/api/content', async (importOriginal) => ({
 }))
 
 const { AssetList } = await import('./AssetList')
+const { CardHead } = await import('@/components/page-primitives/listCards')
 
 const NO_IDEAS = { waiting: 0, yes: 0, later: 0, no: 0 }
 
@@ -64,25 +66,28 @@ function show(
     campaignId = null,
     grouping = 'none',
     groups = [],
-    onDelete = () => {},
+    onToggleBand = () => {},
+    selectedIds = new Set<string>(),
   }: {
     campaignId?: string | null
     grouping?: AssetGrouping
     groups?: AssetGroupCount[]
-    onDelete?: (row: AssetListItem) => void
+    onToggleBand?: (ids: string[]) => void
+    selectedIds?: Set<string>
   } = {},
 ) {
   return renderWithProviders(
     <AssetList
+      head={null}
       rows={rows}
       groups={groups}
-      total={rows.length}
       grouping={grouping}
       groupLabel={(key) => `band ${key}`}
       campaignId={campaignId}
-      selectedIds={new Set()}
+      selectedIds={selectedIds}
+      selecting={selectedIds.size > 0}
       onToggleRow={() => {}}
-      onDelete={onDelete}
+      onToggleBand={onToggleBand}
       asOf={AS_OF}
       onEndReached={() => {}}
       loadingMore={false}
@@ -114,10 +119,10 @@ describe('a row', () => {
     ).toBeInTheDocument()
     // The mark says it is a PDF; the facts line doesn't say it again.
     expect(screen.getByRole('img', { name: 'PDF' })).toBeInTheDocument()
-    expect(screen.getByText(/^94 pages ·/)).toBeInTheDocument()
+    expect(screen.getByText('94 pages')).toBeInTheDocument()
     expect(screen.queryByText(/^PDF/)).not.toBeInTheDocument()
-    // Added and published are two facts; the second is a chip with the exact
-    // date as its tooltip.
+    // Added and published are two facts, each with its exact date as its
+    // tooltip.
     expect(screen.getByText('added 2 minutes ago')).toBeInTheDocument()
     expect(
       screen.getByText('published last year').closest('[title]'),
@@ -143,39 +148,32 @@ describe('a row', () => {
     expect(
       await screen.findByText('Design Patterns for Serverless Systems'),
     ).toBeInTheDocument()
-    expect(screen.getByText(/^infoq\.com ·/)).toBeInTheDocument()
+    expect(screen.getByText('infoq.com')).toBeInTheDocument()
   })
 
-  it('names the next undecided idea, opening its pile, and how many more', async () => {
+  it('counts the ideas waiting at its end, opening their pile, every verdict its name', async () => {
     await show([
       asset({
-        idea_counts: { waiting: 9, yes: 1, later: 0, no: 0 },
+        idea_counts: { waiting: 9, yes: 1, later: 0, no: 1 },
         next_idea: { id: 'i1', title: 'Which AI techniques are past the peak' },
       }),
     ])
-    // One link for the whole line, the count included.
-    const next = await screen.findByRole('link', {
-      name: /^Which AI techniques are past the peak\s*and 8 more$/,
+    const link = await screen.findByRole('link', {
+      name: '9 on the desk · 1 making · 1 set aside',
     })
-    expect(next).toHaveAttribute('href', '/assets/a1?verdict=waiting')
-    expect(screen.getByText('and 8 more')).toBeInTheDocument()
+    expect(link).toHaveTextContent('9 ideas →')
+    expect(link).toHaveAttribute('href', '/assets/a1?verdict=waiting')
   })
 
-  it('draws the ideas as a verdict pill, each segment opening that pile', async () => {
+  it('says nothing at its end once every idea is answered', async () => {
     await show([
-      asset({ idea_counts: { waiting: 2, yes: 1, later: 0, no: 1 } }),
+      asset({ idea_counts: { waiting: 0, yes: 2, later: 0, no: 1 } }),
     ])
-    const pill = await screen.findByRole('group', {
-      name: '2 on the desk · 1 making · 1 set aside',
-    })
-    expect(
-      within(pill).getByRole('link', { name: '2 on the desk' }),
-    ).toHaveAttribute('href', '/assets/a1?verdict=waiting')
-    // No "in the drawer" segment: a verdict with no ideas is left out.
-    expect(within(pill).getAllByRole('link')).toHaveLength(3)
+    await screen.findByText('Positioning')
+    expect(screen.queryByText(/ideas →/)).not.toBeInTheDocument()
   })
 
-  it('says it is still reading, with no pill and no summary yet', async () => {
+  it('says it is still reading, with no ideas and no summary yet', async () => {
     await show([
       asset({
         status: 'processing',
@@ -184,16 +182,15 @@ describe('a row', () => {
         idea_counts: { ...NO_IDEAS, waiting: 1 },
       }),
     ])
-    expect(await screen.findByText('Reading this file.')).toBeInTheDocument()
-    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+    expect(await screen.findByText('Reading it…')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Reading it…' })).toBeInTheDocument()
+    expect(screen.queryByText(/ideas →/)).not.toBeInTheDocument()
     expect(screen.queryByText('Not yet')).not.toBeInTheDocument()
   })
 
   it('says why a file failed, from its code, and what to do', async () => {
     await show([asset({ status: 'failed', failure_code: 'empty_file' })])
-    expect(
-      await screen.findByText('We couldn’t read this file.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Couldn’t read it')).toBeInTheDocument()
     expect(
       screen.getByText(/Upload it again, or delete it\.$/),
     ).toBeInTheDocument()
@@ -202,7 +199,7 @@ describe('a row', () => {
   it('says a read with no ideas found nothing, and offers to analyse again', async () => {
     await show([asset({ gist: 'A glossary of terms' })])
     expect(
-      await screen.findByText(/Read, but no post ideas came out of it\./),
+      await screen.findByText(/No ideas came out of it/),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Analyse again' }),
@@ -213,8 +210,8 @@ describe('a row', () => {
   it('makes no claim about ideas when nothing was analysed', async () => {
     await show([asset({ analysis_status: null })])
     await screen.findByText('Positioning')
-    expect(screen.queryByText(/no post ideas/)).not.toBeInTheDocument()
-    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+    expect(screen.queryByText(/No ideas came/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/ideas →/)).not.toBeInTheDocument()
   })
 
   it('shows its tags as chips', async () => {
@@ -226,9 +223,9 @@ describe('a row', () => {
         ],
       }),
     ])
-    // Twice in the DOM — beside the title on a narrow list, in their own
-    // column on a wide one — and one of them is always hidden.
-    expect(await screen.findAllByText('Gartner')).toHaveLength(2)
+    // On the details line, after the facts.
+    expect(await screen.findByText('Gartner')).toBeInTheDocument()
+    expect(screen.getByText('Finance')).toBeInTheDocument()
   })
 
   it('names the campaigns holding it — only the others on a campaign’s own page', async () => {
@@ -238,10 +235,14 @@ describe('a row', () => {
     ]
     const held = asset({ campaign_ids: ['c1', 'c2'] })
     const { unmount } = await show([held])
-    // Twice, like the tags: under the title on a narrow list, at the far edge
-    // on a wide one, and one of them always hidden.
-    expect(await screen.findAllByText('Beekeeping in Ukraine')).toHaveLength(2)
-    expect(screen.getAllByText('Finance Q4')).toHaveLength(2)
+    // The first in its column on a wide list, then how many more; all of
+    // them ending the details line on a narrow one, where the column is
+    // hidden.
+    expect(await screen.findByText('Beekeeping in Ukraine')).toBeInTheDocument()
+    expect(screen.getByText('+1')).toBeInTheDocument()
+    expect(
+      screen.getByText('Beekeeping in Ukraine, Finance Q4'),
+    ).toBeInTheDocument()
     unmount()
 
     await show([held], { campaignId: 'c1' })
@@ -274,15 +275,20 @@ describe('a row', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('keeps the bin out of sight until the row is pointed at, and asks rather than deletes', async () => {
-    const onDelete = vi.fn()
-    await show([asset({})], { onDelete })
-    const bin = await screen.findByRole('button', {
-      name: 'Delete Positioning',
-    })
-    expect(bin).toHaveClass('opacity-0')
-    await userEvent.click(bin)
-    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }))
+  it('opens the asset from anywhere on the card, and has no bin', async () => {
+    const opened = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {})
+    await show([asset({})])
+    await userEvent.click(
+      (await screen.findByText('added 2 minutes ago')).closest('li')!,
+    )
+    expect(opened).toHaveBeenCalledTimes(1)
+    opened.mockRestore()
+    // DELETE is the selection's, which asks.
+    expect(
+      screen.queryByRole('button', { name: /Delete/ }),
+    ).not.toBeInTheDocument()
   })
 })
 
@@ -329,12 +335,11 @@ describe('the other ideas', () => {
       ])
   })
 
-  it('links the whole line, the count included, to the undecided pile', async () => {
+  it('links the count to the undecided pile', async () => {
     await show([row])
-    const link = await screen.findByRole('link', {
-      name: /^The next one\s*and 2 more$/,
-    })
-    expect(link).toHaveAttribute('href', expect.stringContaining('/assets/a1'))
+    const link = await screen.findByRole('link', { name: '3 on the desk' })
+    expect(link).toHaveTextContent('3 ideas →')
+    expect(link).toHaveAttribute('href', '/assets/a1?verdict=waiting')
   })
 
   it('lists this reading’s ideas, the next one included, read only on hover', async () => {
@@ -342,7 +347,7 @@ describe('the other ideas', () => {
     expect(analyses.fn).not.toHaveBeenCalled()
 
     await userEvent.hover(
-      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
+      await screen.findByRole('link', { name: '3 on the desk' }),
     )
 
     expect(
@@ -368,7 +373,7 @@ describe('the other ideas', () => {
     ])
     await show([row])
     await userEvent.hover(
-      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
+      await screen.findByRole('link', { name: '3 on the desk' }),
     )
     await screen.findAllByText('A strong fit')
 
@@ -408,7 +413,7 @@ describe('the other ideas', () => {
     ])
     await show([row])
     await userEvent.hover(
-      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
+      await screen.findByRole('link', { name: '3 on the desk' }),
     )
     await screen.findAllByText('Idea 12')
     const lists = screen.getAllByRole('list')
@@ -437,7 +442,7 @@ describe('the other ideas', () => {
     ])
     await show([row])
     await userEvent.hover(
-      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
+      await screen.findByRole('link', { name: '3 on the desk' }),
     )
     await screen.findAllByText('Taken')
     const lists = screen.getAllByRole('list')
@@ -462,7 +467,7 @@ describe('the other ideas', () => {
   it('reads the campaign’s reading on a campaign’s page', async () => {
     await show([row], { campaignId: 'c1' })
     await userEvent.hover(
-      await screen.findByRole('link', { name: /^The next one\s*and 2 more$/ }),
+      await screen.findByRole('link', { name: '3 on the desk' }),
     )
     expect(
       (await screen.findAllByText('Only for the campaign')).length,
@@ -489,8 +494,8 @@ describe('group bands', () => {
       'band 1d7',
       'band earlier1',
     ])
-    // Sticky, inside the page's scroller.
-    expect(bands[0].parentElement).toHaveClass('sticky')
+    // Only the list's head pins; a group's head scrolls with its cards.
+    expect(bands[0].parentElement).not.toHaveClass('sticky')
   })
 
   it('draws the band even when the grouping has a single group', async () => {
@@ -504,23 +509,18 @@ describe('group bands', () => {
   })
 
   /*
-   * A new grouping, a fold or the next page moves bands without a scroll
-   * event, so the pinned band — and the cap behind the header that comes with
-   * it — is marked again whenever the bands change, not only on scroll.
+   * A new grouping, a fold or the next page moves the list without a scroll
+   * event, so the pinned head — and the cap behind the header that comes
+   * with it — is marked again whenever the list changes, not only on scroll.
    */
-  it('marks the band at the header’s foot as pinned when the bands change', async () => {
-    // jsdom lays nothing out: the scroller's top is 0, so a band "at" 80px is
-    // the one sitting at the header's foot.
+  it('marks the list head at the header’s foot as pinned when the list changes', async () => {
+    // jsdom lays nothing out: the scroller's top is 0, so a head at
+    // `BAND_TOP` is sitting at the header's foot.
+    const at = { top: 500 }
     const rect = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
       .mockImplementation(function (this: HTMLElement) {
-        // The scroller at 0; one band stuck at the pin line, the others
-        // further down the list.
-        const top = !this.hasAttribute('data-band')
-          ? 0
-          : this.textContent?.startsWith('band earlier')
-            ? 80
-            : 500
+        const top = this.hasAttribute('data-band') ? at.top : 0
         return {
           top,
           bottom: top,
@@ -537,17 +537,29 @@ describe('group bands', () => {
       const [grouping, setGrouping] = useState<AssetGrouping>('none')
       return (
         <div style={{ overflowY: 'auto' }}>
-          <button onClick={() => setGrouping('created')}>regroup</button>
+          <button
+            onClick={() => {
+              at.top = BAND_TOP
+              setGrouping('created')
+            }}
+          >
+            regroup
+          </button>
           <AssetList
+            head={
+              <CardHead wide box={null}>
+                the head
+              </CardHead>
+            }
             rows={grouped}
             groups={grouping === 'none' ? [] : groups}
-            total={grouped.length}
             grouping={grouping}
             groupLabel={(key) => `band ${key}`}
             campaignId={null}
             selectedIds={new Set()}
+            selecting={false}
             onToggleRow={() => {}}
-            onDelete={() => {}}
+            onToggleBand={() => {}}
             asOf={AS_OF}
             onEndReached={() => {}}
             loadingMore={false}
@@ -561,17 +573,26 @@ describe('group bands', () => {
     await userEvent.click(screen.getByText('regroup'))
     const pinned = document.querySelectorAll('[data-pinned]')
     expect(pinned).toHaveLength(1)
-    expect(pinned[0]).toHaveTextContent('band earlier')
+    expect(pinned[0]).toHaveTextContent('the head')
     rect.mockRestore()
   })
 
-  it('draws one "No grouping" band when the list is not grouped', async () => {
+  it('ticks a group’s loaded cards from its own box', async () => {
+    const onToggleBand = vi.fn()
+    await show(grouped, { grouping: 'created', groups, onToggleBand })
+    await userEvent.click(
+      await screen.findByRole('checkbox', {
+        name: 'Select everything in band 1d',
+      }),
+    )
+    expect(onToggleBand).toHaveBeenCalledWith(['a1', 'a2'])
+  })
+
+  it('draws no group heads when the list is not grouped', async () => {
     await show(grouped.slice(0, 2), { grouping: 'none' })
     await screen.findByText('One')
-    // The list always has an edge to pin (CON-392), counted over the match.
-    const bands = screen.getAllByRole('heading', { level: 2 })
-    expect(bands).toHaveLength(1)
-    expect(bands[0]).toHaveTextContent('No grouping2')
+    // The list's head is its edge to pin (CON-392).
+    expect(screen.queryAllByRole('heading', { level: 2 })).toHaveLength(0)
   })
 
   it('folds a band on its button, and remembers it', async () => {
@@ -647,15 +668,16 @@ describe('the next page', () => {
         <>
           <button onClick={() => setRows([asset({})])}>arrive</button>
           <AssetList
+            head={null}
             rows={rows}
             groups={[]}
-            total={rows.length}
             grouping="none"
             groupLabel={(key) => key}
             campaignId={null}
             selectedIds={new Set()}
+            selecting={false}
             onToggleRow={() => {}}
-            onDelete={() => {}}
+            onToggleBand={() => {}}
             asOf={AS_OF}
             onEndReached={onEndReached}
             loadingMore={false}
@@ -697,16 +719,15 @@ describe('in Spanish', () => {
       }),
       asset({ id: 'a2', title: 'Roto', status: 'failed' }),
     ])
-    expect(await screen.findByText('y 2 más')).toBeInTheDocument()
     expect(
-      screen.getByRole('group', { name: '3 sobre la mesa · 1 en el cajón' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('No hemos podido leer este archivo.'),
-    ).toBeInTheDocument()
+      await screen.findByRole('link', {
+        name: '3 sobre la mesa · 1 en el cajón',
+      }),
+    ).toHaveTextContent('3 ideas →')
+    expect(screen.getByText('No se pudo leer')).toBeInTheDocument()
     expect(screen.getAllByText(/^añadido hace/)).toHaveLength(2)
     // The English that a literal would have left behind.
-    expect(screen.queryByText(/and 2 more/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/We couldn’t read/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/on the desk/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Couldn’t read/)).not.toBeInTheDocument()
   })
 })

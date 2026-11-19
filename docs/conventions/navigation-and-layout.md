@@ -71,26 +71,24 @@ keep it accurate when these rules change.
   Foundation. Assets is **unflagged**, which also stops the bank disappearing
   when `brand-materials` is off.
 
-- **The right sidebar never stores which panel is open.** It persists one
-  remembered choice per screen (`panelMemory` in `settingsStore`) and derives
-  the rest: ask `selectActivePanel`, never `panelMemory` directly. A route makes
-  its panels reachable by calling `usePanelScope('post')`
-  — that is the *only* write navigation is allowed, and it's why routes no
-  longer close their own panels on unmount. Never add such a cleanup effect
-  back; it would save the side effects of navigating instead of the user's
-  choice. New panels go in `PANEL_SCOPE` (`lib/rightPanel.ts`), which won't
-  compile until they say which screen they belong to. The assistant is the
-  rail's floor — open on first run, closing another panel reveals it rather
-  than collapsing the rail, and navigating never closes it. **Help is the
-  other panel every screen has** (CON-173): opened from Help beside Work with
-  Ogen, it goes on top of whatever the rail was showing and closing it gives
-  that back (`helpOpen`), and its article follows the page. See
-  `docs/technical-decisions.md#panel-memory`. **The calendar's settings and
-  unscheduled posts are not rail panels**: they are the calendar's own drawer
-  (`CalendarDrawer`, `settingsStore.calendarDrawer`), rendered by the two
-  calendar pages beside the column and under the bar over the page, so opening
-  one never puts the assistant away and both can be open at once. One choice
-  for every calendar, so it is still open on the next grid.
+- **The right rail is the assistant's, with help over it.** It holds the
+  assistant, and its state is `settingsStore.assistantOpen`: open on first
+  run, closed only by a click, and that choice remembered. Navigating never
+  closes it. **Help is the one other layer** (CON-173): opened from Help
+  beside Work with Ogen, it goes on top of whatever the rail was showing and
+  closing it gives that back (`settingsStore.helpOpen`, ignored while the
+  `help-center` flag is off), and its article follows the page. Ask what
+  shows with `selectActivePanel`, never the two flags directly. A screen's
+  own panels don't go in the rail — each one put the assistant away to show
+  something about the page, and needed the rail to know which screen was under
+  it. The post editor's settings, preview, checks, quality, sources, notes and
+  history are tabs in the editor's own side column
+  (`components/posts/editor/PostSideColumn`, the tab in
+  `settingsStore.postTab`); the calendar's settings and unscheduled posts are
+  the calendar's own drawer (`CalendarDrawer`, `settingsStore.calendarDrawer`),
+  rendered by the two calendar pages beside the column and under the bar over
+  the page. Both open alongside the assistant, and each is one choice for
+  every post or every calendar. See `docs/technical-decisions.md#panel-memory`.
 
 - **Explanatory copy goes in `<Explainer>`**, which the user can close for
   good (`settingsStore.dismissedNotes`, device-local — display noise doesn't
@@ -172,11 +170,25 @@ keep it accurate when these rules change.
   corner of the page: it opens from Work with Ogen at the far end of the top bar
   (`TopBar`), which belongs to the app rather than the page — the floating
   bottom-right trigger is gone. Bottom-left and bottom-right stay empty. A bar
-  belongs to **editor** screens only (post, asset, brief, settings) — a list has creation, not
-  commit, so `ADD CAMPAIGN` stays top-right. The bar must anchor to the
+  belongs to **editor** screens only (asset, brief, settings) — a list has creation, not
+  commit, so `ADD CAMPAIGN` stays top-right, and so do the Assets list's ADD
+  and the posts list's `ADD POST`. The bar must anchor to the
   *content column*, not the scroller (it would scroll away) and not the
   viewport (it would drift off the column when the right rail opens); pages
   using one leave `PAGE_ACTION_BAR_INSET` at the bottom of their content.
+  **The post is the exception.** Its editor is a writing column beside a
+  column of tabs (`PostSideColumn`), and its commit sits in its own 48px bar
+  over the writing column (`PostBar`), level with the tab strip: ←, the post's
+  title (never a bare "Posts", which said nothing) and ‹ n of N › on the left;
+  publish timing, status, a bordered ⋮ for the rest, and the one move forward
+  last, in the corner, on the right. Not in the bar over the page — that one
+  is the app's, and a post's SCHEDULE beside Ask Ogen fought it for the
+  corner — and not floating at the foot of the page over a fade. The tabs are
+  an icon over a one-word name, and the first is an Overview: the settings,
+  then one line from each other tab saying whether it is worth opening — a
+  label alone never got Quality or Notes opened. Every settings value starts
+  with a 16px mark (logo, picture, icon, or the warning in its place) so the
+  column of values reads straight down.
 
 - **A control in the corner says which cards it doesn't reach.** The
   top-right rule above says what *may* sit there, not that every view switch
@@ -201,11 +213,10 @@ keep it accurate when these rules change.
   `useAppShortcuts`, mounted once in `_authenticated`, owns `[` (the menu —
   ⌘B still works), `]` (the right rail), `o` (the assistant, composer
   focused), `?` (the sheet) and `g` then a letter; `/` stays with the filter
-  sentence. Where a letter goes is `lib/shortcuts.ts`, and inside a campaign
+  (its sentence, or the pills' add field). Where a letter goes is `lib/shortcuts.ts`, and inside a campaign
   `g i/a/n/s` go to the campaign's own sections, which is the nav's campaign
-  filter again. `]` hides the rail rather than closing its panel
-  (`settingsStore.rightRailHidden`), so the panel memory survives and `]`
-  again brings back what was showing. `shouldIgnoreAppShortcut` allows Alt and
+  filter again. `]` is the same toggle as Ask Ogen, since the rail is the
+  assistant's. `shouldIgnoreAppShortcut` allows Alt and
   AltGr on `[`, `]` and `?`, because those keys need them on German and
   Nordic layouts, and never ⌘. The sheet (`ShortcutsSheet`) lists its rows by
   hand, so a key added to `lib/shortcuts` and not to the sheet is a sheet that

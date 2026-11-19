@@ -6,8 +6,8 @@ import { Note01Icon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
 import {
   CaretDownIcon,
-  CaretRightIcon,
   NotePencilIcon,
+  SparkleIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -20,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { FitTrack } from '@/components/content/FitTrack'
+import { FitRing } from '@/components/content/FitRing'
 import { KIND_ICON } from '@/components/content/AssetKindMark'
 import { KIND_TONE } from '@/components/content/kindTone'
 import { SourceChip } from '@/components/content/asset-page/SourceChip'
@@ -28,7 +28,12 @@ import { useCampaigns } from '@/hooks/useCampaigns'
 import { useDateTimeLabel } from '@/hooks/useActivityLabels'
 import { cn } from '@/lib'
 import { identityAbbr, identityColorVar } from '@/lib/identity'
-import { hasWokenUp, type Idea } from '@/lib/ideas'
+import {
+  POSTPONE_HORIZONS,
+  hasWokenUp,
+  postponeUntil,
+  type Idea,
+} from '@/lib/ideas'
 import { citedPlace, ideaParts, isAnalysed } from '@/lib/ideaSource'
 import { counted, formatDate } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
@@ -37,40 +42,46 @@ import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import type { IdeaEdit } from '@/services/api/ideas'
 import type { AssetListKind } from '@/types/assetList'
 import {
-  AnswerGroup,
+  CARD,
+  CARD_GRID,
+  CARD_GRID_WIDE,
+  CARD_SELECTED,
+  opensCard,
+} from '@/components/page-primitives/listCards'
+import type { VerdictKey } from '@/lib/assetList'
+import {
   AnswerRecord,
   FitSection,
   Part,
-  VerdictMark,
   type Answer,
 } from './card/IdeaCardParts'
 import { pileOf } from './card/ideaRow'
 import { sourceFacts } from './card/sourceFacts'
-import { VerdictControls, type Decide } from './VerdictControls'
+import { HORIZON_KEYS, VERDICTS, VERDICT_ORDER, type Decide } from './verdicts'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import { isNotGrounded } from '@/lib/grounding'
 import { SeriesMark } from '@/components/series/SeriesMark'
 
 /**
- * One idea on the Ideas page, as the CON-387 card (CON-388): the same row the
- * asset page and the Assets list draw, so an idea looks the same wherever it
- * is met.
+ * One idea on the Ideas page, as a card (design/ideas-cards): its own
+ * surface, a hairline border, 4px from the next — the list's rules are in
+ * `page-primitives/listCards`.
  *
- * **The slot at the head of the row says where it came from.** An analysed
- * idea has its fit score on a track; a written one has its writer — initials
- * in their colour and the word *Written*. No badge and no third colour: the
- * column that ranks the list also tells its two kinds apart. The line under
- * the note names the source the same way — the document and the place it
- * cites, or who wrote it and when.
+ * **One 20px mark says where it came from**, on the title line: an analysed
+ * idea's fit as a ring (the number on hover), a written one's writer as
+ * initials in their colour, the assistant's suggestion as its spark. The line
+ * under the summary names the source — the document and the places it cites,
+ * or who wrote it and when — and at most one fact about where the idea
+ * stands; opened, the card says everything.
  *
- * **The row is still the whole of triage.** Hovered or focused, the verdict
- * mark gives way to the three answers, so the forty-seventh idea of two
- * hundred is answered without opening. Opening it shows everything that
- * informs the answer and ends in the full answer group.
+ * **The card is still the whole of triage.** The three answers are always on
+ * it, in the same place: the one given is pressed, and pressing it again
+ * takes it back. Hover only tints — nothing appears, moves or swaps — and the
+ * whole card opens it.
  *
  * **Only a written idea is edited.** An analysed idea's words are the
  * analysis's and its score was given to them, so the server refuses a changed
- * title or note on one (409 `idea_read_only`); this row offers no field that
+ * title or note on one (409 `idea_read_only`); this card offers no field that
  * would be refused. Either kind can be moved to another campaign.
  */
 export function IdeaRow({
@@ -102,11 +113,12 @@ export function IdeaRow({
    * source line keeps only the places it cites.
    */
   compactSource?: boolean
-  /**
-   * The row's box, when the list can select (CON-388 §6). Its column is
-   * reserved whether or not the box shows, so nothing shifts when it does.
-   */
-  selection?: { selected: boolean; selecting: boolean; onToggle: () => void }
+  /** The card's box, when the list can select. Shift extends a range. */
+  selection?: {
+    selected: boolean
+    selecting: boolean
+    onToggle: (shift: boolean) => void
+  }
 }) {
   const { t } = useTranslation()
   const analysed = isAnalysed(idea)
@@ -116,7 +128,7 @@ export function IdeaRow({
   const editing = expanded && !analysed
   // An analysed idea's note is its parts; the angle is the line worth reading.
   const summary = parts ? parts.angle || parts.rationale : idea.note
-  const Caret = expanded ? CaretDownIcon : CaretRightIcon
+  const selected = !!selection?.selected
 
   const verdict = pileOf(idea, now)
   const campaignName = useCampaignName(idea.campaignId)
@@ -126,62 +138,64 @@ export function IdeaRow({
       // What a link to this idea scrolls to (`?idea=`, CON-481).
       data-idea-id={idea.id}
       data-open={expanded || undefined}
+      onClick={(event) => {
+        if (opensCard(event)) onToggle()
+      }}
       className={cn(
-        // The Assets row's frame (CON-388): a rule under each row, 20px of
-        // air, and columns rather than longer lines — the box, the slot, the
-        // text capped at a readable measure, the campaign, the answer.
-        'group relative grid grid-cols-[16px_4rem_minmax(0,1fr)_auto_16px] gap-x-5 border-b border-quaternary px-5 pt-5 pb-5.5',
-        '@4xl:grid-cols-[16px_4rem_minmax(0,calc(72ch+40px))_minmax(0,1fr)_auto_16px]',
-        'hover:bg-secondary focus-within:bg-secondary data-[open]:bg-secondary',
-        selection?.selected && 'bg-accent/5 hover:bg-accent/5',
+        CARD_GRID,
+        showCampaign && CARD_GRID_WIDE,
+        'group cursor-pointer py-4',
+        selected ? CARD_SELECTED : CARD,
+        expanded && !selected && 'bg-secondary',
       )}
     >
-      {/* The box's column is reserved whether or not it shows, so nothing
-          shifts when it does; it sits under the list's select-all. */}
-      <span className="flex h-6 items-center">
+      <span className="flex h-5 items-center">
         {selection && (
           <Checkbox
-            checked={selection.selected}
-            onCheckedChange={selection.onToggle}
+            checked={selected}
+            onClick={(event) => {
+              // The press is the toggle, so Shift can extend a range.
+              event.preventDefault()
+              selection.onToggle(event.shiftKey)
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== ' ') return
+              event.preventDefault()
+              selection.onToggle(event.shiftKey)
+            }}
             aria-label={t('ideas.bulk.select', { title: idea.title })}
             className={cn(
-              'transition-opacity duration-200 ease-out motion-reduce:transition-none',
-              !selection.selected &&
+              'transition-opacity',
+              !selected &&
                 !selection.selecting &&
-                'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
+                'opacity-40 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
             )}
           />
         )}
       </span>
 
-      <span className="flex h-6 items-center">
-        {analysed ? (
-          <FitTrack score={idea.fitScore} />
-        ) : (
-          <AuthorSlot
-            name={writerName(t, idea)}
-            id={suggested(idea) ? null : idea.createdBy}
-          />
-        )}
-      </span>
+      <IdeaMark idea={idea} />
 
       <div className="flex min-w-0 flex-col">
         {editing ? (
           <TitleField idea={idea} onEdit={onEdit} />
         ) : (
-          <h3 className="text-base/6 font-medium break-words">
+          <h3 className="text-sm/5 font-medium break-words">
             <button
               type="button"
               onClick={onToggle}
               aria-expanded={expanded}
-              className="cursor-pointer text-left outline-none hover:underline focus-visible:underline"
+              className={cn(
+                'cursor-pointer text-left outline-none focus-visible:underline',
+                !expanded && 'line-clamp-2',
+              )}
             >
               {idea.title}
             </button>
           </h3>
         )}
         {!expanded && summary && (
-          <p className="mt-1 line-clamp-2 text-sm text-secondary-foreground">
+          <p className="mt-1 line-clamp-2 text-sm/5 text-secondary-foreground">
             {summary}
           </p>
         )}
@@ -197,54 +211,33 @@ export function IdeaRow({
 
       {/* The campaign's own column on a wide list; below it, the source
           line ends with it instead. */}
-      <span className="hidden min-w-0 pt-0.5 text-[13px] @4xl:block">
-        {showCampaign && campaignName && idea.campaignId && (
-          <span className="flex min-w-0 items-center gap-1.5">
-            <CampaignIcon
-              abbr={identityAbbr(campaignName)}
-              color={identityColorVar(idea.campaignId)}
-              className="size-4"
-            />
-            <span className="truncate">{campaignName}</span>
-          </span>
-        )}
-      </span>
-
-      {/* The verdict, and — hovered or focused, closed — the three answers in
-          its place, so a row is answered without being opened. */}
-      <span className="flex h-6 items-center justify-end gap-4">
-        {/* Written from general knowledge (CON-484): beside the answer it is
-            waiting on, open or closed, so it is read before the verdict. */}
-        <NotGroundedMark mode={idea.groundingMode} />
-        <span
-          className={cn(
-            'flex',
-            !expanded &&
-              'group-focus-within:hidden group-hover:hidden group-has-[[data-state=open]]:hidden',
+      {showCampaign && (
+        <span className="hidden h-5 min-w-0 items-center gap-2 text-xs/4 text-secondary-foreground @4xl:flex">
+          {campaignName && idea.campaignId && (
+            <>
+              <CampaignIcon
+                abbr={identityAbbr(campaignName)}
+                color={identityColorVar(idea.campaignId)}
+                className="size-4"
+              />
+              <span className="truncate">{campaignName}</span>
+            </>
           )}
-        >
-          <VerdictMark verdict={verdict} />
         </span>
-        {!expanded && (
-          <span
-            role="group"
-            aria-label={t('ideas.card.quickAnswers', { title: idea.title })}
-            className="-my-1 hidden group-focus-within:flex group-hover:flex group-has-[[data-state=open]]:flex"
-          >
-            <VerdictControls onDecide={onDecide} now={now} />
-          </span>
-        )}
-      </span>
+      )}
 
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        aria-label={expanded ? t('ideas.action.close') : t('ideas.action.open')}
-        className="flex h-6 cursor-pointer items-center"
-      >
-        <Caret className="size-4 text-secondary-foreground" />
-      </button>
+      <span className="flex h-5 items-center justify-end gap-3">
+        {/* Written from general knowledge (CON-484): beside the answer it is
+            waiting on, so it is read before the verdict. */}
+        <NotGroundedMark mode={idea.groundingMode} />
+        <RowAnswers
+          title={idea.title}
+          verdict={verdict}
+          now={now}
+          onDecide={onDecide}
+          onUndecide={onUndecide}
+        />
+      </span>
 
       {expanded &&
         (analysed ? (
@@ -270,13 +263,88 @@ export function IdeaRow({
 }
 
 /**
- * A written idea's slot: its writer's initials in their identity colour, and
- * *Written* beside them. Named for a screen reader, as the fit track is.
+ * The three answers, always on the card and always in the same place: the
+ * one given is pressed, and pressing it again puts the idea back on the desk.
+ * Later asks how long — a postponement names the day it comes back.
  */
+function RowAnswers({
+  title,
+  verdict,
+  now,
+  onDecide,
+  onUndecide,
+}: {
+  title: string
+  verdict: VerdictKey
+  now: Date
+  onDecide: Decide
+  onUndecide: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <span
+      role="group"
+      aria-label={t('ideas.card.quickAnswers', { title })}
+      className="-my-0.5 flex items-center gap-0.5"
+    >
+      {VERDICT_ORDER.map((v) => {
+        const { icon: Glyph, tone, actionKey } = VERDICTS[v]
+        const on = verdict === v
+        const cls = cn(
+          'flex size-6 cursor-pointer items-center justify-center rounded-button outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          on
+            ? 'bg-primary ring-1 ring-quaternary'
+            : 'hover:bg-primary hover:ring-1 hover:ring-quaternary data-[state=open]:bg-primary data-[state=open]:ring-1 data-[state=open]:ring-quaternary',
+        )
+        const glyph = (
+          <Glyph
+            aria-hidden
+            className={cn('size-4', on ? tone : 'text-secondary-foreground')}
+            weight={on ? 'bold' : 'regular'}
+          />
+        )
+        if (v === 'later' && !on)
+          return (
+            <DropdownMenu key={v}>
+              <DropdownMenuTrigger aria-label={t(actionKey)} className={cls}>
+                {glyph}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={4}>
+                {POSTPONE_HORIZONS.map((horizon) => (
+                  <DropdownMenuItem
+                    key={horizon}
+                    onSelect={() =>
+                      onDecide('later', postponeUntil(now, horizon))
+                    }
+                  >
+                    {t(HORIZON_KEYS[horizon])}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        return (
+          <button
+            key={v}
+            type="button"
+            // Pressed, it says so; pressing it again puts the idea back.
+            aria-label={t(actionKey)}
+            aria-pressed={on}
+            onClick={() => (on ? onUndecide() : onDecide(v, null))}
+            className={cls}
+          >
+            {glyph}
+          </button>
+        )
+      })}
+    </span>
+  )
+}
+
 /**
  * An idea the assistant generated from no document (CON-484): it was
  * suggested, whoever's request it came from, and every place that names the
- * idea's writer says so alike — the row, its slot and the opened idea.
+ * idea's writer says so alike — the card, its mark and the opened idea.
  */
 function suggested(idea: Idea): boolean {
   return !isAnalysed(idea) && isNotGrounded(idea.groundingMode)
@@ -288,25 +356,34 @@ function writerName(t: TFunction, idea: Idea): string {
   return idea.authorName || t('ideas.card.someone')
 }
 
-function AuthorSlot({ name, id }: { name: string | null; id: string | null }) {
+/**
+ * The card's 20px mark: the fit ring, the writer's initials on their colour,
+ * or the assistant's spark — one family of circles in one column.
+ */
+function IdeaMark({ idea }: { idea: Idea }) {
   const { t } = useTranslation()
-  const who = name || t('ideas.card.someone')
+  const circle =
+    'flex size-5 shrink-0 items-center justify-center rounded-full font-medium'
+  if (isAnalysed(idea)) return <FitRing score={idea.fitScore} />
+  if (suggested(idea))
+    return (
+      <span
+        role="img"
+        aria-label={t('ideas.card.suggested')}
+        className={cn(circle, 'bg-secondary')}
+      >
+        <SparkleIcon aria-hidden weight="fill" className="size-3 text-accent" />
+      </span>
+    )
+  const who = idea.authorName || t('ideas.card.someone')
   return (
     <span
       role="img"
       aria-label={t('ideas.card.writtenBy', { name: who })}
-      className="flex w-16 shrink-0 items-center gap-1.5"
+      className={cn(circle, 'text-[9px] text-primary')}
+      style={{ background: identityColorVar(idea.createdBy ?? who) }}
     >
-      <span
-        aria-hidden
-        className="flex size-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-primary"
-        style={{ background: identityColorVar(id ?? who) }}
-      >
-        {identityAbbr(who)}
-      </span>
-      <span aria-hidden className="text-[11px] text-secondary-foreground">
-        {t('ideas.card.written')}
-      </span>
+      {identityAbbr(who)}
     </span>
   )
 }
@@ -351,9 +428,11 @@ function sourceLink(idea: Idea, at?: string) {
 }
 
 /**
- * The closed row's last line: where the idea came from. A document by its
- * kind and title, linked, with the places it cites; a person by name and day.
- * The workspace's list ends it with the campaign the idea is filed under.
+ * The closed card's last line: where the idea came from, then at most one
+ * fact about where it stands — in that order, always. A document by its kind
+ * and title, linked, with the places it cites; a person by name and day.
+ * Below the wide layout, where the campaign has no column, it ends with the
+ * campaign the idea is filed under.
  */
 function SourceLine({
   idea,
@@ -368,30 +447,35 @@ function SourceLine({
 }) {
   const { t, i18n } = useTranslation()
   const campaign = useCampaignName(idea.campaignId)
+  const day = (iso: string) =>
+    formatDate(iso, { day: 'numeric', month: 'short' }, i18n.language) ?? ''
   const bits: React.ReactNode[] = []
 
   if (isAnalysed(idea)) {
     if (idea.sourceAsset) {
       const { places, more } = citedPlace(idea)
-      if (!compact)
-        bits.push(
-          <Link
-            key="source"
-            // At the first place it cites, which is where it begins.
-            {...sourceLink(idea, ideaParts(idea)?.sources[0])}
-            className="inline-flex min-w-0 items-center gap-1.5 text-foreground hover:underline"
-          >
-            <KindMark kind={idea.sourceAsset.kind} />
-            <span className="truncate">{idea.sourceAsset.title}</span>
-          </Link>,
-        )
-      if (places.length > 0)
-        bits.push(
-          <span key="places" className="shrink-0 tabular-nums">
-            {places.join(', ')}
-            {more > 0 && ` ${t('ideas.card.morePlaces', { count: more })}`}
-          </span>,
-        )
+      bits.push(
+        <span key="source" className="flex min-w-0 items-center gap-1.5">
+          {compact ? (
+            <KindMark kind={idea.sourceAsset.kind} size={12} />
+          ) : (
+            <Link
+              // At the first place it cites, which is where it begins.
+              {...sourceLink(idea, ideaParts(idea)?.sources[0])}
+              className="flex min-w-0 items-center gap-1.5 hover:text-foreground hover:underline"
+            >
+              <KindMark kind={idea.sourceAsset.kind} size={12} />
+              <span className="truncate">{idea.sourceAsset.title}</span>
+            </Link>
+          )}
+          {places.length > 0 && (
+            <span className="shrink-0 tabular-nums">
+              {places.join(', ')}
+              {more > 0 && ` ${t('ideas.card.morePlaces', { count: more })}`}
+            </span>
+          )}
+        </span>,
+      )
     } else {
       bits.push(<span key="gone">{t('ideas.card.documentDeleted')}</span>)
     }
@@ -405,58 +489,52 @@ function SourceLine({
           : idea.authorName || t('ideas.card.someone')}
       </span>,
       <span key="when" className="shrink-0">
-        {formatDate(
-          idea.createdAt,
-          { day: 'numeric', month: 'short' },
-          i18n.language,
-        ) ?? ''}
+        {day(idea.createdAt)}
       </span>,
     )
   }
-  // Only below the wide layout, where the campaign has no column of its own.
-  const narrowOnly = bits.length
-  if (showCampaign && campaign)
-    bits.push(
-      <span key="campaign" className="truncate">
-        {campaign}
-      </span>,
-    )
-  if (idea.seriesId)
-    // The series a content plan wrote it for (CON-496).
-    bits.push(<SeriesMark key="series" seriesId={idea.seriesId} />)
-  if (idea.postCount)
-    // What it fed (CON-470) — a fact beside the verdict, never a verdict.
-    bits.push(
-      // A muted post mark, then the fact in foreground (CON-485).
+
+  // Where it stands, most urgent first, and only the first of them.
+  const standing: React.ReactNode =
+    // Why this one is back: without it a postponed idea reappearing on the
+    // desk reads as the list having lost track of a decision.
+    hasWokenUp(idea, now) ? (
+      <span key="back" className="text-foreground">
+        {t('ideas.backFrom')}
+      </span>
+    ) : idea.verdict === 'later' && idea.remindAt ? (
+      <span key="returns">
+        {t('ideas.record.returns', { at: day(idea.remindAt) })}
+      </span>
+    ) : idea.postCount ? (
+      // What it fed (CON-470) — a fact beside the verdict, never a verdict.
       <span key="used" className="inline-flex shrink-0 items-center gap-1">
-        <NotePencilIcon
-          aria-hidden
-          className="size-3.5 text-tertiary-foreground"
-        />
+        <NotePencilIcon aria-hidden className="size-3" />
         <span className="text-foreground">
           {t('ideas.lifecycle.used', counted(idea.postCount))}
         </span>
-      </span>,
-    )
-  if (hasWokenUp(idea, now))
-    // Why this one is back. Without it a postponed idea reappearing with the
-    // undecided reads as the list having lost track of a decision.
-    bits.push(<span key="back">{t('ideas.backFrom')}</span>)
+      </span>
+    ) : idea.seriesId ? (
+      // The series a content plan wrote it for (CON-496).
+      <SeriesMark key="series" seriesId={idea.seriesId} />
+    ) : null
+  if (standing) bits.push(standing)
 
   return (
-    <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[13px] text-secondary-foreground">
+    <div className="mt-2 flex min-w-0 items-center gap-1.5 text-xs/4 text-secondary-foreground">
       {bits.map((bit, i) => (
-        <span
-          key={i}
-          className={cn(
-            'contents',
-            i === narrowOnly && showCampaign && campaign && '@4xl:hidden',
-          )}
-        >
+        <span key={i} className="contents">
           {i > 0 && <span aria-hidden>·</span>}
           {bit}
         </span>
       ))}
+      {showCampaign && campaign && (
+        // Only below the wide layout, where the campaign has no column.
+        <span className="contents @4xl:hidden">
+          <span aria-hidden>·</span>
+          <span className="truncate">{campaign}</span>
+        </span>
+      )}
     </div>
   )
 }
@@ -517,12 +595,15 @@ function AnalysedBody({
 
   return (
     // In the title's column, to the row's end.
-    <div className="col-start-3 col-end-[-1] mt-3 flex flex-col gap-3">
+    <div
+      data-card-body
+      className="col-start-3 col-end-[-1] mt-3 flex cursor-auto flex-col gap-3"
+    >
       {parts?.angle && (
-        <p className="text-sm leading-6 text-foreground">{parts.angle}</p>
+        <p className="text-sm/5 text-foreground">{parts.angle}</p>
       )}
       {parts?.rationale && (
-        <p className="whitespace-pre-line text-sm leading-6 text-secondary-foreground">
+        <p className="whitespace-pre-line text-sm/5 text-secondary-foreground">
           {parts.rationale}
         </p>
       )}
@@ -530,21 +611,38 @@ function AnalysedBody({
       <SourceSection idea={idea} sources={parts?.sources ?? []} />
       <MadeInto idea={idea} />
       {showCampaign && <FiledUnder idea={idea} onEdit={onEdit} />}
-      <AnswerGroup
-        idea={idea}
-        now={now}
-        onAnswer={onAnswer}
+      <BodyFoot
+        record={<AnswerRecord idea={idea} now={now} onAnswer={onAnswer} />}
         trailing={
           idea.sourceAsset && (
             <Link
               {...sourceLink(idea)}
-              className="text-sm font-medium text-accent hover:underline"
+              className="font-medium text-accent hover:underline"
             >
               {t('ideas.card.openSource')}
             </Link>
           )
         }
       />
+    </div>
+  )
+}
+
+/**
+ * The opened card's last line: when its answer was given and the way back,
+ * then the way on. The answers themselves are on the card, always.
+ */
+function BodyFoot({
+  record,
+  trailing,
+}: {
+  record: React.ReactNode
+  trailing?: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-quaternary pt-3 text-xs/4 text-secondary-foreground">
+      {record}
+      {trailing && <span className="ml-auto">{trailing}</span>}
     </div>
   )
 }
@@ -695,10 +793,13 @@ function WrittenBody({
   const when = useDateTimeLabel()
 
   return (
-    <div className="col-start-3 col-end-[-1] mt-3 flex flex-col gap-3">
+    <div
+      data-card-body
+      className="col-start-3 col-end-[-1] mt-3 flex cursor-auto flex-col gap-3"
+    >
       <NoteField idea={idea} onEdit={onEdit} />
       {/* No rule above: the note field's own underline is the line. */}
-      <div className="flex flex-col gap-1 text-xs text-secondary-foreground">
+      <div className="flex flex-col gap-1 text-xs/4 text-secondary-foreground">
         <p>
           {suggested(idea)
             ? t('ideas.card.suggestedAt', { at: when(idea.createdAt) })
@@ -711,26 +812,22 @@ function WrittenBody({
       </div>
       <MadeInto idea={idea} />
       {showCampaign && <FiledUnder idea={idea} onEdit={onEdit} />}
-      <AnswerGroup
-        idea={idea}
-        now={now}
-        onAnswer={onAnswer}
+      <BodyFoot
         record={
-          <div className="flex flex-col gap-1">
+          <>
             <AnswerRecord idea={idea} now={now} onAnswer={onAnswer} />
-            <p>
-              {t('ideas.card.savedOnBlur')}
-              {' · '}
-              {/* The only irreversible thing on the card, and it asks first. */}
-              <button
-                type="button"
-                onClick={onDelete}
-                className="cursor-pointer font-medium text-destructive hover:underline"
-              >
-                {t('ideas.action.delete')}
-              </button>
-            </p>
-          </div>
+            <span>{t('ideas.card.savedOnBlur')}</span>
+          </>
+        }
+        trailing={
+          // The only irreversible thing on the card, and it asks first.
+          <button
+            type="button"
+            onClick={onDelete}
+            className="cursor-pointer font-medium text-destructive hover:underline"
+          >
+            {t('ideas.action.delete')}
+          </button>
         }
       />
     </div>
@@ -750,7 +847,7 @@ function FiledUnder({
 }) {
   const { t } = useTranslation()
   return (
-    <div className="flex items-center gap-2 text-xs text-secondary-foreground">
+    <div className="flex items-center gap-2 text-xs/4 text-secondary-foreground">
       <span>{t('ideas.card.filedUnder')}</span>
       <CampaignPicker
         value={idea.campaignId}

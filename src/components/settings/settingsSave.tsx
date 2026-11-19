@@ -121,8 +121,8 @@ export function SettingsSaveBar() {
     <PageActionBar>
       <Button
         type="button"
-        // `ghost` — no fill, no border. See PostStatusActionBar: the bar is the
-        // surface, and anything drawn inside it is text.
+        // `ghost` — no fill, no border: the bar is the surface, and anything
+        // drawn inside it is text.
         variant="ghost"
         size="sm"
         className="text-primary-foreground"

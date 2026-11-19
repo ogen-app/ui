@@ -4,14 +4,16 @@ import { useTranslation } from 'react-i18next'
 import { BulkActionsBar } from '@/components/campaigns/BulkActionsBar'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { PostsTable } from '@/components/tables/postsTable'
-import { PostsToolbar } from '@/components/campaigns/PostsToolbar'
+import { PostsListFrame } from '@/components/campaigns/postsList/PostsListFrame'
+import { PostWarningsPanel } from '@/components/campaigns/postsList/PostWarningsPanel'
 import { useAddPost, useCampaignPosts } from '@/hooks/usePosts.ts'
+import { usePostWarnings } from '@/hooks/usePostWarnings'
 import { useBulkPostActions } from '@/hooks/useBulkPostActions'
 import { usePostsTableSort } from '@/hooks/usePostsTableSort'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import type { Post } from '@/types/posts'
 import { awaiting } from '@/lib/fetched'
-import { counted, formatNumber } from '@/lib/intl'
+import { counted } from '@/lib/intl'
 import {
   useAssistantRequest,
   useListAssistantPage,
@@ -163,38 +165,47 @@ function CampaignListView() {
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
 
-  // The count, said once, on the toolbar's line (CON-486): the match, and
-  // what it is out of while a filter narrows it.
   const totalUnfiltered = allPosts.data?.length ?? rows.length
-  const countLine = isLoading
-    ? // Held back while the query is in flight: "0 posts" is an answer, and
-      // we don't have one yet.
-      undefined
-    : filtered
-      ? t('postsTable.countOf', {
-          ...counted(rows.length, i18n.language),
-          total: formatNumber(totalUnfiltered, {}, i18n.language),
-        })
-      : t('postsTable.count', counted(rows.length, i18n.language))
   // The header box names what it would tick: the whole match, not "all".
   const selectAllLabel = filtered
     ? t('postsTable.selectAllMatching', counted(rows.length, i18n.language))
     : t('postsTable.selectAllCount', counted(rows.length, i18n.language))
 
+  // The post whose warnings the drawer lists; its mark toggles it.
+  const [warningsFor, setWarningsFor] = useState<string | null>(null)
+  const showWarnings = useCallback(
+    (id: string) => setWarningsFor((open) => (open === id ? null : id)),
+    [],
+  )
+  const warningsOf = usePostWarnings(campaignId)
+  const warningsPost = rows.find((p) => p.id === warningsFor)
+
   return (
-    <div className="flex flex-col h-full min-h-0 min-w-0">
-      {/* The sentence first, then the line that counts what it leaves and
-          adds to it, then the table (CON-486) — the order the Ideas page
-          reads in. */}
+    <PostsListFrame
+      campaignId={campaignId}
+      drawer={
+        warningsFor === null ? null : (
+          <PostWarningsPanel
+            post={warningsPost}
+            warnings={warningsPost ? warningsOf(warningsPost) : []}
+            onClose={() => setWarningsFor(null)}
+          />
+        )
+      }
+    >
+      {/* The sentence, then the table, both on the table's left edge. There
+          is no count line: an unfiltered list's length is not news, and a
+          filtered one's is said once, at the sentence's end ("3 of 21").
+          ADD POST is the header's. */}
       {(filtered || (allPosts.data?.length ?? 0) > 0) && (
-        <div className="px-6 pt-2">
+        <div className="shrink-0 pt-3 pb-2">
           <PostsFilterBar
             campaignId={campaignId}
             filter={filter}
             onChange={onFilterChange}
             total={rows.length}
             totalUnfiltered={totalUnfiltered}
-            showCount={false}
+            showCount={filtered && !isLoading}
             setByAssistant={
               !!assistantFilter &&
               assistantFilter.screen === 'campaign.list' &&
@@ -203,56 +214,61 @@ function CampaignListView() {
           />
         </div>
       )}
-      {selectedPosts.length > 0 ? (
-        <BulkActionsBar
-          posts={selectedPosts}
-          allMatching={filtered && selectedPosts.length === rows.length}
-          onClear={clearSelection}
-          onApply={applyPlan}
-          onDelete={deletePosts}
-          busy={busy}
-        />
-      ) : (
-        <PostsToolbar campaignId={campaignId} subheading={countLine} />
-      )}
       {/* Gate on the query, not on `!posts`: the backend answers a campaign
           with no posts with null, so truthiness can't tell "none" from "not
           yet" — and the empty state's invitation to add the first post is a
           claim we don't get to make until we've asked. The table renders on
           one path either way; `loading` draws its own rows. A filter nothing
           matches is not an empty campaign. */}
-      {postsQuery.isError && posts === undefined ? (
-        // A read that never answered is not "nothing matches".
-        <p className="px-6 py-8 text-sm text-tertiary-foreground">
-          {t('calendar.loadFailedCampaign')}
-        </p>
-      ) : !isLoading && rows.length === 0 && filtered ? (
-        <PostsNoMatches
-          campaignId={campaignId}
-          filter={filter}
-          onChange={onFilterChange}
-        />
-      ) : !isLoading && rows.length === 0 ? (
-        <PostsEmptyState variant="list" onAddPost={addPost} />
-      ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <PostsTable
-            posts={rows}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        {postsQuery.isError && posts === undefined ? (
+          // A read that never answered is not "nothing matches".
+          <p className="px-6 py-8 text-sm text-tertiary-foreground">
+            {t('calendar.loadFailedCampaign')}
+          </p>
+        ) : !isLoading && rows.length === 0 && filtered ? (
+          <PostsNoMatches
             campaignId={campaignId}
-            onDelete={handleDelete}
-            emptyStateMessage={t('postsTable.noPosts')}
-            emptyStateActionLabel={t('calendar.addPost')}
-            onEmptyStateAction={addPost}
-            selectAllLabel={selectAllLabel}
-            loading={isLoading || sortPending}
-            selectedIds={selectedIds}
-            onToggleRow={toggleRow}
-            onToggleAll={toggleAll}
-            sorting={sorting}
-            onSortingChange={setSorting}
+            filter={filter}
+            onChange={onFilterChange}
           />
-        </div>
-      )}
-    </div>
+        ) : !isLoading && rows.length === 0 ? (
+          <PostsEmptyState variant="list" onAddPost={addPost} />
+        ) : (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <PostsTable
+              posts={rows}
+              campaignId={campaignId}
+              onDelete={handleDelete}
+              onShowWarnings={showWarnings}
+              warningsOpenFor={warningsFor}
+              emptyStateMessage={t('postsTable.noPosts')}
+              emptyStateActionLabel={t('calendar.addPost')}
+              onEmptyStateAction={addPost}
+              selectAllLabel={selectAllLabel}
+              loading={isLoading || sortPending}
+              selectedIds={selectedIds}
+              onToggleRow={toggleRow}
+              onToggleAll={toggleAll}
+              sorting={sorting}
+              onSortingChange={setSorting}
+            />
+          </div>
+        )}
+        {/* Over the list's foot, as the Ideas bar sits over its list, so
+            ticking a row doesn't push the table down. */}
+        {selectedPosts.length > 0 && (
+          <BulkActionsBar
+            floating
+            posts={selectedPosts}
+            allMatching={filtered && selectedPosts.length === rows.length}
+            onClear={clearSelection}
+            onApply={applyPlan}
+            onDelete={deletePosts}
+            busy={busy}
+          />
+        )}
+      </div>
+    </PostsListFrame>
   )
 }

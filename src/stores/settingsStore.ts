@@ -8,19 +8,9 @@ import {
   type AssetSort,
 } from '@/lib/assetFilter'
 import { SETTINGS_STORE_PERSIST_KEY } from '@/stores/constants'
-import {
-  DEFAULT_PANEL_MEMORY,
-  closePanel,
-  openPanel,
-  resolveActivePanel,
-  sanitizePanelMemory,
-  togglePanel,
-  type PanelMemory,
-  type PanelScope,
-  type RightPanel,
-} from '@/lib/rightPanel'
 import { isFeatureEnabled } from '@/config/featureFlags'
 import { isCalendarDrawer, type CalendarDrawer } from '@/lib/calendarDrawer'
+import { DEFAULT_POST_TAB, isPostTab, type PostTab } from '@/lib/postTabs'
 import {
   rememberVisit,
   sanitizePostsPlaces,
@@ -37,20 +27,20 @@ export type LocalSettings = {
   sidebarCollapsed: boolean
 
   /**
-   * What the right sidebar should show *when it can* — one remembered choice
-   * per screen, not a live "current panel". See `lib/rightPanel`; read it
-   * through `selectActivePanel`, never directly.
+   * Whether the assistant — the right rail's floor — is open. Open on first
+   * run, and closing it is remembered from then on. Read it through
+   * `selectActivePanel`.
    */
-  panelMemory: PanelMemory
+  assistantOpen: boolean
 
   /**
-   * The right rail put away with `]` (CON-394), whatever it was showing. A
-   * flag beside the memory rather than a write to it: closing a panel drops
-   * back to the assistant and closing the assistant forgets it, so neither
-   * could hide the rail and bring back exactly what was there. Any panel
-   * action shows the rail again.
+   * Whether help (CON-173) is open on top of the assistant. It *replaces*
+   * whatever the rail was showing and closing it gives that back, so it is a
+   * flag beside `assistantOpen` rather than a value of it. One fact however far
+   * the reader moves: the panel follows the page. Read it through
+   * `selectActivePanel`, which ignores it while the help-center flag is off.
    */
-  rightRailHidden: boolean
+  helpOpen: boolean
 
   /**
    * Which of the calendar's two panels is open in its drawer, or `null`. One
@@ -58,11 +48,18 @@ export type LocalSettings = {
    * still open on the next grid you go to — they are the same two panels over
    * the same preferences.
    *
-   * Not part of `panelMemory`: the drawer is the calendar's own, beside the
+   * Not the right rail: the drawer is the calendar's own, beside the
    * grid and under the bar over the page, so it never takes the assistant's
    * place and both can be open at once.
    */
   calendarDrawer: CalendarDrawer | null
+
+  /**
+   * The post editor's side-column tab. One choice for every post, so reading
+   * the checks on one post and stepping to the next keeps the checks open.
+   * The editor's own, beside the post — it never takes the assistant's place.
+   */
+  postTab: PostTab
 
   // Modal/Dialog State
   lastOpenedModals: Record<string, string> // modal ID -> last opened timestamp
@@ -111,81 +108,68 @@ export type LocalSettings = {
 }
 
 /**
- * Which screen is under the sidebar right now, declared by the route via
- * `usePanelScope` and cleared when it unmounts.
- *
- * Session-only, and pointedly not part of `LocalSettings`: it is a fact about
- * where you are, not a preference, and persisting it would let a reload restore
- * a screen context that no longer matches the URL.
+ * What the right rail can show: the assistant, and help over it. The post
+ * editor's panels are tabs in the editor's own side column and the calendar's
+ * are its own drawer.
  */
-type PanelContext = {
-  scope: PanelScope | null
+export type RightPanel = 'assistant' | 'help'
+
+type SettingsState = LocalSettings & {
+  // Actions
+  setSidebarCollapsed: (collapsed: boolean) => void
+  toggleSidebar: () => void
+
+  /** Show the panel, or close it if it is the one showing — Ask Ogen, Help and `]`. */
+  toggleRightPanel: (panel: RightPanel) => void
+  /** Show the panel, never closing it — for buttons that mean "open". */
+  openRightPanel: (panel: RightPanel) => void
+  /** Close what is showing: help drops back to what it covered, the assistant closes the rail. */
+  closeRightPanel: () => void
+
+  /** Open the calendar's drawer on this panel, or close it if it is showing. */
+  toggleCalendarDrawer: (panel: CalendarDrawer) => void
+  /** Open the calendar's drawer on this panel — for buttons that mean "open". */
+  openCalendarDrawer: (panel: CalendarDrawer) => void
+  closeCalendarDrawer: () => void
+
+  setPostTab: (tab: PostTab) => void
+
+  recordModalOpened: (modalId: string) => void
+
+  /** Close an explainer permanently. Idempotent. */
+  dismissNote: (id: string) => void
+
+  /** Fold an Assets group band, or unfold it if it is folded. */
+  toggleAssetBand: (band: string) => void
+
+  setAssetGrouping: (grouping: AssetGrouping) => void
+
+  setAssetSort: (sort: AssetSort) => void
+
+  /**
+   * Record that the user is looking at this campaign's posts, arranged this
+   * way. Called by the views themselves, on every anchor change — the fold is
+   * identity-stable when nothing moved, so a re-render is not a write.
+   *
+   * The list passes no anchor; it has none, and keeps the calendar's.
+   */
+  rememberPostsPlace: (
+    campaignId: string,
+    visit: { view: PostsView; anchor?: string },
+  ) => void
+
+  // Reset all settings to defaults
+  resetAllSettings: () => void
 }
-
-type SettingsState = LocalSettings &
-  PanelContext & {
-    // Actions
-    setSidebarCollapsed: (collapsed: boolean) => void
-    toggleSidebar: () => void
-
-    /**
-     * Declare the screen under the sidebar. Called by `usePanelScope` on mount
-     * and unmount only — it never touches `panelMemory`, which is what keeps
-     * navigating around from rewriting the user's choices.
-     */
-    setPanelScope: (scope: PanelScope | null) => void
-
-    /** Show the panel, or close it if it is the one already showing. */
-    toggleRightPanel: (panel: RightPanel) => void
-    /** Show the panel, never closing it — for buttons that mean "open". */
-    openRightPanel: (panel: RightPanel) => void
-    /** Close what is showing: a panel drops back to the assistant, the assistant closes the rail. */
-    closeRightPanel: () => void
-    /**
-     * `]` (CON-394): put the rail away, or bring back what it was showing —
-     * or the assistant, the rail's floor, when it was showing nothing.
-     */
-    toggleRightRail: () => void
-
-    /** Open the calendar's drawer on this panel, or close it if it is showing. */
-    toggleCalendarDrawer: (panel: CalendarDrawer) => void
-    /** Open the calendar's drawer on this panel — for buttons that mean "open". */
-    openCalendarDrawer: (panel: CalendarDrawer) => void
-    closeCalendarDrawer: () => void
-
-    recordModalOpened: (modalId: string) => void
-
-    /** Close an explainer permanently. Idempotent. */
-    dismissNote: (id: string) => void
-
-    /** Fold an Assets group band, or unfold it if it is folded. */
-    toggleAssetBand: (band: string) => void
-
-    setAssetGrouping: (grouping: AssetGrouping) => void
-
-    setAssetSort: (sort: AssetSort) => void
-
-    /**
-     * Record that the user is looking at this campaign's posts, arranged this
-     * way. Called by the views themselves, on every anchor change — the fold is
-     * identity-stable when nothing moved, so a re-render is not a write.
-     *
-     * The list passes no anchor; it has none, and keeps the calendar's.
-     */
-    rememberPostsPlace: (
-      campaignId: string,
-      visit: { view: PostsView; anchor?: string },
-    ) => void
-
-    // Reset all settings to defaults
-    resetAllSettings: () => void
-  }
 
 const DEFAULT_SETTINGS: LocalSettings = {
   sidebarCollapsed: false,
-  panelMemory: DEFAULT_PANEL_MEMORY,
-  rightRailHidden: false,
+  // The assistant is the product, not a utility drawer: a first run that hides
+  // it behind a button in the corner buries the thing the app is for.
+  assistantOpen: true,
+  helpOpen: false,
   calendarDrawer: null,
+  postTab: DEFAULT_POST_TAB,
   lastOpenedModals: {},
   dismissedNotes: [],
   postsPlace: {},
@@ -194,23 +178,53 @@ const DEFAULT_SETTINGS: LocalSettings = {
   assetSort: null,
 }
 
-const DEFAULT_PANEL_CONTEXT: PanelContext = { scope: null }
+/** The panel the right rail is showing, or `null` when it is closed. */
+export const selectActivePanel = (
+  state: Pick<LocalSettings, 'assistantOpen' | 'helpOpen'>,
+): RightPanel | null => {
+  // Help remembered open in a build (or a browser) where it is off would open
+  // the rail onto a layer nothing renders.
+  if (state.helpOpen && isFeatureEnabled('help-center')) return 'help'
+  return state.assistantOpen ? 'assistant' : null
+}
+
+/** Help goes on top; the assistant takes help away, or it would open underneath. */
+const open = (panel: RightPanel): Partial<LocalSettings> =>
+  panel === 'help'
+    ? { helpOpen: true }
+    : { assistantOpen: true, helpOpen: false }
+
+/** One level at a time: help gives back what it covered, the assistant closes the rail. */
+const close = (state: SettingsState): Partial<LocalSettings> => {
+  const active = selectActivePanel(state)
+  if (active === 'help') return { helpOpen: false }
+  return { assistantOpen: false, helpOpen: false }
+}
 
 /**
- * The panel on screen right now — the remembered choice for this screen, or the
- * assistant, or nothing. Every component asks this; none reads `panelMemory`.
+ * The keys the rail was stored under while it also hosted the post editor's
+ * panels. Read once, on rehydration, so nobody who had closed the assistant
+ * finds it open again.
  */
-export const selectActivePanel = (state: SettingsState): RightPanel | null =>
-  state.rightRailHidden
-    ? null
-    : resolveActivePanel(
-        // Help remembered open in a build (or a browser) where it is off would
-        // open the rail onto a layer nothing renders.
-        isFeatureEnabled('help-center')
-          ? state.panelMemory
-          : { ...state.panelMemory, helpOpen: false },
-        state.scope,
-      )
+type LegacyRail = {
+  panelMemory?: unknown
+  rightRailHidden?: unknown
+}
+
+function rehydrateAssistantOpen(
+  saved: Partial<LocalSettings> & LegacyRail,
+): boolean {
+  if (typeof saved.assistantOpen === 'boolean') return saved.assistantOpen
+  const memory = saved.panelMemory
+  // Never stored at all: the first run, so the first-run default.
+  if (typeof memory !== 'object' || memory === null)
+    return DEFAULT_SETTINGS.assistantOpen
+  // A rail put away with `]` was showing nothing, so it comes back closed.
+  return (
+    (memory as { assistantOpen?: unknown }).assistantOpen === true &&
+    saved.rightRailHidden !== true
+  )
+}
 
 /**
  * The raw entry for one campaign, or `undefined` — the identity is what makes
@@ -229,7 +243,6 @@ export const useSettingsStore = create<SettingsState>()(
       (set, _get) => ({
         // Initial state
         ...DEFAULT_SETTINGS,
-        ...DEFAULT_PANEL_CONTEXT,
 
         // Sidebar actions
         setSidebarCollapsed: (collapsed) => {
@@ -240,65 +253,16 @@ export const useSettingsStore = create<SettingsState>()(
           set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed }))
         },
 
-        // Right sidebar. The screen context is session state; the choices are
-        // the persisted part, and only the three panel actions write them.
-        setPanelScope: (scope) => {
-          set({ scope })
-        },
-
-        // A panel action on a hidden rail acts on what the user can see: the
-        // toggle opens rather than closing something invisible, and opening
-        // shows the rail again.
+        // Right rail: the assistant, and help over it. Every write is a click.
         toggleRightPanel: (panel) => {
-          set((state) => ({
-            rightRailHidden: false,
-            panelMemory: state.rightRailHidden
-              ? openPanel(state.panelMemory, panel, state.scope)
-              : togglePanel(state.panelMemory, panel, state.scope),
-          }))
-        },
-
-        openRightPanel: (panel) => {
-          set((state) => ({
-            rightRailHidden: false,
-            panelMemory: openPanel(state.panelMemory, panel, state.scope),
-          }))
-        },
-
-        closeRightPanel: () => {
-          // A hidden rail shows nothing to close.
           set((state) =>
-            state.rightRailHidden
-              ? {}
-              : { panelMemory: closePanel(state.panelMemory, state.scope) },
+            selectActivePanel(state) === panel ? close(state) : open(panel),
           )
         },
 
-        toggleRightRail: () => {
-          set((state) => {
-            if (state.rightRailHidden) {
-              const remembered = resolveActivePanel(
-                state.panelMemory,
-                state.scope,
-              )
-              return {
-                rightRailHidden: false,
-                panelMemory: remembered
-                  ? state.panelMemory
-                  : openPanel(state.panelMemory, 'assistant', state.scope),
-              }
-            }
-            if (resolveActivePanel(state.panelMemory, state.scope))
-              return { rightRailHidden: true }
-            return {
-              panelMemory: openPanel(
-                state.panelMemory,
-                'assistant',
-                state.scope,
-              ),
-            }
-          })
-        },
+        openRightPanel: (panel) => set(open(panel)),
+
+        closeRightPanel: () => set((state) => close(state)),
 
         toggleCalendarDrawer: (panel) => {
           set((state) => ({
@@ -309,6 +273,8 @@ export const useSettingsStore = create<SettingsState>()(
         openCalendarDrawer: (panel) => set({ calendarDrawer: panel }),
 
         closeCalendarDrawer: () => set({ calendarDrawer: null }),
+
+        setPostTab: (tab) => set({ postTab: tab }),
 
         // Modal tracking actions
         recordModalOpened: (modalId) => {
@@ -357,7 +323,7 @@ export const useSettingsStore = create<SettingsState>()(
         // Reset all settings — this brings closed explainers back, which is
         // the only way to see one again.
         resetAllSettings: () => {
-          set({ ...DEFAULT_SETTINGS, ...DEFAULT_PANEL_CONTEXT })
+          set({ ...DEFAULT_SETTINGS })
         },
       }),
       {
@@ -365,31 +331,40 @@ export const useSettingsStore = create<SettingsState>()(
         // Persist all state except transient modal open states
         partialize: (state) => ({
           sidebarCollapsed: state.sidebarCollapsed,
-          panelMemory: state.panelMemory,
-          rightRailHidden: state.rightRailHidden,
+          assistantOpen: state.assistantOpen,
+          helpOpen: state.helpOpen,
           calendarDrawer: state.calendarDrawer,
+          postTab: state.postTab,
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
           postsPlace: state.postsPlace,
           collapsedAssetBands: state.collapsedAssetBands,
           assetGrouping: state.assetGrouping,
           assetSort: state.assetSort,
-          // Don't persist
-          // scope — where you are, not what you chose
         }),
-        // Rehydration is the one place a panel id — or a remembered calendar
-        // anchor — arrives from outside this build, so it is the one place that
-        // has to distrust them.
+        // Rehydration is the one place a stored value — a remembered calendar
+        // anchor, an option this build no longer has — arrives from outside
+        // this build, so it is the one place that has to distrust them.
         merge: (persisted, current) => {
-          const saved = (persisted ?? {}) as Partial<LocalSettings>
+          const stored = (persisted ?? {}) as Partial<LocalSettings> &
+            LegacyRail
+          // The old rail keys are read once and dropped, not carried in state.
+          const {
+            panelMemory: _panelMemory,
+            rightRailHidden: _rightRailHidden,
+            ...saved
+          } = stored
           return {
             ...current,
             ...saved,
-            panelMemory: sanitizePanelMemory(saved.panelMemory),
-            rightRailHidden: saved.rightRailHidden === true,
+            assistantOpen: rehydrateAssistantOpen(stored),
+            helpOpen: saved.helpOpen === true,
             calendarDrawer: isCalendarDrawer(saved.calendarDrawer)
               ? saved.calendarDrawer
               : null,
+            postTab: isPostTab(saved.postTab)
+              ? saved.postTab
+              : DEFAULT_POST_TAB,
             postsPlace: sanitizePostsPlaces(saved.postsPlace),
             collapsedAssetBands: Array.isArray(saved.collapsedAssetBands)
               ? saved.collapsedAssetBands.filter(

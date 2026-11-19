@@ -1,57 +1,114 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { EMPTY_PANEL_MEMORY } from '@/lib/rightPanel'
 import { selectActivePanel, useSettingsStore } from './settingsStore'
 
-describe('toggleRightRail', () => {
+const active = () => selectActivePanel(useSettingsStore.getState())
+
+describe('the right rail', () => {
   beforeEach(() => {
-    useSettingsStore.setState({
-      scope: null,
-      rightRailHidden: false,
-      panelMemory: EMPTY_PANEL_MEMORY,
-    })
+    useSettingsStore.getState().resetAllSettings()
   })
-  const active = () => selectActivePanel(useSettingsStore.getState())
-  const toggle = () => useSettingsStore.getState().toggleRightRail()
+  const rail = () => useSettingsStore.getState()
 
-  it('opens the assistant on an empty rail', () => {
-    toggle()
+  it('shows the assistant on first run', () => {
     expect(active()).toBe('assistant')
   })
 
-  it('hides an open rail and brings back what it showed', () => {
-    useSettingsStore.setState({ scope: 'post' })
-    useSettingsStore.getState().openRightPanel('postQuality')
-    toggle()
+  it('toggles: Ask Ogen and `]` close it, and open it again', () => {
+    rail().toggleRightPanel('assistant')
     expect(active()).toBeNull()
-    expect(useSettingsStore.getState().rightRailHidden).toBe(true)
-    toggle()
-    expect(active()).toBe('postQuality')
-  })
-
-  it('shows the rail again when a panel is opened while hidden', () => {
-    toggle()
-    toggle()
-    useSettingsStore.getState().toggleRightPanel('assistant')
+    rail().toggleRightPanel('assistant')
     expect(active()).toBe('assistant')
   })
 
-  it('closes nothing it is not showing', () => {
-    toggle()
-    toggle()
-    useSettingsStore.getState().closeRightPanel()
-    toggle()
+  it('never closes from a button that means open', () => {
+    rail().openRightPanel('assistant')
+    rail().openRightPanel('assistant')
     expect(active()).toBe('assistant')
+  })
+
+  it('opens help over the assistant, and closing help gives it back', () => {
+    rail().openRightPanel('help')
+    expect(active()).toBe('help')
+    rail().closeRightPanel()
+    expect(active()).toBe('assistant')
+  })
+
+  it('opens help over a closed rail, and closing it closes the rail', () => {
+    rail().closeRightPanel()
+    rail().toggleRightPanel('help')
+    expect(active()).toBe('help')
+    rail().toggleRightPanel('help')
+    expect(active()).toBeNull()
+  })
+
+  it('takes help away when the assistant is asked for', () => {
+    rail().openRightPanel('help')
+    rail().toggleRightPanel('assistant')
+    expect(active()).toBe('assistant')
+  })
+
+  it('closes from its own X, and the toggle brings it back', () => {
+    rail().closeRightPanel()
+    expect(active()).toBeNull()
+    rail().toggleRightPanel('assistant')
+    expect(active()).toBe('assistant')
+  })
+})
+
+describe('rehydrating the rail', () => {
+  const rehydrate = (persisted: unknown) => {
+    const { merge } = useSettingsStore.persist.getOptions()
+    if (!merge) throw new Error('settingsStore persists without a merge')
+    return merge(persisted, useSettingsStore.getState())
+  }
+
+  it('opens the assistant when nothing was stored', () => {
+    expect(rehydrate(undefined).assistantOpen).toBe(true)
+    expect(rehydrate({}).assistantOpen).toBe(true)
+  })
+
+  it('keeps a stored choice', () => {
+    expect(rehydrate({ assistantOpen: false }).assistantOpen).toBe(false)
+    expect(rehydrate({ assistantOpen: true }).assistantOpen).toBe(true)
+  })
+
+  // The shape stored while the rail also hosted the post editor's panels.
+  it('reads the assistant out of the old panel memory', () => {
+    const closed = rehydrate({
+      panelMemory: { assistantOpen: false, scoped: { post: 'postQuality' } },
+    })
+    expect(closed.assistantOpen).toBe(false)
+    const open = rehydrate({
+      panelMemory: { assistantOpen: true, scoped: { post: 'postQuality' } },
+    })
+    expect(open.assistantOpen).toBe(true)
+  })
+
+  it('brings a rail put away with `]` back closed', () => {
+    const m = rehydrate({
+      panelMemory: { assistantOpen: true, scoped: {} },
+      rightRailHidden: true,
+    })
+    expect(m.assistantOpen).toBe(false)
+  })
+
+  it('treats an unreadable old memory as never seen', () => {
+    expect(rehydrate({ panelMemory: 'assistant' }).assistantOpen).toBe(true)
+  })
+
+  it('does not carry the old keys into state', () => {
+    const m = rehydrate({
+      panelMemory: { assistantOpen: true, scoped: {} },
+      rightRailHidden: false,
+    })
+    expect(m).not.toHaveProperty('panelMemory')
+    expect(m).not.toHaveProperty('rightRailHidden')
   })
 })
 
 describe('the calendar drawer', () => {
   beforeEach(() => {
-    useSettingsStore.setState({
-      scope: null,
-      rightRailHidden: false,
-      panelMemory: { assistantOpen: true, helpOpen: false, scoped: {} },
-      calendarDrawer: null,
-    })
+    useSettingsStore.setState({ assistantOpen: true, calendarDrawer: null })
   })
   const drawer = () => useSettingsStore.getState().calendarDrawer
 
@@ -79,7 +136,7 @@ describe('the calendar drawer', () => {
   it('is left alone by the rail', () => {
     useSettingsStore.getState().openCalendarDrawer('notScheduled')
     useSettingsStore.getState().closeRightPanel()
-    useSettingsStore.getState().toggleRightRail()
+    useSettingsStore.getState().toggleRightPanel('assistant')
     expect(drawer()).toBe('notScheduled')
   })
 })

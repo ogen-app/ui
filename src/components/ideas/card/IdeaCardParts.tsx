@@ -222,7 +222,7 @@ export function FitSection({
 
 /**
  * The answer, last — after everything that informs it. Yes / Not now / No as
- * one joined button group on the inbox's own rules (`VerdictControls`): Yes
+ * one joined button group on the inbox's own rules: Yes
  * and No are one click and no confirmation, both being reversible; Not now
  * asks when, because a postponement that names no day is an archive. Choosing
  * another button changes the answer; the record line under the group says

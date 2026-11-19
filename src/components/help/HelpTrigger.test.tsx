@@ -82,7 +82,7 @@ describe('HelpTrigger', () => {
 
     // Opening from a trigger shows help in the rail, on a fresh trail rather
     // than resuming one.
-    expect(useSettingsStore.getState().panelMemory.helpOpen).toBe(true)
+    expect(useSettingsStore.getState().helpOpen).toBe(true)
     expect(useHelpStore.getState().history).toEqual(['post-statuses'])
   })
 })

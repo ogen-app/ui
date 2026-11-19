@@ -6,7 +6,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
  * What the help panel is reading (CON-173).
  *
  * Whether help is *showing* is not here: help is a right-rail panel, so that
- * is the rail's panel memory (`settingsStore`, `lib/rightPanel`). This holds
+ * is `settingsStore.helpOpen`, read through `selectActivePanel`. This holds
  * the reading — the trail of articles followed in this visit — and the screen
  * on view, and none of it is persisted: a trail from last week would put a
  * Back button in front of an article nobody remembers opening.
