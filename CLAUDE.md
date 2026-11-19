@@ -137,7 +137,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   of the copy (they survive copy/paste, screen readers, and any restyle), so
   never swap them for CSS casing and never "sentence-case" them back. Applies
   to every Danger Zone / irreversible action across the app. Leave the button
-  styling alone — this is a copy rule, not a style rule.
+  styling alone — this is a copy rule, not a style rule. **The one exception is
+  a dropdown menu row**, which is sentence case like the rows around it
+  (`Delete campaign`, a `menuItem` key beside the button's `action`); the
+  caps are the buttons' and the confirm modals'.
 - **Design harnesses live on `design/*` branches, never on `develop`.** A
   harness is a `/design/<feature>` route rendering every state of a component
   from fixtures, and it needs an exemption in `__root.tsx` `beforeLoad` to open

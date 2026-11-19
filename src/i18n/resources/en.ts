@@ -411,6 +411,7 @@ export const en = {
       all: 'All campaigns',
       switch: 'Switch campaign',
       newCampaign: 'New campaign',
+      settings: 'Campaign settings',
     },
     /**
      * Heads the workspace's destinations where they appear inside the account
@@ -1971,6 +1972,57 @@ export const en = {
     openStrategy: 'OPEN STRATEGY',
     openAssets: 'OPEN ASSETS',
     openSettings: 'OPEN SETTINGS',
+
+    /**
+     * The row of doors at the foot of the Overview: one per place in the
+     * campaign, each with the one thing to know before opening it — whether
+     * that part is set, and if not what is missing first (`lib/campaignDoors`).
+     */
+    doors: {
+      title: 'Everything in this campaign',
+      loading: 'Counting…',
+      strategy: {
+        set_one: 'Dates, goal and {{formatted}} channel',
+        set_other: 'Dates, goal and {{formatted}} channels',
+        noDates: 'No dates yet',
+        noGoal: 'No post goal yet',
+        noChannels: 'No channels yet',
+        notConnected: 'No account to publish through',
+      },
+      ideas: {
+        waiting_one: '{{formatted}} idea waiting for a decision',
+        waiting_other: '{{formatted}} ideas waiting for a decision',
+        none: 'Nothing waiting for a decision',
+      },
+      assets: {
+        all: 'Every document in the workspace',
+        some_one: '{{formatted}} document',
+        some_other: '{{formatted}} documents',
+        none: 'None yet — Ogen writes from the brief',
+      },
+      posts: {
+        none: 'No posts yet',
+        some_one: '{{formatted}} post',
+        some_other: '{{formatted}} posts',
+        /** Joined after `some` when any are still plans or drafts. */
+        drafts_one: '{{formatted}} still a draft',
+        drafts_other: '{{formatted}} still drafts',
+      },
+      calendar: {
+        next_one: '{{formatted}} scheduled, next on {{date}}',
+        next_other: '{{formatted}} scheduled, next on {{date}}',
+        some_one: '{{formatted}} scheduled',
+        some_other: '{{formatted}} scheduled',
+        none: 'Nothing scheduled',
+        over: 'Nothing left to go out',
+      },
+      analytics: {
+        some_one: '{{formatted}} post published',
+        some_other: '{{formatted}} posts published',
+        none: 'Results once a post goes out',
+      },
+      settings: 'Name, type, archive or delete',
+    },
 
     /**
      * The calendar's problems, read from the server (CON-462). The fix is
@@ -8633,6 +8685,8 @@ export const en = {
       },
       /** The row's link, named for what it opens. */
       open: 'Open {{name}}',
+      /** The row's three-dots button: what can be done to the campaign. */
+      actions: 'Actions for {{name}}',
       noChannels: 'No channels yet',
       /** The third column when nothing wants the user. */
       goodShape: 'In good shape',
@@ -8774,6 +8828,8 @@ export const en = {
       body: 'Two ways to stop running this campaign. Archiving keeps everything and can be undone; deleting removes the campaign and its posts for good.',
       archive: {
         action: 'ARCHIVE CAMPAIGN',
+        /** A dropdown row is sentence case; the caps are the buttons'. */
+        menuItem: 'Archive campaign',
         confirmTitle: 'Archive {{name}}?',
         confirmBody:
           'The campaign comes off the Campaigns list and stops being offered anywhere new work is filed. Nothing is deleted. Its posts, schedule, brief and content stay exactly as they are, and you can bring it back from the archive at any time.',
@@ -8782,6 +8838,7 @@ export const en = {
       },
       delete: {
         action: 'DELETE CAMPAIGN',
+        menuItem: 'Delete campaign',
         confirmTitle: 'Delete {{name}}?',
         confirmBody:
           'The campaign, its posts and its schedule are removed, and nothing in the app can bring them back. Posts that have already been published stay live on the social networks. Archive it instead if you only want it off the list.',
