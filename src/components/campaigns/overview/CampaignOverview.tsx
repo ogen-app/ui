@@ -976,6 +976,8 @@ function NeedsRowView({
         title={action.fix}
         onClick={() => runAction(action, handlers)}
       >
+        {/* The mark says the fix is Ogen's: it opens the assistant. */}
+        <Logo variant="mark" />
         <span className="truncate">{action.fix}</span>
       </Button>
     ) : action?.kind === 'add-post' ? (
@@ -1012,6 +1014,7 @@ function NeedsRowView({
                 key={i}
                 onSelect={() => runAction(alt.action, handlers)}
               >
+                {alt.action.kind === 'ask' && <Logo variant="mark" />}
                 {alt.label}
               </DropdownMenuItem>
             ),
