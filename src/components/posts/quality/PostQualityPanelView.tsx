@@ -169,7 +169,6 @@ export function PostQualityPanelView({
           </div>
         ) : undefined
       }
-      footerFade={12}
     >
       {unavailable ? (
         <QualityEmptyState
