@@ -1750,6 +1750,19 @@ export const en = {
       subtitle:
         'Posts going out, posts failing, and a report of each day land here as they happen.',
     },
+    /**
+     * The second column: live conditions across every campaign that are wrong
+     * now or about to be (`NeedsYouCard`). Not unread notifications — a row
+     * leaves when it is fixed, not when it is seen.
+     */
+    needsYou: {
+      title: 'Needs you',
+      showMore_one: 'SHOW {{formatted}} MORE',
+      showMore_other: 'SHOW {{formatted}} MORE',
+      allSet: 'Nothing needs you',
+      allSetBody:
+        'Nothing is failing, overdue or about to lapse in any campaign. If that changes, it shows up here.',
+    },
     /** The dot's accessible name — the only thing that says what it means. */
     unread: 'Unread',
     /**

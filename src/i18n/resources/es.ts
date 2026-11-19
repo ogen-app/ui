@@ -1455,6 +1455,14 @@ export const es: Translation = {
       subtitle:
         'Aquí aparecerán las publicaciones que salgan, las que fallen y un informe de cada día.',
     },
+    needsYou: {
+      title: 'Te necesita',
+      showMore_one: 'VER {{formatted}} MÁS',
+      showMore_other: 'VER {{formatted}} MÁS',
+      allSet: 'Nada te necesita',
+      allSetBody:
+        'Nada ha fallado, va con retraso ni está a punto de vencer en ninguna campaña. Si eso cambia, aparecerá aquí.',
+    },
     unread: 'Sin leer',
     recent: 'Nuevo',
     seenBefore: 'Visto antes de esta visita',
