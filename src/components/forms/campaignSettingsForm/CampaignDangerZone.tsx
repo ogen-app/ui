@@ -5,7 +5,7 @@ import { ArchiveIcon, TrashIcon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { useArchiveCampaign, useDeleteCampaign } from '@/hooks/useCampaigns'
 import type { Campaign } from '@/types/campaigns'
 
@@ -19,8 +19,9 @@ type Pending = 'archive' | 'delete' | null
  * option. That reasoning made the wrong trade: it left someone who wanted rid
  * of a campaign scanning two cards to find out which one they meant, and the
  * card that offered the *reversible* answer was the one they had already
- * scrolled past. Both actions live here, archive first, and both wear the
- * destructive button: what they have in common is that they take a campaign
+ * scrolled past. Both actions live here, archive first, in the card's content
+ * rather than its header (a header holds one), and both wear the destructive
+ * button: what they have in common is that they take a campaign
  * out of circulation, and the card is titled Danger Zone. Which of the two is
  * reversible is a fact about consequences, and consequences are stated in the
  * modals rather than encoded in a button colour nobody reads that closely.
@@ -73,15 +74,16 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
 
   return (
     <>
-      <SettingsCard title={t('campaigns.dangerZone.title')}>
-        <div className="flex flex-col gap-3 items-start">
+      <Card title={t('campaigns.dangerZone.title')} capped>
+        <div className="flex flex-col items-start gap-3">
           <p className="max-w-150 text-sm text-tertiary-foreground">
             {t('campaigns.dangerZone.body')}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
-              variant="destructiveInverted"
+              size="sm"
+              variant="destructive"
               onClick={() => setPending('archive')}
             >
               <ArchiveIcon />
@@ -89,7 +91,8 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
             </Button>
             <Button
               type="button"
-              variant="destructiveInverted"
+              size="sm"
+              variant="destructive"
               onClick={() => setPending('delete')}
             >
               <TrashIcon />
@@ -99,7 +102,7 @@ export function CampaignDangerZone({ campaign }: { campaign: Campaign }) {
             </Button>
           </div>
         </div>
-      </SettingsCard>
+      </Card>
 
       <ModalContainer
         isOpen={pending === 'archive'}

@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react'
+import type { ComponentType, MouseEvent, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CaretRightIcon, XIcon, type Icon } from '@phosphor-icons/react'
 
@@ -10,21 +10,23 @@ import { cn } from '@/lib'
 /**
  * The app's one card (design harness `/design/cards`, settled 2026-11-19).
  *
- * Bordered `rounded-md` on the white surface, a `text-lg` title and nothing
- * under it, full width of its column unless `capped`. Every card has a title.
+ * A card is three things: the surface, a header, and some content. The
+ * surface is bordered `rounded-md` on white, full width of its column unless
+ * `capped`. The header is a `text-lg` title with nothing under it, and one
+ * option at its end. The content is the card's own — rows, fields, a chart,
+ * a pair of buttons — and the card says nothing about its shape.
  *
- * A card is one of three things, and what it is decides the end of its header:
- * - **summary**: read here, worked on elsewhere. A `door` and the caret. The
- *   whole card is the door and lifts on hover, or only the heading is, when
- *   rows inside open on their own (a link can't sit inside a link).
- * - **input**: fields, and at most one `action`. Saving is automatic, so the
- *   action is the AI or a move, never a submit.
- * - **display**: read-only, with at most one `action` or one `choice` (a
- *   selector that changes what is shown, such as the period).
- * A notice is a display card whose end is a dismiss X.
+ * The header's option is one of:
+ * - a `door`: the card is read here and worked on elsewhere. The whole card is
+ *   the door and lifts on hover, or only the heading is, when rows inside open
+ *   on their own (a link can't sit inside a link).
+ * - an `action`: one real, filled button — the AI, a move, a destructive step.
+ *   Never a submit: saving is automatic.
+ * - a `choice`: a selector that changes what the content shows (the period).
+ * - an `aside`: a line of text in the qualifier's type (the dates and the day).
+ * - `onDismiss`: the X that makes the card a notice.
  *
- * An `action` is a real, filled button, never a text or ghost one.
- * `icon` + `tone` is a prop on every kind, never a kind of its own.
+ * `icon` + `tone` is a prop on every card, never a kind of its own.
  */
 export type CardDoor = {
   kind: 'header' | 'card'
@@ -52,7 +54,8 @@ function follow(door: CardDoor) {
 
 export type CardAction = {
   label: string
-  icon?: Icon
+  /** A Phosphor glyph, or Ogen's mark when the action is Ogen's. */
+  icon?: ComponentType
   onClick: () => void
   disabled?: boolean
   /** The button's own spinner, while what it started is running. */
@@ -138,12 +141,19 @@ export type CardProps = {
   heading?: 'h1' | 'h2'
   /** Caps the card at the content column (740px). Full width otherwise. */
   capped?: boolean
+  /**
+   * The content scrolls under the header once something holds the card to a
+   * height — a sticky column capped at the screen's. Unheld, the card is as
+   * tall as its content.
+   */
+  scrolls?: boolean
   children?: ReactNode
 } & (
   | {
       door: CardDoor
       action?: never
       choice?: never
+      aside?: never
       onDismiss?: never
       dismissLabel?: never
     }
@@ -151,6 +161,7 @@ export type CardProps = {
       door?: never
       action?: CardAction
       choice?: never
+      aside?: never
       onDismiss?: never
       dismissLabel?: never
     }
@@ -158,6 +169,7 @@ export type CardProps = {
       door?: never
       action?: never
       choice?: CardChoice
+      aside?: never
       onDismiss?: never
       dismissLabel?: never
     }
@@ -165,6 +177,15 @@ export type CardProps = {
       door?: never
       action?: never
       choice?: never
+      aside: ReactNode
+      onDismiss?: never
+      dismissLabel?: never
+    }
+  | {
+      door?: never
+      action?: never
+      choice?: never
+      aside?: never
       onDismiss: () => void
       /** What the X does, when it does more than close ("Don't offer this again"). */
       dismissLabel?: string
@@ -182,11 +203,13 @@ const Caret = () => (
 function End({
   action,
   choice,
+  aside,
   onDismiss,
   dismissLabel,
 }: {
   action?: CardAction
   choice?: CardChoice
+  aside?: ReactNode
   onDismiss?: () => void
   dismissLabel?: string
 }) {
@@ -226,6 +249,12 @@ function End({
         className="w-40 shrink-0"
       />
     )
+  if (aside)
+    return (
+      <span className="shrink-0 text-right text-sm text-tertiary-foreground">
+        {aside}
+      </span>
+    )
   if (onDismiss)
     return (
       <button
@@ -250,10 +279,12 @@ export function Card({
   door,
   action,
   choice,
+  aside,
   onDismiss,
   dismissLabel,
   heading: Heading = 'h2',
   capped = false,
+  scrolls = false,
   children,
 }: CardProps) {
   const heading = (
@@ -314,6 +345,7 @@ export function Card({
         <End
           action={action}
           choice={choice}
+          aside={aside}
           onDismiss={onDismiss}
           dismissLabel={dismissLabel}
         />
@@ -324,6 +356,16 @@ export function Card({
   const box = cn(
     'flex w-full min-w-0 flex-col gap-4 rounded-md border border-border bg-primary p-6',
     capped && 'max-w-content',
+    scrolls && 'min-h-0 flex-1 overflow-hidden',
+  )
+
+  // Edge to edge, so the scroll bar sits on the card's border.
+  const body = scrolls ? (
+    <div className="-mx-6 -mb-6 flex min-h-0 flex-col gap-4 overflow-y-auto px-6 pb-6">
+      {children}
+    </div>
+  ) : (
+    children
   )
 
   const lift =
@@ -340,7 +382,7 @@ export function Card({
         className={cn(box, lift)}
       >
         {header}
-        {children}
+        {body}
       </a>
     )
 
@@ -361,14 +403,14 @@ export function Card({
         className={cn(box, lift)}
       >
         {header}
-        {children}
+        {body}
       </section>
     )
 
   return (
     <section id={id} className={box}>
       {header}
-      {children}
+      {body}
     </section>
   )
 }

@@ -22,12 +22,14 @@ keep it accurate when these rules change.
   **Strategy for all campaigns is the Foundation** (`/foundation/*`), and
   both levels hold the same two things, with no headings over them. For all
   campaigns, the hub in the page's column and, in a fixed-width column beside
-  it (under it when the page is too narrow), one timeline
-  (`strategy/CampaignTimeline` — a plan, not a status list; the Overview's
-  cards already report progress). For one, the same two columns: what it
+  it (under it when the page is too narrow), the Campaigns card
+  (`strategy/StrategyCampaigns` — each campaign's dates, rate, channels and
+  voice: a plan, not a status list; the Overview's cards already report
+  progress). The swimlane timeline it replaced is parked.
+  For one, the same two columns: what it
   commits to and then the Foundation as it has it in the main one, and its
-  phases (`CampaignPhasesCard`) beside it, sticky, where the timeline is one
-  level up. The campaign's cards are being brought into the hub's card
+  phases (`CampaignPhasesCard`) beside it, sticky, where the Campaigns card is
+  one level up. The campaign's cards are being brought into the hub's card
   grammar one at a time — a heading, then `LineItem` rows — the phases first.
   The Foundation as it has it (`strategy/FromTheWorkspace`): the voice, audience
   and series it *chooses*, and the guardrails and facts it only *reads*, as
@@ -135,7 +137,7 @@ keep it accurate when these rules change.
     one taller than the screen is never cut off or given its own scroll: it
     rides up until its foot shows, by the asset page's rule
     (`useStickyColumns`). It carries the page's gutters. Strategy at both
-    levels: the timeline sticky for all campaigns, the phases for one.
+    levels: the Campaigns card sticky for all campaigns, the phases for one.
     Activity, with Needs you sticky beside the day cards: the live
     warnings (`workspaceWarnings`, alert and risk only), never unread
     notifications, which the feed marks read on sight.

@@ -13,6 +13,7 @@ import {
   Alert02Icon,
   BookOpen01Icon,
   Task01Icon,
+  TimelineIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
@@ -22,7 +23,7 @@ import { IgnoredList } from '@/components/assistant/FindingsBlock'
 import { GridCell, PageGrid } from '@/components/page-primitives/PageGrid'
 import { PostStatusBadge } from '@/components/posts/PostStatusBadge.tsx'
 import { Button } from '@/components/ui/button.tsx'
-import { Card as CardFrame } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -162,63 +163,6 @@ export function CampaignOverview({
 }
 
 /**
- * A card on the page: the panel colour with the hairline the menu and the
- * rail are drawn with, so the cards sit in the same frame as the chrome.
- */
-const SURFACE = 'rounded-md border border-border bg-primary'
-
-/**
- * The needs list's card: the glyph in its hue, the title in the display face,
- * and a button opposite. Not the app's `Card` (`ui/card`), because the list
- * scrolls inside it, edge to edge, under a header that stays — and its button
- * carries Ogen's mark, which isn't an `Icon`. Every other card on the page is
- * the app's.
- */
-function Card({
-  glyph,
-  title,
-  aside,
-  className,
-  children,
-}: {
-  glyph: ReactNode
-  title: ReactNode
-  /** Opposite the title: a count, an action. */
-  aside?: ReactNode
-  className?: string
-  children?: ReactNode
-}) {
-  return (
-    <section className={cn(SURFACE, 'flex flex-col gap-4 p-6', className)}>
-      {/* The title keeps its width and the aside goes under it when the two
-          don't fit — a narrow column (the assistant open beside the page)
-          would otherwise cut the title to its first word. */}
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-        <h2 className="flex max-w-full min-w-0 flex-[1_0_auto] items-center gap-2 font-display text-xl font-medium tracking-tight">
-          {glyph}
-          <span className="truncate">{title}</span>
-        </h2>
-        {aside}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function Glyph({ icon, tone }: { icon: IconSvgElement; tone?: string }) {
-  return (
-    <HugeiconsIcon
-      icon={icon}
-      size={20}
-      strokeWidth={1.5}
-      className="shrink-0"
-      style={tone ? { color: tone } : undefined}
-      aria-hidden
-    />
-  )
-}
-
-/**
  * A Hugeicons glyph in the shape `Card`'s `icon` takes (a Phosphor `Icon`),
  * so the cards keep the glyphs the rail draws. The card sizes it and gives it
  * its `tone` through `className` and `style`.
@@ -247,16 +191,18 @@ const CalendarGlyph = hugeGlyph(CALENDAR.icon)
 const AnalyticsGlyph = hugeGlyph(ANALYTICS.icon)
 const SetupGlyph = hugeGlyph(Task01Icon)
 const LearnGlyph = hugeGlyph(BookOpen01Icon)
+const ProgressGlyph = hugeGlyph(TimelineIcon)
+const NeedsGlyph = hugeGlyph(Alert02Icon)
+/** Ogen's mark, in the shape a card action's `icon` takes. */
+const OgenMark = () => <Logo variant="mark" />
 
 // --- The progress card -----------------------------------------------------
 
 /**
- * Where the campaign is in its own time: the stage and the day, the window,
- * today's phase, and the goal as a bar. Everything here is a glance; the
- * goal's arithmetic is on Strategy. What goes out next is the week card's,
- * so it is not repeated here. Two type styles: the title, and one size of
- * text at full strength — the bar's colours are carried by its legend's
- * dots, not by fading the words.
+ * Where the campaign is in its own time: the stage and today's phase in the
+ * title, the dates and the day opposite, and the goal as a bar. Everything
+ * here is a glance; the goal's arithmetic is on Strategy. What goes out next
+ * is the week card's, so it is not repeated here.
  *
  * Exported for the design harness's specimens.
  */
@@ -267,84 +213,86 @@ export function ProgressCard({
   stage: OverviewModel['stage']
   band: OverviewBand
 }) {
+  const { t } = useTranslation()
+  const { phase, when } = useBandLines(band)
   return (
-    <section className={cn(SURFACE, 'flex flex-col gap-4 p-6')}>
-      <ProgressHeader stage={stage} band={band} />
+    <Card
+      icon={ProgressGlyph}
+      tone="var(--nav-overview)"
+      title={t(`campaignOverview.stage.${stage}`)}
+      qualifier={phase}
+      aside={when}
+    >
       <PostsBar band={band} />
-    </section>
+    </Card>
   )
 }
 
 /**
- * The progress card's first line: the stage and today's phase on the left,
- * the dates and the day on the right. `row` is the Campaigns list's size,
- * where the campaign's name is the largest thing and the stage sits under
- * it as a column head. Without a band — a campaign with no dates — the stage
- * alone.
+ * Today's phase ("Launch, day 3 of 10") — none before the start, between
+ * phases or after — and the window with where today sits in it.
+ */
+function useBandLines(band: OverviewBand | null) {
+  const { t, i18n } = useTranslation()
+  if (!band) return { phase: null, when: null }
+  const where =
+    band.startsIn != null
+      ? t('campaignOverview.stats.startsIn', {
+          when: formatRelative(band.startsIn, 'day', i18n.language),
+        })
+      : band.endedAgo != null
+        ? t('campaignOverview.stats.ended', {
+            when: formatRelative(-band.endedAgo, 'day', i18n.language),
+          })
+        : t('campaignOverview.stats.dayOf', {
+            day: formatNumber(band.day),
+            total: formatNumber(band.days),
+          })
+  const current = band.phases.find((p) => p.current)
+  return {
+    phase:
+      current?.day != null
+        ? t('campaignOverview.band.phaseNow', {
+            name: current.name,
+            day: formatNumber(current.day),
+            total: formatNumber(current.days),
+          })
+        : null,
+    when: t('campaignOverview.band.when', {
+      range: formatDateRange(
+        band.start,
+        band.end,
+        { month: 'short', day: 'numeric', year: 'numeric' },
+        i18n.language,
+      ),
+      where,
+    }),
+  }
+}
+
+/**
+ * The Campaigns list's column head for where a campaign is in its own time:
+ * the stage, today's phase under it, and the dates and the day opposite.
+ * Without a band — a campaign with no dates — the stage alone.
  */
 export function ProgressHeader({
   stage,
   band,
-  size = 'card',
 }: {
   stage: OverviewModel['stage']
   band: OverviewBand | null
-  size?: 'card' | 'row'
 }) {
-  const { t, i18n } = useTranslation()
-  const where =
-    band == null
-      ? null
-      : band.startsIn != null
-        ? t('campaignOverview.stats.startsIn', {
-            when: formatRelative(band.startsIn, 'day', i18n.language),
-          })
-        : band.endedAgo != null
-          ? t('campaignOverview.stats.ended', {
-              when: formatRelative(-band.endedAgo, 'day', i18n.language),
-            })
-          : t('campaignOverview.stats.dayOf', {
-              day: formatNumber(band.day),
-              total: formatNumber(band.days),
-            })
-  // Only today's phase; none before the start, between phases or after.
-  const phase = band?.phases.find((p) => p.current)
-  const Heading = size === 'row' ? 'h3' : 'h2'
-
+  const { t } = useTranslation()
+  const { phase, when } = useBandLines(band)
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
       <div className="flex flex-col gap-1">
-        <Heading
-          className={cn(
-            'font-display font-medium',
-            size === 'row' ? 'text-base' : 'text-xl tracking-tight',
-          )}
-        >
+        <h3 className="font-display text-base font-medium">
           {t(`campaignOverview.stage.${stage}`)}
-        </Heading>
-        {phase?.day != null && (
-          <p className="text-sm">
-            {t('campaignOverview.band.phaseNow', {
-              name: phase.name,
-              day: formatNumber(phase.day),
-              total: formatNumber(phase.days),
-            })}
-          </p>
-        )}
+        </h3>
+        {phase && <p className="text-sm">{phase}</p>}
       </div>
-      {band && where && (
-        <span className="ml-auto text-sm">
-          {t('campaignOverview.band.when', {
-            range: formatDateRange(
-              band.start,
-              band.end,
-              { month: 'short', day: 'numeric', year: 'numeric' },
-              i18n.language,
-            ),
-            where,
-          })}
-        </span>
-      )}
+      {when && <span className="ml-auto text-sm">{when}</span>}
     </div>
   )
 }
@@ -516,7 +464,7 @@ function WeekBlock({
   const empty = days.every((d) => d.posts.length === 0)
   const todayKey = now.toDateString()
   return (
-    <CardFrame
+    <Card
       icon={CalendarGlyph}
       tone={CALENDAR.tone}
       title={t(`campaignOverview.week.${kind}`)}
@@ -562,7 +510,7 @@ function WeekBlock({
             ))}
         </ol>
       )}
-    </CardFrame>
+    </Card>
   )
 }
 
@@ -620,7 +568,7 @@ function ResultsBlock({
   const { t } = useTranslation()
   const door = useSectionDoor(campaignId)
   return (
-    <CardFrame
+    <Card
       icon={AnalyticsGlyph}
       tone={ANALYTICS.tone}
       title={t('campaignOverview.results.title')}
@@ -630,7 +578,7 @@ function ResultsBlock({
       {results.performance?.best && (
         <BestPost best={results.performance.best} campaignId={campaignId} />
       )}
-    </CardFrame>
+    </Card>
   )
 }
 
@@ -817,40 +765,33 @@ function NeedsList({
   const askable = rows?.some((r) => r.action?.kind === 'ask') ?? false
   return (
     <div ref={frameRef} className="flex flex-col">
-      <Card
+      {/* Holds the card to the screen's height while it is pinned, so its
+          rows scroll under the header; stacked, it is an ordinary card. */}
+      <div
         className={cn(
-          'flex-1',
+          'flex flex-1 flex-col',
           pinned &&
-            '@min-[40rem]:sticky @min-[40rem]:top-4 @min-[40rem]:max-h-[calc(var(--scroll-viewport,100svh)-2rem)] @min-[40rem]:flex-none @min-[40rem]:overflow-hidden',
+            '@min-[40rem]:sticky @min-[40rem]:top-4 @min-[40rem]:max-h-[calc(var(--scroll-viewport,100svh)-2rem)] @min-[40rem]:flex-none',
         )}
-        glyph={<Glyph icon={Alert02Icon} tone="var(--nav-overview)" />}
-        title={
-          <>
-            {t(`campaignOverview.needs.${model.needsTitle}`)}
-            {rows && rows.length > 0 && (
-              <span className="ml-2 font-sans text-sm font-normal text-tertiary-foreground tabular-nums">
-                {formatNumber(rows.length)}
-              </span>
-            )}
-          </>
-        }
-        aside={
-          askable && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={handlers.askAll}
-            >
-              <Logo variant="mark" />
-              <span>{t('campaignOverview.problems.fixAll')}</span>
-            </Button>
-          )
-        }
       >
-        {/* The rows scroll under the header once the card is as tall as the
-          screen; edge to edge, so the bar sits on the card's border. */}
-        <div className="-mx-6 -mb-6 flex min-h-0 flex-col gap-4 overflow-y-auto px-6 pb-6">
+        <Card
+          scrolls
+          icon={NeedsGlyph}
+          tone="var(--nav-overview)"
+          title={t(`campaignOverview.needs.${model.needsTitle}`)}
+          qualifier={
+            rows && rows.length > 0 ? formatNumber(rows.length) : undefined
+          }
+          action={
+            askable
+              ? {
+                  label: t('campaignOverview.problems.fixAll'),
+                  icon: OgenMark,
+                  onClick: handlers.askAll,
+                }
+              : undefined
+          }
+        >
           {rows === null ? (
             <>
               <Skeleton className="h-10 w-full" />
@@ -878,8 +819,8 @@ function NeedsList({
             campaignId={campaignId}
             items={model.ignored.map((p) => ({ key: p.key, title: p.message }))}
           />
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   )
 }
@@ -1158,7 +1099,7 @@ function SetupCard({
   const { t } = useTranslation()
   const next = steps.find((s) => !s.done)?.id
   return (
-    <CardFrame
+    <Card
       icon={SetupGlyph}
       tone="var(--nav-overview)"
       title={t('campaignOverview.setup.title')}
@@ -1220,7 +1161,7 @@ function SetupCard({
           </li>
         ))}
       </ol>
-    </CardFrame>
+    </Card>
   )
 }
 
@@ -1302,17 +1243,17 @@ function LearnCard({ learnMore }: { learnMore?: () => void }) {
     </ul>
   )
   return learnMore ? (
-    <CardFrame
+    <Card
       icon={LearnGlyph}
       title={title}
       door={{ kind: 'card', onOpen: learnMore }}
     >
       {list}
-    </CardFrame>
+    </Card>
   ) : (
-    <CardFrame icon={LearnGlyph} title={title}>
+    <Card icon={LearnGlyph} title={title}>
       {list}
-    </CardFrame>
+    </Card>
   )
 }
 

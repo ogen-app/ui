@@ -191,7 +191,7 @@ export function CampaignRow({
           )}
         >
           <div className="self-baseline">
-            <ProgressHeader stage={model.stage} band={model.band} size="row" />
+            <ProgressHeader stage={model.stage} band={model.band} />
           </div>
           <div className="flex min-w-0 flex-col gap-1.5 text-sm/5">
             <div className="flex h-5 items-center">

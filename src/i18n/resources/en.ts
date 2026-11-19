@@ -8671,14 +8671,12 @@ export const en = {
       removedByAssistant: '{{what}} removed by the assistant',
       undoInThread: 'UNDO is in the thread',
       /**
-       * Strategy for all campaigns: every campaign on one time axis, with
-       * what each commits to and the voice it writes in.
+       * Strategy for all campaigns: every campaign, with what each commits to
+       * and the voice it writes in.
        */
-      timeline: {
-        empty:
-          'No campaigns yet. Each one you add is drawn here against the others, by its dates.',
-        undated: 'No dates set',
-        barLabel: '{{name}}, {{window}}',
+      campaigns: {
+        title: 'Campaigns',
+        empty: 'No campaigns yet.',
         windowAndRate: '{{window}} · {{rate}}',
         perWeek_one: '{{formatted}} post a week',
         perWeek_other: '{{formatted}} posts a week',

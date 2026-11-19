@@ -5,7 +5,7 @@ import { PageColumns } from '@/components/page-primitives/PageColumns'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { BrandOverview } from '@/components/brand/BrandOverview'
 import { BrandPage } from '@/components/brand/detail'
-import { CampaignTimeline } from '@/components/strategy/CampaignTimeline'
+import { StrategyCampaigns } from '@/components/strategy/StrategyCampaigns'
 import { useBrand } from '@/hooks/useBrand'
 import { useFacts } from '@/hooks/useFacts'
 import { useGuardrailsStance } from '@/hooks/useGuardrailsStance'
@@ -66,7 +66,7 @@ function BrandOverviewPage() {
           scrollHideDelay={350}
         >
           <PageHeader title={t('nav.campaign.strategy')} scrollAway />
-          <PageColumns aside={<CampaignTimeline />} stickyAside>
+          <PageColumns aside={<StrategyCampaigns />} stickyAside>
             <BrandOverview
               brand={fetched(brand)}
               facts={facts}

@@ -7171,11 +7171,9 @@ export const es: Translation = {
       spend: 'Presupuesto e idioma',
       removedByAssistant: '{{what}} quitado por el asistente',
       undoInThread: 'DESHACER está en la conversación',
-      timeline: {
-        empty:
-          'Todavía no hay campañas. Cada una que añadas se dibuja aquí junto a las demás, según sus fechas.',
-        undated: 'Sin fechas',
-        barLabel: '{{name}}, {{window}}',
+      campaigns: {
+        title: 'Campañas',
+        empty: 'Todavía no hay campañas.',
         windowAndRate: '{{window}} · {{rate}}',
         perWeek_one: '{{formatted}} publicación a la semana',
         perWeek_other: '{{formatted}} publicaciones a la semana',
