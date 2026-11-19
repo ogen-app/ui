@@ -25,7 +25,7 @@ function focusComposer() {
  * The app's keyboard shortcuts (CON-394), for as long as a session is open:
  *
  * - `[` toggles the left menu (⌘B still does);
- * - `]` puts the right rail away, or brings back what it was showing;
+ * - `]` toggles the right rail, which is the assistant;
  * - `o` opens the assistant with the cursor in its composer;
  * - `?` opens the cheat sheet;
  * - `g` then a letter goes to a module — inside a campaign, to its own
@@ -69,7 +69,7 @@ export function useAppShortcuts() {
           return
         case ']':
           event.preventDefault()
-          settings.toggleRightRail()
+          settings.toggleRightPanel('assistant')
           return
         case 'o':
           event.preventDefault()

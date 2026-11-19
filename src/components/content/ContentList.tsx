@@ -6,22 +6,18 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { LinkProps } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
-  ArrowsClockwiseIcon,
   FileTextIcon,
   GlobeSimpleIcon,
-  TagIcon,
-  TrashIcon,
   UploadSimpleIcon,
-  XIcon,
 } from '@phosphor-icons/react'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
+import { CardHead } from '@/components/page-primitives/listCards'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ZIndex } from '@/config/zIndex'
-import { FilterSentence } from '@/components/smartFilter/FilterSentence'
+import { FilterPills } from '@/components/smartFilter/FilterPills'
+import { FilterButton } from '@/components/smartFilter/ListStrip'
 import {
   assetCountQuery,
   useBulkTagAssets,
@@ -35,16 +31,15 @@ import {
   type AssetSort,
 } from '@/lib/assetFilter'
 import { formatNumber } from '@/lib/intl'
-import { uploadErrorMessage } from '@/lib/uploadError'
 import { queryAssetIds } from '@/services/api/content'
 import {
   useAssistantRequest,
   useListAssistantPage,
 } from '@/hooks/useAssistantContext'
-import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
+import type { UploadItem } from '@/stores/uploadStore'
 import { toast } from '@/stores/toastStore'
 import type { Tag } from '@/types/content'
-import type { AssetListItem, AssetQueryParams } from '@/types/assetList'
+import type { AssetQueryParams } from '@/types/assetList'
 import { ASSET_MODEL } from './smartFilter/assetModel'
 import { NoMatches } from './smartFilter/NoMatches'
 import type { FilterVocabulary } from './smartFilter/useFilterVocabulary'
@@ -60,13 +55,15 @@ type Props = {
   list: ReturnType<typeof useAssetList>
   /** The filter's words — the sentence's, the bands' and the empty state's. */
   vocabulary: FilterVocabulary
-  /** The smart groups' menu, at the sentence's start (the workspace page). */
-  sentenceLeading?: ReactNode
-  /** At the sentence's end: Save as group, or an edited group's actions. */
-  sentenceTrailing?: ReactNode
-  /** Under the sentence: an open group whose filter no longer works. */
+  /** The smart groups' menu, at the head line's end (the workspace page). */
+  views?: ReactNode
+  /** The open smart group, leading the pills. */
+  openView?: ReactNode
+  /** After the pills: Save as group, or an edited group's actions. */
+  pillsTrailing?: ReactNode
+  /** Over the list: an open group whose filter no longer works. */
   groupNotice?: ReactNode
-  /** Whether the sentence offers Clear — not while a group is open. */
+  /** Whether the pills offer Clear filters — not while a group is open. */
   clearable: boolean
   /** The request behind it — what "select all matching" asks again for ids. */
   params: AssetQueryParams
@@ -81,10 +78,9 @@ type Props = {
   /** Files still in transit to this scope, or refused on the way. */
   uploads: UploadItem[]
   /**
-   * Deletes documents, and resolves once every one has settled. One path for
-   * every way in: the row's bin confirms the same dialog the selection does,
-   * so a single row is a selection of one rather than a second code path that
-   * skips the asking.
+   * Deletes documents, and resolves once every one has settled — after the
+   * same confirmation, whichever way in (the selection here, the document's
+   * own screen).
    */
   onDeleteMany: (ids: string[]) => Promise<void>
   onWrite: () => void
@@ -95,12 +91,11 @@ type Props = {
 /** The date-added grouping's disjoint bands. */
 type CreatedBand = '1d' | '7d' | '30d' | 'earlier'
 
-/** What the delete dialog is asking about, and which gesture asked. */
+/** What the delete dialog is asking about. */
 type Confirming = {
   ids: string[]
   /** Named in the title when it is one document. */
   title: string | null
-  fromSelection: boolean
 }
 
 /**
@@ -123,16 +118,21 @@ type Confirming = {
  * filter clears the selection: a set picked under one question must not be
  * deleted under another.
  *
- * **Select all opens the Group by / Sort line** (CON-392), over the rows'
- * boxes — where it sits on Ideas. What it selects is every match, not the
- * rows loaded so far; the sentence above says how many that is.
+ * **One line over the list** (design/ideas-cards, as on Ideas; the documents'
+ * tab and count are the page header's): the list's head, pinned — the box
+ * over the boxes, then Filter and the filters as pills, Views, Group and Sort
+ * at its end; or the selection and its actions in their place.
+ * **Selection is the mail-client pattern**: the head box takes the cards
+ * loaded and a half-ticked one clears; a group's box fills its group; Shift
+ * extends a range; widening to every match is its own named step.
  */
 export function ContentList({
   campaignId,
   list,
   vocabulary,
-  sentenceLeading,
-  sentenceTrailing,
+  views,
+  openView,
+  pillsTrailing,
   groupNotice,
   clearable,
   params,
@@ -149,7 +149,7 @@ export function ContentList({
   onUpload,
   onAddWebPage,
 }: Props) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { rows, total, totalUnfiltered, facets, groups, query } = list
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   /** The selection is every id the filter matches, not only loaded rows. */
@@ -158,6 +158,8 @@ export function ContentList({
   const [confirming, setConfirming] = useState<Confirming | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [tagging, setTagging] = useState(false)
+  // The pills' add field, which Filter opens.
+  const [adding, setAdding] = useState(false)
 
   // Held here rather than passed down from the page, unlike the delete: filing
   // a tag is the same act in both scopes, with nothing for a campaign to also
@@ -201,12 +203,39 @@ export function ContentList({
 
   const narrowed = isFilterActive(filter)
 
-  const toggleRow = (id: string) => {
+  /** The last box pressed, which Shift extends a range from. */
+  const anchor = useRef<string | null>(null)
+  const toggleRow = (id: string, shift = false) => {
     setAllMatching(false)
     setTicked((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      const on = !prev.has(id)
+      const from = shift && anchor.current
+      const a = from ? rows.findIndex((r) => r.id === from) : -1
+      const b = rows.findIndex((r) => r.id === id)
+      const range =
+        a >= 0 && b >= 0
+          ? rows.slice(Math.min(a, b), Math.max(a, b) + 1)
+          : [{ id }]
+      for (const r of range)
+        if (on) next.add(r.id)
+        else next.delete(r.id)
+      return next
+    })
+    anchor.current = id
+  }
+  /**
+   * A group's box takes the group's loaded cards: half-ticked, it fills the
+   * group rather than clearing it — clearing everything is the head box's job.
+   */
+  const toggleBand = (ids: string[]) => {
+    setAllMatching(false)
+    setTicked((prev) => {
+      const next = new Set(prev)
+      const all = ids.every((id) => next.has(id))
+      for (const id of ids)
+        if (all) next.delete(id)
+        else next.add(id)
       return next
     })
   }
@@ -235,29 +264,17 @@ export function ContentList({
     setAllMatching(false)
   }
 
-  // Everything, some, or nothing — against the whole match, which is what the
-  // box selects. Full clears; anything less fills it.
-  const everything = total > 0 && (allMatching || ticked.size >= total)
-  // `ml-4` lines the box up with the rows' check boxes: the line's inset is
-  // 4px, a row's 20px.
-  const selectAll = (
-    <Checkbox
-      className="mr-1 ml-4"
-      checked={everything ? true : ticked.size > 0 ? 'indeterminate' : false}
-      disabled={total === 0 || resolving}
-      onCheckedChange={() =>
-        everything ? clearSelection() : void selectAllMatching()
-      }
-      aria-label={
-        everything
-          ? t('content.selection.clearAll')
-          : t('content.selection.selectAll', {
-              count: total,
-              formatted: formatNumber(total, {}, i18n.language),
-            })
-      }
-    />
-  )
+  // The head box takes the page — the cards loaded — and widening to every
+  // match is a separate, named step; a half-ticked head box clears.
+  const loadedIds = useMemo(() => [...new Set(rows.map((r) => r.id))], [rows])
+  const onPage = loadedIds.filter((id) => ticked.has(id)).length
+  const pageAll = loadedIds.length > 0 && onPage === loadedIds.length
+  const elsewhere = allMatching ? 0 : ticked.size - onPage
+  const headState: boolean | 'indeterminate' =
+    allMatching || pageAll ? true : ticked.size > 0 ? 'indeterminate' : false
+  const toggleHead = () =>
+    ticked.size > 0 ? clearSelection() : setTicked(new Set(loadedIds))
+  const selecting = ticked.size > 0 || allMatching
 
   const groupLabel = useCallback(
     (key: string): string => {
@@ -277,27 +294,12 @@ export function ContentList({
     [grouping, t, vocabulary],
   )
 
-  const ideasLink: LinkProps = campaignId
-    ? { to: '/campaigns/$campaignId/ideas', params: { campaignId } }
-    : { to: '/ideas' }
-
   const handleDeleteConfirmed = async () => {
     if (!confirming) return
     setDeleting(true)
     await onDeleteMany(confirming.ids)
     setDeleting(false)
-    if (confirming.fromSelection) {
-      setTicked(new Set())
-      setAllMatching(false)
-    } else {
-      const [gone] = confirming.ids
-      setTicked((prev) => {
-        if (!prev.has(gone)) return prev
-        const next = new Set(prev)
-        next.delete(gone)
-        return next
-      })
-    }
+    clearSelection()
     setConfirming(null)
   }
 
@@ -362,58 +364,113 @@ export function ContentList({
     )
   }
 
+  const busy = deleting || bulkTag.isPending || resolving
+
   return (
-    // Tighter than Ideas, which has a capture field to set apart (CON-392):
-    // the sentence sits under the title, 12px over the Group by / Sort line.
     // In the page's one scroller (CON-392), under its sticky header.
-    <div className="flex flex-col gap-3 pt-1 pb-4">
-      <div className="flex flex-col gap-1">
-        <FilterSentence
-          filter={filter}
-          onChange={onFilterChange}
-          model={ASSET_MODEL}
-          vocabulary={vocabulary}
-          total={total}
-          totalUnfiltered={totalUnfiltered}
-          countQuery={(f) => assetCountQuery(paramsFor(f))}
-          leading={sentenceLeading}
-          trailing={sentenceTrailing}
-          clearable={clearable}
-        />
-        {groupNotice}
-      </div>
-
-      <AssetViewBar
-        leading={selectAll}
-        undecided={list.ideasUndecidedTotal}
-        documents={total}
-        ideasLink={ideasLink}
-        grouping={grouping}
-        onGroupingChange={onGroupingChange}
-        scoped={!!campaignId}
-        sort={sort}
-        onSortChange={onSortChange}
-        searching={!!filter.text}
-      />
-
-      {uploads.length > 0 && <UploadingRows uploads={uploads} />}
+    <div className="flex flex-col">
+      {groupNotice}
 
       <AssetList
+        head={
+          <CardHead
+            wide
+            box={
+              <Checkbox
+                checked={headState}
+                disabled={resolving || loadedIds.length === 0}
+                onCheckedChange={toggleHead}
+                aria-label={
+                  ticked.size > 0
+                    ? t('content.selection.clearAll')
+                    : t('content.selection.selectPage')
+                }
+              />
+            }
+          >
+            {selecting ? (
+              <SelectionLine
+                count={ticked.size}
+                allMatching={allMatching}
+                elsewhere={elsewhere}
+                canWiden={pageAll && !allMatching && total > onPage}
+                total={total}
+                resolving={resolving}
+                onWiden={() => void selectAllMatching()}
+                onClear={clearSelection}
+              >
+                {/* Tag first: it is the reversible one, and a line whose
+                    first action deletes is one people learn to approach
+                    carefully rather than use. Ghost, not the destructive red:
+                    the dialog behind DELETE is where the warning belongs. */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTagging(true)}
+                  disabled={busy}
+                >
+                  {t('content.tagging.action')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => {
+                    const ids = [...ticked]
+                    const only =
+                      ids.length === 1
+                        ? rows.find((r) => r.id === ids[0])
+                        : undefined
+                    setConfirming({ ids, title: only?.title.trim() || null })
+                  }}
+                >
+                  {t('content.selection.delete')}
+                </Button>
+              </SelectionLine>
+            ) : (
+              <>
+                <div className="flex min-w-0 flex-1 items-start gap-x-4">
+                  <FilterButton
+                    count={ASSET_MODEL.tokensOf(filter).length}
+                    onClick={() => setAdding(true)}
+                  />
+                  <FilterPills
+                    inline
+                    filter={filter}
+                    onChange={onFilterChange}
+                    model={ASSET_MODEL}
+                    vocabulary={vocabulary}
+                    countQuery={(f) => assetCountQuery(paramsFor(f))}
+                    adding={adding}
+                    onAddingChange={setAdding}
+                    clearable={clearable}
+                    leading={openView}
+                    trailing={pillsTrailing}
+                  />
+                </div>
+                <AssetViewBar
+                  views={views}
+                  grouping={grouping}
+                  onGroupingChange={onGroupingChange}
+                  scoped={!!campaignId}
+                  sort={sort}
+                  onSortChange={onSortChange}
+                  searching={!!filter.text}
+                />
+              </>
+            )}
+          </CardHead>
+        }
         rows={rows}
         groups={groups}
-        total={total}
         grouping={grouping}
         groupLabel={groupLabel}
         campaignId={campaignId}
+        uploads={uploads}
         selectedIds={ticked}
+        selecting={selecting}
         onToggleRow={toggleRow}
-        onDelete={(asset: AssetListItem) =>
-          setConfirming({
-            ids: [asset.id],
-            title: asset.title.trim() || null,
-            fromSelection: false,
-          })
-        }
+        onToggleBand={toggleBand}
         asOf={query.dataUpdatedAt}
         onEndReached={() => {
           if (query.hasNextPage && !query.isFetchingNextPage)
@@ -422,41 +479,24 @@ export function ContentList({
         loadingMore={query.isFetchingNextPage}
         emptyState={
           query.isError ? (
-            <p className="px-6 py-12 text-center text-sm text-destructive">
+            <p className="px-6 py-12 text-center text-sm/5 text-destructive">
               {t('content.filter.loadFailed')}
             </p>
           ) : narrowed ? (
-            <NoMatches
-              filter={filter}
-              vocabulary={vocabulary}
-              paramsFor={paramsFor}
-              onChange={onFilterChange}
-            />
+            <div className="pt-4">
+              <NoMatches
+                filter={filter}
+                vocabulary={vocabulary}
+                paramsFor={paramsFor}
+                onChange={onFilterChange}
+              />
+            </div>
           ) : undefined
         }
         // The list is a real fetch, so it arrives after a loader rather than
         // with the page around it.
         className="page-content-motion"
       />
-
-      {ticked.size > 0 && (
-        <SelectionBar
-          count={ticked.size}
-          busy={deleting || bulkTag.isPending || resolving}
-          onClear={clearSelection}
-          onTag={() => setTagging(true)}
-          onDelete={() => {
-            const ids = [...ticked]
-            const only =
-              ids.length === 1 ? rows.find((r) => r.id === ids[0]) : undefined
-            setConfirming({
-              ids,
-              title: only?.title.trim() || null,
-              fromSelection: true,
-            })
-          }}
-        />
-      )}
 
       <TagDocumentsDialog
         count={ticked.size}
@@ -481,94 +521,91 @@ export function ContentList({
 }
 
 /**
- * What is ticked, and what can be done to it.
+ * The list's head while something is ticked: how many, then — the
+ * mail-client way — how many are ticked out of sight, or the named step that
+ * widens a ticked page to every match, or the way out of every match; then
+ * what can be done to them (`children`). The count is in tabular figures, so
+ * the actions hold still while cards are ticked.
  *
- * Two actions, and the bar takes an action only when there is a real operation
- * behind it — it is not a menu of bulk edits standing in for features. Tagging
- * earned its place when the API grew a bulk endpoint (CON-279): before that,
- * nothing in the product could put a tag on a document at all, and the filter
- * above the list sorted by a field only the image screen could set.
- *
- * Tag comes first because it is the reversible one, and because a bar whose
- * leftmost button deletes is a bar people learn to approach carefully rather
- * than use.
- *
- * It floats over the foot of the list rather than opening a band above it,
- * which is where the posts list puts the same idea. An inline bar would appear
- * from nowhere on the first tick and push every row down 40px — putting the
- * second row you meant to tick under the pointer aimed at the first. Floating
- * also keeps the filter in place, which is how the next document to tick gets
- * found.
- *
- * The count is in tabular figures and a fixed box, so the buttons beside it
- * hold still while rows are ticked.
+ * Two actions, each a real operation rather than a menu of bulk edits
+ * standing in for features: tagging (CON-279's bulk endpoint) and DELETE,
+ * which asks first. In the head, pinned, rather than floating over the list's
+ * foot: the head is where the selection is counted and widened, and it stays
+ * in reach however far the list is scrolled.
  */
-function SelectionBar({
+function SelectionLine({
   count,
-  busy,
+  allMatching,
+  elsewhere,
+  canWiden,
+  total,
+  resolving,
+  onWiden,
   onClear,
-  onTag,
-  onDelete,
+  children,
 }: {
   count: number
-  busy: boolean
+  allMatching: boolean
+  /** Ticked but not loaded — the assistant's choice, say. */
+  elsewhere: number
+  /** The whole page is ticked and the match holds more. */
+  canWiden: boolean
+  total: number
+  resolving: boolean
+  onWiden: () => void
   onClear: () => void
-  onTag: () => void
-  onDelete: () => void
+  children: ReactNode
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const n = (value: number) => formatNumber(value, {}, i18n.language)
   return (
-    // The track is full width and takes no clicks, so the bar can centre on the
-    // list without covering it; `bottom-4` and `h-12` are the assistant
-    // trigger's own, which is what puts all three surfaces — trigger, commit
-    // bar, this — on one line along the bottom of the app.
-    // Sticky at the foot of the page's scroller rather than absolute: the
-    // list scrolls with the page now (CON-392), so the bar stays on the
-    // column's bottom edge however far down it is. `-mt-12` takes back the
-    // room it would occupy at the end of the list.
-    <div
-      className="pointer-events-none sticky bottom-4 -mt-12 flex justify-center"
-      style={{ zIndex: ZIndex.pageActionBar }}
-    >
-      <div className="pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg">
-        <span className="shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap">
-          {t('content.selection.count', { count })}
-        </span>
-        <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-primary-foreground"
-          onClick={onTag}
-          disabled={busy}
-        >
-          <TagIcon />
-          <span>{t('content.tagging.action')}</span>
-        </Button>
-        {/* Ghost, like every button on the app's bottom bar, and not the
-            destructive red: the dialog behind it is where the warning belongs,
-            and a button that shouts on every selection teaches people to click
-            past the one screen that is actually asking. Weight carries the
-            hierarchy — the action at full strength, the way out dimmed. */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-primary-foreground"
-          onClick={onDelete}
-          disabled={busy}
-        >
-          <TrashIcon />
-          <span>{t('content.selection.delete')}</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-tertiary-foreground"
+    // One pill's height, like the line it stands in for; the actions' 32px
+    // buttons lean 2px past it either side rather than heighten the line.
+    <div className="flex h-7 min-w-0 flex-1 items-center gap-3">
+      <span
+        role="status"
+        aria-live="polite"
+        className="shrink-0 text-sm/5 font-medium whitespace-nowrap tabular-nums"
+      >
+        {allMatching
+          ? t('content.selection.allSelected', {
+              count: total,
+              formatted: n(total),
+            })
+          : t('content.selection.count', { count })}
+      </span>
+      {allMatching ? (
+        <button
+          type="button"
           onClick={onClear}
-          disabled={busy}
+          className="cursor-pointer truncate text-sm/5 text-secondary-foreground outline-none hover:text-foreground hover:underline focus-visible:underline"
         >
-          {t('content.selection.clear')}
-        </Button>
+          {t('content.selection.clearAll')}
+        </button>
+      ) : canWiden ? (
+        <button
+          type="button"
+          onClick={onWiden}
+          disabled={resolving}
+          className="cursor-pointer truncate text-sm/5 font-medium text-accent outline-none hover:underline focus-visible:underline disabled:opacity-60"
+        >
+          {t('content.selection.selectAll', {
+            count: total,
+            formatted: n(total),
+          })}
+        </button>
+      ) : (
+        elsewhere > 0 && (
+          <span className="truncate text-sm/5 text-secondary-foreground">
+            {t('content.selection.elsewhere', {
+              count: elsewhere,
+              formatted: n(elsewhere),
+            })}
+          </span>
+        )
+      )}
+      <div className="-my-0.5 ml-auto flex shrink-0 items-center gap-1">
+        {children}
       </div>
     </div>
   )
@@ -636,85 +673,5 @@ function EmptyBank({
         </div>
       }
     />
-  )
-}
-
-/**
- * Files in flight, above the list.
- *
- * They sit outside the table on purpose: an upload has no extracted text and
- * no status worth a badge, so it would be a mostly-blank asset row pretending
- * to be a full one. The moment the server has it, it leaves this band and
- * joins the list as a `processing` row.
- *
- * Refusals stay here rather than in the app-level tracker, because this is
- * where the file was dropped and where the user is looking.
- */
-function UploadingRows({ uploads }: { uploads: UploadItem[] }) {
-  const { t } = useTranslation()
-  const retry = useUploadStore((s) => s.retry)
-  const remove = useUploadStore((s) => s.remove)
-
-  return (
-    <div className="flex shrink-0 flex-col gap-1.5">
-      {uploads.map((file) => (
-        <div
-          key={file.id}
-          className="flex items-center gap-3 bg-secondary px-3 py-2"
-        >
-          <UploadSimpleIcon className="size-4 shrink-0 text-tertiary-foreground" />
-          {/* The reason sits under the name rather than beside it. Worded
-              refusals are sentences now (`lib/uploadError`), and a sentence on
-              the same line squeezed the filename — which is the half that says
-              *which* file is being talked about. */}
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm">{file.filename}</span>
-            {file.phase === 'failed' && (
-              <span className="truncate text-xs text-destructive">
-                {file.error
-                  ? uploadErrorMessage(t, file.error)
-                  : t('uploads.failed')}
-              </span>
-            )}
-          </div>
-          {file.phase === 'failed' ? (
-            <>
-              {/* Not for a file this client refused before sending it — the
-                  same file fails the same check again. */}
-              {file.kind !== null && (
-                <Button
-                  variant="ghost"
-                  size="xsIcon"
-                  aria-label={`Retry ${file.filename}`}
-                  onClick={() => retry(file.id)}
-                >
-                  <ArrowsClockwiseIcon className="size-4" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="xsIcon"
-                aria-label={`Dismiss ${file.filename}`}
-                onClick={() => remove(file.id)}
-              >
-                <XIcon className="size-4" />
-              </Button>
-            </>
-          ) : (
-            <>
-              <div className="h-1 w-24 shrink-0 bg-background">
-                <div
-                  className="h-full bg-info transition-[width]"
-                  style={{ width: `${file.progress}%` }}
-                />
-              </div>
-              <span className="w-9 shrink-0 text-right text-xs tabular-nums text-tertiary-foreground">
-                {file.progress}%
-              </span>
-            </>
-          )}
-        </div>
-      ))}
-    </div>
   )
 }

@@ -33,6 +33,8 @@ export function FormatPicker({
   disabled,
   id,
   variant = 'primary',
+  size,
+  ariaLabel,
   className,
 }: {
   /**
@@ -46,6 +48,9 @@ export function FormatPicker({
   disabled?: boolean
   id?: string
   variant?: 'default' | 'ghost' | 'primary' | 'inline'
+  size?: 'default' | 'sm' | 'lg'
+  /** The trigger's accessible name, when no `<label>` points at its `id`. */
+  ariaLabel?: string
   className?: string
 }) {
   const { t } = useTranslation()
@@ -64,6 +69,8 @@ export function FormatPicker({
       id={id}
       className={className}
       variant={variant}
+      size={size}
+      ariaLabel={ariaLabel}
       value={current ?? UNSET}
       elements={elements}
       disabled={disabled}

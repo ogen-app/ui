@@ -165,7 +165,7 @@ Loaded automatically in `src/components/layout`, `src/components/page-primitives
 - The nav is one menu, and the campaign is a filter over it.
 - Posts is a list and the Calendar is a calendar — they are two destinations, not three views of one.
 - Documents are Assets, and Assets is a module rather than a section of Foundation.
-- The right sidebar never stores which panel is open.
+- The right rail is the assistant's, with help over it.
 - Explanatory copy goes in `<Explainer>`.
 - A page header names the place, and the switcher names the scope.
 - There are no centred columns.
@@ -182,6 +182,7 @@ Loaded automatically in `src/components/smartFilter`, `src/components/content`, 
 - The asset list is the server's answer to the URL, a page at a time.
 - The Ideas list is the server's answer to the URL too.
 - A campaign's posts list and calendar read one filter.
+- The Ideas and Assets lists are cards on `listCards`' rules: tabs in the page header, and one pinned line for the filter, the arrangement and the selection.
 
 ### Posts — [`docs/conventions/posts.md`](./docs/conventions/posts.md)
 
@@ -319,7 +320,7 @@ and formats in `campaigns.md`.
 - Brand from what you have is live, unflagged.
 - Calendar preferences are one set per user, shared by every calendar.
 - Two operator-tunable server limits are mirrored on the client with nothing to sync them.
-- The help centre waits on content, not on an endpoint.
+- The help centre is on, read from Sanity.
 - The Profile marketing-email switch is built but flagged off.
 
 ## Global rules

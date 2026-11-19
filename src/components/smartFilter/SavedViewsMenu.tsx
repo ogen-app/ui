@@ -1,8 +1,10 @@
+import { LINE_CONTROL } from './ListStrip'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { FilterMailSquareIcon } from '@hugeicons/core-free-icons'
 import {
+  BookmarkSimpleIcon,
   CaretDownIcon,
   CheckIcon,
   DotsThreeIcon,
@@ -59,6 +61,7 @@ export function SavedViewsMenu({
   onShare,
   onDuplicate,
   onDelete,
+  trigger = 'line',
 }: {
   views: SavedView[]
   /** "All ideas", "All assets": the list with no group open. */
@@ -77,6 +80,12 @@ export function SavedViewsMenu({
   onShare: (view: SavedView, shared: boolean) => void
   onDuplicate: (view: SavedView) => void
   onDelete: (view: SavedView) => void
+  /**
+   * `tab`: the card lists' quiet "Views" beside Filter in the tab strip
+   * (design/ideas-cards). An open group is named at the head of the pills
+   * row instead, and closed there, so the menu has no "All …" item.
+   */
+  trigger?: 'line' | 'tab'
 }) {
   const { t, i18n } = useTranslation()
   const count = (n: number) => formatNumber(n, {}, i18n.language)
@@ -90,53 +99,70 @@ export function SavedViewsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('savedViews.trigger', { name: label })}
-          // A ghost button opening the sentence's line (CON-391). Its 17px
-          // inset puts the icon's centre at 26px — over the select-all box
-          // in the rows' 20px inset, and so over every row's.
-          className="flex h-[34px] shrink-0 cursor-pointer items-center gap-2 pr-2.5 pl-[17px] text-[15px] font-medium outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent data-[state=open]:bg-secondary"
-        >
-          <HugeiconsIcon
-            icon={FilterMailSquareIcon}
-            size={18}
-            strokeWidth={1.5}
-            aria-hidden
-          />
-          <span className="max-w-56 truncate">{label}</span>
-          {active?.shared && (
-            <UsersIcon
-              className="size-3.5 text-tertiary-foreground"
-              aria-label={t('savedViews.shared')}
+        {trigger === 'tab' ? (
+          <button type="button" className={LINE_CONTROL}>
+            <BookmarkSimpleIcon
+              className="size-4"
+              weight={active ? 'fill' : 'regular'}
+              aria-hidden
             />
-          )}
-          {figure !== null && (
-            <span className="text-accent tabular-nums">{figure}</span>
-          )}
-          {edited && (
-            <span className="text-xs font-normal text-accent">
-              {t('savedViews.edited')}
-            </span>
-          )}
-          <CaretDownIcon className="size-3.5 text-secondary-foreground" />
-        </button>
+            {t('savedViews.views')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label={t('savedViews.trigger', { name: label })}
+            // A ghost button opening the sentence's line (CON-391). Its 17px
+            // inset puts the icon's centre at 26px — over the select-all box
+            // in the rows' 20px inset, and so over every row's.
+            className="flex h-[34px] shrink-0 cursor-pointer items-center gap-2 pr-2.5 pl-[17px] text-[15px] font-medium outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent data-[state=open]:bg-secondary"
+          >
+            <HugeiconsIcon
+              icon={FilterMailSquareIcon}
+              size={18}
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <span className="max-w-56 truncate">{label}</span>
+            {active?.shared && (
+              <UsersIcon
+                className="size-3.5 text-tertiary-foreground"
+                aria-label={t('savedViews.shared')}
+              />
+            )}
+            {figure !== null && (
+              <span className="text-accent tabular-nums">{figure}</span>
+            )}
+            {edited && (
+              <span className="text-xs font-normal text-accent">
+                {t('savedViews.edited')}
+              </span>
+            )}
+            <CaretDownIcon className="size-3.5 text-secondary-foreground" />
+          </button>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={6} className="w-80 p-1.5">
-        <DropdownMenuItem
-          onSelect={() => onOpen(null)}
-          className={cn('gap-2.5', !active && 'font-medium')}
-        >
-          <span className="flex size-4 shrink-0 items-center">
-            {!active && <CheckIcon className="size-3.5 text-accent" />}
-          </span>
-          <span className="min-w-0 flex-1 truncate">{allLabel}</span>
-          <span className="text-xs text-accent tabular-nums">
-            {count(allCount)}
-          </span>
-        </DropdownMenuItem>
+      <DropdownMenuContent
+        align={trigger === 'tab' ? 'end' : 'start'}
+        sideOffset={6}
+        className="w-80 p-1.5"
+      >
+        {trigger === 'line' && (
+          <DropdownMenuItem
+            onSelect={() => onOpen(null)}
+            className={cn('gap-2.5', !active && 'font-medium')}
+          >
+            <span className="flex size-4 shrink-0 items-center">
+              {!active && <CheckIcon className="size-3.5 text-accent" />}
+            </span>
+            <span className="min-w-0 flex-1 truncate">{allLabel}</span>
+            <span className="text-xs text-accent tabular-nums">
+              {count(allCount)}
+            </span>
+          </DropdownMenuItem>
+        )}
 
-        <DropdownMenuLabel className="pt-3">
+        <DropdownMenuLabel className={trigger === 'line' ? 'pt-3' : undefined}>
           {t('savedViews.groups')}
         </DropdownMenuLabel>
         {views.length === 0 ? (

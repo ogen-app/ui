@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
-import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { useAtScrollEnd } from '@/components/page-primitives/useAtScrollEnd'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { IdeaListSearch } from '@/lib/ideaFilter'
@@ -35,11 +34,10 @@ import { IdeasQuerySurface } from './query/IdeasQuerySurface'
  * that campaign.
  *
  * **The post page's scroll frame** (CON-392), at both levels: the header
- * sticky inside one `ScrollArea`, carrying its own 80px fade; the capture
- * field, the sentence, the piles and the list scrolling under it, the list's
- * bands pinning at the header's foot (`pinnedBands`); `PageBottomFader` along
- * the bottom. The campaign layout hands this section its whole page, as it
- * does Assets, so the header is drawn here at both levels.
+ * sticky inside one `ScrollArea` — drawn by the list, since it carries the
+ * piles and ADD IDEA — and the list scrolling under it, its head pinning at
+ * the header's foot (`pinnedBands`); `PageBottomFader` along the bottom. The
+ * campaign layout hands this section its whole page, as it does Assets.
  */
 export function IdeasSurface({
   campaignId = null,
@@ -60,6 +58,7 @@ export function IdeasSurface({
   const [hasMore, setHasMore] = useState(false)
   const body = (
     <IdeasQuerySurface
+      heading={heading}
       campaignId={campaignId}
       search={search}
       onSearchChange={onSearchChange}
@@ -76,8 +75,7 @@ export function IdeasSurface({
           type="scroll"
           scrollHideDelay={350}
         >
-          <PageHeader title={heading} />
-          <div className="px-3 lg:px-6">{body}</div>
+          {body}
         </ScrollArea>
         {/* Gone once the list has nothing below it: scrolled to its end
             with no further page to load. */}

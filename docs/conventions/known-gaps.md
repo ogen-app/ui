@@ -37,7 +37,7 @@ a judgement call about a component rather than a mechanical fix
 ([`docs/quality-tooling.md`](./docs/quality-tooling.md)) · **i18n converts whole screens in some
 places and only islands in others.** Converted whole: the auth screens,
 sidebar, Profile, Workspace Settings, the campaign calendar (its week, month
-and list views, the cards, both rail panels and the posts table), the
+and list views, the cards, both drawer panels and the posts table), the
 analytics surfaces (the workspace dashboard, the campaign composition, a
 post's own numbers and the three view mappers behind them), Brand (the
 Overview, all five sections, the three editors and the routes — plus the two
@@ -108,26 +108,44 @@ existing platforms' constraint jsonb untouched, so `lib/platformMedia.ts`'s
 override table cannot be retired either, and an operator editing Instagram's
 image cap changes nothing the editor checks.
 
-**The help centre waits on content, not on an endpoint** (`help-center`,
-CON-173). The drawer, its triggers and the `#help/<key>` deep link are built;
-`services/help` serves fixtures. There is no API in the way — articles live in
-the Sanity project `getogen.com` already runs, and the app reads the **public
-`production` dataset** — so switching on is: seed `production`, register the
-app's origins for CORS (**without** credentials; it only ever reads), and
-replace the two functions in `services/help/index.ts` with the GROQ query. The
-starter articles were bootstrapped into the private `staging` dataset, which a
-browser cannot authenticate against, and that is the whole of why the flag is
-off. Three things to keep hold of when it lands. Help content must **never** go
-through `services/api/http.ts` — every request in there carries
-`credentials: 'include'`, and Sanity is a third party. An article is identified
-by a language-independent `key` and cross-linked by reference rather than by
-title, so a translation cannot break a link; the catalogue holds only the
-drawer's own chrome (`help.*`), because prose is content and belongs in the
-CMS. And the trigger is the feature's only presence on ordinary screens, so it
-reads the flag and passes it to `useHelpTopicMap({ enabled })` — an
-unconditional read would open a cross-origin request from the post editor for a
-drawer that cannot be opened, which fixtures hide right up until the deploy
-that swaps them out.
+**The help centre is on, read from Sanity** (`help-center`, on since
+2026-11-19 and due for deletion; CON-173; [`docs/help-centre.md`](../help-centre.md)). **Every screen has a
+page article, and shared ideas are written once.** A route names the screen it
+is with `staticData: { help: '<page>' }` (`HELP_PAGES` in `lib/helpTopics`;
+deepest match wins, and `ideas` is both levels' Ideas, by the nav rule), and
+**Help** in the top bar, beside Work with Ogen, opens that screen's article in
+the right rail — so a new screen gets help by declaring its key, never by
+placing a button. An article is
+a **page** (explains one screen, may talk about it) or a **concept** (one idea
+several screens share, never mentions a screen); page articles **embed**
+concepts whole through a `helpEmbed` block, which is how post statuses read the
+same on the Posts list, the calendar and the post editor — and later on the
+website — without a copy. Embeds go one level deep. **Help is a rail panel
+that takes the assistant's place** (`settingsStore.helpOpen`: on top of
+whatever was showing, and closing it gives that back), and it follows the page
+while the reader has not followed a link of their own. **With nothing to show
+it says why**: help that could not be fetched offers to try again — never
+"no help yet" over a network fault — and a screen nobody has written for, or
+a key that answers nothing, hands the reader to the assistant. A
+`<HelpTrigger>` **renders nothing while nothing is written for its topic**.
+
+The content lives in the Sanity project `getogen.com` already runs (schema on
+that repo's `alec/con-173-help-content`), read from the **public
+`production` dataset**, so everything published is world-readable. The read
+is `services/help/sanity.ts`, and **every build reads it, dev included** —
+there are no stand-in articles, so a broken query or a missing article shows
+where it happens; only the tests read `src/test/helpArticles`, through a
+mocked `services/help`. Every screen in `HELP_PAGES` has a published article
+(first drafts, to be rewritten in the Studio, which is deployed with the help
+types). The app's origins are registered for CORS (**without** credentials),
+and of localhost only `http://localhost:9010`: a dev server on another port
+gets "Couldn’t load help". Three things to keep
+hold of. Help must **never** go through `services/api/http.ts` — Sanity is a
+third party, and the one bare `fetch` in `sanity.ts` omits credentials on
+purpose. An article is identified by a language-independent `key` and linked
+and embedded by reference, so a translation cannot break a link; an
+untranslated article falls back to English and says so. And the catalogue holds
+only the panel's chrome (`help.*`), because prose is content.
 
 **The Profile marketing-email switch is built but flagged off**
 (`email-preferences` in `config/featureFlags.ts`). CON-155 shipped the server's

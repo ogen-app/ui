@@ -11,6 +11,7 @@ type AssetsSearch = AssetListSearch & {
 }
 
 export const Route = createFileRoute('/_authenticated/assets/')({
+  staticData: { help: 'assets' },
   component: Assets,
   // The list's filter — the same keys the Assets query takes, so the
   // address is the request and a link reopens the same list (CON-371). Per

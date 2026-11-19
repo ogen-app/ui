@@ -29,6 +29,12 @@ type PageHeaderProps = {
   center?: ReactNode
   actions?: ReactNode
   /**
+   * A field laid over the whole row — 4px past it on every side, the glyph
+   * and the actions included — while what it covers stays where it was,
+   * inert, so opening and closing it moves nothing. Ideas' capture field.
+   */
+  overlay?: ReactNode
+  /**
    * A document page: the header scrolls away with the page, and the bar over
    * the page takes over its title (`pageCrumbStore`). Requires a scrollable ancestor (the header must sit
    * inside the page's scroll container).
@@ -65,6 +71,7 @@ export function PageHeader({
   className,
   center,
   actions,
+  overlay,
   scrollAway,
 }: PageHeaderProps) {
   const { toggleSidebar } = useSidebar()
@@ -108,7 +115,7 @@ export function PageHeader({
       )}
       style={scrollAway ? undefined : { zIndex: ZIndex.pageHeader }}
     >
-      <div className="relative flex h-10 items-center gap-3 px-3 lg:px-6">
+      <div className="relative flex min-h-10 items-center gap-3 px-3 lg:px-6">
         <div className="md:hidden shrink-0">
           <Button
             variant={'default'}
@@ -123,7 +130,10 @@ export function PageHeader({
         </div>
         {/* `relative` on both side groups only so they paint over the
             absolutely-positioned centre when a long title runs into it. */}
-        <div className="relative flex flex-1 min-w-0 items-center gap-2">
+        <div
+          inert={!!overlay}
+          className="relative flex flex-1 min-w-0 items-center gap-2"
+        >
           {back}
           {glyph && (
             <span className="flex shrink-0">
@@ -146,8 +156,18 @@ export function PageHeader({
           </div>
         )}
         {actions && (
-          <div className="relative flex shrink-0 items-center gap-2">
+          <div
+            inert={!!overlay}
+            className="relative flex shrink-0 items-center gap-2"
+          >
             {actions}
+          </div>
+        )}
+        {overlay && (
+          // The row's padding less 4px: the field's edge runs 4px outside
+          // the glyph and the action it covers.
+          <div className="absolute -top-1 right-2 left-2 lg:right-5 lg:left-5">
+            {overlay}
           </div>
         )}
       </div>

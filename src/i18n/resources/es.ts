@@ -336,7 +336,8 @@ export const es: Translation = {
     workspaceMenu: 'Menú del espacio de trabajo',
     yourWorkspaces: 'Tus espacios de trabajo',
     accountMenu: 'Menú de la cuenta',
-    askOgen: 'Preguntar a Ogen',
+    openHelp: 'Ayuda',
+    workWithOgen: 'Trabajar con Ogen',
     assistantFinished: 'El asistente ha terminado',
     campaignNoWindow: 'Sin fechas',
     campaign: {
@@ -673,12 +674,15 @@ export const es: Translation = {
   sentence: {
     label: 'Filtro',
     addDetail: 'añadir un detalle',
+    add: 'Añadir',
     addPlaceholder: 'un detalle…',
     change: 'Cambiar: {{clause}}',
     remove: 'Quitar: {{clause}}',
     removeDetail: 'Quitar este detalle',
     done: 'Hecho',
     clear: 'Borrar',
+    clearAll: 'Quitar filtros',
+    more: '+{{formatted}}',
     removeLast: 'quitar el último detalle',
     noValues: 'Aún no hay nada que elegir',
     heading: {
@@ -700,6 +704,8 @@ export const es: Translation = {
     share: 'Compartir con el espacio de trabajo',
     unshare: 'Dejar de compartir',
     duplicate: 'Duplicar',
+    views: 'Vistas',
+    close: 'Cerrar «{{name}}»',
     delete: 'Eliminar',
     copyName: '{{name}} (copia)',
     edited: 'modificado',
@@ -830,6 +836,9 @@ export const es: Translation = {
       dismiss: 'Descartar',
       hintMultiline:
         'Mayús <key/> para otra línea · Intro <key/> para guardarla',
+      open: 'AÑADIR IDEA',
+      close: 'Dejar de añadir ideas',
+      keep: 'Guardar esta idea',
     },
     verdict: {
       yes: 'En marcha',
@@ -841,8 +850,6 @@ export const es: Translation = {
       later: 'En el cajón',
       no: 'Apartar',
       undecide: 'Devolverla a la mesa',
-      close: 'Cerrar esta idea',
-      open: 'Abrir esta idea',
       delete: 'ELIMINAR IDEA',
     },
     horizon: {
@@ -879,10 +886,10 @@ export const es: Translation = {
     undecidedCount_one: '{{count}} idea sobre la mesa',
     undecidedCount_other: '{{count}} ideas sobre la mesa',
     card: {
-      written: 'Escrita',
       writtenBy: 'Escrita por {{name}}',
       writtenByAt: 'Escrita por {{name}} · {{at}}',
       suggestedAt: 'Sugerida por el asistente · {{at}}',
+      suggested: 'Sugerida por el asistente',
       assistant: 'Asistente',
       someone: 'Alguien',
       byAssistant: 'sugerida por el asistente',
@@ -1058,14 +1065,18 @@ export const es: Translation = {
     },
     bulk: {
       select: 'Seleccionar «{{title}}»',
-      selectAll_one: 'Seleccionar {{formatted}} idea',
-      selectAll_other: 'Seleccionar las {{formatted}} ideas',
+      selectPage: 'Seleccionar las ideas que se muestran',
+      selectAllIn_one: 'Seleccionar la {{formatted}} idea de «{{pile}}»',
+      selectAllIn_other: 'Seleccionar las {{formatted}} ideas de «{{pile}}»',
+      allIn_one: 'La {{formatted}} idea de «{{pile}}» está seleccionada',
+      allIn_other: 'Las {{formatted}} ideas de «{{pile}}» están seleccionadas',
+      elsewhere_one: '{{formatted}} más seleccionada en otro sitio',
+      elsewhere_other: '{{formatted}} más seleccionadas en otro sitio',
       clearAll: 'Quitar la selección',
       tooMany: 'Acota el filtro para seleccionarlas todas (hasta 5.000).',
       count_one: '{{count}} seleccionada',
       count_other: '{{count}} seleccionadas',
       delete: 'ELIMINAR',
-      clear: 'QUITAR',
       done_one: 'Se eliminó {{count}} idea.',
       done_other: 'Se eliminaron {{count}} ideas.',
       partial_one:
@@ -1337,8 +1348,6 @@ export const es: Translation = {
 
   formats: {
     none: 'Sin forma',
-    postHint:
-      'Opcional. Qué forma toma esta publicación, aparte del tipo de publicación de la plataforma.',
     'how-to': {
       label: 'Cómo se hace',
       hint: 'Pasos que alguien puede seguir para obtener un resultado.',
@@ -4452,7 +4461,7 @@ export const es: Translation = {
 
     columnTitle: 'Título',
     columnStatus: 'Estado',
-    columnGrounding: 'Fuentes',
+    columnWarnings: 'Avisos',
     columnPlatform: 'Plataforma',
     columnFormat: 'Formato',
     columnCampaign: 'Campaña',
@@ -4461,11 +4470,6 @@ export const es: Translation = {
     columnWhen: 'Cuándo',
 
     notSet: 'Sin programar',
-
-    count_one: '{{formatted}} publicación',
-    count_other: '{{formatted}} publicaciones',
-    countOf_one: '{{formatted}} de {{total}} publicaciones',
-    countOf_other: '{{formatted}} de {{total}} publicaciones',
 
     noPosts: 'No hay publicaciones',
 
@@ -4486,6 +4490,66 @@ export const es: Translation = {
     inDays_other: 'Dentro de {{count}} días',
     daysAgo_one: 'Hace {{count}} día',
     daysAgo_other: 'Hace {{count}} días',
+
+    warnings: {
+      open_one: '{{formatted}} aviso en {{title}}',
+      open_other: '{{formatted}} avisos en {{title}}',
+      panelTitle: 'Avisos',
+      openPost: 'Abrir publicación',
+      none: 'Ya no hay nada que corregir en esta publicación.',
+      kind: {
+        failed: {
+          title: 'No se pudo publicar',
+          detail:
+            'La plataforma la rechazó. Abre la publicación para ver por qué y vuelve a intentarlo.',
+        },
+        missed: {
+          title: 'Se pasó la fecha',
+          detail:
+            'Su hora de publicación pasó sin que saliera. Dale una fecha nueva.',
+        },
+        noPlatform: {
+          title: 'Sin plataforma',
+          detail: 'Elige dónde se publica antes de poder programarla.',
+        },
+        noAccount: {
+          title: 'Ninguna cuenta conectada',
+          detail:
+            'No hay nada conectado para su plataforma. Conecta una cuenta en Ajustes del espacio.',
+        },
+        chooseAccount: {
+          title: 'Elige una cuenta',
+          detail:
+            'Hay más de una cuenta conectada para su plataforma. Elige con cuál se publica.',
+        },
+        accountGone: {
+          title: 'Cuenta desconectada',
+          detail:
+            'La cuenta con la que iba a publicarse ya no está conectada. Elige otra.',
+        },
+        outsidePlatform: {
+          title: 'No es una plataforma de esta campaña',
+          detail:
+            'La campaña ya no usa esta plataforma. Mueve la publicación o vuelve a añadir la plataforma a la campaña.',
+        },
+        outsidePostType: {
+          title: 'No es un tipo de publicación de esta campaña',
+          detail:
+            'La campaña ya no admite este tipo de publicación en esta plataforma. Elige otro tipo.',
+        },
+        notGrounded: {
+          title: 'Escrita sin fuentes',
+          detail:
+            'Se generó a partir de conocimiento general, no del material propio de la campaña.',
+        },
+      },
+    },
+
+    chooseCampaign: {
+      title: '¿A qué campaña añades la publicación?',
+      description:
+        'Una publicación pertenece a una sola campaña. Elige dónde va esta.',
+    },
   },
 
   analytics: {
@@ -5171,7 +5235,149 @@ export const es: Translation = {
       },
     },
 
-    backToPosts: 'Volver a las publicaciones',
+    editor: {
+      titlePlaceholder: 'Título',
+      untitled: 'Publicación sin título',
+      back: 'Volver a las publicaciones',
+      more: 'Más acciones',
+      downloadMarkdown: 'Descargar como Markdown',
+      delete: 'ELIMINAR PUBLICACIÓN',
+      previous: 'Publicación anterior',
+      next: 'Publicación siguiente',
+      position: '{{position}} de {{total}}',
+      tabs: {
+        label: 'Sobre esta publicación',
+        overview: 'Resumen',
+        preview: 'Vista',
+        checks: 'Revisión',
+        quality: 'Calidad',
+        sources: 'Fuentes',
+        notes: 'Notas',
+        history: 'Historial',
+        withWarnings_one: '{{label}}: 1 cosa por revisar',
+        withWarnings_other: '{{label}}: {{count}} cosas por revisar',
+      },
+      settings: {
+        platform: 'Plataforma',
+        postType: 'Tipo',
+        account: 'Cuenta',
+        date: 'Publicar',
+        publishing: 'Publicación',
+        phase: 'Fase',
+        noPhase: 'Sin fase',
+        format: 'Formato',
+        platformChange: 'Cambiar de plataforma',
+        platformPick: 'Elegir plataforma',
+        platformPickHint:
+          'Elige la plataforma en la que se publica: decide los tipos de publicación disponibles y la cuenta que publica.',
+        platformNone: 'Esta campaña no tiene plataformas',
+        platformDeselect: 'Quitar la plataforma',
+        postTypeChange: 'Cambiar el tipo de publicación',
+        postTypePick: 'Elegir tipo de publicación',
+        postTypePickHint:
+          'Elige el tipo de publicación de {{platform}}: fija el formato con el que se publica.',
+        postTypeNone: 'Esta campaña no tiene tipos de publicación',
+        notConnected: 'Sin conectar',
+        accountChange: 'Cambiar la cuenta con la que se publica',
+        accountNone: 'Ninguna cuenta conectada',
+        accountNoneHint:
+          'No hay ninguna cuenta de {{platform}} conectada, así que nada puede publicar esta publicación. Conecta una en los ajustes de plataformas.',
+        accountNotRecorded: 'Cuenta sin registrar',
+        accountDisconnected: '{{name}}: desconectada',
+        accountDisconnectedUnnamed: 'Cuenta desconectada',
+        accountGoneHint:
+          '{{name}} ya no está conectada a {{platform}}, así que esta publicación no puede salir con ella. Elige otra cuenta.',
+        accountGoneHintUnnamed:
+          'La cuenta con la que se publica ya no está conectada a {{platform}}. Elige otra.',
+        accountPick: 'Elegir cuenta',
+        accountPickHint_one:
+          'Este espacio de trabajo tiene {{count}} cuenta de {{platform}} conectada: elige con cuál se publica.',
+        accountPickHint_other:
+          'Este espacio de trabajo tiene {{count}} cuentas de {{platform}} conectadas: elige con cuál se publica.',
+        methodChange: 'Cambiar cómo se publica',
+        methodNotAllowed:
+          'No está permitido para {{platform}} en este espacio de trabajo: cámbialo en los ajustes del espacio de trabajo.',
+        methodNotAllowedUnnamed:
+          'No está permitido para esta plataforma en este espacio de trabajo: cámbialo en los ajustes del espacio de trabajo.',
+        methodNoAccount:
+          'No hay ninguna cuenta de {{platform}} conectada: se quedará en un recordatorio.',
+        methodNoAccountUnnamed:
+          'No hay ninguna cuenta para publicar conectada: se quedará en un recordatorio.',
+      },
+      overview: {
+        publishing: 'Publicación',
+        health: 'Estado',
+        quality: 'Calidad',
+        notes: 'Notas',
+        sources: 'Fuentes',
+        writing: 'Redacción',
+        open: 'Abrir {{tab}}',
+        moreChecks_one: 'y {{count}} más',
+        moreChecks_other: 'y {{count}} más',
+        moreNotes_one: 'y {{count}} nota más',
+        moreNotes_other: 'y {{count}} notas más',
+        score: 'Puntuación',
+        notAssessed: 'Aún sin evaluar',
+        note: 'Nota',
+        attached: 'Adjuntas',
+        sourceCount_one: '{{count}} fuente',
+        sourceCount_other: '{{count}} fuentes',
+        noSources: 'Sin fuentes',
+        notGrounded: 'Sin fundamentar: escrita con conocimiento general',
+        problems: {
+          platform: 'Elige una plataforma.',
+          postType: 'Elige un tipo de publicación.',
+          videoUnsupported:
+            'Este tipo de publicación necesita vídeo, y la plataforma no lo publica.',
+          videoTitle: 'El vídeo necesita un título.',
+          titleOver_one: 'El título se pasa en {{count}} carácter.',
+          titleOver_other: 'El título se pasa en {{count}} caracteres.',
+          copy: 'La publicación necesita texto.',
+          copyEmpty: 'Aún no hay texto.',
+          lengthOver_one: 'Se pasa de largo en {{count}} carácter.',
+          lengthOver_other: 'Se pasa de largo en {{count}} caracteres.',
+          needVideo: 'La publicación necesita un vídeo.',
+          needImage: 'La publicación necesita una imagen.',
+          needFile: 'La publicación necesita un archivo.',
+          tooFew_one: 'La publicación necesita {{count}} archivo más.',
+          tooFew_other: 'La publicación necesita {{count}} archivos más.',
+          tooMany_one: 'Sobra un archivo: la plataforma admite {{max}}.',
+          tooMany_other:
+            'Sobran {{count}} archivos: la plataforma admite {{max}}.',
+          unwanted: 'Este tipo de publicación sale sin archivos.',
+          wrongKind_one:
+            '{{count}} archivo no puede salir con este tipo de publicación.',
+          wrongKind_other:
+            '{{count}} archivos no pueden salir con este tipo de publicación.',
+          altText_one: '{{count}} imagen no tiene texto alternativo.',
+          altText_other: '{{count}} imágenes no tienen texto alternativo.',
+        },
+      },
+      schedule: {
+        setDate: 'Fijar la fecha de publicación',
+        pickDate: 'Elegir fecha de publicación',
+        time: 'Hora de publicación',
+        noDateHint:
+          'Esta publicación no tiene fecha, así que no se puede programar. Elige una fecha y una hora.',
+        pastHint:
+          'La fecha de publicación ya ha pasado. Para programarla hace falta una fecha futura: elige otra.',
+        unscheduling: 'Desprogramando…',
+        noDate: 'Sin fecha de publicación',
+        autoAt: 'Se publica sola el {{when}}',
+        manualAt: 'Publicación manual: aviso el {{when}}',
+        publishedAt: 'Publicada el {{when}}',
+        published: 'Publicada',
+        failedAt: 'No se pudo publicar: estaba programada para el {{when}}',
+        failed: 'No se pudo publicar',
+        notPublishedAt: 'Sin publicar: estaba prevista para el {{when}}',
+        notPublished: 'Sin publicar',
+        plannedAt: 'Prevista para el {{when}}',
+        notScheduled: 'Aún sin programar',
+      },
+      checks: {
+        notAssessed: 'Aún sin evaluar.',
+      },
+    },
 
     hasProblem: 'Esta publicación tiene un problema',
     outsideCampaign: {
@@ -7168,21 +7374,22 @@ export const es: Translation = {
       label: 'Documentos',
       untitled: 'Sin título',
       selectRow: 'Seleccionar {{title}}',
-      deleteRow: 'Eliminar {{title}}',
+      selectGroup: 'Seleccionar todo en {{group}}',
       justNow: 'ahora mismo',
       minutes_one: '{{count}} min',
       minutes_other: '{{count}} min',
       publishedAgo: 'publicado {{when}}',
       addedAgo: 'añadido {{when}}',
-      nextIdeaMore_one: 'y {{count}} más',
-      nextIdeaMore_other: 'y {{count}} más',
-      readingTitle: 'Leyendo este archivo.',
-      readingBody:
-        'Las ideas aparecerán aquí solas cuando termine; puedes irte.',
-      failedTitle: 'No hemos podido leer este archivo.',
+      reading: 'Leyéndolo…',
+      failed: 'No se pudo leer',
       failedNext: 'Vuelve a subirlo o elimínalo.',
-      noIdeas: 'Leído, pero no ha salido ninguna idea de publicación.',
+      noIdeas: 'No ha salido ninguna idea',
       analyseAgain: 'Analizar de nuevo',
+      uploading: 'Subiendo, {{progress}} %',
+      retryUpload: 'Volver a subir {{name}}',
+      dismissUpload: 'Descartar {{name}}',
+      ideasWaiting_one: '{{formatted}} idea →',
+      ideasWaiting_other: '{{formatted}} ideas →',
       fold: 'Plegar {{group}}',
       unfold: 'Desplegar {{group}}',
       otherIdeasLoading: 'Cargando las ideas…',
@@ -7475,10 +7682,14 @@ export const es: Translation = {
     selection: {
       count_one: '{{count}} seleccionado',
       count_other: '{{count}} seleccionados',
-      clear: 'QUITAR SELECCIÓN',
       delete: 'ELIMINAR',
+      selectPage: 'Seleccionar los documentos que se muestran',
       selectAll_one: 'Seleccionar el documento',
       selectAll_other: 'Seleccionar los {{formatted}} documentos',
+      allSelected_one: 'El documento está seleccionado',
+      allSelected_other: 'Los {{formatted}} documentos están seleccionados',
+      elsewhere_one: '{{formatted}} más seleccionado en otro sitio',
+      elsewhere_other: '{{formatted}} más seleccionados en otro sitio',
       clearAll: 'Quitar la selección',
       failed: 'No se han podido seleccionar todas las coincidencias',
     },
@@ -7614,11 +7825,30 @@ export const es: Translation = {
     title: 'Ayuda',
     back: 'Atrás',
     related: 'Relacionado',
-    notFound: 'Todavía no hemos escrito este artículo.',
-    resize: 'Cambiar el ancho del panel de ayuda',
     trigger: {
       label: '¿Qué es esto?',
     },
+    empty: {
+      failed: {
+        title: 'No se pudo cargar la ayuda',
+        body: 'Comprueba tu conexión e inténtalo de nuevo.',
+        retry: 'REINTENTAR',
+      },
+      none: {
+        title: 'Todavía no hay ayuda para esta página',
+        body: 'Aún la estamos escribiendo. Mientras tanto, Ogen puede explicarte cualquier cosa de esta pantalla.',
+      },
+      notFound: {
+        title: 'Este artículo no está aquí',
+        body: 'Puede que se haya renombrado o retirado. Ogen puede responder a tu pregunta.',
+      },
+      askOgen: 'PREGUNTAR A OGEN',
+    },
+    embed: {
+      open: 'Abrir',
+      openLabel: 'Abrir «{{title}}» por separado',
+    },
+    untranslated: 'Este artículo todavía no está disponible en tu idioma.',
   },
 
   announcements: {

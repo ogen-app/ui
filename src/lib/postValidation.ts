@@ -26,7 +26,38 @@ export type PostCheck = {
   label: string
   status: CheckStatus
   detail?: string
+  /** Set on a failing or warning check: what is wrong, as one sentence. */
+  problem?: CheckProblem
 }
+
+/**
+ * What is wrong, for someone who has not opened the Checks tab — the
+ * Overview's Health row says "Length is 106 characters over." rather than
+ * the row's label and its measurement. Keyed rather than worded, so the
+ * component words it through the catalogue
+ * (`posts.editor.overview.problems.*`); `text` is a server message, which
+ * arrives already worded.
+ */
+export type CheckProblem =
+  { key: CheckProblemKey; count?: number; max?: number } | { text: string }
+
+export type CheckProblemKey =
+  | 'platform'
+  | 'postType'
+  | 'videoUnsupported'
+  | 'videoTitle'
+  | 'titleOver'
+  | 'copy'
+  | 'copyEmpty'
+  | 'lengthOver'
+  | 'needVideo'
+  | 'needImage'
+  | 'needFile'
+  | 'tooFew'
+  | 'tooMany'
+  | 'unwanted'
+  | 'wrongKind'
+  | 'altText'
 
 export type EvaluateInput = {
   post: Post
@@ -85,6 +116,7 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
     label: 'Platform',
     status: platform ? 'pass' : 'fail',
     detail: platform ? platform.name : 'Pick a platform',
+    problem: platform ? undefined : { key: 'platform' },
   })
 
   const typeLabel = post.platform_post_type
@@ -103,6 +135,11 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
       : policy.videoUnsupported
         ? `${typeLabel} needs video, which this platform doesn't publish`
         : typeLabel,
+    problem: !post.platform_post_type
+      ? { key: 'postType' }
+      : policy.videoUnsupported
+        ? { key: 'videoUnsupported' }
+        : undefined,
   })
 
   // No account check here, deliberately. Who the post publishes as is metadata,
@@ -125,6 +162,7 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
       detail: titled
         ? undefined
         : `${platform?.name ?? 'This platform'} rejects a video with no title`,
+      problem: titled ? undefined : { key: 'videoTitle' },
     })
   }
 
@@ -141,6 +179,9 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
       detail: over
         ? `${titleLength} / ${maxTitleChars} characters — ${titleLength - maxTitleChars} over`
         : `${titleLength} / ${maxTitleChars} characters`,
+      problem: over
+        ? { key: 'titleOver', count: titleLength - maxTitleChars }
+        : undefined,
     })
   }
 
@@ -160,6 +201,9 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
       : requiresContent
         ? 'This post type needs copy'
         : 'No copy yet',
+    problem: content
+      ? undefined
+      : { key: requiresContent ? 'copy' : 'copyEmpty' },
   })
 
   // A thread has no single length to check: the ceiling is per post of the
@@ -194,6 +238,9 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
         detail: over
           ? `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters — ${formatNumber(length - maxContentChars)} over`
           : `${formatNumber(length)} / ${formatNumber(maxContentChars)} characters`,
+        problem: over
+          ? { key: 'lengthOver', count: length - maxContentChars }
+          : undefined,
       })
     }
   }
@@ -202,6 +249,21 @@ export function evaluatePost(input: EvaluateInput): PostCheck[] {
 
   return checks
 }
+
+/** The one kind of file a post type takes, or `file` when it takes several. */
+function mediaKindOf(policy: MediaPolicy): 'video' | 'image' | 'file' {
+  if (policy.kinds.length > 0 && policy.kinds.every((k) => k === 'video'))
+    return 'video'
+  if (policy.kinds.length > 0 && policy.kinds.every((k) => k === 'image'))
+    return 'image'
+  return 'file'
+}
+
+const NEED = {
+  video: 'needVideo',
+  image: 'needImage',
+  file: 'needFile',
+} as const satisfies Record<string, CheckProblemKey>
 
 function mediaChecks({
   policy,
@@ -243,6 +305,17 @@ function mediaChecks({
           : count === 0
             ? 'None attached'
             : `${count} attached`,
+      problem: belowMin
+        ? policy.min === 1
+          ? { key: NEED[mediaKindOf(policy)] }
+          : { key: 'tooFew', count: policy.min - count }
+        : aboveMax
+          ? {
+              key: 'tooMany',
+              count: count - (policy.max ?? 0),
+              max: policy.max ?? 0,
+            }
+          : undefined,
     })
   } else if (count > 0) {
     checks.push({
@@ -250,6 +323,7 @@ function mediaChecks({
       label: 'Media',
       status: 'warn',
       detail: `${count} attached, but this post type publishes without media`,
+      problem: { key: 'unwanted' },
     })
   }
 
@@ -260,6 +334,7 @@ function mediaChecks({
       label: 'Media type',
       status: 'fail',
       detail: `${stranded.length} attachment${stranded.length === 1 ? '' : 's'} this post type can't publish`,
+      problem: { key: 'wrongKind', count: stranded.length },
     })
   }
 
@@ -280,6 +355,7 @@ function mediaChecks({
       label: 'Media rules',
       status: 'warn',
       detail: message,
+      problem: { text: message },
     })
   }
 
@@ -314,6 +390,7 @@ function altTextCheck(
         : images.length === 1
           ? 'The image has no alt text'
           : `${missing} of ${images.length} images ${missing === 1 ? 'has' : 'have'} no alt text`,
+    problem: missing > 0 ? { key: 'altText', count: missing } : undefined,
   }
 }
 

@@ -1,4 +1,5 @@
-import { CaretDownIcon } from '@phosphor-icons/react'
+import { CaretDownIcon, UserCircleIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import {
   DropdownMenu,
@@ -8,10 +9,10 @@ import {
 import type { PublishingAccount } from '@/hooks/usePublishingAccount'
 import { accountLabel } from '@/lib/publishingAccount'
 import { cn } from '@/lib'
-import { QuickBarTrigger, WarningHint } from './parts'
+import { Mark, Marked, QuickBarTrigger, WarningHint } from './parts'
 
 /**
- * "by <account>" — and, where the platform has more than one connected
+ * The account the post publishes as, marked by its picture — and, where the platform has more than one connected
  * account, the picker that decides which (CON-150).
  *
  * Three shapes, matching the three the server distinguishes:
@@ -37,6 +38,24 @@ export function AccountSlot({
   editable: boolean
   onSelect: (accountId: string) => void
 }) {
+  const { t } = useTranslation()
+  // The picture where we have one; the generic person where we don't, so the
+  // value still starts at the same x as every other row's.
+  const picture = account.avatarUrl ? (
+    <AccountAvatar
+      src={account.avatarUrl}
+      name={account.name ?? ''}
+      size="xs"
+    />
+  ) : (
+    <UserCircleIcon />
+  )
+  const noneHint = t('posts.editor.settings.accountNoneHint', {
+    platform: platformName,
+  })
+  const disconnected = account.name
+    ? t('posts.editor.settings.accountDisconnected', { name: account.name })
+    : t('posts.editor.settings.accountNone')
   // `account.name` survives disconnection via the post's hydrated relation,
   // so a published post still names what it went out as even once that
   // account has left the platform's connected list.
@@ -49,11 +68,10 @@ export function AccountSlot({
   if (!account.name && !account.connected && editable) {
     return (
       <span className="flex min-w-0 items-center gap-1.5 text-tertiary-foreground">
-        <WarningHint
-          focusable
-          text={`No ${platformName} account is connected, so nothing can publish this post. Connect one in Platform settings.`}
-        />
-        <span className="truncate">No account connected</span>
+        <WarningHint focusable text={noneHint} />
+        <span className="truncate">
+          {t('posts.editor.settings.accountNone')}
+        </span>
       </span>
     )
   }
@@ -65,18 +83,12 @@ export function AccountSlot({
     // which one the worker picked. Saying so beats naming the wrong one.
     if (!account.name) {
       return (
-        <span className="truncate text-tertiary-foreground">
-          Account not recorded
-        </span>
+        <Marked mark={<UserCircleIcon />} className="text-tertiary-foreground">
+          {t('posts.editor.settings.accountNotRecorded')}
+        </Marked>
       )
     }
-    // gap-1.5 matches the icon/label spacing inside the bar's triggers.
-    return (
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span className="text-tertiary-foreground">by</span>
-        <span className="truncate">{account.name}</span>
-      </span>
-    )
+    return <Marked mark={picture}>{account.name}</Marked>
   }
 
   // The chosen account disconnected and nothing else is left: `mismatched`
@@ -86,48 +98,51 @@ export function AccountSlot({
   if (account.accounts.length === 0) {
     return (
       <span className="flex min-w-0 items-center gap-1.5 text-tertiary-foreground">
-        <WarningHint
-          focusable
-          text={`No ${platformName} account is connected, so nothing can publish this post. Connect one in Platform settings.`}
-        />
-        <span className="truncate">
-          {account.name
-            ? `${account.name} — disconnected`
-            : 'No account connected'}
-        </span>
+        <WarningHint focusable text={noneHint} />
+        <span className="truncate">{disconnected}</span>
       </span>
     )
   }
 
   return (
     <DropdownMenu>
-      <QuickBarTrigger label="Change the account this post publishes as">
+      <QuickBarTrigger label={t('posts.editor.settings.accountChange')}>
         {account.mismatched ? (
           <>
             <WarningHint
               text={
                 account.name
-                  ? `${account.name} is no longer connected to ${platformName}, so this post can't publish as it. Pick another account.`
-                  : `The account this post publishes as is no longer connected to ${platformName}. Pick another one.`
+                  ? t('posts.editor.settings.accountGoneHint', {
+                      name: account.name,
+                      platform: platformName,
+                    })
+                  : t('posts.editor.settings.accountGoneHintUnnamed', {
+                      platform: platformName,
+                    })
               }
             />
             <span className="truncate">
               {account.name
-                ? `${account.name} — disconnected`
-                : 'Account disconnected'}
+                ? t('posts.editor.settings.accountDisconnected', {
+                    name: account.name,
+                  })
+                : t('posts.editor.settings.accountDisconnectedUnnamed')}
             </span>
           </>
         ) : account.account ? (
           <>
-            <span className="text-tertiary-foreground">by</span>
+            <Mark>{picture}</Mark>
             <span className="truncate">{account.name}</span>
           </>
         ) : (
           <>
             <WarningHint
-              text={`This workspace has ${account.accounts.length} ${platformName} accounts connected — pick the one this post publishes as.`}
+              text={t('posts.editor.settings.accountPickHint', {
+                count: account.accounts.length,
+                platform: platformName,
+              })}
             />
-            <span>Select account</span>
+            <span>{t('posts.editor.settings.accountPick')}</span>
           </>
         )}
         <CaretDownIcon className="size-3 text-tertiary-foreground" />

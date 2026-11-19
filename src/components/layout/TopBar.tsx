@@ -1,3 +1,4 @@
+import { QuestionIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { CampaignSwitcher } from '@/components/layout/CampaignSwitcher'
 import { Logo } from '@/components/Logo'
@@ -10,6 +11,9 @@ import {
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { cn } from '@/lib'
 import { usePageCrumbStore } from '@/stores/pageCrumbStore'
+import { useFeatureFlag } from '@/config/featureFlags'
+import { useHelpStore } from '@/stores/helpStore'
+import { usePageHelpArticle } from '@/hooks/useHelp'
 
 /**
  * The bar over the page: which part of the work — the campaign — on the left,
@@ -24,8 +28,9 @@ export function TopBar() {
       {isMobile && <SidebarTrigger />}
       <CampaignSwitcher />
       <PageCrumbTrail />
-      <div className="ml-auto flex shrink-0 items-center gap-1">
-        <AskOgen />
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <Help />
+        <WorkWithOgen />
       </div>
     </header>
   )
@@ -52,6 +57,46 @@ function PageCrumbTrail() {
 }
 
 /**
+ * Help for the screen you are on (CON-173), in the column beside the page. It
+ * takes the assistant's place there rather than opening a second column, and
+ * pressing it again gives the assistant back (`settingsStore.helpOpen`). The article is
+ * the one the route names (`staticData.help`), and the panel follows the page
+ * from then on (`HelpPanel`).
+ *
+ * White beside Work with Ogen's teal: help is a way of reading the screen, and
+ * the bar keeps its one colour for the thing that does work.
+ */
+function Help() {
+  const enabled = useFeatureFlag('help-center')
+  return enabled ? <HelpButton /> : null
+}
+
+function HelpButton() {
+  const { t } = useTranslation()
+  const on = useSettingsStore(selectActivePanel) === 'help'
+  const pageArticle = usePageHelpArticle({ enabled: true })
+
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={() => {
+        if (on) useSettingsStore.getState().closeRightPanel()
+        else useHelpStore.getState().open(pageArticle)
+      }}
+      className={cn(
+        'flex h-9 items-center gap-2 rounded-button border border-border bg-primary px-3 text-sm font-medium text-primary-foreground outline-none transition-colors',
+        'hover:bg-secondary aria-pressed:bg-secondary',
+        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-primary',
+      )}
+    >
+      <QuestionIcon className="size-5 shrink-0" />
+      {t('nav.openHelp')}
+    </button>
+  )
+}
+
+/**
  * Opens the assistant in the column beside the page; pressing it while the
  * assistant shows closes it. Filled in the brand teal with Ogen's own mark in
  * white: it is the one coloured thing in the bar, because it is the one thing
@@ -59,7 +104,7 @@ function PageCrumbTrail() {
  * A thread working elsewhere draws the mark's loading stroke, and one that
  * finished while you were away leaves a dot until it is read.
  */
-function AskOgen() {
+function WorkWithOgen() {
   const { t } = useTranslation()
   const toggle = useSettingsStore((s) => s.toggleRightPanel)
   const on = useSettingsStore(selectActivePanel) === 'assistant'
@@ -85,7 +130,7 @@ function AskOgen() {
         loading={busy}
         className="size-5 shrink-0 [&_path:first-of-type]:fill-primary [&_path:last-of-type]:stroke-primary"
       />
-      {t('nav.askOgen')}
+      {t('nav.workWithOgen')}
       {unread && (
         <span
           aria-label={t('nav.assistantFinished')}

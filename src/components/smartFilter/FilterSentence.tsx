@@ -455,7 +455,7 @@ function ClauseButton({
 }
 
 /** A clause's catalogue sentence, its chosen words marked. */
-function ClauseWords({
+export function ClauseWords({
   clause,
   open,
   bold,
@@ -489,7 +489,7 @@ function ClauseWords({
  * the title") with how many rows it would leave, and any value whose name
  * the words match.
  */
-function AddDetail<F, Field extends string>({
+export function AddDetail<F, Field extends string>({
   inputRef,
   panelRef,
   adding,
@@ -502,6 +502,7 @@ function AddDetail<F, Field extends string>({
   countQuery,
   onRemoveLast,
   onStarter,
+  variant = 'sentence',
 }: {
   inputRef: React.RefObject<HTMLInputElement | null>
   panelRef: React.RefObject<HTMLDivElement | null>
@@ -515,6 +516,8 @@ function AddDetail<F, Field extends string>({
   countQuery: CountQuery<F>
   onRemoveLast: () => void
   onStarter: (field: Field) => void
+  /** In the pills row: a quiet `+ Add` at the pills' size. */
+  variant?: 'sentence' | 'pills'
 }) {
   const { t, i18n } = useTranslation()
   const [text, setText] = useState('')
@@ -665,10 +668,18 @@ function AddDetail<F, Field extends string>({
         type="button"
         data-add
         onClick={onStart}
-        className="ml-1 inline-flex cursor-pointer items-baseline gap-0.5 font-medium whitespace-nowrap text-accent outline-none hover:underline focus-visible:ring-2 focus-visible:ring-accent"
+        className={
+          variant === 'pills'
+            ? 'flex h-6 cursor-pointer items-center gap-1 px-1 whitespace-nowrap text-secondary-foreground outline-none hover:text-foreground focus-visible:underline'
+            : 'ml-1 inline-flex cursor-pointer items-baseline gap-0.5 font-medium whitespace-nowrap text-accent outline-none hover:underline focus-visible:ring-2 focus-visible:ring-accent'
+        }
       >
-        <PlusIcon weight="bold" className="size-3 self-center" aria-hidden />
-        {t('sentence.addDetail')}
+        <PlusIcon
+          weight={variant === 'pills' ? 'regular' : 'bold'}
+          className="size-3 self-center"
+          aria-hidden
+        />
+        {variant === 'pills' ? t('sentence.add') : t('sentence.addDetail')}
       </button>
     )
 
@@ -677,7 +688,10 @@ function AddDetail<F, Field extends string>({
     <>
       <span
         data-add
-        className="ml-1 inline-flex items-baseline gap-0.5 rounded-xs bg-secondary px-1.5 font-medium text-accent"
+        className={cn(
+          'inline-flex items-baseline gap-0.5 rounded-xs bg-secondary px-1.5 font-medium text-accent',
+          variant === 'pills' ? 'h-6 items-center' : 'ml-1',
+        )}
       >
         <PlusIcon weight="bold" className="size-3 self-center" aria-hidden />
         <input
@@ -864,7 +878,7 @@ function AddRow<Field extends string>({
  * with their counts — several at once, none dimmed — and Remove this detail /
  * Done. A tick changes the filter at once.
  */
-function ClausePanel<F, Field extends string>({
+export function ClausePanel<F, Field extends string>({
   panelRef,
   field,
   negated,

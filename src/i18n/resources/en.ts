@@ -420,7 +420,8 @@ export const en = {
     workspaceMenu: 'Workspace menu',
     yourWorkspaces: 'Your workspaces',
     accountMenu: 'Account menu',
-    askOgen: 'Ask Ogen',
+    openHelp: 'Help',
+    workWithOgen: 'Work with Ogen',
     assistantFinished: 'The assistant has finished',
     /** A campaign with no start or end date, in the rail's window line. */
     campaignNoWindow: 'No dates set',
@@ -824,12 +825,18 @@ export const en = {
   sentence: {
     label: 'Filter',
     addDetail: 'add a detail',
+    /** The pills row's way into a detail (design/ideas-cards). */
+    add: 'Add',
     addPlaceholder: 'a detail…',
     change: 'Change: {{clause}}',
     remove: 'Remove: {{clause}}',
     removeDetail: 'Remove this detail',
     done: 'Done',
     clear: 'Clear',
+    /** The pills row's end: every filter off at once. */
+    clearAll: 'Clear filters',
+    /** A pill naming its first value only: how many more it holds. */
+    more: '+{{formatted}}',
     removeLast: 'remove the last detail',
     noValues: 'Nothing to choose from yet',
     heading: {
@@ -851,6 +858,10 @@ export const en = {
     share: 'Share with the workspace',
     unshare: 'Stop sharing',
     duplicate: 'Duplicate',
+    /** The tab strip's menu of smart groups, beside Filter. */
+    views: 'Views',
+    /** The × after an open group's name, leading the pills row. */
+    close: 'Close “{{name}}”',
     delete: 'Delete',
     copyName: '{{name}} (copy)',
     edited: 'edited',
@@ -1002,6 +1013,11 @@ export const en = {
       retry: 'Try again',
       dismiss: 'Dismiss',
       hintMultiline: 'Shift <key/> for a new line · Return <key/> to keep it',
+      /** The header's button that opens the field, and the way out of it. */
+      open: 'ADD IDEA',
+      close: 'Stop adding ideas',
+      /** The field's send button: Return, for the mouse. */
+      keep: 'Keep this idea',
     },
     /** The verdicts as the piles they name. */
     verdict: {
@@ -1015,8 +1031,6 @@ export const en = {
       later: 'In the drawer',
       no: 'Set aside',
       undecide: 'Put it back on the desk',
-      close: 'Close this idea',
-      open: 'Open this idea',
       delete: 'DELETE IDEA',
     },
     horizon: {
@@ -1065,11 +1079,12 @@ export const en = {
     undecidedCount_other: '{{count}} ideas on the desk',
     /** The Ideas page's card (CON-388): where each idea came from. */
     card: {
-      written: 'Written',
       writtenBy: 'Written by {{name}}',
       writtenByAt: 'Written by {{name}} · {{at}}',
       /** An idea generated from no document, opened (CON-484). */
       suggestedAt: 'Suggested by the assistant · {{at}}',
+      /** The assistant's spark, in the card's mark column. */
+      suggested: 'Suggested by the assistant',
       /** Its writer's slot: the assistant, not whoever asked. */
       assistant: 'Assistant',
       /** A written idea whose writer was never named. */
@@ -1277,14 +1292,21 @@ export const en = {
     },
     bulk: {
       select: 'Select “{{title}}”',
-      selectAll_one: 'Select {{formatted}} idea',
-      selectAll_other: 'Select all {{formatted}} ideas',
+      /** The list head's box: the ideas loaded, not every match. */
+      selectPage: 'Select the ideas shown',
+      /** The named step from a ticked page to every match in the pile. */
+      selectAllIn_one: 'Select the {{formatted}} idea in “{{pile}}”',
+      selectAllIn_other: 'Select all {{formatted}} ideas in “{{pile}}”',
+      allIn_one: 'The {{formatted}} idea in “{{pile}}” is selected',
+      allIn_other: 'All {{formatted}} ideas in “{{pile}}” are selected',
+      /** Ticked but not on screen — in another pile, or not loaded. */
+      elsewhere_one: '{{formatted}} more selected elsewhere',
+      elsewhere_other: '{{formatted}} more selected elsewhere',
       clearAll: 'Clear the selection',
       tooMany: 'Narrow the filter to select all (up to 5,000).',
       count_one: '{{count}} selected',
       count_other: '{{count}} selected',
       delete: 'DELETE',
-      clear: 'CLEAR',
       done_one: 'Deleted {{count}} idea.',
       done_other: 'Deleted {{count}} ideas.',
       partial_one: 'Deleted {{count}} idea; {{failed}} couldn’t be deleted.',
@@ -1591,8 +1613,6 @@ export const en = {
    */
   formats: {
     none: 'No format',
-    postHint:
-      'Optional. What shape this post takes — separate from the platform’s post type.',
     'how-to': {
       label: 'How-to',
       hint: 'Steps somebody can follow and get a result.',
@@ -5244,8 +5264,11 @@ export const en = {
      */
     columnTitle: 'Title',
     columnStatus: 'Status',
-    /** Where a post written from general knowledge says so (CON-484). */
-    columnGrounding: 'Sources',
+    /**
+     * What is wrong with the post, as a mark only; the words are in the
+     * drawer it opens (`warnings` below).
+     */
+    columnWarnings: 'Warnings',
     columnPlatform: 'Platform',
     columnFormat: 'Format',
     /** Only on the workspace's list, where the rows come from every campaign. */
@@ -5256,12 +5279,6 @@ export const en = {
 
     /** A post with no publish date, in either date column. */
     notSet: 'Not scheduled',
-
-    /** The toolbar's line: the posts listed, and what a filter left of them. */
-    count_one: '{{formatted}} post',
-    count_other: '{{formatted}} posts',
-    countOf_one: '{{formatted}} of {{total}} posts',
-    countOf_other: '{{formatted}} of {{total}} posts',
 
     /** The table with no rows in it — the campaign has posts, this filter doesn't. */
     noPosts: 'No posts',
@@ -5293,6 +5310,76 @@ export const en = {
     inDays_other: 'In {{count}} days',
     daysAgo_one: '{{count}} day ago',
     daysAgo_other: '{{count}} days ago',
+
+    /**
+     * The Warnings column and the drawer it opens: what the list can tell is
+     * wrong with a post from the list alone (`lib/postWarnings`). The editor's
+     * Quality checks go further; these are the ones worth a mark in a row.
+     */
+    warnings: {
+      /** The row's mark, read aloud: it opens the drawer. */
+      open_one: '{{formatted}} warning on {{title}}',
+      open_other: '{{formatted}} warnings on {{title}}',
+      panelTitle: 'Warnings',
+      openPost: 'Open post',
+      /** The post was fixed, or left the list, while the drawer was open. */
+      none: 'Nothing to fix on this post any more.',
+      kind: {
+        failed: {
+          title: 'Publishing failed',
+          detail:
+            'The platform refused it. Open the post to see why and try again.',
+        },
+        missed: {
+          title: 'Missed its date',
+          detail:
+            'Its publish time passed without it going out. Give it a new date.',
+        },
+        noPlatform: {
+          title: 'No platform',
+          detail: 'Choose where it publishes before it can be scheduled.',
+        },
+        noAccount: {
+          title: 'No account connected',
+          detail:
+            'Nothing is connected for its platform. Connect an account in Workspace Settings.',
+        },
+        chooseAccount: {
+          title: 'Choose an account',
+          detail:
+            'More than one account is connected for its platform. Pick the one it publishes as.',
+        },
+        accountGone: {
+          title: 'Account disconnected',
+          detail:
+            'The account it was set to publish as is no longer connected. Choose another.',
+        },
+        outsidePlatform: {
+          title: 'Not a platform of this campaign',
+          detail:
+            'The campaign no longer targets this platform. Move the post, or add the platform back to the campaign.',
+        },
+        outsidePostType: {
+          title: 'Not a post type of this campaign',
+          detail:
+            'The campaign no longer takes this post type on this platform. Choose another type.',
+        },
+        notGrounded: {
+          title: 'Written without sources',
+          detail:
+            'It was generated from general knowledge rather than from the campaign’s own material.',
+        },
+      },
+    },
+
+    /**
+     * ADD POST on the all-campaigns list: a post belongs to one campaign, so
+     * the button asks which before it makes one.
+     */
+    chooseCampaign: {
+      title: 'Add a post to which campaign?',
+      description: 'A post belongs to one campaign. Pick where this one goes.',
+    },
   },
 
   /**
@@ -5984,11 +6071,161 @@ export const en = {
     },
 
     /**
-     * The post editor's back arrow. Names the destination generically because
-     * it is not always the same one — it returns to whichever arrangement of
-     * the campaign's posts the user came from, calendar or table.
+     * The post editor (`components/posts/editor`): its part of the bar over
+     * the page, and the side column's tabs.
      */
-    backToPosts: 'Back to posts',
+    editor: {
+      titlePlaceholder: 'Title',
+      /** The post's bar names it by its title; this when it has none. */
+      untitled: 'Post with no title',
+      back: 'Back to posts',
+      more: 'More actions',
+      downloadMarkdown: 'Download as Markdown',
+      delete: 'DELETE POST',
+      previous: 'Previous post',
+      next: 'Next post',
+      /** The post's place in the campaign's timeline: "3 of 21". */
+      position: '{{position}} of {{total}}',
+      tabs: {
+        label: 'About this post',
+        overview: 'Overview',
+        preview: 'Preview',
+        checks: 'Checks',
+        quality: 'Quality',
+        sources: 'Sources',
+        notes: 'Notes',
+        history: 'History',
+        /** A closed tab's name while something on it needs a look. */
+        withWarnings_one: '{{label}} — 1 thing to look at',
+        withWarnings_other: '{{label}} — {{count}} things to look at',
+      },
+      settings: {
+        platform: 'Platform',
+        postType: 'Post type',
+        account: 'Account',
+        date: 'Publish',
+        publishing: 'Publishing',
+        phase: 'Phase',
+        noPhase: 'No phase',
+        format: 'Format',
+        platformChange: 'Change platform',
+        platformPick: 'Select platform',
+        platformPickHint:
+          'Pick the platform this post publishes to — it decides the available post types and the publishing account.',
+        platformNone: 'No platforms on this campaign',
+        platformDeselect: 'Deselect platform',
+        postTypeChange: 'Change post type',
+        postTypePick: 'Select post type',
+        postTypePickHint:
+          'Pick the {{platform}} post type — it sets the format this post publishes as.',
+        postTypeNone: 'No post types on this campaign',
+        /** A post type the campaign plans for, with no account to publish it. */
+        notConnected: 'Not connected',
+        accountChange: 'Change the account this post publishes as',
+        accountNone: 'No account connected',
+        accountNoneHint:
+          'No {{platform}} account is connected, so nothing can publish this post. Connect one in Platform settings.',
+        accountNotRecorded: 'Account not recorded',
+        accountDisconnected: '{{name}} — disconnected',
+        accountDisconnectedUnnamed: 'Account disconnected',
+        accountGoneHint:
+          '{{name}} is no longer connected to {{platform}}, so this post can’t publish as it. Pick another account.',
+        accountGoneHintUnnamed:
+          'The account this post publishes as is no longer connected to {{platform}}. Pick another one.',
+        accountPick: 'Select account',
+        accountPickHint_one:
+          'This workspace has {{count}} {{platform}} account connected — pick the one this post publishes as.',
+        accountPickHint_other:
+          'This workspace has {{count}} {{platform}} accounts connected — pick the one this post publishes as.',
+        methodChange: 'Change how this post publishes',
+        methodNotAllowed:
+          'Not allowed for {{platform}} in this workspace — change it in Workspace Settings.',
+        methodNotAllowedUnnamed:
+          'Not allowed for this platform in this workspace — change it in Workspace Settings.',
+        methodNoAccount:
+          'No {{platform}} account is connected — this will fall back to a reminder.',
+        methodNoAccountUnnamed:
+          'No publishing account is connected — this will fall back to a reminder.',
+      },
+      /** The Overview tab's sections, and its one-line summaries of the rest. */
+      overview: {
+        publishing: 'Publishing',
+        health: 'Health',
+        quality: 'Quality',
+        notes: 'Notes',
+        sources: 'Sources',
+        writing: 'Writing',
+        /** The tooltip on a line that opens another tab. */
+        open: 'Open {{tab}}',
+        moreChecks_one: 'and {{count}} more',
+        moreChecks_other: 'and {{count}} more',
+        moreNotes_one: 'and {{count}} more note',
+        moreNotes_other: 'and {{count}} more notes',
+        /** The Quality section's one row. */
+        score: 'Score',
+        notAssessed: 'Not assessed yet',
+        /** A note with no title, where its title would be the row's label. */
+        note: 'Note',
+        /** The Sources section's one row: what is attached to the post. */
+        attached: 'Attached',
+        sourceCount_one: '{{count}} source',
+        sourceCount_other: '{{count}} sources',
+        noSources: 'No sources',
+        notGrounded: 'Not grounded — written from general knowledge',
+        /** A failing check as one sentence (`CheckProblem` in lib/postValidation). */
+        problems: {
+          platform: 'Pick a platform.',
+          postType: 'Pick a post type.',
+          videoUnsupported:
+            'This post type needs video, which the platform doesn’t publish.',
+          videoTitle: 'The video needs a title.',
+          titleOver_one: 'The title is {{count}} character over.',
+          titleOver_other: 'The title is {{count}} characters over.',
+          copy: 'The post needs copy.',
+          copyEmpty: 'There’s no copy yet.',
+          lengthOver_one: 'Length is {{count}} character over.',
+          lengthOver_other: 'Length is {{count}} characters over.',
+          needVideo: 'The post needs a video.',
+          needImage: 'The post needs an image.',
+          needFile: 'The post needs a file.',
+          tooFew_one: 'The post needs {{count}} more file.',
+          tooFew_other: 'The post needs {{count}} more files.',
+          tooMany_one: 'One file too many — the platform takes {{max}}.',
+          tooMany_other:
+            '{{count}} files too many — the platform takes {{max}}.',
+          unwanted: 'This post type publishes without media.',
+          wrongKind_one: '{{count}} file can’t go out with this post type.',
+          wrongKind_other: '{{count}} files can’t go out with this post type.',
+          altText_one: '{{count}} image has no alt text.',
+          altText_other: '{{count}} images have no alt text.',
+        },
+      },
+      /** The publishing list's date row, and what it says once it is history. */
+      schedule: {
+        setDate: 'Set publish date',
+        pickDate: 'Select publish date',
+        time: 'Publish time',
+        noDateHint:
+          'This post has no publish date, so it can’t be scheduled. Pick a date and time to publish it.',
+        pastHint:
+          'The publish date is in the past. Scheduling needs a date in the future — pick a new one.',
+        unscheduling: 'Unscheduling…',
+        noDate: 'No publish date set',
+        autoAt: 'Auto-publishes {{when}}',
+        manualAt: 'Manual publish — reminder {{when}}',
+        publishedAt: 'Published {{when}}',
+        published: 'Published',
+        failedAt: 'Publish failed — was scheduled for {{when}}',
+        failed: 'Publish failed',
+        notPublishedAt: 'Not published — was planned for {{when}}',
+        notPublished: 'Not published',
+        plannedAt: 'Planned for {{when}}',
+        notScheduled: 'Not scheduled yet',
+      },
+      checks: {
+        notAssessed: 'Not assessed yet.',
+      },
+    },
 
     /**
      * The card's warning mark. What is wrong is in the post itself — the mark
@@ -8706,24 +8943,29 @@ export const en = {
       label: 'Documents',
       untitled: 'Untitled',
       selectRow: 'Select {{title}}',
-      deleteRow: 'Delete {{title}}',
+      /** A group head's box, over its cards' boxes. */
+      selectGroup: 'Select everything in {{group}}',
       justNow: 'just now',
       minutes_one: '{{count}} min',
       minutes_other: '{{count}} min',
       /** The facts line's date: `when` is a distance, "14 months ago". */
       publishedAgo: 'published {{when}}',
       addedAgo: 'added {{when}}',
-      /** After the next undecided idea's title: how many more are waiting. */
-      nextIdeaMore_one: 'and {{count}} more',
-      nextIdeaMore_other: 'and {{count}} more',
-      readingTitle: 'Reading this file.',
-      readingBody:
-        'Ideas appear here on their own when it’s done; you can leave.',
-      failedTitle: 'We couldn’t read this file.',
+      /** The card's one standing fact, and its mark's name, while it is read. */
+      reading: 'Reading it…',
+      /** …and when it couldn't be: the reason is where the summary would be. */
+      failed: 'Couldn’t read it',
       /** After the reason a file failed. Nothing re-runs a PDF or an office file. */
       failedNext: 'Upload it again, or delete it.',
-      noIdeas: 'Read, but no post ideas came out of it.',
+      noIdeas: 'No ideas came out of it',
       analyseAgain: 'Analyse again',
+      /** A file on its way in, as a card at the list's head. */
+      uploading: 'Uploading, {{progress}}%',
+      retryUpload: 'Upload {{name}} again',
+      dismissUpload: 'Dismiss {{name}}',
+      /** The card's end: the ideas still waiting on it, opening that pile. */
+      ideasWaiting_one: '{{formatted}} idea →',
+      ideasWaiting_other: '{{formatted}} ideas →',
       /** A group band's fold, named for the group. */
       fold: 'Fold {{group}}',
       unfold: 'Unfold {{group}}',
@@ -9060,15 +9302,21 @@ export const en = {
         "This image's format can't be shown in a browser, and no viewable copy was made.",
     },
 
-    /** The floating bar over a ticked selection in the documents list. */
+    /** The list head over a ticked selection in the documents list. */
     selection: {
       count_one: '{{count}} selected',
       count_other: '{{count}} selected',
-      clear: 'CLEAR',
       delete: 'DELETE',
-      /** The filter bar's select-all: every match, not just the rows loaded. */
+      /** The head's box: the documents loaded, not every match. */
+      selectPage: 'Select the documents shown',
+      /** The named step from a ticked page to every match. */
       selectAll_one: 'Select the {{formatted}} document',
       selectAll_other: 'Select all {{formatted}} documents',
+      allSelected_one: 'The {{formatted}} document is selected',
+      allSelected_other: 'All {{formatted}} documents are selected',
+      /** Ticked but not loaded — the assistant's choice, say. */
+      elsewhere_one: '{{formatted}} more selected elsewhere',
+      elsewhere_other: '{{formatted}} more selected elsewhere',
       clearAll: 'Clear the selection',
       failed: 'Unable to select every match',
     },
@@ -9299,11 +9547,38 @@ export const en = {
     title: 'Help',
     back: 'Back',
     related: 'Related',
-    notFound: "We haven't written this one yet.",
-    resize: 'Resize the help panel',
     trigger: {
       label: 'What is this?',
     },
+    /**
+     * The panel with no article to show. `failed` is help that could not be
+     * fetched — said as such, so a network fault never reads as a screen
+     * nobody wrote for. The other two are nothing to show, though nothing
+     * went wrong, and send the reader on to the assistant.
+     */
+    empty: {
+      failed: {
+        title: 'Couldn’t load help',
+        body: 'Check your connection and try again.',
+        retry: 'TRY AGAIN',
+      },
+      none: {
+        title: 'No help for this page yet',
+        body: 'We’re still writing it. In the meantime, Ogen can explain anything on this screen.',
+      },
+      notFound: {
+        title: 'This article isn’t here',
+        body: 'It may have been renamed or taken down. Ogen can answer the question instead.',
+      },
+      askOgen: 'ASK OGEN',
+    },
+    /** A concept placed inside a page article, and the way to read it alone. */
+    embed: {
+      open: 'Open',
+      openLabel: 'Open “{{title}}” on its own',
+    },
+    /** Under the summary when the article has no translation yet. */
+    untranslated: 'This article isn’t available in your language yet.',
   },
 
   /**

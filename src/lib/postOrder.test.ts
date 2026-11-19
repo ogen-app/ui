@@ -75,6 +75,14 @@ describe('postNeighbours', () => {
     expect(next?.id).toBe('third')
   })
 
+  it('says where the post sits in the order', () => {
+    expect(postNeighbours(posts, 'first')).toMatchObject({
+      position: 1,
+      total: 3,
+    })
+    expect(postNeighbours(posts, 'third').position).toBe(3)
+  })
+
   it('has no previous at the start and no next at the end', () => {
     expect(postNeighbours(posts, 'first').previous).toBeNull()
     expect(postNeighbours(posts, 'third').next).toBeNull()
@@ -84,8 +92,15 @@ describe('postNeighbours', () => {
     expect(postNeighbours(posts, 'gone')).toEqual({
       previous: null,
       next: null,
+      position: 0,
+      total: 3,
     })
-    expect(postNeighbours([], 'first')).toEqual({ previous: null, next: null })
+    expect(postNeighbours([], 'first')).toEqual({
+      previous: null,
+      next: null,
+      position: 0,
+      total: 0,
+    })
   })
 
   it('leaves the list it was given alone', () => {

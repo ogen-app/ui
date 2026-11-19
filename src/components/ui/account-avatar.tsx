@@ -15,9 +15,12 @@ import type { PlatformInfo } from '@/lib/platformDictionary'
  * image has actually failed, so a letter tile on screen means the URL was
  * empty or the request was refused — worth knowing when one shows up.
  */
-type Size = 'sm' | 'md'
+type Size = 'xs' | 'sm' | 'md'
 
 const SIZES: Record<Size, { root: string; badge: string; icon: string }> = {
+  // A 16px mark in front of a name, as the post's Settings tab draws one: too
+  // small for the platform badge, so pass no `platform` at this size.
+  xs: { root: 'size-4', badge: '', icon: '' },
   sm: { root: 'size-6', badge: 'size-3.5 rounded-[4px]', icon: 'size-2.5' },
   md: { root: 'size-10', badge: 'size-[18px] rounded-[5px]', icon: 'size-3' },
 }
@@ -50,7 +53,9 @@ export function AccountAvatar({
           // as a plain load error and silently drops us to the initial.
           <AvatarImage src={src} alt="" referrerPolicy="no-referrer" />
         )}
-        <AvatarFallback>{initial}</AvatarFallback>
+        <AvatarFallback className={cn(size === 'xs' && 'text-[9px]')}>
+          {initial}
+        </AvatarFallback>
       </Avatar>
       {Icon && (
         <span

@@ -47,7 +47,10 @@ export function PostsFilterBar({
   totalUnfiltered: number
   /** The assistant put this filter here (CON-482), and it hasn't changed. */
   setByAssistant?: boolean
-  /** Off on the list, whose toolbar line says it (CON-486). */
+  /**
+   * The list shows it only while a filter narrows it ("3 of 21"): it has no
+   * count line of its own, and an unfiltered total is not news.
+   */
   showCount?: boolean
 }) {
   const { t } = useTranslation()
@@ -96,6 +99,13 @@ export function PostsNoMatches({
       vocabulary={vocabulary}
       countQuery={countQuery}
       onChange={onChange}
+      columns={[
+        t('postsTable.columnTitle'),
+        t('postsTable.columnStatus'),
+        t('postsTable.columnWarnings'),
+        t('postsTable.columnPlatform'),
+        t('postsTable.columnPublishDate'),
+      ]}
     />
   )
 }

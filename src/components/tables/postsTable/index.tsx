@@ -17,11 +17,10 @@ import { formatDate as formatLocaleDate } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import { contentFormat, contentFormatLabel } from '@/lib/contentFormats'
 import { useFeatureFlag } from '@/config/featureFlags'
-import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
-import { OutsideCampaignMark } from '@/components/campaigns/OutsideCampaignMark'
-import { outsideCampaign } from '@/lib/campaignTarget'
-import { useCampaign } from '@/hooks/useCampaigns'
 import { SeriesMark } from '@/components/series/SeriesMark'
+import { PostWarningsMark } from '@/components/campaigns/postsList/PostWarningsMark'
+import { usePostWarnings } from '@/hooks/usePostWarnings'
+import { counted } from '@/lib/intl'
 
 type PostRow = Post & Record<string, unknown>
 
@@ -35,6 +34,13 @@ type PostsTableProps = {
    */
   campaignId: string | null
   onDelete: (id: string) => void
+  /**
+   * A row's warning mark was pressed: open the drawer listing that post's
+   * warnings. `warningsOpenFor` is the post it is open for, so its mark reads
+   * as pressed.
+   */
+  onShowWarnings: (postId: string) => void
+  warningsOpenFor?: string | null
   emptyStateMessage?: string
   emptyStateActionLabel?: string
   onEmptyStateAction?: () => void
@@ -106,6 +112,8 @@ function PostsTableComponent({
   posts,
   campaignId,
   onDelete,
+  onShowWarnings,
+  warningsOpenFor = null,
   emptyStateMessage,
   emptyStateActionLabel,
   onEmptyStateAction,
@@ -121,9 +129,7 @@ function PostsTableComponent({
   const { t, i18n } = useTranslation()
   const locale = i18n.language
   const formats = useFeatureFlag('content-formats')
-  // What the campaign targets, so a post left outside it is marked (CON-483).
-  // On the workspace's list each row carries its own campaign instead.
-  const targets = useCampaign(campaignId ?? '').data?.target_platforms
+  const warningsOf = usePostWarnings(campaignId)
 
   const selectable = !!selectedIds && !!onToggleRow && !!onToggleAll
   // Against the rows on screen, not against the whole selection: the header
@@ -182,6 +188,10 @@ function PostsTableComponent({
         accessorKey: 'title',
         header: t('postsTable.columnTitle'),
         isAutoSize: true,
+        // What it keeps when the page is too narrow for every column — the
+        // warnings drawer open, say — and the table scrolls sideways instead:
+        // without it the title falls to the 50px default and reads as nothing.
+        minSize: 240,
         cell: (_value, row) => {
           const displayTitle = formatTitle(row.title)
           return (
@@ -214,43 +224,43 @@ function PostsTableComponent({
         ),
       },
       {
-        // A post written from general knowledge says so in a column of its
-        // own, just before its status (CON-484) — the one place a row states
-        // what the post is. Empty for every other post.
-        id: 'grounding',
-        accessorFn: (row) => row.grounding_mode ?? '',
-        header: t('postsTable.columnGrounding'),
-        size: 130,
-        minSize: 120,
-        sortable: false,
+        id: 'status',
+        accessorKey: 'status',
+        header: t('postsTable.columnStatus'),
+        size: 170,
+        minSize: 130,
         cell: (_value, row) => (
-          <div className="flex h-[34px] items-center border-b-2 border-background px-3">
-            <NotGroundedMark mode={row.grounding_mode} />
+          <div className="h-[34px] border-b-2 border-background px-3 leading-8">
+            <TextCell value={postStatusLabel(t, row.status)} />
           </div>
         ),
       },
       {
-        id: 'status',
-        accessorKey: 'status',
-        header: t('postsTable.columnStatus'),
-        // Room for the longest status beside the off-campaign mark; narrower,
-        // the status truncates and the mark stays whole.
-        size: 230,
-        minSize: 140,
-        cell: (_value, row) => (
-          <div className="flex h-[34px] items-center gap-3 border-b-2 border-background px-3 leading-8">
-            <TextCell
-              value={postStatusLabel(t, row.status)}
-              className="min-w-0 truncate"
-            />
-            <OutsideCampaignMark
-              outside={outsideCampaign(
-                row,
-                campaignId ? targets : row.campaign?.target_platforms,
-              )}
-            />
-          </div>
-        ),
+        // The mark alone (`PostWarningsMark`): what is wrong is said in the
+        // drawer it opens, so the row stays one line however much is wrong.
+        // Read off the list payload only — see `lib/postWarnings`.
+        id: 'warnings',
+        accessorFn: (row) => warningsOf(row).length,
+        header: t('postsTable.columnWarnings'),
+        size: 110,
+        minSize: 90,
+        sortable: false,
+        cell: (_value, row) => {
+          const warnings = warningsOf(row)
+          return (
+            <div className="flex h-[34px] items-center border-b-2 border-background px-3">
+              <PostWarningsMark
+                warnings={warnings}
+                pressed={warningsOpenFor === row.id}
+                label={t('postsTable.warnings.open', {
+                  ...counted(warnings.length, locale),
+                  title: formatTitle(row.title),
+                })}
+                onPress={() => onShowWarnings(row.id)}
+              />
+            </div>
+          )
+        },
       },
       {
         id: 'platform',
@@ -369,8 +379,10 @@ function PostsTableComponent({
       },
     ],
     [
-      campaignId,
       onDelete,
+      onShowWarnings,
+      warningsOpenFor,
+      warningsOf,
       selectable,
       selectedIds,
       selectAllLabel,
@@ -380,7 +392,6 @@ function PostsTableComponent({
       visibleSelected,
       locale,
       t,
-      targets,
     ],
   )
 
@@ -392,8 +403,8 @@ function PostsTableComponent({
       ...(selectable ? ['select'] : []),
       'title',
       ...(campaignId ? [] : ['campaign']),
-      'grounding',
       'status',
+      'warnings',
       'platform',
       ...(formats ? ['format'] : []),
       // Only where some post was made for a series (CON-496): a column empty

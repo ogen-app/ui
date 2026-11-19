@@ -1,8 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { FlagIcon } from '@phosphor-icons/react'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PostStatusBadge } from '@/components/posts/PostStatusBadge'
+import { TextSelect } from '@/components/ui/text-select'
+import { PostBrandSection } from '@/components/brand/PostBrandSection'
+import { PostFormatSection } from '@/components/formats/PostFormatSection'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { useAutoPublishState } from '@/hooks/useAutoPublishAllowlist'
-import { HelpTrigger } from '@/components/help/HelpTrigger'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { useCampaignPostTypes } from '@/hooks/useCampaignPostTypes'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
@@ -16,11 +20,11 @@ import {
 } from '@/lib/postStatusMachine'
 import { cn } from '@/lib'
 import type { Post } from '@/types/posts'
-import { AccountSlot } from './quickBar/AccountSlot'
-import { PlatformPicker, PostTypePicker } from './quickBar/ChannelPickers'
-import { PublishMethodPicker } from './quickBar/PublishMethodPicker'
-import { SchedulingDetails } from './quickBar/SchedulingLine'
-import { Dot } from './quickBar/parts'
+import { AccountSlot } from '../quickBar/AccountSlot'
+import { PlatformPicker, PostTypePicker } from '../quickBar/ChannelPickers'
+import { PublishMethodPicker } from '../quickBar/PublishMethodPicker'
+import { SchedulingDetails } from '../quickBar/SchedulingLine'
+import { Mark, SettingList, SettingRow as Row } from '../quickBar/parts'
 import { awaiting } from '@/lib/fetched'
 
 type Props = {
@@ -28,9 +32,9 @@ type Props = {
   changeDoc: (fn: (p: Post) => void) => void
   cancelling: boolean
   /**
-   * Bumped by the header when a blocked status action is clicked. Each new
-   * value flashes the bar — see the outline/shake below — because the fields
-   * that block the transition all live in here.
+   * When a blocked status action was last pressed (ms), or 0. Each press
+   * flashes the tab — see the outline/shake below — because the fields that
+   * block the transition all live in here.
    */
   attention?: number
   publishMethod: PublishMethod
@@ -44,38 +48,35 @@ type Props = {
   /**
    * The format an automatic post would publish as right now, resolved by the
    * route's one `usePostMedia`. Read only while the post carries no slug of its
-   * own — the bar shows it beside *Auto* so the decision is visible without
+   * own — the tab shows it beside *Auto* so the decision is visible without
    * opening the menu.
    */
   resolvedPostType?: string
-  className?: string
 }
+
+const NO_PHASE = '__none__'
 
 /** How long the attention flash runs. Matches the `attention-flash` keyframes. */
 const ATTENTION_MS = 1500
+/** How old a press can be and still flash a tab that has only just opened. */
+const FRESH_MS = 500
 
 /**
- * The card above the post editor. Line 1: when and how it publishes, next to
- * the status badge. Line 2: the platform / post type pickers (autosaving
- * through `changeDoc`) and the connected publishing account.
+ * Where the post goes, when, and how — the fields that decide whether it can
+ * be published at all. The top of the Overview tab, which is why that tab
+ * carries a mark while any of them blocks publishing (`PostSideColumn`), and
+ * why a blocked press flashes this list.
  *
- * Validation is inline — no separate checklist: a missing/past publish
- * date warns on line 1, a deselected platform warns on its own trigger,
- * and a platform without a connected account warns in the account slot.
- * The pickers only offer what the campaign allows, plus a deselect option.
+ * One labelled row per decision, every one of them editable in place and
+ * autosaving through `changeDoc`. Each value starts with a 16px mark — the
+ * platform's logo, the account's picture, an icon, or the warning standing in
+ * for a value that is missing — so every row's text starts at the same x. The
+ * pickers only offer what the campaign allows, plus a deselect option.
  *
- * Everything here is editable in place — the date, the time and the publish
- * method all open pickers — so a post can be scheduled without opening the
- * settings rail. The status badge is read-only: moving between statuses is
- * the header's job.
- *
- * What stays in this file is the two lines and the wiring: which controls
- * appear, in what order, against which reads of the campaign and the platform
- * list. Each control's own behaviour lives beside it in `quickBar/` — they
- * share the bar's grammar (`quickBar/parts.tsx`) rather than each other's
- * internals, so the ordering above can be read without them.
+ * Each control's own behaviour lives in `quickBar/`, which is what this list
+ * was before it was a tab — a two-line bar above the post.
  */
-export function PostQuickSettingsBar({
+export function PublishingSettings({
   doc,
   changeDoc,
   cancelling,
@@ -84,8 +85,8 @@ export function PostQuickSettingsBar({
   onPublishMethodChange,
   onAddPostLink,
   resolvedPostType,
-  className,
 }: Props) {
+  const { t } = useTranslation()
   const catalog = usePlatformCatalog()
   const platform = catalog.resolve(doc.platform_id)
   const campaignQuery = useCampaign(doc.campaign_id)
@@ -206,65 +207,19 @@ export function PostQuickSettingsBar({
     })
   }
 
+  const methodOpen =
+    doc.status === 'draft' || doc.status === 'ready_for_publish'
+
   return (
-    <div
+    <SettingList
       className={cn(
-        'w-full bg-primary px-10 py-4 flex flex-col gap-3',
-        // Blocked-action feedback: shake, then the ring fades out. Defined
-        // in index.css because the ring's colour is animated, and it uses
-        // `outline` rather than `border` so the bar never reflows.
+        // Blocked-action feedback: shake, then the ring fades out. Defined in
+        // index.css because the ring's colour is animated, and it uses
+        // `outline` rather than `border` so nothing reflows.
         flashing && 'animate-attention',
-        className,
       )}
     >
-      <div className="flex items-center justify-between gap-3">
-        {/* text-sm, like the row below: the bare Dot inherits the card's
-            24px line-height otherwise and makes this row 4px taller than
-            its 20px siblings. */}
-        <span className="flex min-w-0 items-center gap-2.5 text-sm">
-          <SchedulingDetails
-            post={doc}
-            cancelling={cancelling}
-            onChange={setScheduledAt}
-            onAddPostLink={onAddPostLink}
-          />
-          <HelpTrigger topic="post.schedule" />
-          {/* Only where the fork is still ahead of the post. Once it's
-              scheduled the status itself records which way it went, and
-              SchedulingDetails spells it out ("Auto-publishes …"). */}
-          {(doc.status === 'draft' || doc.status === 'ready_for_publish') && (
-            <>
-              <Dot />
-              {autoPublish === 'unknown' ? (
-                <Skeleton className="h-4 w-28" />
-              ) : (
-                <PublishMethodPicker
-                  method={publishMethod}
-                  onChange={onPublishMethodChange}
-                  platformName={platform?.name ?? null}
-                  hasAccount={account.connected}
-                  autoAllowed={autoPublish === 'allowed'}
-                />
-              )}
-            </>
-          )}
-        </span>
-        {/* flex, not a plain block: the badge is inline-flex, so a block
-            parent gives it a line box at the bar's 24px line-height and the
-            row renders 24.5px against its 20px siblings. */}
-        <div className="shrink-0 flex items-center gap-1.5">
-          {/* Beside the status it explains, not in the corner: the badge is
-              the thing people ask about. Renders nothing until an article
-              claims the topic. */}
-          <HelpTrigger topic="post.status" />
-          <PostStatusBadge
-            status={doc.status}
-            className="text-sm text-primary-foreground"
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2.5 text-sm">
+      <Row label={t('posts.editor.settings.platform')}>
         <PlatformPicker
           platform={platform}
           platforms={campaignPlatforms}
@@ -272,14 +227,13 @@ export function PostQuickSettingsBar({
           readOnly={locked}
           onSelect={selectPlatform}
         />
-
-        {/* Post types are a property of the platform, so there is nothing to
-            choose from until one is picked — the slot is hidden rather than
-            shown disabled next to its own warning. The account slot follows
-            the same rule for the same reason. */}
-        {platform && (
-          <>
-            <Dot />
+      </Row>
+      {/* Post types and accounts are a property of the platform, so there
+              is nothing to choose from until one is picked — the rows are
+              left out rather than shown empty under its warning. */}
+      {platform && (
+        <>
+          <Row label={t('posts.editor.settings.postType')}>
             <PostTypePicker
               platform={platform}
               selected={doc.platform_post_type}
@@ -293,17 +247,93 @@ export function PostQuickSettingsBar({
               readOnly={locked}
               onSelect={selectPostType}
             />
-            <Dot />
+          </Row>
+          <Row label={t('posts.editor.settings.account')}>
             <AccountSlot
               account={account}
               platformName={platform.name}
               editable={canEditPublishingAccount(doc.status)}
               onSelect={selectAccount}
             />
-          </>
-        )}
-      </div>
-    </div>
+          </Row>
+        </>
+      )}
+      <Row label={t('posts.editor.settings.date')}>
+        <SchedulingDetails
+          post={doc}
+          cancelling={cancelling}
+          onChange={setScheduledAt}
+          onAddPostLink={onAddPostLink}
+        />
+      </Row>
+      {/* Only while the fork is still ahead of the post. Once it is
+              scheduled the status itself records which way it went. */}
+      {methodOpen && (
+        <Row label={t('posts.editor.settings.publishing')}>
+          {autoPublish === 'unknown' ? (
+            <Skeleton className="h-4 w-28" />
+          ) : (
+            <PublishMethodPicker
+              method={publishMethod}
+              onChange={onPublishMethodChange}
+              platformName={platform?.name ?? null}
+              hasAccount={account.connected}
+              autoAllowed={autoPublish === 'allowed'}
+            />
+          )}
+        </Row>
+      )}
+    </SettingList>
+  )
+}
+
+/**
+ * The inputs to writing the post that are not about publishing it: the
+ * campaign phase, the voice and audience, the format. The foot of the
+ * Overview tab — set once, if at all.
+ */
+export function WritingSettings({
+  doc,
+  changeDoc,
+}: {
+  doc: Post
+  changeDoc: (fn: (p: Post) => void) => void
+}) {
+  const { t } = useTranslation()
+  const formatsEnabled = useFeatureFlag('content-formats')
+  const campaign = useCampaign(doc.campaign_id).data
+  const locked = isSubmitted(doc.status)
+  const phases = campaign?.campaign_type?.phases ?? []
+  const phaseOptions = [
+    { id: NO_PHASE, displayValue: t('posts.editor.settings.noPhase') },
+    ...phases.map((ph) => ({ id: ph.id, displayValue: ph.name })),
+  ]
+  const selectPhase = (id: string) =>
+    changeDoc((d) => {
+      d.campaign_type_phase_id = id === NO_PHASE ? null : id
+    })
+
+  return (
+    <SettingList>
+      {phases.length > 0 && (
+        <Row label={t('posts.editor.settings.phase')}>
+          <Mark>
+            <FlagIcon />
+          </Mark>
+          <TextSelect
+            variant="inline"
+            size="sm"
+            value={doc.campaign_type_phase_id ?? NO_PHASE}
+            onValueChange={selectPhase}
+            elements={phaseOptions}
+            disabled={locked}
+            ariaLabel={t('posts.editor.settings.phase')}
+          />
+        </Row>
+      )}
+      <PostBrandSection post={doc} />
+      {formatsEnabled && <PostFormatSection post={doc} changeDoc={changeDoc} />}
+    </SettingList>
   )
 }
 
@@ -315,20 +345,19 @@ export function PostQuickSettingsBar({
 const EMPTY_SLUGS: ReadonlySet<string> = new Set()
 
 /**
- * Holds a flash on for ATTENTION_MS each time `attention` changes. The
- * counter (not a boolean) is what lets a second blocked click re-trigger
- * the animation while the first is still running.
+ * Holds a flash on for ATTENTION_MS after each blocked press. `attention` is
+ * the press's time rather than a counter, because the press is also what
+ * opens this tab: a tab mounting on a press a moment ago flashes too, and one
+ * mounting long after an old press does not.
  */
 function useAttentionFlash(attention: number): boolean {
   const [flashing, setFlashing] = useState(false)
-  const seen = useRef(attention)
 
   useEffect(() => {
-    if (attention === seen.current) return
-    seen.current = attention
+    if (!attention || Date.now() - attention > FRESH_MS) return
     setFlashing(false)
     // Two frames: drop the class, let the browser paint, then re-add it so
-    // the animation restarts from the top on a repeat click.
+    // the animation restarts from the top on a repeat press.
     const raf = requestAnimationFrame(() => {
       requestAnimationFrame(() => setFlashing(true))
     })

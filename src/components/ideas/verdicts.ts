@@ -6,6 +6,9 @@ import {
 } from '@phosphor-icons/react'
 import type { IdeaVerdict, PostponeHorizon } from '@/lib/ideas'
 
+/** An answer given on a card: the verdict, and the day a postponement ends. */
+export type Decide = (verdict: IdeaVerdict, remindAt: string | null) => void
+
 /**
  * The three answers, in one table.
  *

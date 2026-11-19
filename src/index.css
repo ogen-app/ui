@@ -527,6 +527,16 @@
   --fit-high: oklch(0.8 0.09 148);
   --fit-low: oklch(0.86 0.045 85);
 
+  /* An idea's fit as the list's 20px ring (`FitRing`): one colour along a
+     continuous red → yellow → green scale, mixed in oklch between these three
+     stops by `fitColor`. Unlike the pale track above, the ends are meant to
+     be read at a glance across a list — the user asked for a scale that says
+     poor, fair and strong — and the ring's grey track keeps the arc's length,
+     not its colour, as the score itself. */
+  --fit-poor: oklch(0.63 0.2 28);
+  --fit-fair: oklch(0.8 0.16 85);
+  --fit-strong: oklch(0.66 0.15 150);
+
   /* The 120° rule above is the target and no longer reachable: the campaign's
      rail went from four coloured rows to six, and six hues cannot sit 120°
      apart on a wheel with red and the teal accent cut out of it. Two adjacent
