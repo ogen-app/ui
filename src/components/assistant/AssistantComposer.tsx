@@ -192,12 +192,17 @@ export function AssistantComposer({
         </Button>
       ) : (
         <Button
-          variant="ghost"
+          // Ogen's teal once there is something to send — the Ask Ogen
+          // button's own fill — and a quiet white square until then.
+          variant={canSend ? 'accent' : 'ghost'}
           size="smIcon"
           onClick={submit}
           disabled={!canSend}
           aria-label={t('assistant.composer.send')}
-          className="self-end bg-primary disabled:text-senary-foreground"
+          className={cn(
+            'self-end',
+            !canSend && 'bg-primary disabled:text-senary-foreground',
+          )}
         >
           <PaperPlaneRightIcon />
         </Button>
