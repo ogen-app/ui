@@ -43,20 +43,45 @@ keep it accurate when these rules change.
   well, because a **smart group** (`/api/saved-views`, surface `ideas`) is
   that address saved, minus the pile. Never count or pile ideas on the
   client: the rail's figure is a `pile=waiting&limit=1` read. Both lists'
-  filters are **a sentence you edit** — one
-  `components/smartFilter/FilterSentence` over a per-list model and sentence
-  vocabulary (`lib/smartFilter`; CON-391 for Ideas, CON-392 for Assets): one
-  catalogue sentence per field and operator, clauses in a fixed order, joined
-  by `formatListParts`, and on Assets the type is the subject ("Showing
-  PDFs, in …"). Never assemble a clause from fragments. Both lists have
-  smart groups through the same `SavedViewsMenu` and `useSavedViews(surface)`,
-  on the workspace page only. Both pages use the post page's scroll frame
-  (CON-392): `PageHeader` sticky inside one `ScrollArea`, the whole page
-  scrolling under it, `PageBottomFader` along the bottom, and group
-  bands pinning at the header's foot through `page-primitives/pinnedBands` —
-  always at least one band ("No grouping"), in the page's own colour, capped
-  behind the header while pinned. The campaign layout hands both sections
-  their whole page. Bulk delete is
+  filters are built from **one catalogue sentence per field and operator**
+  over a per-list model and vocabulary (`lib/smartFilter`; CON-391 for Ideas,
+  CON-392 for Assets), clauses in a fixed order — never a clause assembled
+  from fragments. On the posts list they still read as a sentence
+  (`FilterSentence`); on the card lists each clause is a **pill**
+  (`FilterPills`, `inline`) in the list's head line, after Filter, with the
+  sentence's own add field and clause panels; a choice of three or more reads
+  as its first value and how many more ("that are CSVs +9"), its full words
+  the pill's name and tooltip.
+  Both lists have smart groups through the same `SavedViewsMenu` and
+  `useSavedViews(surface)`, on the workspace page only — as **Views at the
+  line's end**, before Group and Sort, the open group's name leading the
+  pills and closed there; there is no "All ideas" to pick. Both pages use the post
+  page's scroll frame (CON-392): `PageHeader` sticky inside one `ScrollArea`,
+  the whole page scrolling under it, `PageBottomFader` along the bottom.
+  The campaign layout hands both sections their whole page.
+  **The two lists are cards** (design/ideas-cards, `page-primitives/listCards`):
+  two text sizes (14/20 read, 12/16 glanced at), a 4px rhythm, each card its
+  own hairline-bordered surface 4px from the next, one 20px mark on the title
+  line (an idea's fit as a ring on the red → yellow → green scale,
+  `FitRing`, the number on hover). **Two strips, and only these pin**: the
+  page header carries the tabs (the only counts) after the title and the
+  page's add action (ADD IDEA lays the capture field over the whole header
+  row, 4px past it on every side, with the assistant's send button; with no
+  ideas yet it is simply open; Assets has one tab, Documents, and after it
+  the ideas its documents hold still to answer), and **the list's head** is one line directly
+  under it — the box over the boxes, Filter and the pills, then Views, Group
+  and Sort ending flush with the cards' edge, all four controls in one voice
+  and as tall as a pill so wrapping pills leave them on the first row — or
+  the selection and its actions in their place. Group heads are their own surface, a step
+  lighter than the page and quieter than a card, each with its own box, and
+  scroll with their cards: a stack of pinned bars was too much header.
+  **Selection is the mail-client pattern**: boxes always
+  shown, faint until hovered; the head box takes the cards loaded and a
+  half-ticked head box clears; a group's box fills its group; Shift extends
+  a range; widening to every match is a separate, named step ("Select all
+  46 ideas in …"); ticks survive switching piles and the head says how many
+  are elsewhere. The actions sit in the head rather than in a floating bar.
+  Bulk delete is
   `POST /api/ideas/bulk-delete` in batches of 500, and select-all is
   `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
   `idea_read_only`); only its campaign may change.

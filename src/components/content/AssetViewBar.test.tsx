@@ -3,7 +3,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { i18next, loadLocaleResources } from '@/i18n'
-import { AssetViewBar } from './AssetViewBar'
+import { AssetViewBar, UndecidedIdeas } from './AssetViewBar'
 
 function show({
   undecided = 29,
@@ -14,17 +14,21 @@ function show({
   onSortChange = vi.fn(),
 } = {}) {
   return renderWithProviders(
-    <AssetViewBar
-      undecided={undecided}
-      documents={documents}
-      ideasLink={{ to: '/ideas' }}
-      grouping="created"
-      onGroupingChange={onGroupingChange}
-      scoped={scoped}
-      sort="-created_at"
-      onSortChange={onSortChange}
-      searching={searching}
-    />,
+    <>
+      <UndecidedIdeas
+        undecided={undecided}
+        documents={documents}
+        ideasLink={{ to: '/ideas' }}
+      />
+      <AssetViewBar
+        grouping="created"
+        onGroupingChange={onGroupingChange}
+        scoped={scoped}
+        sort="-created_at"
+        onSortChange={onSortChange}
+        searching={searching}
+      />
+    </>,
   )
 }
 

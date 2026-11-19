@@ -824,12 +824,18 @@ export const en = {
   sentence: {
     label: 'Filter',
     addDetail: 'add a detail',
+    /** The pills row's way into a detail (design/ideas-cards). */
+    add: 'Add',
     addPlaceholder: 'a detail…',
     change: 'Change: {{clause}}',
     remove: 'Remove: {{clause}}',
     removeDetail: 'Remove this detail',
     done: 'Done',
     clear: 'Clear',
+    /** The pills row's end: every filter off at once. */
+    clearAll: 'Clear filters',
+    /** A pill naming its first value only: how many more it holds. */
+    more: '+{{formatted}}',
     removeLast: 'remove the last detail',
     noValues: 'Nothing to choose from yet',
     heading: {
@@ -851,6 +857,10 @@ export const en = {
     share: 'Share with the workspace',
     unshare: 'Stop sharing',
     duplicate: 'Duplicate',
+    /** The tab strip's menu of smart groups, beside Filter. */
+    views: 'Views',
+    /** The × after an open group's name, leading the pills row. */
+    close: 'Close “{{name}}”',
     delete: 'Delete',
     copyName: '{{name}} (copy)',
     edited: 'edited',
@@ -1002,6 +1012,11 @@ export const en = {
       retry: 'Try again',
       dismiss: 'Dismiss',
       hintMultiline: 'Shift <key/> for a new line · Return <key/> to keep it',
+      /** The header's button that opens the field, and the way out of it. */
+      open: 'ADD IDEA',
+      close: 'Stop adding ideas',
+      /** The field's send button: Return, for the mouse. */
+      keep: 'Keep this idea',
     },
     /** The verdicts as the piles they name. */
     verdict: {
@@ -1015,8 +1030,6 @@ export const en = {
       later: 'In the drawer',
       no: 'Set aside',
       undecide: 'Put it back on the desk',
-      close: 'Close this idea',
-      open: 'Open this idea',
       delete: 'DELETE IDEA',
     },
     horizon: {
@@ -1065,11 +1078,12 @@ export const en = {
     undecidedCount_other: '{{count}} ideas on the desk',
     /** The Ideas page's card (CON-388): where each idea came from. */
     card: {
-      written: 'Written',
       writtenBy: 'Written by {{name}}',
       writtenByAt: 'Written by {{name}} · {{at}}',
       /** An idea generated from no document, opened (CON-484). */
       suggestedAt: 'Suggested by the assistant · {{at}}',
+      /** The assistant's spark, in the card's mark column. */
+      suggested: 'Suggested by the assistant',
       /** Its writer's slot: the assistant, not whoever asked. */
       assistant: 'Assistant',
       /** A written idea whose writer was never named. */
@@ -1277,14 +1291,21 @@ export const en = {
     },
     bulk: {
       select: 'Select “{{title}}”',
-      selectAll_one: 'Select {{formatted}} idea',
-      selectAll_other: 'Select all {{formatted}} ideas',
+      /** The list head's box: the ideas loaded, not every match. */
+      selectPage: 'Select the ideas shown',
+      /** The named step from a ticked page to every match in the pile. */
+      selectAllIn_one: 'Select the {{formatted}} idea in “{{pile}}”',
+      selectAllIn_other: 'Select all {{formatted}} ideas in “{{pile}}”',
+      allIn_one: 'The {{formatted}} idea in “{{pile}}” is selected',
+      allIn_other: 'All {{formatted}} ideas in “{{pile}}” are selected',
+      /** Ticked but not on screen — in another pile, or not loaded. */
+      elsewhere_one: '{{formatted}} more selected elsewhere',
+      elsewhere_other: '{{formatted}} more selected elsewhere',
       clearAll: 'Clear the selection',
       tooMany: 'Narrow the filter to select all (up to 5,000).',
       count_one: '{{count}} selected',
       count_other: '{{count}} selected',
       delete: 'DELETE',
-      clear: 'CLEAR',
       done_one: 'Deleted {{count}} idea.',
       done_other: 'Deleted {{count}} ideas.',
       partial_one: 'Deleted {{count}} idea; {{failed}} couldn’t be deleted.',
@@ -8865,24 +8886,29 @@ export const en = {
       label: 'Documents',
       untitled: 'Untitled',
       selectRow: 'Select {{title}}',
-      deleteRow: 'Delete {{title}}',
+      /** A group head's box, over its cards' boxes. */
+      selectGroup: 'Select everything in {{group}}',
       justNow: 'just now',
       minutes_one: '{{count}} min',
       minutes_other: '{{count}} min',
       /** The facts line's date: `when` is a distance, "14 months ago". */
       publishedAgo: 'published {{when}}',
       addedAgo: 'added {{when}}',
-      /** After the next undecided idea's title: how many more are waiting. */
-      nextIdeaMore_one: 'and {{count}} more',
-      nextIdeaMore_other: 'and {{count}} more',
-      readingTitle: 'Reading this file.',
-      readingBody:
-        'Ideas appear here on their own when it’s done; you can leave.',
-      failedTitle: 'We couldn’t read this file.',
+      /** The card's one standing fact, and its mark's name, while it is read. */
+      reading: 'Reading it…',
+      /** …and when it couldn't be: the reason is where the summary would be. */
+      failed: 'Couldn’t read it',
       /** After the reason a file failed. Nothing re-runs a PDF or an office file. */
       failedNext: 'Upload it again, or delete it.',
-      noIdeas: 'Read, but no post ideas came out of it.',
+      noIdeas: 'No ideas came out of it',
       analyseAgain: 'Analyse again',
+      /** A file on its way in, as a card at the list's head. */
+      uploading: 'Uploading, {{progress}}%',
+      retryUpload: 'Upload {{name}} again',
+      dismissUpload: 'Dismiss {{name}}',
+      /** The card's end: the ideas still waiting on it, opening that pile. */
+      ideasWaiting_one: '{{formatted}} idea →',
+      ideasWaiting_other: '{{formatted}} ideas →',
       /** A group band's fold, named for the group. */
       fold: 'Fold {{group}}',
       unfold: 'Unfold {{group}}',
@@ -9219,15 +9245,21 @@ export const en = {
         "This image's format can't be shown in a browser, and no viewable copy was made.",
     },
 
-    /** The floating bar over a ticked selection in the documents list. */
+    /** The list head over a ticked selection in the documents list. */
     selection: {
       count_one: '{{count}} selected',
       count_other: '{{count}} selected',
-      clear: 'CLEAR',
       delete: 'DELETE',
-      /** The filter bar's select-all: every match, not just the rows loaded. */
+      /** The head's box: the documents loaded, not every match. */
+      selectPage: 'Select the documents shown',
+      /** The named step from a ticked page to every match. */
       selectAll_one: 'Select the {{formatted}} document',
       selectAll_other: 'Select all {{formatted}} documents',
+      allSelected_one: 'The {{formatted}} document is selected',
+      allSelected_other: 'All {{formatted}} documents are selected',
+      /** Ticked but not loaded — the assistant's choice, say. */
+      elsewhere_one: '{{formatted}} more selected elsewhere',
+      elsewhere_other: '{{formatted}} more selected elsewhere',
       clearAll: 'Clear the selection',
       failed: 'Unable to select every match',
     },

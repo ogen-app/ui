@@ -79,12 +79,13 @@ keep it accurate when these rules change.
   carries and two people filing at once don't overwrite each other. The server
   refuses a tag named in both lists rather than picking a winner.
 
-- **Deleting a document asks, from every way in.** The row's bin, the selection
-  bar and the document's own screen all reach a confirmation that *names* what
-  it is about to delete — one title, or a count. The bin used to delete on one
-  click, on the argument that a row is one of twenty and a mistake is visible
-  immediately; the second half is false, because nothing in the product undoes
-  this. Route a new entry point through `DeleteDocumentsDialog`
+- **Deleting a document asks, from every way in.** DELETE in the list's head
+  (over the ticked cards — a single card is a selection of one; the cards
+  carry no bin since design/ideas-cards) and the document's own screen both
+  reach a confirmation that *names* what it is about to delete — one title, or
+  a count. A row's bin once deleted on one click, on the argument that a row
+  is one of twenty and a mistake is visible immediately; the second half is
+  false, because nothing in the product undoes this. Route a new entry point through `DeleteDocumentsDialog`
   (`ContentList` holds the state; a single row is a selection of one) rather
   than calling the mutation, and never add a second path that skips the asking.
 
