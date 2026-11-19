@@ -132,22 +132,19 @@ const FEATURE_FLAGS = {
 
   /**
    * The help centre (CON-173) — Help in the top bar and the rail panel it
-   * opens, the contextual triggers and the `#help/<key>` deep link. **Off —
-   * waiting on content, not on an endpoint.**
+   * opens, the contextual triggers and the `#help/<key>` deep link. **On since
+   * 2026-11-19** — delete it, with its off-branch, at the first review after
+   * it has been through a deploy.
    *
-   * There is no API to wait for: articles live in the Sanity project
-   * `getogen.com` already runs (schema: `studio/schemaTypes/helpArticle.ts` on
-   * that repo's `alec/con-173-help-content`), and the app reads them from the
-   * public `production` dataset. Since 2026-11-19 every screen has a
-   * published article there (first drafts, to be rewritten in the Studio),
-   * the app's four origins are registered for CORS (without credentials),
-   * every deployed build reads it (`.env.production`), and the queries return
-   * exactly the fixtures' payload. What is missing: the Studio deployed with
-   * the help types (getogen.com's `alec/con-173-help-content`, so editors can
-   * open the articles), and a pass on app.dev with the flag forced. Then
-   * decide this flag's fate. See `docs/help-centre.md`.
+   * There is no API behind it: articles live in the Sanity project
+   * `getogen.com` already runs (schema: `studio/schemaTypes/helpArticle.ts`,
+   * deployed to the hosted Studio), and the app reads them from the public
+   * `production` dataset. Every screen has a published article (first drafts,
+   * to be rewritten in the Studio), the app's four origins are registered for
+   * CORS (without credentials), and every deployed build reads it
+   * (`.env.production`). See `docs/help-centre.md`.
    */
-  'help-center': false,
+  'help-center': true,
 
   /**
    * Series — the recurring things a workspace makes, and what each campaign

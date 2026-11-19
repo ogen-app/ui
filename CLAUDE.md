@@ -315,7 +315,7 @@ and formats in `campaigns.md`.
 - Brand from what you have is live, unflagged.
 - Calendar preferences are one set per user, shared by every calendar.
 - Two operator-tunable server limits are mirrored on the client with nothing to sync them.
-- The help centre waits on content, not on an endpoint.
+- The help centre is on, read from Sanity.
 - The Profile marketing-email switch is built but flagged off.
 
 ## Global rules

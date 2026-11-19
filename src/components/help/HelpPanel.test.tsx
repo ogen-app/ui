@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EMPTY_PANEL_MEMORY } from '@/lib/rightPanel'
+import { fetchHelpArticle, fetchHelpIndex } from '@/services/help'
 import { useHelpStore } from '@/stores/helpStore'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { HelpPanel } from './HelpPanel'
@@ -17,6 +19,16 @@ vi.mock('@/config/featureFlags', () => ({
   useFeatureFlag: () => true,
   isFeatureEnabled: () => true,
 }))
+
+// The real fixtures behind spies, so a test can make one request fail.
+vi.mock('@/services/help', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/help')>()
+  return {
+    ...actual,
+    fetchHelpArticle: vi.fn(actual.fetchHelpArticle),
+    fetchHelpIndex: vi.fn(actual.fetchHelpIndex),
+  }
+})
 
 function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({
@@ -62,9 +74,7 @@ describe('HelpPanel', () => {
     // place the reader has left.
     navigateTo('analytics')
     await waitFor(() => expect(useHelpStore.getState().history).toEqual([]))
-    expect(
-      await screen.findByText('There’s no help for this page yet.'),
-    ).toBeVisible()
+    expect(await screen.findByText('No help for this page yet')).toBeVisible()
   })
 
   it('catches up with an index that lands after Help was pressed', async () => {
@@ -88,5 +98,50 @@ describe('HelpPanel', () => {
       'page-posts',
       'post-statuses',
     ])
+  })
+
+  describe('with nothing to show', () => {
+    it('says help could not load, rather than that none was written, and tries again', async () => {
+      vi.mocked(fetchHelpIndex).mockRejectedValueOnce(new Error('offline'))
+      act(() => useHelpStore.getState().open(null))
+      render(<HelpPanel onClose={() => {}} />, { wrapper })
+
+      expect(await screen.findByText('Couldn’t load help')).toBeVisible()
+      expect(screen.queryByText('No help for this page yet')).toBeNull()
+
+      await userEvent.click(screen.getByRole('button', { name: 'TRY AGAIN' }))
+      expect(
+        await screen.findByRole('heading', { name: 'Posts' }),
+      ).toBeVisible()
+    })
+
+    it('retries a failed article', async () => {
+      vi.mocked(fetchHelpArticle).mockRejectedValueOnce(new Error('offline'))
+      render(<HelpPanel onClose={() => {}} />, { wrapper })
+      act(() => useHelpStore.getState().open('page-posts'))
+
+      expect(await screen.findByText('Couldn’t load help')).toBeVisible()
+      await userEvent.click(screen.getByRole('button', { name: 'TRY AGAIN' }))
+      expect(
+        await screen.findByRole('heading', { name: 'Posts' }),
+      ).toBeVisible()
+    })
+
+    it('names a link that answers nothing', async () => {
+      render(<HelpPanel onClose={() => {}} />, { wrapper })
+      act(() => useHelpStore.getState().open('no-such-article'))
+      expect(await screen.findByText('This article isn’t here')).toBeVisible()
+    })
+
+    it('hands a screen with no help to the assistant', async () => {
+      useHelpStore.setState({ page: 'analytics' })
+      act(() => useHelpStore.getState().open(null))
+      render(<HelpPanel onClose={() => {}} />, { wrapper })
+
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'ASK OGEN' }),
+      )
+      expect(selectActivePanel(useSettingsStore.getState())).toBe('assistant')
+    })
   })
 })

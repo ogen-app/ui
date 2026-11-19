@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react'
-import { ArrowLeftIcon } from '@phosphor-icons/react'
+import { ArrowLeftIcon, QuestionIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
-import { useHelpArticle, usePageHelpArticle } from '@/hooks/useHelp'
+import {
+  useHelpArticle,
+  useHelpIndex,
+  usePageHelpArticle,
+} from '@/hooks/useHelp'
+import { Button } from '@/components/ui/button'
 import { useLocale } from '@/hooks/useLocale'
 import { Spinner } from '@/components/ui/spinner'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
@@ -87,6 +92,10 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
   // has followed a link. It also catches up with an index that lands after
   // Help was pressed: the trail was empty, and now this screen has an answer.
   const pageArticle = usePageHelpArticle({ enabled: true })
+  // The same shared query the line above reads: an empty trail is "nothing
+  // written for this screen" only once the index has answered, and "couldn't
+  // load help" when it failed — never the first while it is the second.
+  const indexQuery = useHelpIndex()
   const lastPageArticle = useRef(pageArticle)
   useEffect(() => {
     const previous = lastPageArticle.current
@@ -118,6 +127,9 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
       title={article?.title ?? t('help.title')}
       onClose={onClose}
       className="h-full"
+      // The body fills the rail, so an empty state centres in it the way the
+      // assistant's does; an article is taller than the rail anyway.
+      bodyClassName="grow"
     >
       <Trail
         previousKey={previousKey}
@@ -128,10 +140,20 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
         }
         onBack={back}
       />
-      {loadingArticle ? (
+      {loadingArticle || (!articleKey && awaiting(indexQuery)) ? (
         <div className="flex justify-center py-8">
           <Spinner />
         </div>
+      ) : query.isError || (!articleKey && indexQuery.isError) ? (
+        <HelpEmptyState
+          title={t('help.empty.failed.title')}
+          body={t('help.empty.failed.body')}
+          action={t('help.empty.failed.retry')}
+          onAction={() => {
+            if (query.isError) void query.refetch()
+            if (indexQuery.isError) void indexQuery.refetch()
+          }}
+        />
       ) : article ? (
         <>
           {/* The article's one-line answer, set apart by its surface
@@ -159,11 +181,58 @@ export function HelpPanel({ onClose }: { onClose: () => void }) {
           />
         </>
       ) : (
-        <p className="text-tertiary-foreground py-8 text-center text-sm">
-          {articleKey ? t('help.notFound') : t('help.page.none')}
-        </p>
+        // Nothing to show, though nothing failed: a screen nobody has written
+        // for yet, or a key (an old link, a renamed article) that answers
+        // nothing. Either way the reader came with a question, so the way on
+        // is the assistant, which knows the screen — not a dead end.
+        <HelpEmptyState
+          title={
+            articleKey
+              ? t('help.empty.notFound.title')
+              : t('help.empty.none.title')
+          }
+          body={
+            articleKey
+              ? t('help.empty.notFound.body')
+              : t('help.empty.none.body')
+          }
+          action={t('help.empty.askOgen')}
+          onAction={() =>
+            useSettingsStore.getState().openRightPanel('assistant')
+          }
+        />
       )}
     </RailPanel>
+  )
+}
+
+/**
+ * What the panel says when it has no article to show: the help mark, a
+ * heading, one line, and one way on. The assistant's empty thread is the same
+ * shape at the same scale — the two panels share the rail.
+ */
+function HelpEmptyState({
+  title,
+  body,
+  action,
+  onAction,
+}: {
+  title: string
+  body: string
+  action: string
+  onAction: () => void
+}) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12 text-center">
+      <QuestionIcon className="text-quinary-foreground size-8" />
+      <div className="flex max-w-72 flex-col gap-1">
+        <p className="text-foreground text-sm font-medium">{title}</p>
+        <p className="text-tertiary-foreground text-sm">{body}</p>
+      </div>
+      <Button variant="outline" size="sm" onClick={onAction}>
+        {action}
+      </Button>
+    </div>
   )
 }
 

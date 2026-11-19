@@ -108,8 +108,8 @@ existing platforms' constraint jsonb untouched, so `lib/platformMedia.ts`'s
 override table cannot be retired either, and an operator editing Instagram's
 image cap changes nothing the editor checks.
 
-**The help centre waits on content, not on an endpoint** (`help-center`,
-CON-173; [`docs/help-centre.md`](../help-centre.md)). **Every screen has a
+**The help centre is on, read from Sanity** (`help-center`, on since
+2026-11-19 and due for deletion; CON-173; [`docs/help-centre.md`](../help-centre.md)). **Every screen has a
 page article, and shared ideas are written once.** A route names the screen it
 is with `staticData: { help: '<page>' }` (`HELP_PAGES` in `lib/helpTopics`;
 deepest match wins, and `ideas` is both levels' Ideas, by the nav rule), and
@@ -123,21 +123,22 @@ same on the Posts list, the calendar and the post editor — and later on the
 website — without a copy. Embeds go one level deep. **Help is a rail panel
 that takes the assistant's place** (`helpOpen` in `lib/rightPanel`: on top of
 whatever was showing, and closing it gives that back), and it follows the page
-while the reader has not followed a link of their own; a screen with nothing
-written says so. A `<HelpTrigger>` **renders nothing while nothing is written
-for its topic**, and nothing about help reads Sanity while the flag is off.
+while the reader has not followed a link of their own. **With nothing to show
+it says why**: help that could not be fetched offers to try again — never
+"no help yet" over a network fault — and a screen nobody has written for, or
+a key that answers nothing, hands the reader to the assistant. A
+`<HelpTrigger>` **renders nothing while nothing is written for its topic**.
 
 The content lives in the Sanity project `getogen.com` already runs (schema on
 that repo's `alec/con-173-help-content`), read from the **public
 `production` dataset**, so everything published is world-readable. The read
 is `services/help/sanity.ts`, switched on by `VITE_SANITY_PROJECT_ID` in the
 committed `.env.production`, so every deployed build reads Sanity while
-`pnpm dev` and the tests serve `services/help/fixtures`. Since 2026-11-19
-every screen in `HELP_PAGES` has a published article (first drafts, to be
-rewritten in the Studio), the app's origins are registered for CORS
-(**without** credentials; localhost is not), and the queries return the
-fixtures' payload exactly. Still owed: the Studio deployed with the help types,
-and a pass on app.dev with the flag forced. Three things to keep
+`pnpm dev` and the tests serve `services/help/fixtures`. Every screen in
+`HELP_PAGES` has a published article (first drafts, to be rewritten in the
+Studio, which is deployed with the help types), and the app's origins are
+registered for CORS (**without** credentials; localhost is not, so dev keeps
+the fixtures). Three things to keep
 hold of. Help must **never** go through `services/api/http.ts` — Sanity is a
 third party, and the one bare `fetch` in `sanity.ts` omits credentials on
 purpose. An article is identified by a language-independent `key` and linked
