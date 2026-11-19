@@ -66,7 +66,7 @@ export function OverviewDoors({
           </Link>
         )}
       </div>
-      <ul className="grid grid-cols-1 gap-3 @min-[30rem]:grid-cols-2 @min-[48rem]:grid-cols-3 @min-[96rem]:grid-cols-6">
+      <ul className="grid grid-cols-1 gap-3 @min-[30rem]:grid-cols-2 @min-[48rem]:grid-cols-3">
         {work.map((door) => (
           <li key={door.place} className="min-w-0">
             <Door door={door} campaignId={campaignId} />

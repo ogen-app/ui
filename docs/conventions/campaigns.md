@@ -162,8 +162,9 @@ rewrite.
   takes more than a glance belongs on the page the row links to. The columns
   answer to the page's width through a container query, and on a narrow page
   the list comes last.
-  **The page ends with a door to every other place** (`OverviewDoors`, from
-  `lib/campaignDoors`): the rail's glyph and name, and one line saying whether
+  **The wide column ends with a door to every other place**, straight under
+  the cards (`OverviewDoors`, from `lib/campaignDoors`) — no card is stretched
+  to the list's height any more: the rail's glyph and name, and one line saying whether
   that part is set — a tick, an open ring for what wants something first, no
   mark where there is nothing to finish. Read across it is the campaign's
   checklist; it reads only what the Overview already holds, plus one count of

@@ -110,31 +110,31 @@ export function CampaignOverview({
    */
   analytics?: ReactNode
   /**
-   * The row of doors at the foot of the page (`lib/campaignDoors`): every
+   * The doors at the foot of the wide column (`lib/campaignDoors`): every
    * other place in the campaign, and whether it is set.
    */
   doors?: OverviewDoor[]
 }) {
-  const footer = doors && (
-    <GridCell span="full">
-      <OverviewDoors doors={doors} campaignId={campaignId} />
-    </GridCell>
+  const doorRow = doors && (
+    <OverviewDoors key="doors" doors={doors} campaignId={campaignId} />
   )
   if (model.stage === 'new') {
     return (
       <div className="pb-10">
         <PageGrid>
           <GridCell span="wide">
-            <SetupCard
-              steps={model.setup ?? []}
-              campaignId={campaignId}
-              handlers={handlers}
-            />
+            <div className="flex flex-col gap-4">
+              <SetupCard
+                steps={model.setup ?? []}
+                campaignId={campaignId}
+                handlers={handlers}
+              />
+              {doorRow}
+            </div>
           </GridCell>
           <GridCell span="narrow">
             <LearnCard learnMore={handlers.learnMore} campaignId={campaignId} />
           </GridCell>
-          {footer}
         </PageGrid>
       </div>
     )
@@ -143,21 +143,22 @@ export function CampaignOverview({
   // The progress card and the time cards are one column, beside the list;
   // the list is held on screen while they are read. With none, the list takes
   // the row. Once the campaign is over the results say how it went, so the
-  // progress card goes.
-  const column = [
+  // progress card goes. The doors end the column, straight under the cards.
+  const cards = [
     model.band && model.stage !== 'ended' && (
       <ProgressCard key="band" stage={model.stage} band={model.band} />
     ),
     ...timeCards(model, campaignId, now, analytics),
   ].filter(Boolean)
+  const column = cards.length > 0 ? [...cards, doorRow] : []
   return (
     <div className="pb-10">
       <PageGrid>
         {column.length > 0 && (
           <GridCell span="wide">
-            {/* Each card keeps its height; the last takes what the list
-                leaves, so the column ends with it. */}
-            <div className="flex flex-col gap-4 *:last:flex-1">{column}</div>
+            {/* Each card keeps its own height: none is stretched to match
+                the list beside them. */}
+            <div className="flex flex-col gap-4">{column}</div>
           </GridCell>
         )}
         <GridCell span={column.length > 0 ? 'narrow' : 'full'}>
@@ -168,7 +169,9 @@ export function CampaignOverview({
             pinned={column.length > 0}
           />
         </GridCell>
-        {footer}
+        {cards.length === 0 && doorRow && (
+          <GridCell span="full">{doorRow}</GridCell>
+        )}
       </PageGrid>
     </div>
   )
