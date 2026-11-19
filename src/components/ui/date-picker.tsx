@@ -23,6 +23,9 @@ const datePickerTriggerVariants = cva(
           'bg-input-secondary rounded-none border-b-2 border-quaternary px-4 shadow-none data-[state=open]:border-foreground focus-visible:border-foreground aria-invalid:border-destructive',
         default:
           'bg-input rounded-none border-b-1 border-quaternary px-4 shadow-none data-[state=open]:border-foreground focus-visible:border-foreground aria-invalid:border-destructive',
+        // The calendar glyph alone, for a date that is already printed beside
+        // it — a row's own meta line — so the trigger only has to say "change".
+        icon: 'w-auto aspect-square justify-center rounded-md text-tertiary-foreground hover:bg-secondary hover:text-foreground data-[state=open]:bg-secondary focus-visible:ring-2 focus-visible:ring-ring',
       },
       size: {
         sm: 'h-8',
@@ -49,6 +52,8 @@ type DatePickerProps = {
   max?: string
   /** Offer the calendar's Clear. Off where an empty value means nothing. */
   clearable?: boolean
+  /** The trigger's name — required in practice by `variant="icon"`, which prints no date. */
+  'aria-label'?: string
 } & VariantProps<typeof datePickerTriggerVariants>
 
 function toDate(value: string | null): Date | undefined {
@@ -85,6 +90,7 @@ function DatePicker({
   min,
   max,
   clearable = true,
+  'aria-label': ariaLabel,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
   const selected = toDate(value)
@@ -99,17 +105,24 @@ function DatePicker({
       <DropdownMenuTrigger
         id={id}
         disabled={disabled}
+        aria-label={ariaLabel}
         className={cn(datePickerTriggerVariants({ variant, size }), className)}
       >
-        <span
-          className={cn(
-            'truncate',
-            selected ? 'text-foreground' : 'text-tertiary-foreground',
-          )}
-        >
-          {selected ? formatDisplay(selected, locale) : placeholder}
-        </span>
-        <CalendarDotsIcon className="size-4 text-tertiary-foreground" />
+        {variant === 'icon' ? (
+          <CalendarDotsIcon className="size-4" aria-hidden />
+        ) : (
+          <>
+            <span
+              className={cn(
+                'truncate',
+                selected ? 'text-foreground' : 'text-tertiary-foreground',
+              )}
+            >
+              {selected ? formatDisplay(selected, locale) : placeholder}
+            </span>
+            <CalendarDotsIcon className="size-4 text-tertiary-foreground" />
+          </>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="p-0">
         <Calendar

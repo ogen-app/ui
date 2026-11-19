@@ -24,6 +24,8 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
+import { PageColumns } from '@/components/page-primitives/PageColumns'
+import { NeedsYouCard } from './NeedsYouCard'
 import { useActivityFeed } from '@/hooks/useActivity'
 import {
   useMarkNotificationsReadThrough,
@@ -193,9 +195,12 @@ export function ActivityFeed() {
             />
           </div>
         ) : (
-          // Same stack as the Campaigns list — one card per day, same gap, same
-          // gutters — so the two screens are read the same way.
-          <div className="flex flex-col gap-3 px-3 lg:px-6 pt-4 pb-10">
+          // One card per day in the main column, and beside it what is wrong
+          // now (`NeedsYouCard`), held on screen while the history scrolls:
+          // the feed is a record and the aside is the to-do, so the two are
+          // never one list. Neither centred nor stretched — a row is one line
+          // and its time, and at full width the two drift a screen apart.
+          <PageColumns stickyAside aside={<NeedsYouCard />}>
             {days.map((day) => (
               <DayCard
                 key={day.date}
@@ -224,7 +229,7 @@ export function ActivityFeed() {
                 })}
               </p>
             )}
-          </div>
+          </PageColumns>
         )}
       </div>
     </PageContainer>

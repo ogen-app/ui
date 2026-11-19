@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { placeLink, scopeLink, whereOf } from './campaignScope'
 
-const off = { workspaceCalendar: false }
-const on = { workspaceCalendar: true }
-
 describe('whereOf', () => {
   it('reads a campaign route as that campaign, on its section', () => {
     expect(whereOf('/campaigns/c1/ideas')).toEqual({
@@ -29,6 +26,10 @@ describe('whereOf', () => {
       scope: null,
     })
     expect(whereOf('/campaigns')).toEqual({ place: 'overview', scope: null })
+    expect(whereOf('/calendar/2026-11-16/week')).toEqual({
+      place: 'calendar',
+      scope: null,
+    })
   })
 
   it('reads the Foundation as Strategy for all campaigns', () => {
@@ -43,27 +44,6 @@ describe('whereOf', () => {
     })
   })
 
-  it('reads the campaigns list asking for a campaign as the asking place', () => {
-    expect(whereOf('/campaigns', 'calendar')).toEqual({
-      place: 'calendar',
-      scope: null,
-    })
-    // Strategy has a page of its own for all campaigns now, so it never asks.
-    expect(whereOf('/campaigns', 'strategy')).toEqual({
-      place: 'overview',
-      scope: null,
-    })
-    // Posts has a page of its own for all campaigns, so it never asks.
-    expect(whereOf('/campaigns', 'posts')).toEqual({
-      place: 'overview',
-      scope: null,
-    })
-    expect(whereOf('/campaigns', 'nonsense')).toEqual({
-      place: 'overview',
-      scope: null,
-    })
-  })
-
   it('gives a page no campaign narrows no scope', () => {
     expect(whereOf('/tasks')).toEqual({ place: 'inbox', scope: undefined })
     expect(whereOf('/profile')).toEqual({ place: null, scope: undefined })
@@ -72,35 +52,31 @@ describe('whereOf', () => {
 
 describe('placeLink', () => {
   it('leads a filtered row to its campaign twin', () => {
-    expect(placeLink('posts', 'c1', off)).toEqual({
+    expect(placeLink('posts', 'c1')).toEqual({
       to: '/campaigns/$campaignId/list',
       params: { campaignId: 'c1' },
     })
-    expect(placeLink('posts', null, off)).toEqual({ to: '/posts' })
+    expect(placeLink('posts', null)).toEqual({ to: '/posts' })
   })
 
   it('leads Strategy for all campaigns to the Foundation', () => {
-    expect(placeLink('strategy', null, off)).toEqual({ to: '/foundation' })
-    expect(placeLink('strategy', 'c1', off)).toEqual({
+    expect(placeLink('strategy', null)).toEqual({ to: '/foundation' })
+    expect(placeLink('strategy', 'c1')).toEqual({
       to: '/campaigns/$campaignId/strategy',
       params: { campaignId: 'c1' },
     })
     // The Foundation is the workspace's however many campaigns it has.
-    expect(
-      placeLink('strategy', null, { ...off, soleCampaignId: 'c1' }),
-    ).toEqual({ to: '/foundation' })
+    expect(placeLink('strategy', null, { soleCampaignId: 'c1' })).toEqual({
+      to: '/foundation',
+    })
   })
 
-  it('asks for a campaign where there is no all-campaigns page', () => {
-    expect(placeLink('calendar', null, off)).toEqual({
-      to: '/campaigns',
-      search: { pick: 'calendar' },
-    })
-    expect(placeLink('calendar', null, on)).toEqual({ to: '/calendar' })
+  it('leads Calendar for all campaigns to the workspace calendar', () => {
+    expect(placeLink('calendar', null)).toEqual({ to: '/calendar' })
   })
 
   it('asks nothing of a workspace with one campaign', () => {
-    const sole = { workspaceCalendar: true, soleCampaignId: 'c1' }
+    const sole = { soleCampaignId: 'c1' }
     expect(placeLink('posts', null, sole)).toEqual({
       to: '/campaigns/$campaignId/list',
       params: { campaignId: 'c1' },
@@ -111,32 +87,32 @@ describe('placeLink', () => {
   })
 
   it('leaves the workspace-only rows unfiltered', () => {
-    expect(placeLink('inbox', 'c1', off)).toEqual({ to: '/tasks' })
+    expect(placeLink('inbox', 'c1')).toEqual({ to: '/tasks' })
   })
 })
 
 describe('scopeLink', () => {
   it('keeps the place and changes the filter', () => {
-    expect(scopeLink(whereOf('/posts'), 'c1', off)).toEqual({
+    expect(scopeLink(whereOf('/posts'), 'c1')).toEqual({
       to: '/campaigns/$campaignId/list',
       params: { campaignId: 'c1' },
     })
-    expect(scopeLink(whereOf('/campaigns/c1/ideas'), null, off)).toEqual({
+    expect(scopeLink(whereOf('/campaigns/c1/ideas'), null)).toEqual({
       to: '/ideas',
     })
   })
 
   it('moves between the Foundation and a campaign’s strategy', () => {
-    expect(scopeLink(whereOf('/foundation/facts'), 'c1', off)).toEqual({
+    expect(scopeLink(whereOf('/foundation/facts'), 'c1')).toEqual({
       to: '/campaigns/$campaignId/strategy',
       params: { campaignId: 'c1' },
     })
-    expect(scopeLink(whereOf('/campaigns/c1/strategy'), null, off)).toEqual({
+    expect(scopeLink(whereOf('/campaigns/c1/strategy'), null)).toEqual({
       to: '/foundation',
     })
   })
 
   it('stays put on a page no campaign narrows', () => {
-    expect(scopeLink(whereOf('/tasks'), 'c1', off)).toBeNull()
+    expect(scopeLink(whereOf('/tasks'), 'c1')).toBeNull()
   })
 })

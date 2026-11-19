@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { i18next, loadLocaleResources } from '@/i18n'
@@ -60,7 +60,7 @@ const DATED = [
 ]
 
 function boundaries() {
-  return screen.queryAllByRole('group', { name: /^When Phase .* ends$/ })
+  return screen.queryAllByRole('button', { name: /^When Phase .* ends$/ })
 }
 
 afterEach(() => {
@@ -73,9 +73,9 @@ describe('CampaignPhasesCard', () => {
     hooks.plan = plan('derived', DATED)
     render(<CampaignPhasesCard campaignId="c1" pending={null} />)
 
-    expect(screen.getByText('Oct 1 – Oct 16')).toBeInTheDocument()
-    expect(screen.getByText('16 days · 2 posts')).toBeInTheDocument()
-    expect(screen.getByText('15 days · 0 posts')).toBeInTheDocument()
+    expect(screen.getByText('Oct 1 – 16 · 2 posts')).toBeInTheDocument()
+    expect(screen.getByText('Oct 17 – 31 · 0 posts')).toBeInTheDocument()
+    expect(screen.getByText('Why a')).toBeInTheDocument()
     // Only the first phase has a boundary after it.
     expect(boundaries()).toHaveLength(1)
     expect(
@@ -90,7 +90,7 @@ describe('CampaignPhasesCard', () => {
     hooks.plan = plan('derived', DATED)
     render(<CampaignPhasesCard campaignId="c1" pending={null} />)
 
-    await userEvent.click(within(boundaries()[0]).getByRole('button'))
+    await userEvent.click(boundaries()[0])
     await userEvent.click(await screen.findByRole('button', { name: /20th/ }))
 
     expect(hooks.save).toHaveBeenCalledWith([
@@ -118,6 +118,7 @@ describe('CampaignPhasesCard', () => {
     render(<CampaignPhasesCard campaignId="c1" pending={null} />)
 
     expect(screen.getByText('Phase a')).toBeInTheDocument()
+    expect(screen.getAllByText('0 posts')).toHaveLength(2)
     expect(boundaries()).toHaveLength(0)
     expect(
       screen.getByText('Set a start and end date to see when each phase runs.'),
@@ -167,10 +168,10 @@ describe('CampaignPhasesCard', () => {
       render(<CampaignPhasesCard campaignId="c1" pending={null} />)
 
       expect(screen.getByText('Fases')).toBeInTheDocument()
-      expect(screen.getByText('16 días · 2 publicaciones')).toBeInTheDocument()
+      expect(screen.getByText(/ · 2 publicaciones$/)).toBeInTheDocument()
       expect(screen.getByText('Fechas fijadas a mano.')).toBeInTheDocument()
       expect(screen.queryByText('Dates set by hand.')).not.toBeInTheDocument()
-      expect(screen.queryByText(/days/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/posts/)).not.toBeInTheDocument()
     } finally {
       await i18next.changeLanguage('en')
     }

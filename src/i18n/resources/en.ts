@@ -1748,6 +1748,19 @@ export const en = {
       subtitle:
         'Posts going out, posts failing, and a report of each day land here as they happen.',
     },
+    /**
+     * The second column: live conditions across every campaign that are wrong
+     * now or about to be (`NeedsYouCard`). Not unread notifications — a row
+     * leaves when it is fixed, not when it is seen.
+     */
+    needsYou: {
+      title: 'Needs you',
+      showMore_one: 'SHOW {{formatted}} MORE',
+      showMore_other: 'SHOW {{formatted}} MORE',
+      allSet: 'Nothing needs you',
+      allSetBody:
+        'Nothing is failing, overdue or about to lapse in any campaign. If that changes, it shows up here.',
+    },
     /** The dot's accessible name — the only thing that says what it means. */
     unread: 'Unread',
     /**
@@ -1944,6 +1957,14 @@ export const en = {
      */
     noDate: 'No date',
 
+    /** The Analytics card: the tab's first row, over its default period. */
+    analytics: {
+      nothingMeasured: 'Nothing measured yet',
+      emptyBody:
+        'Once this campaign’s posts go out and the platforms report back, what they earn shows up here.',
+      error: 'Couldn’t load analytics.',
+    },
+
     /**
      * The calendar's problems, read from the server (CON-462). The fix is
      * asked of the campaign's assistant, which offers it to confirm.
@@ -2079,6 +2100,8 @@ export const en = {
      * readable again.
      */
     addPostOn: 'Add a post on {{date}}',
+    /** Over the campaigns the workspace calendar's add asks between. */
+    addPostTo: 'Add a post to',
     density_one: '{{count}} post on {{date}} — open this week',
     density_other: '{{count}} posts on {{date}} — open this week',
     /** On a day too busy to draw its cards, how many of its posts are ticked. */
@@ -2089,19 +2112,15 @@ export const en = {
 
     /** The right rail's holding pen for posts with no date yet. */
     notScheduled: 'Not scheduled',
-    /** Under its title (CON-485): what the panel is for. */
-    notScheduledHint: 'Drag a post onto a day to schedule it.',
     /**
      * The Not scheduled panel's two groups: posts with an account to publish
      * as, and the ones the schedule gate would refuse for want of one —
      * folded away by default, with each row's reason in amber.
      */
     readyToSchedule: 'Ready to schedule',
+    /** Inside that group when every undated post needs an account. */
+    noneReady: 'Nothing is ready to be scheduled',
     needsAccount: 'Needs an account',
-    needsAccountHint:
-      'No account to publish as yet. Set one on each post, or connect one in Settings.',
-    /** When every undated post is in the second group. */
-    noneReady: 'None of these can publish yet: each needs an account.',
     /** A row's reason, worded as what to do about it. */
     accountGap: {
       noPlatform: 'Choose a platform',
@@ -8553,8 +8572,6 @@ export const en = {
      */
     phases: {
       title: 'Phases',
-      explainer:
-        'A campaign type moves through its phases in order, and generated posts are planned into the phase whose dates they fall on. Move the day a phase ends to give it more or less of the campaign.',
       derived: 'Split evenly across the campaign dates.',
       manual: 'Dates set by hand.',
       reset: 'Split evenly again',
@@ -8567,12 +8584,9 @@ export const en = {
       pendingType: 'Save the new type to see its phases.',
       empty: 'This campaign type has no phases.',
       loadError: "The phases couldn't be loaded.",
-      window: '{{start}} – {{end}}',
-      days_one: '{{count}} day',
-      days_other: '{{count}} days',
+      meta: '{{range}} · {{posts}}',
       posts_one: '{{count}} post',
       posts_other: '{{count}} posts',
-      ends: 'Ends',
       endsLabel: 'When {{phase}} ends',
       saveError: 'Unable to save the phase dates',
       resetError: 'Unable to split the phases evenly again',

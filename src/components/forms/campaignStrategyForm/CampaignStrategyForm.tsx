@@ -60,6 +60,7 @@ import { SchedulingCard } from './SchedulingCard'
 import { CampaignBrandCard } from '@/components/brand/CampaignBrandCard'
 import { CampaignSeriesCard } from '@/components/series/CampaignSeriesCard'
 import { FromTheWorkspace } from '@/components/strategy/FromTheWorkspace'
+import { PageColumns } from '@/components/page-primitives/PageColumns'
 import {
   strategyDefaultValues,
   strategySchema,
@@ -294,13 +295,23 @@ export function CampaignStrategyForm({ campaign }: Props) {
         <fieldset
           disabled={assistantRunning}
           className={cn(
-            'flex flex-col gap-10 pb-10 transition-opacity',
+            'min-w-0 transition-opacity',
             assistantRunning && 'opacity-60',
           )}
         >
-          {/* Two groups, set apart by space alone: this campaign's own
-              commitments, then the Foundation as it has it. */}
-          <div className="flex flex-col gap-4">
+          {/* Two columns, as on Strategy for all campaigns: what the campaign
+              commits to in the main one, and when each phase of its type runs
+              beside it — a plan over the whole window, read against every card
+              in the main column rather than as one step down it. */}
+          <PageColumns
+            stickyAside
+            aside={
+              <CampaignPhasesCard
+                campaignId={campaign.id}
+                pending={phasesPending}
+              />
+            }
+          >
             {/* What the campaign says, first: every card under it is a
               constraint on how much of it goes out and where, and reads as
               bookkeeping without the claim it is serving. */}
@@ -400,13 +411,6 @@ export function CampaignStrategyForm({ campaign }: Props) {
                 />
               </div>
             </SettingsCard>
-
-            {/* Straight after the window and the type, because it is both of
-              them at once: the type's phases laid over the campaign's dates. */}
-            <CampaignPhasesCard
-              campaignId={campaign.id}
-              pending={phasesPending}
-            />
 
             {/* How much the campaign should produce, then when it goes out. The
             post target used to sit in Advanced next to budget and language,
@@ -532,20 +536,23 @@ export function CampaignStrategyForm({ campaign }: Props) {
                 />
               </div>
             </SettingsCard>
-          </div>
 
-          {/* Last, because it is the half of Strategy this campaign shares
+            {/* Last, because it is the half of Strategy this campaign shares
               with every other: the Foundation, which Strategy is for all
-              campaigns. What it chooses from it first, then what it reads. */}
-          <FromTheWorkspace>
-            {/* The same control the messaging card's fields defer to: with
-                Brand on, persona and tone are chosen here rather than written
-                above. */}
-            <CampaignBrandCard campaignId={campaign.id} />
-            {/* What this campaign is written in, then what it writes again and
-                again. Draws nothing with the `series` flag off. */}
-            <CampaignSeriesCard campaign={campaign} />
-          </FromTheWorkspace>
+              campaigns. What it chooses from it first, then what it reads.
+              Set apart from the cards above by space alone. */}
+            <div className="mt-6">
+              <FromTheWorkspace>
+                {/* The same control the messaging card's fields defer to: with
+                  Brand on, persona and tone are chosen here rather than
+                  written above. */}
+                <CampaignBrandCard campaignId={campaign.id} />
+                {/* What this campaign is written in, then what it writes again
+                  and again. Draws nothing with the `series` flag off. */}
+                <CampaignSeriesCard campaign={campaign} />
+              </FromTheWorkspace>
+            </div>
+          </PageColumns>
         </fieldset>
       </form>
     </Form>

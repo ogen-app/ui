@@ -311,7 +311,7 @@ thread rules are in `posts.md`, billing and refusals in `billing.md`, series
 and formats in `campaigns.md`.
 
 - The universal assistant waits on the API's merge, and on five API follow-ups.
-- The workspace calendar is on.
+- The workspace calendar is unflagged.
 - Brand from what you have is live, unflagged.
 - Calendar preferences are one set per user, shared by every calendar.
 - Two operator-tunable server limits are mirrored on the client with nothing to sync them.

@@ -16,10 +16,9 @@ import type {
  *
  * It lives here rather than in `analytics.ts` because it is not on that prefix,
  * and the difference is load-bearing: its 503 says "post analytics is not
- * available" where `/api/analytics/posts` says "analytics is not available", so
- * `isAnalyticsUnavailable` does **not** match it. Two messages for one
- * condition is the server's, not ours — {@link isPostAnalyticsUnavailable} is
- * the matching half.
+ * available" where `/api/analytics/posts` says "analytics is not available".
+ * Two messages for one condition is the server's, not ours —
+ * {@link isPostAnalyticsUnavailable} matches this one.
  */
 
 /** The message the Go handler sends with its no-analytics-database 503. */
@@ -28,9 +27,8 @@ const UNAVAILABLE_MESSAGE = 'post analytics is not available'
 /**
  * Whether a failure means this deployment has no analytics database.
  *
- * Matched on the message as well as the status for the same reason
- * `isAnalyticsUnavailable` is: a gateway answers 503 during a redeploy, and
- * that body never parses to this message.
+ * Matched on the message as well as the status: a gateway answers 503 during
+ * a redeploy, and that body never parses to this message.
  */
 export function isPostAnalyticsUnavailable(error: unknown): boolean {
   return (

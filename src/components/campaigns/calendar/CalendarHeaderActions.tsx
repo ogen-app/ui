@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { CalendarBlankIcon, GearSixIcon } from '@phosphor-icons/react'
+import { Settings01Icon } from '@hugeicons/core-free-icons'
+import { HeaderIcon, UnscheduledCalendarIcon } from './HeaderIcon'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useCampaignPosts, useWorkspacePosts } from '@/hooks/usePosts'
@@ -34,9 +35,9 @@ export function WorkspaceCalendarHeaderActions() {
  * grid (`CalendarDrawer`), apart from the assistant's rail; these buttons only
  * switch what it shows. The active icon renders filled in the accent color.
  *
- * The counter comes first because it is about the posts and settings is about
- * the view — the same order the rest of the app puts them in, work before
- * preferences, and it keeps the gear last where a gear is always looked for.
+ * Settings comes first and the counter takes the corner: the counter is the
+ * one that changes — its word slides open and shut with what is waiting — and
+ * at the row's end that never moves the gear.
  */
 function CalendarActions({
   posts,
@@ -88,21 +89,27 @@ function CalendarActions({
       <Button
         variant="headerIcon"
         size="excluded"
+        className={cn(settingsActive && 'text-accent hover:text-accent')}
+        onClick={() => toggle('calendarSettings')}
+        aria-label={t('calendar.settings')}
+        aria-pressed={settingsActive}
+      >
+        <HeaderIcon icon={Settings01Icon} />
+      </Button>
+      <Button
+        variant="headerIcon"
+        size="excluded"
         className={cn(unscheduledActive && 'text-accent hover:text-accent')}
         onClick={() => toggle('notScheduled')}
         aria-label={t('calendar.unscheduledPosts')}
         aria-pressed={unscheduledActive}
       >
-        <span className="relative flex size-5 shrink-0">
-          <CalendarBlankIcon
-            weight={unscheduledActive || hasUnscheduled ? 'fill' : 'regular'}
-            className="size-5"
-          />
+        <span className="relative flex size-[18px] shrink-0">
+          <UnscheduledCalendarIcon filled={hasUnscheduled} />
           {hasUnscheduled && (
-            // Knocked out of the filled icon in the page background color; the
-            // 2px nudge centers it optically in the calendar body below the
-            // header strip of the glyph.
-            <span className="absolute inset-0 flex translate-y-[2px] items-center justify-center text-[10px]/none font-medium tabular-nums text-background">
+            // Knocked out of the filled body in the page's colour. The 1px
+            // nudge centres it on the body, which sits below the rings.
+            <span className="absolute inset-0 flex translate-y-[1px] items-center justify-center text-[10px]/none font-semibold tabular-nums text-background">
               {unscheduledCount}
             </span>
           )}
@@ -134,19 +141,6 @@ function CalendarActions({
             {t('calendar.unscheduled')}
           </span>
         </span>
-      </Button>
-      <Button
-        variant="headerIcon"
-        size="excluded"
-        className={cn(settingsActive && 'text-accent hover:text-accent')}
-        onClick={() => toggle('calendarSettings')}
-        aria-label={t('calendar.settings')}
-        aria-pressed={settingsActive}
-      >
-        <GearSixIcon
-          weight={settingsActive ? 'fill' : 'regular'}
-          className="size-5"
-        />
       </Button>
     </div>
   )

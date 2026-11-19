@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useCampaigns, useCampaignSummaries } from '@/hooks/useCampaigns'
 import { usePlatformViews } from '@/hooks/usePlatforms'
-import { useFeatureFlag } from '@/config/featureFlags'
 import {
   workspaceWarnings,
   type WorkspaceWarning,
@@ -13,7 +12,10 @@ import { awaiting } from '@/lib/fetched'
  *
  * Costs no request of its own: campaigns, the batched post summaries and the
  * platform list are all already in cache on an authenticated screen — the same
- * three the Campaigns list reads. Everything is settled together on purpose:
+ * three the Campaigns list reads. Not behind the `tasks` flag: a warning is a
+ * live condition, not the Tasks module's data, and Activity's Needs you card
+ * reads it with that flag off (`useTaskReconciliation` keeps its own gate).
+ * Everything is settled together on purpose:
  * scoring a campaign against a half-arrived summaries map would show a "no
  * posts scheduled" warning to a campaign whose posts are still in flight.
  */
@@ -22,7 +24,6 @@ export function useWorkspaceWarnings(): {
   isLoading: boolean
   isError: boolean
 } {
-  const enabled = useFeatureFlag('tasks')
   const campaignsQuery = useCampaigns()
   const summariesQuery = useCampaignSummaries()
   const platformViews = usePlatformViews()
@@ -35,7 +36,7 @@ export function useWorkspaceWarnings(): {
 
   const warnings = useMemo(
     () =>
-      enabled && settled
+      settled
         ? workspaceWarnings(
             campaignsQuery.data ?? [],
             summariesQuery.data ?? {},
@@ -47,7 +48,6 @@ export function useWorkspaceWarnings(): {
           )
         : [],
     [
-      enabled,
       settled,
       dataUpdatedAt,
       campaignsQuery.data,
@@ -60,6 +60,6 @@ export function useWorkspaceWarnings(): {
     warnings,
     // `awaiting`, not `isLoading` — see `lib/fetched`.
     isLoading: awaiting(campaignsQuery) || awaiting(summariesQuery),
-    isError: enabled && (campaignsQuery.isError || summariesQuery.isError),
+    isError: campaignsQuery.isError || summariesQuery.isError,
   }
 }

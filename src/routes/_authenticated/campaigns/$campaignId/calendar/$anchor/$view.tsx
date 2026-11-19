@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
-import { PostsToolbar } from '@/components/campaigns/PostsToolbar'
+import { CalendarHeader } from '@/components/campaigns/calendar/CalendarHeader'
 import { MonthlyCalendar } from '@/components/campaigns/calendar/MonthlyCalendar'
 import { WeeklyCalendar } from '@/components/campaigns/calendar/WeeklyCalendar'
 import {
@@ -294,78 +294,80 @@ function CalendarView() {
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0">
-      {/* The toolbar stays while posts are ticked (CON-486): it is the week's
+      {/* The header stays while posts are ticked (CON-486): it is the week's
           navigation, and the bulk bar floats over the grid's foot instead. */}
-      <PostsToolbar
+      <CalendarHeader
         campaignId={campaignId}
         view={granularity}
         anchor={anchorDate}
         onAnchorChange={handleAnchorChange}
       />
-      {!campaignEmpty && (
-        <div className="px-6 pb-3">
-          <PostsFilterBar
-            campaignId={campaignId}
-            filter={filter}
-            onChange={onFilterChange}
-            total={onScreen.length}
-            totalUnfiltered={onScreenUnfiltered.length}
+      <div className="flex flex-1 min-h-0 min-w-0 flex-col px-3 pt-3 lg:px-6">
+        {!campaignEmpty && (
+          <div className="px-6 pb-3">
+            <PostsFilterBar
+              campaignId={campaignId}
+              filter={filter}
+              onChange={onFilterChange}
+              total={onScreen.length}
+              totalUnfiltered={onScreenUnfiltered.length}
+            />
+          </div>
+        )}
+        {settingsPending ? null : postsFailed ? (
+          <p className="px-6 py-8 text-sm text-tertiary-foreground">
+            {t('calendar.loadFailedCampaign')}
+          </p>
+        ) : campaignEmpty ? (
+          // Only once the query has answered: the invitation to add the first
+          // post is a claim about the campaign, and an empty grid is the honest
+          // way to wait for it.
+          <PostsEmptyState
+            variant={granularity}
+            anchor={anchorDate}
+            onAddPost={addPost}
           />
-        </div>
-      )}
-      {settingsPending ? null : postsFailed ? (
-        <p className="px-6 py-8 text-sm text-tertiary-foreground">
-          {t('calendar.loadFailedCampaign')}
-        </p>
-      ) : campaignEmpty ? (
-        // Only once the query has answered: the invitation to add the first
-        // post is a claim about the campaign, and an empty grid is the honest
-        // way to wait for it.
-        <PostsEmptyState
-          variant={granularity}
-          anchor={anchorDate}
-          onAddPost={addPost}
-        />
-      ) : (
-        <div
-          className={cn(
-            'relative flex flex-1 min-h-0 min-w-0 flex-col',
-            // While the bulk bar shows, its strip under the grid is the bar's
-            // (CON-486): its 48px and the 16px it stands off the edge. The
-            // grid ends above it, so no card or tick box is ever under it —
-            // the month grid can't scroll out from under a bar, and a week
-            // lane at its foot couldn't either.
-            selectedPosts.length > 0 && 'pb-16',
-          )}
-        >
-          <CalendarSelectionContext.Provider value={selection}>
-            {granularity === 'month' ? (
-              <MonthlyCalendar
-                campaignId={campaignId}
-                posts={rows}
-                anchor={anchorDate}
-              />
-            ) : (
-              <WeeklyCalendar
-                campaignId={campaignId}
-                posts={rows}
-                anchor={anchorDate}
-                hideIdeaSlots={filtered}
+        ) : (
+          <div
+            className={cn(
+              'relative flex flex-1 min-h-0 min-w-0 flex-col',
+              // While the bulk bar shows, its strip under the grid is the bar's
+              // (CON-486): its 48px and the 16px it stands off the edge. The
+              // grid ends above it, so no card or tick box is ever under it —
+              // the month grid can't scroll out from under a bar, and a week
+              // lane at its foot couldn't either.
+              selectedPosts.length > 0 && 'pb-16',
+            )}
+          >
+            <CalendarSelectionContext.Provider value={selection}>
+              {granularity === 'month' ? (
+                <MonthlyCalendar
+                  campaignId={campaignId}
+                  posts={rows}
+                  anchor={anchorDate}
+                />
+              ) : (
+                <WeeklyCalendar
+                  campaignId={campaignId}
+                  posts={rows}
+                  anchor={anchorDate}
+                  hideIdeaSlots={filtered}
+                />
+              )}
+            </CalendarSelectionContext.Provider>
+            {selectedPosts.length > 0 && (
+              <BulkActionsBar
+                floating
+                posts={selectedPosts}
+                onClear={() => setSelectedIds(new Set())}
+                onApply={applyPlan}
+                onDelete={deletePosts}
+                busy={busy}
               />
             )}
-          </CalendarSelectionContext.Provider>
-          {selectedPosts.length > 0 && (
-            <BulkActionsBar
-              floating
-              posts={selectedPosts}
-              onClear={() => setSelectedIds(new Set())}
-              onApply={applyPlan}
-              onDelete={deletePosts}
-              busy={busy}
-            />
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
