@@ -8,6 +8,7 @@ import {
   type AssetSort,
 } from '@/lib/assetFilter'
 import { SETTINGS_STORE_PERSIST_KEY } from '@/stores/constants'
+import { isFeatureEnabled } from '@/config/featureFlags'
 import { isCalendarDrawer, type CalendarDrawer } from '@/lib/calendarDrawer'
 import { DEFAULT_POST_TAB, isPostTab, type PostTab } from '@/lib/postTabs'
 import {
@@ -26,11 +27,20 @@ export type LocalSettings = {
   sidebarCollapsed: boolean
 
   /**
-   * Whether the right rail — which only ever holds the assistant — is open.
-   * Open on first run, and closing it is remembered from then on. Read it
-   * through `selectActivePanel`.
+   * Whether the assistant — the right rail's floor — is open. Open on first
+   * run, and closing it is remembered from then on. Read it through
+   * `selectActivePanel`.
    */
   assistantOpen: boolean
+
+  /**
+   * Whether help (CON-173) is open on top of the assistant. It *replaces*
+   * whatever the rail was showing and closing it gives that back, so it is a
+   * flag beside `assistantOpen` rather than a value of it. One fact however far
+   * the reader moves: the panel follows the page. Read it through
+   * `selectActivePanel`, which ignores it while the help-center flag is off.
+   */
+  helpOpen: boolean
 
   /**
    * Which of the calendar's two panels is open in its drawer, or `null`. One
@@ -98,21 +108,22 @@ export type LocalSettings = {
 }
 
 /**
- * What the right rail can show. Only the assistant: the post editor's panels
- * are tabs in the editor's own side column and the calendar's are its own
- * drawer. Kept as a name so a call reads as what it opens.
+ * What the right rail can show: the assistant, and help over it. The post
+ * editor's panels are tabs in the editor's own side column and the calendar's
+ * are its own drawer.
  */
-export type RightPanel = 'assistant'
+export type RightPanel = 'assistant' | 'help'
 
 type SettingsState = LocalSettings & {
   // Actions
   setSidebarCollapsed: (collapsed: boolean) => void
   toggleSidebar: () => void
 
-  /** Open the rail on the panel, or close it if it is showing — Ask Ogen and `]`. */
+  /** Show the panel, or close it if it is the one showing — Ask Ogen, Help and `]`. */
   toggleRightPanel: (panel: RightPanel) => void
-  /** Open the rail on the panel, never closing it — for buttons that mean "open". */
+  /** Show the panel, never closing it — for buttons that mean "open". */
   openRightPanel: (panel: RightPanel) => void
+  /** Close what is showing: help drops back to what it covered, the assistant closes the rail. */
   closeRightPanel: () => void
 
   /** Open the calendar's drawer on this panel, or close it if it is showing. */
@@ -156,6 +167,7 @@ const DEFAULT_SETTINGS: LocalSettings = {
   // The assistant is the product, not a utility drawer: a first run that hides
   // it behind a button in the corner buries the thing the app is for.
   assistantOpen: true,
+  helpOpen: false,
   calendarDrawer: null,
   postTab: DEFAULT_POST_TAB,
   lastOpenedModals: {},
@@ -167,8 +179,27 @@ const DEFAULT_SETTINGS: LocalSettings = {
 }
 
 /** The panel the right rail is showing, or `null` when it is closed. */
-export const selectActivePanel = (state: SettingsState): RightPanel | null =>
-  state.assistantOpen ? 'assistant' : null
+export const selectActivePanel = (
+  state: Pick<LocalSettings, 'assistantOpen' | 'helpOpen'>,
+): RightPanel | null => {
+  // Help remembered open in a build (or a browser) where it is off would open
+  // the rail onto a layer nothing renders.
+  if (state.helpOpen && isFeatureEnabled('help-center')) return 'help'
+  return state.assistantOpen ? 'assistant' : null
+}
+
+/** Help goes on top; the assistant takes help away, or it would open underneath. */
+const open = (panel: RightPanel): Partial<LocalSettings> =>
+  panel === 'help'
+    ? { helpOpen: true }
+    : { assistantOpen: true, helpOpen: false }
+
+/** One level at a time: help gives back what it covered, the assistant closes the rail. */
+const close = (state: SettingsState): Partial<LocalSettings> => {
+  const active = selectActivePanel(state)
+  if (active === 'help') return { helpOpen: false }
+  return { assistantOpen: false, helpOpen: false }
+}
 
 /**
  * The keys the rail was stored under while it also hosted the post editor's
@@ -222,15 +253,16 @@ export const useSettingsStore = create<SettingsState>()(
           set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed }))
         },
 
-        // Right rail. One panel, so the panel argument only names it; the
-        // state is whether it is open, and every write is a click.
-        toggleRightPanel: () => {
-          set((state) => ({ assistantOpen: !state.assistantOpen }))
+        // Right rail: the assistant, and help over it. Every write is a click.
+        toggleRightPanel: (panel) => {
+          set((state) =>
+            selectActivePanel(state) === panel ? close(state) : open(panel),
+          )
         },
 
-        openRightPanel: () => set({ assistantOpen: true }),
+        openRightPanel: (panel) => set(open(panel)),
 
-        closeRightPanel: () => set({ assistantOpen: false }),
+        closeRightPanel: () => set((state) => close(state)),
 
         toggleCalendarDrawer: (panel) => {
           set((state) => ({
@@ -300,6 +332,7 @@ export const useSettingsStore = create<SettingsState>()(
         partialize: (state) => ({
           sidebarCollapsed: state.sidebarCollapsed,
           assistantOpen: state.assistantOpen,
+          helpOpen: state.helpOpen,
           calendarDrawer: state.calendarDrawer,
           postTab: state.postTab,
           lastOpenedModals: state.lastOpenedModals,
@@ -325,6 +358,7 @@ export const useSettingsStore = create<SettingsState>()(
             ...current,
             ...saved,
             assistantOpen: rehydrateAssistantOpen(stored),
+            helpOpen: saved.helpOpen === true,
             calendarDrawer: isCalendarDrawer(saved.calendarDrawer)
               ? saved.calendarDrawer
               : null,

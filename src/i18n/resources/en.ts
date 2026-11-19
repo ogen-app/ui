@@ -419,7 +419,8 @@ export const en = {
     workspaceMenu: 'Workspace menu',
     yourWorkspaces: 'Your workspaces',
     accountMenu: 'Account menu',
-    askOgen: 'Ask Ogen',
+    openHelp: 'Help',
+    workWithOgen: 'Work with Ogen',
     assistantFinished: 'The assistant has finished',
     /** A campaign with no start or end date, in the rail's window line. */
     campaignNoWindow: 'No dates set',
@@ -9457,11 +9458,38 @@ export const en = {
     title: 'Help',
     back: 'Back',
     related: 'Related',
-    notFound: "We haven't written this one yet.",
-    resize: 'Resize the help panel',
     trigger: {
       label: 'What is this?',
     },
+    /**
+     * The panel with no article to show. `failed` is help that could not be
+     * fetched — said as such, so a network fault never reads as a screen
+     * nobody wrote for. The other two are nothing to show, though nothing
+     * went wrong, and send the reader on to the assistant.
+     */
+    empty: {
+      failed: {
+        title: 'Couldn’t load help',
+        body: 'Check your connection and try again.',
+        retry: 'TRY AGAIN',
+      },
+      none: {
+        title: 'No help for this page yet',
+        body: 'We’re still writing it. In the meantime, Ogen can explain anything on this screen.',
+      },
+      notFound: {
+        title: 'This article isn’t here',
+        body: 'It may have been renamed or taken down. Ogen can answer the question instead.',
+      },
+      askOgen: 'ASK OGEN',
+    },
+    /** A concept placed inside a page article, and the way to read it alone. */
+    embed: {
+      open: 'Open',
+      openLabel: 'Open “{{title}}” on its own',
+    },
+    /** Under the summary when the article has no translation yet. */
+    untranslated: 'This article isn’t available in your language yet.',
   },
 
   /**

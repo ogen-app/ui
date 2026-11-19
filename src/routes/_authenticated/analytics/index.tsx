@@ -13,6 +13,7 @@ import { OVERVIEW_WINDOWS } from '@/hooks/useAnalyticsOverview'
  * the assistant can set them and a link carries them.
  */
 export const Route = createFileRoute('/_authenticated/analytics/')({
+  staticData: { help: 'analytics' },
   validateSearch: (raw: Record<string, unknown>) =>
     validateAnalyticsSearch(
       raw,

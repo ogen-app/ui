@@ -71,10 +71,14 @@ keep it accurate when these rules change.
   Foundation. Assets is **unflagged**, which also stops the bank disappearing
   when `brand-materials` is off.
 
-- **The right rail is the assistant's alone.** It holds the assistant and
-  nothing else, and its whole state is `settingsStore.assistantOpen`: open on
-  first run, closed only by a click, and that choice remembered. Navigating
-  never closes it. Ask whether it shows with `selectActivePanel`. A screen's
+- **The right rail is the assistant's, with help over it.** It holds the
+  assistant, and its state is `settingsStore.assistantOpen`: open on first
+  run, closed only by a click, and that choice remembered. Navigating never
+  closes it. **Help is the one other layer** (CON-173): opened from Help
+  beside Work with Ogen, it goes on top of whatever the rail was showing and
+  closing it gives that back (`settingsStore.helpOpen`, ignored while the
+  `help-center` flag is off), and its article follows the page. Ask what
+  shows with `selectActivePanel`, never the two flags directly. A screen's
   own panels don't go in the rail — each one put the assistant away to show
   something about the page, and needed the rail to know which screen was under
   it. The post editor's settings, preview, checks, quality, sources, notes and
@@ -161,7 +165,7 @@ keep it accurate when these rules change.
   never anything that changes the document. Top-centre (`PageHeader`'s `center`
   slot): passive status, in practice just `SaveStatus`, non-interactive by
   rule. Bottom-centre: the commit, on `PageActionBar`. The assistant is not a
-  corner of the page: it opens from Ask Ogen at the far end of the top bar
+  corner of the page: it opens from Work with Ogen at the far end of the top bar
   (`TopBar`), which belongs to the app rather than the page — the floating
   bottom-right trigger is gone. Bottom-left and bottom-right stay empty. A bar
   belongs to **editor** screens only (asset, brief, settings) — a list has creation, not
@@ -204,8 +208,8 @@ keep it accurate when these rules change.
   focused), `?` (the sheet) and `g` then a letter; `/` stays with the filter
   sentence. Where a letter goes is `lib/shortcuts.ts`, and inside a campaign
   `g i/a/n/s` go to the campaign's own sections, which is the nav's campaign
-  filter again. `]` is the same toggle as Ask Ogen, since the rail holds only
-  the assistant. `shouldIgnoreAppShortcut` allows Alt and
+  filter again. `]` is the same toggle as Ask Ogen, since the rail is the
+  assistant's. `shouldIgnoreAppShortcut` allows Alt and
   AltGr on `[`, `]` and `?`, because those keys need them on German and
   Nordic layouts, and never ⌘. The sheet (`ShortcutsSheet`) lists its rows by
   hand, so a key added to `lib/shortcuts` and not to the sheet is a sheet that

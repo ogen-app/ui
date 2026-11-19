@@ -13,6 +13,7 @@ type CampaignAssetsSearch = AssetListSearch & {
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/assets',
 )({
+  staticData: { help: 'assets' },
   component: CampaignAssets,
   // The list's filter, as on `/assets` — see `lib/assetFilter`. The sort and
   // the grouping are per-device preferences, not part of the address.

@@ -26,6 +26,27 @@ describe('the right rail', () => {
     expect(active()).toBe('assistant')
   })
 
+  it('opens help over the assistant, and closing help gives it back', () => {
+    rail().openRightPanel('help')
+    expect(active()).toBe('help')
+    rail().closeRightPanel()
+    expect(active()).toBe('assistant')
+  })
+
+  it('opens help over a closed rail, and closing it closes the rail', () => {
+    rail().closeRightPanel()
+    rail().toggleRightPanel('help')
+    expect(active()).toBe('help')
+    rail().toggleRightPanel('help')
+    expect(active()).toBeNull()
+  })
+
+  it('takes help away when the assistant is asked for', () => {
+    rail().openRightPanel('help')
+    rail().toggleRightPanel('assistant')
+    expect(active()).toBe('assistant')
+  })
+
   it('closes from its own X, and the toggle brings it back', () => {
     rail().closeRightPanel()
     expect(active()).toBeNull()

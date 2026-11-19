@@ -51,6 +51,7 @@ const workspaceSettingsSearchSchema = z.object({
 })
 
 export const Route = createFileRoute('/_authenticated/workspace-settings/')({
+  staticData: { help: 'workspace-settings' },
   validateSearch: workspaceSettingsSearchSchema,
   component: WorkspaceSettings,
 })

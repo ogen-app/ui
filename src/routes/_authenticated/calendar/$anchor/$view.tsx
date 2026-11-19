@@ -33,6 +33,7 @@ function isGranularity(value: string): value is CalendarGranularity {
 }
 
 export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
+  staticData: { help: 'calendar' },
   beforeLoad: ({ params }) => {
     // Normalize malformed anchors / unsupported views to the current week, as
     // the campaign's calendar does — including `list`, which is a real view

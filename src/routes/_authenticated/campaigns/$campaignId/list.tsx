@@ -37,6 +37,7 @@ import {
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/list',
 )({
+  staticData: { help: 'posts' },
   // The filter is the address, in the endpoint's own words (CON-472), so the
   // assistant's set_filter lands here as search params.
   validateSearch: parsePostListSearch,

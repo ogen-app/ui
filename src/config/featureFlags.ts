@@ -131,21 +131,20 @@ const FEATURE_FLAGS = {
   'post-version-delete': false,
 
   /**
-   * The contextual help centre (CON-173) — the drawer, its triggers and the
-   * `#help/<key>` deep link. **Off — waiting on content, not on an endpoint.**
+   * The help centre (CON-173) — Help in the top bar and the rail panel it
+   * opens, the contextual triggers and the `#help/<key>` deep link. **On since
+   * 2026-11-19** — delete it, with its off-branch, at the first review after
+   * it has been through a deploy.
    *
-   * There is no API to wait for: articles live in the Sanity project
-   * `getogen.com` already runs, and the app reads them from the public
-   * `production` dataset. What is missing is the reading itself —
-   * `services/help` serves fixtures today, because the starter articles were
-   * bootstrapped into the private `staging` dataset that a browser cannot
-   * authenticate against. Switching on means seeding `production`, registering
-   * the app's origins for CORS (without credentials — it only ever reads), and
-   * replacing the two functions in `services/help/index.ts` with the GROQ
-   * query. Delete the flag once the drawer has been exercised against the real
-   * dataset.
+   * There is no API behind it: articles live in the Sanity project
+   * `getogen.com` already runs (schema: `studio/schemaTypes/helpArticle.ts`,
+   * deployed to the hosted Studio), and the app reads them from the public
+   * `production` dataset. Every screen has a published article (first drafts,
+   * to be rewritten in the Studio), and the app's four origins and
+   * `localhost:9010` are registered for CORS (without credentials). Every
+   * build reads it, dev included. See `docs/help-centre.md`.
    */
-  'help-center': false,
+  'help-center': true,
 
   /**
    * Series — the recurring things a workspace makes, and what each campaign
