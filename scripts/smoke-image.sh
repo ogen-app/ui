@@ -20,11 +20,14 @@ set -euo pipefail
 image=${1:?usage: scripts/smoke-image.sh <image>}
 tricky='https://k@o0.ingest.sentry.io/1#"\</script>'
 containers=()
+port=
 trap 'docker rm -f "${containers[@]}" >/dev/null 2>&1 || true' EXIT
 
-# Starts the image with the given -e flags and prints the host port.
+# Starts the image with the given -e flags and sets `port` to its host port.
+# Called directly, never as $(start …): a subshell would keep its container id
+# from `containers`, and the EXIT trap would leave the container running.
 start() {
-	local id port
+	local id
 	id=$(docker run -d -p 127.0.0.1::8080 "$@" "$image")
 	containers+=("$id")
 	port=$(docker port "$id" 8080/tcp | head -1 | sed 's/.*://')
@@ -32,7 +35,6 @@ start() {
 		curl -fsS -o /dev/null "http://127.0.0.1:$port/" 2>/dev/null && break
 		sleep 0.25
 	done
-	echo "$port"
 }
 
 # Fetches /env.js from the port and compares what it sets with the JSON given.
@@ -58,14 +60,15 @@ expect_config() {
 	' <<<"$body"
 }
 
-dev=$(start \
+start \
 	-e DEV_TOOLS=1 \
 	-e SENTRY_ENVIRONMENT=development \
 	-e "SENTRY_DSN=$tricky" \
 	-e SENTRY_TRACES_SAMPLE_RATE= \
 	-e SENTRY_AUTH_TOKEN=must-not-leak \
 	-e DATABASE_URL=must-not-leak \
-	-e API_ORIGIN=api.invalid:8080)
+	-e API_ORIGIN=api.invalid:8080
+dev=$port
 expect_config "$dev" "$(
 	TRICKY=$tricky node -e 'console.log(JSON.stringify({
 		DEV_TOOLS: "1",
@@ -79,7 +82,7 @@ if ! curl -fsS "http://127.0.0.1:$dev/" | grep -q '<script src="/env.js"></scrip
 	exit 1
 fi
 
-prod=$(start)
-expect_config "$prod" '{}'
+start
+expect_config "$port" '{}'
 
 echo "ok: $image serves /env.js from its environment, allow-listed and uncached"
