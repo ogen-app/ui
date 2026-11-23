@@ -20,6 +20,7 @@ import {
 } from '@/hooks/useAssistantContext'
 import {
   PostsFilterBar,
+  PostsGroupMenu,
   PostsNoMatches,
 } from '@/components/campaigns/postsFilter/PostsFilterBar'
 import { viewerTimeZone } from '@/lib/assetFilter'
@@ -27,11 +28,13 @@ import { listFilter, sameFilter } from '@/lib/viewContext'
 import { useViewContextStore } from '@/stores/viewContextStore'
 import {
   isPostFilterActive,
-  parsePostListSearch,
+  parseCampaignPostListSearch,
   postFilterFromSearch,
+  postGroupingFromSearch,
   postRequestParams,
   searchFromPostFilter,
   type PostFilter,
+  type PostGrouping,
 } from '@/lib/postFilter'
 
 export const Route = createFileRoute(
@@ -40,7 +43,7 @@ export const Route = createFileRoute(
   staticData: { help: 'posts' },
   // The filter is the address, in the endpoint's own words (CON-472), so the
   // assistant's set_filter lands here as search params.
-  validateSearch: parsePostListSearch,
+  validateSearch: parseCampaignPostListSearch,
   component: CampaignListView,
 })
 
@@ -73,13 +76,32 @@ function CampaignListView() {
     setSelectionFor(question)
     setSelectedIds(new Set())
   }
+  // The grouping rides beside the filter in the address, and survives it.
+  const grouping = postGroupingFromSearch(search)
   const onFilterChange = useCallback(
     (next: PostFilter) =>
-      void navigate({ search: searchFromPostFilter(next), replace: true }),
+      void navigate({
+        search: (prev) => ({
+          ...searchFromPostFilter(next),
+          group: prev.group,
+        }),
+        replace: true,
+      }),
+    [navigate],
+  )
+  const onGroupingChange = useCallback(
+    (next: PostGrouping) =>
+      void navigate({
+        search: (prev) => ({
+          ...prev,
+          group: next === 'none' ? undefined : next,
+        }),
+        replace: true,
+      }),
     [navigate],
   )
   const postsQuery = useCampaignPosts(campaignId, params)
-  // The sentence says how many there are in all; a filtered read is a second
+  // The pills say how many there are in all; a filtered read is a second
   // query, and the unfiltered one is usually in the cache already.
   const allPosts = useCampaignPosts(campaignId)
   const posts = postsQuery.data
@@ -193,10 +215,10 @@ function CampaignListView() {
         )
       }
     >
-      {/* The sentence, then the table, both on the table's left edge. There
-          is no count line: an unfiltered list's length is not news, and a
-          filtered one's is said once, at the sentence's end ("3 of 21").
-          ADD POST is the header's. */}
+      {/* The filter line, then the table, both on the table's left edge.
+          There is no count line: an unfiltered list's length is not news, and
+          a filtered one's is said once, at the pills' end ("3 of 21"). ADD
+          POST is the header's. */}
       {(filtered || (allPosts.data?.length ?? 0) > 0) && (
         <div className="shrink-0 pt-3 pb-2">
           <PostsFilterBar
@@ -206,6 +228,13 @@ function CampaignListView() {
             total={rows.length}
             totalUnfiltered={totalUnfiltered}
             showCount={filtered && !isLoading}
+            end={
+              <PostsGroupMenu
+                grouping={grouping}
+                onChange={onGroupingChange}
+                scoped
+              />
+            }
             setByAssistant={
               !!assistantFilter &&
               assistantFilter.screen === 'campaign.list' &&
@@ -235,7 +264,11 @@ function CampaignListView() {
         ) : !isLoading && rows.length === 0 ? (
           <PostsEmptyState variant="list" onAddPost={addPost} />
         ) : (
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="flex min-h-0 flex-1 flex-col">
+            {/* A flex column, not a scroller: the table scrolls in its own
+                viewport, which its rows are virtualised against. A scroller
+                here let the table grow to its full height, and the
+                viewport's `overscroll-none` kept the wheel from reaching it. */}
             <PostsTable
               posts={rows}
               campaignId={campaignId}
@@ -252,6 +285,7 @@ function CampaignListView() {
               onToggleAll={toggleAll}
               sorting={sorting}
               onSortingChange={setSorting}
+              grouping={grouping}
             />
           </div>
         )}

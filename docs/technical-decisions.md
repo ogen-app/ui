@@ -1314,7 +1314,7 @@ somewhere else.
 with every analysed document, so the page stopped loading the whole backlog and
 piling it here: `GET /api/ideas` filters, counts the piles within the filter,
 groups and pages, and the page's search params are the endpoint's own
-(`lib/ideaFilter`). The narrowing is the Assets list's — one `FilterSentence`
+(`lib/ideaFilter`). The narrowing is the Assets list's — one `FilterPills`
 over a per-list model and vocabulary (`lib/smartFilter`), so the two lists
 cannot drift — with one difference, since closed by CON-392: the pile, the sort and the grouping are in
 the address too, because a **smart group** is that address saved

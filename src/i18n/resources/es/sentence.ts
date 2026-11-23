@@ -10,7 +10,6 @@ export const sentence: Translation['sentence'] = {
   remove: 'Quitar: {{clause}}',
   removeDetail: 'Quitar este detalle',
   done: 'Hecho',
-  clear: 'Borrar',
   clearAll: 'Quitar filtros',
   more: '+{{formatted}}',
   removeLast: 'quitar el último detalle',

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutationState } from '@tanstack/react-query'
 import { useCampaign } from '@/hooks/useCampaigns'
 import { useTranslation } from 'react-i18next'
-import { useSearch } from '@tanstack/react-router'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Collapse } from '@/components/ui/collapse'
@@ -28,13 +27,6 @@ import { formatNumber } from '@/lib/intl'
 import { cn } from '@/lib'
 import { awaiting } from '@/lib/fetched'
 import { useJustWrittenStore } from '@/stores/justWrittenStore'
-import { viewerTimeZone } from '@/lib/assetFilter'
-import {
-  isPostFilterActive,
-  parsePostListSearch,
-  postFilterFromSearch,
-  postRequestParams,
-} from '@/lib/postFilter'
 
 /** One campaign's strays, for the panel beside that campaign's calendar. */
 export function NotScheduledPanel({
@@ -44,28 +36,13 @@ export function NotScheduledPanel({
   campaignId: string
   onClose?: () => void
 }) {
-  // The filter of the posts screen beside it (CON-486), read off the address
-  // both screens keep it in: a post the grid hides for not matching is not
-  // offered here to be dragged onto it either. `strict: false` — the
-  // calendar's drawer mounts this panel, not the route.
-  const search = useSearch({ strict: false })
-  const filter = useMemo(
-    () => postFilterFromSearch(parsePostListSearch(search)),
-    [search],
-  )
-  const [timeZone] = useState(viewerTimeZone)
-  const params = useMemo(
-    () => postRequestParams(filter, timeZone),
-    [filter, timeZone],
-  )
-  const postsQuery = useCampaignPosts(campaignId, params)
+  const postsQuery = useCampaignPosts(campaignId)
   const addPost = useAddPost(campaignId)
   return (
     <NotScheduled
       campaignId={campaignId}
       posts={postsQuery.data}
       waiting={awaiting(postsQuery)}
-      filtered={isPostFilterActive(filter)}
       onAddPost={addPost}
       onClose={onClose}
     />
@@ -106,15 +83,12 @@ function NotScheduled({
   campaignId,
   posts,
   waiting,
-  filtered = false,
   onAddPost,
   onClose,
 }: {
   campaignId: string | null
   posts: Post[] | undefined
   waiting: boolean
-  /** A filter narrowed `posts`, so none left is no match, not none at all. */
-  filtered?: boolean
   onAddPost?: () => void
   onClose?: () => void
 }) {
@@ -249,10 +223,6 @@ function NotScheduled({
             <Skeleton className="h-20 w-full shrink-0" />
             <Skeleton className="h-20 w-full shrink-0" />
           </div>
-        ) : unscheduled.length === 0 && filtered ? (
-          <p className="text-sm leading-5 text-tertiary-foreground">
-            {t('calendar.notScheduledNoMatch')}
-          </p>
         ) : unscheduled.length === 0 ? (
           <PostsEmptyState variant="panel" onAddPost={onAddPost} />
         ) : (

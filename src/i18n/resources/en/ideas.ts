@@ -334,14 +334,10 @@ export const ideas = {
     failed: 'Could not delete the ideas. Some may still be there.',
   },
   /**
-   * The filter as a sentence you edit (CON-391). One sentence per field
-   * and operator, its chosen words marked `<v>`, so a language orders the
-   * words its own way; the clauses are joined by `Intl.ListFormat`.
+   * The filter's pills (CON-391): one sentence per field and operator, its
+   * chosen words marked `<v>`, so a language orders the words its own way.
    */
   sentence: {
-    /** `<clauses>` is the list of clauses, already joined. */
-    showing: 'Showing ideas <clauses></clauses>',
-    showingAll: 'Showing <v>all ideas</v>',
     clause: {
       origin: '<v>{{values}}</v>',
       origin_not: 'not <v>{{values}}</v>',

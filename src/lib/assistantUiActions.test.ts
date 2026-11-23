@@ -93,6 +93,20 @@ describe('a set_window', () => {
     expect(windowCampaign(action)).toBe('c1')
   })
 
+  it('lands a filter set on the calendar on the campaign’s posts list', () => {
+    expect(
+      destinationFor({
+        type: 'set_filter',
+        screen: 'campaign.calendar',
+        campaignId: 'c1',
+        filter: 'status=draft',
+      }),
+    ).toEqual({
+      to: '/campaigns/$campaignId/list',
+      params: { campaignId: 'c1' },
+    })
+  })
+
   it('narrows to the window’s own campaign first', () => {
     expect(
       windowCampaign({

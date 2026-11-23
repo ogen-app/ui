@@ -100,6 +100,11 @@ own: paging watches the page's.
 
 ## The filter sentence
 
+> Superseded: the list's filter is now pills in its head line
+> (`smartFilter/FilterPills`, design/ideas-cards), and the sentence component
+> is gone. The vocabulary, clause order and panels below still hold; the
+> "Showing …" lead does not.
+
 Since CON-392 the filter reads as **a sentence you edit** — the Ideas page's
 (CON-391), one `smartFilter/FilterSentence` over the Assets model
 (`smartFilter/assetModel`) and its sentence vocabulary

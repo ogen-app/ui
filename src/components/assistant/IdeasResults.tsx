@@ -439,7 +439,7 @@ function FoundCard({
 /**
  * What a found filter named, in the Ideas list's own clauses (CON-509): "from
  * Brochure", "not from Brochure", "in Spring reopening", "written by Ana" —
- * the sentences `FilterSentence` prints for the same filter, in its order, a
+ * the clauses `FilterPills` shows for the same filter, in its order, a
  * left-out value after the kept ones and never worded as kept. Several values
  * of one field read as either, as the server matches any of them.
  */

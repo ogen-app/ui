@@ -2,6 +2,17 @@ import type { Translation } from '../en'
 
 export const postsTable: Translation['postsTable'] = {
   sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
+  view: {
+    groupBy: 'Agrupar por',
+    groupByHeading: 'AGRUPAR POR',
+    group: {
+      status: 'Estado',
+      campaign: 'Campaña',
+      none: 'Sin agrupar',
+    },
+    fold: 'Plegar {{group}}',
+    unfold: 'Desplegar {{group}}',
+  },
 
   columnTitle: 'Título',
   columnStatus: 'Estado',

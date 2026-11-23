@@ -96,4 +96,13 @@ export type VirtualTableProps<TData extends Record<string, unknown>> = {
    * the row's own fill and hover, so a tint can hold under the pointer.
    */
   rowClassName?: (row: TData) => string | false | undefined
+  /**
+   * Rows under group heads: the group each row is in. The heads read in
+   * `rank` order (then by label), the rows under each in the table's sort,
+   * and a head folds its group. Omitted, the rows are one run.
+   */
+  groupOf?: (row: TData) => TableGroup
 }
+
+/** A row's group, as a table's group head names it. */
+export type TableGroup = { key: string; label: string; rank: number }

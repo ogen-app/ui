@@ -16,6 +16,7 @@ import {
   CAMPAIGN_SUMMARIES_KEY,
   campaignPostsKey,
   filteredCampaignPostsKey,
+  filteredWorkspacePostsKey,
   WORKSPACE_POSTS_KEY,
 } from '@/lib/queryKeys'
 import { selectStreamedPosts, useAssistantStore } from '@/stores/assistantStore'
@@ -117,10 +118,16 @@ export function useCampaignPosts(
  * unhydrated is kept — that is a gap in the payload, not evidence the campaign
  * was put away (CON-156).
  */
-export function useWorkspacePosts() {
+export function useWorkspacePosts(
+  /** The posts filter's query (`lib/postFilter`); none asks for every post. */
+  params: Record<string, string> = NO_PARAMS,
+) {
+  const filtered = Object.keys(params).length > 0
   const query = useQuery({
-    queryKey: WORKSPACE_POSTS_KEY,
-    queryFn: listPosts,
+    queryKey: filtered
+      ? filteredWorkspacePostsKey(params)
+      : WORKSPACE_POSTS_KEY,
+    queryFn: () => listPosts(params),
     ...COVER_REFRESH,
   })
 
