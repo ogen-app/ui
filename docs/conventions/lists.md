@@ -46,8 +46,7 @@ keep it accurate when these rules change.
   filters are built from **one catalogue sentence per field and operator**
   over a per-list model and vocabulary (`lib/smartFilter`; CON-391 for Ideas,
   CON-392 for Assets), clauses in a fixed order — never a clause assembled
-  from fragments. On every list — Ideas, Assets, a campaign's posts and its
-  calendar — each clause is a **pill** (`FilterPills`, `inline`) in the
+  from fragments. On every list — Ideas, Assets, the posts lists — each clause is a **pill** (`FilterPills`, `inline`) in the
   list's head line, after Filter, with `+ Add` and the clause panels
   (`FilterParts`); with nothing chosen the line is Filter alone, never
   "Showing all …"; a choice of three or more reads
@@ -87,15 +86,17 @@ keep it accurate when these rules change.
   `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
   `idea_read_only`); only its campaign may change.
 
-- **The posts lists and calendars read one filter** (CON-472), a
-  campaign's and the workspace's alike: `lib/postFilter`, the endpoints' own
-  params (`status`, `platform` — the post's platform sqid —, `post_type`,
-  `scheduled=yes|no`, `scheduled_after`/`scheduled_before` as days, `tz` only
-  beside a date), in the address of both pages and carried across WEEK/MONTH
-  and the bare calendar redirect. `GET /api/posts` takes the same params plus
+- **The posts lists read one filter** (CON-472), a campaign's and the
+  workspace's alike: `lib/postFilter`, the endpoints' own params (`status`,
+  `platform` — the post's platform sqid —, `post_type`, `scheduled=yes|no`,
+  `scheduled_after`/`scheduled_before` as days, `tz` only beside a date), in
+  the list's address. **The calendars have no filter for now** (2026-11-23):
+  they draw every post, their address carries none, and an assistant
+  `set_filter` on `campaign.calendar` lands on the campaign's list
+  (`destinationFor`). `GET /api/posts` takes the same params plus
   `campaign_id`, so the workspace's pages add a Campaign field
   (`campaign_id`/`campaign_id_not`), offering the live campaigns and every
-  platform and post type they take; a campaign's pages drop it from the
+  platform and post type they take; a campaign's list drops it from the
   address (`parseCampaignPostListSearch`), which already names the campaign. The pills are the Assets ones on a third model
   (`PostsFilterBar`: Filter, then the pills, ending "3 of 21"); the
   endpoint answers the whole match, unpaged and without facets, so the
@@ -108,8 +109,7 @@ keep it accurate when these rules change.
   through `CalendarSelectionContext` — as the selection. The calendar keeps
   its toolbar while posts are ticked; the bulk bar floats over the grid's
   foot, and a month day too busy for cards says how many of its posts are
-  ticked (CON-486). The sentence counts the days on screen, idea slots hide
-  under a filter, and the Not scheduled panel reads the same filter.
+  ticked (CON-486).
   Foundation's voices, audiences, facts and series tick the same way
   (`useLibrarySelection`), as something to ask about: their bar clears, and
   on facts it also REMOVEs, asking first through `RemoveFactsDialog` — the

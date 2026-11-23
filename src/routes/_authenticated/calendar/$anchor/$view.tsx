@@ -1,9 +1,8 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
-import { PostsFilterBar } from '@/components/campaigns/postsFilter/PostsFilterBar'
 import { CalendarHeader } from '@/components/campaigns/calendar/CalendarHeader'
 import { CalendarDrawer } from '@/components/campaigns/calendar/CalendarDrawer'
 import { MonthlyCalendar } from '@/components/campaigns/calendar/MonthlyCalendar'
@@ -11,26 +10,15 @@ import { WeeklyCalendar } from '@/components/campaigns/calendar/WeeklyCalendar'
 import {
   addDays,
   addMonths,
-  calendarRange,
   formatAnchor,
   parseAnchor,
-  postsInRange,
 } from '@/components/campaigns/calendar/date'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { useWorkspacePosts } from '@/hooks/usePosts'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import { WORKSPACE_PLACE } from '@/lib/postsPlace'
-import { viewerTimeZone } from '@/lib/assetFilter'
 import { awaiting } from '@/lib/fetched'
-import {
-  isPostFilterActive,
-  parsePostListSearch,
-  postFilterFromSearch,
-  postRequestParams,
-  searchFromPostFilter,
-  type PostFilter,
-} from '@/lib/postFilter'
 import type { Post } from '@/types/posts'
 
 /** Stable identity for a grid with nothing in it yet. */
@@ -46,9 +34,7 @@ function isGranularity(value: string): value is CalendarGranularity {
 
 export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
   staticData: { help: 'calendar' },
-  // The workspace posts list's filter, in the same words (CON-472).
-  validateSearch: parsePostListSearch,
-  beforeLoad: ({ params, search }) => {
+  beforeLoad: ({ params }) => {
     // Normalize malformed anchors / unsupported views to the current week, as
     // the campaign's calendar does — including `list`, which is a real view
     // there and not one here.
@@ -60,7 +46,6 @@ export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
           anchor: formatAnchor(parsed ?? new Date()),
           view: 'week',
         },
-        search,
       })
     }
   },
@@ -75,8 +60,8 @@ export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
  * rung ladder and the toolbar all take the campaign as an argument, and `null`
  * is what says there isn't one. Three things follow from that null and they are
  * the whole of the difference — the cards name their campaign, a day's add
- * asks which campaign the post is for, the filter has a Campaign field, and
- * the view switch has no LIST segment because the table is a campaign's.
+ * asks which campaign the post is for, and the view switch has no LIST segment
+ * because the table is a campaign's.
  *
  * Owns its own page shell rather than sitting under a layout route: `/calendar`
  * is a redirect and this is the only screen beneath it, so a layout would exist
@@ -93,31 +78,11 @@ function WorkspaceCalendarView() {
   const { anchor, view } = Route.useParams()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const search = Route.useSearch()
-  const filter = useMemo(() => postFilterFromSearch(search), [search])
-  const filtered = isPostFilterActive(filter)
-  const [timeZone] = useState(viewerTimeZone)
-  const params = useMemo(
-    () => postRequestParams(filter, timeZone),
-    [filter, timeZone],
-  )
-  const onFilterChange = useCallback(
-    (next: PostFilter) =>
-      void navigate({
-        to: '/calendar/$anchor/$view',
-        params: { anchor, view },
-        search: (prev) => ({
-          ...searchFromPostFilter(next),
-          group: prev.group,
-        }),
-        replace: true,
-      }),
-    [navigate, anchor, view],
-  )
-  const postsQuery = useWorkspacePosts(params)
-  // Whether there are posts at all is the unfiltered read's to say.
-  const allPosts = useWorkspacePosts()
+  const postsQuery = useWorkspacePosts()
   const { data: posts, isError: postsError } = postsQuery
+  // `awaiting`, not `isLoading` — see `lib/fetched`. Same reasoning as the
+  // campaign's calendar.
+  const postsPending = awaiting(postsQuery)
   const rows = posts ?? NO_POSTS
   // A failed fetch is not an empty workspace — same rule as the campaign's
   // calendar. Cached rows from an earlier success still draw; only a fetch that
@@ -126,34 +91,13 @@ function WorkspaceCalendarView() {
   // The grids read the settings themselves; the route only needs to know
   // whether they have arrived, because which day starts the week and which days
   // are shown at all decide the shape of the grid.
-  const {
-    isPending: settingsPending,
-    firstDayOfWeek,
-    hiddenDays,
-  } = useCalendarSettings()
+  const { isPending: settingsPending } = useCalendarSettings()
   // `beforeLoad` has already rejected anything else; this narrows the param
   // for the branches below rather than re-deciding it.
   const granularity = isGranularity(view) ? view : 'week'
   // Memoized because it is the key every range derivation downstream hangs
   // off: a fresh Date each render would rebuild the whole grid each render.
   const anchorDate = useMemo(() => parseAnchor(anchor) ?? new Date(), [anchor])
-  // The pills count the days on screen (CON-486), as the campaign's do.
-  const range = useMemo(
-    () => calendarRange(anchorDate, granularity, firstDayOfWeek),
-    [anchorDate, granularity, firstDayOfWeek],
-  )
-  const onScreen = useMemo(
-    () => postsInRange(rows, range, hiddenDays),
-    [rows, range, hiddenDays],
-  )
-  const onScreenUnfiltered = useMemo(
-    () => postsInRange(allPosts.data ?? NO_POSTS, range, hiddenDays),
-    [allPosts.data, range, hiddenDays],
-  )
-  // `awaiting`, not `isLoading` — see `lib/fetched`: the empty state is a
-  // claim about the workspace, and a paused read is not an answer.
-  const workspaceEmpty =
-    !awaiting(allPosts) && (allPosts.data?.length ?? 0) === 0 && !filtered
 
   // Filed under the workspace's own key in the same map the campaigns use, so
   // coming back to `/calendar` lands on the week that was being read.
@@ -163,7 +107,6 @@ function WorkspaceCalendarView() {
     navigate({
       to: '/calendar/$anchor/$view',
       params: { anchor: formatAnchor(d), view: granularity },
-      search: true,
     })
 
   const Calendar = granularity === 'month' ? MonthlyCalendar : WeeklyCalendar
@@ -192,22 +135,11 @@ function WorkspaceCalendarView() {
         />
         <div className="page-content-motion grid overflow-hidden h-full px-3 lg:px-6 pt-3">
           <div className="flex flex-col h-full min-h-0 min-w-0">
-            {!workspaceEmpty && (
-              <div className="pb-3">
-                <PostsFilterBar
-                  campaignId={null}
-                  filter={filter}
-                  onChange={onFilterChange}
-                  total={onScreen.length}
-                  totalUnfiltered={onScreenUnfiltered.length}
-                />
-              </div>
-            )}
             {settingsPending ? null : postsFailed ? (
               <p className="px-6 py-8 text-sm text-tertiary-foreground">
                 {t('calendar.loadFailed')}
               </p>
-            ) : workspaceEmpty ? (
+            ) : !postsPending && rows.length === 0 ? (
               // Only once the query has answered: an empty grid is the honest
               // way to wait for it. No add affordance, so the empty state says
               // where posts come from rather than offering to make one.

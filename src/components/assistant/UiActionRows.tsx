@@ -216,7 +216,13 @@ function actionTitle(
   found: (connect: NonNullable<UIAction['connect']>) => boolean,
 ): React.ReactNode {
   const { action } = applied
-  const screen = screenName(t, action.screen)
+  // A filter set on the calendar landed on the posts list (`destinationFor`).
+  const screen = screenName(
+    t,
+    action.type === 'set_filter' && action.screen === 'campaign.calendar'
+      ? 'campaign.list'
+      : action.screen,
+  )
   const grey = (
     <span className="text-sm font-normal text-secondary-foreground" />
   )

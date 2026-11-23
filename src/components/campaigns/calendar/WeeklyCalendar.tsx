@@ -38,13 +38,6 @@ type WeeklyCalendarProps = {
   posts: Post[]
   /** The anchor day from the route; the visible week is derived from it. */
   anchor: Date
-  /**
-   * Leave the ideas planned onto these days out (CON-486). A filtered grid
-   * shows the posts that match and nothing else: an idea slot matches no
-   * filter on posts, so it would be the one thing on screen the filter
-   * doesn't explain.
-   */
-  hideIdeaSlots?: boolean
 }
 
 type Column = {
@@ -92,7 +85,6 @@ function WeeklyCalendarComponent({
   campaignId,
   posts,
   anchor,
-  hideIdeaSlots = false,
 }: WeeklyCalendarProps) {
   /** Column whose empty space the pointer is on — see the column's onMouseOver. */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
@@ -126,10 +118,10 @@ function WeeklyCalendarComponent({
   // without being posts, so they are read beside the posts, not merged in.
   const range = useMemo(
     () =>
-      days.length > 0 && !hideIdeaSlots
+      days.length > 0
         ? { from: isoDay(days[0]), to: isoDay(days[days.length - 1]) }
         : null,
-    [days, hideIdeaSlots],
+    [days],
   )
   const slotsQuery = useIdeaSlots(range, campaignId)
   const slotsByDay = useMemo(() => {

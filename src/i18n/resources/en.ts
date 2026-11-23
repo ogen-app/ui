@@ -2311,8 +2311,6 @@ export const en = {
     /** A panel row's ideas: "Instagram · Carousel · from 1 idea" (CON-485). */
     fromIdeas_one: 'from {{formatted}} idea',
     fromIdeas_other: 'from {{formatted}} ideas',
-    /** The rail's panel under a filter that leaves no undated post (CON-486). */
-    notScheduledNoMatch: 'No post without a date matches the filter.',
 
     /**
      * The one control a day offers, in both grids. Capitalised like every
