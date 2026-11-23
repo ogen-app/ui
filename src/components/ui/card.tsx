@@ -1,7 +1,11 @@
 import type { MouseEvent, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
-import { ArrowRight01Icon, Cancel01Icon } from '@hugeicons/core-free-icons'
+import {
+  ArrowRight01Icon,
+  Cancel01Icon,
+  PlusSignIcon,
+} from '@hugeicons/core-free-icons'
 
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
@@ -280,6 +284,52 @@ function End({
       </button>
     )
   return null
+}
+
+/**
+ * The card that isn't there yet: the way to make a new one, at the end of the
+ * cards it would join. Wherever a click spawns a new card — an entry in a
+ * library, a file on a post — the offer looks like this: the card's outline,
+ * dashed, on no surface of its own, with a plus and what it makes. Dashed
+ * because it is a place for a card rather than a card; transparent so it never
+ * reads as one of the real entries beside it.
+ */
+export function NewCard({
+  label,
+  hint,
+  icon = PlusSignIcon,
+  onClick,
+  capped = false,
+}: {
+  label: string
+  /** One line under the label, for what the new card will be. */
+  hint?: string
+  icon?: IconSvgElement
+  onClick?: () => void
+  capped?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group flex w-full min-w-0 cursor-pointer flex-col gap-1 rounded-md border border-dashed border-border bg-transparent p-6 text-left transition-colors hover:border-tertiary-foreground',
+        capped && 'max-w-content',
+      )}
+    >
+      <span className="flex min-h-8 items-center gap-2 font-display text-lg font-medium tracking-tight text-secondary-foreground group-hover:text-primary-foreground">
+        <HugeiconsIcon
+          icon={icon}
+          size={20}
+          strokeWidth={1.5}
+          className="shrink-0"
+          aria-hidden
+        />
+        {label}
+      </span>
+      {hint && <span className="text-sm text-tertiary-foreground">{hint}</span>}
+    </button>
+  )
 }
 
 export function Card({

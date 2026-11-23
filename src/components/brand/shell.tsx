@@ -2,8 +2,6 @@ import type { ReactNode } from 'react'
 import {
   CaretDownIcon,
   CaretRightIcon,
-  PencilSimpleIcon,
-  PlusIcon,
   StarIcon,
   type Icon,
 } from '@phosphor-icons/react'
@@ -11,7 +9,6 @@ import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card, type CardStatus } from '@/components/ui/card'
-import { TickBox } from '@/components/ui/tick-box'
 import { cn } from '@/lib'
 import { formatList } from '@/lib/intl'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -255,74 +252,6 @@ export function BrandLibrary({
 }
 
 /**
- * The card an entry sits in when the section is a screen: full column width,
- * the same `bg-primary` block `SettingsCard` uses everywhere else in the app.
- *
- * Distinct from `EntryCard`, which is the tile a *summary* uses. Same module,
- * two jobs: one is a thing in a list of things, the other is a thing you are
- * about to work on.
- *
- * **Hover lifts the card; it does not tint it.** The first version darkened the
- * surface by 3%, which is the wrong signal twice over: on a white card in a
- * column of white cards a wash that faint is nearly invisible, and where it
- * *is* visible it reads as selection — the app tints a surface when something
- * is chosen, not when the pointer is passing over it. A shadow says the card
- * can be picked up without claiming it has been. It is also what `CampaignCard`
- * already does, and these two are the same gesture: a full-width card in a
- * column that opens a screen.
- *
- * The caret comes from the same place, and earns its keep on a card that is
- * otherwise four blocks of text: nothing else on it looks clickable, and the
- * `role="button"` that makes it so is invisible to everyone using a mouse.
- */
-export function LibraryCard({
-  children,
-  onClick,
-  className,
-}: {
-  children: ReactNode
-  onClick?: () => void
-  className?: string
-}) {
-  return (
-    <article
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={
-        onClick
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onClick()
-              }
-            }
-          : undefined
-      }
-      className={cn(
-        COLUMN,
-        'group flex gap-4 bg-primary px-6 py-6 text-left',
-        onClick &&
-          'cursor-pointer transition-shadow duration-150 hover:shadow-lg',
-        className,
-      )}
-    >
-      <div className="flex min-w-0 flex-1 flex-col gap-4">{children}</div>
-      {onClick && (
-        // Aligned to the title's line rather than to the middle of the card:
-        // the cards are different heights, and a vertically-centred caret would
-        // sit at a different point on each one down the column.
-        <CaretRightIcon
-          className="mt-1 size-4 shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-          weight="bold"
-          aria-hidden
-        />
-      )}
-    </article>
-  )
-}
-
-/**
  * One library entry, laid out — **the anatomy every library card shares**, so
  * voices, audiences and series stop being three cards that happen to sit on
  * the same white block.
@@ -345,23 +274,16 @@ export function LibraryCard({
  */
 export function LibraryEntry({
   name,
-  mark,
+  status,
   line,
   substance,
   empty,
   facts,
   onOpen,
-  tick,
 }: {
   name: string
-  /**
-   * The entry's tick (CON-472): beside the card rather than in it — the card
-   * is a button, and a control inside a button is two targets in one. Shown
-   * under the pointer, and on every entry once any is ticked.
-   */
-  tick?: { checked: boolean; shown: boolean; onToggle: () => void }
-  /** Beside the name — in practice `DefaultStar`. */
-  mark?: ReactNode
+  /** On the name's baseline — in practice the default star. */
+  status?: CardStatus
   line?: string
   /** A string is clamped to four lines; a node is drawn as given. */
   substance?: ReactNode
@@ -370,29 +292,11 @@ export function LibraryEntry({
   facts: ReactNode[]
   onOpen?: () => void
 }) {
-  const card = (
-    <LibraryCard
-      onClick={onOpen}
-      className={cn(
-        tick && 'pl-10',
-        // Ticked, a light tint of the accent, as a ticked Ideas row is
-        // (CON-486) — mixed into the card's own fill rather than laid over
-        // the page, since the card sits on the grey and the row on white.
-        tick?.checked &&
-          'bg-[color-mix(in_srgb,var(--color-accent)_5%,var(--color-primary))]',
-      )}
-    >
-      <header className="flex min-w-0 flex-col gap-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-          <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
-            {name}
-          </h3>
-          {mark}
-        </div>
-        {line ? (
-          <p className="text-sm leading-5 text-secondary-foreground">{line}</p>
-        ) : null}
-      </header>
+  const body = (
+    <>
+      {line ? (
+        <p className="text-sm leading-5 text-secondary-foreground">{line}</p>
+      ) : null}
 
       <div className="border-l-2 border-quaternary pl-3 text-sm leading-5">
         {typeof substance === 'string' ? (
@@ -406,145 +310,21 @@ export function LibraryEntry({
 
       {/* A list rather than stacked lines, because a fact wraps on a narrow
           column and without markers the wrapped half reads as another fact. */}
-      <footer>
-        <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
-          {facts.map((fact, i) => (
-            <li key={i}>{fact}</li>
-          ))}
-        </ul>
-      </footer>
-    </LibraryCard>
+      <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
+        {facts.map((fact, i) => (
+          <li key={i}>{fact}</li>
+        ))}
+      </ul>
+    </>
   )
-  if (!tick) return card
-  return (
-    <div className={cn(COLUMN, 'group/entry relative')}>
-      {card}
-      <LibraryTick name={name} {...tick} />
-    </div>
-  )
-}
-
-function LibraryTick({
-  name,
-  checked,
-  shown,
-  onToggle,
-}: {
-  name: string
-  checked: boolean
-  shown: boolean
-  onToggle: () => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <TickBox
-      checked={checked}
-      onCheckedChange={onToggle}
-      aria-label={t('brand.selection.select', { name })}
-      className={cn(
-        'absolute top-8 left-4',
-        // Without hover to reveal it, a touch screen shows it from the start.
-        !shown &&
-          'opacity-0 group-hover/entry:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
-      )}
-    />
-  )
-}
-
-/**
- * The add card that closes a library.
- *
- * **On the same white surface as the entries above it.** It was a dashed
- * outline on the page background for a while, on the argument that it is an
- * entry which does not exist yet — true, and it made the last row of the
- * library read as a dropzone rather than as a card, because a dashed rectangle
- * on a bare canvas is what every upload target in this app looks like. It is
- * not a placeholder for a thing; it is the control that makes one, and a
- * control is as solid as the things it sits with.
- *
- * What keeps it from competing with the real entries is not the surface but the
- * weight: the plus tile, one line of label, one line of hint, and none of the
- * material that gives an entry card its height. It is visibly the shortest
- * thing in the column, which is exactly where the eye goes after reading a list
- * and finding nothing that does the job.
- *
- * Only on a library that already has entries — the empty library's blank form
- * is a `PlainActionCard` instead.
- */
-export function AddEntryCard({
-  label,
-  hint,
-  icon: Glyph = PlusIcon,
-  onClick,
-}: {
-  /** Literal capitals, matching the app's other action labels. */
-  label: string
-  hint: string
-  /** Defaults to the plus. Give it a pencil when the card means "start blank". */
-  icon?: Icon
-  onClick?: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        COLUMN,
-        'group flex cursor-pointer items-center gap-3 bg-primary px-6 py-5 text-left',
-        'transition-shadow duration-150 hover:shadow-lg',
-      )}
-    >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary transition-colors group-hover:bg-foreground group-hover:text-background">
-        <Glyph className="size-5" />
-      </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="font-grotesk text-sm font-medium">{label}</span>
-        <span className="text-sm text-secondary-foreground">{hint}</span>
-      </span>
-    </button>
-  )
-}
-
-/**
- * The third card: one action, no heading and **no description**.
- *
- * Its plainness is the design. Two cards above it have spent the screen
- * explaining things, and this one is a single line — which is what makes it
- * legible as a different kind of offer rather than a third thing to read. It is
- * also the honest shape for it: there is nothing to say about a blank form
- * beyond what it is, and a sentence underneath would be a sentence written to
- * fill the space.
- *
- * Distinguished from `AddEntryCard` by what it leaves out, not by its surface:
- * both are white cards closing a library, and this one has no hint line under
- * the label because on an empty screen the two cards above it have already said
- * everything a hint would.
- */
-export function PlainActionCard({
-  label,
-  icon: Glyph = PencilSimpleIcon,
-  onClick,
-}: {
-  /** Literal capitals, matching the app's other action labels. */
-  label: string
-  icon?: Icon
-  onClick?: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        COLUMN,
-        'group flex cursor-pointer items-center gap-3 bg-primary px-6 py-5 text-left',
-        'transition-shadow duration-150 hover:shadow-lg',
-      )}
-    >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary transition-colors group-hover:bg-foreground group-hover:text-background">
-        <Glyph className="size-5" />
-      </span>
-      <span className="font-grotesk text-sm font-medium">{label}</span>
-    </button>
+  return onOpen ? (
+    <Card title={name} status={status} door={{ kind: 'card', onOpen }} capped>
+      {body}
+    </Card>
+  ) : (
+    <Card title={name} status={status} capped>
+      {body}
+    </Card>
   )
 }
 

@@ -141,6 +141,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   never a pale red tint. The way in (Danger Zone, Remove) is `destructive`:
   white with a border and the icon in the danger colour, so it always has an
   icon. The step that does it (a dialog's confirm) is `destructiveInverted`.
+  A Danger Zone card holds its buttons in its body, never in the header.
+- **What makes a new card looks like a blank one** — `NewCard`: the card's
+  outline dashed, on no surface, a plus and what it makes, at the end of the
+  cards it joins. A tile that adds a file (the post's Add media) is the same.
 - **Design harnesses live on `design/*` branches, never on `develop`.** A
   harness is a `/design/<feature>` route rendering every state of a component
   from fixtures, and it needs an exemption in `__root.tsx` `beforeLoad` to open

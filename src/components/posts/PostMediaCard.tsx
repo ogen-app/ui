@@ -5,12 +5,12 @@ import {
   FileArrowUpIcon,
   FilePdfIcon,
   ImageBrokenIcon,
-  ImagesIcon,
   PlayCircleIcon,
-  PlusIcon,
   TrashIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Image02Icon, PlusSignIcon } from '@hugeicons/core-free-icons'
 import { Card } from '@/components/ui/card'
 import {
   DropdownMenu,
@@ -52,6 +52,13 @@ import type {
 import { AddFromAssetsModal } from './AddFromAssetsModal.tsx'
 import { AltTextControl } from './AltTextControl.tsx'
 import type { Post } from '@/types/posts.ts'
+
+/**
+ * A tile that adds a file: the shape of the tile it makes, dashed and on no
+ * surface of its own — what every "make a new one" looks like (`NewCard`).
+ */
+const NEW_TILE =
+  'flex size-32 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-transparent text-tertiary-foreground transition-colors hover:border-tertiary-foreground hover:text-primary-foreground'
 
 /**
  * The posts of a thread, when this post publishes as one (CON-196).
@@ -219,23 +226,24 @@ export function PostMediaCard({
             `${attachments.length}${policy.accepts && totalMax !== null ? ` / ${totalMax}` : ''}`
           : undefined
       }
-      // The button is what the card offers while shut; once open, the tiles
-      // below are how media is added and the constraints say what fits.
+      // The header's button, as on the first comment's card: the one way in
+      // whether the card is shut or open. It opens the picker, and opens the
+      // card with it. The tiles below stay for dropping files on.
       action={
-        collapsed
-          ? { label: t('posts.media.add'), onClick: () => setRevealed(true) }
+        canAdd
+          ? {
+              label: t('posts.media.add'),
+              icon: PlusSignIcon,
+              onClick: () => {
+                storage.intent(() => {
+                  setRevealed(true)
+                  inputRef.current?.click()
+                })()
+              },
+            }
           : undefined
       }
     >
-      {/* What the card says once it is open. With no platform the numbers
-          would be the fallback policy's rather than a platform's, and stating
-          them would be inventing rules — so a collapsed card says nothing. */}
-      {!collapsed && policy.accepts && (
-        <p className="text-xs text-tertiary-foreground">
-          {describeConstraints(policy)}
-        </p>
-      )}
-
       {thread && policy.accepts && (
         <p className="text-xs text-tertiary-foreground">
           {t('posts.sequence.mediaPerPost')}
@@ -361,14 +369,23 @@ export function PostMediaCard({
             onClick={() => {
               storage.intent(() => inputRef.current?.click())()
             }}
-            className={cn(
-              'flex size-32 flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors',
-              'bg-tertiary hover:bg-quaternary',
-            )}
+            // What fits is said on the way in rather than on the card: the
+            // limits matter at the moment a file is picked, and a refused one
+            // is told why in its toast. With no platform there are none to
+            // state — they would be the fallback policy's, not a platform's.
+            title={post.platform_id ? describeConstraints(policy) : undefined}
+            className={NEW_TILE}
           >
-            <PlusIcon className="size-5 text-tertiary-foreground" />
-            <span className="text-xs text-tertiary-foreground">
-              {attachments.length === 0 ? 'Add media' : 'Add more'}
+            <HugeiconsIcon
+              icon={PlusSignIcon}
+              size={20}
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <span className="text-xs">
+              {attachments.length === 0
+                ? t('posts.media.add')
+                : t('posts.media.addMore')}
             </span>
           </button>
         )}
@@ -383,15 +400,15 @@ export function PostMediaCard({
             onClick={() => {
               storage.intent(() => setChoosingAssets(true))()
             }}
-            className={cn(
-              'flex size-32 flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors',
-              'bg-tertiary hover:bg-quaternary',
-            )}
+            className={NEW_TILE}
           >
-            <ImagesIcon className="size-5 text-tertiary-foreground" />
-            <span className="text-xs text-tertiary-foreground">
-              {t('posts.media.fromAssets.tile')}
-            </span>
+            <HugeiconsIcon
+              icon={Image02Icon}
+              size={20}
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <span className="text-xs">{t('posts.media.fromAssets.tile')}</span>
           </button>
         )}
       </div>

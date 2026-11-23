@@ -5389,6 +5389,7 @@ export const es: Translation = {
     media: {
       /** The shut media card's one action. */
       add: 'Añadir medios',
+      addMore: 'Añadir más',
       fromAssets: {
         tile: 'Desde Recursos',
         title: 'Añadir imágenes desde Recursos',
@@ -6160,14 +6161,8 @@ export const es: Translation = {
   brand: {
     selection: {
       select: 'Seleccionar «{{name}}»',
-      voice_one: '{{formatted}} voz seleccionada',
-      voice_other: '{{formatted}} voces seleccionadas',
-      audience_one: '{{formatted}} audiencia seleccionada',
-      audience_other: '{{formatted}} audiencias seleccionadas',
       fact_one: '{{formatted}} dato seleccionado',
       fact_other: '{{formatted}} datos seleccionados',
-      series_one: '{{formatted}} serie seleccionada',
-      series_other: '{{formatted}} series seleccionadas',
       selectAll: 'Seleccionar todos los datos mostrados',
       clearAll: 'Quitar la selección',
       clear: 'QUITAR',
@@ -6842,10 +6837,7 @@ export const es: Translation = {
         cancel: 'CANCELAR',
         addIt: 'AÑADIRLO',
         done: 'LISTO',
-        moreSampleOptions: 'Más opciones de ejemplos',
         resetSamples: 'Restablecer ejemplos',
-        bulkUpload: 'Carga masiva',
-        bulkUploadSoon: 'Próximamente',
         rules: 'Reglas',
         rulesHint:
           'Lo que un ejemplo no puede decir por sí solo. Una publicación pegada enseña el registro; no puede prometer que las treinta siguientes se abstengan de los signos de exclamación.',

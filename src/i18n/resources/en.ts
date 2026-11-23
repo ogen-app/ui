@@ -6400,8 +6400,10 @@ export const en = {
      * the refusals the copy can meet.
      */
     media: {
-      /** The shut media card's one action. */
+      /** The media card's header button, and its first add tile. */
       add: 'Add media',
+      /** The add tile once something is attached. */
+      addMore: 'Add more',
       fromAssets: {
         tile: 'From Assets',
         title: 'Add images from Assets',
@@ -7530,14 +7532,8 @@ export const en = {
      */
     selection: {
       select: 'Select “{{name}}”',
-      voice_one: '{{formatted}} voice selected',
-      voice_other: '{{formatted}} voices selected',
-      audience_one: '{{formatted}} audience selected',
-      audience_other: '{{formatted}} audiences selected',
       fact_one: '{{formatted}} fact selected',
       fact_other: '{{formatted}} facts selected',
-      series_one: '{{formatted}} series selected',
-      series_other: '{{formatted}} series selected',
       selectAll: 'Select every fact shown',
       clearAll: 'Clear the selection',
       clear: 'CLEAR',
@@ -8295,10 +8291,7 @@ export const en = {
         cancel: 'CANCEL',
         addIt: 'ADD IT',
         done: 'DONE',
-        moreSampleOptions: 'More sample options',
         resetSamples: 'Reset samples',
-        bulkUpload: 'Bulk upload',
-        bulkUploadSoon: 'Coming soon',
         rules: 'Rules',
         rulesHint:
           'What a sample cannot say for itself. A pasted post shows the register; it cannot promise that the next thirty stay off the exclamation marks.',

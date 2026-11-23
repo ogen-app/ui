@@ -1,18 +1,10 @@
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card } from '@/components/ui/card'
-import { LibrarySelectionBar } from '@/components/brand/librarySelection'
-import {
-  useLibrarySelection,
-  type LibrarySelection,
-} from '@/components/brand/useLibrarySelection'
+import { Card, NewCard } from '@/components/ui/card'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { brandSection } from '@/lib/brandSections'
 import {
-  AddEntryCard,
   BrandLibrary,
   LibraryEntry,
-  PlainActionCard,
   StarterCard,
 } from '@/components/brand/shell'
 import { seriesMetaLine, supplyLine } from './format'
@@ -54,45 +46,34 @@ export function SeriesSection({
 }) {
   const { t } = useTranslation()
   const empty = series.length === 0
-  // Ticks for the assistant to read (CON-472); none while the list is empty.
-  const selection = useLibrarySelection(
-    'series',
-    useMemo(() => series.map((e) => e.id), [series]),
-  )
 
   return (
-    <>
-      <BrandLibrary
-        add={
-          empty ? (
-            <PlainActionCard
-              label={t('series.library.writeYourOwn')}
-              onClick={onAdd}
-            />
-          ) : (
-            <AddEntryCard
-              label={t('series.library.add')}
-              hint={t('series.library.addHint')}
-              onClick={onAdd}
-            />
-          )
-        }
-      >
-        {empty ? (
-          <SeriesEmpty onStart={onStart} />
+    <BrandLibrary
+      add={
+        empty ? (
+          <NewCard
+            capped
+            label={t('series.library.writeYourOwn')}
+            onClick={onAdd}
+          />
         ) : (
-          series.map((entry) => (
-            <SeriesCard
-              key={entry.id}
-              series={entry}
-              onOpen={onOpen}
-              selection={selection}
-            />
-          ))
-        )}
-      </BrandLibrary>
-      <LibrarySelectionBar kind="series" selection={selection} />
-    </>
+          <NewCard
+            capped
+            label={t('series.library.add')}
+            hint={t('series.library.addHint')}
+            onClick={onAdd}
+          />
+        )
+      }
+    >
+      {empty ? (
+        <SeriesEmpty onStart={onStart} />
+      ) : (
+        series.map((entry) => (
+          <SeriesCard key={entry.id} series={entry} onOpen={onOpen} />
+        ))
+      )}
+    </BrandLibrary>
   )
 }
 
@@ -127,9 +108,7 @@ function SeriesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
 function SeriesCard({
   series,
   onOpen,
-  selection,
 }: {
-  selection?: LibrarySelection
   series: ContentSeries
   onOpen?: (id: string) => void
 }) {
@@ -138,13 +117,6 @@ function SeriesCard({
 
   return (
     <LibraryEntry
-      tick={
-        selection && {
-          checked: selection.ticked.has(series.id),
-          shown: selection.ticked.size > 0,
-          onToggle: () => selection.toggle(series.id),
-        }
-      }
       onOpen={onOpen ? () => onOpen(series.id) : undefined}
       name={series.name}
       line={series.promise}

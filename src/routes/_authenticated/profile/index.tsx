@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { Delete02Icon } from '@hugeicons/core-free-icons'
+import { Logout03Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Button } from '@/components/ui/button'
 
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
@@ -88,19 +90,22 @@ function ProfilePage() {
               {emailPreferencesEnabled && (
                 <EmailPreferencesSection userId={user.id} />
               )}
-              <Card
-                title={t('profile.dangerZone.title')}
-                action={{
-                  label: t('profile.dangerZone.action'),
-                  icon: Delete02Icon,
-                  onClick: () => setDeleteOpen(true),
-                  destructive: true,
-                }}
-                capped
-              >
+              {/* The button in the body, as in every Danger Zone. */}
+              <Card title={t('profile.dangerZone.title')} capped>
                 <p className="max-w-150 text-sm text-tertiary-foreground">
                   {t('profile.dangerZone.body')}
                 </p>
+                <div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setDeleteOpen(true)}
+                  >
+                    <HugeiconsIcon icon={Logout03Icon} strokeWidth={1.5} />
+                    <span>{t('profile.dangerZone.action')}</span>
+                  </Button>
+                </div>
               </Card>
             </div>
           </div>
