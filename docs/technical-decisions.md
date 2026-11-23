@@ -653,7 +653,7 @@ copy of the other's field and the second to land wins.
 ## English is bundled, every other language is a chunk {#i18n}
 
 **Decision.** i18next + react-i18next, one namespace, with English statically
-imported into the main bundle (`i18n/resources/en.ts`) and every other locale
+imported into the main bundle (`i18n/resources/en.ts`, one file per section in `en/`) and every other locale
 behind an `import()` (`i18n/index.ts`, `LAZY_RESOURCES`). The chosen language
 lives in `localStorage`, not in `/api/settings`. `?lang=es` forces one for a
 page load and is then persisted like any other choice. Any load or switch that
@@ -713,14 +713,15 @@ label map, a `const` array of select options — moves inside a `(t) => …`
 factory or a hook rather than sitting at module level; see the Zod note above,
 which is the same failure in a different shape.
 
-**Catalogue conventions** (also stated at the top of `en.ts`): keys name the
+**Catalogue conventions** (also stated at the top of `resources/en.ts`): keys name the
 place, never quote their own English; one key per sentence the user reads, with
 `<Trans>` for a sentence that has a link or emphasis inside it; plurals use
 i18next's `_one`/`_other` and spell out each form whole, because English
 pronouns and Spanish agreement do not survive being stitched at runtime. Even
 the list separators are translated — English writes "a, b, c, and d" where
-Spanish writes "a, b, c y d". Destructive-action labels keep their literal
-capitals in every language (`DELETE ACCOUNT` / `ELIMINAR CUENTA`).
+Spanish writes "a, b, c y d". Button labels on cards are sentence case in
+every language, destructive ones included (`Delete campaign` / `Eliminar
+campaña`).
 
 **Where.** `src/i18n/` (config, resources, boot messages),
 `stores/localeStore.ts`, `components/layout/{AppLoader,LocaleSwitchOverlay}.tsx`,
@@ -728,7 +729,7 @@ capitals in every language (`DELETE ACCOUNT` / `ELIMINAR CUENTA`).
 
 **A release gate per language, not per feature.** `LOCALES` carries an
 `enabled` flag on each row. A disabled locale still compiles, still type-checks
-against `en.ts` and still ships its chunk — it is simply not offered in the
+against the English catalogue and still ships its chunk — it is simply not offered in the
 picker, not accepted from `?lang=`, and not restored from a previous visit;
 a stored preference for one is cleared, so it cannot lie dormant and switch
 someone's language by itself on the deploy that releases it. The gate is on
