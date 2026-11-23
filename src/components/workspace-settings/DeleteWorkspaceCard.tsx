@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Delete02Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -88,17 +89,8 @@ export function DeleteWorkspaceCard() {
 
   return (
     <>
-      <Card
-        title={t('workspaceSettings.dangerZone.title')}
-        action={{
-          label: t('workspaceSettings.dangerZone.action'),
-          icon: Delete02Icon,
-          onClick: () => setOpen(true),
-          disabled: isLast,
-          destructive: true,
-        }}
-        capped
-      >
+      {/* The button in the body, as in every Danger Zone. */}
+      <Card title={t('workspaceSettings.dangerZone.title')} capped>
         <p className="max-w-150 text-sm text-tertiary-foreground">
           {t('workspaceSettings.dangerZone.body')}
         </p>
@@ -107,6 +99,18 @@ export function DeleteWorkspaceCard() {
             {t('workspaceSettings.dangerZone.lastWorkspace')}
           </p>
         )}
+        <div>
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            onClick={() => setOpen(true)}
+            disabled={isLast}
+          >
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
+            <span>{t('workspaceSettings.dangerZone.action')}</span>
+          </Button>
+        </div>
       </Card>
 
       <ModalContainer

@@ -1,4 +1,4 @@
-import { CaretDownIcon } from '@phosphor-icons/react'
+import { TextSelect } from '@/components/ui/text-select'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { measureCopy } from './format'
@@ -55,7 +55,7 @@ export function ComparisonBar({
   return (
     <div
       className={cn(
-        'flex w-full max-w-content flex-wrap items-center gap-x-3 gap-y-2',
+        'flex w-full flex-wrap items-center gap-x-3 gap-y-2',
         className,
       )}
     >
@@ -176,32 +176,16 @@ export function Picker({
   highlighted?: boolean
 }) {
   return (
-    <label
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 transition-colors',
-        highlighted ? 'border-accent bg-accent/5' : 'border-border bg-primary',
-      )}
-    >
-      <span className="text-xs text-tertiary-foreground">{label}</span>
-      <span className="relative inline-flex items-center gap-1">
-        <select
-          value={
-            options.find((o) => o.label === value)?.value ?? options[0]?.value
-          }
-          onChange={(e) => onChange(e.target.value)}
-          className="appearance-none bg-transparent pr-4 text-xs font-medium text-foreground outline-none"
-        >
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <CaretDownIcon
-          className="pointer-events-none absolute right-0 size-3 text-tertiary-foreground"
-          aria-hidden
-        />
-      </span>
-    </label>
+    <TextSelect
+      variant="button"
+      size="sm"
+      lead={label}
+      ariaLabel={label}
+      value={options.find((o) => o.label === value)?.value ?? ''}
+      placeholder={value}
+      onValueChange={onChange}
+      elements={options.map((o) => ({ id: o.value, displayValue: o.label }))}
+      className={cn('shrink-0', highlighted && 'border-accent bg-accent/5')}
+    />
   )
 }

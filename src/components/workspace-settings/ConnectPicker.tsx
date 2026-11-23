@@ -7,7 +7,7 @@ import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
-import { SettingsCard } from '@/components/settings/SettingsCard'
+import { Card } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
 import { usePendingConnection, useSelectPendingTarget } from '@/hooks/useZernio'
 import { getPlatformByZernioId } from '@/lib/platformDictionary'
@@ -75,26 +75,30 @@ export function ConnectPicker({ connectionId }: { connectionId: string }) {
         // session went while the user was deciding. Answering it inline, under
         // a list of options that no longer exist, would invite a second click
         // on a dead choice.
-        <SettingsCard>
+        <Card title={t('workspaceSettings.connect.picker.nothingTitle')}>
           <PickerFailure error={error ?? select.error} />
-        </SettingsCard>
+        </Card>
       ) : !data || data.options.length === 0 ? (
         // Rare: the backend redirects `no_targets` to the accounts page before
         // it ever gets this far. Reachable only if the account's last page
         // disappeared between the list and this render.
-        <SettingsCard>
+        <Card title={t('workspaceSettings.connect.picker.nothingTitle')}>
           <Explanation body={t('workspaceSettings.connect.picker.empty')} />
-        </SettingsCard>
+        </Card>
       ) : (
-        <SettingsCard>
+        <Card
+          title={t('workspaceSettings.connect.picker.legend', {
+            platform: platformName,
+          })}
+        >
           <form
-            className="flex flex-col gap-5"
+            className="flex flex-col gap-4"
             onSubmit={(e) => {
               e.preventDefault()
               submit()
             }}
           >
-            <p className="text-sm text-foreground">
+            <p className="text-sm text-secondary-foreground">
               {t('workspaceSettings.connect.picker.body', {
                 platform: platformName,
               })}
@@ -127,29 +131,28 @@ export function ConnectPicker({ connectionId }: { connectionId: string }) {
               </p>
             )}
 
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" asChild>
-                <Link to="/workspace-settings">
-                  {t('workspaceSettings.connect.picker.cancel')}
-                </Link>
-              </Button>
+            {/* The card's own buttons, under what they act on: the main one
+                black and first, the way out white. */}
+            <div className="flex gap-2">
               <Button
                 type="submit"
+                size="sm"
                 variant="defaultInverted"
                 disabled={!chosen || select.isPending}
                 loading={select.isPending}
               >
-                {/* Uppercased here rather than in the catalogue: the platform
-                    arrives as a proper noun, and the caps have to be in the
-                    text itself — never CSS — to survive copy/paste and a
-                    screen reader. */}
                 {t('workspaceSettings.connect.picker.submit', {
-                  platform: platformName.toUpperCase(),
+                  platform: platformName,
                 })}
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/workspace-settings">
+                  {t('workspaceSettings.connect.picker.cancel')}
+                </Link>
               </Button>
             </div>
           </form>
-        </SettingsCard>
+        </Card>
       )}
     </PickerFrame>
   )
@@ -190,7 +193,7 @@ function TargetRow({
       />
       <div
         className={cn(
-          'flex items-center gap-3 border border-border bg-primary px-4 py-3 min-w-0',
+          'flex items-center gap-3 rounded-md border border-border bg-primary px-4 py-3 min-w-0',
           'transition-colors hover:bg-secondary',
           'peer-checked:border-accent peer-checked:bg-secondary',
           'peer-focus-visible:outline-2 peer-focus-visible:outline-ring',
@@ -206,7 +209,9 @@ function TargetRow({
           <span className="truncate text-sm font-medium">{target.name}</span>
           <span className="flex min-w-0 items-center gap-2 text-xs text-tertiary-foreground">
             {kind && (
-              <span className="shrink-0 bg-tertiary px-1.5 py-0.5">{kind}</span>
+              <span className="shrink-0 rounded-sm bg-tertiary px-1.5 py-0.5">
+                {kind}
+              </span>
             )}
             {target.username && (
               <span className="truncate">@{target.username}</span>
@@ -257,8 +262,8 @@ function Explanation({ body }: { body: string }) {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col items-start gap-4">
-      <p className="text-sm">{body}</p>
-      <Button variant="outline" asChild>
+      <p className="text-sm text-secondary-foreground">{body}</p>
+      <Button size="sm" variant="outline" asChild>
         <Link to="/workspace-settings">
           {t('workspaceSettings.connect.picker.backToAccounts')}
         </Link>
@@ -270,11 +275,9 @@ function Explanation({ body }: { body: string }) {
 /**
  * The page chrome, shared by every state so nothing above the content moves.
  *
- * The title sits on its own line and centred, rather than in the header row
- * beside the back control. This screen is a single question with a single
- * answer — it has no document to head, no actions to sit opposite, and the
- * choice below it is centred too; a left-aligned title would be the only thing
- * on the page pulling to one side.
+ * The question is the page header's title, beside the way back, and the
+ * answer is a card under it at the column's full width — the app has no
+ * centred columns.
  */
 function PickerFrame({
   title,
@@ -288,6 +291,7 @@ function PickerFrame({
     <PageContainer variant="fullFlex">
       <div className="flex h-0 grow flex-col overflow-y-auto">
         <PageHeader
+          title={title}
           back={
             <Button
               variant="headerIcon"
@@ -301,10 +305,7 @@ function PickerFrame({
             </Button>
           }
         />
-        <div className="flex flex-col gap-6 px-3 pb-6 lg:px-6">
-          <h1 className="font-display text-center text-2xl leading-8 font-medium tracking-[-0.24px] text-primary-foreground">
-            {title}
-          </h1>
+        <div className="flex flex-col gap-3 px-3 pt-4 pb-6 lg:px-6">
           {children}
         </div>
       </div>

@@ -38,7 +38,7 @@ export function OutcomesSection({ view }: { view: OutcomesView }) {
 
   if (!goal) {
     return (
-      <Card capped title={t('analytics.outcomes.title')}>
+      <Card title={t('analytics.outcomes.title')}>
         <NotYet title={t('analytics.outcomes.noGoalTitle')}>
           {t('analytics.outcomes.noGoalBody')}
         </NotYet>
@@ -68,7 +68,6 @@ export function OutcomesSection({ view }: { view: OutcomesView }) {
 
   return (
     <Card
-      capped
       title={t('analytics.outcomes.title')}
       status={signalStatus(t, view.bestAvailableSignal)}
     >

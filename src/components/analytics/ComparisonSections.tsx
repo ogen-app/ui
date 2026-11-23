@@ -64,7 +64,7 @@ export function NowSection({
   // later.
   if (view.coverage.measured === 0) {
     return (
-      <Card capped title={t('analytics.now.title')} qualifier={window}>
+      <Card title={t('analytics.now.title')} qualifier={window}>
         <EmptyChart />
         <p className="text-[13px] text-secondary-foreground">
           {view.coverage.published === 0
@@ -115,7 +115,7 @@ export function NowSection({
         : reading.previousSeries
 
   return (
-    <Card capped title={t('analytics.now.title')} qualifier={window}>
+    <Card title={t('analytics.now.title')} qualifier={window}>
       <FigureGrid>
         {view.readings.map((r) => (
           <MeasureTile
@@ -327,7 +327,7 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
 
   if (rows.length < 2) {
     return (
-      <Card capped title={t('analytics.sideBySide.title')}>
+      <Card title={t('analytics.sideBySide.title')}>
         <NotYet title={t('analytics.sideBySide.nothingTitle')}>
           {t('analytics.sideBySide.nothingBody', {
             dimension: t(`analytics.sleeves.${view.dimension}` as const),
@@ -338,7 +338,7 @@ export function SideBySideSection({ view }: { view: SideBySideView }) {
   }
 
   return (
-    <Card capped title={t('analytics.sideBySide.title')} qualifier={copy.label}>
+    <Card title={t('analytics.sideBySide.title')} qualifier={copy.label}>
       <ul className="flex flex-col">
         <li className="flex items-center gap-3 border-b border-border pb-1.5 text-xs text-tertiary-foreground">
           <span className="flex-1">

@@ -72,7 +72,7 @@ export function QualitySection({ view }: { view: QualityView }) {
 
   if (posts.length === 0 || criteria.length === 0) {
     return (
-      <Card capped title={t('analytics.quality.title')}>
+      <Card title={t('analytics.quality.title')}>
         <ScopeNote scope="all-time" />
         <NotYet title={emptyTitle(t, view, posts.length, criteria.length)}>
           {emptyBody(t, view, posts.length, criteria.length)}
@@ -95,7 +95,7 @@ export function QualitySection({ view }: { view: QualityView }) {
   */
   if (posts.length < MIN_SCORED_POSTS) {
     return (
-      <Card capped title={t('analytics.quality.title')}>
+      <Card title={t('analytics.quality.title')}>
         <ScopeNote scope="all-time" />
         <NotYet
           title={t('analytics.quality.gateTitle', { count: posts.length })}
@@ -116,7 +116,6 @@ export function QualitySection({ view }: { view: QualityView }) {
 
   return (
     <Card
-      capped
       title={t('analytics.quality.title')}
       qualifier={t('analytics.quality.qualifier')}
       choice={{

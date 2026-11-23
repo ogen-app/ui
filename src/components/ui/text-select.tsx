@@ -4,6 +4,8 @@ import { cva } from 'class-variance-authority'
 import { cn } from '@/lib'
 import { ZIndex } from '@/config/zIndex.ts'
 import { CaretDownIcon, CaretUpIcon } from '@phosphor-icons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { ArrowDown01Icon } from '@hugeicons/core-free-icons'
 
 const popoverContentStyles =
   'bg-popover text-popover-foreground rounded-sm border-0 shadow-lg relative overflow-x-hidden overflow-y-auto'
@@ -44,6 +46,10 @@ const selectTriggerVariants = cva(
         // against the value. Matches the post quick-settings triggers.
         inline:
           'border-0 rounded-none bg-transparent p-0 shadow-none text-sm font-normal text-primary-foreground w-fit',
+        // A card's or a bar's dropdown, drawn as the outline `Button` with a
+        // chevron at its end: it is a control you press, not a field you fill.
+        button:
+          'border rounded-button bg-transparent px-3 shadow-none text-[13px]/4 text-primary-foreground w-fit hover:bg-quaternary hover:border-quaternary data-[state=open]:bg-quaternary data-[state=open]:border-quaternary',
       },
       size: {
         sm: 'h-8',
@@ -73,8 +79,11 @@ type CurrencySelectProps = {
   id?: string
   /** The trigger's accessible name, when no `<label>` points at its `id`. */
   ariaLabel?: string
-  variant?: 'default' | 'ghost' | 'primary' | 'inline' | null | undefined
+  variant?:
+    'default' | 'ghost' | 'primary' | 'inline' | 'button' | null | undefined
   size?: 'default' | 'sm' | 'lg'
+  /** Set back before the value, in the button variant: "Period  Last 28 days". */
+  lead?: string
 }
 
 function TextSelect({
@@ -88,15 +97,17 @@ function TextSelect({
   ariaLabel,
   variant = 'primary',
   size = 'lg',
+  lead,
 }: CurrencySelectProps) {
   // Borderless triggers keep the caret next to the value; field-shaped ones
   // push it to the far edge, where the rule underneath makes it read as a
   // control rather than as part of the text.
   const borderless = variant === 'inline' || variant === 'ghost'
+  const button = variant === 'button'
 
   // Left padding of each trigger variant, i.e. where its text starts.
   const triggerTextInset =
-    variant === 'inline' ? 0 : variant === 'ghost' ? 12 : 16
+    variant === 'inline' ? 0 : variant === 'ghost' || button ? 12 : 16
 
   return (
     <SelectPrimitive.Root
@@ -111,18 +122,33 @@ function TextSelect({
           selectTriggerVariants({ variant, size }),
           borderless
             ? 'justify-start gap-1.5 cursor-pointer'
-            : 'justify-between gap-3 pr-2 cursor-pointer',
+            : button
+              ? 'justify-between gap-2 cursor-pointer'
+              : 'justify-between gap-3 pr-2 cursor-pointer',
           className,
         )}
       >
         {/* The trigger is as wide as its column, not as wide as its value: a
             long option (a time-zone name, a full campaign title) trims to an
             ellipsis instead of pushing the caret out of the field. */}
+        {lead && (
+          <span className="shrink-0 font-normal text-tertiary-foreground">
+            {lead}
+          </span>
+        )}
         <SelectPrimitive.Value
           className="min-w-0 truncate text-left"
           placeholder={placeholder ?? 'Select...'}
         />
-        {borderless ? (
+        {button ? (
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            size={16}
+            strokeWidth={1.5}
+            className="ml-auto shrink-0 text-tertiary-foreground"
+            aria-hidden
+          />
+        ) : borderless ? (
           <CaretDownIcon className="size-3 shrink-0 text-tertiary-foreground" />
         ) : (
           <div className="w-8 h-8 shrink-0 flex justify-center items-center text-center relative">

@@ -51,12 +51,12 @@ export function WorkspaceOverviewView({
   const { t } = useTranslation()
 
   if (isPending) {
-    return <Skeleton className="h-96 w-full max-w-content" />
+    return <Skeleton className="h-96 w-full" />
   }
 
   if (isUnavailable) {
     return (
-      <Card capped title={t('analytics.now.title')}>
+      <Card title={t('analytics.now.title')}>
         <NotYet title={t('analytics.now.unavailableTitle')}>
           {t('analytics.now.unavailableBody')}
         </NotYet>
@@ -70,7 +70,7 @@ export function WorkspaceOverviewView({
   // broken when the truth is that it hasn't published yet.
   if (isEmpty) {
     return (
-      <Card capped title={t('analytics.now.title')}>
+      <Card title={t('analytics.now.title')}>
         {narrowedTo.length > 0 ? (
           <NotYet
             title={t('analytics.now.emptyNarrowedTitle', {
@@ -93,7 +93,7 @@ export function WorkspaceOverviewView({
   // leave the skeleton spinning, which is indistinguishable from a hung app.
   if (isError || !view) {
     return (
-      <Card capped title={t('analytics.now.title')}>
+      <Card title={t('analytics.now.title')}>
         <NotYet title={t('analytics.now.errorTitle')}>
           {t('analytics.now.errorBody')}
         </NotYet>
