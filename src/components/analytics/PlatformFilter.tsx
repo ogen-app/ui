@@ -74,7 +74,7 @@ export function PlatformFilter({
   return (
     <section
       className={cn(
-        'flex w-full max-w-content flex-wrap items-center gap-x-4 gap-y-3 rounded-lg bg-primary px-5 py-4',
+        'flex w-full flex-wrap items-center gap-x-4 gap-y-3 rounded-lg bg-primary px-5 py-4',
         className,
       )}
     >

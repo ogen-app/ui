@@ -320,10 +320,10 @@ type BrandRow = {
  * size of a word — the target is now the card, which is also the thing the eye
  * is already on when it finishes reading the rows.
  *
- * It is deliberately the same gesture as a `LibraryCard` one level down: a
+ * It is deliberately the same gesture as a library entry one level down: a
  * white block that lifts on hover, with a caret on the heading line.
  * Two levels of this screen open things the same way, so learning it once is
- * enough. Hover lifts rather than tints, for the reason `LibraryCard` gives.
+ * enough. Hover lifts rather than tints, as a door card does.
  */
 function SectionCard({
   section,

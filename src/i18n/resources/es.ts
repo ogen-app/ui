@@ -1216,9 +1216,10 @@ export const es: Translation = {
 
   series: {
     library: {
-      add: 'AÑADIR SERIE',
+      add: 'Añadir serie',
       addHint: 'Otra cosa que este espacio de trabajo hace una y otra vez.',
       writeYourOwn: 'Escribe la tuya',
+      writeYourOwnHint: 'Una serie propia, desde una página en blanco.',
       starterGroupTitle: 'Tres para empezar',
       starterGroupBody:
         'Cada una es un ejemplo trabajado de lo más difícil de inventar desde un formulario en blanco: la receta. Toma una y reescríbela hasta que sea tuya.',
@@ -4337,10 +4338,11 @@ export const es: Translation = {
         title: 'Elige qué conectar',
         body: 'Tu cuenta de {{platform}} gestiona más de un perfil. Elige en cuál debe publicar Ogen.',
         legend: 'Perfiles de {{platform}} disponibles',
-        submit: 'CONECTAR {{platform}}',
-        cancel: 'CANCELAR',
+        submit: 'Conectar {{platform}}',
+        cancel: 'Cancelar',
+        nothingTitle: 'Nada que conectar',
         back: 'Volver a Ajustes del espacio',
-        backToAccounts: 'VOLVER A AJUSTES DEL ESPACIO',
+        backToAccounts: 'Volver a Ajustes del espacio',
         expired:
           'Esta conexión ha caducado o ya se ha usado. Vuelve a empezar desde Ajustes del espacio.',
         empty: 'No hay nada en esta cuenta en lo que podamos publicar.',
@@ -5096,9 +5098,10 @@ export const es: Translation = {
       silentTitle: 'La plataforma todavía no ha dicho nada',
       silentBody:
         'Esta publicación ya ha salido. La plataforma no ha reportado ningún número sobre ella — eso suele tardar unas horas.',
+      reading: 'Cómo leerlo',
       readingTotal: 'Total acumulado',
-      readingHour: '1H',
-      readingDay: '1D',
+      readingHour: 'Por hora',
+      readingDay: 'Por día',
       noHistoryLabel: 'No hay historial registrado de esta publicación',
       noHistoryBasis:
         '{{measure}} se recogió como total. No se registró cómo llegó, así que no hay forma que dibujar.',
@@ -5389,6 +5392,7 @@ export const es: Translation = {
     media: {
       /** The shut media card's one action. */
       add: 'Añadir medios',
+      addMore: 'Añadir más',
       fromAssets: {
         tile: 'Desde Recursos',
         title: 'Añadir imágenes desde Recursos',
@@ -5507,14 +5511,13 @@ export const es: Translation = {
     },
 
     performance: {
+      title: 'Analíticas',
       unlinked: {
-        title: 'Nada conecta esta publicación con lo que se publicó',
-        body: 'Salió a mano, así que no podemos encontrarla en la plataforma ni tenemos cifras suyas. Añadir el enlace conecta las dos — a partir de ahí se mide como cualquier otra.',
-        action: 'AÑADIR ENLACE',
+        body: 'Nada conecta esta publicación con lo que se publicó. Salió a mano, así que no podemos encontrarla en la plataforma ni tenemos cifras suyas. Añadir el enlace conecta las dos — a partir de ahí se mide como cualquier otra.',
+        action: 'Añadir enlace',
       },
       waiting: {
-        title: 'Las cifras están en camino',
-        body: 'Esta publicación ya salió y aún no han vuelto las primeras cifras. Suelen llegar en unas horas; esto se rellenará solo.',
+        body: 'Las cifras están en camino. Esta publicación ya salió y aún no han vuelto las primeras cifras. Suelen llegar en unas horas; esto se rellenará solo.',
       },
       unavailable: {
         body: 'Las analíticas no están activadas en esta instalación, así que no se recogen cifras de las publicaciones.',
@@ -6160,14 +6163,8 @@ export const es: Translation = {
   brand: {
     selection: {
       select: 'Seleccionar «{{name}}»',
-      voice_one: '{{formatted}} voz seleccionada',
-      voice_other: '{{formatted}} voces seleccionadas',
-      audience_one: '{{formatted}} audiencia seleccionada',
-      audience_other: '{{formatted}} audiencias seleccionadas',
       fact_one: '{{formatted}} dato seleccionado',
       fact_other: '{{formatted}} datos seleccionados',
-      series_one: '{{formatted}} serie seleccionada',
-      series_other: '{{formatted}} series seleccionadas',
       selectAll: 'Seleccionar todos los datos mostrados',
       clearAll: 'Quitar la selección',
       clear: 'QUITAR',
@@ -6753,8 +6750,10 @@ export const es: Translation = {
     },
 
     voices: {
-      writeFromScratch: 'ESCRIBIR UNA DESDE CERO',
-      add: 'AÑADIR VOZ',
+      writeFromScratch: 'Escribir una desde cero',
+      writeFromScratchHint:
+        'Empieza con una página en blanco y define tú sus reglas.',
+      add: 'Añadir voz',
       addHint:
         'Otra más, para las publicaciones a las que ninguna de las anteriores les va bien.',
       starterGroupTitle: 'Empieza con una plantilla',
@@ -6850,10 +6849,7 @@ export const es: Translation = {
         cancel: 'CANCELAR',
         addIt: 'AÑADIRLO',
         done: 'LISTO',
-        moreSampleOptions: 'Más opciones de ejemplos',
         resetSamples: 'Restablecer ejemplos',
-        bulkUpload: 'Carga masiva',
-        bulkUploadSoon: 'Próximamente',
         rules: 'Reglas',
         rulesHint:
           'Lo que un ejemplo no puede decir por sí solo. Una publicación pegada enseña el registro; no puede prometer que las treinta siguientes se abstengan de los signos de exclamación.',
@@ -6913,8 +6909,9 @@ export const es: Translation = {
     },
 
     audiences: {
-      describeYourself: 'DESCRIBIR UNA TÚ MISMO',
-      add: 'AÑADIR AUDIENCIA',
+      describeYourself: 'Describir una tú mismo',
+      describeYourselfHint: 'Di quiénes son con tus propias palabras.',
+      add: 'Añadir audiencia',
       addHint:
         'Otra más, para las publicaciones a las que no van dirigidas las demás.',
       starterGroupTitle: 'Empieza con una plantilla',

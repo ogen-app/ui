@@ -63,7 +63,7 @@ export function AnalyticsSurface({
   if (state.isUnavailable) {
     return (
       <Wrapper>
-        <Card capped title={t('analytics.surface.title')}>
+        <Card title={t('analytics.surface.title')}>
           <NotYet title={t('analytics.surface.unavailableTitle')}>
             {t('analytics.surface.unavailableBody')}
           </NotYet>
@@ -75,7 +75,7 @@ export function AnalyticsSurface({
   if (state.isError || !state.data) {
     return (
       <Wrapper>
-        <Card capped title={t('analytics.surface.title')}>
+        <Card title={t('analytics.surface.title')}>
           <NotYet title={t('analytics.surface.errorTitle')}>
             {scope.kind === 'campaign'
               ? t('analytics.surface.errorBodyCampaign')
@@ -109,7 +109,7 @@ export function AnalyticsSurface({
             would be counted, and a scope line that appears only once figures
             arrive is one nobody knows they can change. */}
         {scopeBar}
-        <Card capped title={t('analytics.now.title')}>
+        <Card title={t('analytics.now.title')}>
           <NotYet title={t('analytics.surface.coldTitle')}>
             {now.coverage.published === 0
               ? t('analytics.surface.coldNothingPublished')
@@ -141,10 +141,10 @@ function SurfaceSkeleton() {
     <Wrapper>
       {/* The scope bar's own height, so the cards don't jump up the page when
           the marks arrive. */}
-      <Skeleton className="h-[4.5rem] w-full max-w-content" />
-      <Skeleton className="h-72 w-full max-w-content" />
-      <Skeleton className="h-56 w-full max-w-content" />
-      <Skeleton className="h-48 w-full max-w-content" />
+      <Skeleton className="h-[4.5rem] w-full" />
+      <Skeleton className="h-72 w-full" />
+      <Skeleton className="h-56 w-full" />
+      <Skeleton className="h-48 w-full" />
     </Wrapper>
   )
 }

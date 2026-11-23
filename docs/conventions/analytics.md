@@ -23,7 +23,11 @@ keep it accurate when these rules change.
   the demo is off by default even in dev, has to be asked for, folds away
   entirely without `VITE_DEV_TOOLS=1`, and is announced in the corner for as
   long as it is on — invented figures about a workspace's own posts are
-  indistinguishable from real ones, and somebody would act on them.
+  indistinguishable from real ones, and somebody would act on them. The same
+  mode answers a single post's `GET /api/posts/:id/analytics` for any published
+  post, linked or not, and fills in the per-measure history no endpoint serves
+  yet (`demoPostHistory`), so the post's measure cards and their reading
+  dropdown can be looked at.
 
 - **Charts are hand-rolled SVG, except the two full-card plots.**
   `components/analytics/charts.tsx` draws sparklines, heatmaps, the decay
@@ -38,6 +42,11 @@ keep it accurate when these rules change.
   `useMeasuredWidth`, not `ParentSize`, which never observed a plot mounted
   after the first paint and left every switched measure blank. Sparklines keep
   the stretched viewBox; they have no pointer and nothing round.
+
+- **Analytics cards and bars take the column's full width** (2026-11-23):
+  no `capped`, no `max-w-content`, on the dashboards and on a post's
+  analytics alike. Their dropdowns — a card's `choice`, the bars' `Picker` —
+  are `TextSelect`'s `button` variant.
 
 - **A measure is drawn in one shape, decided in one place.** `drawnSeries`
   (`analytics/format.ts`) says whether a series is accumulated, and both the

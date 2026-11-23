@@ -837,7 +837,10 @@ function PostEditorSurface({
               <div className="empty:hidden">
                 <PostFailureNotice post={doc} />
               </div>
-              <div className="bg-primary px-10 py-8">
+              {/* The writing surface: no header — the title is the post's own —
+                  but the cards' border and padding, so its edges line up
+                  with the Media and First comment cards under it. */}
+              <div className="rounded-md border border-border bg-primary p-6">
                 <div className="flex flex-col">
                   <div className="mb-4 flex flex-col">
                     <div className="relative">

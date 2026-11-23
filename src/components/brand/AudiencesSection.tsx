@@ -1,21 +1,8 @@
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card } from '@/components/ui/card'
-import { LibrarySelectionBar } from '@/components/brand/librarySelection'
-import {
-  useLibrarySelection,
-  type LibrarySelection,
-} from '@/components/brand/useLibrarySelection'
+import { Card, NewCard } from '@/components/ui/card'
 import { brandSection } from '@/lib/brandSections'
 import { usageLine } from './format'
-import {
-  AddEntryCard,
-  BrandLibrary,
-  LibraryEntry,
-  OriginLine,
-  PlainActionCard,
-  StarterCard,
-} from './shell'
+import { BrandLibrary, LibraryEntry, OriginLine, StarterCard } from './shell'
 import { AUDIENCE_STARTERS, audienceStarterCopy } from './starters'
 import type { BrandAudience } from './types'
 
@@ -57,45 +44,35 @@ export function AudiencesSection({
 }) {
   const { t } = useTranslation()
   const empty = audiences.length === 0
-  // Ticks for the assistant to read (CON-472); none while the list is empty.
-  const selection = useLibrarySelection(
-    'audience',
-    useMemo(() => audiences.map((e) => e.id), [audiences]),
-  )
 
   return (
-    <>
-      <BrandLibrary
-        add={
-          empty ? (
-            <PlainActionCard
-              label={t('brand.audiences.describeYourself')}
-              onClick={onAdd}
-            />
-          ) : (
-            <AddEntryCard
-              label={t('brand.audiences.add')}
-              hint={t('brand.audiences.addHint')}
-              onClick={onAdd}
-            />
-          )
-        }
-      >
-        {empty ? (
-          <AudiencesEmpty onStart={onStart} />
+    <BrandLibrary
+      add={
+        empty ? (
+          <NewCard
+            capped
+            label={t('brand.audiences.describeYourself')}
+            hint={t('brand.audiences.describeYourselfHint')}
+            onClick={onAdd}
+          />
         ) : (
-          audiences.map((audience) => (
-            <AudienceCard
-              key={audience.id}
-              audience={audience}
-              onOpen={onOpen}
-              selection={selection}
-            />
-          ))
-        )}
-      </BrandLibrary>
-      <LibrarySelectionBar kind="audience" selection={selection} />
-    </>
+          <NewCard
+            capped
+            label={t('brand.audiences.add')}
+            hint={t('brand.audiences.addHint')}
+            onClick={onAdd}
+          />
+        )
+      }
+    >
+      {empty ? (
+        <AudiencesEmpty onStart={onStart} />
+      ) : (
+        audiences.map((audience) => (
+          <AudienceCard key={audience.id} audience={audience} onOpen={onOpen} />
+        ))
+      )}
+    </BrandLibrary>
   )
 }
 
@@ -134,22 +111,13 @@ function AudiencesEmpty({
 function AudienceCard({
   audience,
   onOpen,
-  selection,
 }: {
-  selection?: LibrarySelection
   audience: BrandAudience
   onOpen?: (id: string) => void
 }) {
   const { t } = useTranslation()
   return (
     <LibraryEntry
-      tick={
-        selection && {
-          checked: selection.ticked.has(audience.id),
-          shown: selection.ticked.size > 0,
-          onToggle: () => selection.toggle(audience.id),
-        }
-      }
       onOpen={onOpen ? () => onOpen(audience.id) : undefined}
       name={audience.name}
       line={audience.who}

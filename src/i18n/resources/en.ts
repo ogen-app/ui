@@ -1463,9 +1463,10 @@ export const en = {
    */
   series: {
     library: {
-      add: 'ADD SERIES',
+      add: 'Add series',
       addHint: 'Something else this workspace makes again and again.',
       writeYourOwn: 'Write your own',
+      writeYourOwnHint: 'A series of your own, from a blank page.',
       starterGroupTitle: 'Three to start from',
       starterGroupBody:
         'Each one is a worked example of the part that is hard to invent from a blank form — the recipe. Take one, rewrite it until it is yours.',
@@ -5124,12 +5125,13 @@ export const en = {
         title: 'Choose what to connect',
         body: 'Your {{platform}} account manages more than one profile. Pick the one Ogen should publish to.',
         legend: 'Available {{platform}} profiles',
-        submit: 'CONNECT {{platform}}',
-        cancel: 'CANCEL',
+        submit: 'Connect {{platform}}',
+        cancel: 'Cancel',
+        nothingTitle: 'Nothing to connect',
         // Sentence case on purpose: this one is only ever read aloud, as the
         // label of the header's icon button.
         back: 'Back to Workspace Settings',
-        backToAccounts: 'BACK TO WORKSPACE SETTINGS',
+        backToAccounts: 'Back to Workspace Settings',
         expired:
           'This connection expired or was already used. Start the connection again from Workspace Settings.',
         empty: 'There’s nothing on this account we can publish to.',
@@ -5968,9 +5970,10 @@ export const en = {
       silentTitle: 'Nothing back from the platform yet',
       silentBody:
         "This post is out. The platform hasn't reported any numbers for it — that usually takes a few hours.",
+      reading: 'How to read it',
       readingTotal: 'Running total',
-      readingHour: '1H',
-      readingDay: '1D',
+      readingHour: 'Per hour',
+      readingDay: 'Per day',
       noHistoryLabel: 'No history recorded for this post',
       noHistoryBasis:
         '{{measure}} was collected as a total. Nothing recorded how it arrived, so there is no shape to draw.',
@@ -6400,8 +6403,10 @@ export const en = {
      * the refusals the copy can meet.
      */
     media: {
-      /** The shut media card's one action. */
+      /** The media card's header button, and its first add tile. */
       add: 'Add media',
+      /** The add tile once something is attached. */
+      addMore: 'Add more',
       fromAssets: {
         tile: 'From Assets',
         title: 'Add images from Assets',
@@ -6552,14 +6557,13 @@ export const en = {
      * clock, and one is a fact about the deployment that no reader can act on.
      */
     performance: {
+      title: 'Analytics',
       unlinked: {
-        title: 'Nothing links this post to what was published',
-        body: 'It went out by hand, so we have no way to find it on the platform and no figures for it. Adding the post link connects the two — from then on it is measured like any other.',
-        action: 'ADD POST LINK',
+        body: 'Nothing links this post to what was published. It went out by hand, so we have no way to find it on the platform and no figures for it. Adding the post link connects the two — from then on it is measured like any other.',
+        action: 'Add post link',
       },
       waiting: {
-        title: 'Numbers are on their way',
-        body: 'This post has gone out and the first figures have not come back yet. They usually arrive within a few hours; this will fill in on its own.',
+        body: 'Numbers are on their way. This post has gone out and the first figures have not come back yet. They usually arrive within a few hours; this will fill in on its own.',
       },
       unavailable: {
         body: 'Analytics is not switched on for this deployment, so no figures are collected for published posts.',
@@ -7530,14 +7534,8 @@ export const en = {
      */
     selection: {
       select: 'Select “{{name}}”',
-      voice_one: '{{formatted}} voice selected',
-      voice_other: '{{formatted}} voices selected',
-      audience_one: '{{formatted}} audience selected',
-      audience_other: '{{formatted}} audiences selected',
       fact_one: '{{formatted}} fact selected',
       fact_other: '{{formatted}} facts selected',
-      series_one: '{{formatted}} series selected',
-      series_other: '{{formatted}} series selected',
       selectAll: 'Select every fact shown',
       clearAll: 'Clear the selection',
       clear: 'CLEAR',
@@ -8194,8 +8192,10 @@ export const en = {
 
     /** The cast — `VoicesSection.tsx`. */
     voices: {
-      writeFromScratch: 'WRITE ONE FROM SCRATCH',
-      add: 'ADD VOICE',
+      writeFromScratch: 'Write one from scratch',
+      writeFromScratchHint:
+        'Start from a blank page and set its rules yourself.',
+      add: 'Add voice',
       addHint: 'Another one, for the posts none of the above are right for.',
       starterGroupTitle: 'Start from a template',
       starterGroupBody:
@@ -8305,10 +8305,7 @@ export const en = {
         cancel: 'CANCEL',
         addIt: 'ADD IT',
         done: 'DONE',
-        moreSampleOptions: 'More sample options',
         resetSamples: 'Reset samples',
-        bulkUpload: 'Bulk upload',
-        bulkUploadSoon: 'Coming soon',
         rules: 'Rules',
         rulesHint:
           'What a sample cannot say for itself. A pasted post shows the register; it cannot promise that the next thirty stay off the exclamation marks.',
@@ -8381,8 +8378,9 @@ export const en = {
 
     /** Who the content is for — `AudiencesSection.tsx`. */
     audiences: {
-      describeYourself: 'DESCRIBE ONE YOURSELF',
-      add: 'ADD AUDIENCE',
+      describeYourself: 'Describe one yourself',
+      describeYourselfHint: 'Say who they are in your own words.',
+      add: 'Add audience',
       addHint: 'Another one, for the posts the others are not written to.',
       starterGroupTitle: 'Start from a template',
       starterGroupBody:

@@ -1,22 +1,9 @@
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card } from '@/components/ui/card'
-import { LibrarySelectionBar } from '@/components/brand/librarySelection'
-import {
-  useLibrarySelection,
-  type LibrarySelection,
-} from '@/components/brand/useLibrarySelection'
+import { StarIcon } from '@hugeicons/core-free-icons'
+import { Card, NewCard } from '@/components/ui/card'
 import { brandSection } from '@/lib/brandSections'
-import { defaultVoiceLabel, rulesLine, sampleCount, usageLine } from './format'
-import {
-  AddEntryCard,
-  BrandLibrary,
-  DefaultStar,
-  LibraryEntry,
-  OriginLine,
-  PlainActionCard,
-  StarterCard,
-} from './shell'
+import { rulesLine, sampleCount, usageLine } from './format'
+import { BrandLibrary, LibraryEntry, OriginLine, StarterCard } from './shell'
 import { VOICE_STARTERS, voiceStarterCopy } from './starters'
 import { MIN_VOICE_SAMPLES, type BrandVoice } from './types'
 
@@ -60,48 +47,38 @@ export function VoicesSection({
 }) {
   const { t } = useTranslation()
   const empty = voices.length === 0
-  // Ticks for the assistant to read (CON-472); none while the list is empty.
-  const selection = useLibrarySelection(
-    'voice',
-    useMemo(() => voices.map((e) => e.id), [voices]),
-  )
 
   return (
-    <>
-      <BrandLibrary
-        add={
-          empty ? (
-            // The blank form, and it keeps the same slot the add card has when
-            // there are voices: whatever else the screen is offering, the way to
-            // write one yourself is the last card on the page.
-            <PlainActionCard
-              label={t('brand.voices.writeFromScratch')}
-              onClick={onAdd}
-            />
-          ) : (
-            <AddEntryCard
-              label={t('brand.voices.add')}
-              hint={t('brand.voices.addHint')}
-              onClick={onAdd}
-            />
-          )
-        }
-      >
-        {empty ? (
-          <VoicesEmpty onStart={onStart} />
+    <BrandLibrary
+      add={
+        empty ? (
+          // The blank form, and it keeps the same slot the add card has when
+          // there are voices: whatever else the screen is offering, the way to
+          // write one yourself is the last card on the page.
+          <NewCard
+            capped
+            label={t('brand.voices.writeFromScratch')}
+            hint={t('brand.voices.writeFromScratchHint')}
+            onClick={onAdd}
+          />
         ) : (
-          voices.map((voice) => (
-            <VoiceCard
-              key={voice.id}
-              voice={voice}
-              onOpen={onOpen}
-              selection={selection}
-            />
-          ))
-        )}
-      </BrandLibrary>
-      <LibrarySelectionBar kind="voice" selection={selection} />
-    </>
+          <NewCard
+            capped
+            label={t('brand.voices.add')}
+            hint={t('brand.voices.addHint')}
+            onClick={onAdd}
+          />
+        )
+      }
+    >
+      {empty ? (
+        <VoicesEmpty onStart={onStart} />
+      ) : (
+        voices.map((voice) => (
+          <VoiceCard key={voice.id} voice={voice} onOpen={onOpen} />
+        ))
+      )}
+    </BrandLibrary>
   )
 }
 
@@ -181,9 +158,7 @@ function VoicesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
 function VoiceCard({
   voice,
   onOpen,
-  selection,
 }: {
-  selection?: LibrarySelection
   voice: BrandVoice
   onOpen?: (id: string) => void
 }) {
@@ -203,23 +178,21 @@ function VoiceCard({
 
   return (
     <LibraryEntry
-      tick={
-        selection && {
-          checked: selection.ticked.has(voice.id),
-          shown: selection.ticked.size > 0,
-          onToggle: () => selection.toggle(voice.id),
-        }
-      }
       onOpen={onOpen ? () => onOpen(voice.id) : undefined}
       name={voice.name}
-      mark={
-        voice.isDefault && (
-          <DefaultStar
-            backed={voice.samples.length >= MIN_VOICE_SAMPLES}
-            label={defaultVoiceLabel(t, voice)}
-            className="text-sm leading-5 text-secondary-foreground"
-          />
-        )
+      // The star is green once the voice has the samples behind it that make
+      // it worth being the default, grey until then.
+      status={
+        voice.isDefault
+          ? {
+              label: t('brand.shell.default'),
+              icon: StarIcon,
+              tone:
+                voice.samples.length >= MIN_VOICE_SAMPLES
+                  ? 'positive'
+                  : 'neutral',
+            }
+          : undefined
       }
       line={voice.whenToUse}
       // The sample carries the card: it is the one thing that tells one voice
