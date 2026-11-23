@@ -6,6 +6,7 @@ import { i18next, loadLocaleResources } from '@/i18n'
 import type { IdeaBody } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { InsightsPanel, type PanelState } from './InsightsPanel'
+import { WhatItCovers } from './WhatItCovers'
 
 const verdicts = vi.hoisted(() => ({ fn: vi.fn() }))
 vi.mock('@/services/api/ideas', async (actual) => ({
@@ -53,46 +54,62 @@ const lens = (over: Partial<AssetAnalysis> = {}): AssetAnalysis => ({
 function renderPanel(
   state: PanelState,
   l: AssetAnalysis | undefined,
-  onRetry = () => {},
+  {
+    part = 'ideas',
+    onRetry = () => {},
+  }: { part?: 'ideas' | 'summary'; onRetry?: () => void } = {},
 ) {
   return renderWithProviders(
-    <InsightsPanel state={state} lens={l} onRetry={onRetry} retrying={false} />,
+    <InsightsPanel
+      state={state}
+      part={part}
+      lens={l}
+      onRetry={onRetry}
+      retrying={false}
+    />,
   )
 }
 
+/** The card's own answers, always on it. */
+const answers = (title: string) =>
+  screen.getByRole('group', { name: `Answer “${title}”` })
+
 describe('InsightsPanel', () => {
-  it('reads a campaign lens: fit, a summary at rest, mentions by kind', async () => {
-    await renderPanel('ready', lens({ ideas: [idea(1), idea(2)] }))
-    expect(screen.getByText('Read for Spring launch')).toBeInTheDocument()
+  it('reads a campaign lens in Summary: fit, the lead, the rest on request', async () => {
+    await renderPanel('ready', lens({ ideas: [idea(1), idea(2)] }), {
+      part: 'summary',
+    })
+    expect(screen.getByText('Why it fits')).toBeInTheDocument()
     expect(screen.getByText('Settles the launch date.')).toBeInTheDocument()
-    // At rest: the lead paragraph only, the rest a click away.
+    // Folded to its lead, the key points under it.
     expect(screen.getByText('First paragraph.')).toBeInTheDocument()
     expect(screen.queryByText('Second paragraph.')).not.toBeInTheDocument()
-    expect(screen.queryByText('Point one')).not.toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { name: '2 post ideas' }),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Point one')).toBeInTheDocument()
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Read the whole summary' }),
+    )
+    expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    // The ideas are the other card's, what it covers the side column's.
+    expect(screen.queryByText('Idea 1')).not.toBeInTheDocument()
+    expect(screen.queryByText('Organisations')).not.toBeInTheDocument()
+  })
+
+  it('names what a reading covers by kind, as text', async () => {
+    renderWithProviders(<WhatItCovers lens={lens()} />)
     // Mentions are text, grouped under their kind — no tooltip.
-    expect(screen.getByText('Organisations')).toBeInTheDocument()
+    expect(await screen.findByText('Organisations')).toBeInTheDocument()
     expect(screen.getByText('Acme')).not.toHaveAttribute('title')
   })
 
-  it('reads the full summary in place, and folds it back', async () => {
-    await renderPanel('ready', lens())
-    const more = screen.getByRole('button', { name: /Read the full summary/ })
-    expect(more).toHaveAttribute('aria-expanded', 'false')
-    fireEvent.click(more)
-    expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
-    expect(screen.getByText('Point one')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /Show less/ }))
-    expect(screen.queryByText('Second paragraph.')).not.toBeInTheDocument()
-  })
-
-  it('offers no "read more" when the lead already says everything', async () => {
-    await renderPanel('ready', lens({ summary: 'Short.', key_points: [] }))
-    expect(
-      screen.queryByRole('button', { name: /Read the full summary/ }),
-    ).not.toBeInTheDocument()
+  it('lists the ideas in Ideas, and not the summary', async () => {
+    await renderPanel('ready', lens({ ideas: [idea(1), idea(2)] }))
+    expect(screen.getByText('Idea 1')).toBeInTheDocument()
+    expect(screen.queryByText('First paragraph.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Organisations')).not.toBeInTheDocument()
   })
 
   it('shows every idea, hides the ones answered no, and opens one in place', async () => {
@@ -101,9 +118,6 @@ describe('InsightsPanel', () => {
       idea(8, { verdict: 'no' }),
     ]
     await renderPanel('ready', lens({ ideas }))
-    expect(
-      screen.getByRole('heading', { name: '7 post ideas' }),
-    ).toBeInTheDocument()
     // Every idea at once — no fold after the fifth — and no link above them.
     expect(screen.getByText('Idea 7')).toBeInTheDocument()
     expect(screen.queryByText('Idea 8')).not.toBeInTheDocument()
@@ -132,8 +146,9 @@ describe('InsightsPanel', () => {
     expect(
       screen.getByRole('button', { name: '2 On the desk' }),
     ).toBeInTheDocument()
+    // A pile with nothing in it is left out (the cards' own answers stay).
     expect(
-      screen.queryByRole('button', { name: /In the drawer/ }),
+      screen.queryByRole('button', { name: /^\d+ In the drawer$/ }),
     ).not.toBeInTheDocument()
     expect(screen.queryByText('Idea 4')).not.toBeInTheDocument()
 
@@ -165,7 +180,7 @@ describe('InsightsPanel', () => {
     await renderPanel(
       'failed',
       lens({ status: 'failed', failure_code: 'model_unavailable' }),
-      onRetry,
+      { onRetry },
     )
     expect(
       screen.getByText('The analysis model could not be reached.'),
@@ -193,6 +208,7 @@ describe('InsightsPanel', () => {
     await renderWithProviders(
       <InsightsPanel
         state="empty"
+        part="ideas"
         lens={lens({ summary: '' })}
         authored
         onOpenSource={onOpenSource}
@@ -215,7 +231,7 @@ describe('InsightsPanel', () => {
 
   it('offers to analyse a never-analysed asset now', async () => {
     const onRetry = vi.fn()
-    await renderPanel('none', undefined, onRetry)
+    await renderPanel('none', undefined, { onRetry })
     fireEvent.click(screen.getByRole('button', { name: /analyse now/i }))
     expect(onRetry).toHaveBeenCalledOnce()
   })
@@ -224,9 +240,10 @@ describe('InsightsPanel', () => {
     await renderPanel(
       'ready',
       lens({ summary: '## Small models **win**\n\nThe position.' }),
+      { part: 'summary' },
     )
     fireEvent.click(
-      screen.getByRole('button', { name: /Read the full summary/ }),
+      screen.getByRole('button', { name: 'Read the whole summary' }),
     )
     expect(
       screen.getByRole('heading', { name: 'Small models win' }),
@@ -242,7 +259,7 @@ describe('InsightsPanel', () => {
   })
 
   it('keeps a reading on screen while it is read again', async () => {
-    await renderPanel('ready', lens({ status: 'running' }))
+    await renderPanel('ready', lens({ status: 'running' }), { part: 'summary' })
     expect(screen.getByText(/Re-reading for Spring launch/)).toBeInTheDocument()
     expect(screen.getByText('First paragraph.')).toBeInTheDocument()
   })
@@ -251,16 +268,17 @@ describe('InsightsPanel', () => {
     await renderPanel(
       'ready',
       lens({ summary: 'Lead with **the chart**.\n\n- one\n- two' }),
+      { part: 'summary' },
     )
-    // The lead keeps its own marks at rest.
     expect(screen.getByText('the chart').tagName).toBe('STRONG')
+    expect(screen.queryByText('two')).not.toBeInTheDocument()
     fireEvent.click(
-      screen.getByRole('button', { name: /Read the full summary/ }),
+      screen.getByRole('button', { name: 'Read the whole summary' }),
     )
     expect(screen.getByText('two').tagName).toBe('LI')
   })
 
-  it('shows page references only in an opened idea, merged and sorted', async () => {
+  it('cites its places on the card, and merges them in the opened one', async () => {
     await renderPanel(
       'ready',
       lens({
@@ -269,7 +287,8 @@ describe('InsightsPanel', () => {
         ],
       }),
     )
-    expect(screen.queryByText('pp. 55–59')).not.toBeInTheDocument()
+    // Closed, the line under it names the places, with no document to name.
+    expect(screen.queryByText('Open source')).not.toBeInTheDocument()
     fireEvent.click(screen.getByText('Idea 1'))
     expect(screen.getByText('pp. 55–59')).toBeInTheDocument()
     expect(
@@ -277,7 +296,7 @@ describe('InsightsPanel', () => {
     ).toBeInTheDocument()
   })
 
-  it('orders the ideas best fit first, each with its score and verdict', async () => {
+  it('orders the ideas best fit first, each with its ring and its answer', async () => {
     await renderPanel(
       'ready',
       lens({
@@ -299,9 +318,19 @@ describe('InsightsPanel', () => {
       screen.getByRole('img', { name: 'Fit 88 of 100' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Not scored' })).toBeInTheDocument()
-    // On the desk has a mark now, not only the answered.
-    expect(screen.getAllByRole('img', { name: 'On the desk' })).toHaveLength(2)
-    expect(screen.getByRole('img', { name: 'Making' })).toBeInTheDocument()
+    // The answer given is pressed on the card; the others are not.
+    expect(
+      within(answers('Idea 3')).getByRole('button', {
+        name: 'Making',
+        pressed: true,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      within(answers('Idea 1')).getByRole('button', {
+        name: 'Making',
+        pressed: false,
+      }),
+    ).toBeInTheDocument()
   })
 
   it('explains the score, heaviest criterion first, in an opened idea', async () => {
@@ -347,29 +376,29 @@ describe('InsightsPanel', () => {
     expect(screen.getByText('Launch')).toBeInTheDocument()
   })
 
-  it('answers an idea in place, and asks when for the drawer', async () => {
+  it('answers an idea from its card, and asks when for the drawer', async () => {
     verdicts.fn.mockReset().mockResolvedValue(undefined)
     await renderPanel('ready', lens({ ideas: [idea(1), idea(2)] }))
-    fireEvent.click(screen.getByText('Idea 1'))
-    const group = screen.getByRole('group', { name: 'Answer this idea' })
 
-    await userEvent.click(within(group).getByRole('button', { name: /Making/ }))
+    await userEvent.click(
+      within(answers('Idea 1')).getByRole('button', { name: 'Making' }),
+    )
     expect(verdicts.fn).toHaveBeenCalledWith('i1', 'yes', null)
 
     await userEvent.click(
-      within(group).getByRole('button', { name: /In the drawer/ }),
+      within(answers('Idea 2')).getByRole('button', { name: 'In the drawer' }),
     )
     await userEvent.click(
       await screen.findByRole('menuitem', { name: 'Ask me in a week' }),
     )
     expect(verdicts.fn).toHaveBeenLastCalledWith(
-      'i1',
+      'i2',
       'later',
       expect.any(String),
     )
   })
 
-  it('holds the answer still while one is on its way', async () => {
+  it('ignores a second answer while one is on its way', async () => {
     let settle: (value?: unknown) => void = () => {}
     verdicts.fn
       .mockReset()
@@ -378,22 +407,18 @@ describe('InsightsPanel', () => {
       )
       .mockResolvedValue(undefined)
     await renderPanel('ready', lens({ ideas: [idea(1)] }))
-    fireEvent.click(screen.getByText('Idea 1'))
-    const group = screen.getByRole('group', { name: 'Answer this idea' })
+    const group = answers('Idea 1')
 
-    await userEvent.click(within(group).getByRole('button', { name: /Making/ }))
-    expect(
-      within(group).getByRole('button', { name: /^Set aside$/ }),
-    ).toBeDisabled()
-    fireEvent.click(within(group).getByRole('button', { name: /^Set aside$/ }))
-    expect(verdicts.fn).toHaveBeenCalledTimes(1)
+    fireEvent.click(within(group).getByRole('button', { name: 'Making' }))
+    // A second answer racing the first could land first (`useAnswerIdea`).
+    fireEvent.click(within(group).getByRole('button', { name: 'Set aside' }))
+    await waitFor(() => expect(verdicts.fn).toHaveBeenCalledTimes(1))
 
     settle()
     await waitFor(() =>
-      expect(
-        within(group).getByRole('button', { name: /^Set aside$/ }),
-      ).not.toBeDisabled(),
+      expect(verdicts.fn).toHaveBeenCalledWith('i1', 'yes', null),
     )
+    expect(verdicts.fn).toHaveBeenCalledTimes(1)
   })
 
   it("names an answered idea's verdict and offers the way back", async () => {
@@ -451,7 +476,7 @@ describe('InsightsPanel in Spanish', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('Referencia')).toBeInTheDocument()
     expect(
-      screen.getByRole('group', { name: 'Responder a esta idea' }),
+      screen.getByRole('group', { name: 'Responder a «Idea 1»' }),
     ).toBeInTheDocument()
     // The English a literal would have left behind.
     expect(screen.queryByText(/Why it scores/)).not.toBeInTheDocument()
