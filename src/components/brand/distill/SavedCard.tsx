@@ -28,9 +28,7 @@ export function SavedCard() {
       onDismiss={() => setSaved(null)}
       capped
     >
-      <p className="text-sm text-secondary-foreground">
-        {savedSentence(t, saved, i18n.language)}
-      </p>
+      <p className="text-sm">{savedSentence(t, saved, i18n.language)}</p>
     </Card>
   )
 }

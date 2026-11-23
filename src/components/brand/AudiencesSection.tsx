@@ -34,8 +34,11 @@ export function AudiencesSection({
   onAdd,
   onOpen,
   onStart,
+  usedBy,
 }: {
   audiences: BrandAudience[]
+  /** Each audience's "Chosen by …" line (`useUsedBy`), once the campaigns load. */
+  usedBy?: Map<string, string>
   /** Describe one from nothing. */
   onAdd?: () => void
   onOpen?: (id: string) => void
@@ -69,7 +72,12 @@ export function AudiencesSection({
         <AudiencesEmpty onStart={onStart} />
       ) : (
         audiences.map((audience) => (
-          <AudienceCard key={audience.id} audience={audience} onOpen={onOpen} />
+          <AudienceCard
+            key={audience.id}
+            audience={audience}
+            usedBy={usedBy?.get(audience.id)}
+            onOpen={onOpen}
+          />
         ))
       )}
     </BrandLibrary>
@@ -86,9 +94,7 @@ function AudiencesEmpty({
   const { tone } = brandSection('audiences')
   return (
     <Card title={t('brand.audiences.starterGroupTitle')} capped>
-      <p className="text-sm text-secondary-foreground">
-        {t('brand.audiences.starterGroupBody')}
-      </p>
+      <p className="text-sm">{t('brand.audiences.starterGroupBody')}</p>
       <div className="grid gap-3">
         {AUDIENCE_STARTERS.map((starter) => {
           const copy = audienceStarterCopy(t, starter)
@@ -110,9 +116,11 @@ function AudiencesEmpty({
 
 function AudienceCard({
   audience,
+  usedBy,
   onOpen,
 }: {
   audience: BrandAudience
+  usedBy?: string
   onOpen?: (id: string) => void
 }) {
   const { t } = useTranslation()
@@ -144,6 +152,7 @@ function AudienceCard({
       }
       facts={[
         usageLine(t, audience.usage),
+        ...(usedBy ? [usedBy] : []),
         <OriginLine key="origin" origin={audience.origin} />,
       ]}
     />

@@ -154,9 +154,7 @@ export function SeriesEditor({
 
       {/* The screen's subject, and the card it is built around. */}
       <Card title={t('series.editor.recipeCard')} capped>
-        <p className="text-sm text-secondary-foreground">
-          {t('series.editor.recipeHint')}
-        </p>
+        <p className="text-sm">{t('series.editor.recipeHint')}</p>
         <Textarea
           value={recipe}
           onChange={(event) => setRecipe(event.target.value)}

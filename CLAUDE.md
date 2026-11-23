@@ -137,6 +137,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   2026-11-19, replacing the old literal-capitals rule). Write the casing into
   the copy, never with an `uppercase` class. Labels elsewhere that are still in
   capitals move to sentence case as their screens join `ui/card`.
+- **A card's content is black** — body text, a row's second line and the
+  facts at a card's foot are `text-foreground`, never
+  `text-secondary-foreground`: grey body copy reads as disabled (2026-11-23).
+  A card ranks its lines by size, weight and place. Grey is left to labels
+  and captions — a field's label, a chart's axis and legend, a chip, a
+  timestamp — and tertiary to what is absent.
 - **A destructive button is red in its body or in its icon** — never grey, and
   never a pale red tint. The way in (Danger Zone, Remove) is `destructive`:
   white with a border and the icon in the danger colour, so it always has an

@@ -6287,6 +6287,12 @@ export const es: Translation = {
       usagePublished: '{{count}} publicadas',
       usageDrafts: '{{count}} en borrador',
       usageNever: 'nunca usada',
+      usedByChosen: 'Elegida por {{campaigns}}',
+      usedByDefault: 'Predeterminada en {{campaigns}}',
+      usedByBoth: 'Elegida por {{chosen}}; predeterminada en {{inherited}}',
+      usedByNone: 'Ninguna campaña la usa',
+      usedByMore_one: '{{count}} más',
+      usedByMore_other: '{{count}} más',
       separator: ', ',
     },
 
@@ -6723,13 +6729,6 @@ export const es: Translation = {
       deleted: 'Se eliminó {{name}}.',
       guardrailsDeleted: 'Se eliminaron los límites.',
       about: 'Acerca de',
-      usedBy: {
-        title: 'Lo usan',
-        empty: 'Aún no hay campañas.',
-        noVoice: 'Sin voz',
-        noAudience: 'Sin audiencia',
-        defaultVoice: '{{voice}} (predeterminada)',
-      },
     },
 
     look: {

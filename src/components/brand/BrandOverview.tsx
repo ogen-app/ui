@@ -403,17 +403,13 @@ function CardContents({
   }
 
   if (contents.status === 'error') {
-    return (
-      <p className="text-sm text-secondary-foreground">
-        {t('brand.overview.unreadable')}
-      </p>
-    )
+    return <p className="text-sm">{t('brand.overview.unreadable')}</p>
   }
 
   const { rows } = contents.data
 
   if (rows.length === 0) {
-    return <p className="text-sm text-secondary-foreground">{whenEmpty}</p>
+    return <p className="text-sm">{whenEmpty}</p>
   }
 
   return (

@@ -331,9 +331,7 @@ export function BrandEditorFrame({
         size="small"
       >
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-secondary-foreground">
-            {t('brand.editor.leave.body')}
-          </p>
+          <p className="text-sm">{t('brand.editor.leave.body')}</p>
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -403,10 +401,8 @@ export function EditorIntro({
       status={readByStatus(t, readBy)}
       capped
     >
-      <p className="text-sm text-secondary-foreground">{body}</p>
-      {missing && (
-        <p className="text-sm text-secondary-foreground">{missing}</p>
-      )}
+      <p className="text-sm">{body}</p>
+      {missing && <p className="text-sm">{missing}</p>}
     </Card>
   )
 }
@@ -469,7 +465,7 @@ export function ForkedNote({
       icon={Copy01Icon}
       title={t('brand.editor.forkedTitle', { name })}
     >
-      <p className="text-sm text-secondary-foreground">
+      <p className="text-sm">
         {t('brand.editor.forkedFrom')} {children}
       </p>
     </Card>
@@ -521,7 +517,7 @@ export function DangerCard({
   // control, and this card can hold two.
   return (
     <Card title={t('brand.editor.danger.title')} capped>
-      <p className="text-sm text-secondary-foreground">{cost}</p>
+      <p className="text-sm">{cost}</p>
       <div className="flex flex-wrap items-center gap-2">
         {reset && (
           <Button
@@ -557,7 +553,7 @@ export function DangerCard({
               a literal beside it: "this cannot be undone" is the second half
               of a sentence the first half sets up, and a language may want
               them the other way round. */}
-          <p className="text-sm text-secondary-foreground">
+          <p className="text-sm">
             {t('brand.editor.danger.confirmBody', { cost })}
           </p>
           <div className="flex justify-end gap-2">

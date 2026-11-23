@@ -141,9 +141,7 @@ export function PostFirstCommentCard({
             }
       }
     >
-      <p className="text-sm text-secondary-foreground">
-        {t('posts.firstComment.helper')}
-      </p>
+      <p className="text-sm">{t('posts.firstComment.helper')}</p>
 
       {open && (
         <>

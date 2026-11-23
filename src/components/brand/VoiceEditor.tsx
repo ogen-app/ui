@@ -208,9 +208,7 @@ export function VoiceEditor({
       />
 
       <Card title={t('brand.voices.editor.rules')} capped>
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.voices.editor.rulesHint')}
-        </p>
+        <p className="text-sm">{t('brand.voices.editor.rulesHint')}</p>
         {/* Two columns, and the only two on the screen. It is affordable
             here for the reason it was not when these were one-line
             controls: a stacked radio group is a block with a straight left
@@ -281,9 +279,7 @@ export function VoiceEditor({
       </Card>
 
       <Card title={t('brand.voices.editor.channels')} capped>
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.voices.editor.channelsHint')}
-        </p>
+        <p className="text-sm">{t('brand.voices.editor.channelsHint')}</p>
         {/* Collapsed to a placeholder on purpose. It was six inputs — one
             per platform — which is a lot of screen spent on a question
             nobody has answered yet: whether a per-channel note is a free
@@ -528,7 +524,7 @@ function SamplesCard({
        * screen counting to itself.
        */}
       {summary ? (
-        <p className="text-sm text-secondary-foreground">
+        <p className="text-sm">
           <span className="text-primary-foreground">
             {t('brand.voices.editor.readsAs')}
           </span>{' '}
@@ -536,15 +532,11 @@ function SamplesCard({
         </p>
       ) : (
         samples.length > 0 && (
-          <p className="text-sm text-secondary-foreground">
-            {t('brand.voices.editor.summaryPending')}
-          </p>
+          <p className="text-sm">{t('brand.voices.editor.summaryPending')}</p>
         )
       )}
       {short && (
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.voices.editor.samplesShort')}
-        </p>
+        <p className="text-sm">{t('brand.voices.editor.samplesShort')}</p>
       )}
       <ul className="grid gap-3 sm:grid-cols-2">
         {samples.map((sample, i) => (

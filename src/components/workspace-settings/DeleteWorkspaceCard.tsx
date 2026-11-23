@@ -130,7 +130,7 @@ export function DeleteWorkspaceCard() {
             if (matches) handleDelete()
           }}
         >
-          <p className="text-sm text-secondary-foreground">
+          <p className="text-sm">
             {/* One sentence, one key: the name sits mid-sentence, so `<Trans>`
                 places the <strong> — translations may move it. */}
             <Trans

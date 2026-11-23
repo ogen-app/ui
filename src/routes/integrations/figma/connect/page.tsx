@@ -61,7 +61,7 @@ export default function FigmaConnectPage() {
   if (expired) {
     return (
       <Shell title={t('integrations.figma.connect.expired.title')}>
-        <p className="text-sm text-secondary-foreground">
+        <p className="text-sm">
           {t('integrations.figma.connect.expired.body')}
         </p>
       </Shell>
@@ -75,7 +75,7 @@ export default function FigmaConnectPage() {
         icon={CheckmarkCircle02Icon}
         tone="var(--positive)"
       >
-        <p className="text-sm text-secondary-foreground">
+        <p className="text-sm">
           <Trans
             i18nKey="integrations.figma.connect.success.body"
             values={{ workspace: approve.variables.workspaceName }}
@@ -93,9 +93,7 @@ export default function FigmaConnectPage() {
   if (deny.isSuccess) {
     return (
       <Shell title={t('integrations.figma.connect.denied.title')}>
-        <p className="text-sm text-secondary-foreground">
-          {t('integrations.figma.connect.denied.body')}
-        </p>
+        <p className="text-sm">{t('integrations.figma.connect.denied.body')}</p>
       </Shell>
     )
   }
@@ -103,7 +101,7 @@ export default function FigmaConnectPage() {
   if (answered) {
     return (
       <Shell title={t('integrations.figma.connect.answered.title')}>
-        <p className="text-sm text-secondary-foreground">
+        <p className="text-sm">
           {t('integrations.figma.connect.answered.body')}
         </p>
       </Shell>
@@ -113,7 +111,7 @@ export default function FigmaConnectPage() {
   if (pairing.isError) {
     return (
       <Shell title={t('integrations.figma.connect.loadFailed.title')}>
-        <p className="text-sm text-secondary-foreground">
+        <p className="text-sm">
           {t('integrations.figma.connect.loadFailed.body')}
         </p>
         <Button

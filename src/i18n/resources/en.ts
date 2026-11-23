@@ -7685,6 +7685,18 @@ export const en = {
       usageDrafts: '{{count}} in draft',
       usageNever: 'never used',
       /**
+       * Which campaigns use a voice or an audience (`useUsedBy`). A voice a
+       * campaign does not choose is the workspace default's, and says so;
+       * `{{campaigns}}` is a joined list of names, the last item possibly
+       * `usedByMore`.
+       */
+      usedByChosen: 'Chosen by {{campaigns}}',
+      usedByDefault: 'The default for {{campaigns}}',
+      usedByBoth: 'Chosen by {{chosen}}; the default for {{inherited}}',
+      usedByNone: 'No campaign uses it',
+      usedByMore_one: '{{count}} more',
+      usedByMore_other: '{{count}} more',
+      /**
        * How the parts of a fact are joined — a comma and a space in English.
        * On the catalogue rather than in the helper because the separator is a
        * property of the language, and a hard-coded `', '` is the same class of
@@ -8160,16 +8172,8 @@ export const en = {
       /** The confirmations. `{{name}}` is the entry's own, always the user's words. */
       deleted: '{{name}} was deleted.',
       guardrailsDeleted: 'The guardrails were deleted.',
-      /** The side column's first card: what the section is for. */
+      /** The side column's card: what the section is for. */
       about: 'About',
-      /** The side column's second card: each campaign, and what it picks here. */
-      usedBy: {
-        title: 'Used by',
-        empty: 'No campaigns yet.',
-        noVoice: 'No voice',
-        noAudience: 'No audience',
-        defaultVoice: '{{voice}} (default)',
-      },
     },
 
     /** The visual half — `LookSection.tsx`. */

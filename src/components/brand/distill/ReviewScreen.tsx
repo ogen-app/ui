@@ -280,13 +280,13 @@ function Summary({
 
   return (
     <Card capped title={t('brand.distill.summary.title')}>
-      <p className="text-sm text-secondary-foreground">
+      <p className="text-sm">
         {parts.length > 0
           ? t('brand.distill.summary.proposes', { from, what })
           : t('brand.distill.summary.nothing', { from })}
       </p>
       {leftOut.length > 0 && (
-        <p className="text-sm leading-5 text-secondary-foreground">
+        <p className="text-sm leading-5">
           {t('brand.distill.summary.leftOut', {
             what: formatList(leftOut, 'conjunction', i18n.language),
           })}

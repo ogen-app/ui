@@ -39,9 +39,7 @@ export function StrategyCampaigns() {
           <Skeleton className="h-12 w-4/5" />
         </div>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-secondary-foreground">
-          {t('campaigns.strategy.campaigns.empty')}
-        </p>
+        <p className="text-sm">{t('campaigns.strategy.campaigns.empty')}</p>
       ) : (
         <ul className="flex flex-col">
           {rows.map(({ campaign, window }) => (
@@ -123,7 +121,7 @@ function CampaignLabel({
       >
         {campaign.name}
       </Link>
-      <p className="truncate text-sm text-secondary-foreground">
+      <p className="truncate text-sm">
         {when
           ? t('campaigns.strategy.campaigns.windowAndRate', {
               window: when,

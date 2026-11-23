@@ -58,15 +58,11 @@ export function ReadingScreen({ run }: { run: DistillRun }) {
           ))}
         </ul>
       )}
-      <p className="text-sm text-secondary-foreground">
-        {t('brand.distill.reading.leave')}
-      </p>
+      <p className="text-sm">{t('brand.distill.reading.leave')}</p>
       {/* Where the pages go, under what the read is doing — one card, not a
           second one for a sentence. */}
       {route === 'website' && (
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.distill.reading.pagesLand')}
-        </p>
+        <p className="text-sm">{t('brand.distill.reading.pagesLand')}</p>
       )}
     </Card>
   )

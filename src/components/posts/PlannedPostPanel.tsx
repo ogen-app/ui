@@ -43,9 +43,7 @@ export function PlannedPostPanel({ post }: { post: Post }) {
         onClick: write,
       }}
     >
-      <p className="text-sm text-secondary-foreground">
-        {t('ideas.lifecycle.noBodyHint')}
-      </p>
+      <p className="text-sm">{t('ideas.lifecycle.noBodyHint')}</p>
     </Card>
   )
 }
@@ -68,9 +66,7 @@ export function BuiltFromIdeas({ postId }: { postId: string }) {
           onClick: () => void ideas.refetch(),
         }}
       >
-        <p className="text-sm text-secondary-foreground">
-          {t('ideas.lifecycle.builtFromFailed')}
-        </p>
+        <p className="text-sm">{t('ideas.lifecycle.builtFromFailed')}</p>
       </Card>
     )
   }

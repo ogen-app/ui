@@ -26,9 +26,7 @@ export function QuestionsScreen() {
 
   return (
     <Card capped title={t('brand.distill.questions.cardTitle')}>
-      <p className="text-sm text-secondary-foreground">
-        {t('brand.distill.questions.intro')}
-      </p>
+      <p className="text-sm">{t('brand.distill.questions.intro')}</p>
       {questions.isPending ? (
         <div className="flex flex-col gap-4" aria-hidden>
           <Skeleton className="h-16 w-full" />
@@ -36,9 +34,7 @@ export function QuestionsScreen() {
           <Skeleton className="h-16 w-full" />
         </div>
       ) : questions.isError ? (
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.distill.questions.unavailable')}
-        </p>
+        <p className="text-sm">{t('brand.distill.questions.unavailable')}</p>
       ) : (
         <ol className="flex flex-col gap-5">
           {list.map((q, i) => (
@@ -61,7 +57,7 @@ export function QuestionsScreen() {
           </p>
         )}
         <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-secondary-foreground">
+          <span className="text-sm">
             {t('brand.distill.questions.answered', {
               answered: answers.length,
               count: list.length,

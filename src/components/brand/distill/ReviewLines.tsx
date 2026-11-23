@@ -271,7 +271,7 @@ function DisclaimerChoice({
           aria-hidden
           className="size-4 shrink-0 text-tertiary-foreground"
         />
-        <p className="min-w-0 flex-1 text-sm text-secondary-foreground">
+        <p className="min-w-0 flex-1 text-sm">
           {t('brand.distill.review.disclaimerDiffers')}
         </p>
         <Button variant="outline" size="sm" onClick={() => setComparing(true)}>
@@ -387,9 +387,7 @@ function ChoiceCard({
           {meta}
         </span>
       </span>
-      <span className="pl-7 text-sm leading-5 text-secondary-foreground">
-        {text}
-      </span>
+      <span className="pl-7 text-sm leading-5">{text}</span>
     </button>
   )
 }

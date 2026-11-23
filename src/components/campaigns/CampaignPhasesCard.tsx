@@ -88,9 +88,7 @@ export function CampaignPhasesCard({ campaignId, pending }: Props) {
         </div>
       )}
       {plan.status === 'error' && (
-        <p className="text-sm text-secondary-foreground">
-          {t('campaigns.phases.loadError')}
-        </p>
+        <p className="text-sm">{t('campaigns.phases.loadError')}</p>
       )}
       {plan.status === 'ready' && (
         <PhaseList
@@ -120,11 +118,7 @@ function PhaseList({
   const { phases } = plan
 
   if (phases.length === 0) {
-    return (
-      <p className="text-sm text-secondary-foreground">
-        {t('campaigns.phases.empty')}
-      </p>
-    )
+    return <p className="text-sm">{t('campaigns.phases.empty')}</p>
   }
 
   const splittable = canSplit(phases)
@@ -199,7 +193,7 @@ function PhaseList({
           )
         })}
       </ol>
-      <p className="text-sm text-secondary-foreground">{status}</p>
+      <p className="text-sm">{status}</p>
     </div>
   )
 }

@@ -399,7 +399,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
                         />
                       )}
                       {typeLocked && (
-                        <p className="text-sm text-secondary-foreground">
+                        <p className="text-sm">
                           {phasedPosts
                             ? t('campaigns.type.locked', { count: phasedPosts })
                             : t('campaigns.type.lockedUncounted')}
