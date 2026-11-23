@@ -8,6 +8,7 @@ import {
   isPostAnalyticsUnavailable,
 } from '@/services/api/postAnalytics'
 import { ApiError } from '@/services/api/errors'
+import { demoMode, demoPostHistory } from '@/services/api/analytics.demo'
 import {
   buildPostPerformanceView,
   type PostFacts,
@@ -94,7 +95,12 @@ export function usePostPerformance(
   //
   // The server stays the authority: the 409 is still handled below, because
   // the field could be stale in a cache this screen did not refetch.
-  const linked = Boolean(publisherPostId)
+  //
+  // The analytics demo (`?analytics=demo`, dev only) answers for any published
+  // post, so a local one — which never went out through a publisher — shows
+  // the measured surface rather than the unlinked notice.
+  const demo = demoMode()
+  const linked = Boolean(publisherPostId) || demo !== 'live'
   const enabled = published && linked
 
   const query = useQuery({
@@ -130,13 +136,14 @@ export function usePostPerformance(
   // the language changes (its snapshot is cached on `lng`), so the spans and
   // relative dates below are rebuilt with it rather than being stranded in
   // whichever language they were first built in.
-  const view = useMemo(
-    () =>
-      answer && !isPending(answer)
-        ? buildPostPerformanceView(t, answer, facts, new Date())
-        : null,
-    [answer, facts, t],
-  )
+  const view = useMemo(() => {
+    if (!answer || isPending(answer)) return null
+    const now = new Date()
+    const built = buildPostPerformanceView(t, answer, facts, now)
+    return demo === 'demo'
+      ? demoPostHistory(built, postId, facts.publishedAt, now)
+      : built
+  }, [answer, facts, t, demo, postId])
 
   if (!published) return { state: 'unpublished' }
   if (!linked) return { state: 'unlinked' }

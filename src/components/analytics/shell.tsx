@@ -13,7 +13,7 @@ import { cn } from '@/lib'
  *
  * | Beat | Component | Owns | Never |
  * |---|---|---|---|
- * | Header | `Card` (`ui/card`), `capped` | the name, the window it covers, and at most one control | a figure, a finding |
+ * | Header | `Card` (`ui/card`), full width | the name, the window it covers, and at most one control | a figure, a finding |
  * | Figures | `FigureGrid` / `FigureTile` | the numbers, their deltas, and which side of usual they fall on | anything the reader can't select or compare |
  * | Detail | the section's own chart or list | the shape behind the selected figure — drawn, not narrated | a restatement of the figure above it |
  * | Insight | `InsightLine` | what the picture can't say: where it came from, what moved it. **The only beat with a tone mark** | method, sample size, caveats |
@@ -101,7 +101,7 @@ export function SectionCard({
   return (
     <section
       className={cn(
-        'flex w-full max-w-content flex-col gap-3 rounded-lg border border-border bg-primary p-5',
+        'flex w-full flex-col gap-3 rounded-lg border border-border bg-primary p-5',
         className,
       )}
     >

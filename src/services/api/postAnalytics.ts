@@ -1,4 +1,5 @@
 import { apiJson } from './http'
+import { demoMode, demoPostAnalytics } from './analytics.demo'
 import { ApiError } from './errors'
 import type {
   PostAnalyticsAnswer,
@@ -74,6 +75,11 @@ export function isMeasured(
 export async function fetchPostAnalytics(
   postId: string,
 ): Promise<PostAnalyticsAnswer> {
+  // `?analytics=` (see `analytics.demo.ts`). Off unless asked for, and folded
+  // away in a production build.
+  const demo = demoMode()
+  if (demo === 'unavailable') throw new ApiError(503, UNAVAILABLE_MESSAGE)
+  if (demo !== 'live') return demoPostAnalytics(postId)
   return apiJson<PostAnalyticsAnswer>(
     `/api/posts/${postId}/analytics`,
     'Unable to fetch analytics for this post',

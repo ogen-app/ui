@@ -8,7 +8,11 @@ import {
 } from 'react'
 import { useBlocker } from '@tanstack/react-router'
 import { type Icon } from '@phosphor-icons/react'
-import { AlertCircleIcon, Delete02Icon } from '@hugeicons/core-free-icons'
+import {
+  AlertCircleIcon,
+  Delete02Icon,
+  RefreshIcon,
+} from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -548,6 +552,7 @@ export function DangerCard({
   name,
   cost,
   onDelete,
+  reset,
 }: {
   /**
    * `voice`, `audience` — in lower case, because it is spliced into the
@@ -557,22 +562,44 @@ export function DangerCard({
   name: string
   cost: string
   onDelete: () => void
+  /**
+   * Putting the screen back as it opened — the voice's samples. Here rather
+   * than on the card it resets, because it throws away what was typed, and a
+   * step that loses work sits with the others that do.
+   */
+  reset?: { label: string; onClick: () => void; disabled?: boolean }
 }) {
   const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
 
+  // The buttons in the body, as in every Danger Zone: the header holds one
+  // control, and this card can hold two.
   return (
-    <Card
-      title={t('brand.editor.danger.title')}
-      action={{
-        label: t('brand.editor.danger.delete', { noun }),
-        icon: Delete02Icon,
-        onClick: () => setConfirming(true),
-        destructive: true,
-      }}
-      capped
-    >
+    <Card title={t('brand.editor.danger.title')} capped>
       <p className="text-sm text-secondary-foreground">{cost}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        {reset && (
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            onClick={reset.onClick}
+            disabled={reset.disabled}
+          >
+            <HugeiconsIcon icon={RefreshIcon} strokeWidth={1.5} />
+            <span>{reset.label}</span>
+          </Button>
+        )}
+        <Button
+          type="button"
+          size="sm"
+          variant="destructive"
+          onClick={() => setConfirming(true)}
+        >
+          <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
+          <span>{t('brand.editor.danger.delete', { noun })}</span>
+        </Button>
+      </div>
 
       <ModalContainer
         isOpen={confirming}

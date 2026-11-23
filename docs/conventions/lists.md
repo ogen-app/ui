@@ -104,11 +104,13 @@ keep it accurate when these rules change.
   foot, and a month day too busy for cards says how many of its posts are
   ticked (CON-486). The sentence counts the days on screen, idea slots hide
   under a filter, and the Not scheduled panel reads the same filter.
-  Foundation's voices, audiences, facts and series tick the same way
-  (`useLibrarySelection`), as something to ask about: their bar clears, and
-  on facts it also REMOVEs, asking first through `RemoveFactsDialog` — the
-  row's trash asks the same way. A fact selection is held against the rows
-  the tab and search show.
+  Foundation's facts tick the same way (`useLibrarySelection`), as
+  something to ask about: the bar clears and REMOVEs, asking first through
+  `RemoveFactsDialog` — the row's trash asks the same way. A fact selection
+  is held against the rows the tab and search show. Voices, audiences and
+  series have no ticks and no bar (2026-11-23): each is a plain card that
+  opens its entry, deleted from the entry's Danger Zone, and the list ends
+  with a `NewCard`.
   Ticks clear when the filter in the **address** changes — the assistant's
   `set_filter` and its UNDO included — and on the calendar when the day or
   view the user chose does, not when the computed range shifts (CON-482). An

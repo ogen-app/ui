@@ -135,12 +135,12 @@ describe('in Spanish', () => {
       screen.getByText('Una vez por semana', { exact: false }),
     ).toBeInTheDocument()
     expect(screen.getByText('Aporta su propio tema')).toBeInTheDocument()
-    expect(screen.getByText('AÑADIR SERIE')).toBeInTheDocument()
+    expect(screen.getByText('Añadir serie')).toBeInTheDocument()
     // The words that would still be here if any of this were a literal.
     expect(
       screen.queryByText('Once a week', { exact: false }),
     ).not.toBeInTheDocument()
-    expect(screen.queryByText('ADD SERIES')).not.toBeInTheDocument()
+    expect(screen.queryByText('Add series')).not.toBeInTheDocument()
   })
 
   it('offers the starters in Spanish on an empty library', () => {
