@@ -1283,12 +1283,13 @@ export const en = {
       draftsKept_one: 'The {{formatted}} already written was kept.',
       draftsKept_other: 'The {{formatted}} already written were kept.',
       tooMany: 'Pick up to 10 ideas to compile or draft them',
-      noBody: 'No body yet.',
+      noBody: 'No body yet',
       noBodyHint: 'Write it from the theses, or ask the assistant.',
-      write: 'WRITE THE POST',
+      write: 'Write the post',
       writePrompt: 'Write this post in full from its theses.',
       builtFrom_one: 'Built from {{count}} idea',
       builtFrom_other: 'Built from {{count}} ideas',
+      builtFromTitle: 'Built from ideas',
       builtFromFailed: 'Couldn’t load the ideas this post was built from.',
     },
     bulk: {
@@ -4868,7 +4869,8 @@ export const en = {
   workspaces: {
     title: 'Your workspaces',
     loadFailed: 'Failed to load your workspaces.',
-    create: 'NEW WORKSPACE',
+    create: 'New workspace',
+    createHint: 'Its own campaigns, content and social accounts.',
     /** Marks the workspace *this tab* is in — another tab may be somewhere else. */
     current: 'Current',
     memberCount_one: '{{count}} member',
@@ -7833,6 +7835,7 @@ export const en = {
         thin: 'too little text',
         timedOut: 'took too long',
         failed: "couldn't be read",
+        title: 'Progress',
         leave:
           'This takes a few minutes. You can leave — it carries on, and Ogen lets you know when it is ready to look at. Nothing is saved to your Foundation until you say so.',
         pagesLand:
@@ -7853,6 +7856,7 @@ export const en = {
         facts_other: '{{count}} facts',
       },
       summary: {
+        title: 'Summary',
         fromPages_one: 'From {{count}} page of {{site}}',
         fromPages_other: 'From {{count}} pages of {{site}}',
         fromFile: 'From {{title}}',
@@ -7913,16 +7917,17 @@ export const en = {
           questions:
             'Answering drafts the proposal again with these answers added. What you have kept, dropped or edited so far stays as you left it.',
         },
-        ask: 'ASK AGAIN WITH THESE',
+        ask: 'Ask again with these',
       },
       questions: {
         title: 'A handful of questions',
+        cardTitle: 'Questions',
         intro:
           'Answer what you can and skip the rest. Ogen drafts voices, audiences, guardrails and facts from your words, and you review them before anything is saved — the same as reading a website.',
         placeholder: 'Skip, or say it in a line or two',
         unavailable: "The questions couldn't be loaded. Try again in a minute.",
         answered: '{{answered}} of {{count}} answered',
-        draft: 'DRAFT IT',
+        draft: 'Draft it',
         /** The server's seven starter questions, by their stable ids. */
         starter: {
           q_offer: 'What do you sell, and who buys it?',
@@ -8634,14 +8639,10 @@ export const en = {
         stay: 'Keep editing',
         discard: 'DISCARD',
       },
-      /**
-       * The fork note's first sentence. `<name>` is the starter's name, set in
-       * the foreground colour — a `<Trans>` rather than three JSX fragments,
-       * because where the emphasis falls inside a sentence is the translator's
-       * decision and not the layout's.
-       */
+      /** The fork note: its title names the starter, its body begins with this. */
+      forkedTitle: 'Started from {{name}}',
       forkedFrom:
-        'Started from <name>{{name}}</name>, and copied rather than linked — ours changing will never change yours.',
+        'Copied rather than linked — ours changing will never change yours.',
       danger: {
         title: 'Danger zone',
         /**

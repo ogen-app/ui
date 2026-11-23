@@ -126,8 +126,9 @@ keep it accurate when these rules change.
 - **There are no centred columns.** The content column is `max-w-content`
   (740px) against the page's left gutter, under the header's title — never
   `mx-auto`. `PageActionBar` spans that column, not the page.
-  Full-screen flows outside the app frame (auth, `/plans`, checkout) are the
-  exception.
+  Full-screen flows outside the app frame (auth, `/plans`, checkout, the
+  workspace chooser, the Figma consent) are the exception — and their cards
+  are still `ui/card`.
 
 - **A page that is more than one column of cards uses one of two layouts**
   (`page-primitives`), never a hand-rolled grid. Both switch on the page's own
@@ -215,7 +216,7 @@ keep it accurate when these rules change.
   that campaign's Analytics — and one connected platform still shows its
   mark, as a mark rather than a toggle. The period does not
   reach the all-time lessons card; what makes the corner safe anyway is that
-  the cards answer back — `SectionCard`'s `scope` prints one line under the
+  the cards answer back — `ScopeNote` prints one line under the
   heading when the period does *not* reach it. A card silently ignoring a
   control above it is worse than not offering the control. A card's own
   control (the board's basis, the lessons' metric) stays in that card.

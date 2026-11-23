@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRequestDistill, useStarterQuestions } from '@/hooks/useBrandDistill'
 import { filledAnswers, questionText } from '@/lib/brandDistillCopy'
@@ -10,7 +11,7 @@ import { QuestionField } from './Questions'
  * The third route, for when nothing is written down (CON-400 board 5A).
  *
  * Seven questions from the server, worded here by their stable ids. None is
- * required and DRAFT IT needs one: the run skips the reading steps and goes
+ * required and Draft it needs one: the run skips the reading steps and goes
  * straight to drafting, and the review it lands on is the same page every
  * other read lands on, with each item's source reading "your answer to …".
  */
@@ -24,8 +25,8 @@ export function QuestionsScreen() {
   const answers = filledAnswers(t, list, values)
 
   return (
-    <section className="flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6">
-      <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
+    <Card capped title={t('brand.distill.questions.cardTitle')}>
+      <p className="text-sm text-secondary-foreground">
         {t('brand.distill.questions.intro')}
       </p>
       {questions.isPending ? (
@@ -76,6 +77,6 @@ export function QuestionsScreen() {
           </Button>
         </div>
       </div>
-    </section>
+    </Card>
   )
 }

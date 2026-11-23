@@ -149,6 +149,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   outline dashed, on no surface, one leading plus as tall as its two lines,
   what it makes in the card header's type and a line under it saying what it will be, at the end of the
   cards it joins. A tile that adds a file (the post's Add media) is the same.
+- **Every card is `ui/card`** — no local `Card`, no hand-rolled
+  `bg-primary px-6 py-6` section, outside the frame too (2026-11-23). A page
+  with no header of its own (the Figma consent) titles its card `heading="h1"`.
 - **Design harnesses live on `design/*` branches, never on `develop`.** A
   harness is a `/design/<feature>` route rendering every state of a component
   from fixtures, and it needs an exemption in `__root.tsx` `beforeLoad` to open

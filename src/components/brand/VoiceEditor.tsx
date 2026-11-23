@@ -11,7 +11,6 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   BrandEditorFrame,
   DangerCard,
-  EditorCard,
   EditorIntro,
   Field,
   ForkedNote,
@@ -149,10 +148,7 @@ export function VoiceEditor({
       <VoiceIntro name={voice?.name} />
 
       {starter && !voice && (
-        <ForkedNote
-          icon={starter.icon}
-          title={voiceStarterCopy(t, starter).title}
-        >
+        <ForkedNote name={voiceStarterCopy(t, starter).title}>
           {t('brand.voices.editor.forkedNote')}
         </ForkedNote>
       )}
@@ -519,9 +515,8 @@ function SamplesCard({
   const isNewSample = editing !== null && editing >= samples.length
 
   return (
-    <EditorCard
-      title={t('brand.voices.editor.samples')}
-      /*
+    <Card title={t('brand.voices.editor.samples')} capped>
+      {/*
        * The reading first, in the foreground colour, where the description used
        * to be — because once there are samples it is the more useful of the two
        * and the only one that is about *this* voice. The description is a
@@ -531,25 +526,26 @@ function SamplesCard({
        *
        * The count went with it. "4 samples" over four visible cards is the
        * screen counting to itself.
-       */
-      hint={
-        <>
-          {summary ? (
-            <span>
-              <span className="text-primary-foreground">
-                {t('brand.voices.editor.readsAs')}
-              </span>{' '}
-              {summary}
-            </span>
-          ) : (
-            samples.length > 0 && (
-              <span>{t('brand.voices.editor.summaryPending')}</span>
-            )
-          )}
-          {short && <span>{t('brand.voices.editor.samplesShort')}</span>}
-        </>
-      }
-    >
+       */}
+      {summary ? (
+        <p className="text-sm text-secondary-foreground">
+          <span className="text-primary-foreground">
+            {t('brand.voices.editor.readsAs')}
+          </span>{' '}
+          {summary}
+        </p>
+      ) : (
+        samples.length > 0 && (
+          <p className="text-sm text-secondary-foreground">
+            {t('brand.voices.editor.summaryPending')}
+          </p>
+        )
+      )}
+      {short && (
+        <p className="text-sm text-secondary-foreground">
+          {t('brand.voices.editor.samplesShort')}
+        </p>
+      )}
       <ul className="grid gap-3 sm:grid-cols-2">
         {samples.map((sample, i) => (
           // Index as key: samples are positional, unidentified strings, and
@@ -630,7 +626,7 @@ function SamplesCard({
           </div>
         </div>
       </ModalContainer>
-    </EditorCard>
+    </Card>
   )
 }
 

@@ -1055,12 +1055,13 @@ export const es: Translation = {
       draftsKept_one: 'Se ha conservado el {{formatted}} ya escrito.',
       draftsKept_other: 'Se han conservado los {{formatted}} ya escritos.',
       tooMany: 'Elige hasta 10 ideas para compilarlas o redactarlas',
-      noBody: 'Aún sin cuerpo.',
+      noBody: 'Aún sin cuerpo',
       noBodyHint: 'Escríbela a partir de las tesis, o pídeselo al asistente.',
-      write: 'ESCRIBIR LA PUBLICACIÓN',
+      write: 'Escribir la publicación',
       writePrompt: 'Escribe esta publicación completa a partir de sus tesis.',
       builtFrom_one: 'Hecha a partir de {{count}} idea',
       builtFrom_other: 'Hecha a partir de {{count}} ideas',
+      builtFromTitle: 'Hecha a partir de ideas',
       builtFromFailed:
         'No se pudieron cargar las ideas a partir de las que se hizo esta publicación.',
     },
@@ -4095,7 +4096,8 @@ export const es: Translation = {
   workspaces: {
     title: 'Tus espacios',
     loadFailed: 'No se han podido cargar tus espacios.',
-    create: 'NUEVO ESPACIO',
+    create: 'Nuevo espacio',
+    createHint: 'Con sus propias campañas, contenido y cuentas sociales.',
     current: 'Actual',
     memberCount_one: '{{count}} miembro',
     memberCount_other: '{{count}} miembros',
@@ -6412,6 +6414,7 @@ export const es: Translation = {
         thin: 'demasiado poco texto',
         timedOut: 'tardó demasiado',
         failed: 'no se pudo leer',
+        title: 'Progreso',
         leave:
           'Esto tarda unos minutos. Puedes irte: sigue en marcha, y Ogen te avisa cuando esté listo para revisarlo. No se guarda nada en tus Fundamentos hasta que tú lo digas.',
         pagesLand:
@@ -6431,6 +6434,7 @@ export const es: Translation = {
         facts_other: '{{count}} datos',
       },
       summary: {
+        title: 'Resumen',
         fromPages_one: 'A partir de {{count}} página de {{site}}',
         fromPages_other: 'A partir de {{count}} páginas de {{site}}',
         fromFile: 'A partir de {{title}}',
@@ -6499,17 +6503,18 @@ export const es: Translation = {
           questions:
             'Responder vuelve a redactar la propuesta con estas respuestas añadidas. Lo que has conservado, descartado o editado hasta ahora se queda como lo dejaste.',
         },
-        ask: 'PREGUNTAR DE NUEVO CON ESTAS',
+        ask: 'Preguntar de nuevo con estas',
       },
       questions: {
         title: 'Unas cuantas preguntas',
+        cardTitle: 'Preguntas',
         intro:
           'Responde lo que puedas y sáltate el resto. Ogen redacta voces, audiencias, límites y datos a partir de tus palabras, y tú los revisas antes de que se guarde nada, igual que al leer un sitio web.',
         placeholder: 'Sáltala, o dilo en una o dos líneas',
         unavailable:
           'No se han podido cargar las preguntas. Vuelve a intentarlo en un minuto.',
         answered: '{{answered}} de {{count}} respondidas',
-        draft: 'REDACTARLO',
+        draft: 'Redactarlo',
         starter: {
           q_offer: '¿Qué vendes y quién te lo compra?',
           q_three_words: 'Tres palabras que un cliente usaría sobre ti.',
@@ -7139,8 +7144,9 @@ export const es: Translation = {
         stay: 'Seguir editando',
         discard: 'DESCARTAR',
       },
+      forkedTitle: 'Partió de {{name}}',
       forkedFrom:
-        'Partió de <name>{{name}}</name>, y se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
+        'Se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
       danger: {
         title: 'Zona de peligro',
         delete: 'Eliminar {{noun}}',

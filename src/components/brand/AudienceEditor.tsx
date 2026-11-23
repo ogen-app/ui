@@ -113,10 +113,7 @@ export function AudienceEditor({
       <AudienceIntro name={audience?.name} />
 
       {starter && !audience && (
-        <ForkedNote
-          icon={starter.icon}
-          title={audienceStarterCopy(t, starter).title}
-        >
+        <ForkedNote name={audienceStarterCopy(t, starter).title}>
           {t('brand.audiences.editor.forkedNote')}
         </ForkedNote>
       )}

@@ -211,14 +211,6 @@ export function WholeBrandOffer({
 }
 
 /**
- * The measure every Brand screen is set to. The Overview's cards sit on it, so
- * a section opened from one of them has to as well — otherwise going in shifts
- * the column under you, and so does the editor a level below that: opening an
- * entry would move the column the entry was just sitting on.
- */
-export const COLUMN = 'w-full max-w-content'
-
-/**
  * A library section rendered as its own screen: a stack of full-width entries
  * with the way to add one at the bottom.
  *

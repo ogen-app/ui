@@ -14,7 +14,7 @@ type SettingsRowProps = {
 }
 
 /**
- * One row inside a SettingsCard: title + badges on the left, actions on the
+ * One row inside a settings `Card`: title + badges on the left, actions on the
  * right, then an optional description and body. Rows carry no surface of
  * their own — the parent card does — and rely on the list's `divide-y` for
  * separation when stacked.

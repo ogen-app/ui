@@ -215,10 +215,7 @@ export function GuardrailsEditor({
           is, within a second, and the warning is about reading every line of
           what just arrived, which takes longer than that. */}
       {forkedFrom && (
-        <ForkedNote
-          icon={forkedFrom.icon}
-          title={guardrailStarterCopy(t, forkedFrom).title}
-        >
+        <ForkedNote name={guardrailStarterCopy(t, forkedFrom).title}>
           {t('brand.guardrails.forkedNote')}
         </ForkedNote>
       )}
