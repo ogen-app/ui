@@ -206,7 +206,7 @@ Loaded automatically in `src/components/content`, `src/components/uploads`.
 
 - Video uploads take a different path from images and PDFs.
 - An asset only opens in the editor if `assetScreen` says so.
-- The asset page is two columns, and those screens are its Source tab.
+- The asset page is the reading, then the thing read, and those screens are its Source card.
 - An asset update is presence-aware, and a campaign's is not.
 - A bank image reaches a post as a copy, never a reference.
 - Tags are filed over a selection, not on a row.

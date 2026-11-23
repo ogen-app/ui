@@ -6,6 +6,7 @@ import { i18next, loadLocaleResources } from '@/i18n'
 import type { IdeaBody } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { InsightsPanel, type PanelState } from './InsightsPanel'
+import { WhatItCovers } from './WhatItCovers'
 
 const verdicts = vi.hoisted(() => ({ fn: vi.fn() }))
 vi.mock('@/services/api/ideas', async (actual) => ({
@@ -74,23 +75,33 @@ const answers = (title: string) =>
   screen.getByRole('group', { name: `Answer “${title}”` })
 
 describe('InsightsPanel', () => {
-  it('reads a campaign lens in Summary: fit, the whole summary, mentions by kind', async () => {
+  it('reads a campaign lens in Summary: fit, the lead, the rest on request', async () => {
     await renderPanel('ready', lens({ ideas: [idea(1), idea(2)] }), {
       part: 'summary',
     })
     expect(screen.getByText('Read for Spring launch')).toBeInTheDocument()
     expect(screen.getByText('Settles the launch date.')).toBeInTheDocument()
-    // The tab is the summary's own: nothing folded, the key points under it.
+    // Folded to its lead, the key points under it.
     expect(screen.getByText('First paragraph.')).toBeInTheDocument()
-    expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
+    expect(screen.queryByText('Second paragraph.')).not.toBeInTheDocument()
     expect(screen.getByText('Point one')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: /Read the full summary/ }),
-    ).not.toBeInTheDocument()
-    // The ideas are the other tab's.
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Read the whole summary' }),
+    )
+    expect(screen.getByText('Second paragraph.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    // The ideas are the other card's, what it covers the side column's.
     expect(screen.queryByText('Idea 1')).not.toBeInTheDocument()
+    expect(screen.queryByText('Organisations')).not.toBeInTheDocument()
+  })
+
+  it('names what a reading covers by kind, as text', async () => {
+    renderWithProviders(<WhatItCovers lens={lens()} />)
     // Mentions are text, grouped under their kind — no tooltip.
-    expect(screen.getByText('Organisations')).toBeInTheDocument()
+    expect(await screen.findByText('Organisations')).toBeInTheDocument()
     expect(screen.getByText('Acme')).not.toHaveAttribute('title')
   })
 
@@ -231,6 +242,9 @@ describe('InsightsPanel', () => {
       lens({ summary: '## Small models **win**\n\nThe position.' }),
       { part: 'summary' },
     )
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Read the whole summary' }),
+    )
     expect(
       screen.getByRole('heading', { name: 'Small models win' }),
     ).toBeInTheDocument()
@@ -257,6 +271,10 @@ describe('InsightsPanel', () => {
       { part: 'summary' },
     )
     expect(screen.getByText('the chart').tagName).toBe('STRONG')
+    expect(screen.queryByText('two')).not.toBeInTheDocument()
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Read the whole summary' }),
+    )
     expect(screen.getByText('two').tagName).toBe('LI')
   })
 

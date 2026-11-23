@@ -46,9 +46,8 @@ type Props = {
 /**
  * A document, open for writing.
  *
- * Framed like the post editor, because it is the same kind of screen: its own
- * bar over a content column, the document on its own surface in it, and a
- * side column of tabs beside it (`AssetPage`).
+ * Its own bar across the top, then the reading and the document as cards in
+ * one column, with what is known about it in a side column (`AssetPage`).
  *
  * A document scraped from a web page (CON-222) shows its progress here instead
  * of its body until it has one — see `ScrapeState`. Everything else about the

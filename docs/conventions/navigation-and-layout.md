@@ -86,9 +86,9 @@ keep it accurate when these rules change.
   it. The post editor's settings, preview, checks, quality, sources, notes and
   history are tabs in the editor's own side column
   (`components/posts/editor/PostSideColumn`, the tab in
-  `settingsStore.postTab`), and the asset page has the same column for its
-  Overview, Ideas and Summary (`page-primitives/SideColumn`,
-  `settingsStore.assetTab`); the calendar's settings and unscheduled posts are
+  `settingsStore.postTab`), and the asset page has a side column of its own,
+  untabbed, for what is known about the asset (`page-primitives/SidePanel`);
+  the calendar's settings and unscheduled posts are
   the calendar's own drawer (`CalendarDrawer`, `settingsStore.calendarDrawer`),
   rendered by the two calendar pages beside the column and under the bar over
   the page. Both open alongside the assistant, and each is one choice for

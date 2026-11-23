@@ -9,13 +9,13 @@ import {
 import { formatList, formatNumber } from '@/lib/intl'
 import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
-import { Section } from './InsightSection'
 
 /** How many mentions show before "+N more". */
 const FIRST_MENTIONS = 12
 
 /**
- * What the asset is about, under the ideas (CON-369): its topics as one line
+ * What the asset is about, in the side column (CON-369) under the caller's
+ * heading: its topics as one line
  * of text, the things it mentions grouped by kind — the kind written out, not
  * hidden in a tooltip — and, for a spreadsheet, the sheets it read.
  *
@@ -42,7 +42,7 @@ export function WhatItCovers({
   if (!coversAnything(lens, sheets)) return null
 
   return (
-    <Section title={t('assetInsights.covers')}>
+    <div className="flex flex-col gap-3">
       <dl className="grid grid-cols-[112px_1fr] gap-x-4 gap-y-3 text-sm leading-6">
         {lens.topics.length > 0 && (
           <Row label={t('assetInsights.topics')}>{lens.topics.join(' · ')}</Row>
@@ -82,7 +82,7 @@ export function WhatItCovers({
           {t('assetInsights.moreMentions', { count: hidden })}
         </button>
       )}
-    </Section>
+    </div>
   )
 }
 

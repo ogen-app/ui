@@ -14,10 +14,8 @@ import {
   WarningIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib'
 import {
-  coversAnything,
   hasMeetingNotes,
   isLensWaiting,
   type InsightState,
@@ -26,7 +24,6 @@ import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { AssetIdeaList } from './AssetIdeaList'
 import { ReadingSummary } from './ReadingSummary'
-import { WhatItCovers } from './WhatItCovers'
 import { Separator } from '@/components/ui/separator'
 import { MeetingNotes } from './MeetingNotes'
 
@@ -39,14 +36,14 @@ export type PanelState = InsightState | 'loadFailed' | 'none' | 'empty'
 
 type Props = {
   state: PanelState
-  /** Which half of a ready reading this tab shows: its ideas, or the rest. */
+  /** Which half of a ready reading this card shows: its ideas, or the rest. */
   part: 'ideas' | 'summary'
   lens: AssetAnalysis | undefined
   onRetry: () => void
   retrying: boolean
   /**
-   * A spreadsheet's sheets as far as they are loaded, named for display —
-   * shown as what the reading covered (§5.4). Absent on every other kind.
+   * A spreadsheet's sheets as far as they are loaded — present only on a
+   * spreadsheet, whose ideas carry a footnote to check the figures (§5.4).
    */
   sheets?: SheetSummary[]
   /**
@@ -54,12 +51,12 @@ type Props = {
    * not-yet-analysed states point at writing rather than at the file.
    */
   authored?: boolean
-  /** Switches to the Source tab — the empty note's way to start writing. */
+  /** Goes to the note's own card — the empty note's way to start writing. */
   onOpenSource?: () => void
 }
 
 /**
- * The Insights tab for one lens (CON-366) — the reading itself once it is
+ * The reading for one lens (CON-366), in the asset page's cards — the reading itself once it is
  * there, and an honest sentence for every way it is not: the file still being
  * read, the analysis on its way, a failure that can be retried, and the two
  * plan gates, which are not errors and are not worded as ones.
@@ -200,10 +197,10 @@ export function InsightsPanel({
 }
 
 /**
- * A ready reading, one half per tab. **Ideas** is the list and the way to ask
- * for more. **Summary** is the rest: why it fits the campaign, the summary,
- * a recording's meeting notes and what it covers — a pale rule between each,
- * left out above a part with nothing to show.
+ * A ready reading, one half per card. **Ideas** is the list and the way to
+ * ask for more. **Summary** is the rest: why it fits the campaign, the
+ * summary, and a recording's meeting notes under a pale rule. What it covers
+ * is the side column's — it is about the asset, not something to act on.
  */
 function Reading({
   lens,
@@ -266,13 +263,6 @@ function Reading({
               </div>
             </>
           )}
-
-          {coversAnything(lens, sheets) && (
-            <>
-              <Separator className="bg-quaternary" />
-              <WhatItCovers lens={lens} sheets={sheets} />
-            </>
-          )}
         </>
       )}
     </div>
@@ -322,8 +312,9 @@ function StepTracker({ step }: { step: 'extract' | 'analyse' }) {
 }
 
 /**
- * Something is on its way: a line saying what, and the shape of what is
- * coming — summary, points, ideas — so the page does not jump when it lands.
+ * Something is on its way: a line saying what, and how far it has got. Short,
+ * so the asset itself — the card under this one — is on the first screen
+ * while there is nothing else to read.
  */
 function Waiting({
   step,
@@ -335,31 +326,13 @@ function Waiting({
   body: string
 }) {
   return (
-    <div className="flex flex-col gap-8" aria-busy>
+    <div aria-busy>
       <div className="flex flex-col gap-4 rounded-md bg-accent/5 px-5 py-4">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-medium text-foreground">{title}</p>
           <p className="text-sm text-secondary-foreground">{body}</p>
         </div>
         <StepTracker step={step} />
-      </div>
-      <div className="flex flex-col gap-3">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-      </div>
-      <div className="flex flex-col gap-3">
-        <Skeleton className="h-3 w-28" />
-        <Skeleton className="h-4 w-5/6" />
-        <Skeleton className="h-4 w-2/3" />
-        <Skeleton className="h-4 w-3/4" />
-      </div>
-      <div className="flex flex-col gap-3 border-t border-quaternary pt-8">
-        <Skeleton className="h-5 w-32" />
-        {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-16 w-full" />
-        ))}
       </div>
     </div>
   )

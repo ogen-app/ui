@@ -3,9 +3,8 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import {
   ArrowSquareOutIcon,
-  BookOpenTextIcon,
   FigmaLogoIcon,
-  LightbulbIcon,
+  type Icon,
 } from '@phosphor-icons/react'
 import {
   SettingList,
@@ -20,8 +19,11 @@ import {
 import { useAudioStatus } from '@/hooks/useContent'
 import { useWorkspaceMembers } from '@/hooks/useWorkspaces'
 import { cn } from '@/lib'
-import { metaStatus, type MetaStatus } from '@/lib/assetAnalysis'
-import type { AssetTab } from '@/lib/assetTabs'
+import {
+  coversAnything,
+  metaStatus,
+  type MetaStatus,
+} from '@/lib/assetAnalysis'
 import { extentLabel } from '@/lib/assetExtent'
 import { assetKind } from '@/lib/assetKind'
 import { formatBytes, isTerminalStatus } from '@/lib/assetStatus'
@@ -32,24 +34,31 @@ import { pageUrlLabel } from '@/lib/webPageUrl'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import type { Asset, AudioStatus, FigmaOriginRef } from '@/types/content'
 import { MetaCampaigns } from './MetaCampaigns'
-import { SummaryLead } from './SummaryText'
+import { WhatItCovers } from './WhatItCovers'
+
+/** One card down the main column, as a way to it from here. */
+export type PagePart = {
+  /** The card's element id, scrolled to. */
+  id: string
+  icon: Icon
+  label: string
+  /** What is in it, in a line — "4 ideas on the desk". */
+  line?: string
+}
 
 type Props = {
   asset: Asset
   lenses: AssetAnalysis[]
-  /** The reading the other tabs show, for its lines here. */
+  /** The reading the main column shows, once it is ready — what it covers. */
   current: AssetAnalysis | undefined
   /** The campaign whose reading is open, marked among the campaigns. */
   openCampaignId: string | null
   /** The asset's picture — a PDF's cover, a page's hero, a sheet's grid. */
   stage: ReactNode
   sheets?: SheetSummary[]
-  /**
-   * What the Ideas tab holds, in a line — or null for an asset that is never
-   * analysed, which has no Ideas tab.
-   */
-  ideasLine: string | null
-  onOpenTab: (tab: AssetTab) => void
+  /** The main column's cards, top to bottom, each a way to it. */
+  parts: PagePart[]
+  onJump: (id: string) => void
 }
 
 const STATUS_DOT: Record<MetaStatus, string> = {
@@ -63,29 +72,30 @@ const STATUS_DOT: Record<MetaStatus, string> = {
 }
 
 /**
- * What the asset is, without opening anything — the post editor's Overview
- * tab, for a document:
+ * Everything known about the asset, beside the reading — the page's side
+ * column, the post editor's Overview tab for a document:
  *
  *   - its **picture** edge to edge, where it has one worth a look;
  *   - **About** — what kind of thing it is, where it stands, who added it
  *     and when, the file or the address, the sheets, the language;
- *   - **Ideas** and **Summary** — one line each from the tabs that hold them,
- *     each a way into that tab;
+ *   - **On this page** — the main column's cards, a line each, each a jump;
+ *   - **What it covers** — the reading's topics and mentions, once it has
+ *     them: context for the ideas rather than something to act on;
  *   - **Campaigns** — with their fit, and the way to add it to another;
  *   - **Tags**, left out while there are none.
  *
  * The facts are the post's two columns (`SettingList`), so the values read
- * straight down the tab.
+ * straight down the column.
  */
-export function AssetOverviewTab({
+export function AssetOverview({
   asset,
   lenses,
   current,
   openCampaignId,
   stage,
   sheets,
-  ideasLine,
-  onOpenTab,
+  parts,
+  onJump,
 }: Props) {
   const { t, i18n } = useTranslation()
   const members = useWorkspaceMembers()
@@ -102,10 +112,9 @@ export function AssetOverviewTab({
   const language = languageName(workspaceLens?.language, i18n.language)
   const when = (iso: string) =>
     formatDate(iso, { dateStyle: 'medium', timeStyle: 'short' }, i18n.language)
-  const summary = current?.summary.trim() ? current.summary : null
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
+    <div className="flex flex-col">
       {/* Each stage crops itself and owns its fade, so nothing here cuts it. */}
       {stage && <div className="shrink-0">{stage}</div>}
       <div className="flex flex-col px-3 pb-6 lg:px-6">
@@ -205,33 +214,32 @@ export function AssetOverviewTab({
           </SettingList>
         </SideSection>
 
-        {ideasLine !== null && (
-          <SideSection title={t('assetInsights.overview.ideas')}>
-            <SummaryLine
-              onOpen={() => onOpenTab('ideas')}
-              label={t('assetInsights.tabs.ideas')}
-            >
-              <LightbulbIcon className="size-4 shrink-0 text-tertiary-foreground" />
-              <span className="min-w-0 truncate text-sm">{ideasLine}</span>
-            </SummaryLine>
+        {parts.length > 1 && (
+          <SideSection title={t('assetInsights.overview.onThisPage')}>
+            <ul className="flex flex-col gap-1">
+              {parts.map((part) => (
+                <li key={part.id} className="flex flex-col">
+                  <SummaryLine
+                    onOpen={() => onJump(part.id)}
+                    label={part.label}
+                  >
+                    <part.icon className="size-4 shrink-0 text-tertiary-foreground" />
+                    <span className="shrink-0 text-sm">{part.label}</span>
+                    {part.line && (
+                      <span className="min-w-0 truncate text-sm text-secondary-foreground">
+                        {part.line}
+                      </span>
+                    )}
+                  </SummaryLine>
+                </li>
+              ))}
+            </ul>
           </SideSection>
         )}
 
-        {summary && (
-          <SideSection title={t('assetInsights.overview.summary')}>
-            <button
-              type="button"
-              onClick={() => onOpenTab('summary')}
-              title={t('posts.editor.overview.open', {
-                tab: t('assetInsights.tabs.summary'),
-              })}
-              className="-mx-1.5 flex cursor-pointer gap-1.5 rounded-button px-1.5 py-0.5 text-left text-sm outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <BookOpenTextIcon className="mt-0.5 size-4 shrink-0 text-tertiary-foreground" />
-              <span className="line-clamp-3 text-secondary-foreground">
-                <SummaryLead text={summary} />
-              </span>
-            </button>
+        {current && coversAnything(current, sheets) && (
+          <SideSection title={t('assetInsights.covers')}>
+            <WhatItCovers lens={current} sheets={sheets} />
           </SideSection>
         )}
 

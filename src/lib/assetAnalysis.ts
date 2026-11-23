@@ -3,6 +3,7 @@ import type { SheetSummary } from '@/lib/sheetChunks'
 import type { Asset, AssetStatus, AssetType } from '@/types/content'
 import { retrievability } from './campaignSources'
 import { shortSheetLabel } from './sheetChunks'
+import { parseAssistantMarkup } from './assistantMarkup'
 
 /**
  * The rules behind the asset page's Insights tab (CON-366), over the analyses
@@ -448,5 +449,17 @@ export function coversAnything(
     lens.topics.length > 0 ||
     lens.entities.length > 0 ||
     (sheets !== undefined && sheets.length > 0)
+  )
+}
+
+/** Whether the summary holds more than its lead — a reason to offer the rest. */
+export function summaryHasMore(text: string): boolean {
+  const parts = summaryParts(text)
+  const texts = parts.filter((part) => part.kind === 'text')
+  if (parts.length > texts.length || texts.length > 1) return true
+  const blocks = texts[0] ? parseAssistantMarkup(texts[0].text) : []
+  return (
+    blocks.length > 1 ||
+    (blocks[0]?.kind === 'list' && blocks[0].items.length > 1)
   )
 }

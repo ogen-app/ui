@@ -1,14 +1,17 @@
 import { createContext, useContext } from 'react'
 
 /**
- * Opens a spreadsheet's Source tab on the rows something cited (CON-366
+ * Opens a spreadsheet's Source card on the rows something cited (CON-366
  * §5.4) — the sheet counterpart of `useAudioSeek`. An idea's
- * `Pipeline · rows 10–24` chip calls it; the page switches tab, selects the
- * sheet and highlights the range.
+ * `Pipeline · rows 10–24` chip calls it; the page selects the sheet, scrolls
+ * to the range and highlights it.
  */
 export type SheetCite = {
-  /** `label` is the chunk label as cited; `by` names what cited it. */
-  cite: (label: string, by: string) => void
+  /**
+   * `label` is the chunk label as cited; `by` names what cited it, and
+   * `from` is the control pressed, for the way back to it.
+   */
+  cite: (label: string, by: string, from?: HTMLElement) => void
 }
 
 export const SheetCiteContext = createContext<SheetCite | null>(null)

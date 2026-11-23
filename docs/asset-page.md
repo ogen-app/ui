@@ -1,65 +1,77 @@
-# The asset page — the post editor's frame, for a document (CON-366)
+# The asset page — the reading, then the thing read (CON-366)
 
-`/assets/:id` and `/campaigns/:id/assets/:assetId` are framed like the post
-editor: the asset's own 48px bar over a **content column**, and a **side
-column of tabs** beside it (`page-primitives/SideColumn`, shared with
-`PostSideColumn`), so the right rail stays the assistant's. Shipped
-unflagged. It replaced the two columns of 2026-10 (what it is on the left,
-Insights | Source on the right, the left one sticky by `useStickyColumns`).
+`/assets/:id` and `/campaigns/:id/assets/:assetId`: the asset's own 48px bar
+across the top, a **main column of cards** under it — the reading first,
+then the asset — and a **side column** beside them with everything known
+about the asset (`page-primitives/SidePanel`), so the right rail stays the
+assistant's. Shipped unflagged. It replaced, in order, the two columns of
+2026-10 (what it is on the left, Insights | Source on the right) and, on
+2026-11-23, the post editor's frame (the asset in the content column, its
+Overview, Ideas and Summary as side-column tabs) — which put the reading,
+the reason to open the page, in 24rem beside a document often three lines
+long.
 
 Code: `components/content/asset-page/` (`AssetPage`, `AssetBar`,
-`AssetOverviewTab`). Rules (pure, tested): `lib/assetAnalysis.ts`,
-`lib/sheetChunks.ts`, `lib/assetTabs.ts`. Data: `hooks/useAssetAnalyses.ts`
-over `GET /api/content-bank/assets/:id/analyses` (CON-364).
+`AssetOverview`). Rules (pure, tested): `lib/assetAnalysis.ts`,
+`lib/sheetChunks.ts`. Data: `hooks/useAssetAnalyses.ts` over
+`GET /api/content-bank/assets/:id/analyses` (CON-364).
 
 ## The bar
 
-`AssetBar`, the post's `PostBar` for a document: ← back to the assets list it
-came from (the campaign's or all), the title, `SaveStatus`; a bordered ⋮
-(read the page again, download as Markdown, delete) and, last, **Download**
-for the original file. No black button — a document saves as it is typed and
-has no status to move along.
+`AssetBar`, the post's `PostBar` for a document, across both columns: ← back
+to the assets list it came from (the campaign's or all), the title,
+`SaveStatus`; a bordered ⋮ (read the page again, download as Markdown,
+delete) and, last, **Download** for the original file. No black button — a
+document saves as it is typed and has no status to move along.
 
-## Content column
+## Main column
 
-The asset itself and nothing about it, on one white surface: the **title**
-(edited here and nowhere else; a file name reads as words until renamed,
-`readableTitle`), then `assetScreen`'s screen — the editor, the extracted
-text, the image, a spreadsheet's table. A recording's player (the page's one
-`<audio>`) heads it, over the transcript it drives. It scrolls on its own,
-with the post's travel past the end.
+The **title** (edited here and nowhere else; a file name reads as words
+until renamed, `readableTitle`) and under it the lens line, then `ui/card`
+cards, one after another:
+
+- **Summary** — the relevance panel (campaign lens), the summary's **lead**
+  (its first paragraph) with **Read the whole summary** for the rest, the key
+  points, and a recording's meeting notes. Folded because it sits over the
+  ideas: unfolded, a four-paragraph summary pushed them off the screen.
+- **Ideas** — the piles, then every idea as the Ideas list's card
+  (`ideas/IdeaRow` with `atSource`, below), then **Distill more ideas**.
+- **Source**, titled by kind (Note, Document, Page, Spreadsheet, Image,
+  Transcript) — `assetScreen`'s screen: the editor, the extracted text, the
+  image, a spreadsheet's table, a recording's transcript.
+
+Until there is a reading, Summary and Ideas are **one short card** ("Summary
+and ideas") with the state's notice and no skeletons, so the asset is on the
+first screen. An image is never analysed and has the Source card alone. A
+recording's player (the page's one `<audio>`) sits over every card, since
+the chips in all of them seek it. The column scrolls on its own, with the
+post's travel past the end.
+
+The idea cards: the 20px fit ring, title, angle in two lines, the places it
+cites and the three answers always on the card, best fit first (`byFit`), no
+box column and nothing to select. Opened, a card holds the angle, the
+rationale, **Why it scores N** (CON-385's `fit_breakdown`), **Reference** —
+the page span, then the source chips, which play the recording or open the
+sheet's rows in the Source card — the answer's record, and **Open in Ideas**.
+Answers go through the asset's cache (`useAnswerIdea`), so the piles move
+with them. A chip that opened a sheet's rows leaves **Back to the idea** in
+the banner over them, since the sheet is a card further down.
 
 ## Side column
 
-Three tabs, an icon over a one-word name, one remembered choice for every
-asset (`settingsStore.assetTab`, Ideas the first time). An image is never
-analysed and has the Overview alone.
+One column, no tabs (`AssetOverview`): the asset's picture edge to edge where
+it has one worth a look (a PDF's cover, a page's hero, a sheet's grid, a
+Word file's headings or a deck's slide titles, else a format tile; never an
+image or a note, which the Source card already shows); **About** in the
+post's two columns (kind line, status, added by, added, file or source,
+updated and images for a page, sheets, language, a Figma frame); **On this
+page** — a row per card, the Ideas row saying how many wait ("6 ideas on the
+desk", or why there are none), each scrolling to its card; **What it
+covers** (topics and mentions, once there is a reading: context, not
+something to act on); **Campaigns** with their fit, the open reading's
+marked, and **Add to campaign**; **Tags**.
 
-- **Overview** — the asset's picture edge to edge where it has one worth a
-  look (a PDF's cover, a page's hero, a sheet's grid, a Word file's headings
-  or a deck's slide titles, else a format tile; never an image or a note,
-  which the content column already shows); **About** in the post's two
-  columns (kind line, status, added by, added, file or source, updated and
-  images for a page, sheets, language, a Figma frame); one line each from
-  Ideas ("6 ideas on the desk", or why there are none) and Summary (the
-  lead, three lines), each opening its tab; **Campaigns** with their fit, the
-  open reading's marked, and **Add to campaign**; **Tags**.
-- **Ideas** — the lens line, then the piles, then every idea as the Ideas
-  list's card (`ideas/IdeaRow` with `atSource`): the 20px fit ring, title,
-  angle in two lines, the places it cites and the three answers always on the
-  card, best fit first (`byFit`). There is no box column, nothing to select.
-  Opened, a card holds the angle, the rationale, **Why it scores N**
-  (CON-385's `fit_breakdown`, the reasons under their criteria at this width),
-  **Reference** — the page span, then the source chips, which play the
-  recording or open the sheet's rows in place — the answer's record, and
-  **Open in Ideas**. Answers go through the asset's cache (`useAnswerIdea`),
-  so the piles move with them. Then **Distill more ideas** (below).
-- **Summary** — the lens line, the relevance panel (campaign lens), the whole
-  summary as light Markdown with its key points (no fold: the tab is its
-  own), then meeting notes for a recording and **What it covers**, a pale
-  rule between each, laid out by the column's width.
-
-- **Lens picker** (a dropdown, at the top of Ideas and Summary): the
+- **Lens picker** (a dropdown, under the title): the
   workspace reading and one per campaign, with fit, a spinner while one is in
   flight, and `?lens=` in the address. A campaign the asset joined before
   analysis existed has no row; it is listed and answers "not analysed". With

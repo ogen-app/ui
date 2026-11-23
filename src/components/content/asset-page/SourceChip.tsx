@@ -60,7 +60,7 @@ export function SourceChip({
         title={label}
         onClick={(e) => {
           e.stopPropagation()
-          sheets.cite(label, citedBy)
+          sheets.cite(label, citedBy, e.currentTarget)
         }}
         aria-label={t('assetInsights.sheet.openRows', { label: sheetLabel })}
         className={`${CHIP} cursor-pointer text-accent hover:bg-secondary`}

@@ -11,7 +11,6 @@ import { SETTINGS_STORE_PERSIST_KEY } from '@/stores/constants'
 import { isFeatureEnabled } from '@/config/featureFlags'
 import { isCalendarDrawer, type CalendarDrawer } from '@/lib/calendarDrawer'
 import { DEFAULT_POST_TAB, isPostTab, type PostTab } from '@/lib/postTabs'
-import { DEFAULT_ASSET_TAB, isAssetTab, type AssetTab } from '@/lib/assetTabs'
 import {
   rememberVisit,
   sanitizePostsPlaces,
@@ -61,9 +60,6 @@ export type LocalSettings = {
    * The editor's own, beside the post — it never takes the assistant's place.
    */
   postTab: PostTab
-
-  /** The asset page's side-column tab, one choice for every asset. */
-  assetTab: AssetTab
 
   // Modal/Dialog State
   lastOpenedModals: Record<string, string> // modal ID -> last opened timestamp
@@ -137,7 +133,6 @@ type SettingsState = LocalSettings & {
   closeCalendarDrawer: () => void
 
   setPostTab: (tab: PostTab) => void
-  setAssetTab: (tab: AssetTab) => void
 
   recordModalOpened: (modalId: string) => void
 
@@ -175,7 +170,6 @@ const DEFAULT_SETTINGS: LocalSettings = {
   helpOpen: false,
   calendarDrawer: null,
   postTab: DEFAULT_POST_TAB,
-  assetTab: DEFAULT_ASSET_TAB,
   lastOpenedModals: {},
   dismissedNotes: [],
   postsPlace: {},
@@ -282,8 +276,6 @@ export const useSettingsStore = create<SettingsState>()(
 
         setPostTab: (tab) => set({ postTab: tab }),
 
-        setAssetTab: (tab) => set({ assetTab: tab }),
-
         // Modal tracking actions
         recordModalOpened: (modalId) => {
           set((state) => ({
@@ -343,7 +335,6 @@ export const useSettingsStore = create<SettingsState>()(
           helpOpen: state.helpOpen,
           calendarDrawer: state.calendarDrawer,
           postTab: state.postTab,
-          assetTab: state.assetTab,
           lastOpenedModals: state.lastOpenedModals,
           dismissedNotes: state.dismissedNotes,
           postsPlace: state.postsPlace,
@@ -374,9 +365,6 @@ export const useSettingsStore = create<SettingsState>()(
             postTab: isPostTab(saved.postTab)
               ? saved.postTab
               : DEFAULT_POST_TAB,
-            assetTab: isAssetTab(saved.assetTab)
-              ? saved.assetTab
-              : DEFAULT_ASSET_TAB,
             postsPlace: sanitizePostsPlaces(saved.postsPlace),
             collapsedAssetBands: Array.isArray(saved.collapsedAssetBands)
               ? saved.collapsedAssetBands.filter(

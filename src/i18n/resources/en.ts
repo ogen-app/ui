@@ -500,11 +500,24 @@ export const en = {
     },
     moreMentions_one: '+{{count}} more',
     moreMentions_other: '+{{count}} more',
-    tabs: {
-      label: 'About this asset',
-      overview: 'Overview',
-      ideas: 'Ideas',
+    /** The cards down the asset page's main column. */
+    cards: {
       summary: 'Summary',
+      ideas: 'Ideas',
+      /** Before there is a reading: one card stands for both. */
+      reading: 'Summary and ideas',
+      readWhole: 'Read the whole summary',
+      readLess: 'Show less',
+      /** The card holding the asset itself, by kind. */
+      source: {
+        text: 'Note',
+        page: 'Page',
+        pdf: 'Document',
+        document: 'Document',
+        sheet: 'Spreadsheet',
+        image: 'Image',
+        audio: 'Transcript',
+      },
     },
     /** The asset's own bar, over its content column. */
     bar: {
@@ -520,15 +533,15 @@ export const en = {
       rereadFailed: 'Couldn’t read that page again',
     },
     notFound: 'Document not found',
-    /** The side column's Overview tab. */
+    /** The side column: everything about the asset. */
     overview: {
+      label: 'About this asset',
       about: 'About',
+      onThisPage: 'On this page',
       kind: 'Kind',
       status: 'Status',
       /** Where it was imported from — a Figma frame. */
       from: 'From',
-      ideas: 'Ideas',
-      summary: 'Summary',
       ideasComing: 'Ideas are on their way',
       noIdeas: 'No ideas from this one',
       waiting_one: '{{count}} idea on the desk',
@@ -783,6 +796,7 @@ export const en = {
       readOnly: 'Read-only · the text the assistant reads',
       citedRange: 'Rows {{from}}–{{to}}',
       citedBy: 'cited by “{{idea}}”',
+      backToIdea: 'Back to the idea',
       clear: 'Clear',
       showing: 'Showing {{shown}} of {{total}} rows',
       loaded_one: '{{shown}} row loaded',

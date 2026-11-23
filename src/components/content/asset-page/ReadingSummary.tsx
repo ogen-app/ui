@@ -1,15 +1,19 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { Section } from './InsightSection'
 import { Bullets } from './MeetingNotes'
-import { SummaryText } from './SummaryText'
+import { summaryHasMore } from '@/lib/assetAnalysis'
+import { SummaryLead, SummaryText } from './SummaryText'
 
 /**
- * The reading in full (CON-369): the whole summary, then the key points.
+ * The reading (CON-369): the summary's lead, then the key points — and the
+ * whole summary on request.
  *
- * It has the Summary tab to itself, so nothing is folded: the Overview quotes
- * its opening lines and opens this tab for the rest. The tab scrolls as one —
- * there is no box scrolling inside it for the wheel to get caught in.
+ * It heads the page's main column, over the ideas, so it is folded to its
+ * first paragraph: a summary runs to several, and unfolded it would push the
+ * ideas off the screen. The key points are never folded away — they are the
+ * summary at a glance.
  */
 export function ReadingSummary({
   lens,
@@ -20,7 +24,9 @@ export function ReadingSummary({
   >
 }) {
   const { t } = useTranslation()
+  const [whole, setWhole] = useState(false)
   const hasSummary = lens.summary.trim() !== ''
+  const more = hasSummary && summaryHasMore(lens.summary)
 
   const note = (lens.partial_source || lens.truncated) && (
     <p className="text-xs text-warning">
@@ -38,12 +44,30 @@ export function ReadingSummary({
   if (!hasSummary) return points || null
 
   return (
-    <Section title={t('assetInsights.summary')}>
-      <div className="flex flex-col gap-6">
-        <SummaryText text={lens.summary} />
-        {note}
-        {points}
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col items-start gap-2">
+        {whole || !more ? (
+          <SummaryText text={lens.summary} />
+        ) : (
+          <p className="text-sm/6 text-foreground">
+            <SummaryLead text={lens.summary} />
+          </p>
+        )}
+        {more && (
+          <button
+            type="button"
+            aria-expanded={whole}
+            onClick={() => setWhole((w) => !w)}
+            className="cursor-pointer text-sm font-medium text-accent hover:underline"
+          >
+            {whole
+              ? t('assetInsights.cards.readLess')
+              : t('assetInsights.cards.readWhole')}
+          </button>
+        )}
       </div>
-    </Section>
+      {note}
+      {points}
+    </div>
   )
 }
