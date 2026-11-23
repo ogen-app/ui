@@ -273,8 +273,6 @@ export const ideas: Translation['ideas'] = {
     failed: 'No se pudieron eliminar las ideas. Puede que algunas sigan ahí.',
   },
   sentence: {
-    showing: 'Mostrando ideas <clauses></clauses>',
-    showingAll: 'Mostrando <v>todas las ideas</v>',
     clause: {
       origin: '<v>{{values}}</v>',
       origin_not: 'no <v>{{values}}</v>',

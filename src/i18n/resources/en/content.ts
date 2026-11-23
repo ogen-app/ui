@@ -225,15 +225,10 @@ export const content = {
     },
   },
   /**
-   * The Assets filter as a sentence you edit (CON-392). The type is the
-   * subject when chosen — "Showing PDFs, in …" — so a list of documents is
-   * named by what they are; every other field is one clause, one catalogue
-   * sentence per field and operator, its chosen words marked `<v>`.
+   * The Assets filter's pills (CON-392): one catalogue sentence per field
+   * and operator, its chosen words marked `<v>`.
    */
   sentence: {
-    showing: 'Showing assets <clauses></clauses>',
-    showingSubject: 'Showing <clauses></clauses>',
-    showingAll: 'Showing <v>all assets</v>',
     clause: {
       kind: '<v>{{values}}</v>',
       kind_not: 'that aren’t <v>{{values}}</v>',

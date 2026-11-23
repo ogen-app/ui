@@ -131,6 +131,13 @@ export function destinationFor(action: UIAction): Destination | null {
   if (action.type === 'set_window' && screen === 'campaign.analytics') {
     return { to: '/analytics', params: {} }
   }
+  // The calendar has no filter for now, so a filter set on it lands on the
+  // campaign's posts list, which reads the same one.
+  if (action.type === 'set_filter' && screen === 'campaign.calendar') {
+    return campaignId
+      ? { to: '/campaigns/$campaignId/list', params: { campaignId } }
+      : null
+  }
   const workspace = WORKSPACE_PATHS[screen]
   if (workspace) return { to: workspace, params: {} }
 

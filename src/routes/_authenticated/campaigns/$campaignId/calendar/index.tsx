@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { readCalendarPlace } from '@/hooks/usePostsPlace'
-import { parsePostListSearch } from '@/lib/postFilter'
 
 // Bare /campaigns/:id/calendar → wherever this campaign's calendar was last
 // left, or the current week for one never opened. The date *and* the
@@ -9,17 +8,13 @@ import { parsePostListSearch } from '@/lib/postFilter'
 export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/calendar/',
 )({
-  // The filter rides through (CON-472): the assistant's set_filter lands on
-  // this bare address, and the place it redirects to must keep it.
-  validateSearch: parsePostListSearch,
-  beforeLoad: ({ params, search }) => {
+  beforeLoad: ({ params }) => {
     throw redirect({
       to: '/campaigns/$campaignId/calendar/$anchor/$view',
       params: {
         campaignId: params.campaignId,
         ...readCalendarPlace(params.campaignId),
       },
-      search,
     })
   },
 })

@@ -9,7 +9,6 @@ export const sentence = {
   remove: 'Remove: {{clause}}',
   removeDetail: 'Remove this detail',
   done: 'Done',
-  clear: 'Clear',
   /** The pills row's end: every filter off at once. */
   clearAll: 'Clear filters',
   /** A pill naming its first value only: how many more it holds. */

@@ -1,12 +1,11 @@
 import type { IconSvgElement } from '@hugeicons/react'
 
 /**
- * The filter sentence's contract with a list (CON-391, carried to Assets by
- * CON-392): what a list must say for `FilterSentence` to read and edit its
- * filter. The sentence knows clauses, panels and keys; the list knows its
- * fields, its values, how each clause is worded and the shape its filter
- * travels in. Assets (`lib/assetFilter`) and Ideas (`lib/ideaFilter`) are the
- * two that do.
+ * The filter's contract with a list (CON-391, carried to Assets by CON-392
+ * and to posts by CON-472): what a list must say for `FilterPills` to read
+ * and edit its filter. The pills know clauses, panels and keys; the list
+ * knows its fields, its values, how each clause is worded and the shape its
+ * filter travels in.
  */
 
 /**
@@ -100,16 +99,10 @@ export type SentenceVocabulary<Field extends string> = {
   /** The order the clauses read in, however the filter was built. */
   order: readonly Field[]
   /**
-   * A field whose included values name what is listed — "Showing *PDFs*, in
-   * …" rather than "Showing assets that are PDFs". Read first when present.
+   * A field whose included values name what is listed — "*PDFs*, in …"
+   * rather than "assets that are PDFs". Read first when present.
    */
   subject?: Field
-  /** The lead sentence; `<clauses>` holds the joined clauses. */
-  showingKey: string
-  /** The lead when the subject is the first clause. */
-  showingSubjectKey?: string
-  /** Nothing chosen: "Showing <v>all ideas</v>". */
-  showingAllKey: string
   clause: (token: SmartToken<Field>) => Clause
   /** The clause as plain words, for screen readers and the empty state. */
   tokenText: (token: SmartToken<Field>) => string

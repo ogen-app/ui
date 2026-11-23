@@ -174,9 +174,6 @@ export const content: Translation['content'] = {
     },
   },
   sentence: {
-    showing: 'Mostrando recursos <clauses></clauses>',
-    showingSubject: 'Mostrando <clauses></clauses>',
-    showingAll: 'Mostrando <v>todos los recursos</v>',
     clause: {
       kind: '<v>{{values}}</v>',
       kind_not: 'que no son <v>{{values}}</v>',

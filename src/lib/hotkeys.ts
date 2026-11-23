@@ -30,7 +30,7 @@ export type Hotkey =
   | 'o'
   | '?'
   | 'g'
-  // The filter sentence's "add a detail" — bound by `FilterSentence` itself,
+  // The filter's "+ Add" — bound by `FilterPills` itself,
   // listed here so nothing else claims it.
   | '/'
 
