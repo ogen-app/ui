@@ -3,11 +3,14 @@ import type { FieldKind, FilterModel, SmartToken } from '@/lib/smartFilter'
 import type { PostStatus } from '@/types/posts'
 
 /**
- * What a campaign's posts are narrowed to (CON-472), on its posts list and
- * its calendar — the Ideas and Assets rule (`lib/ideaFilter`), for posts.
+ * What posts are narrowed to (CON-472), on a campaign's posts list and its
+ * calendar and on the workspace's — the Ideas and Assets rule
+ * (`lib/ideaFilter`), for posts.
  *
  * **The URL is the query.** Every key is a parameter of `GET
- * /api/campaigns/:id/posts` under the same name, so the assistant's
+ * /api/campaigns/:id/posts` and of `GET /api/posts` under the same name — the
+ * campaign (`campaign_id`) only on the workspace's pages, where it is a
+ * choice rather than the address — so the assistant's
  * `set_filter` lands as the address, and "select all matching" is that same
  * string resolved by the server. Dates are `YYYY-MM-DD` days, read in the
  * viewer's zone (`tz`) — the endpoint takes no presets.
@@ -20,6 +23,7 @@ import type { PostStatus } from '@/types/posts'
 
 /** The fields of the sentence, in the order its clauses read. */
 export const POST_FILTER_FIELDS = [
+  'campaign_id',
   'status',
   'platform',
   'post_type',
@@ -29,8 +33,18 @@ export const POST_FILTER_FIELDS = [
 
 export type PostFilterField = (typeof POST_FILTER_FIELDS)[number]
 
+/** A campaign's own pages: every post is in it, so there is no choosing. */
+export const CAMPAIGN_POST_FILTER_FIELDS = POST_FILTER_FIELDS.filter(
+  (field) => field !== 'campaign_id',
+)
+
 /** The fields that choose from a list of values, several at once. */
-const CHOICE_FIELDS = ['status', 'platform', 'post_type'] as const
+const CHOICE_FIELDS = [
+  'campaign_id',
+  'status',
+  'platform',
+  'post_type',
+] as const
 type ChoiceField = (typeof CHOICE_FIELDS)[number]
 
 /**
@@ -65,6 +79,7 @@ export type PostFilter = Record<ChoiceField, ValueFilter> & {
 }
 
 export const EMPTY_POST_FILTER: PostFilter = {
+  campaign_id: { any: [], not: [] },
   status: { any: [], not: [] },
   platform: { any: [], not: [] },
   post_type: { any: [], not: [] },
@@ -73,14 +88,26 @@ export const EMPTY_POST_FILTER: PostFilter = {
   before: null,
 }
 
-/** The posts pages' search params — the endpoint's own names, comma-joined. */
+/**
+ * How a posts list is grouped (`group`): by status anywhere, by campaign only
+ * where the rows come from more than one. Not the endpoint's — the table
+ * groups the rows it has — so it is never part of the request.
+ */
+export const POST_GROUPS = ['status', 'campaign'] as const
+export type PostGrouping = (typeof POST_GROUPS)[number] | 'none'
+
+/**
+ * The posts pages' search params — the endpoint's own names, comma-joined —
+ * and the list's grouping beside them.
+ */
 export type PostListSearch = Partial<
   Record<
     | ChoiceField
     | `${ChoiceField}_not`
     | 'scheduled'
     | 'scheduled_after'
-    | 'scheduled_before',
+    | 'scheduled_before'
+    | 'group',
     string
   >
 >
@@ -137,7 +164,30 @@ export function parsePostListSearch(
   if (after) out.scheduled_after = after
   if (before) out.scheduled_before = before
   if ((after || before) && out.scheduled === 'no') delete out.scheduled
+  const group = String(raw.group ?? '')
+  if ((POST_GROUPS as readonly string[]).includes(group)) out.group = group
   return out
+}
+
+/**
+ * A campaign's pages: the workspace's params less the campaign, which the
+ * address already names — a `campaign_id` carried over would be a pill
+ * nobody could have chosen there.
+ */
+export function parseCampaignPostListSearch(
+  raw: Record<string, unknown>,
+): PostListSearch {
+  const out = parsePostListSearch(raw)
+  delete out.campaign_id
+  delete out.campaign_id_not
+  if (out.group === 'campaign') delete out.group
+  return out
+}
+
+export function postGroupingFromSearch(search: PostListSearch): PostGrouping {
+  return (POST_GROUPS as readonly string[]).includes(search.group ?? '')
+    ? (search.group as PostGrouping)
+    : 'none'
 }
 
 export function postFilterFromSearch(search: PostListSearch): PostFilter {
@@ -146,6 +196,7 @@ export function postFilterFromSearch(search: PostListSearch): PostFilter {
     not: splitValues(search[`${key}_not`]),
   })
   return {
+    campaign_id: pair('campaign_id'),
     status: pair('status'),
     platform: pair('platform'),
     post_type: pair('post_type'),
@@ -220,6 +271,7 @@ export function postTokensOf(filter: PostFilter): PostToken[] {
 function clone(filter: PostFilter): PostFilter {
   return {
     ...filter,
+    campaign_id: { ...filter.campaign_id },
     status: { ...filter.status },
     platform: { ...filter.platform },
     post_type: { ...filter.post_type },

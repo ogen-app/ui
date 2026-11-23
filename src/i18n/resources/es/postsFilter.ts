@@ -3,15 +3,16 @@ import type { Translation } from '../en'
 export const postsFilter: Translation['postsFilter'] = {
   setByAssistant: 'puesto por el asistente',
   unknownPlatform: 'Una plataforma retirada',
+  unknownCampaign: 'Una campaña archivada',
   nothingMatches: 'Ninguna publicación coincide con estos filtros',
   scheduled: {
     yes: 'Con fecha',
     no: 'Sin fecha',
   },
   sentence: {
-    showing: 'Mostrando publicaciones <clauses></clauses>',
-    showingAll: 'Mostrando <v>todas las publicaciones</v>',
     clause: {
+      campaign_id: 'en <v>{{values}}</v>',
+      campaign_id_not: 'fuera de <v>{{values}}</v>',
       status: 'que son <v>{{values}}</v>',
       status_not: 'que no son <v>{{values}}</v>',
       platform: 'en <v>{{values}}</v>',
@@ -38,6 +39,7 @@ export const postsFilter: Translation['postsFilter'] = {
       no: 'sin fecha',
     },
     question: {
+      campaign_id: 'Publicaciones en…',
       status: 'Publicaciones que son…',
       platform: 'Publicaciones en…',
       post_type: 'Publicaciones en formato…',
@@ -45,18 +47,21 @@ export const postsFilter: Translation['postsFilter'] = {
       date: 'Publicaciones programadas…',
     },
     include: {
+      campaign_id: 'en',
       status: 'son',
       platform: 'en',
       post_type: 'en',
       date: 'entre',
     },
     exclude: {
+      campaign_id: 'fuera de',
       status: 'no son',
       platform: 'fuera de',
       post_type: 'no en',
       date: 'antes',
     },
     starter: {
+      campaign_id: 'en una campaña…',
       status: 'que son…',
       platform: 'en una plataforma…',
       post_type: 'en un formato…',
@@ -66,6 +71,7 @@ export const postsFilter: Translation['postsFilter'] = {
     starterHint: {
       status: 'borradores, fallidas',
     },
+    findCampaign: 'Buscar una campaña',
     posts_one: '{{formatted}} publicación',
     posts_other: '{{formatted}} publicaciones',
   },

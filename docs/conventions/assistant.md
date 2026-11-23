@@ -159,7 +159,7 @@ keep it accurate when these rules change.
   since smart groups load nowhere else, and the card says so inside a
   campaign. Each group is named by its stored filter in the list's own
   sentence (`useSavedViewText`, through `lib/smartFilter`'s
-  `orderedTokens`, which `FilterSentence` reads too). `readAssetsState`
+  `orderedTokens`, which `FilterPills` reads too). `readAssetsState`
   answers "how does the bank stand" as `results.assets.state`, in the REST
   endpoint's own shape (`parseAssetsState`). The Assets list's suggestions lead with
   what is waiting, read from `GET /api/content-bank/assets-state`

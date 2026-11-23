@@ -1,5 +1,17 @@
 export const postsTable = {
   sortSaveFailed: "Couldn't save the order you sorted by",
+  /** Group by, at the end of the filter line; the table's group heads. */
+  view: {
+    groupBy: 'Group by',
+    groupByHeading: 'GROUP BY',
+    group: {
+      status: 'Status',
+      campaign: 'Campaign',
+      none: 'No grouping',
+    },
+    fold: 'Fold {{group}}',
+    unfold: 'Unfold {{group}}',
+  },
 
   /**
    * The column headers, also drawn in the empty state's sketch of the table

@@ -70,7 +70,6 @@ export const calendar: Translation['calendar'] = {
   justWritten: 'RECIÉN ESCRITA',
   fromIdeas_one: 'de {{formatted}} idea',
   fromIdeas_other: 'de {{formatted}} ideas',
-  notScheduledNoMatch: 'Ninguna publicación sin fecha coincide con el filtro.',
   addPost: 'AÑADIR PUBLICACIÓN',
   dateLocked: 'La fecha de esta publicación está bloqueada',
 
