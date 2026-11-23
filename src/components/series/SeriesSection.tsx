@@ -96,7 +96,7 @@ export function SeriesSection({
   )
 }
 
-/** Three cards — the page's intro card has already stated the absence. */
+/** Three cards — the page's About card has already stated the absence. */
 function SeriesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
   const { t } = useTranslation()
   const { tone } = brandSection('series')

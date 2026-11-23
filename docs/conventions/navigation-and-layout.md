@@ -26,6 +26,16 @@ keep it accurate when these rules change.
   (`strategy/StrategyCampaigns` — each campaign's dates, rate, channels and
   voice: a plan, not a status list; the Overview's cards already report
   progress). The swimlane timeline it replaced is parked.
+  One level down, a section with a list (Voices, Audiences, Series) keeps the
+  hub's frame (`brand/detail`'s `BrandSectionFrame`): the caret back and the
+  section's name in a header that scrolls away, its entries in the main
+  column, and beside them, sticky, **About** (what the section is for, and
+  "Nothing reads this yet" where that is true) and **Used by** — every
+  campaign in the hub's order (`lib/campaignOrder`) with what it picks here,
+  the default voice saying so. Series has About alone: a campaign's series
+  are its runs, one request per campaign, and Used by waits on a series list
+  that says where each one runs. Guardrails and Facts are an editor and a
+  ledger, not lists, and keep their own shapes.
   For one, the same two columns: what it
   commits to and then the Foundation as it has it in the main one, and its
   phases (`CampaignPhasesCard`) beside it, sticky, where the Campaigns card is
@@ -137,7 +147,8 @@ keep it accurate when these rules change.
     one taller than the screen is never cut off or given its own scroll: it
     rides up until its foot shows, by the asset page's rule
     (`useStickyColumns`). It carries the page's gutters. Strategy at both
-    levels: the Campaigns card sticky for all campaigns, the phases for one.
+    levels: the Campaigns card sticky for all campaigns, the phases for one;
+    and a Foundation section, with About and Used by.
     Activity, with Needs you sticky beside the day cards: the live
     warnings (`workspaceWarnings`, alert and risk only), never unread
     notifications, which the feed marks read on sight.
