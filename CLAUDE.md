@@ -176,6 +176,7 @@ Loaded automatically in `src/components/layout`, `src/components/page-primitives
 - The right rail is the assistant's, with help over it.
 - Explanatory copy goes in `<Explainer>`.
 - A page header names the place, and the switcher names the scope.
+- A small heading is `SmallHeading`, one look everywhere.
 - There are no centred columns.
 - A page that is more than one column of cards uses one of two layouts.
 - Screen corners have fixed jobs — top is about the object, bottom is about the work.

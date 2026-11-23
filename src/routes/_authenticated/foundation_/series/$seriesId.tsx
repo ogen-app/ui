@@ -124,7 +124,7 @@ function SeriesEditorPage() {
             message={t('brand.detail.missingMessage')}
             action={
               <Button variant="ghost" size="sm" onClick={back}>
-                <span className="uppercase">{t('series.detail.back')}</span>
+                {t('series.detail.back')}
               </Button>
             }
           />

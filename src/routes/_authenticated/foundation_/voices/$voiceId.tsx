@@ -143,9 +143,7 @@ function VoiceEditorPage() {
             message={t('brand.detail.missingMessage')}
             action={
               <Button variant="ghost" size="sm" onClick={back}>
-                <span className="uppercase">
-                  {t('brand.detail.backToVoices')}
-                </span>
+                {t('brand.detail.backToVoices')}
               </Button>
             }
           />

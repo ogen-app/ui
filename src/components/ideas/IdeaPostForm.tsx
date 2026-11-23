@@ -13,6 +13,7 @@ import { startOfDay } from '@/lib/assetFilter'
 import { counted, formatDate, formatNumber } from '@/lib/intl'
 import { cn } from '@/lib/styles'
 import type { IdeaPlan } from '@/lib/ideas'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 export type IdeaPostAnswer = {
   /** Empty when the campaign is unknown: the ideas' plans decide. */
@@ -357,9 +358,7 @@ function Group({
 }) {
   return (
     <div className="flex flex-col gap-1 border-t border-border px-4 pt-2.5 pb-2.5">
-      <p className="text-[11px] font-semibold tracking-[0.1em] text-tertiary-foreground uppercase">
-        {heading}
-      </p>
+      <SmallHeading as="p">{heading}</SmallHeading>
       {children}
     </div>
   )

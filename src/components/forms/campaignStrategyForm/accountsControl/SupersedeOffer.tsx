@@ -44,7 +44,9 @@ export function SupersedeOffer({
     // would cut the row in half instead of ending a section inside it.
     <div className="ml-16 mr-5 mb-2 border-b border-border pb-2">
       <GroupLabel>
-        {accounts.length === 1 ? 'AVAILABLE ACCOUNT' : 'AVAILABLE ACCOUNTS'}
+        {t('campaigns.accounts.groups.available', {
+          count: accounts.length,
+        })}
       </GroupLabel>
       {accounts.map((account) => (
         <div

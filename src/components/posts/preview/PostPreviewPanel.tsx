@@ -28,6 +28,7 @@ import {
   type PreviewProps,
   type StoryNetwork,
 } from './types.ts'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * A card per platform Ogen publishes to. Anything without an entry falls
@@ -610,7 +611,7 @@ function Notes({
 
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="text-xs text-tertiary-foreground">NOTES</h3>
+      <SmallHeading as="h3">{t('posts.preview.notesHeading')}</SmallHeading>
       <ul className="flex flex-col gap-1.5">
         {notes.map((note, i) => (
           <li key={i} className="text-xs text-secondary-foreground">

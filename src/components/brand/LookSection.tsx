@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card'
 import { brandSection, brandSectionCopy } from '@/lib/brandSections'
 import { ChipList, Gap, readByStatus } from './shell'
 import type { BrandLook } from './types'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * The visual half, same semantics as the voice half: ambient, applied by
@@ -147,11 +148,7 @@ export function LookSection({
 }
 
 function SlotLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
-      {children}
-    </p>
-  )
+  return <SmallHeading as="p">{children}</SmallHeading>
 }
 
 /**

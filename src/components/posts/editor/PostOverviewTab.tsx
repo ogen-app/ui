@@ -10,6 +10,7 @@ import { cn } from '@/lib'
 import { SettingList, SettingRow, SummaryLine } from '../quickBar/parts'
 import { PostChecksSummary, PostQualitySummary } from './PostChecksTab'
 import { PublishingSettings, WritingSettings } from './PostSettings'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /** How many notes the Overview quotes before pointing at the Notes tab. */
 const NOTES_SHOWN = 2
@@ -194,9 +195,7 @@ function Section({
         first ? 'pt-4' : 'mt-5 border-t border-border pt-5',
       )}
     >
-      <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
-        {title}
-      </h3>
+      <SmallHeading as="h3">{title}</SmallHeading>
       {children}
     </section>
   )

@@ -8,6 +8,7 @@ import type { RunRoute } from '@/lib/brandDistill'
 import { filledAnswers } from '@/lib/brandDistillCopy'
 import { counted } from '@/lib/intl'
 import type { DistillAnswer, DistillQuestion } from '@/types/brandDistill'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * Questions, in the two places a read asks them (CON-400 board 5): the
@@ -124,9 +125,9 @@ export function GapQuestions({
           count: questions.length,
         })}
       </h2>
-      <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-secondary-foreground">
+      <SmallHeading as="p">
         {t('brand.distill.gaps.label', counted(questions.length))}
-      </p>
+      </SmallHeading>
       <ol className="flex flex-col gap-5">
         {questions.map((q, i) => (
           <QuestionField

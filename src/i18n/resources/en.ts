@@ -6012,6 +6012,9 @@ export const en = {
   },
 
   posts: {
+    preview: {
+      notesHeading: 'Notes',
+    },
     delete: {
       keep: 'Keep post',
     },
@@ -8674,6 +8677,12 @@ export const en = {
 
   campaigns: {
     accounts: {
+      groups: {
+        available_other: 'Available accounts',
+        available_one: 'Available account',
+        inactive: 'Inactive',
+        active: 'Active',
+      },
       use: 'Use',
       activate: 'Activate',
     },
@@ -9370,7 +9379,7 @@ export const en = {
       documents_one: '{{formatted}} document',
       documents_other: '{{formatted}} documents',
       groupBy: 'Group by',
-      groupByHeading: 'GROUP BY',
+      groupByHeading: 'Group by',
       sortBy: 'Sort',
       group: {
         created: 'Date added',

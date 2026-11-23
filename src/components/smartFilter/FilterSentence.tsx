@@ -25,6 +25,7 @@ import type {
   SmartToken,
   ValueOption,
 } from '@/lib/smartFilter'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /** The value every list uses for "none" — no campaign, no tags, no document. */
 const NONE = 'none'
@@ -735,9 +736,9 @@ export function AddDetail<F, Field extends string>({
               role="group"
               aria-label={section.heading}
             >
-              <div className="px-3.5 pt-2.5 pb-1 text-[11px] tracking-wide text-tertiary-foreground uppercase">
+              <SmallHeading as="div" className="px-3.5 pt-2.5 pb-1">
                 {section.heading}
-              </div>
+              </SmallHeading>
               {section.items.map((item) => {
                 index += 1
                 const i = index

@@ -5141,6 +5141,9 @@ export const es: Translation = {
   },
 
   posts: {
+    preview: {
+      notesHeading: 'Notas',
+    },
     delete: {
       keep: 'Conservar publicación',
     },
@@ -7169,6 +7172,12 @@ export const es: Translation = {
 
   campaigns: {
     accounts: {
+      groups: {
+        available_other: 'Cuentas disponibles',
+        available_one: 'Cuenta disponible',
+        inactive: 'Inactivas',
+        active: 'Activas',
+      },
       use: 'Usar',
       activate: 'Activar',
     },
@@ -7733,7 +7742,7 @@ export const es: Translation = {
       documents_one: '{{formatted}} documento',
       documents_other: '{{formatted}} documentos',
       groupBy: 'Agrupar por',
-      groupByHeading: 'AGRUPAR POR',
+      groupByHeading: 'Agrupar por',
       sortBy: 'Ordenar',
       group: {
         created: 'Fecha de alta',

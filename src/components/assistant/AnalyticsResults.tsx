@@ -48,6 +48,7 @@ import {
   SourcesLine,
   TEXT_ACTION_CLASS,
 } from './blocks'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * What the analytics pack read or wrote this turn (CON-463, drawn as CON-479
@@ -500,9 +501,9 @@ function TopPostsRows({ board }: { board: PerformersBoard }) {
     <>
       {best.map(row)}
       {worst.length > 0 && (
-        <p className="pt-3 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-secondary-foreground">
+        <SmallHeading as="p" className="pt-3 pb-1">
           {t('assistant.analytics.topPosts.weakest')}
-        </p>
+        </SmallHeading>
       )}
       {worst.map(row)}
     </>
