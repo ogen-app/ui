@@ -100,7 +100,6 @@ export function PostIdentityCard({ post }: { post: PostIdentity }) {
 
   return (
     <Card
-      capped
       title={t('analytics.post.identityTitle')}
       // Out of the app, so a new tab: the post's own page on the network.
       action={
@@ -208,7 +207,7 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
 
   if (view.maturity === 'unpublished') {
     return (
-      <Card capped title={t('analytics.post.overviewTitle')}>
+      <Card title={t('analytics.post.overviewTitle')}>
         <NotYet title={t('analytics.post.unpublishedTitle')}>
           {t('analytics.post.unpublishedBody')}
         </NotYet>
@@ -226,7 +225,6 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
       // here is the publication date — that is on the card above, and a header
       // restating it is the same fact in two type sizes.
       <Card
-        capped
         title={t('analytics.post.overviewTitle')}
         qualifier={window_(t, view)}
       >
@@ -253,7 +251,6 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
 
   return (
     <Card
-      capped
       title={t('analytics.post.overviewTitle')}
       qualifier={window_(t, view)}
     >
@@ -328,7 +325,6 @@ export function PostMeasureCard({
 
   return (
     <Card
-      capped
       title={copy.label}
       choice={{
         label: t('analytics.post.reading'),

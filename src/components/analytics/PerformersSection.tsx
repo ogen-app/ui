@@ -51,7 +51,6 @@ export function PerformersSection({ view }: { view: PerformersView }) {
   if (view.posts.length === 0 || criteria.length === 0) {
     return (
       <Card
-        capped
         title={t('analytics.performers.title')}
         qualifier={periodPhrase(t, view.period)}
       >
@@ -94,7 +93,6 @@ export function PerformersSection({ view }: { view: PerformersView }) {
 
   return (
     <Card
-      capped
       title={t('analytics.performers.title')}
       qualifier={periodPhrase(t, view.period)}
       choice={{

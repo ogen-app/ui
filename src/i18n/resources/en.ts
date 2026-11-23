@@ -5125,12 +5125,13 @@ export const en = {
         title: 'Choose what to connect',
         body: 'Your {{platform}} account manages more than one profile. Pick the one Ogen should publish to.',
         legend: 'Available {{platform}} profiles',
-        submit: 'CONNECT {{platform}}',
-        cancel: 'CANCEL',
+        submit: 'Connect {{platform}}',
+        cancel: 'Cancel',
+        nothingTitle: 'Nothing to connect',
         // Sentence case on purpose: this one is only ever read aloud, as the
         // label of the header's icon button.
         back: 'Back to Workspace Settings',
-        backToAccounts: 'BACK TO WORKSPACE SETTINGS',
+        backToAccounts: 'Back to Workspace Settings',
         expired:
           'This connection expired or was already used. Start the connection again from Workspace Settings.',
         empty: 'There’s nothing on this account we can publish to.',

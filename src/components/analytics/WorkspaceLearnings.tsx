@@ -71,7 +71,7 @@ export function WorkspaceLearningsView({
   const { view, isPending, isError, isUnavailable, isEmpty } = result
 
   if (isPending) {
-    return <Skeleton className="h-96 w-full max-w-content" />
+    return <Skeleton className="h-96 w-full" />
   }
 
   if (isUnavailable) {
@@ -244,7 +244,6 @@ function Shell({
   const { t } = useTranslation()
   return (
     <Card
-      capped
       title={t('analytics.learned.title')}
       qualifier={qualifier}
       choice={

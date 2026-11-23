@@ -31,7 +31,8 @@ import { cn } from '@/lib'
  *   Labels are in sentence case. A destructive one is white with its
  *   icon in the danger colour, so it always carries an icon. Never a
  *   submit: saving is automatic.
- * - a `choice`: a selector that changes what the content shows (the period).
+ * - a `choice`: a selector that changes what the content shows (the period),
+ *   drawn as the outline button with a chevron at its end.
  * - an `aside`: a line of text in the qualifier's type (the dates and the day).
  * - `onDismiss`: the X that makes the card a notice.
  *
@@ -261,9 +262,9 @@ function End({
         value={choice.value}
         onValueChange={choice.onChange}
         elements={choice.options}
-        variant="default"
+        variant="button"
         size="sm"
-        className="w-40 shrink-0"
+        className="shrink-0"
       />
     )
   if (aside)
@@ -292,8 +293,9 @@ function End({
  * library, a file on a post — the offer looks like this: the card's outline,
  * dashed, on no surface of its own, with a plus and what it makes. Dashed
  * because it is a place for a card rather than a card; transparent so it never
- * reads as one of the real entries beside it. One plus, the title in the
- * header's type, and a line under it saying what the new card will be.
+ * reads as one of the real entries beside it. One plus as tall as the two
+ * lines beside it, the title in the header's type, and a line under it saying
+ * what the new card will be.
  */
 export function NewCard({
   label,
@@ -315,12 +317,13 @@ export function NewCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'group flex w-full min-w-0 cursor-pointer items-start gap-2 rounded-md border border-dashed border-border bg-transparent p-6 text-left transition-colors hover:border-tertiary-foreground',
+        'group flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-md border border-dashed border-border bg-transparent p-6 text-left transition-colors hover:border-tertiary-foreground',
         capped && 'max-w-content',
       )}
     >
-      <span className="flex h-8 shrink-0 items-center text-tertiary-foreground group-hover:text-primary-foreground">
-        <HugeiconsIcon icon={icon} size={20} strokeWidth={1.5} aria-hidden />
+      {/* As tall as the two lines beside it, and centred on them. */}
+      <span className="flex shrink-0 items-center text-tertiary-foreground group-hover:text-primary-foreground">
+        <HugeiconsIcon icon={icon} size={32} strokeWidth={1.5} aria-hidden />
       </span>
       <span className="flex min-w-0 flex-col">
         <span className="flex min-h-8 items-center font-display text-lg font-medium tracking-tight">

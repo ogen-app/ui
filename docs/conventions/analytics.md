@@ -43,6 +43,11 @@ keep it accurate when these rules change.
   after the first paint and left every switched measure blank. Sparklines keep
   the stretched viewBox; they have no pointer and nothing round.
 
+- **Analytics cards and bars take the column's full width** (2026-11-23):
+  no `capped`, no `max-w-content`, on the dashboards and on a post's
+  analytics alike. Their dropdowns — a card's `choice`, the bars' `Picker` —
+  are `TextSelect`'s `button` variant.
+
 - **A measure is drawn in one shape, decided in one place.** `drawnSeries`
   (`analytics/format.ts`) says whether a series is accumulated, and both the
   tile's sparkline and the chart under it ask it. They used to each hold a

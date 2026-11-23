@@ -53,7 +53,6 @@ export function PostPerformanceSection({
     case 'unlinked':
       return (
         <Card
-          capped
           title={t('posts.performance.title')}
           action={{
             label: t('posts.performance.unlinked.action'),
@@ -85,7 +84,7 @@ export function PostPerformanceSection({
 function Note({ body }: { body: string }) {
   const { t } = useTranslation()
   return (
-    <Card capped title={t('posts.performance.title')}>
+    <Card title={t('posts.performance.title')}>
       <Body>{body}</Body>
     </Card>
   )
