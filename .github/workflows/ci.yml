@@ -9,9 +9,12 @@ on:
     branches: [develop, main]
 
 # A new push to the same PR cancels the run still going for the old one.
-# Branch pushes are never cancelled, so every green develop merge publishes.
+# A branch push gets a group of its own (its SHA), so it is neither cancelled
+# nor left pending where a newer push could replace it — a shared group holds
+# one pending run, and queue: max can't sit beside cancel-in-progress: true.
+# Every green develop merge publishes; the publish job queues them in order.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
