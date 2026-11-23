@@ -1,27 +1,53 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CaretDownIcon } from '@phosphor-icons/react'
 import { FilterPills } from '@/components/smartFilter/FilterPills'
-import { FilterButton } from '@/components/smartFilter/ListStrip'
+import { FilterButton, LINE_CONTROL } from '@/components/smartFilter/ListStrip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { NoMatches } from '@/components/smartFilter/NoMatches'
 import { viewerTimeZone } from '@/lib/assetFilter'
 import { formatNumber } from '@/lib/intl'
-import { filteredCampaignPostsKey } from '@/lib/queryKeys'
+import {
+  filteredCampaignPostsKey,
+  filteredWorkspacePostsKey,
+} from '@/lib/queryKeys'
 import {
   POST_FILTER_MODEL,
+  POST_GROUPS,
   postRequestParams,
   type PostFilter,
+  type PostGrouping,
 } from '@/lib/postFilter'
 import type { CountQuery } from '@/lib/smartFilter'
-import { listCampaignPosts } from '@/services/api/posts'
+import { listCampaignPosts, listPosts } from '@/services/api/posts'
 import { usePostVocabulary } from './usePostVocabulary'
 
 /**
  * How many posts a filter would leave: the length of the server's answer to
- * it, read under the filtered key so the list showing that filter shares it.
+ * it, read under the filtered key so the list showing that filter shares it —
+ * a campaign's, or the workspace's (`campaignId` null).
  */
-function countQueryFor(campaignId: string): CountQuery<PostFilter> {
+function countQueryFor(campaignId: string | null): CountQuery<PostFilter> {
   return (filter) => {
     const params = postRequestParams(filter, viewerTimeZone())
+    if (campaignId === null)
+      return {
+        queryKey: [...filteredWorkspacePostsKey(params), 'count'],
+        // The workspace's pages leave archived campaigns out
+        // (`useWorkspacePosts`), so the count does too.
+        queryFn: () =>
+          listPosts(params).then(
+            (rows) => rows.filter((p) => !p.campaign?.archived_at).length,
+          ),
+      }
     return {
       queryKey: [...filteredCampaignPostsKey(campaignId, params), 'count'],
       queryFn: () =>
@@ -31,10 +57,12 @@ function countQueryFor(campaignId: string): CountQuery<PostFilter> {
 }
 
 /**
- * The posts filter (CON-472) over a campaign's posts list and its calendar,
- * on the Assets list's head line: `Filter`, then the filter as pills, which
- * show only while something narrows the list. With nothing chosen the line
- * is the button alone — an unfiltered list says nothing about itself.
+ * The posts filter (CON-472) over a posts list and a calendar — a
+ * campaign's, or the workspace's (`campaignId` null) — on the Assets list's
+ * head line: `Filter`, then the filter as pills, which show only while
+ * something narrows the list, and the list's own controls at the end. With
+ * nothing chosen the line is the button alone: an unfiltered list says
+ * nothing about itself.
  */
 export function PostsFilterBar({
   campaignId,
@@ -44,8 +72,9 @@ export function PostsFilterBar({
   totalUnfiltered,
   setByAssistant = false,
   showCount = true,
+  end,
 }: {
-  campaignId: string
+  campaignId: string | null
   filter: PostFilter
   onChange: (next: PostFilter) => void
   total: number
@@ -57,6 +86,8 @@ export function PostsFilterBar({
    * is still answering, when the number would be the last filter's.
    */
   showCount?: boolean
+  /** At the line's end: the list's Group by. */
+  end?: ReactNode
 }) {
   const { t, i18n } = useTranslation()
   const vocabulary = usePostVocabulary(campaignId)
@@ -98,7 +129,57 @@ export function PostsFilterBar({
           </>
         }
       />
+      {end && <div className="ml-auto flex shrink-0 items-center">{end}</div>}
     </div>
+  )
+}
+
+/**
+ * Group by, at the end of the posts list's filter line, in the line's voice
+ * (`LINE_CONTROL`) — the Assets list's control, for posts: by status, and by
+ * campaign where the rows come from more than one.
+ */
+export function PostsGroupMenu({
+  grouping,
+  onChange,
+  scoped,
+}: {
+  grouping: PostGrouping
+  onChange: (next: PostGrouping) => void
+  /** A campaign's own list: no Campaign grouping, every row is in it. */
+  scoped: boolean
+}) {
+  const { t } = useTranslation()
+  const groupings = POST_GROUPS.filter((g) => !(scoped && g === 'campaign'))
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className={LINE_CONTROL}>
+        {t('postsTable.view.groupBy')}
+        <span className="font-medium text-foreground">
+          {t(`postsTable.view.group.${grouping}`)}
+        </span>
+        <CaretDownIcon className="size-3" aria-hidden />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={6} className="w-56">
+        <DropdownMenuLabel className="text-[11px] tracking-wide text-secondary-foreground">
+          {t('postsTable.view.groupByHeading')}
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={grouping}
+          onValueChange={(v) => onChange(v as PostGrouping)}
+        >
+          {groupings.map((g) => (
+            <DropdownMenuRadioItem key={g} value={g}>
+              {t(`postsTable.view.group.${g}`)}
+            </DropdownMenuRadioItem>
+          ))}
+          <DropdownMenuSeparator className="mx-2" />
+          <DropdownMenuRadioItem value="none">
+            {t('postsTable.view.group.none')}
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -108,7 +189,7 @@ export function PostsNoMatches({
   filter,
   onChange,
 }: {
-  campaignId: string
+  campaignId: string | null
   filter: PostFilter
   onChange: (next: PostFilter) => void
 }) {
@@ -125,6 +206,7 @@ export function PostsNoMatches({
       onChange={onChange}
       columns={[
         t('postsTable.columnTitle'),
+        ...(campaignId === null ? [t('postsTable.columnCampaign')] : []),
         t('postsTable.columnStatus'),
         t('postsTable.columnWarnings'),
         t('postsTable.columnPlatform'),

@@ -1,11 +1,12 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useCampaign } from '@/hooks/useCampaigns'
+import { useCampaign, useCampaigns } from '@/hooks/useCampaigns'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { previousDay, startOfDay } from '@/lib/assetFilter'
 import { formatDate, formatList, formatNumber } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import {
+  CAMPAIGN_POST_FILTER_FIELDS,
   POST_FILTER_FIELDS,
   POST_SCHEDULED,
   POST_STATUSES,
@@ -18,21 +19,39 @@ import type { PostStatus } from '@/types/posts'
 
 /**
  * The words and values of the posts filter (CON-472) — the Ideas
- * vocabulary's shape (`useIdeaVocabulary`), for a campaign's posts.
+ * vocabulary's shape (`useIdeaVocabulary`), for posts.
  *
- * The values a field offers are the campaign's own: its platforms, and the
- * post types those platforms take there. The endpoint returns no facets, so
- * no value carries a count, and none is ever counted here.
+ * On a campaign's pages the values a field offers are the campaign's own: its
+ * platforms, and the post types those platforms take there. On the
+ * workspace's (`campaignId` null) they are every live campaign's, and the
+ * campaigns themselves are a field. The endpoint returns no facets, so no
+ * value carries a count, and none is ever counted here.
  */
-export function usePostVocabulary(campaignId: string) {
+export function usePostVocabulary(campaignId: string | null) {
   const { t, i18n } = useTranslation()
   const locale = i18n.language
   const { resolve } = usePlatformCatalog()
-  const campaign = useCampaign(campaignId)
-  const targets = useMemo(
-    () => campaign.data?.target_platforms ?? [],
-    [campaign.data],
+  const campaign = useCampaign(campaignId ?? '')
+  const campaignsQuery = useCampaigns()
+  // Archived campaigns' posts are not on the workspace's pages
+  // (`useWorkspacePosts`), so they are not offered either.
+  const campaigns = useMemo(
+    () => (campaignsQuery.data ?? []).filter((c) => !c.archived_at),
+    [campaignsQuery.data],
   )
+  const targets = useMemo(() => {
+    if (campaignId) return campaign.data?.target_platforms ?? []
+    // Each platform once, with every post type any campaign takes on it.
+    const merged = new Map<string, Set<string>>()
+    for (const c of campaigns)
+      for (const target of c.target_platforms ?? []) {
+        const types = merged.get(target.id) ?? new Set<string>()
+        for (const slug of target.post_types) types.add(slug)
+        merged.set(target.id, types)
+      }
+    return [...merged].map(([id, types]) => ({ id, post_types: [...types] }))
+  }, [campaignId, campaign.data, campaigns])
+  const fields = campaignId ? CAMPAIGN_POST_FILTER_FIELDS : POST_FILTER_FIELDS
 
   /** Every post type the campaign's platforms take, each worded once. */
   const postTypes = useMemo(() => {
@@ -60,6 +79,11 @@ export function usePostVocabulary(campaignId: string) {
   const valueLabel = useCallback(
     (field: PostFilterField, value: string): string => {
       switch (field) {
+        case 'campaign_id':
+          return (
+            campaigns.find((c) => c.id === value)?.name ??
+            t('postsFilter.unknownCampaign')
+          )
         case 'status':
           return postStatusLabel(t, value as PostStatus)
         case 'platform':
@@ -74,7 +98,7 @@ export function usePostVocabulary(campaignId: string) {
           return day(value)
       }
     },
-    [t, resolve, postTypes, day],
+    [t, campaigns, resolve, postTypes, day],
   )
 
   /** One value as it reads inside a clause: "drafts", "with a date". */
@@ -148,6 +172,8 @@ export function usePostVocabulary(campaignId: string) {
         count: null,
       })
       switch (field) {
+        case 'campaign_id':
+          return campaigns.map((c) => option(c.id))
         case 'status':
           return POST_STATUSES.map(option)
         case 'platform':
@@ -161,7 +187,7 @@ export function usePostVocabulary(campaignId: string) {
           return []
       }
     },
-    [valueLabel, targets, postTypes],
+    [valueLabel, campaigns, targets, postTypes],
   )
 
   const question = useCallback(
@@ -178,7 +204,11 @@ export function usePostVocabulary(campaignId: string) {
           ],
     [t],
   )
-  const findLabel = useCallback(() => null, [])
+  const findLabel = useCallback(
+    (field: PostFilterField) =>
+      field === 'campaign_id' ? t('postsFilter.sentence.findCampaign') : null,
+    [t],
+  )
   const starter = useCallback(
     (field: PostFilterField) => t(`postsFilter.sentence.starter.${field}`),
     [t],
@@ -200,8 +230,8 @@ export function usePostVocabulary(campaignId: string) {
 
   return useMemo<SentenceVocabulary<PostFilterField>>(
     () => ({
-      fields: POST_FILTER_FIELDS,
-      order: POST_FILTER_FIELDS,
+      fields,
+      order: fields,
       clause,
       tokenText,
       options,
@@ -214,6 +244,7 @@ export function usePostVocabulary(campaignId: string) {
       matches,
     }),
     [
+      fields,
       clause,
       tokenText,
       options,

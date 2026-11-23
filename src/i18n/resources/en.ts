@@ -907,6 +907,7 @@ export const en = {
     /** After a filter the assistant set, until it changes (CON-482). */
     setByAssistant: 'set by the assistant',
     unknownPlatform: 'A removed platform',
+    unknownCampaign: 'An archived campaign',
     nothingMatches: 'No posts match these filters',
     scheduled: {
       yes: 'With a date',
@@ -914,6 +915,9 @@ export const en = {
     },
     sentence: {
       clause: {
+        /** The workspace's pages only: a campaign's are in it already. */
+        campaign_id: 'in <v>{{values}}</v>',
+        campaign_id_not: 'not in <v>{{values}}</v>',
         status: 'that are <v>{{values}}</v>',
         status_not: 'that aren’t <v>{{values}}</v>',
         platform: 'on <v>{{values}}</v>',
@@ -940,6 +944,7 @@ export const en = {
         no: 'without a date',
       },
       question: {
+        campaign_id: 'Posts in…',
         status: 'Posts that are…',
         platform: 'Posts on…',
         post_type: 'Posts in the format…',
@@ -947,18 +952,21 @@ export const en = {
         date: 'Posts scheduled…',
       },
       include: {
+        campaign_id: 'in',
         status: 'are',
         platform: 'on',
         post_type: 'in',
         date: 'between',
       },
       exclude: {
+        campaign_id: 'not in',
         status: 'aren’t',
         platform: 'not on',
         post_type: 'not in',
         date: 'before',
       },
       starter: {
+        campaign_id: 'in a campaign…',
         status: 'that are…',
         platform: 'on a platform…',
         post_type: 'in a format…',
@@ -968,6 +976,7 @@ export const en = {
       starterHint: {
         status: 'drafts, failed',
       },
+      findCampaign: 'Find a campaign',
       posts_one: '{{formatted}} post',
       posts_other: '{{formatted}} posts',
     },
@@ -5250,6 +5259,18 @@ export const en = {
 
   postsTable: {
     sortSaveFailed: "Couldn't save the order you sorted by",
+    /** Group by, at the end of the filter line; the table's group heads. */
+    view: {
+      groupBy: 'Group by',
+      groupByHeading: 'GROUP BY',
+      group: {
+        status: 'Status',
+        campaign: 'Campaign',
+        none: 'No grouping',
+      },
+      fold: 'Fold {{group}}',
+      unfold: 'Unfold {{group}}',
+    },
 
     /**
      * The column headers, also drawn in the empty state's sketch of the table

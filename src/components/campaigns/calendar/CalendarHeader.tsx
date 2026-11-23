@@ -90,16 +90,17 @@ export function CalendarHeader({
     // switching views keeps the day you were looking at and only re-derives
     // the range around it.
     const nextAnchor = formatAnchor(anchor)
+    // The filter is the same posts at either granularity (CON-472).
     if (campaignId === null) {
       navigate({
         to: '/calendar/$anchor/$view',
         params: { anchor: nextAnchor, view: next },
+        search: true,
       })
     } else {
       navigate({
         to: '/campaigns/$campaignId/calendar/$anchor/$view',
         params: { campaignId, anchor: nextAnchor, view: next },
-        // The filter is the same posts at either granularity (CON-472).
         search: true,
       })
     }

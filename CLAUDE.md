@@ -181,7 +181,7 @@ Loaded automatically in `src/components/smartFilter`, `src/components/content`, 
 - The Campaigns list reads one batched query, never one per card.
 - The asset list is the server's answer to the URL, a page at a time.
 - The Ideas list is the server's answer to the URL too.
-- A campaign's posts list and calendar read one filter.
+- The posts lists and calendars read one filter, a campaign's and the workspace's.
 - The Ideas and Assets lists are cards on `listCards`' rules: tabs in the page header, and one pinned line for the filter, the arrangement and the selection.
 
 ### Posts — [`docs/conventions/posts.md`](./docs/conventions/posts.md)

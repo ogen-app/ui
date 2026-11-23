@@ -26,13 +26,19 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual'
 import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area'
 import { cn } from '@/lib'
-import type { VirtualTableProps, ColumnConfig } from './types'
+import type { VirtualTableProps, ColumnConfig, TableGroup } from './types'
 import { calculateTotal } from './utils'
 import { useColumnWidths, useContainerWidth } from './hooks/useColumnWidths'
 import { Button } from '@/components/ui/button'
 import { ScrollBar } from '@/components/ui/scroll-area'
 import { ZIndex } from '@/config/zIndex.ts'
-import { CaretDownIcon, CaretUpIcon } from '@phosphor-icons/react'
+import {
+  CaretDownIcon,
+  CaretRightIcon,
+  CaretUpIcon,
+} from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
+import { formatNumber } from '@/lib/intl'
 import { FooterCell } from '@/components/tables/TableCells.tsx'
 import { TableEmptyState } from './TableEmptyState'
 
@@ -56,6 +62,14 @@ const features = tableFeatures({
 })
 type Features = typeof features
 
+/** A group head's height: room above its words to part it from the last group. */
+const GROUP_HEAD_HEIGHT = 44
+
+/** What the body draws, in order: a group's head, or one of its rows. */
+type BodyItem<TData extends Record<string, unknown>> =
+  | { kind: 'group'; group: TableGroup; count: number; folded: boolean }
+  | { kind: 'row'; row: Row<Features, TData> }
+
 function VirtualTableComponent<TData extends Record<string, unknown>>({
   data,
   columnConfigs,
@@ -78,7 +92,9 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   onEndReached,
   rowClassName,
   endInset = 0,
+  groupOf,
 }: VirtualTableProps<TData>) {
+  const { t, i18n } = useTranslation()
   // Controlled when the caller passes `sorting`, otherwise the table owns it.
   // Whoever owns it, the header below only ever calls `setSorting`.
   const [ownSorting, setOwnSorting] = useState<SortingState>(initialSorting)
@@ -267,11 +283,71 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
 
   const { rows } = table.getRowModel()
 
-  // Row virtualizer
+  // Grouped, the body is each group's head and then its rows, in the table's
+  // sort; a folded group is its head alone. Ungrouped, it is the rows.
+  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set())
+  const items = useMemo<BodyItem<TData>[]>(() => {
+    if (!groupOf) return rows.map((row) => ({ kind: 'row', row }))
+    const groups = new Map<
+      string,
+      { group: TableGroup; rows: Row<Features, TData>[] }
+    >()
+    for (const row of rows) {
+      const group = groupOf(row.original)
+      const entry = groups.get(group.key) ?? { group, rows: [] }
+      entry.rows.push(row)
+      groups.set(group.key, entry)
+    }
+    const out: BodyItem<TData>[] = []
+    const ordered = [...groups.values()].sort(
+      (a, b) =>
+        a.group.rank - b.group.rank ||
+        a.group.label.localeCompare(b.group.label, i18n.language),
+    )
+    for (const { group, rows: inGroup } of ordered) {
+      const isFolded = folded.has(group.key)
+      out.push({
+        kind: 'group',
+        group,
+        count: inGroup.length,
+        folded: isFolded,
+      })
+      if (!isFolded) for (const row of inGroup) out.push({ kind: 'row', row })
+    }
+    return out
+  }, [rows, groupOf, folded, i18n.language])
+  const toggleFold = useCallback(
+    (key: string) =>
+      setFolded((prev) => {
+        const next = new Set(prev)
+        if (!next.delete(key)) next.add(key)
+        return next
+      }),
+    [],
+  )
+
+  // Row virtualizer — over the body's items, keyed by what they are, so a
+  // fold or a regroup never hands one item's measured size to another.
+  // Stable between renders: the virtualiser re-derives every offset when
+  // either changes, so a fresh function each render would lay out each render.
+  const estimateSize = useCallback(
+    (index: number) =>
+      items[index]?.kind === 'group' ? GROUP_HEAD_HEIGHT : estimatedRowHeight,
+    [items, estimatedRowHeight],
+  )
+  const getItemKey = useCallback(
+    (index: number) => {
+      const item = items[index]
+      if (!item) return index
+      return item.kind === 'group' ? `group:${item.group.key}` : item.row.id
+    },
+    [items],
+  )
   const rowVirtualizer = useVirtualizer({
-    count: rows.length,
+    count: items.length,
     getScrollElement: () => viewportRef.current,
-    estimateSize: () => estimatedRowHeight,
+    estimateSize,
+    getItemKey,
     overscan,
   })
 
@@ -283,9 +359,9 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   // still pulls the one after it.
   const lastRendered = virtualRows[virtualRows.length - 1]?.index ?? -1
   useEffect(() => {
-    if (!onEndReached || rows.length === 0) return
-    if (lastRendered >= rows.length - 1 - overscan) onEndReached()
-  }, [onEndReached, lastRendered, rows.length, overscan])
+    if (!onEndReached || items.length === 0) return
+    if (lastRendered >= items.length - 1 - overscan) onEndReached()
+  }, [onEndReached, lastRendered, items.length, overscan])
 
   // Calculate dynamic column widths based on container size
   const {
@@ -541,7 +617,54 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
               }}
             >
               {virtualRows.map((virtualRow) => {
-                const row = rows[virtualRow.index]
+                const item = items[virtualRow.index]
+                if (item.kind === 'group') {
+                  const { group, count } = item
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      data-index={virtualRow.index}
+                      className="absolute top-0 left-0 flex items-end bg-background px-3 pb-2"
+                      style={{
+                        height: `${GROUP_HEAD_HEIGHT}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                        width: hasOverflow ? `${totalWidth}px` : '100%',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleFold(group.key)}
+                        aria-expanded={!item.folded}
+                        aria-label={t(
+                          item.folded
+                            ? 'postsTable.view.unfold'
+                            : 'postsTable.view.fold',
+                          { group: group.label },
+                        )}
+                        className="flex h-5 max-w-full cursor-pointer items-center gap-2 text-left text-sm/5 outline-none focus-visible:underline"
+                      >
+                        {item.folded ? (
+                          <CaretRightIcon
+                            className="size-3 shrink-0 text-secondary-foreground"
+                            aria-hidden
+                          />
+                        ) : (
+                          <CaretDownIcon
+                            className="size-3 shrink-0 text-secondary-foreground"
+                            aria-hidden
+                          />
+                        )}
+                        <span className="truncate font-medium text-foreground">
+                          {group.label}
+                        </span>
+                        <span className="shrink-0 text-secondary-foreground tabular-nums">
+                          {formatNumber(count, {}, i18n.language)}
+                        </span>
+                      </button>
+                    </div>
+                  )
+                }
+                const { row } = item
                 return (
                   <div
                     key={row.id}

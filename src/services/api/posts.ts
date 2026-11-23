@@ -33,8 +33,18 @@ export function listCampaignPosts(
  * campaigns (the auto-publish allowlist is workspace-wide, so switching it off
  * has to look at every campaign's scheduled posts, not just the open one).
  */
-export function listPosts(): Promise<Post[]> {
-  return apiJson<Post[]>(BASE, 'Unable to fetch posts')
+/**
+ * Every campaign's posts, or those matching the posts filter
+ * (`lib/postFilter`) — the campaign endpoint's params, `campaign_id` included.
+ */
+export function listPosts(
+  params: Record<string, string> = {},
+): Promise<Post[]> {
+  const query = new URLSearchParams(params).toString()
+  return apiJson<Post[]>(
+    `${BASE}${query ? `?${query}` : ''}`,
+    'Unable to fetch posts',
+  )
 }
 
 export function getPost(id: string): Promise<Post> {

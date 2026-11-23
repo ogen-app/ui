@@ -70,6 +70,13 @@ export const CAMPAIGN_SUMMARIES_KEY = ['campaigns', 'summaries'] as const
 export const WORKSPACE_POSTS_KEY = ['posts'] as const
 
 /**
+ * The workspace's posts under a filter. Under `WORKSPACE_POSTS_KEY`, so every
+ * write that refreshes the workspace's posts refreshes the filtered reads too.
+ */
+export const filteredWorkspacePostsKey = (params: Record<string, string>) =>
+  [...WORKSPACE_POSTS_KEY, 'filtered', params] as const
+
+/**
  * A post's attachments.
  *
  * Unlike the history and the notes, this one nests under the editor's

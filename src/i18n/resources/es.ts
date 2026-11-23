@@ -740,6 +740,7 @@ export const es: Translation = {
   postsFilter: {
     setByAssistant: 'puesto por el asistente',
     unknownPlatform: 'Una plataforma retirada',
+    unknownCampaign: 'Una campaña archivada',
     nothingMatches: 'Ninguna publicación coincide con estos filtros',
     scheduled: {
       yes: 'Con fecha',
@@ -747,6 +748,8 @@ export const es: Translation = {
     },
     sentence: {
       clause: {
+        campaign_id: 'en <v>{{values}}</v>',
+        campaign_id_not: 'fuera de <v>{{values}}</v>',
         status: 'que son <v>{{values}}</v>',
         status_not: 'que no son <v>{{values}}</v>',
         platform: 'en <v>{{values}}</v>',
@@ -773,6 +776,7 @@ export const es: Translation = {
         no: 'sin fecha',
       },
       question: {
+        campaign_id: 'Publicaciones en…',
         status: 'Publicaciones que son…',
         platform: 'Publicaciones en…',
         post_type: 'Publicaciones en formato…',
@@ -780,18 +784,21 @@ export const es: Translation = {
         date: 'Publicaciones programadas…',
       },
       include: {
+        campaign_id: 'en',
         status: 'son',
         platform: 'en',
         post_type: 'en',
         date: 'entre',
       },
       exclude: {
+        campaign_id: 'fuera de',
         status: 'no son',
         platform: 'fuera de',
         post_type: 'no en',
         date: 'antes',
       },
       starter: {
+        campaign_id: 'en una campaña…',
         status: 'que son…',
         platform: 'en una plataforma…',
         post_type: 'en un formato…',
@@ -801,6 +808,7 @@ export const es: Translation = {
       starterHint: {
         status: 'borradores, fallidas',
       },
+      findCampaign: 'Buscar una campaña',
       posts_one: '{{formatted}} publicación',
       posts_other: '{{formatted}} publicaciones',
     },
@@ -4453,6 +4461,17 @@ export const es: Translation = {
 
   postsTable: {
     sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
+    view: {
+      groupBy: 'Agrupar por',
+      groupByHeading: 'AGRUPAR POR',
+      group: {
+        status: 'Estado',
+        campaign: 'Campaña',
+        none: 'Sin agrupar',
+      },
+      fold: 'Plegar {{group}}',
+      unfold: 'Desplegar {{group}}',
+    },
 
     columnTitle: 'Título',
     columnStatus: 'Estado',

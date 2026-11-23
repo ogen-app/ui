@@ -87,12 +87,16 @@ keep it accurate when these rules change.
   `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
   `idea_read_only`); only its campaign may change.
 
-- **A campaign's posts list and calendar read one filter** (CON-472):
-  `lib/postFilter`, the endpoint's own params (`status`, `platform` — the
-  post's platform sqid —, `post_type`, `scheduled=yes|no`,
-  `scheduled_after`/`scheduled_before` as days, `tz` only beside a date), in
-  the address of both pages and carried across WEEK/MONTH and the bare
-  calendar redirect. The pills are the Assets ones on a third model
+- **The posts lists and calendars read one filter** (CON-472), a
+  campaign's and the workspace's alike: `lib/postFilter`, the endpoints' own
+  params (`status`, `platform` — the post's platform sqid —, `post_type`,
+  `scheduled=yes|no`, `scheduled_after`/`scheduled_before` as days, `tz` only
+  beside a date), in the address of both pages and carried across WEEK/MONTH
+  and the bare calendar redirect. `GET /api/posts` takes the same params plus
+  `campaign_id`, so the workspace's pages add a Campaign field
+  (`campaign_id`/`campaign_id_not`), offering the live campaigns and every
+  platform and post type they take; a campaign's pages drop it from the
+  address (`parseCampaignPostListSearch`), which already names the campaign. The pills are the Assets ones on a third model
   (`PostsFilterBar`: Filter, then the pills, ending "3 of 21"); the
   endpoint answers the whole match, unpaged and without facets, so the
   values carry no counts and the table still sorts on the client. A filtered
@@ -125,7 +129,12 @@ keep it accurate when these rules change.
   ADD POST in the header's top-right (on the workspace list it asks which
   campaign in a modal), then Filter and its pills, then the table. There is
   no count line: the pills end "3 of 21" while a filter narrows the list, and
-  with none there are no pills to say anything. The bulk bar floats over the list's foot, as on the
+  with none there are no pills to say anything. **Group by** ends the line
+  (`PostsGroupMenu`): by status, in the order a post moves through them, or —
+  on the workspace's list — by campaign, by name; `group` sits in the address
+  beside the filter, survives it, and is never sent. The table draws a head
+  per group (`VirtualTable`'s `groupOf`), which folds it; the rows under each
+  keep the table's sort. The bulk bar floats over the list's foot, as on the
   calendar. **What is wrong with a post is one column of marks** after Status
   (`lib/postWarnings`): read off the list payload alone — a failed or missed
   publish, no platform, no account it can publish as, outside its campaign's

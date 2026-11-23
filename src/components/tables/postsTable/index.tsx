@@ -7,7 +7,7 @@ import { TrashIcon } from '@phosphor-icons/react'
 import { DEFAULT_POSTS_SORT } from '@/hooks/usePostsTableSort'
 import { VirtualTable } from '../VirtualTable'
 import { TextCell } from '../TableCells'
-import type { ColumnConfig } from '../types'
+import type { ColumnConfig, TableGroup } from '../types'
 import type { Post } from '@/types/posts'
 import { DELETABLE_STATUSES } from '@/types/posts'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,7 @@ import { SeriesMark } from '@/components/series/SeriesMark'
 import { PostWarningsMark } from '@/components/campaigns/postsList/PostWarningsMark'
 import { usePostWarnings } from '@/hooks/usePostWarnings'
 import { counted } from '@/lib/intl'
+import { POST_STATUSES, type PostGrouping } from '@/lib/postFilter'
 
 type PostRow = Post & Record<string, unknown>
 
@@ -62,6 +63,11 @@ type PostsTableProps = {
    */
   sorting?: SortingState
   onSortingChange?: (next: SortingState) => void
+  /**
+   * Rows under a head per status, in the order a post moves through them, or
+   * per campaign, by name. Omitted or `none`, one run of rows.
+   */
+  grouping?: PostGrouping
 }
 
 function formatDate(
@@ -108,6 +114,29 @@ function formatRelativeDate(dateStr: string | null, t: TFunction): string {
   return t('postsTable.daysAgo', { count: Math.abs(diffDays) })
 }
 
+/**
+ * A row's group head: its status, in the order a post moves through them, or
+ * its campaign, by name.
+ */
+function groupOfFor(
+  grouping: PostGrouping,
+  t: TFunction,
+): ((row: PostRow) => TableGroup) | undefined {
+  if (grouping === 'status')
+    return (row) => ({
+      key: row.status,
+      label: postStatusLabel(t, row.status),
+      rank: POST_STATUSES.indexOf(row.status),
+    })
+  if (grouping === 'campaign')
+    return (row) => ({
+      key: row.campaign_id,
+      label: row.campaign?.name ?? '',
+      rank: 0,
+    })
+  return undefined
+}
+
 function PostsTableComponent({
   posts,
   campaignId,
@@ -124,6 +153,7 @@ function PostsTableComponent({
   onToggleAll,
   sorting,
   onSortingChange,
+  grouping = 'none',
 }: PostsTableProps) {
   const data = posts as PostRow[]
   const { t, i18n } = useTranslation()
@@ -395,6 +425,8 @@ function PostsTableComponent({
     ],
   )
 
+  const groupOf = useMemo(() => groupOfFor(grouping, t), [grouping, t])
+
   const seriesOn = useFeatureFlag('series')
   const withSeries = seriesOn && data.some((post) => post.series_id)
 
@@ -433,6 +465,7 @@ function PostsTableComponent({
       emptyStateActionLabel={emptyStateActionLabel}
       onEmptyStateAction={onEmptyStateAction}
       loading={loading}
+      groupOf={groupOf}
     />
   )
 }

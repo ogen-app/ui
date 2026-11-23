@@ -25,7 +25,7 @@ import {
 import { viewerTimeZone } from '@/lib/assetFilter'
 import {
   isPostFilterActive,
-  parsePostListSearch,
+  parseCampaignPostListSearch,
   postFilterFromSearch,
   postRequestParams,
   searchFromPostFilter,
@@ -56,7 +56,7 @@ export const Route = createFileRoute(
 )({
   staticData: { help: 'calendar' },
   // The posts list's filter, in the same words (CON-472).
-  validateSearch: parsePostListSearch,
+  validateSearch: parseCampaignPostListSearch,
   beforeLoad: ({ params, search }) => {
     // Normalize malformed anchors / unsupported views to the current week.
     const parsed = parseAnchor(params.anchor)
@@ -92,7 +92,11 @@ function CalendarView() {
       void navigate({
         to: '/campaigns/$campaignId/calendar/$anchor/$view',
         params: { campaignId, anchor, view },
-        search: searchFromPostFilter(next),
+        // The list's grouping rides along, for the way back to it.
+        search: (prev) => ({
+          ...searchFromPostFilter(next),
+          group: prev.group,
+        }),
         replace: true,
       }),
     [navigate, campaignId, anchor, view],

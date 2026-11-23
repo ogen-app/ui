@@ -31,7 +31,7 @@ import { useJustWrittenStore } from '@/stores/justWrittenStore'
 import { viewerTimeZone } from '@/lib/assetFilter'
 import {
   isPostFilterActive,
-  parsePostListSearch,
+  parseCampaignPostListSearch,
   postFilterFromSearch,
   postRequestParams,
 } from '@/lib/postFilter'
@@ -50,7 +50,7 @@ export function NotScheduledPanel({
   // calendar's drawer mounts this panel, not the route.
   const search = useSearch({ strict: false })
   const filter = useMemo(
-    () => postFilterFromSearch(parsePostListSearch(search)),
+    () => postFilterFromSearch(parseCampaignPostListSearch(search)),
     [search],
   )
   const [timeZone] = useState(viewerTimeZone)

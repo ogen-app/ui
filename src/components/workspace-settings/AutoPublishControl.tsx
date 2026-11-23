@@ -82,7 +82,7 @@ export function AutoPublishControl({ view }: { view: PlatformView }) {
       // run on a list up to 30 seconds old.
       const posts = await queryClient.fetchQuery({
         queryKey: WORKSPACE_POSTS_KEY,
-        queryFn: listPosts,
+        queryFn: () => listPosts(),
         staleTime: 0,
       })
       const pending = pendingAutoPosts(posts, platform.id, Date.now())
