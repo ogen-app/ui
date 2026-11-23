@@ -163,11 +163,19 @@ describe('WorkspaceScopeBar', () => {
   })
 
   it('shows a range the address names as the period, until a span is picked', async () => {
+    // Radix's select reads pointer capture and scrolls its options into view,
+    // neither of which jsdom implements.
+    Element.prototype.hasPointerCapture ??= () => false
+    Element.prototype.releasePointerCapture ??= () => {}
+    Element.prototype.scrollIntoView ??= () => {}
     const onWindowChange = vi.fn()
     setup({ range: { from: '2026-03-01', to: '2026-03-31' }, onWindowChange })
-    const period = screen.getByLabelText(/Period/) as HTMLSelectElement
-    expect(period.selectedOptions[0].textContent).toBe('Mar 1 – Mar 31')
-    await userEvent.selectOptions(period, '7d')
+    const period = screen.getByRole('combobox', { name: /Period/ })
+    expect(period).toHaveTextContent('Mar 1 – Mar 31')
+    await userEvent.click(period)
+    await userEvent.click(
+      await screen.findByRole('option', { name: 'last 7 days' }),
+    )
     expect(onWindowChange).toHaveBeenCalledWith('7d')
   })
 })

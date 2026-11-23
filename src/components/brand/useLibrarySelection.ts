@@ -4,8 +4,12 @@ import {
   useAssistantRequest,
 } from '@/hooks/useAssistantContext'
 
-/** The Foundation libraries a selection can be made on (CON-472). */
-export type LibraryKind = 'voice' | 'audience' | 'fact' | 'series'
+/**
+ * The Foundation libraries a selection can be made on (CON-472). Only the
+ * facts ledger now: voices, audiences and series are plain cards that open
+ * their entry, and are deleted from inside it.
+ */
+export type LibraryKind = 'fact'
 
 /** What a library's entries need to draw their tick. */
 export type LibrarySelection = {
@@ -15,8 +19,7 @@ export type LibrarySelection = {
 }
 
 /**
- * The entries ticked in one Foundation library — voices, audiences, facts or
- * series (CON-472). By hand, or by the assistant's `select`; either way the
+ * The entries ticked in one Foundation library — the facts ledger (CON-472). By hand, or by the assistant's `select`; either way the
  * selection goes out with the next message, which is what it is for: these
  * libraries are short and have no bulk verbs, so a selection is something to
  * ask about ("do these two overlap?"), and the bar only clears it.

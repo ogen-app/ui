@@ -1,22 +1,10 @@
 import { useId, useMemo, useState, type ReactNode } from 'react'
-import {
-  ArrowCounterClockwiseIcon,
-  DotsThreeVerticalIcon,
-  PlusIcon,
-  TrashIcon,
-  UploadSimpleIcon,
-} from '@phosphor-icons/react'
+import { PlusIcon, TrashIcon } from '@phosphor-icons/react'
 import { StarIcon } from '@hugeicons/core-free-icons'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { ModalContainer } from '@/components/ui/modal'
 import { Textarea } from '@/components/ui/textarea'
@@ -219,11 +207,6 @@ export function VoiceEditor({
 
       <SamplesCard
         samples={draft.samples}
-        // What `Reset` goes back to. `initial` rather than `voice`, so a
-        // voice forked from a starter resets to the starter's samples and a
-        // new one resets to none — the state the screen opened in, which is
-        // what anybody means by resetting a form they have been typing in.
-        saved={initial.samples}
         onChange={(samples) => set('samples', samples)}
         summary={samplesChanged ? null : voice?.summary || null}
       />
@@ -329,6 +312,15 @@ export function VoiceEditor({
           noun={t('brand.voices.editor.noun')}
           name={voice.name}
           cost={deletionCost(t, voice.usage)}
+          // Back to `initial` rather than `voice`, so a voice forked from a
+          // starter resets to the starter's samples — the state the screen
+          // opened in, which is what anybody means by resetting a form.
+          reset={{
+            label: t('brand.voices.editor.resetSamples'),
+            onClick: () => set('samples', initial.samples),
+            disabled:
+              draft.samples.join('\u0000') === initial.samples.join('\u0000'),
+          }}
           onDelete={() => {
             const release = save.hold()
             onDelete().catch(release)
@@ -478,18 +470,16 @@ function assemble(
  *
  * **Pasting several at once is gone from the card.** It was a second textarea
  * flow living permanently in the block, and it split its samples on blank lines
- * — a rule you had to be told. It is in the overflow menu as the thing it
- * actually is: a bulk import, not yet built.
+ * — a rule you had to be told. It comes back, if it does, as the thing it
+ * actually is: a bulk import, not yet built. Resetting the samples is in the
+ * Danger Zone, with the other step that throws work away.
  */
 function SamplesCard({
   samples,
-  saved,
   onChange,
   summary,
 }: {
   samples: string[]
-  /** The samples as last saved, which is what `Reset` puts back. */
-  saved: string[]
   onChange: (samples: string[]) => void
   /** Our reading of these samples, or `null` once they have moved under it. */
   summary: string | null
@@ -527,7 +517,6 @@ function SamplesCard({
 
   const short = samples.length < MIN_VOICE_SAMPLES
   const isNewSample = editing !== null && editing >= samples.length
-  const changed = samples.join('\n\n') !== saved.join('\n\n')
 
   return (
     <EditorCard
@@ -559,9 +548,6 @@ function SamplesCard({
           )}
           {short && <span>{t('brand.voices.editor.samplesShort')}</span>}
         </>
-      }
-      action={
-        <SamplesMenu canReset={changed} onReset={() => onChange(saved)} />
       }
     >
       <ul className="grid gap-3 sm:grid-cols-2">
@@ -645,55 +631,6 @@ function SamplesCard({
         </div>
       </ModalContainer>
     </EditorCard>
-  )
-}
-
-/**
- * The card's overflow, for the two things that are about the set rather than
- * about one sample.
- *
- * Both are here for the same reason: neither earns a permanent control. `Reset`
- * is an undo for a session of editing and is dark until there is something to
- * undo. Bulk upload is the paste-several flow that used to live in the block —
- * a real need (nobody seeds a voice by typing five posts) and a decision nobody
- * has made, since "upload" could mean a file, a URL, or the old paste-and-split.
- * Listed and disabled rather than absent, because a screen that has thought
- * about a thing and not built it should say so where somebody would look.
- */
-function SamplesMenu({
-  canReset,
-  onReset,
-}: {
-  canReset: boolean
-  onReset: () => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="smIcon"
-          className="shrink-0"
-          aria-label={t('brand.voices.editor.moreSampleOptions')}
-        >
-          <DotsThreeVerticalIcon weight="regular" className="size-5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem disabled={!canReset} onSelect={onReset}>
-          <ArrowCounterClockwiseIcon />
-          <span>{t('brand.voices.editor.resetSamples')}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled>
-          <UploadSimpleIcon />
-          <span>{t('brand.voices.editor.bulkUpload')}</span>
-          <span className="pl-6 text-xs text-tertiary-foreground">
-            {t('brand.voices.editor.bulkUploadSoon')}
-          </span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }
 

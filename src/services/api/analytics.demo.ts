@@ -12,7 +12,13 @@ import type {
   PerformerRow,
   PerformerSort,
   PerformersBoard,
+  PostAnalyticsAnswer,
+  PostAnalyticsSnapshot,
 } from '@/types/analytics'
+import type {
+  PostPerformanceView,
+  PostSeriesPoint,
+} from '@/components/analytics/types'
 import type {
   AnalyticsPlatformQuery,
   AnalyticsWindowQuery,
@@ -64,8 +70,17 @@ import type {
  * disagreed about the same month would make the demo useless for reading the
  * page as a page, which is the only reason to have it.
  *
- * Delete this file and the `demoMode()` branches in `analytics.ts` once a dev
- * environment can seed the analytics database itself.
+ * ## One post
+ *
+ * The same mode also answers `GET /api/posts/:id/analytics`, for any published
+ * post — linked or not, since a local post never went out through a publisher.
+ * The figures are seeded off the post's id; the history behind each measure
+ * card, which no endpoint serves yet, is spread out of those figures so a
+ * running total ends on the number at the top of its card.
+ *
+ * Delete this file and the `demoMode()` branches in `analytics.ts`,
+ * `postAnalytics.ts` and `usePostPerformance` once a dev environment can seed
+ * the analytics database itself.
  */
 
 /* --------------------------------------------------------------- the mode -- */
@@ -867,4 +882,147 @@ export function demoLearnings(
   now: Date = new Date(),
 ): Promise<InsightEnvelope<AnalyticsLearnings>> {
   return envelopeFor(() => buildLearnings(query, now))
+}
+
+/* ---------------------------------------------------------------- one post -- */
+
+const HOUR_MS = 3_600_000
+
+/** Fourteen days of hourly history, at most: enough for the day reading to mean something. */
+const HISTORY_HOURS = 14 * 24
+
+/**
+ * `GET /api/posts/:id/analytics` for one published post.
+ *
+ * `empty` is the sweep that has not reached it yet (`pending`); `unavailable`
+ * is thrown by the caller, which owns the message the 503 carries.
+ */
+export function demoPostAnalytics(
+  postId: string,
+  now: Date = new Date(),
+): Promise<PostAnalyticsAnswer> {
+  return new Promise((resolve) => {
+    setTimeout(
+      () =>
+        resolve(
+          mode === 'empty'
+            ? { status: 'pending', post_id: postId }
+            : buildPostSnapshot(postId, now),
+        ),
+      LATENCY_MS,
+    )
+  })
+}
+
+function buildPostSnapshot(postId: string, now: Date): PostAnalyticsSnapshot {
+  const r = rng(`post:${postId}`)
+  const reach = Math.round(2_000 + r() * 9_000)
+  const impressions = Math.round(reach * (1.3 + r() * 0.5))
+  const likes = Math.round(reach * (0.03 + r() * 0.04))
+  const comments = Math.round(likes * (0.06 + r() * 0.06))
+  const shares = Math.round(likes * (0.03 + r() * 0.05))
+  const saves = Math.round(likes * (0.08 + r() * 0.1))
+  const clicks = Math.round(reach * (0.006 + r() * 0.01))
+  const views = Math.round(impressions * (0.8 + r() * 0.15))
+  const analytics = {
+    impressions,
+    reach,
+    likes,
+    comments,
+    shares,
+    saves,
+    clicks,
+    views,
+    engagement_rate: (likes + comments + shares + saves) / reach,
+  }
+  const refreshed = new Date(now.getTime() - 20 * 60_000).toISOString()
+  return {
+    post_id: postId,
+    publisher: 'zernio',
+    publisher_post_id: `demo-${postId}`,
+    sync_status: 'synced',
+    metrics_last_updated: refreshed,
+    last_refreshed_at: refreshed,
+    analytics,
+    platform_analytics: [
+      {
+        // Empty, so the view falls back to the post's own platform.
+        platform: '',
+        account_username: 'ogen.demo',
+        platform_post_url: `https://example.com/demo/${postId}`,
+        analytics,
+      },
+    ],
+  }
+}
+
+/**
+ * What the wire cannot say yet, filled in for the demo: each measure's hourly
+ * history, a typical post to hold it against, and a rank once it settles.
+ */
+export function demoPostHistory(
+  view: PostPerformanceView,
+  postId: string,
+  publishedAt: string | null,
+  now: Date = new Date(),
+): PostPerformanceView {
+  const age = publishedAt
+    ? Math.floor((now.getTime() - Date.parse(publishedAt)) / HOUR_MS)
+    : 48
+  const hours = Math.min(Math.max(age, 2), HISTORY_HOURS)
+  const start = publishedAt
+    ? Date.parse(publishedAt)
+    : now.getTime() - hours * HOUR_MS
+  const r = rng(`post:${postId}:typical`)
+  const settled = view.maturity === 'settling'
+
+  return {
+    ...view,
+    percentile: settled ? 40 + Math.floor(r() * 55) : null,
+    sample: 38,
+    metrics: view.metrics.map((metric) => {
+      const typical = metric.value * (0.6 + r() * 0.7)
+      return {
+        ...metric,
+        typical,
+        expected: { low: typical * 0.7, high: typical * 1.4 },
+      }
+    }),
+    series: view.metrics
+      .filter((metric) => metric.measure !== 'engagement_rate')
+      .map((metric) => ({
+        measure: metric.measure,
+        points: spread(
+          metric.value,
+          hours,
+          start,
+          rng(`post:${postId}:${metric.measure}`),
+        ),
+      })),
+  }
+}
+
+/**
+ * A total, handed out over the post's first hours the way a post earns it: a
+ * slow first hour, a peak, then a long decay with noise on it. Whole numbers
+ * that add back up to the total, so the running total ends on it.
+ */
+function spread(
+  total: number,
+  hours: number,
+  start: number,
+  r: () => number,
+): PostSeriesPoint[] {
+  const weights = Array.from({ length: hours }, (_, i) => {
+    const ramp = i < 2 ? 0.5 + i * 0.25 : 1
+    return ramp * Math.exp(-i / 16) * (0.6 + r() * 0.8)
+  })
+  const whole = sum(weights)
+  const values = weights.map((w) => Math.floor((total * w) / whole))
+  values[2 % hours] += Math.round(total) - sum(values)
+  return values.map((value, i) => ({
+    at: new Date(start + (i + 1) * HOUR_MS).toISOString(),
+    hour: i + 1,
+    value,
+  }))
 }

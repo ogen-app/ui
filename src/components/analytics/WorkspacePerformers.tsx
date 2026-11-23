@@ -59,7 +59,7 @@ export function WorkspacePerformersView({
   const { view, isPending, isError, isUnavailable, isEmpty } = result
 
   if (isPending) {
-    return <Skeleton className="h-80 w-full max-w-content" />
+    return <Skeleton className="h-80 w-full" />
   }
 
   if (isUnavailable) {
@@ -130,7 +130,6 @@ function Shell({
   const { t } = useTranslation()
   return (
     <Card
-      capped
       title={t('analytics.performers.title')}
       qualifier={qualifier}
       choice={
