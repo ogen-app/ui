@@ -17,6 +17,10 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Read-only by default; a job that needs more (publish) asks for it itself.
+permissions:
+  contents: read
+
 jobs:
   check:
     name: typecheck · lint · format · test · build
@@ -134,6 +138,7 @@ jobs:
           permission-contents: write
 
       - name: Dispatch bump to ogen-release
+        id: dispatch
         if: steps.release-token.outcome == 'success'
         continue-on-error: true
         env:
@@ -145,3 +150,11 @@ jobs:
             -f 'client_payload[service]=ui' \
             -F "client_payload[build]=$BUILD" \
             -f "client_payload[revision]=$GITHUB_SHA"
+
+      # The two steps above can't fail the job, so say so when no bump went out:
+      # the image is published but ogen-release never hears about it.
+      - name: Warn when the bump was not sent
+        if: steps.release-token.outcome != 'success' || steps.dispatch.outcome != 'success'
+        env:
+          BUILD: ${{ steps.build.outputs.number }}
+        run: echo "::warning title=Bump not sent::ghcr.io/ogen-app/ui:$BUILD was published, but ogen-release was not asked to bump the ui to it. Check the release App (RELEASE_APP_CLIENT_ID, RELEASE_APP_PRIVATE_KEY, its installation on ogen-release)."
