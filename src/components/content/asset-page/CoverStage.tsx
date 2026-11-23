@@ -57,10 +57,6 @@ export function CoverStage({
           />
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-b from-transparent to-primary lg:h-24"
-          />
-          <span
-            aria-hidden
             className="pointer-events-none absolute left-3 top-3 flex size-9 items-center justify-center rounded-full bg-primary-foreground/80 text-primary opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
           >
             <MagnifyingGlassPlusIcon className="size-5" />
