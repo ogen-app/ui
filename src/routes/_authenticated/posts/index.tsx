@@ -177,7 +177,11 @@ function WorkspacePostsView() {
       ) : !isLoading && rows.length === 0 ? (
         <PostsEmptyState variant="list" />
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col">
+          {/* A flex column, not a scroller: the table scrolls in its own
+              viewport, which its rows are virtualised against. A scroller
+              here let the table grow to its full height, and the
+              viewport's `overscroll-none` kept the wheel from reaching it. */}
           <PostsTable
             posts={rows}
             campaignId={null}

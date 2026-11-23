@@ -62,9 +62,6 @@ const features = tableFeatures({
 })
 type Features = typeof features
 
-/** A group head's height: room above its words to part it from the last group. */
-const GROUP_HEAD_HEIGHT = 44
-
 /** What the body draws, in order: a group's head, or one of its rows. */
 type BodyItem<TData extends Record<string, unknown>> =
   | { kind: 'group'; group: TableGroup; count: number; folded: boolean }
@@ -330,10 +327,10 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
   // fold or a regroup never hands one item's measured size to another.
   // Stable between renders: the virtualiser re-derives every offset when
   // either changes, so a fresh function each render would lay out each render.
+  // A group head is a row's height, so every item is.
   const estimateSize = useCallback(
-    (index: number) =>
-      items[index]?.kind === 'group' ? GROUP_HEAD_HEIGHT : estimatedRowHeight,
-    [items, estimatedRowHeight],
+    () => estimatedRowHeight,
+    [estimatedRowHeight],
   )
   const getItemKey = useCallback(
     (index: number) => {
@@ -620,13 +617,15 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                 const item = items[virtualRow.index]
                 if (item.kind === 'group') {
                   const { group, count } = item
+                  // A row like the others — the same surface, height and rule
+                  // under it — whose words are bold: the group, then its count.
                   return (
                     <div
                       key={virtualRow.key}
                       data-index={virtualRow.index}
-                      className="absolute top-0 left-0 flex items-end bg-background px-3 pb-2"
+                      className="absolute top-0 left-0 flex items-center border-b-2 border-background bg-table-row px-3 hover:bg-table-row-hover"
                       style={{
-                        height: `${GROUP_HEAD_HEIGHT}px`,
+                        height: `${estimatedRowHeight}px`,
                         transform: `translateY(${virtualRow.start}px)`,
                         width: hasOverflow ? `${totalWidth}px` : '100%',
                       }}
@@ -641,7 +640,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                             : 'postsTable.view.fold',
                           { group: group.label },
                         )}
-                        className="flex h-5 max-w-full cursor-pointer items-center gap-2 text-left text-sm/5 outline-none focus-visible:underline"
+                        className="table-text-accented flex max-w-full cursor-pointer items-center gap-2 text-left text-foreground outline-none focus-visible:underline"
                       >
                         {item.folded ? (
                           <CaretRightIcon
@@ -654,9 +653,7 @@ function VirtualTableComponent<TData extends Record<string, unknown>>({
                             aria-hidden
                           />
                         )}
-                        <span className="truncate font-medium text-foreground">
-                          {group.label}
-                        </span>
+                        <span className="truncate">{group.label}</span>
                         <span className="shrink-0 text-secondary-foreground tabular-nums">
                           {formatNumber(count, {}, i18n.language)}
                         </span>
