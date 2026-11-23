@@ -23,6 +23,7 @@ import {
 afterEach(() => {
   vi.clearAllMocks()
   vi.unstubAllEnvs()
+  delete window.__OGEN_CONFIG__
 })
 
 describe('redactEvent', () => {
@@ -169,5 +170,27 @@ describe('initTelemetry', () => {
 
     useAuthStore.getState().clearUser()
     expect(sentry.setUser).toHaveBeenLastCalledWith(null)
+  })
+
+  it('takes the DSN, environment and sample rate from env.js', async () => {
+    vi.stubEnv('VITE_SENTRY_DSN', 'https://build@o0.ingest.sentry.io/1')
+    window.__OGEN_CONFIG__ = {
+      SENTRY_DSN: 'https://runtime@o0.ingest.sentry.io/1',
+      SENTRY_ENVIRONMENT: 'production',
+      SENTRY_TRACES_SAMPLE_RATE: '0.5',
+    }
+    vi.resetModules()
+
+    const sentry = await import('@sentry/react')
+    const mod = await import('./sentry')
+    mod.initTelemetry({} as never)
+
+    expect(sentry.init).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dsn: 'https://runtime@o0.ingest.sentry.io/1',
+        environment: 'production',
+        tracesSampleRate: 0.5,
+      }),
+    )
   })
 })

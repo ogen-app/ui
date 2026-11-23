@@ -1,5 +1,7 @@
+import { runtimeConfig } from './runtimeConfig'
+
 /**
- * Per-browser feature-flag overrides — staging and local dev only.
+ * Per-browser feature-flag overrides — the dev deploy and local dev only.
  *
  * The problem: on staging one teammate needs to exercise a half-built feature
  * while everyone else keeps testing the app as it ships, and the copy team
@@ -15,17 +17,20 @@
  *
  * ## Why it cannot reach production
  *
- * `DEV_TOOLS` is a build-time constant. Vite substitutes both halves of it
- * before terser runs, so in a production build every branch below folds to a
- * literal `false` and collapses: `readFlagOverrides()` becomes `{}` and
- * nothing else here survives. Production ignores the storage key entirely —
- * writing it by hand does nothing — and *that*, rather than the absence of a
- * link, is what makes this safe to ship. An unlisted page is not a security
- * boundary and is not being asked to be one.
+ * One image serves development and production (CON-518), so this code is in
+ * every bundle, and `DEV_TOOLS` is decided when the page loads, from the
+ * container's `DEV_TOOLS` (`config/runtimeConfig.ts`). With it off, the stored
+ * key is **never read**: `overrides` starts as `{}`, `readFlagOverrides()`
+ * returns `{}`, and every writer returns before touching storage. Production
+ * ignores the storage key entirely — writing it by hand, or calling these
+ * functions from the console, does nothing — and *that*, rather than the
+ * absence of a link, is what makes this safe to ship. An unlisted page is not
+ * a security boundary and is not being asked to be one.
  *
- * On for `pnpm dev` always, and for any build made with `VITE_DEV_TOOLS=1`
- * (the staging image sets it — see the `Dockerfile`). Off by omission, which
- * is the direction a mistake here should fail in.
+ * On for `pnpm dev` always, and in an image whose container sets
+ * `DEV_TOOLS=1` (the dev service does). Off by omission, which is the
+ * direction a mistake here should fail in. The panel and the marker stay
+ * behind `lazy()`, so with it off their chunks are never fetched.
  *
  * ## Reading is a snapshot
  *
@@ -36,9 +41,8 @@
  * property lookup rather than a `localStorage` hit per render.
  */
 
-/** Whether the override machinery exists in this build at all. */
-export const DEV_TOOLS =
-  import.meta.env.DEV || import.meta.env.VITE_DEV_TOOLS === '1'
+/** Whether the override machinery is live on this deploy at all. */
+export const DEV_TOOLS = runtimeConfig.devTools
 
 /** Device-local, like every other per-browser preference. */
 const STORAGE_KEY = 'ogen.flagOverrides'

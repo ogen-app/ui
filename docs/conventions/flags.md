@@ -28,9 +28,11 @@ keep it accurate when these rules change.
   to localStorage, so one teammate can exercise a half-built feature on the
   shared deploy while everyone else sees the app as it ships. Deliberately
   *not* in `/api/settings` — that row is workspace-wide, which is the opposite
-  of what this is for. The whole layer is compiled out unless the build sets
-  `VITE_DEV_TOOLS=1`, so in production the key is inert and the panel's chunk
-  does not exist; keep it that way, and never link `/flags` from the app. See
+  of what this is for. The whole layer is inert unless the container sets
+  `DEV_TOOLS=1` (read at page load from `/env.js`, `config/runtimeConfig.ts`),
+  so in production the key is never read and the panel's chunk never fetched;
+  keep every entry point behind `DEV_TOOLS` and `lazy()`, and never link
+  `/flags` from the app. See
   `docs/technical-decisions.md#staging-flag-overrides`.
 
 - **A feature waiting on the back end is stubbed with a JSON seed, never with

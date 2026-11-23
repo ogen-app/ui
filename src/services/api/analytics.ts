@@ -25,8 +25,8 @@ const BASE = '/api/analytics'
  * Unlike the `STUBBED` constant in `tiers.stub.ts`, these three endpoints exist
  * and answer — the demo is for a dev machine whose analytics database has never
  * seen a refresh sweep, so every card is stuck in its setup state. It is off by
- * default, has to be asked for with `?analytics=demo`, and folds away entirely
- * in a production build. See `analytics.demo.ts`.
+ * default, has to be asked for with `?analytics=demo`, and is never consulted
+ * in production, where dev tools are off. See `analytics.demo.ts`.
  */
 function demo(): boolean {
   return demoMode() !== 'live'

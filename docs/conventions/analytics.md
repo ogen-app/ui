@@ -20,8 +20,8 @@ keep it accurate when these rules change.
   applies them at boot, and they track their state in `bun_migrations_analytics`
   precisely so the schema can share the dev Postgres with the control plane. `empty` and `unavailable` produce the other two answers the endpoints
   give. It is **not** the JSON-seed stub pattern: these endpoints exist and ship, so
-  the demo is off by default even in dev, has to be asked for, folds away
-  entirely without `VITE_DEV_TOOLS=1`, and is announced in the corner for as
+  the demo is off by default even in dev, has to be asked for, is never
+  consulted unless the deploy sets `DEV_TOOLS=1`, and is announced in the corner for as
   long as it is on — invented figures about a workspace's own posts are
   indistinguishable from real ones, and somebody would act on them. The same
   mode answers a single post's `GET /api/posts/:id/analytics` for any published
