@@ -466,11 +466,6 @@ export const en = {
    * reading of an asset (CON-364) under Insights, the old screen under Source.
    */
   assetInsights: {
-    /** Beside the back caret: where it goes. */
-    header: {
-      bank: 'Content bank',
-      campaign: '{{campaign}} · Assets',
-    },
     /** A PDF's first page on the stage, and opened whole. */
     cover: {
       zoom: 'View the cover full size',
@@ -493,9 +488,6 @@ export const en = {
       slides: 'Slides',
       untitled: 'Slide {{number}}',
     },
-    /** The reading at rest and in full (CON-369). */
-    summaryMore: 'Read the full summary',
-    summaryLess: 'Show less',
     /** Topics, mentions and sheets, under the ideas. */
     covers: 'What it covers',
     /** A mention group's name, by the kind the analysis gave. */
@@ -509,8 +501,40 @@ export const en = {
     moreMentions_one: '+{{count}} more',
     moreMentions_other: '+{{count}} more',
     tabs: {
-      insights: 'Insights',
-      source: 'Source',
+      label: 'About this asset',
+      overview: 'Overview',
+      ideas: 'Ideas',
+      summary: 'Summary',
+    },
+    /** The asset's own bar, over its content column. */
+    bar: {
+      back: 'Back to assets',
+      untitled: 'Untitled',
+      more: 'More options',
+      readAgain: 'Read the page again',
+      downloadMarkdown: 'Download as Markdown',
+      delete: 'Delete document',
+      rereading: 'Reading the page again',
+      rereadingBody:
+        'Its text will be replaced with the page’s current version.',
+      rereadFailed: 'Couldn’t read that page again',
+    },
+    notFound: 'Document not found',
+    /** The side column's Overview tab. */
+    overview: {
+      about: 'About',
+      kind: 'Kind',
+      status: 'Status',
+      /** Where it was imported from — a Figma frame. */
+      from: 'From',
+      ideas: 'Ideas',
+      summary: 'Summary',
+      ideasComing: 'Ideas are on their way',
+      noIdeas: 'No ideas from this one',
+      waiting_one: '{{count}} idea on the desk',
+      waiting_other: '{{count}} ideas on the desk',
+      allAnswered_one: '{{count}} idea, answered',
+      allAnswered_other: '{{count}} ideas, all answered',
     },
     lens: {
       workspaceOnly: 'Read for your workspace',
@@ -588,20 +612,14 @@ export const en = {
         later: 'In the drawer',
         no: 'Set aside',
       },
-      /** The heading, with the count (CON-369). */
-      count_one: '{{count}} post idea',
-      count_other: '{{count}} post ideas',
       waiting:
         'New ideas land on the desk in Ideas, to make, put in the drawer or set aside.',
       waitingFor:
         'New ideas land on the desk in the Ideas for {{campaign}}, to make, put in the drawer or set aside.',
-      heading: 'Ideas',
       open: 'Open in Ideas',
       emptyTitle: 'No ideas from this one',
       emptyBody:
         'The summary is here, but the source was too short or too far off the brief to draw posts from.',
-      /** The opened idea's answer, as a group of buttons (CON-387). */
-      answer: 'Answer this idea',
     },
     /**
      * Asking a reading for more ideas (CON-398): the ghost button under the
@@ -673,7 +691,6 @@ export const en = {
       forCampaign: 'for {{campaign}}',
       forWorkspace: 'for the workspace',
       /** An idea keeps its score when filed elsewhere, and says where it got it. */
-      scoredWorkspace: 'scored for the workspace',
       scoredOther: 'scored for another campaign',
       /** A criterion's rating, read out: "Key message: 4 of 5". */
       rating: '{{criterion}}: {{level}} of 5',

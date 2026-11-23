@@ -1,7 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { TFunction } from 'i18next'
+import {
+  BookOpenTextIcon,
+  LayoutIcon,
+  LightbulbIcon,
+  type Icon,
+} from '@phosphor-icons/react'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  SideColumn,
+  type SideTab,
+} from '@/components/page-primitives/SideColumn'
+import { AssetTitle } from '@/components/content/AssetTitle'
 import { AudioSeekContext, type AudioSeek } from '@/hooks/useAudioSeek'
 import {
   useAssetAnalyses,
@@ -9,7 +21,6 @@ import {
 } from '@/hooks/useAssetAnalyses'
 import { useCampaigns } from '@/hooks/useCampaigns'
 import { useLensArrival } from '@/hooks/useLensArrival'
-import { useStickyColumns } from '@/hooks/useStickyColumns'
 import { useAssetChunks } from '@/hooks/useContent'
 import { SheetCiteContext, type SheetCite } from '@/hooks/useSheetCite'
 import {
@@ -20,7 +31,12 @@ import {
   lensKey,
   missingLens,
   pickLens,
+  readableTitle,
 } from '@/lib/assetAnalysis'
+import { ASSET_TABS, type AssetTab } from '@/lib/assetTabs'
+import { countIdeas } from '@/lib/ideas'
+import { ideaFromWire } from '@/services/api/ideas'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { retrievability } from '@/lib/campaignSources'
 import {
   isSpreadsheet,
@@ -33,7 +49,8 @@ import { assetKind } from '@/lib/assetKind'
 import { assetPlace, findPlace, type AssetPlace } from '@/lib/assetPlace'
 import { documentOutline } from '@/lib/documentOutline'
 import type { Asset } from '@/types/content'
-import { AssetMetaColumn } from './AssetMetaColumn'
+import type { AssetAnalysis } from '@/types/assetAnalysis'
+import { AssetOverviewTab } from './AssetOverviewTab'
 import { AssetStage } from './AssetStage'
 import { InsightsPanel, type PanelState } from './InsightsPanel'
 import { LensPicker } from './LensPicker'
@@ -52,7 +69,9 @@ type Props = {
   at?: string
   /** Drops `?at=` once the page has gone there, so a reload does not again. */
   onPlaceReached?: () => void
-  /** Today's screen for this asset, hosted whole under the Source tab. */
+  /** The asset's own bar, over the content column (`AssetBar`). */
+  bar: ReactNode
+  /** Today's screen for this asset, the content column under the title. */
   source: ReactNode
   onTitleChange: (title: string) => void
   onDirty: () => void
@@ -60,51 +79,34 @@ type Props = {
 
 const noop = () => {}
 
-/** Whether a cited place is found in the Source tab's text. */
+/** Whether a cited place is found in the content column's text. */
 function readsInSource(
   place: AssetPlace | null,
 ): place is Extract<AssetPlace, { kind: 'page' | 'label' }> {
   return place?.kind === 'page' || place?.kind === 'label'
 }
 
-type Tab = 'insights' | 'source'
-
-/** Where the last-used tab is remembered, per browser. */
-const TAB_STORAGE_KEY = 'ogen.asset-page.tab'
-
-function readTab(): Tab {
-  try {
-    return localStorage.getItem(TAB_STORAGE_KEY) === 'source'
-      ? 'source'
-      : 'insights'
-  } catch {
-    return 'insights'
-  }
-}
-
-function rememberTab(tab: Tab) {
-  try {
-    localStorage.setItem(TAB_STORAGE_KEY, tab)
-  } catch {
-    // A private window or blocked storage: the default is fine.
-  }
-}
-
 /**
- * The asset page as two columns (CON-366): what the
- * asset is on the left, what it says on the right.
+ * The asset page, framed like the post editor (`$postId.tsx`): a content
+ * column under the asset's own bar, and a side column of tabs beside it, so
+ * the right rail is left to the assistant.
  *
- * The right column is two tabs. **Insights** is the LLM's reading of the asset
- * (CON-364) through one lens at a time — the workspace's, or a campaign's —
- * with the ideas that reading distilled. **Source** is the screen this page
- * used to be, kept whole: the editor for a note, the extracted text for a PDF,
- * the transcript for a recording. An image is never analysed, so it gets
- * Source alone and no tab bar to choose between one thing.
+ * The **content column** is the asset itself — its title, edited here and
+ * nowhere else, then `assetScreen`'s screen: the editor for a note, the
+ * extracted text for a PDF, the transcript under the one player for a
+ * recording, the image, a spreadsheet's table. What gets read, and nothing
+ * about it.
  *
- * A spreadsheet is the one kind whose Source is new rather than kept (§5.4):
- * its rows read badly as extracted text, so it gets a sheet grid on the stage
- * and a table under Source, and an idea's "rows 10–24" chip opens that table
- * on those rows.
+ * The **side column** is everything about it. **Overview**: its picture, its
+ * facts, its campaigns and tags, and a line from each other tab. **Ideas**:
+ * the ideas one reading distilled (CON-364), as the Ideas list's cards.
+ * **Summary**: the rest of that reading. A reading is one lens at a time —
+ * the workspace's, or a campaign's — picked at the top of those two tabs. An
+ * image is never analysed, so it has the Overview alone.
+ *
+ * A spreadsheet's rows read badly as extracted text (§5.4), so it gets a
+ * table rebuilt from its row chunks, and an idea's "rows 10–24" chip opens
+ * that table on those rows.
  *
  * Nothing here listens for events itself: `asset.analysis.updated` reaches the
  * app's one event stream and invalidates the asset's subtree, which holds the
@@ -118,6 +120,7 @@ export function AssetPage({
   onLensChange,
   at,
   onPlaceReached = noop,
+  bar,
   source,
   onTitleChange,
   onDirty,
@@ -129,13 +132,10 @@ export function AssetPage({
     enabled: analyzable,
   })
   const retry = useRetryAssetAnalysis(asset.id)
-  const [tab, setTabState] = useState<Tab>(() =>
-    readsInSource(at ? assetPlace(at) : null) ? 'source' : readTab(),
-  )
-  const setTab = useCallback((next: Tab) => {
-    setTabState(next)
-    rememberTab(next)
-  }, [])
+  // One remembered choice for every asset; an image has the Overview alone.
+  const storedTab = useSettingsStore((s) => s.assetTab)
+  const setTab = useSettingsStore((s) => s.setAssetTab)
+  const tab: AssetTab = analyzable ? storedTab : 'overview'
 
   const lenses = useMemo(() => analyses.data ?? [], [analyses.data])
   // Every campaign the asset is in gets an entry in the picker — those with
@@ -184,11 +184,6 @@ export function AssetPage({
   }, [staleLens, onLensChange])
 
   const arrived = useLensArrival(current)
-
-  const rowRef = useRef<HTMLDivElement | null>(null)
-  const leftRef = useRef<HTMLElement | null>(null)
-  const rightRef = useRef<HTMLElement | null>(null)
-  useStickyColumns(rowRef, leftRef, rightRef)
 
   // One player for the page: the stage draws it, the right column drives it.
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -242,13 +237,7 @@ export function AssetPage({
   const { fetchNextPage } = chunks
   const loadMore = useCallback(() => void fetchNextPage(), [fetchNextPage])
 
-  const openSheet = useCallback(
-    (name: string) => {
-      setSelectedSheet(name)
-      setTab('source')
-    },
-    [setTab],
-  )
+  const openSheet = useCallback((name: string) => setSelectedSheet(name), [])
   const citer = useMemo<SheetCite | null>(
     () =>
       spreadsheet
@@ -273,13 +262,6 @@ export function AssetPage({
   // the sheet opens on its rows, anything else is found in the Source tab
   // once its text has loaded. Once, then the address forgets it.
   const place = useMemo(() => (at ? assetPlace(at) : null), [at])
-  // A page or a labelled part is read in the Source tab: switched to as the
-  // place arrives, not remembered as the reader's choice of tab.
-  const [placeSeen, setPlaceSeen] = useState(at)
-  if (placeSeen !== at) {
-    setPlaceSeen(at)
-    if (readsInSource(place)) setTabState('source')
-  }
   useEffect(() => {
     if (!place) return
     if (place.kind === 'time') {
@@ -332,147 +314,195 @@ export function AssetPage({
     onPlaceReached,
   ])
 
-  const sourceBody = (
-    <div className="px-8 py-8">
-      {spreadsheet ? (
-        <SheetView
-          sheets={sheets}
-          fallbackName={fallbackName}
-          selected={selectedSheet}
-          onSelect={setSelectedSheet}
-          cited={cited}
-          onClearCited={() => setCited(null)}
-          loading={chunks.isPending}
-          failed={chunks.isError}
-          hasMore={chunks.hasNextPage}
-          loadingMore={chunks.isFetchingNextPage}
-          onLoadMore={loadMore}
-          fallback={source}
+  const sourceBody = spreadsheet ? (
+    <SheetView
+      sheets={sheets}
+      fallbackName={fallbackName}
+      selected={selectedSheet}
+      onSelect={setSelectedSheet}
+      cited={cited}
+      onClearCited={() => setCited(null)}
+      loading={chunks.isPending}
+      failed={chunks.isError}
+      hasMore={chunks.hasNextPage}
+      loadingMore={chunks.isFetchingNextPage}
+      onLoadMore={loadMore}
+      fallback={source}
+    />
+  ) : (
+    source
+  )
+
+  // The asset's picture. A recording's is its player — the page's one
+  // `<audio>` — so it heads the content column, over the transcript it
+  // drives; a cover, a page's hero, a sheet's grid or a document's outline
+  // heads the Overview. An image and a note have none: the content column
+  // already is the picture, or the words.
+  const kind = assetKind(asset)
+  const stage =
+    spreadsheet && sheets.length > 0 ? (
+      <SheetStage
+        sheets={sheets}
+        fallbackName={fallbackName}
+        onOpenSheet={openSheet}
+      />
+    ) : outline ? (
+      <OutlineStage
+        outline={outline}
+        format={fileFormat(asset.file?.original_name)}
+        fileName={asset.file?.original_name ?? null}
+      />
+    ) : kind === 'image' || kind === 'text' ? null : (
+      <AssetStage asset={asset} audioRef={audioRef} onAudioTime={setNowMs} />
+    )
+  const playerStage = kind === 'audio' ? stage : null
+  const overviewStage = kind === 'audio' ? null : stage
+
+  const tabs: SideTab<AssetTab>[] = (
+    analyzable ? ASSET_TABS : (['overview'] as const)
+  ).map((id) => ({
+    id,
+    label: t(`assetInsights.tabs.${id}`),
+    icon: TAB_ICON[id],
+  }))
+
+  // A picker only when there is a reading to switch to: an asset in no
+  // campaign has the workspace's alone, and a one-item dropdown is a control
+  // with no choice in it.
+  const lensLine =
+    current &&
+    (lensOptions.some((l) => l.campaign_id !== null) ? (
+      <LensPicker
+        lenses={lensOptions}
+        current={current}
+        onChange={onLensChange}
+      />
+    ) : (
+      <p className="text-xs/4 text-secondary-foreground">
+        {t('assetInsights.lens.workspaceOnly')}
+      </p>
+    ))
+
+  const insights = (part: 'ideas' | 'summary') => (
+    <div className="flex h-full flex-col overflow-y-auto">
+      <div
+        className="flex flex-col gap-4 px-3 pt-4 pb-6 lg:px-6"
+        aria-busy={busy}
+      >
+        {lensLine}
+        {/* Announced, and shown for a moment, when a reading lands while the
+            page is open. */}
+        {part === 'ideas' && (
+          <div aria-live="polite" className="empty:hidden">
+            {arrived !== null && (
+              <p className="flex items-center gap-2 rounded-md bg-accent/10 px-4 py-3 text-sm font-medium text-foreground motion-safe:animate-in motion-safe:fade-in">
+                <span aria-hidden className="size-2 rounded-full bg-accent" />
+                {t('assetInsights.arrived', { count: arrived })}
+              </p>
+            )}
+          </div>
+        )}
+        <InsightsPanel
+          state={state}
+          part={part}
+          lens={current}
+          sheets={sheetSummaries}
+          authored={kind === 'text'}
+          retrying={retry.isPending}
+          onRetry={() => retry.mutate(current?.campaign_id ?? null)}
         />
-      ) : (
-        source
-      )}
+      </div>
     </div>
   )
 
   return (
     <AudioSeekContext.Provider value={player}>
       <SheetCiteContext.Provider value={citer}>
-        <div
-          ref={rowRef}
-          className="flex w-full max-w-[1180px] flex-col items-start gap-6 px-6 lg:flex-row"
-        >
-          <AssetMetaColumn
-            ref={leftRef}
-            asset={asset}
-            lenses={lenses}
-            openCampaignId={current?.campaign_id ?? null}
-            sheets={sheetSummaries}
-            stage={
-              spreadsheet && sheets.length > 0 ? (
-                <SheetStage
-                  sheets={sheets}
-                  fallbackName={fallbackName}
-                  onOpenSheet={openSheet}
-                />
-              ) : outline ? (
-                <OutlineStage
-                  outline={outline}
-                  format={fileFormat(asset.file?.original_name)}
-                  fileName={asset.file?.original_name ?? null}
-                />
-              ) : (
-                <AssetStage
-                  asset={asset}
-                  audioRef={audioRef}
-                  onAudioTime={setNowMs}
-                />
-              )
-            }
-            onTitleChange={onTitleChange}
-            onDirty={onDirty}
-          />
-
-          <main
-            ref={rightRef}
-            className="flex w-full min-w-0 flex-1 flex-col bg-primary"
-          >
-            {!analyzable ? (
-              sourceBody
-            ) : (
-              <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
-                <div className="flex flex-wrap items-end justify-between gap-3 border-b border-quaternary px-8 pt-5">
-                  <TabsList variant="underlineSecondary" size="lg">
-                    <TabsTrigger variant="underlineSecondary" value="insights">
-                      {t('assetInsights.tabs.insights')}
-                    </TabsTrigger>
-                    <TabsTrigger variant="underlineSecondary" value="source">
-                      {t('assetInsights.tabs.source')}
-                    </TabsTrigger>
-                  </TabsList>
-                  {/* A picker only when there is a reading to switch to: an
-                      asset in no campaign has the workspace's alone, and a
-                      one-item dropdown is a control with no choice in it. */}
-                  {tab === 'insights' &&
-                    current &&
-                    (lensOptions.some((l) => l.campaign_id !== null) ? (
-                      <div className="mb-2">
-                        <LensPicker
-                          lenses={lensOptions}
-                          current={current}
-                          onChange={onLensChange}
-                        />
-                      </div>
-                    ) : (
-                      <p className="mb-3 text-xs text-secondary-foreground">
-                        {t('assetInsights.lens.workspaceOnly')}
-                      </p>
-                    ))}
-                </div>
-                <TabsContent
-                  value="insights"
-                  className="mt-0 px-8 py-8"
-                  aria-busy={busy}
-                >
-                  {/* Announced, and shown for a moment, when a reading lands
-                      while the page is open. */}
-                  <div aria-live="polite" className="empty:hidden">
-                    {arrived !== null && (
-                      <p className="mb-6 flex items-center gap-2 bg-accent/10 px-4 py-3 text-sm font-medium text-foreground motion-safe:animate-in motion-safe:fade-in">
-                        <span
-                          aria-hidden
-                          className="size-2 rounded-full bg-accent"
-                        />
-                        {t('assetInsights.arrived', { count: arrived })}
-                      </p>
-                    )}
-                  </div>
-                  <InsightsPanel
-                    state={state}
-                    lens={current}
-                    sheets={sheetSummaries}
-                    authored={assetKind(asset) === 'text'}
-                    onOpenSource={() => setTab('source')}
-                    retrying={retry.isPending}
-                    onRetry={() => retry.mutate(current?.campaign_id ?? null)}
+        <div className="flex min-h-0 flex-1">
+          {/* The content column: the asset, and nothing about it — under its
+              own bar, level with the side column's tabs. */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            {bar}
+            <ScrollArea
+              className="min-h-0 flex-1"
+              type="scroll"
+              scrollHideDelay={350}
+            >
+              <div className="flex flex-col gap-3 px-3 pt-4 pb-40 lg:px-6">
+                <div className="flex flex-col gap-6 bg-primary px-10 py-8">
+                  {/* A file name reads as words until someone renames it. */}
+                  <AssetTitle
+                    initialTitle={readableTitle(asset.title)}
+                    onChange={onTitleChange}
+                    onDirty={onDirty}
                   />
-                </TabsContent>
-                {/* Kept mounted: the editor autosaves, and a tab switch must
-                    not unmount it mid-debounce or drop a recording's place. */}
-                <TabsContent
-                  value="source"
-                  forceMount
-                  className="mt-0 data-[state=inactive]:hidden"
-                >
-                  {sourceBody}
-                </TabsContent>
-              </Tabs>
+                  {playerStage}
+                  <div>{sourceBody}</div>
+                </div>
+              </div>
+            </ScrollArea>
+          </div>
+
+          <SideColumn
+            tabs={tabs}
+            current={tab}
+            onSelect={setTab}
+            label={t('assetInsights.tabs.label')}
+            idPrefix="asset"
+          >
+            {tab === 'overview' && (
+              <AssetOverviewTab
+                asset={asset}
+                lenses={lenses}
+                current={state === 'ready' ? current : undefined}
+                openCampaignId={current?.campaign_id ?? null}
+                stage={overviewStage}
+                sheets={sheetSummaries}
+                ideasLine={
+                  analyzable
+                    ? ideasLine(t, state, current, kind === 'text')
+                    : null
+                }
+                onOpenTab={setTab}
+              />
             )}
-          </main>
+            {tab === 'ideas' && insights('ideas')}
+            {tab === 'summary' && insights('summary')}
+          </SideColumn>
         </div>
       </SheetCiteContext.Provider>
     </AudioSeekContext.Provider>
   )
+}
+
+const TAB_ICON: Record<AssetTab, Icon> = {
+  overview: LayoutIcon,
+  ideas: LightbulbIcon,
+  summary: BookOpenTextIcon,
+}
+
+/** The Ideas tab in a line, for the Overview: how many wait to be answered. */
+function ideasLine(
+  t: TFunction,
+  state: PanelState,
+  lens: AssetAnalysis | undefined,
+  authored: boolean,
+): string {
+  if (state === 'reading' || state === 'analysing')
+    return t('assetInsights.overview.ideasComing')
+  // Otherwise the reason there are none, as the Ideas tab titles it.
+  if (state === 'empty')
+    return authored
+      ? t('assetInsights.state.emptyNote')
+      : t('assetInsights.state.emptySource')
+  if (state !== 'ready') return t(`assetInsights.state.${state}`)
+  if (!lens) return t('assetInsights.overview.noIdeas')
+  const total = lens.ideas.length
+  if (total === 0) return t('assetInsights.overview.noIdeas')
+  const waiting = countIdeas(lens.ideas.map(ideaFromWire), new Date()).waiting
+  return waiting > 0
+    ? t('assetInsights.overview.waiting', { count: waiting })
+    : t('assetInsights.overview.allAnswered', { count: total })
 }
 
 /** "DOCX" from "plan.docx". */

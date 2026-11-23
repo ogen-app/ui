@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { Link } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
@@ -35,6 +35,7 @@ import {
   type Idea,
 } from '@/lib/ideas'
 import { citedPlace, ideaParts, isAnalysed } from '@/lib/ideaSource'
+import { mergePageRefs, pageSpan } from '@/lib/assetAnalysis'
 import { counted, formatDate } from '@/lib/intl'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import { useIdeaPostRefs } from '@/hooks/useIdeaPosts'
@@ -44,6 +45,7 @@ import type { AssetListKind } from '@/types/assetList'
 import {
   CARD,
   CARD_GRID,
+  CARD_GRID_BARE,
   CARD_GRID_WIDE,
   CARD_SELECTED,
   opensCard,
@@ -61,6 +63,12 @@ import { HORIZON_KEYS, VERDICTS, VERDICT_ORDER, type Decide } from './verdicts'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import { isNotGrounded } from '@/lib/grounding'
 import { SeriesMark } from '@/components/series/SeriesMark'
+
+/** An idea on its own source's page — see `IdeaRow`'s `atSource`. */
+type AtSource = {
+  link: ReactNode
+  reading: { campaignId: string | null; campaignName: string | null }
+}
 
 /**
  * One idea on the Ideas page, as a card (design/ideas-cards): its own
@@ -97,6 +105,8 @@ export function IdeaRow({
   showCampaign = true,
   compactSource = false,
   selection,
+  atSource,
+  fresh = false,
 }: {
   idea: Idea
   now: Date
@@ -119,6 +129,16 @@ export function IdeaRow({
     selecting: boolean
     onToggle: (shift: boolean) => void
   }
+  /**
+   * The card sits on its own source's page (the asset page's Ideas tab): the
+   * line under it keeps only the places it cites, an opened card's places
+   * play or open in place, and it ends in `link` (the way to Ideas) rather
+   * than a way back to the page it is already on. `reading` is the lens on
+   * screen, so the score can name the campaign it was given for.
+   */
+  atSource?: AtSource
+  /** It landed from a request for more ideas while the page was open. */
+  fresh?: boolean
 }) {
   const { t } = useTranslation()
   const analysed = isAnalysed(idea)
@@ -142,37 +162,39 @@ export function IdeaRow({
         if (opensCard(event)) onToggle()
       }}
       className={cn(
-        CARD_GRID,
+        selection ? CARD_GRID : CARD_GRID_BARE,
         showCampaign && CARD_GRID_WIDE,
         'group cursor-pointer py-4',
         selected ? CARD_SELECTED : CARD,
         expanded && !selected && 'bg-secondary',
       )}
     >
-      <span className="flex h-5 items-center">
-        {selection && (
-          <Checkbox
-            checked={selected}
-            onClick={(event) => {
-              // The press is the toggle, so Shift can extend a range.
-              event.preventDefault()
-              selection.onToggle(event.shiftKey)
-            }}
-            onKeyDown={(event) => {
-              if (event.key !== ' ') return
-              event.preventDefault()
-              selection.onToggle(event.shiftKey)
-            }}
-            aria-label={t('ideas.bulk.select', { title: idea.title })}
-            className={cn(
-              'transition-opacity',
-              !selected &&
-                !selection.selecting &&
-                'opacity-40 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
-            )}
-          />
-        )}
-      </span>
+      {selection && (
+        <span className="flex h-5 items-center">
+          {
+            <Checkbox
+              checked={selected}
+              onClick={(event) => {
+                // The press is the toggle, so Shift can extend a range.
+                event.preventDefault()
+                selection.onToggle(event.shiftKey)
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== ' ') return
+                event.preventDefault()
+                selection.onToggle(event.shiftKey)
+              }}
+              aria-label={t('ideas.bulk.select', { title: idea.title })}
+              className={cn(
+                'transition-opacity',
+                !selected &&
+                  !selection.selecting &&
+                  'opacity-40 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
+              )}
+            />
+          }
+        </span>
+      )}
 
       <IdeaMark idea={idea} />
 
@@ -190,6 +212,14 @@ export function IdeaRow({
                 !expanded && 'line-clamp-2',
               )}
             >
+              {fresh && (
+                // Before the title, inside its column, so titles keep their line.
+                <span
+                  role="img"
+                  aria-label={t('assetInsights.distill.freshMark')}
+                  className="mr-2 inline-block size-1.5 -translate-y-0.5 rounded-full bg-accent align-middle"
+                />
+              )}
               {idea.title}
             </button>
           </h3>
@@ -205,6 +235,7 @@ export function IdeaRow({
             now={now}
             showCampaign={showCampaign}
             compact={compactSource}
+            atSource={!!atSource}
           />
         )}
       </div>
@@ -247,6 +278,8 @@ export function IdeaRow({
             onAnswer={answer}
             onEdit={onEdit}
             showCampaign={showCampaign}
+            bare={!selection}
+            atSource={atSource}
           />
         ) : (
           <WrittenBody
@@ -256,6 +289,7 @@ export function IdeaRow({
             onEdit={onEdit}
             onDelete={onDelete}
             showCampaign={showCampaign}
+            bare={!selection}
           />
         ))}
     </li>
@@ -439,11 +473,14 @@ function SourceLine({
   now,
   showCampaign,
   compact,
+  atSource,
 }: {
   idea: Idea
   now: Date
   showCampaign: boolean
   compact: boolean
+  /** On its source's page: the places alone, with no document to name. */
+  atSource: boolean
 }) {
   const { t, i18n } = useTranslation()
   const campaign = useCampaignName(idea.campaignId)
@@ -451,7 +488,16 @@ function SourceLine({
     formatDate(iso, { day: 'numeric', month: 'short' }, i18n.language) ?? ''
   const bits: React.ReactNode[] = []
 
-  if (isAnalysed(idea)) {
+  if (isAnalysed(idea) && atSource) {
+    const { places, more } = citedPlace(idea)
+    if (places.length > 0)
+      bits.push(
+        <span key="places" className="shrink-0 tabular-nums">
+          {places.join(', ')}
+          {more > 0 && ` ${t('ideas.card.morePlaces', { count: more })}`}
+        </span>,
+      )
+  } else if (isAnalysed(idea)) {
     if (idea.sourceAsset) {
       const { places, more } = citedPlace(idea)
       bits.push(
@@ -519,6 +565,7 @@ function SourceLine({
       <SeriesMark key="series" seriesId={idea.seriesId} />
     ) : null
   if (standing) bits.push(standing)
+  if (bits.length === 0) return null
 
   return (
     <div className="mt-2 flex min-w-0 items-center gap-1.5 text-xs/4 text-secondary-foreground">
@@ -556,12 +603,14 @@ function scoredFor(
   t: TFunction,
   idea: Idea,
   campaignName: (id: string) => string | null,
+  /** The reading on screen, when the card sits on its source's page. */
+  onScreen?: AtSource['reading'],
 ): string | null {
   const breakdown = idea.fitBreakdown
   if (!breakdown) return null
   if (breakdown.lens === 'workspace')
     return t('assetInsights.ideaFit.forWorkspace')
-  const reading = idea.sourceAsset?.reading
+  const reading = onScreen ?? idea.sourceAsset?.reading
   const name =
     breakdown.campaign_id && reading?.campaignId === breakdown.campaign_id
       ? reading.campaignName
@@ -580,12 +629,17 @@ function AnalysedBody({
   onAnswer,
   onEdit,
   showCampaign,
+  bare,
+  atSource,
 }: {
   idea: Idea
   now: Date
   onAnswer: Answer
   onEdit: (change: IdeaEdit) => void
   showCampaign: boolean
+  /** No box column: the body starts in the second. */
+  bare: boolean
+  atSource?: AtSource
 }) {
   const { t } = useTranslation()
   const { data: campaigns } = useCampaigns()
@@ -597,7 +651,10 @@ function AnalysedBody({
     // In the title's column, to the row's end.
     <div
       data-card-body
-      className="col-start-3 col-end-[-1] mt-3 flex cursor-auto flex-col gap-3"
+      className={cn(
+        bare ? 'col-start-2' : 'col-start-3',
+        'col-end-[-1] mt-3 flex cursor-auto flex-col gap-3',
+      )}
     >
       {parts?.angle && (
         <p className="text-sm/5 text-foreground">{parts.angle}</p>
@@ -607,21 +664,30 @@ function AnalysedBody({
           {parts.rationale}
         </p>
       )}
-      <FitSection idea={idea} scoredFor={scoredFor(t, idea, nameOf)} />
-      <SourceSection idea={idea} sources={parts?.sources ?? []} />
+      <FitSection
+        idea={idea}
+        scoredFor={scoredFor(t, idea, nameOf, atSource?.reading)}
+      />
+      {atSource ? (
+        <CitedHere sources={parts?.sources ?? []} citedBy={idea.title} />
+      ) : (
+        <SourceSection idea={idea} sources={parts?.sources ?? []} />
+      )}
       <MadeInto idea={idea} />
       {showCampaign && <FiledUnder idea={idea} onEdit={onEdit} />}
       <BodyFoot
         record={<AnswerRecord idea={idea} now={now} onAnswer={onAnswer} />}
         trailing={
-          idea.sourceAsset && (
+          atSource ? (
+            atSource.link
+          ) : idea.sourceAsset ? (
             <Link
               {...sourceLink(idea)}
               className="font-medium text-accent hover:underline"
             >
               {t('ideas.card.openSource')}
             </Link>
-          )
+          ) : null
         }
       />
     </div>
@@ -644,6 +710,39 @@ function BodyFoot({
       {record}
       {trailing && <span className="ml-auto">{trailing}</span>}
     </div>
+  )
+}
+
+/**
+ * Where in the page's own source the idea comes from (an idea on its asset's
+ * page): the page span, then the places as chips that play the recording or
+ * open the sheet's rows in place. Pages are merged ("pp. 55–59", not
+ * "pp. 57–59, pp. 55–57").
+ */
+function CitedHere({
+  sources,
+  citedBy,
+}: {
+  sources: string[]
+  citedBy: string
+}) {
+  const { t } = useTranslation()
+  const merged = mergePageRefs(sources)
+  if (merged.length === 0) return null
+  const span = pageSpan(merged)
+  const aside = !span
+    ? null
+    : span.from === span.to
+      ? t('assetInsights.reference.page', { from: span.from })
+      : t('assetInsights.reference.pages', { from: span.from, to: span.to })
+  return (
+    <Part heading={t('assetInsights.reference.heading')} aside={aside}>
+      <span className="flex flex-wrap gap-1.5">
+        {merged.map((s) => (
+          <SourceChip key={s} label={s} citedBy={citedBy} />
+        ))}
+      </span>
+    </Part>
   )
 }
 
@@ -781,6 +880,7 @@ function WrittenBody({
   onEdit,
   onDelete,
   showCampaign,
+  bare,
 }: {
   idea: Idea
   now: Date
@@ -788,6 +888,7 @@ function WrittenBody({
   onEdit: (change: IdeaEdit) => void
   onDelete: () => void
   showCampaign: boolean
+  bare: boolean
 }) {
   const { t } = useTranslation()
   const when = useDateTimeLabel()
@@ -795,7 +896,10 @@ function WrittenBody({
   return (
     <div
       data-card-body
-      className="col-start-3 col-end-[-1] mt-3 flex cursor-auto flex-col gap-3"
+      className={cn(
+        bare ? 'col-start-2' : 'col-start-3',
+        'col-end-[-1] mt-3 flex cursor-auto flex-col gap-3',
+      )}
     >
       <NoteField idea={idea} onEdit={onEdit} />
       {/* No rule above: the note field's own underline is the line. */}

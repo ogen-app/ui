@@ -60,10 +60,7 @@ export function MetaCampaigns({
   }
 
   return (
-    <section className="flex flex-col gap-3 border-t border-quaternary pt-5">
-      <h2 className="text-sm font-semibold text-secondary-foreground">
-        {t('assetInsights.meta.campaigns')}
-      </h2>
+    <div className="flex flex-col gap-3">
       {memberOf.length === 0 ? (
         <p className="text-sm text-secondary-foreground">
           {t('assetInsights.meta.noCampaigns')}
@@ -131,6 +128,6 @@ export function MetaCampaigns({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-    </section>
+    </div>
   )
 }

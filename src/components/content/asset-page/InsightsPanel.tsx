@@ -39,6 +39,8 @@ export type PanelState = InsightState | 'loadFailed' | 'none' | 'empty'
 
 type Props = {
   state: PanelState
+  /** Which half of a ready reading this tab shows: its ideas, or the rest. */
+  part: 'ideas' | 'summary'
   lens: AssetAnalysis | undefined
   onRetry: () => void
   retrying: boolean
@@ -64,6 +66,7 @@ type Props = {
  */
 export function InsightsPanel({
   state,
+  part,
   lens,
   onRetry,
   retrying,
@@ -117,7 +120,7 @@ export function InsightsPanel({
               creates it when there is none (CON-367). */}
           <Button
             variant="outline"
-            className="uppercase"
+
             onClick={onRetry}
             loading={retrying}
           >
@@ -136,7 +139,7 @@ export function InsightsPanel({
           {onOpenSource && (
             <Button
               variant="outline"
-              className="uppercase"
+
               onClick={onOpenSource}
             >
               {t('assetInsights.state.startWriting')}
@@ -192,22 +195,24 @@ export function InsightsPanel({
         </Notice>
       )
     case 'ready':
-      return lens ? <Reading lens={lens} sheets={sheets} /> : null
+      return lens ? <Reading lens={lens} sheets={sheets} part={part} /> : null
   }
 }
 
 /**
- * A settled reading, in the order someone mining it reads (CON-369): what it
- * is in four lines, the post ideas it gave, then — for a recording — what was
- * agreed, and last what it covers. The ideas come second because they are
- * what the page is for; everything after them is context.
+ * A ready reading, one half per tab. **Ideas** is the list and the way to ask
+ * for more. **Summary** is the rest: why it fits the campaign, the summary,
+ * a recording's meeting notes and what it covers — a pale rule between each,
+ * left out above a part with nothing to show.
  */
 function Reading({
   lens,
   sheets,
+  part,
 }: {
   lens: AssetAnalysis
   sheets?: SheetSummary[]
+  part: 'ideas' | 'summary'
 }) {
   const { t } = useTranslation()
   const lensName =
@@ -216,7 +221,7 @@ function Reading({
       : t('assetInsights.lens.theWorkspace')
 
   return (
-    <div className="flex flex-col gap-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150">
+    <div className="flex flex-col gap-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150">
       {isLensWaiting(lens) && (
         // A re-read in flight (a brief edit, a retry): the reading below
         // stays until the new one replaces it.
@@ -226,47 +231,48 @@ function Reading({
         </p>
       )}
 
-      {lens.campaign_id && lens.relevance && (
-        // A tinted panel with a leading mark — not a coloured side stripe.
-        <div className="flex items-start gap-3 rounded-md bg-accent/10 px-5 py-4">
-          <TargetIcon
-            className="mt-0.5 size-5 shrink-0 text-accent"
-            aria-hidden
-          />
-          <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-semibold text-foreground">
-              {t('assetInsights.relevance.title', {
-                campaign: lens.campaign_name ?? '',
-              })}
-            </p>
-            <p className="text-sm text-secondary-foreground">
-              {lens.relevance.why}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <ReadingSummary lens={lens} />
-
-      {/* A pale rule between the three parts — what it says, what to make,
-          what it covers — standing in the column's own gap on either side. */}
-      <Separator className="bg-quaternary" />
-
-      <AssetIdeaList lens={lens} spreadsheet={sheets !== undefined} />
-
-      {hasMeetingNotes(lens) && (
+      {part === 'ideas' ? (
+        <AssetIdeaList lens={lens} spreadsheet={sheets !== undefined} />
+      ) : (
         <>
-          <Separator className="bg-quaternary" />
-          <div className="flex flex-col gap-8">
-            <MeetingNotes lens={lens} />
-          </div>
-        </>
-      )}
+          {lens.campaign_id && lens.relevance && (
+            // A tinted panel with a leading mark — not a coloured side stripe.
+            <div className="flex items-start gap-3 rounded-md bg-accent/10 px-4 py-3">
+              <TargetIcon
+                className="mt-0.5 size-5 shrink-0 text-accent"
+                aria-hidden
+              />
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-semibold text-foreground">
+                  {t('assetInsights.relevance.title', {
+                    campaign: lens.campaign_name ?? '',
+                  })}
+                </p>
+                <p className="text-sm text-secondary-foreground">
+                  {lens.relevance.why}
+                </p>
+              </div>
+            </div>
+          )}
 
-      {coversAnything(lens, sheets) && (
-        <>
-          <Separator className="bg-quaternary" />
-          <WhatItCovers lens={lens} sheets={sheets} />
+          <ReadingSummary lens={lens} />
+
+          {hasMeetingNotes(lens) && (
+            <>
+              <Separator className="bg-quaternary" />
+              {/* Laid out by the column's width, not the window's. */}
+              <div className="@container flex flex-col gap-8">
+                <MeetingNotes lens={lens} />
+              </div>
+            </>
+          )}
+
+          {coversAnything(lens, sheets) && (
+            <>
+              <Separator className="bg-quaternary" />
+              <WhatItCovers lens={lens} sheets={sheets} />
+            </>
+          )}
         </>
       )}
     </div>
@@ -395,7 +401,7 @@ function RetryButton({
   return (
     <Button
       variant="outline"
-      className="uppercase"
+
       onClick={onRetry}
       loading={retrying}
     >
@@ -408,7 +414,7 @@ function RetryButton({
 function PlansButton() {
   const { t } = useTranslation()
   return (
-    <Button variant="defaultInverted" className="uppercase" asChild>
+    <Button variant="defaultInverted" asChild>
       <Link to="/workspace-settings">{t('assetInsights.seePlans')}</Link>
     </Button>
   )

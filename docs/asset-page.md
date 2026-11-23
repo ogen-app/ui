@@ -1,98 +1,95 @@
-# The asset page — insights and source (CON-366)
+# The asset page — the post editor's frame, for a document (CON-366)
 
-`/assets/:id` and `/campaigns/:id/assets/:assetId` are two columns: **what
-the asset is** on the left, **what it says** on the right. Shipped unflagged —
-the `asset-insights` flag and the single-column page are gone; the old
-screens live on as the Source tab, without their own titles.
+`/assets/:id` and `/campaigns/:id/assets/:assetId` are framed like the post
+editor: the asset's own 48px bar over a **content column**, and a **side
+column of tabs** beside it (`page-primitives/SideColumn`, shared with
+`PostSideColumn`), so the right rail stays the assistant's. Shipped
+unflagged. It replaced the two columns of 2026-10 (what it is on the left,
+Insights | Source on the right, the left one sticky by `useStickyColumns`).
 
-Code: `components/content/asset-page/`. Rules (pure, tested):
-`lib/assetAnalysis.ts`, `lib/sheetChunks.ts`. Data: `hooks/useAssetAnalyses.ts`
+Code: `components/content/asset-page/` (`AssetPage`, `AssetBar`,
+`AssetOverviewTab`). Rules (pure, tested): `lib/assetAnalysis.ts`,
+`lib/sheetChunks.ts`, `lib/assetTabs.ts`. Data: `hooks/useAssetAnalyses.ts`
 over `GET /api/content-bank/assets/:id/analyses` (CON-364).
 
-## Left column
+## The bar
 
-A stage per kind (PDF cover edge to edge, recording player, page hero with its
-domain, image, note opening lines, spreadsheet grid, a Word file's headings or a
-deck's slide titles, else a format tile), the kind
-line, the editable title, a status line, facts (added by, added, file or
-source, sheets, language), Download (a quiet link), campaigns with their fit —
-the one whose reading is open marked — and **Add to campaign**, tags. A title
-that is still a file name (`q3_pipeline_review.xlsx`) shows as words until it
-is renamed (`readableTitle`); a dotted rule and a pencil say it is editable. Stacked and cropped below `lg`.
+`AssetBar`, the post's `PostBar` for a document: ← back to the assets list it
+came from (the campaign's or all), the title, `SaveStatus`; a bordered ⋮
+(read the page again, download as Markdown, delete) and, last, **Download**
+for the original file. No black button — a document saves as it is typed and
+has no status to move along.
 
-On `lg+` it sits beside the right column with no scroll of its own
-(CON-373): pinned while the reading scrolls; a column taller than the screen
-waits until the reading's foot reaches the bottom of the screen, then the
-reading holds there while the column moves up by what it overflows, until its
-own foot shows. `lib/stickyColumns.ts` is the arithmetic (a negative sticky
-`top` on the reading, a `min-height` on the row for the extra scroll);
-`hooks/useStickyColumns.ts` measures with a `ResizeObserver` and does nothing
-on scroll. Tabbing into the column's hidden foot scrolls to the end.
+## Content column
 
-Each stage crops itself and owns its fade, so nothing outside a stage cuts it:
-the PDF cover and an image (both open whole on a click) and a page's hero fade
-to the column's white at every width; a recording's player has no fade.
+The asset itself and nothing about it, on one white surface: the **title**
+(edited here and nowhere else; a file name reads as words until renamed,
+`readableTitle`), then `assetScreen`'s screen — the editor, the extracted
+text, the image, a spreadsheet's table. A recording's player (the page's one
+`<audio>`) heads it, over the transcript it drives. It scrolls on its own,
+with the post's travel past the end.
 
-## Right column
+## Side column
 
-**Insights | Source** tabs; the last one used is remembered per browser. An
-image has Source only.
+Three tabs, an icon over a one-word name, one remembered choice for every
+asset (`settingsStore.assetTab`, Ideas the first time). An image is never
+analysed and has the Overview alone.
 
-- **Lens picker** (a dropdown): the workspace reading and one per campaign,
-  with fit, a spinner while one is in flight, and `?lens=` in the address. A
-  campaign the asset joined before analysis existed has no row; it is listed
-  and answers "not analysed". With no campaign at all there is nothing to
-  pick, and the picker is a line of text instead.
-- **Insights** (ideas first, CON-369): relevance panel (campaign lens), the
-  summary at rest — its lead paragraph, four lines — with "Read the full
-  summary" growing the page in place (whole summary as light Markdown, key
-  points; no box scrolling inside the page), a pale rule, then **N post ideas** (CON-387) — led by the teal `AiIdeaIcon`, the count
-  alone in regular weight, the campaign named in the line under it, no link
-  beside it; every idea at once, no fold, best fit first (`byFit`, the Assets list card's order), each
-  row the card's: score track, title, verdict mark in the pill's colours, the
-  note in two lines, a pale inset rule between rows and no box. A row opens in
-  place, its title semibold, to the angle, the rationale, **Why it scores N**
-  (CON-385's `fit_breakdown`: criteria heaviest first, each a Plex Mono
-  rating in a disc and five segments in the fit track's colour, the reason
-  with the phase or campaign as a chip, a cap said above them), **Reference**
-  (the page span, then the source chips — pages merged, `pp. 55–57,
-  pp. 57–59` → `pp. 55–59`; closed rows carry no references) and the
-  **answer**: Yes / Not now / No as one joined outline button group on the
-  inbox's rules — one click and no confirmation for Yes and No, Not now asks
-  when — with the record and "Put this back with the undecided" under it.
-  **Triage happens here as well as in the Ideas inbox**; an answered row stays
-  put until it is closed, even when it leaves the chosen pile. Then meeting
-  notes for a recording (participants, commitments with time chips,
-  decisions, open questions), then **What it covers**: topics as a line of
-  text, mentions grouped by kind with the kind written out, and the sheets
-  read. A pale rule stands between each of those parts — summary, ideas,
-  meeting notes, what it covers — in the column's own 40px gap, and is left
-  out above a part with nothing to show. Turning an idea into a post is CON-365.
+- **Overview** — the asset's picture edge to edge where it has one worth a
+  look (a PDF's cover, a page's hero, a sheet's grid, a Word file's headings
+  or a deck's slide titles, else a format tile; never an image or a note,
+  which the content column already shows); **About** in the post's two
+  columns (kind line, status, added by, added, file or source, updated and
+  images for a page, sheets, language, a Figma frame); one line each from
+  Ideas ("6 ideas on the desk", or why there are none) and Summary (the
+  lead, three lines), each opening its tab; **Campaigns** with their fit, the
+  open reading's marked, and **Add to campaign**; **Tags**.
+- **Ideas** — the lens line, then the piles, then every idea as the Ideas
+  list's card (`ideas/IdeaRow` with `atSource`): the 20px fit ring, title,
+  angle in two lines, the places it cites and the three answers always on the
+  card, best fit first (`byFit`). There is no box column, nothing to select.
+  Opened, a card holds the angle, the rationale, **Why it scores N**
+  (CON-385's `fit_breakdown`, the reasons under their criteria at this width),
+  **Reference** — the page span, then the source chips, which play the
+  recording or open the sheet's rows in place — the answer's record, and
+  **Open in Ideas**. Answers go through the asset's cache (`useAnswerIdea`),
+  so the piles move with them. Then **Distill more ideas** (below).
+- **Summary** — the lens line, the relevance panel (campaign lens), the whole
+  summary as light Markdown with its key points (no fold: the tab is its
+  own), then meeting notes for a recording and **What it covers**, a pale
+  rule between each, laid out by the column's width.
+
+- **Lens picker** (a dropdown, at the top of Ideas and Summary): the
+  workspace reading and one per campaign, with fit, a spinner while one is in
+  flight, and `?lens=` in the address. A campaign the asset joined before
+  analysis existed has no row; it is listed and answers "not analysed". With
+  no campaign at all there is nothing to pick, and the picker is a line of
+  text instead.
+- **Piles** (CON-370): the ideas by verdict, labelled; `?verdict=` picks one,
+  which is where the Assets list's verdict pill sends a click. An idea
+  answered No is left out unless that pile is chosen; an answered card stays
+  put until it is closed.
 - **More ideas** (CON-398, unflagged): the ideas end in a ghost
   **Distill more ideas** (`AiChemistry02Icon`). It opens a modal — how many,
   3–10 in a segmented radio group, default 5, and an optional focus of up to
-  300 characters, counted as the server counts it (trimmed, in code points) —
-  whose commit, **DISTILL N IDEAS**, is the delete dialog's pair with a dark
-  fill. The run's news is a row at the foot of the list on the idea rows'
-  grid: in flight, nothing new (Try again reopens the form on the last ask),
-  failed (Try again re-sends it), out of runs or not on the plan (See plans).
-  A run that lands says nothing there — its ideas take their places by fit,
-  each with a teal dot, and a **N new** chip beside the piles narrows the list
-  to them. Only a run this visit watched reports or marks anything, so last
-  week's failure does not greet the next visit. The button stays on screen
-  when it can't be pressed, its reason beside it. Runs live under the asset's
-  key (`hooks/useIdeaDistill`), so `asset.ideas.distill.updated` moves them
-  and their ideas together.
-- **Type and colour**: section labels are sentence case; readable grey text is
-  `secondary-foreground` (gray-700, 5.2:1 — gray-600 fails AA at 3.3:1), the
-  tertiary grey is left to icons and markers. Highlights are tinted panels,
-  never a coloured side stripe.
-- **States**: reading / analysing (step tracker and skeleton), failed (Try
-  again, optimistic), not in plan and monthly limit (See plans), no ideas,
-  never analysed, analyses unreadable. A re-read keeps the old reading on
-  screen until the new one lands.
-- **Source**: today's screens, embedded without their own title — except a
-  spreadsheet, which gets a table rebuilt from its row chunks.
+  300 characters, counted as the server counts it (trimmed, in code points).
+  The run's news is a row at the foot of the list: in flight, nothing new
+  (Try again reopens the form on the last ask), failed (Try again re-sends
+  it), out of runs or not on the plan (See plans). A run that lands says
+  nothing there — its ideas take their places by fit, each with a teal dot
+  before the title, and a **N new** chip beside the piles narrows the list to
+  them. Only a run this visit watched reports or marks anything. Runs live
+  under the asset's key (`hooks/useIdeaDistill`), so
+  `asset.ideas.distill.updated` moves them and their ideas together.
+- **Type and colour**: readable grey text is `secondary-foreground` (gray-700,
+  5.2:1 — gray-600 fails AA at 3.3:1), the tertiary grey is left to icons and
+  markers. Highlights are tinted panels, never a coloured side stripe.
+- **States** (in Ideas and Summary alike): reading / analysing (step tracker
+  and skeleton), failed (Try again, optimistic), not in plan and monthly limit
+  (See plans), no ideas, never analysed, analyses unreadable. A re-read keeps
+  the old reading on screen until the new one lands. A reading that lands
+  while the page is open says "Insights ready — N ideas added" at the top of
+  Ideas for four seconds.
 
 ## Live updates
 
@@ -106,11 +103,16 @@ refetches the ideas itself.
 
 ## Shared controls
 
-- One `<audio>` per page (`hooks/useAudioSeek`): the stage's player, driven by
-  transcript lines, commitment chips and idea chips. Space plays, arrows step
+- One `<audio>` per page (`hooks/useAudioSeek`): the player heading the
+  content column, driven by transcript lines, commitment chips and idea chips. Space plays, arrows step
   five seconds.
-- `hooks/useSheetCite`: an idea's "Pipeline · rows 10–24" chip switches to
-  Source, picks the sheet, fetches the pages that hold the rows and marks them.
+- `hooks/useSheetCite`: an idea's "Pipeline · rows 10–24" chip picks the sheet
+  in the content column's table, fetches the pages that hold the rows and
+  marks them.
+- `?at=` (CON-388): the place an idea cites, gone to once — the recording
+  plays from it, the sheet opens on its rows, a page or a labelled part is
+  found in the content column's text, reading on page by page until it turns
+  up.
 
 ## Spreadsheets
 
@@ -121,6 +123,9 @@ that back. A row number shows only when it is certain (blank rows are skipped
 but counted); a line that will not split is shown whole.
 
 ## Wireframes
+
+Of the two-column page this frame replaced (2026-10) — the parts are the
+same, their places are not.
 
 ![PDF, workspace lens](asset-page/1-pdf-workspace.png)
 ![Recording, campaign lens](asset-page/2-audio-campaign.png)

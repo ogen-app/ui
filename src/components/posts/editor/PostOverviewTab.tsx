@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BooksIcon } from '@phosphor-icons/react'
 import { isNotGrounded } from '@/lib/grounding'
@@ -6,7 +5,7 @@ import type { PostTab } from '@/lib/postTabs'
 import type { PostCheck } from '@/lib/postValidation'
 import type { PostNote } from '@/services/api/postNotes'
 import type { PostEvaluation } from '@/types/quality'
-import { cn } from '@/lib'
+import { SideSection } from '@/components/page-primitives/SideColumn'
 import { SettingList, SettingRow, SummaryLine } from '../quickBar/parts'
 import { PostChecksSummary, PostQualitySummary } from './PostChecksTab'
 import { PublishingSettings, WritingSettings } from './PostSettings'
@@ -63,23 +62,23 @@ export function PostOverviewTab({
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <div className="flex flex-col px-3 pb-6 lg:px-6">
-        <Section title={t('posts.editor.overview.publishing')} first>
+        <SideSection title={t('posts.editor.overview.publishing')} first>
           <PublishingSettings {...publishing} />
-        </Section>
+        </SideSection>
 
         {doc.status !== 'published' && (
-          <Section title={t('posts.editor.overview.health')}>
+          <SideSection title={t('posts.editor.overview.health')}>
             <SettingList>
               <PostChecksSummary
                 checks={checks}
                 onOpen={() => onOpenTab('checks')}
               />
             </SettingList>
-          </Section>
+          </SideSection>
         )}
 
         {!qualityUnavailable && (
-          <Section title={t('posts.editor.overview.quality')}>
+          <SideSection title={t('posts.editor.overview.quality')}>
             <SettingList>
               <PostQualitySummary
                 status={doc.status}
@@ -90,16 +89,16 @@ export function PostOverviewTab({
                 onOpen={() => onOpenTab('quality')}
               />
             </SettingList>
-          </Section>
+          </SideSection>
         )}
 
         {notes.length > 0 && (
-          <Section title={t('posts.editor.overview.notes')}>
+          <SideSection title={t('posts.editor.overview.notes')}>
             <NotesSummary notes={notes} onOpen={() => onOpenTab('notes')} />
-          </Section>
+          </SideSection>
         )}
 
-        <Section title={t('posts.editor.overview.sources')}>
+        <SideSection title={t('posts.editor.overview.sources')}>
           <SettingList>
             <SettingRow label={t('posts.editor.overview.attached')}>
               <SummaryLine
@@ -119,11 +118,11 @@ export function PostOverviewTab({
               </SummaryLine>
             </SettingRow>
           </SettingList>
-        </Section>
+        </SideSection>
 
-        <Section title={t('posts.editor.overview.writing')}>
+        <SideSection title={t('posts.editor.overview.writing')}>
           <WritingSettings doc={doc} changeDoc={changeDoc} />
-        </Section>
+        </SideSection>
       </div>
     </div>
   )
@@ -174,30 +173,5 @@ function NotesSummary({
         </SettingRow>
       )}
     </SettingList>
-  )
-}
-
-function Section({
-  title,
-  first,
-  children,
-}: {
-  title: string
-  /** No rule above the first section — the tab strip is already there. */
-  first?: boolean
-  children: ReactNode
-}) {
-  return (
-    <section
-      className={cn(
-        'flex flex-col gap-3',
-        first ? 'pt-4' : 'mt-5 border-t border-border pt-5',
-      )}
-    >
-      <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
-        {title}
-      </h3>
-      {children}
-    </section>
   )
 }

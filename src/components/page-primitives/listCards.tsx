@@ -30,6 +30,13 @@ import { cn } from '@/lib'
 export const CARD_GRID =
   'grid grid-cols-[16px_20px_minmax(0,1fr)_auto] gap-x-4 border px-4'
 
+/**
+ * A card no list selects from — an idea on its own source's page: no box
+ * column, so the mark leads.
+ */
+export const CARD_GRID_BARE =
+  'grid grid-cols-[20px_minmax(0,1fr)_auto] gap-x-3 border px-4'
+
 /** With a fourth column (the campaign) on a wide list — `@container` widths. */
 export const CARD_GRID_WIDE =
   '@4xl:grid-cols-[16px_20px_minmax(0,1fr)_minmax(0,13rem)_auto]'

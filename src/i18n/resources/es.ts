@@ -355,10 +355,6 @@ export const es: Translation = {
   },
 
   assetInsights: {
-    header: {
-      bank: 'Banco de contenido',
-      campaign: '{{campaign}} · Recursos',
-    },
     cover: {
       zoom: 'Ver la portada a tamaño completo',
       zoomImage: 'Ver la imagen a tamaño completo',
@@ -377,8 +373,6 @@ export const es: Translation = {
       slides: 'Diapositivas',
       untitled: 'Diapositiva {{number}}',
     },
-    summaryMore: 'Leer el resumen completo',
-    summaryLess: 'Mostrar menos',
     covers: 'De qué trata',
     mentionKind: {
       org: 'Organizaciones',
@@ -390,8 +384,37 @@ export const es: Translation = {
     moreMentions_one: '+{{count}} más',
     moreMentions_other: '+{{count}} más',
     tabs: {
-      insights: 'Análisis',
-      source: 'Fuente',
+      label: 'Sobre este recurso',
+      overview: 'Resumen',
+      ideas: 'Ideas',
+      summary: 'Lectura',
+    },
+    bar: {
+      back: 'Volver a los recursos',
+      untitled: 'Sin título',
+      more: 'Más opciones',
+      readAgain: 'Leer la página de nuevo',
+      downloadMarkdown: 'Descargar como Markdown',
+      delete: 'Eliminar documento',
+      rereading: 'Leyendo la página de nuevo',
+      rereadingBody:
+        'Su texto se sustituirá por la versión actual de la página.',
+      rereadFailed: 'No se pudo volver a leer la página',
+    },
+    notFound: 'Documento no encontrado',
+    overview: {
+      about: 'Acerca de',
+      kind: 'Tipo',
+      status: 'Estado',
+      from: 'Origen',
+      ideas: 'Ideas',
+      summary: 'Lectura',
+      ideasComing: 'Las ideas están en camino',
+      noIdeas: 'Ninguna idea de este',
+      waiting_one: '{{count}} idea en la mesa',
+      waiting_other: '{{count}} ideas en la mesa',
+      allAnswered_one: '{{count}} idea, respondida',
+      allAnswered_other: '{{count}} ideas, todas respondidas',
     },
     lens: {
       workspaceOnly: 'Leído para tu espacio de trabajo',
@@ -462,18 +485,14 @@ export const es: Translation = {
         later: 'En el cajón',
         no: 'Apartadas',
       },
-      count_one: '{{count}} idea de publicación',
-      count_other: '{{count}} ideas de publicación',
       waiting:
         'Las ideas nuevas llegan a la mesa de Ideas, para ponerlas en marcha, guardarlas en el cajón o apartarlas.',
       waitingFor:
         'Las ideas nuevas llegan a la mesa de las Ideas de {{campaign}}, para ponerlas en marcha, guardarlas en el cajón o apartarlas.',
-      heading: 'Ideas',
       open: 'Abrir en Ideas',
       emptyTitle: 'Este no dio ideas',
       emptyBody:
         'El resumen está aquí, pero la fuente era demasiado corta o se alejaba demasiado del brief para sacar publicaciones.',
-      answer: 'Responder a esta idea',
     },
     distill: {
       action: 'Destilar más ideas',
@@ -538,7 +557,6 @@ export const es: Translation = {
       heading: 'Por qué puntúa {{score}}',
       forCampaign: 'para {{campaign}}',
       forWorkspace: 'para el espacio de trabajo',
-      scoredWorkspace: 'puntuada para el espacio de trabajo',
       scoredOther: 'puntuada para otra campaña',
       rating: '{{criterion}}: {{level}} de 5',
       criterion: {

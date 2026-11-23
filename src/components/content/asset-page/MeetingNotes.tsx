@@ -23,7 +23,7 @@ export function MeetingNotes({ lens }: { lens: AssetAnalysis }) {
     <>
       {participants.length > 0 && (
         <Section title={t('assetInsights.meeting.participants')}>
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-4 @md:grid-cols-3">
             {participants.map((p) => (
               <li key={p.name} className="flex items-center gap-3">
                 <span
@@ -63,7 +63,7 @@ export function MeetingNotes({ lens }: { lens: AssetAnalysis }) {
             {commitments.map((c, i) => (
               <li
                 key={i}
-                className="grid grid-cols-[minmax(0,140px)_1fr_auto] items-center gap-x-4 gap-y-1 border-b border-quaternary py-3 text-sm sm:grid-cols-[minmax(0,140px)_1fr_120px_auto]"
+                className="grid grid-cols-[minmax(0,140px)_1fr_auto] items-center gap-x-4 gap-y-1 border-b border-quaternary py-3 text-sm @md:grid-cols-[minmax(0,140px)_1fr_120px_auto]"
               >
                 <span
                   className={
@@ -75,7 +75,7 @@ export function MeetingNotes({ lens }: { lens: AssetAnalysis }) {
                   {c.owner || t('assetInsights.meeting.unattributed')}
                 </span>
                 <span className="text-foreground">{c.commitment}</span>
-                <span className="hidden text-secondary-foreground sm:block">
+                <span className="hidden text-secondary-foreground @md:block">
                   {c.due || '—'}
                 </span>
                 <span className="justify-self-end">
@@ -88,7 +88,7 @@ export function MeetingNotes({ lens }: { lens: AssetAnalysis }) {
       )}
 
       {(decisions.length > 0 || questions.length > 0) && (
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 @md:grid-cols-2">
           {decisions.length > 0 && (
             <Section title={t('assetInsights.meeting.decisions')}>
               <Bullets items={decisions.map((d) => d.text)} />

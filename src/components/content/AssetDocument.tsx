@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
-import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { AssetDetailsHeader } from '@/components/content/AssetDetailsHeader'
 import { AssetAudioView } from '@/components/content/AssetAudioView'
 import { AssetEditor } from '@/components/content/AssetEditor'
 import { AssetExtractedView } from '@/components/content/AssetExtractedView'
@@ -24,6 +21,8 @@ import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import type { UpdateAssetPayload } from '@/types/content'
 import { awaiting } from '@/lib/fetched'
 import { AssetPage } from '@/components/content/asset-page/AssetPage'
+import { AssetBar } from '@/components/content/asset-page/AssetBar'
+import { readableTitle } from '@/lib/assetAnalysis'
 
 type Props = {
   assetId: string
@@ -47,9 +46,9 @@ type Props = {
 /**
  * A document, open for writing.
  *
- * Framed like the post editor, because it is the same kind of screen: a
- * positioned column holding a scroller, the document on its own surface in the
- * middle, the header fading in at the top and its mirror at the bottom.
+ * Framed like the post editor, because it is the same kind of screen: its own
+ * bar over a content column, the document on its own surface in it, and a
+ * side column of tabs beside it (`AssetPage`).
  *
  * A document scraped from a web page (CON-222) shows its progress here instead
  * of its body until it has one — see `ScrapeState`. Everything else about the
@@ -66,11 +65,10 @@ type Props = {
  * type the server added that wasn't a document would have been quietly
  * overwritten by anyone who opened it.
  *
- * What it does *not* borrow is the commit bar. A post has one because it has
- * somewhere to go — draft, scheduled, published — and the bar is where that
- * happens. A document has no such move: it saves as you type, and the only
- * thing left to do is leave, which the back caret already does. A bar whose
- * one button is a second way out is furniture.
+ * What it does *not* borrow is the post's black button. A post has one
+ * because it has somewhere to go — draft, scheduled, published. A document
+ * has no such move: it saves as you type, so its bar (`AssetBar`) ends in
+ * handing back the file, when there is one, rather than a commit.
  */
 export function AssetDocument({
   assetId,
@@ -213,17 +211,16 @@ export function AssetDocument({
     if (!sourceUrl) return
     rescrape.mutate(sourceUrl, {
       onSuccess: () => {
-        toast.info('Reading the page again', {
-          description:
-            "Its text will be replaced with the page's current version.",
+        toast.info(t('assetInsights.bar.rereading'), {
+          description: t('assetInsights.bar.rereadingBody'),
         })
       },
       onError: (err) =>
-        toast.error("Couldn't read that page again", {
+        toast.error(t('assetInsights.bar.rereadFailed'), {
           description: readPageErrorMessage(err),
         }),
     })
-  }, [sourceUrl, rescrape])
+  }, [sourceUrl, rescrape, t])
 
   const handleDownloadMarkdown = useCallback(() => {
     if (!asset) return
@@ -244,7 +241,7 @@ export function AssetDocument({
   if (isError || !asset) {
     return (
       <PageContainer>
-        <PageError header="Document not found" />
+        <PageError header={t('assetInsights.notFound')} />
       </PageContainer>
     )
   }
@@ -268,8 +265,8 @@ export function AssetDocument({
   const editable = screen === 'editor'
 
   /*
-   * The asset's own screen, under the two-column page's Source tab (CON-366);
-   * the title lives in the left column, so none of these draws one.
+   * The asset's own screen, the page's content column under its title
+   * (CON-366); the title is the page's, so none of these draws one.
    */
   const source =
     readingFrom !== null ? (
@@ -301,60 +298,32 @@ export function AssetDocument({
 
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
-      {/* `relative` so the fader anchors to the content column rather than
-          the window: the right rail is a sibling of this container, so it
-          recedes when a panel opens instead of spanning the whole app. */}
-      <div className="relative flex flex-1 min-h-0">
-        <ScrollArea
-          className="flex-1 min-h-0"
-          type="scroll"
-          scrollHideDelay={350}
-        >
-          <AssetDetailsHeader
+      <AssetPage
+        asset={asset}
+        campaignId={campaignId}
+        lens={lens}
+        onLensChange={onLensChange}
+        at={at}
+        onPlaceReached={onPlaceReached}
+        bar={
+          <AssetBar
             campaignId={campaignId}
-            contextLabel={
-              campaignId
-                ? t('assetInsights.header.campaign', {
-                    campaign: campaignName ?? '',
-                  })
-                : t('assetInsights.header.bank')
-            }
+            title={title ?? readableTitle(asset.title)}
             saving={isDirty}
-            sourceUrl={sourceUrl}
-            fromFigma={
-              asset.origin === 'figma'
-                ? { frame: asset.origin_ref ?? null }
-                : undefined
+            file={
+              asset.file?.url
+                ? { url: asset.file.url, name: asset.file.original_name }
+                : null
             }
             onRefreshSource={sourceUrl ? handleRefreshSource : undefined}
             onDownloadMarkdown={editable ? handleDownloadMarkdown : undefined}
             onDelete={() => setDeleteOpen(true)}
           />
-          <div className="flex flex-col items-center gap-3 relative z-0">
-            <AssetPage
-              asset={asset}
-              campaignId={campaignId}
-              lens={lens}
-              onLensChange={onLensChange}
-              at={at}
-              onPlaceReached={onPlaceReached}
-              source={source}
-              onTitleChange={handleTitleChange}
-              onDirty={markDirty}
-            />
-            {/* Scroll past the end, as on a post: without it the last line
-                sits pinned against the bottom edge with nowhere to go. This is
-                the travel that lets the end of what you are writing come up to
-                the middle of the screen — and it keeps the assistant's mark in
-                the corner off the document. */}
-            <div className="h-40 shrink-0" aria-hidden />
-          </div>
-        </ScrollArea>
-
-        {/* The header's fade, mirrored — the document dissolves into the page
-            on its way out instead of being sliced off by the bottom edge. */}
-        <PageBottomFader />
-      </div>
+        }
+        source={source}
+        onTitleChange={handleTitleChange}
+        onDirty={markDirty}
+      />
 
       <DeleteAssetDialog
         asset={asset}
