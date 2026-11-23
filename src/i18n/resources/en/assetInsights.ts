@@ -3,11 +3,6 @@
  * reading of an asset (CON-364) under Insights, the old screen under Source.
  */
 export const assetInsights = {
-  /** Beside the back caret: where it goes. */
-  header: {
-    bank: 'Content bank',
-    campaign: '{{campaign}} · Assets',
-  },
   /** A PDF's first page on the stage, and opened whole. */
   cover: {
     zoom: 'View the cover full size',
@@ -30,9 +25,6 @@ export const assetInsights = {
     slides: 'Slides',
     untitled: 'Slide {{number}}',
   },
-  /** The reading at rest and in full (CON-369). */
-  summaryMore: 'Read the full summary',
-  summaryLess: 'Show less',
   /** Topics, mentions and sheets, under the ideas. */
   covers: 'What it covers',
   /** A mention group's name, by the kind the analysis gave. */
@@ -45,13 +37,58 @@ export const assetInsights = {
   },
   moreMentions_one: '+{{count}} more',
   moreMentions_other: '+{{count}} more',
-  tabs: {
-    insights: 'Insights',
-    source: 'Source',
+  /** The cards down the asset page's main column. */
+  cards: {
+    summary: 'Summary',
+    ideas: 'Ideas',
+    /** Before there is a reading: one card stands for both. */
+    reading: 'Summary and ideas',
+    readWhole: 'Read the whole summary',
+    readLess: 'Show less',
+    /** The card holding the asset itself, by kind. */
+    source: {
+      text: 'Note',
+      page: 'Page',
+      pdf: 'Document',
+      document: 'Document',
+      sheet: 'Spreadsheet',
+      image: 'Image',
+      audio: 'Transcript',
+    },
+  },
+  /** The asset's own bar, over its content column. */
+  bar: {
+    back: 'Back to assets',
+    untitled: 'Untitled',
+    more: 'More options',
+    readAgain: 'Read the page again',
+    downloadMarkdown: 'Download as Markdown',
+    delete: 'Delete document',
+    rereading: 'Reading the page again',
+    rereadingBody: 'Its text will be replaced with the page’s current version.',
+    rereadFailed: 'Couldn’t read that page again',
+  },
+  notFound: 'Document not found',
+  /** The side column: everything about the asset. */
+  overview: {
+    label: 'About this asset',
+    tab: 'Overview',
+    about: 'About',
+    kind: 'Kind',
+    status: 'Status',
+    /** Where it was imported from — a Figma frame. */
+    from: 'From',
   },
   lens: {
-    workspaceOnly: 'Read for your workspace',
-    readingFor: 'Reading for',
+    /** An asset in no campaign: the asset bar's line instead of a dropdown. */
+    workspaceOnly: 'For your workspace',
+    /** Set back before the dropdown's value: "For  Spring launch · 88% fit". */
+    for: 'For',
+    /** The dropdown's accessible name. */
+    label: 'Which reading to show',
+    withFit: '{{name}} · {{fit}} fit',
+    /** A campaign's reading still on its way. */
+    analysing: '{{name}} · analysing…',
     workspace: 'Workspace',
     /** A campaign lens whose campaign name did not arrive. */
     campaign: 'Campaign',
@@ -101,7 +138,7 @@ export const assetInsights = {
   keyPoints: 'Key points',
   topics: 'Topics',
   relevance: {
-    title: 'Read for {{campaign}}',
+    title: 'Why it fits',
   },
   partialSource:
     'Part of this file couldn’t be read, so this reading covers only the rest of it.',
@@ -125,20 +162,14 @@ export const assetInsights = {
       later: 'In the drawer',
       no: 'Set aside',
     },
-    /** The heading, with the count (CON-369). */
-    count_one: '{{count}} post idea',
-    count_other: '{{count}} post ideas',
     waiting:
       'New ideas land on the desk in Ideas, to make, put in the drawer or set aside.',
     waitingFor:
       'New ideas land on the desk in the Ideas for {{campaign}}, to make, put in the drawer or set aside.',
-    heading: 'Ideas',
     open: 'Open in Ideas',
     emptyTitle: 'No ideas from this one',
     emptyBody:
       'The summary is here, but the source was too short or too far off the brief to draw posts from.',
-    /** The opened idea's answer, as a group of buttons (CON-387). */
-    answer: 'Answer this idea',
   },
   /**
    * Asking a reading for more ideas (CON-398): the ghost button under the
@@ -210,7 +241,6 @@ export const assetInsights = {
     forCampaign: 'for {{campaign}}',
     forWorkspace: 'for the workspace',
     /** An idea keeps its score when filed elsewhere, and says where it got it. */
-    scoredWorkspace: 'scored for the workspace',
     scoredOther: 'scored for another campaign',
     /** A criterion's rating, read out: "Key message: 4 of 5". */
     rating: '{{criterion}}: {{level}} of 5',
@@ -302,6 +332,7 @@ export const assetInsights = {
     readOnly: 'Read-only · the text the assistant reads',
     citedRange: 'Rows {{from}}–{{to}}',
     citedBy: 'cited by “{{idea}}”',
+    backToIdea: 'Back to the idea',
     clear: 'Clear',
     showing: 'Showing {{shown}} of {{total}} rows',
     loaded_one: '{{shown}} row loaded',

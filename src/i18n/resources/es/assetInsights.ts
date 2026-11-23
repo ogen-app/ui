@@ -1,10 +1,6 @@
 import type { Translation } from '../en'
 
 export const assetInsights: Translation['assetInsights'] = {
-  header: {
-    bank: 'Banco de contenido',
-    campaign: '{{campaign}} · Recursos',
-  },
   cover: {
     zoom: 'Ver la portada a tamaño completo',
     zoomImage: 'Ver la imagen a tamaño completo',
@@ -23,8 +19,6 @@ export const assetInsights: Translation['assetInsights'] = {
     slides: 'Diapositivas',
     untitled: 'Diapositiva {{number}}',
   },
-  summaryMore: 'Leer el resumen completo',
-  summaryLess: 'Mostrar menos',
   covers: 'De qué trata',
   mentionKind: {
     org: 'Organizaciones',
@@ -35,13 +29,52 @@ export const assetInsights: Translation['assetInsights'] = {
   },
   moreMentions_one: '+{{count}} más',
   moreMentions_other: '+{{count}} más',
-  tabs: {
-    insights: 'Análisis',
-    source: 'Fuente',
+  cards: {
+    summary: 'Resumen',
+    ideas: 'Ideas',
+    reading: 'Resumen e ideas',
+    readWhole: 'Leer el resumen completo',
+    readLess: 'Mostrar menos',
+    source: {
+      text: 'Nota',
+      page: 'Página',
+      pdf: 'Documento',
+      document: 'Documento',
+      sheet: 'Hoja de cálculo',
+      image: 'Imagen',
+      audio: 'Transcripción',
+    },
+  },
+  bar: {
+    back: 'Volver a los recursos',
+    untitled: 'Sin título',
+    more: 'Más opciones',
+    readAgain: 'Leer la página de nuevo',
+    downloadMarkdown: 'Descargar como Markdown',
+    delete: 'Eliminar documento',
+    rereading: 'Leyendo la página de nuevo',
+    rereadingBody: 'Su texto se sustituirá por la versión actual de la página.',
+    rereadFailed: 'No se pudo volver a leer la página',
+  },
+  notFound: 'Documento no encontrado',
+  overview: {
+    label: 'Sobre este recurso',
+    tab: 'Vista general',
+    about: 'Acerca de',
+    kind: 'Tipo',
+    status: 'Estado',
+    from: 'Origen',
   },
   lens: {
-    workspaceOnly: 'Leído para tu espacio de trabajo',
-    readingFor: 'Leído para',
+    /** An asset in no campaign: the asset bar's line instead of a dropdown. */
+    workspaceOnly: 'Para tu espacio de trabajo',
+    /** Set back before the dropdown's value: "For  Spring launch · 88% fit". */
+    for: 'Para',
+    /** The dropdown's accessible name. */
+    label: 'Qué lectura mostrar',
+    withFit: '{{name}} · {{fit}} de encaje',
+    /** A campaign's reading still on its way. */
+    analysing: '{{name}} · analizando…',
     workspace: 'Espacio de trabajo',
     campaign: 'Campaña',
     theWorkspace: 'el espacio de trabajo',
@@ -85,7 +118,7 @@ export const assetInsights: Translation['assetInsights'] = {
   keyPoints: 'Puntos clave',
   topics: 'Temas',
   relevance: {
-    title: 'Leído para {{campaign}}',
+    title: 'Por qué encaja',
   },
   partialSource:
     'Parte de este archivo no se pudo leer, así que esta lectura solo cubre el resto.',
@@ -108,18 +141,14 @@ export const assetInsights: Translation['assetInsights'] = {
       later: 'En el cajón',
       no: 'Apartadas',
     },
-    count_one: '{{count}} idea de publicación',
-    count_other: '{{count}} ideas de publicación',
     waiting:
       'Las ideas nuevas llegan a la mesa de Ideas, para ponerlas en marcha, guardarlas en el cajón o apartarlas.',
     waitingFor:
       'Las ideas nuevas llegan a la mesa de las Ideas de {{campaign}}, para ponerlas en marcha, guardarlas en el cajón o apartarlas.',
-    heading: 'Ideas',
     open: 'Abrir en Ideas',
     emptyTitle: 'Este no dio ideas',
     emptyBody:
       'El resumen está aquí, pero la fuente era demasiado corta o se alejaba demasiado del brief para sacar publicaciones.',
-    answer: 'Responder a esta idea',
   },
   distill: {
     action: 'Destilar más ideas',
@@ -184,7 +213,6 @@ export const assetInsights: Translation['assetInsights'] = {
     heading: 'Por qué puntúa {{score}}',
     forCampaign: 'para {{campaign}}',
     forWorkspace: 'para el espacio de trabajo',
-    scoredWorkspace: 'puntuada para el espacio de trabajo',
     scoredOther: 'puntuada para otra campaña',
     rating: '{{criterion}}: {{level}} de 5',
     criterion: {
@@ -272,6 +300,7 @@ export const assetInsights: Translation['assetInsights'] = {
     readOnly: 'Solo lectura · el texto que lee el asistente',
     citedRange: 'Filas {{from}}–{{to}}',
     citedBy: 'citadas por «{{idea}}»',
+    backToIdea: 'Volver a la idea',
     clear: 'Quitar',
     showing: 'Mostrando {{shown}} de {{total}} filas',
     loaded_one: '{{shown}} fila cargada',

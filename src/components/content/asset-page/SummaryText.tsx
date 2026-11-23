@@ -9,7 +9,7 @@ import { parseAssistantMarkup, type InlineSpan } from '@/lib/assistantMarkup'
  */
 export function SummaryText({ text }: { text: string }) {
   return (
-    <div className="flex flex-col gap-3 text-[15px] leading-7 text-foreground">
+    <div className="flex flex-col gap-3 text-sm/6 text-foreground">
       {summaryParts(text).map((part, i) =>
         part.kind === 'heading' ? (
           <p

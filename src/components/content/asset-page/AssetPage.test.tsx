@@ -3,6 +3,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import type { Asset, AssetChunkPage } from '@/types/content'
+import type { LensControl } from './lensChoice'
 
 const api = vi.hoisted(() => ({
   listAssetAnalyses: vi.fn(),
@@ -23,6 +24,17 @@ vi.mock('@/hooks/useWorkspaces', () => ({
 }))
 
 const { AssetPage } = await import('./AssetPage')
+const { AssetBar } = await import('./AssetBar')
+
+const bar = (lens: LensControl) => (
+  <AssetBar
+    campaignId={null}
+    title="Q3 Pipeline Review"
+    saving={false}
+    lens={lens}
+    onDelete={() => {}}
+  />
+)
 
 const asset = (over: Partial<Asset> = {}): Asset => ({
   id: 'a1',
@@ -73,6 +85,7 @@ function renderPage(
       lens={undefined}
       onLensChange={() => {}}
       {...place}
+      bar={bar}
       source={<p>legacy source</p>}
       onTitleChange={() => {}}
       onDirty={() => {}}
@@ -87,13 +100,34 @@ beforeEach(() => {
 })
 
 describe('AssetPage', () => {
-  it('shows the creator and the workspace reading', async () => {
+  it('starts with the summary, then the ideas, then the source, with the facts in Overview', async () => {
     api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
     await renderPage(asset())
     expect(
       await screen.findByText('The workspace reading.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('Anna K.')).toBeInTheDocument()
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent),
+    ).toEqual(['Summary', 'Ideas', 'Document'])
+    expect(
+      screen.getByRole('tablist', { name: 'About this asset' }),
+    ).toHaveTextContent('Overview')
+    const side = screen.getByRole('tabpanel')
+    expect(within(side).getByText('Anna K.')).toBeInTheDocument()
+    // No index of the cards: three, a scroll apart.
+    expect(within(side).queryByText('On this page')).not.toBeInTheDocument()
+  })
+
+  it('stands one short card for the reading until there is one', async () => {
+    api.listAssetAnalyses.mockResolvedValue([
+      workspaceLens({ status: 'pending', summary: '' }),
+    ])
+    await renderPage(asset())
+    await vi.waitFor(() =>
+      expect(
+        screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent),
+      ).toEqual(['Summary and ideas', 'Document']),
+    )
   })
 
   it('draws a deck as its outline of slides', async () => {
@@ -169,10 +203,27 @@ describe('AssetPage', () => {
   it('offers no lens picker when only the workspace has read it', async () => {
     api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
     await renderPage(asset())
-    expect(
-      await screen.findByText('Read for your workspace'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('For your workspace')).toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
+  it('picks the reading in the Summary card’s dropdown, with its fit', async () => {
+    campaigns.current = [{ id: 'c1', name: 'Spring launch', asset_ids: ['a1'] }]
+    api.listAssetAnalyses.mockResolvedValue([
+      workspaceLens(),
+      workspaceLens({
+        id: 'an-2',
+        campaign_id: 'c1',
+        campaign_name: 'Spring launch',
+        relevance: { score: 64, why: 'It fits.' },
+      }),
+    ])
+    await renderPage(asset(), 'c1')
+    const picker = await screen.findByRole('combobox', {
+      name: 'Which reading to show',
+    })
+    expect(picker).toHaveTextContent('For')
+    expect(picker).toHaveTextContent('Spring launch · 64% fit')
   })
 
   it('titles a file-named asset in words and marks the open campaign', async () => {
@@ -251,6 +302,7 @@ describe('AssetPage', () => {
             decided_at: null,
             decided_by: null,
             remind_at: null,
+            origin: 'asset_analysis',
           },
         ],
       }),
@@ -271,11 +323,13 @@ describe('AssetPage', () => {
       }),
     )
 
+    await vi.waitFor(() =>
+      expect(screen.getAllByText('Sheets').some((el) => el.closest('dt'))).toBe(
+        true,
+      ),
+    )
     expect(await screen.findByText('What it covers')).toBeInTheDocument()
-    expect(
-      screen.getAllByText('Sheets').some((el) => el.tagName === 'DT'),
-    ).toBe(true)
-    fireEvent.click(screen.getByText('Bigger deals'))
+    fireEvent.click(await screen.findByText('Bigger deals'))
     fireEvent.click(
       screen.getByRole('button', {
         name: 'Show Pipeline · row 3 in the sheet',
@@ -287,9 +341,12 @@ describe('AssetPage', () => {
     expect(
       within(screen.getByRole('table')).getByText('Litware').closest('tr'),
     ).toHaveClass('bg-warning/10')
+    expect(
+      screen.getByRole('button', { name: 'Back to the idea' }),
+    ).toBeInTheDocument()
   })
 
-  it('opens the Source tab at the page an idea cites (?at=), once', async () => {
+  it('goes to the page an idea cites (?at=), once', async () => {
     api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
     api.listAssetChunks.mockResolvedValue({
       chunks: [],
@@ -309,6 +366,7 @@ describe('AssetPage', () => {
           onLensChange={() => {}}
           at="pp. 5–6"
           onPlaceReached={onPlaceReached}
+          bar={bar}
           source={
             <ol>
               <li data-place data-page-from="1" data-page-to="4" />
@@ -321,9 +379,6 @@ describe('AssetPage', () => {
       </>,
     )
 
-    expect(
-      screen.getByRole('tab', { name: /Source/, selected: true }),
-    ).toBeInTheDocument()
     await vi.waitFor(() => expect(onPlaceReached).toHaveBeenCalledTimes(1))
     expect(scrolled.mock.contexts[0]).toHaveProperty('id', 'p5')
   })
@@ -365,6 +420,7 @@ describe('AssetPage', () => {
         onLensChange={() => {}}
         at="p. 6"
         onPlaceReached={onPlaceReached}
+        bar={bar}
         source={<AssetExtractedView asset={pdf} />}
         onTitleChange={() => {}}
         onDirty={() => {}}

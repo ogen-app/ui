@@ -98,7 +98,9 @@ keep it accurate when these rules change.
   it. The post editor's settings, preview, checks, quality, sources, notes and
   history are tabs in the editor's own side column
   (`components/posts/editor/PostSideColumn`, the tab in
-  `settingsStore.postTab`); the calendar's settings and unscheduled posts are
+  `settingsStore.postTab`), and the asset page has the same column, with one
+  tab for now, Overview (`page-primitives/SideColumn`);
+  the calendar's settings and unscheduled posts are
   the calendar's own drawer (`CalendarDrawer`, `settingsStore.calendarDrawer`),
   rendered by the two calendar pages beside the column and under the bar over
   the page. Both open alongside the assistant, and each is one choice for
@@ -148,8 +150,8 @@ keep it accurate when these rules change.
     `stickyAside` keeps the side column on screen while the main one is read
     — under a `scrollAway` header only, since it pins 16px from the top — and
     one taller than the screen is never cut off or given its own scroll: it
-    rides up until its foot shows, by the asset page's rule
-    (`useStickyColumns`). It carries the page's gutters. Strategy at both
+    rides up until its foot shows (`useStickyColumns`, first written for
+    the asset page's old two columns). It carries the page's gutters. Strategy at both
     levels: the Campaigns card sticky for all campaigns, the phases for one;
     and a Foundation section, with About.
     Activity, with Needs you sticky beside the day cards: the live
