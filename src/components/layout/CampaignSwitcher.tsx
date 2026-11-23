@@ -93,6 +93,7 @@ export function CampaignSwitcher() {
             </>
           ) : (
             <>
+              <AllCampaignsMark campaigns={campaigns} className="size-2.5" />
               <span className="truncate font-medium text-primary-foreground">
                 {t('nav.scope.all')}
               </span>
@@ -110,7 +111,8 @@ export function CampaignSwitcher() {
           onCloseAutoFocus={(event) => event.preventDefault()}
         >
           <ChromeMenuItem on={!campaignId} onSelect={() => go(null)}>
-            {t('nav.scope.all')}
+            <AllCampaignsMark campaigns={campaigns} />
+            <span className="truncate">{t('nav.scope.all')}</span>
           </ChromeMenuItem>
           <ChromeMenuRule />
           {campaigns.map((campaign) => (
@@ -186,6 +188,48 @@ function CampaignDot({ id, className }: { id: string; className?: string }) {
       style={{ backgroundColor: identityColorVar(id) }}
       className={cn('size-2 shrink-0 rounded-full', className)}
     />
+  )
+}
+
+/**
+ * "All campaigns" as four campaign dots in a square, in the box one dot takes,
+ * so the scope's mark sits where a campaign's would and reads as all of them.
+ * The dots are the first campaigns' own colours (repeating when there are
+ * fewer than four); with none yet they are neutral.
+ */
+function AllCampaignsMark({
+  campaigns,
+  className,
+}: {
+  campaigns: Campaign[]
+  className?: string
+}) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'grid size-2 shrink-0 grid-cols-2 grid-rows-2 gap-px',
+        className,
+      )}
+    >
+      {[0, 1, 2, 3].map((i) => {
+        const campaign = campaigns[i % Math.max(campaigns.length, 1)]
+        return (
+          <span
+            key={i}
+            style={
+              campaign
+                ? { backgroundColor: identityColorVar(campaign.id) }
+                : undefined
+            }
+            className={cn(
+              'rounded-full',
+              !campaign && 'bg-tertiary-foreground',
+            )}
+          />
+        )
+      })}
+    </span>
   )
 }
 
