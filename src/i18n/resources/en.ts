@@ -551,8 +551,15 @@ export const en = {
       allAnswered_other: '{{count}} ideas, all answered',
     },
     lens: {
-      workspaceOnly: 'Read for your workspace',
-      readingFor: 'Reading for',
+      /** An asset in no campaign: the Summary card's line instead of a dropdown. */
+      workspaceOnly: 'For your workspace',
+      /** Set back before the dropdown's value: "For  Spring launch · 88% fit". */
+      for: 'For',
+      /** The dropdown's accessible name. */
+      label: 'Which reading to show',
+      withFit: '{{name}} · {{fit}} fit',
+      /** A campaign's reading still on its way. */
+      analysing: '{{name}} · analysing…',
       workspace: 'Workspace',
       /** A campaign lens whose campaign name did not arrive. */
       campaign: 'Campaign',

@@ -193,10 +193,27 @@ describe('AssetPage', () => {
   it('offers no lens picker when only the workspace has read it', async () => {
     api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
     await renderPage(asset())
-    expect(
-      await screen.findByText('Read for your workspace'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('For your workspace')).toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
+  it('picks the reading in the Summary card’s dropdown, with its fit', async () => {
+    campaigns.current = [{ id: 'c1', name: 'Spring launch', asset_ids: ['a1'] }]
+    api.listAssetAnalyses.mockResolvedValue([
+      workspaceLens(),
+      workspaceLens({
+        id: 'an-2',
+        campaign_id: 'c1',
+        campaign_name: 'Spring launch',
+        relevance: { score: 64, why: 'It fits.' },
+      }),
+    ])
+    await renderPage(asset(), 'c1')
+    const picker = await screen.findByRole('combobox', {
+      name: 'Which reading to show',
+    })
+    expect(picker).toHaveTextContent('For')
+    expect(picker).toHaveTextContent('Spring launch · 64% fit')
   })
 
   it('titles a file-named asset in words and marks the open campaign', async () => {

@@ -428,8 +428,15 @@ export const es: Translation = {
       allAnswered_other: '{{count}} ideas, todas respondidas',
     },
     lens: {
-      workspaceOnly: 'Leído para tu espacio de trabajo',
-      readingFor: 'Leído para',
+      /** An asset in no campaign: the Summary card's line instead of a dropdown. */
+      workspaceOnly: 'Para tu espacio de trabajo',
+      /** Set back before the dropdown's value: "For  Spring launch · 88% fit". */
+      for: 'Para',
+      /** The dropdown's accessible name. */
+      label: 'Qué lectura mostrar',
+      withFit: '{{name}} · {{fit}} de encaje',
+      /** A campaign's reading still on its way. */
+      analysing: '{{name}} · analizando…',
       workspace: 'Espacio de trabajo',
       campaign: 'Campaña',
       theWorkspace: 'el espacio de trabajo',

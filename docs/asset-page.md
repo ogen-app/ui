@@ -28,7 +28,7 @@ document saves as it is typed and has no status to move along.
 
 `ui/card` cards, one after another, starting with the reading:
 
-- **Summary**, with the lens line at the card's end — the relevance panel (campaign lens), the summary's **lead**
+- **Summary**, with the lens picker at the card's end — the relevance panel (campaign lens), the summary's **lead**
   (its first paragraph) with **Read the whole summary** for the rest, the key
   points, and a recording's meeting notes. Folded because it sits over the
   ideas: unfolded, a four-paragraph summary pushed them off the screen.
@@ -72,12 +72,13 @@ covers** (topics and mentions, once there is a reading: context, not
 something to act on); **Campaigns** with their fit, the open reading's
 marked, and **Add to campaign**; **Tags**.
 
-- **Lens picker** (a dropdown, at the end of the Summary card's header): the
-  workspace reading and one per campaign, with fit, a spinner while one is in
-  flight, and `?lens=` in the address. A campaign the asset joined before
-  analysis existed has no row; it is listed and answers "not analysed". With
-  no campaign at all there is nothing to pick, and the picker is a line of
-  text instead.
+- **Lens picker**: the Summary card's `choice` (`lensChoice`), the outline
+  button with a chevron every card dropdown is — "For  Spring launch · 64%
+  fit". It lists the workspace reading and one per campaign with its fit, or
+  "analysing…" while one is in flight, and keeps `?lens=` in the address. A
+  campaign the asset joined before analysis existed has no row; it is listed
+  and answers "not analysed". With no campaign at all there is nothing to
+  pick, and the card's end says "For your workspace" instead.
 - **Piles** (CON-370): the ideas by verdict, labelled; `?verdict=` picks one,
   which is where the Assets list's verdict pill sends a click. An idea
   answered No is left out unless that pile is chosen; an answered card stays

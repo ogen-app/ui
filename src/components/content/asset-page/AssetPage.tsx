@@ -52,7 +52,7 @@ import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { AssetOverview, type PagePart } from './AssetOverview'
 import { AssetStage } from './AssetStage'
 import { InsightsPanel, type PanelState } from './InsightsPanel'
-import { LensPicker } from './LensPicker'
+import { lensChoice } from './lensChoice'
 import { OutlineStage } from './OutlineStage'
 import { SheetStage } from './SheetStage'
 import { SheetView } from './SheetView'
@@ -128,7 +128,7 @@ export function AssetPage({
   onTitleChange,
   onDirty,
 }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const analyzable = isAnalyzable(asset.type)
   const analyses = useAssetAnalyses(asset.id, {
     assetStatus: asset.status,
@@ -372,20 +372,22 @@ export function AssetPage({
   const playerStage = kind === 'audio' ? stage : null
   const overviewStage = kind === 'audio' ? null : stage
 
-  // A picker only when there is a reading to switch to: an asset in no
-  // campaign has the workspace's alone, and a one-item dropdown is a control
-  // with no choice in it.
-  const lensLine =
-    current &&
-    (lensOptions.some((l) => l.campaign_id !== null) ? (
-      <LensPicker
-        lenses={lensOptions}
-        current={current}
-        onChange={onLensChange}
-      />
-    ) : (
-      <span>{t('assetInsights.lens.workspaceOnly')}</span>
-    ))
+  // The card's dropdown only when there is a reading to switch to: an asset
+  // in no campaign has the workspace's alone, and a one-item dropdown is a
+  // control with no choice in it.
+  const lensHeader = !current
+    ? {}
+    : lensOptions.some((l) => l.campaign_id !== null)
+      ? {
+          choice: lensChoice(
+            lensOptions,
+            current,
+            onLensChange,
+            t,
+            i18n.language,
+          ),
+        }
+      : { aside: t('assetInsights.lens.workspaceOnly') }
 
   const jump = useCallback((id: string) => {
     document
@@ -482,7 +484,7 @@ export function AssetPage({
                       <div id={SUMMARY_CARD} className="scroll-mt-4">
                         <Card
                           title={t('assetInsights.cards.summary')}
-                          aside={lensLine}
+                          {...lensHeader}
                         >
                           {panel('summary')}
                         </Card>
@@ -512,7 +514,7 @@ export function AssetPage({
                     <div id={READING_CARD} className="scroll-mt-4">
                       <Card
                         title={t('assetInsights.cards.reading')}
-                        aside={lensLine || undefined}
+                        {...lensHeader}
                       >
                         {panel('summary')}
                       </Card>
