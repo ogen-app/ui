@@ -2,14 +2,15 @@
  * The languages the app ships.
  *
  * `en` is not merely the first row: it is bundled into the main chunk (see
- * `resources/en.ts`) and is the fallback for every key, so the app can paint
+ * `resources/en/`) and is the fallback for every key, so the app can paint
  * before any locale request resolves and can never show a raw key. Every other
  * row is an `import()` — one chunk per locale, fetched the first time that
  * locale is chosen, and cached by the browser afterwards.
  *
- * Adding a language means adding a row here, a file in `resources/`, and a
- * loader in `LAZY_RESOURCES` (`i18n/index.ts`). That last map is typed against
- * this list, so forgetting it is a compile error rather than a runtime one.
+ * Adding a language means adding a row here, a folder in `resources/` with a
+ * file for each of English's sections, and a loader in `LAZY_RESOURCES`
+ * (`i18n/index.ts`). That last map is typed against this list, so forgetting
+ * it is a compile error rather than a runtime one.
  *
  * Labels are written in the language they name: someone hunting for their own
  * language scans for "Español", not for "Spanish".
