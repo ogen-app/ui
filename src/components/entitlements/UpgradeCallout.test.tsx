@@ -43,7 +43,7 @@ describe('UpgradeCallout', () => {
     )
 
     expect(screen.getByText('Not in your plan')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'UPGRADE' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Upgrade' })).toBeInTheDocument()
     // No count, because there is no allowance involved — this is about what was
     // bought, not about what is left.
     expect(screen.queryByText(/\d+ of \d+/)).not.toBeInTheDocument()
@@ -136,7 +136,7 @@ describe('UpgradeCallout', () => {
       ),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'MEJORAR PLAN' }),
+      screen.getByRole('button', { name: 'Mejorar plan' }),
     ).toBeInTheDocument()
   })
 })

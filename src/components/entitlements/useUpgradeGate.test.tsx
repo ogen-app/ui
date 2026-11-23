@@ -227,7 +227,7 @@ describe('UpgradeDialog', () => {
     ).not.toBeInTheDocument()
 
     await userEvent.click(
-      screen.getByRole('button', { name: 'UPGRADE TO PRO' }),
+      screen.getByRole('button', { name: 'Upgrade to Pro' }),
     )
     expect(navigate).toHaveBeenCalledWith({ to: '/plans' })
   })
@@ -271,7 +271,7 @@ describe('UpgradeDialog', () => {
       ),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'UPGRADE TO PRO' }),
+      screen.queryByRole('button', { name: 'Upgrade to Pro' }),
     ).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Close' }))
@@ -305,7 +305,7 @@ describe('UpgradeDialog', () => {
     expect(screen.queryByText('€24')).not.toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'UPGRADE TO PRO' }),
+      screen.getByRole('button', { name: 'Upgrade to Pro' }),
     ).toBeInTheDocument()
   })
 
@@ -344,7 +344,7 @@ describe('UpgradeDialog', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'PASAR A PRO' }),
+      screen.getByRole('button', { name: 'Pasar a Pro' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Anual' })).toBeInTheDocument()
     expect(

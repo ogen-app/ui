@@ -70,7 +70,7 @@ describe('ChangePlanDialog', () => {
     dialog({ onConfirm })
 
     expect(screen.getByText('$129.00 / month, excl. VAT')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'MOVE TO MAX' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Move to Max' }))
     expect(onConfirm).toHaveBeenCalled()
   })
 
@@ -96,7 +96,7 @@ describe('ChangePlanDialog', () => {
       screen.getByText("Nothing was charged, and you're still on Pro."),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'MOVE TO MAX' }),
+      screen.queryByRole('button', { name: 'Move to Max' }),
     ).not.toBeInTheDocument()
   })
 })

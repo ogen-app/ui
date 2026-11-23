@@ -112,7 +112,7 @@ describe('HelpPanel', () => {
       expect(await screen.findByText('Couldn’t load help')).toBeVisible()
       expect(screen.queryByText('No help for this page yet')).toBeNull()
 
-      await userEvent.click(screen.getByRole('button', { name: 'TRY AGAIN' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
       expect(
         await screen.findByRole('heading', { name: 'Posts' }),
       ).toBeVisible()
@@ -124,7 +124,7 @@ describe('HelpPanel', () => {
       act(() => useHelpStore.getState().open('page-posts'))
 
       expect(await screen.findByText('Couldn’t load help')).toBeVisible()
-      await userEvent.click(screen.getByRole('button', { name: 'TRY AGAIN' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
       expect(
         await screen.findByRole('heading', { name: 'Posts' }),
       ).toBeVisible()
@@ -142,7 +142,7 @@ describe('HelpPanel', () => {
       render(<HelpPanel onClose={() => {}} />, { wrapper })
 
       await userEvent.click(
-        await screen.findByRole('button', { name: 'ASK OGEN' }),
+        await screen.findByRole('button', { name: 'Ask Ogen' }),
       )
       expect(selectActivePanel(useSettingsStore.getState())).toBe('assistant')
     })

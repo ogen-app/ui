@@ -257,12 +257,7 @@ export function SheetView({
               })}
         </p>
         {hasMore && (
-          <Button
-            variant="outline"
-            className="uppercase"
-            onClick={onLoadMore}
-            loading={loadingMore}
-          >
+          <Button variant="outline" onClick={onLoadMore} loading={loadingMore}>
             {t('assetInsights.sheet.loadMore')}
           </Button>
         )}

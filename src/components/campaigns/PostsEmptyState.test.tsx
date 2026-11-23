@@ -47,7 +47,7 @@ describe('PostsEmptyState', () => {
     )
 
     expect(screen.getByText('Your calendar is empty')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'ADD POST' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add post' })).toBeInTheDocument()
     // From `Intl`, not from the catalogue — the sketch's column headers.
     expect(screen.getByText('Monday')).toBeInTheDocument()
   })
@@ -71,7 +71,7 @@ describe('PostsEmptyState', () => {
     // Capitals survive translation — a destructive/action label's caps are the
     // copy, in every language.
     expect(
-      screen.getByRole('button', { name: 'AÑADIR PUBLICACIÓN' }),
+      screen.getByRole('button', { name: 'Añadir publicación' }),
     ).toBeInTheDocument()
     expect(screen.getByText('lunes')).toBeInTheDocument()
   })

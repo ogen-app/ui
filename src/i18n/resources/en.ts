@@ -26,7 +26,14 @@
  *   CLAUDE.md. Labels elsewhere still in capitals follow as their screens move.
  */
 export const en = {
+  tables: {
+    empty: {
+      resetFilters: 'Reset filters',
+    },
+  },
   common: {
+    clear: 'Clear',
+    today: 'Today',
     cancel: 'Cancel',
     close: 'Close',
     done: 'Done',
@@ -101,7 +108,7 @@ export const en = {
     login: {
       title: 'Log in',
       subtitle: 'Log in to continue managing your content',
-      submit: 'LOG IN',
+      submit: 'Log in',
       expired:
         'Your session expired — log in again to pick up where you left off',
       afterReset: 'Your password has been changed. Log in with the new one',
@@ -118,7 +125,7 @@ export const en = {
     register: {
       title: 'Create your organization',
       subtitle: 'Sign up to start managing your content',
-      submit: 'SIGN UP',
+      submit: 'Sign up',
       organizationLabel: 'Organization Name',
       organizationPlaceholder: 'Enter your organization name',
       firstNameLabel: 'First Name',
@@ -146,7 +153,7 @@ export const en = {
       expiredTitle: 'This invite has expired',
       expiredBody:
         'The link is no longer valid. It may have expired, been replaced by a newer invite, or already been used. Ask the Ogen team to send you a new one.',
-      logInInstead: 'LOG IN INSTEAD',
+      logInInstead: 'Log in instead',
       /** The preview failed for a reason that says nothing about the invite — retryable. */
       previewFailedTitle: "We couldn't check this invite",
       previewFailedSubtitle:
@@ -154,8 +161,8 @@ export const en = {
       signedInTitle: "You're signed in as {{name}}",
       signedInBody:
         'This invite is for {{email}}. Sign out to accept it with that address. Your current workspaces stay exactly as they are.',
-      signOutAndContinue: 'SIGN OUT AND CONTINUE',
-      staySignedIn: 'STAY SIGNED IN',
+      signOutAndContinue: 'Sign out and continue',
+      staySignedIn: 'Stay signed in',
     },
     /** Self-registration is switched off and there is no invite (CON-402). */
     privateBeta: {
@@ -168,7 +175,7 @@ export const en = {
     /** Sign in with Google (CON-396) — the button, the divider, and what each `?error=` says. */
     google: {
       /** Google's branding allows this wording; the caps are the app's CTA convention. */
-      continue: 'CONTINUE WITH GOOGLE',
+      continue: 'Continue with Google',
       orWithEmail: 'or with your email',
       orSignUpWithEmail: 'or sign up with your email',
       /** One sentence per callback code: plain, no blame, the next step included. */
@@ -208,7 +215,7 @@ export const en = {
       subtitle: 'One last step — this is where your campaigns will live',
       organizationLabel: 'Organization name',
       organizationHint: 'You can rename it later in Workspace Settings.',
-      submit: 'CREATE WORKSPACE',
+      submit: 'Create workspace',
       /** Restarts at Google's account chooser. */
       notYou: 'Not you?',
       logInLink: 'Log in',
@@ -228,7 +235,7 @@ export const en = {
     forgot: {
       title: 'Reset your password',
       subtitle: "We'll email you a link to set a new one",
-      submit: 'SEND RESET LINK',
+      submit: 'Send reset link',
       emailLabel: 'Email',
       emailPlaceholder: 'Enter your email',
       remembered: 'Remembered it?',
@@ -239,7 +246,7 @@ export const en = {
        *  cannot make. */
       sentBody:
         'If <strong>{{email}}</strong> has an Ogen account, a link to set a new password is on its way. It expires in an hour.',
-      resend: 'SEND IT AGAIN',
+      resend: 'Send it again',
       resentNote: 'Sent again — give it a minute.',
       emailHint:
         'Use the address you log in with. The link stops working after an hour.',
@@ -248,7 +255,7 @@ export const en = {
     reset: {
       title: 'Set a new password',
       subtitle: "Choose something you haven't used here before",
-      submit: 'SET NEW PASSWORD',
+      submit: 'Set new password',
       passwordLabel: 'New password',
       passwordPlaceholder: 'Enter a new password',
       confirmLabel: 'Confirm new password',
@@ -284,7 +291,7 @@ export const en = {
         "<strong>Because this sign-in came through Google, we'll also disconnect Google.</strong> Connect it again from Profile once you're back in.",
       explainer:
         "If this wasn't you, secure your account. We'll sign out every session on every device — including this one — and you'll set a new password right away.",
-      submit: 'SECURE MY ACCOUNT',
+      submit: 'Secure my account',
       wasMe: 'This was me',
       /** Network or server failure — nothing was revoked, so retrying is safe. */
       failed: "We couldn't reach Ogen, so nothing has changed yet. Try again.",
@@ -300,7 +307,7 @@ export const en = {
       expiredTitle: 'This link has expired',
       expiredBody:
         'Links are valid for 24 hours. Resetting your password also signs out every session.',
-      expiredSubmit: 'RESET MY PASSWORD',
+      expiredSubmit: 'Reset my password',
       invalidTitle: "This link isn't valid",
       invalidBody: 'Check you opened the full link from the email.',
       invalidReset:
@@ -316,7 +323,7 @@ export const en = {
       lastNameLabel: 'Last name',
       passwordLabel: 'Password',
       passwordPlaceholder: 'Choose a password',
-      submit: 'JOIN THE WORKSPACE',
+      submit: 'Join the workspace',
       haveAccount: 'Already have an Ogen account?',
       logInLink: 'Log in',
       brokenTitle: 'This invitation link no longer works',
@@ -331,7 +338,7 @@ export const en = {
       /** Already signed in as the invited address: nothing to create, one thing to confirm. */
       joinBody:
         "You're signed in as {{email}}, which is who this invitation is for. Accepting adds this workspace to your account.",
-      joinSubmit: 'ACCEPT INVITATION',
+      joinSubmit: 'Accept invitation',
       /** Signed in as somebody else — no form on this page can fix that. */
       wrongAccountBody:
         'This invitation is for {{invited}}, but you are signed in as {{current}}. Log out and open the link again to accept it.',
@@ -348,8 +355,8 @@ export const en = {
       pendingMessage: 'This may take a few seconds',
       doneTitle: "You've Been Logged Out",
       doneMessage: 'See you next time!',
-      home: 'TAKE ME HOME',
-      footer: 'LOGOUT',
+      home: 'Take me home',
+      footer: 'Logout',
     },
   },
 
@@ -662,9 +669,9 @@ export const en = {
           'Ogen reads the source again for {{campaign}}. It won’t repeat the ideas already here, and keeps away from the ones you set aside. Every existing idea stays.',
         invalid: 'Check the focus and the count, then try again.',
         failed: 'Couldn’t ask for more ideas. Try again in a moment.',
-        cancel: 'CANCEL',
-        submit_one: 'DISTILL {{count}} IDEA',
-        submit_other: 'DISTILL {{count}} IDEAS',
+        cancel: 'Cancel',
+        submit_one: 'Distill {{count}} idea',
+        submit_other: 'Distill {{count}} ideas',
       },
     },
     /** Why an idea scores what it does, criterion by criterion (CON-385/387). */
@@ -882,16 +889,16 @@ export const en = {
       share: 'Share with the workspace',
       what: 'Saves the filters, the grouping and the sort — not what they find.',
       cancel: 'Cancel',
-      confirm: 'SAVE GROUP',
-      renameConfirm: 'SAVE',
+      confirm: 'Save group',
+      renameConfirm: 'Save',
     },
     remove: {
       title: 'Delete “{{name}}”?',
       body: 'The group goes; nothing it shows is deleted.',
       bodyShared:
         'The group goes for everyone it is shared with; nothing it shows is deleted.',
-      keep: 'KEEP GROUP',
-      confirm: 'DELETE GROUP',
+      keep: 'Keep group',
+      confirm: 'Delete group',
     },
   },
   /**
@@ -1015,7 +1022,7 @@ export const en = {
       dismiss: 'Dismiss',
       hintMultiline: 'Shift <key/> for a new line · Return <key/> to keep it',
       /** The header's button that opens the field, and the way out of it. */
-      open: 'ADD IDEA',
+      open: 'Add idea',
       close: 'Stop adding ideas',
       /** The field's send button: Return, for the mouse. */
       keep: 'Keep this idea',
@@ -1032,7 +1039,7 @@ export const en = {
       later: 'In the drawer',
       no: 'Set aside',
       undecide: 'Put it back on the desk',
-      delete: 'DELETE IDEA',
+      delete: 'Delete idea',
     },
     horizon: {
       week: 'Ask me in a week',
@@ -1120,10 +1127,10 @@ export const en = {
         'This idea will be permanently deleted, with its verdict. This cannot be undone.',
       body_other:
         'These ideas will be permanently deleted, with their verdicts. This cannot be undone.',
-      keep_one: 'KEEP IDEA',
-      keep_other: 'KEEP IDEAS',
-      confirm_one: 'DELETE IDEA',
-      confirm_other: 'DELETE {{count}} IDEAS',
+      keep_one: 'Keep idea',
+      keep_other: 'Keep ideas',
+      confirm_one: 'Delete idea',
+      confirm_other: 'Delete {{count}} ideas',
     },
     /** The smart filter on the Ideas list (CON-388 §4). */
     filter: {
@@ -1190,8 +1197,8 @@ export const en = {
     lifecycle: {
       /** Literal capitals: the slot's tag on the calendar. */
       slot: 'IDEA',
-      compile: 'COMPILE',
-      draft: 'DRAFT',
+      compile: 'Compile',
+      draft: 'Draft',
       compiled_one: 'Compiled into a planned post',
       compiled_other: 'Compiled into {{formatted}} planned posts',
       /**
@@ -1207,7 +1214,7 @@ export const en = {
       draftedSome_other:
         '{{formatted}} drafts written, {{unscheduled}} not scheduled',
       /** The toast's way to the drafts: the calendar's Not scheduled panel. */
-      show: 'SHOW',
+      show: 'Show',
       inNotScheduled: 'In Not scheduled, until you drag them onto a day.',
       /** Drafts that went to several campaigns: one toast each (CON-485). */
       inCampaign: 'In {{campaign}}',
@@ -1243,7 +1250,7 @@ export const en = {
         pickOne: 'Pick at least one platform.',
         noPlatforms: 'This campaign has no platforms yet.',
         platformsFailed: 'Couldn’t load the campaign’s platforms.',
-        retry: 'TRY AGAIN',
+        retry: 'Try again',
         noCampaign:
           'These ideas aren’t filed under one campaign, so each goes to the platform its plan names.',
         howMany: 'How many',
@@ -1263,7 +1270,7 @@ export const en = {
           'One planned post per platform: the same theses, each with its platform’s type.',
         compileNote:
           'Planned posts have no body and no date; WRITE THE POST turns each into a draft.',
-        cancel: 'CANCEL',
+        cancel: 'Cancel',
         onDay: 'Dated {{date}}, the idea’s day.',
         unscheduled: 'Not scheduled, unless an idea has a day planned.',
         /** Every idea has a day planned (CON-485). */
@@ -1271,12 +1278,12 @@ export const en = {
         /** No idea has a day planned (CON-485). */
         undated_one: 'Not scheduled: the idea has no day planned.',
         undated_other: 'Not scheduled: none of the ideas has a day planned.',
-        compile: 'COMPILE',
-        compileCount_one: 'COMPILE {{formatted}} PLANNED POST',
-        compileCount_other: 'COMPILE {{formatted}} PLANNED POSTS',
-        draft: 'DRAFT',
-        draftCount_one: 'DRAFT {{formatted}} POST',
-        draftCount_other: 'DRAFT {{formatted}} POSTS',
+        compile: 'Compile',
+        compileCount_one: 'Compile {{formatted}} planned post',
+        compileCount_other: 'Compile {{formatted}} planned posts',
+        draft: 'Draft',
+        draftCount_one: 'Draft {{formatted}} post',
+        draftCount_other: 'Draft {{formatted}} posts',
       },
       draftFailed: 'The drafts could not all be written',
       compileFailed: 'Couldn’t compile the idea',
@@ -1285,7 +1292,7 @@ export const en = {
       tooMany: 'Pick up to 10 ideas to compile or draft them',
       noBody: 'No body yet.',
       noBodyHint: 'Write it from the theses, or ask the assistant.',
-      write: 'WRITE THE POST',
+      write: 'Write the post',
       writePrompt: 'Write this post in full from its theses.',
       builtFrom_one: 'Built from {{count}} idea',
       builtFrom_other: 'Built from {{count}} ideas',
@@ -1307,7 +1314,7 @@ export const en = {
       tooMany: 'Narrow the filter to select all (up to 5,000).',
       count_one: '{{count}} selected',
       count_other: '{{count}} selected',
-      delete: 'DELETE',
+      delete: 'Delete',
       done_one: 'Deleted {{count}} idea.',
       done_other: 'Deleted {{count}} ideas.',
       partial_one: 'Deleted {{count}} idea; {{failed}} couldn’t be deleted.',
@@ -1657,13 +1664,13 @@ export const en = {
    */
   tasks: {
     title: 'Tasks',
-    add: 'ADD TASK',
+    add: 'Add task',
     newTask: 'New task',
-    create: 'CREATE TASK',
+    create: 'Create task',
     cancel: 'Cancel',
     complete: 'Mark this task done',
     reopen: 'Reopen this task',
-    delete: 'DELETE TASK',
+    delete: 'Delete task',
     unassigned: 'Unassigned',
     /**
      * The assignee's picture is a button, and these name it: initials read out
@@ -1780,8 +1787,8 @@ export const en = {
      */
     needsYou: {
       title: 'Needs you',
-      showMore_one: 'SHOW {{formatted}} MORE',
-      showMore_other: 'SHOW {{formatted}} MORE',
+      showMore_one: 'Show {{formatted}} more',
+      showMore_other: 'Show {{formatted}} more',
       allSet: 'Nothing needs you',
       allSetBody:
         'Nothing is failing, overdue or about to lapse in any campaign. If that changes, it shows up here.',
@@ -1965,15 +1972,15 @@ export const en = {
      * a name — the article and word order are not the same in every language.
      * Capitals are the copy, as with every other button in the app.
      */
-    openOverview: 'OPEN OVERVIEW',
-    openPosts: 'OPEN POSTS',
-    openIdeas: 'OPEN IDEAS',
-    openCalendar: 'OPEN CALENDAR',
-    openActivity: 'OPEN ACTIVITY',
-    openAnalytics: 'OPEN ANALYTICS',
-    openStrategy: 'OPEN STRATEGY',
-    openAssets: 'OPEN ASSETS',
-    openSettings: 'OPEN SETTINGS',
+    openOverview: 'Open overview',
+    openPosts: 'Open posts',
+    openIdeas: 'Open ideas',
+    openCalendar: 'Open calendar',
+    openActivity: 'Open activity',
+    openAnalytics: 'Open analytics',
+    openStrategy: 'Open strategy',
+    openAssets: 'Open assets',
+    openSettings: 'Open settings',
 
     /**
      * The row of doors at the foot of the Overview: one per place in the
@@ -2031,7 +2038,7 @@ export const en = {
      * asked of the campaign's assistant, which offers it to confirm.
      */
     problems: {
-      ignore: 'IGNORE',
+      ignore: 'Ignore',
       ignoreFailed: 'Couldn’t ignore that problem. Try again.',
       /** The card's header: every problem, to the campaign's assistant. */
       fixAll: 'Fix with Ogen',
@@ -2041,7 +2048,7 @@ export const en = {
     },
     /** The Before-launch list's first post. */
     todo: {
-      addPost: 'ADD POST',
+      addPost: 'Add post',
     },
     /** Shared by the band and the figures. */
     stats: {
@@ -2126,23 +2133,23 @@ export const en = {
      */
     setup: {
       title: 'Set up this campaign',
-      withOgen: 'DO IT WITH OGEN',
+      withOgen: 'Do it with Ogen',
       strategy: {
         title: 'Dates and a post goal',
         detail: 'When it runs and how often it publishes.',
-        action: 'SET DATES',
+        action: 'Set dates',
         ask: 'Suggest dates and a post goal for this campaign.',
       },
       channels: {
         title: 'Channels',
         detail: 'Where it publishes, with an account connected.',
-        action: 'CHOOSE CHANNELS',
+        action: 'Choose channels',
         ask: 'Suggest which channels this campaign should publish on.',
       },
       posts: {
         title: 'The first post',
         detail: 'Write one yourself, or have Ogen draft a plan.',
-        action: 'ADD POST',
+        action: 'Add post',
         ask: 'Generate a content plan for this campaign.',
       },
     },
@@ -2174,7 +2181,7 @@ export const en = {
      * it is capitalised like every other; `unscheduledPosts` is its accessible
      * name, and starts with the same word so voice control can reach it.
      */
-    unscheduled: 'UNSCHEDULED',
+    unscheduled: 'Unscheduled',
     unscheduledPosts: 'Unscheduled posts',
     settings: 'Calendar settings',
 
@@ -2282,7 +2289,7 @@ export const en = {
     densityTicked_one: '{{formatted}} ticked',
     densityTicked_other: '{{formatted}} ticked',
     /** The toolbar's way back to this week. */
-    today: 'TODAY',
+    today: 'Today',
 
     /** The right rail's holding pen for posts with no date yet. */
     notScheduled: 'Not scheduled',
@@ -2318,7 +2325,7 @@ export const en = {
      * other action; the month's is icon-only and takes `addPostOn` above as
      * its title instead.
      */
-    addPost: 'ADD POST',
+    addPost: 'Add post',
 
     /**
      * A post whose date can no longer be moved by dragging it. The mark is the
@@ -3386,7 +3393,7 @@ export const en = {
         queued: 'More ideas on the way',
         notQueued: 'No more ideas were asked for',
         meta: 'saved to Ideas as they’re found',
-        open: 'OPEN IDEAS',
+        open: 'Open ideas',
       },
       /** The bank's state a turn read (`readAssetsState`, CON-476). */
       state: {
@@ -3406,15 +3413,15 @@ export const en = {
         /** The first few by name, then how many more. */
         namesAndMore_one: '{{names}} and {{formatted}} more',
         namesAndMore_other: '{{names}} and {{formatted}} more',
-        analyse: 'ANALYSE',
-        retry: 'RETRY',
-        triage: 'TRIAGE',
+        analyse: 'Analyse',
+        retry: 'Retry',
+        triage: 'Triage',
       },
       ask: {
         /** A cited passage from one of several assets. */
         chip: '{{title}} · {{pages}}',
         onlyThis: 'Only this asset.',
-        searchAll: 'SEARCH ALL ASSETS',
+        searchAll: 'Search all assets',
         searchAllPrompt: 'Search all the assets for that, not only this one.',
       },
       lens: {
@@ -3451,15 +3458,15 @@ export const en = {
         lensIdeas_one: '{{formatted}} idea',
         lensIdeas_other: '{{formatted}} ideas',
         readOn: 'read {{date}}',
-        openIdeas: 'OPEN IDEAS',
+        openIdeas: 'Open ideas',
         notReadFor: '{{lens}} hasn’t read it',
         /** Where another lens has: "Read for the workspace on 2 Nov". */
         readFor: 'Read for {{owner}}',
         readForOn: 'Read for {{owner}} on {{date}}',
-        showThat: 'SHOW THAT',
+        showThat: 'Show that',
         analyseFor: 'Analyse for {{owner}}',
         analysePrompt: 'Analyse it for the {{lens}}.',
-        show: 'SHOW',
+        show: 'Show',
         showPrompt: 'What did the analysis find for the {{lens}}?',
         readFrom: 'Read from',
         analysisOf: 'Analysis of {{title}}',
@@ -3475,7 +3482,7 @@ export const en = {
         partial_one: 'Only {{formatted}}',
         partial_other: 'Only {{formatted}}',
         conflicts: 'They disagree',
-        askWhich: 'ASK WHICH',
+        askWhich: 'Ask which',
         askWhichPrompt: 'Which is right: {{claim}}?',
         fromPassages_one:
           '{{titles}} isn’t analysed for this lens, so it was read from its passages.',
@@ -3505,14 +3512,14 @@ export const en = {
         /** Inside a campaign: smart groups are the workspace's. */
         workspaceOnly:
           'Smart groups open on the workspace’s {{list}}, outside this campaign.',
-        open: 'OPEN',
+        open: 'Open',
       },
       campaign: {
         sources_one: '{{formatted}} source attached',
         sources_other: '{{formatted}} sources attached',
         sourcesNote:
           'The documents stay in the bank; the campaign points at them.',
-        open: 'OPEN',
+        open: 'Open',
       },
     },
 
@@ -3559,7 +3566,7 @@ export const en = {
         audience: 'audience',
         series: 'series',
       },
-      open: 'OPEN',
+      open: 'Open',
       unbound_one: 'Taken off {{formatted}} campaign or post that used it',
       unbound_other: 'Taken off {{formatted}} campaigns and posts that used it',
       voice: {
@@ -3629,8 +3636,8 @@ export const en = {
         ofTotal_one: 'of {{formatted}}',
         ofTotal_other: 'of {{formatted}}',
         expiredOn: 'Expired {{date}}',
-        renew: 'RENEW',
-        edit: 'EDIT',
+        renew: 'Renew',
+        edit: 'Edit',
         renewPrompt: 'Renew the fact “{{statement}}” for another season.',
         editPrompt: 'Change the fact “{{statement}}” to ',
       },
@@ -3652,7 +3659,7 @@ export const en = {
         answered_one: 'Answered {{formatted}} question',
         answered_other: 'Answered {{formatted}} questions',
         answerFrom: '{{answer}}, from {{from}}',
-        open: 'OPEN THE READ',
+        open: 'Open the read',
         voices_one: '{{formatted}} voice',
         voices_other: '{{formatted}} voices',
         audiences_one: '{{formatted}} audience',
@@ -3819,7 +3826,7 @@ export const en = {
       sources: {
         word: 'SOURCES',
         title: '{{ready}} of {{attached}} ready',
-        open: 'OPEN ASSETS',
+        open: 'Open assets',
         ready: 'ready',
         analysing: 'analysing',
         unreadable: 'couldn’t be read',
@@ -3884,7 +3891,7 @@ export const en = {
       connectCampaignNote:
         'Add {{platform}} to this campaign’s platforms once it is connected — on Strategy.',
       openAddSource: 'Opened {{screen}} to add a source',
-      back: 'BACK',
+      back: 'Back',
       putBack: 'Put back',
     },
 
@@ -3895,8 +3902,8 @@ export const en = {
     proposal: {
       /** The composer, while an offer is waiting. */
       placeholder: 'Reply “yes” to run it, or say what to change',
-      confirm: 'CONFIRM',
-      dismiss: 'DISMISS',
+      confirm: 'Confirm',
+      dismiss: 'Dismiss',
       gone: 'This offer no longer exists.',
       failed: 'It didn’t go through. Ask again to retry.',
       stopped:
@@ -3915,7 +3922,7 @@ export const en = {
       /** The request that waited on a source, back once it is read (CON-484). */
       sourceReady: 'Source ready: “{{title}}”',
       /** An option's own small form: the page's link, then IMPORT (CON-484). */
-      import: 'IMPORT',
+      import: 'Import',
       inputRequired: 'Paste the page’s link to import it.',
       badLink: 'That doesn’t look like a web address.',
       /** Before a confirmed run: every confirm re-checks the offer first. */
@@ -3935,7 +3942,7 @@ export const en = {
         title: 'That offer lapsed',
         nothing: 'Nothing ran',
         hint: 'Ask again and it will be built from things as they are now.',
-        askAgain: 'ASK AGAIN',
+        askAgain: 'Ask again',
       },
       recommended: 'RECOMMENDED',
       /** Beside an offer's detail rows (CON-476): what each one is. */
@@ -3961,15 +3968,15 @@ export const en = {
       or: 'or {{fix}}',
       dismissed_one: '{{formatted}} dismissed finding left out.',
       dismissed_other: '{{formatted}} dismissed findings left out.',
-      ignore: 'IGNORE',
+      ignore: 'Ignore',
       ignored: 'Ignored: {{finding}}',
       ignoreFailed: 'Couldn’t ignore that. Try again.',
       /** The campaign's ignored findings, behind SHOW, each with RESTORE. */
       ignoredCount_one: '{{formatted}} ignored on this campaign',
       ignoredCount_other: '{{formatted}} ignored on this campaign',
-      show: 'SHOW',
-      hide: 'HIDE',
-      restore: 'RESTORE',
+      show: 'Show',
+      hide: 'Hide',
+      restore: 'Restore',
       restoreFailed: 'Couldn’t restore that. Try again.',
       /** A finding whose fix ran; `choice` is the slot or option picked. */
       fixed: 'Fixed: {{fix}}',
@@ -3985,15 +3992,15 @@ export const en = {
        * A post finding's way to its post's thread (CON-495): the row's button
        * when no fix runs on its own, else the last "or …".
        */
-      assist: 'FIX WITH ASSISTANT',
+      assist: 'Fix with assistant',
       orAssist: 'or fix with assistant',
       /** The idea a same-idea finding's posts share (CON-495). */
       fromIdea: 'All from “{{title}}”',
       /** Under a fix's offer opened in the row: back to the row's fixes. */
-      back: 'BACK TO THE FIXES',
+      back: 'Back to the fixes',
       /** When the check read the calendar: "Read Wed 12 Nov, 16:40." */
       readAt: 'Read {{when}}.',
-      checkAgain: 'CHECK AGAIN',
+      checkAgain: 'Check again',
       checkPrompt: 'Check the calendar again.',
     },
 
@@ -4104,7 +4111,7 @@ export const en = {
         highestOn_other: '{{formatted}} highest on {{platform}}',
         sortedBy: 'sorted by {{measure}}',
         figures: '{{reach}} reach · {{rate}}',
-        open: 'OPEN',
+        open: 'Open',
       },
       compare: {
         word: 'Compared',
@@ -4132,13 +4139,13 @@ export const en = {
         planned_one: 'Planned {{formatted}} idea',
         planned_other: 'Planned {{formatted}} ideas',
         onIdeas: 'on Ideas · nothing on the calendar',
-        open: 'OPEN',
+        open: 'Open',
       },
     },
 
     /** The workspace pack's cards (CON-464). */
     workspace: {
-      open: 'OPEN',
+      open: 'Open',
       allCampaigns: 'The whole workspace',
       activity: {
         day: 'Day',
@@ -4275,7 +4282,7 @@ export const en = {
         connected: 'Connected',
         expiresIn_one: 'expires in {{formatted}} day',
         expiresIn_other: 'expires in {{formatted}} days',
-        reconnect: 'RECONNECT {{platform}}',
+        reconnect: 'Reconnect {{platform}}',
         zone: 'Times in {{zone}}',
       },
       autoRead: {
@@ -4329,8 +4336,8 @@ export const en = {
         group_other: 'NOT MADE · {{formatted}}',
         title_one: '{{formatted}} not made',
         title_other: '{{formatted}} not made',
-        retryCount_one: 'RETRY {{formatted}}',
-        retryCount_other: 'RETRY {{formatted}}',
+        retryCount_one: 'Retry {{formatted}}',
+        retryCount_other: 'Retry {{formatted}}',
         lapsed: 'The offer behind them lapsed; ask again to make them.',
         /** Items the server names no title for, under one reason. */
         unnamed_one: '{{formatted}} item',
@@ -4397,16 +4404,16 @@ export const en = {
         changedSince: '{{changed}} of {{of}} retagged since',
         cantHint:
           'Undo would overwrite that change; untag by hand from Assets.',
-        open: 'OPEN',
+        open: 'Open',
       },
     },
 
     /** The ideas pack's cards (CON-465/466). */
     ideas: {
       untitled: 'Untitled idea',
-      open: 'OPEN',
+      open: 'Open',
       /** Exactly a card's ideas, on the Ideas list (CON-510). */
-      openAll: 'OPEN ALL',
+      openAll: 'Open all',
       noDate: 'no date',
       backOn: 'back on {{day}}',
       more_one: 'and {{formatted}} more',
@@ -4427,7 +4434,7 @@ export const en = {
         none: 'No ideas match',
         /** The pile the filter named, counted whole: "of 14 · On the desk". */
         ofPile: 'of {{total}} · {{pile}}',
-        show: 'SHOW ON SCREEN',
+        show: 'Show on screen',
         fit: 'fit {{score}}',
       },
       decided: {
@@ -4477,7 +4484,7 @@ export const en = {
         fromIdeas_one: '{{drafts}} from {{formatted}} idea',
         fromIdeas_other: '{{drafts}} from {{formatted}} ideas',
         /** Opens the calendar's Not scheduled panel (CON-485). */
-        show: 'SHOW',
+        show: 'Show',
         /** A row's day, and why it is that day (CON-485). */
         notScheduled: 'Not scheduled',
         datedPlan: '{{date}} · the idea’s plan date',
@@ -4488,7 +4495,7 @@ export const en = {
         notGrounded: 'not grounded',
         dropped_one: '{{formatted}} draft couldn’t be written',
         dropped_other: '{{formatted}} drafts couldn’t be written',
-        openAll: 'OPEN ALL',
+        openAll: 'Open all',
         fromIdea_one: 'The idea cites no document; written from its own words.',
         fromIdea_other:
           'Its ideas cite no document; written from their own words.',
@@ -4590,7 +4597,7 @@ export const en = {
         meta: 'rewritten',
         inVoice: 'A new version, in {{voice}}',
         newVersion: 'A new version',
-        open: 'OPEN',
+        open: 'Open',
         notRevised: 'Post left as it was',
         versioned: 'The old one stays in the post’s versions',
         unversioned:
@@ -4612,7 +4619,7 @@ export const en = {
         ownUnnamed: 'Now in a voice of its own',
         copyKept:
           'The copy stays as it is; checks and rewrites read it in this voice',
-        open: 'OPEN',
+        open: 'Open',
       },
       converted: {
         word: 'Converted',
@@ -4727,8 +4734,8 @@ export const en = {
         more_other: 'and {{formatted}} more',
         /** After the headline: "within Mon 13–Sun 19". */
         window: 'within {{from}} – {{to}}',
-        confirm_one: 'MOVE {{formatted}} POST',
-        confirm_other: 'MOVE {{formatted}} POSTS',
+        confirm_one: 'Move {{formatted}} post',
+        confirm_other: 'Move {{formatted}} posts',
         before: 'Before',
         after: 'After',
         legendMoved: 'moved',
@@ -4738,7 +4745,7 @@ export const en = {
 
     /** Reversing a change a turn made. */
     undo: {
-      undo: 'UNDO',
+      undo: 'Undo',
       undone: 'Undone',
       changed: 'Can’t undo: it was changed again since.',
       gone: 'This can no longer be undone.',
@@ -4787,8 +4794,8 @@ export const en = {
       drafted_one: '{{formatted}} post',
       drafted_other: '{{formatted}} posts',
       notScheduled: 'not scheduled',
-      openPost: 'OPEN',
-      openPosts: 'OPEN ALL',
+      openPost: 'Open',
+      openPosts: 'Open all',
       platformsUpdated: 'Platforms updated',
       /** The server's words for what changed, e.g. "Threads". */
       platformsAdded: 'added {{what}}',
@@ -4814,7 +4821,7 @@ export const en = {
         '{{formatted}} posts unscheduled first. UNDO puts the platform back, not the schedule.',
       /** The days saved ideas target, after their count. */
       ideasWindow: 'targeting {{range}}',
-      openIdeas: 'OPEN',
+      openIdeas: 'Open',
       /** The goal is a rate; the total is the whole campaign's. */
       goal: {
         week_one: 'Goal raised to {{formatted}} post a week',
@@ -4868,7 +4875,7 @@ export const en = {
   workspaces: {
     title: 'Your workspaces',
     loadFailed: 'Failed to load your workspaces.',
-    create: 'NEW WORKSPACE',
+    create: 'New workspace',
     /** Marks the workspace *this tab* is in — another tab may be somewhere else. */
     current: 'Current',
     memberCount_one: '{{count}} member',
@@ -4914,8 +4921,8 @@ export const en = {
     password: {
       sentBody:
         'A link to set a new password is on its way to <email>{{email}}</email>. It expires in an hour, and using it signs out every device — including this one.',
-      send: 'EMAIL ME A RESET LINK',
-      resend: 'SEND IT AGAIN',
+      send: 'Email me a reset link',
+      resend: 'Send it again',
       resentNote: 'Sent again — give it a minute.',
     },
     /** Every way into the account, one row each (CON-396). */
@@ -4926,12 +4933,12 @@ export const en = {
       passwordSet: 'Email and password',
       passwordNotSet: 'Not set — you sign in with Google',
       /** The same reset email: there is no current password to ask for. */
-      setPassword: 'SET A PASSWORD',
+      setPassword: 'Set a password',
       google: 'Google',
       googleConnected: '{{email}} · connected {{date}}',
       googleNotConnected: 'Not connected',
-      connect: 'CONNECT',
-      disconnect: 'DISCONNECT',
+      connect: 'Connect',
+      disconnect: 'Disconnect',
       onlyWayIn:
         'Google is your only way in. Set a password first, then you can disconnect it.',
       connectedToast: 'Google connected',
@@ -4952,8 +4959,8 @@ export const en = {
         'Your login keeps working: any other workspace you belong to is untouched, and <strong>{{workspace}}</strong> itself carries on without you. If you are its only owner, appoint another owner first — a workspace can’t be left ownerless.',
       thisWorkspace: 'this workspace',
       confirmLabel: 'Type <email>{{email}}</email> to confirm',
-      keep: 'STAY IN THIS WORKSPACE',
-      confirm: 'LEAVE THIS WORKSPACE',
+      keep: 'Stay in this workspace',
+      confirm: 'Leave this workspace',
     },
   },
 
@@ -5030,8 +5037,8 @@ export const en = {
       confirmBody:
         'Everything in this workspace is deleted, for every member, and you can’t restore it yourself. Type <strong>{{name}}</strong> to confirm.',
       confirmLabel: 'Workspace name',
-      keep: 'KEEP WORKSPACE',
-      confirm: 'DELETE WORKSPACE',
+      keep: 'Keep workspace',
+      confirm: 'Delete workspace',
       /** The server's own last-workspace guard, arriving from another tab's race. */
       onlyWorkspace: 'This is your only workspace',
       onlyWorkspaceNote: 'Create another workspace before deleting this one.',
@@ -5047,8 +5054,8 @@ export const en = {
       reconnectDialog: {
         title: 'Reconnect {{platform}}',
         body: 'You’ll sign in to {{platform}} and come back here. Your posts and settings stay as they are, and the posts scheduled through this account go out once it is back.',
-        continue: 'CONTINUE TO {{platform}}',
-        cancel: 'CANCEL',
+        continue: 'Continue to {{platform}}',
+        cancel: 'Cancel',
       },
       reconnect: 'Reconnect',
       disconnectAccount: 'Disconnect {{name}}',
@@ -5067,8 +5074,8 @@ export const en = {
         'Scheduled posts go out on their own, across every campaign.',
       blockedTitle: 'Auto-publishing not allowed',
       blockedBody: 'Scheduled posts wait for you to publish them by hand.',
-      allow: 'ALLOW',
-      disallow: 'DISALLOW',
+      allow: 'Allow',
+      disallow: 'Disallow',
       checkFailed: "Unable to check {{platform}}'s scheduled posts",
       pending: {
         title_one: '{{platform}} has {{count}} post queued to publish',
@@ -5149,8 +5156,8 @@ export const en = {
       body: 'Ogen will stop publishing to this {{platform}} account, and the connection is removed on the publishing provider too — so it won’t come back on the next sync.',
       published:
         'Posts already published stay live on {{platform}}. You can reconnect the account later, but it has to go through the authorization flow again.',
-      keep: 'KEEP CONNECTED',
-      confirm: 'DISCONNECT ACCOUNT',
+      keep: 'Keep connected',
+      confirm: 'Disconnect account',
       succeeded: 'Disconnected {{name}}',
       blocked: {
         title: 'This account has scheduled posts',
@@ -5162,7 +5169,7 @@ export const en = {
           'To keep it, close this and unschedule the post first — then you can pick a different account for it.',
         keep_other:
           'To keep them, close this and unschedule those posts first — then you can pick a different account for each.',
-        confirm: 'DISCONNECT ANYWAY',
+        confirm: 'Disconnect anyway',
       },
     },
   },
@@ -5251,7 +5258,7 @@ export const en = {
           'Only the member who connected this plugin, or a workspace owner, can disconnect it.',
         failed: 'The plugin could not be disconnected. Try again in a moment.',
         keep: 'Keep connected',
-        confirm: 'DISCONNECT',
+        confirm: 'Disconnect',
         succeeded: '{{label}} disconnected',
       },
     },
@@ -5914,9 +5921,9 @@ export const en = {
       period: 'Period',
       compare: 'Compare',
       by: 'By',
-      selectAll: 'SELECT ALL',
-      deselectAll: 'DESELECT ALL',
-      allPlatforms: 'ALL PLATFORMS',
+      selectAll: 'Select all',
+      deselectAll: 'Deselect all',
+      allPlatforms: 'All platforms',
       accounts_one: '{{count}} account',
       accounts_other: '{{count}} accounts',
       platformAccounts: '{{platform}} — {{accounts}}',
@@ -6005,6 +6012,9 @@ export const en = {
   },
 
   posts: {
+    delete: {
+      keep: 'Keep post',
+    },
     /**
      * The post statuses, as the app names them. Not the server's words: these
      * are read on a card at a glance, so `scheduled` is written as the thing
@@ -6081,7 +6091,7 @@ export const en = {
       back: 'Back to posts',
       more: 'More actions',
       downloadMarkdown: 'Download as Markdown',
-      delete: 'DELETE POST',
+      delete: 'Delete post',
       previous: 'Previous post',
       next: 'Next post',
       /** The post's place in the campaign's timeline: "3 of 21". */
@@ -6457,9 +6467,9 @@ export const en = {
         placeholder: 'e.g. A barista pouring latte art into a white cup',
         count: '{{length}} / {{limit}} characters',
         over: '{{length}} / {{limit}} characters — {{over}} over',
-        save: 'SAVE',
-        cancel: 'CANCEL',
-        close: 'CLOSE',
+        save: 'Save',
+        cancel: 'Cancel',
+        close: 'Close',
       },
     },
 
@@ -6506,7 +6516,7 @@ export const en = {
       heading: 'Sources',
       /** The rail section's title. Its capitals are the copy, as everywhere. */
       sectionTitle: 'SOURCES',
-      add: 'ADD A SOURCE',
+      add: 'Add a source',
       fromBank: 'Choose from content bank',
       upload: 'Upload files',
       webPage: 'Add a web page',
@@ -6798,6 +6808,9 @@ export const en = {
      * collapses into a numbered version.
      */
     versions: {
+      create: 'Create new version',
+      restore: 'Restore this version',
+      deleteVersion: 'Delete',
       liveDraft: 'Draft',
       liveDraftTime: 'Unsaved',
       liveDraftNote: 'Not snapshotted yet',
@@ -6827,7 +6840,7 @@ export const en = {
      * where the copy lands rather than what happens to this one.
      */
     duplicate: {
-      action: 'DUPLICATE INTO DRAFT',
+      action: 'Duplicate into draft',
       pending: 'Duplicating…',
       success: 'Draft created',
       error: "The post couldn't be duplicated. Try again.",
@@ -6903,10 +6916,10 @@ export const en = {
      */
     notes: {
       heading: 'Notes',
-      add: 'ADD NOTE',
-      save: 'SAVE',
-      cancel: 'CANCEL',
-      delete: 'DELETE',
+      add: 'Add note',
+      save: 'Save',
+      cancel: 'Cancel',
+      delete: 'Delete',
       edit: 'Edit note',
 
       titlePlaceholder: 'Title (optional)',
@@ -6971,8 +6984,8 @@ export const en = {
       waitingTitle: 'Waiting on the owner',
       waitingBody:
         'Only an owner of {{workspace}} can choose a plan. This page opens the workspace as soon as they do.',
-      switchWorkspace: 'SWITCH WORKSPACE',
-      signOut: 'SIGN OUT',
+      switchWorkspace: 'Switch workspace',
+      signOut: 'Sign out',
       /** The yearly saving, beside the billing switch. Floored, never rounded up. */
       save: 'SAVE {{percent}}%',
       mostPopular: 'MOST POPULAR',
@@ -6984,11 +6997,11 @@ export const en = {
       billedYearly: 'Billed {{total}} a year · excl. VAT',
       allowances: 'ALLOWANCES',
       /** `name` arrives already in capitals, set for the active language. */
-      chooseNamed: 'CHOOSE {{name}}',
-      startFreeMonth: 'START FREE MONTH',
-      currentPlan: 'CURRENT PLAN',
-      scheduled: 'SCHEDULED',
-      unavailable: 'NOT AVAILABLE YET',
+      chooseNamed: 'Choose {{name}}',
+      startFreeMonth: 'Start free month',
+      currentPlan: 'Current plan',
+      scheduled: 'Scheduled',
+      unavailable: 'Not available yet',
       noneOnSale: 'No plan is on sale right now.',
       vatNote:
         'Prices exclude VAT. Lemon Squeezy sells Ogen as merchant of record and adds it at checkout.',
@@ -7001,7 +7014,7 @@ export const en = {
       compTryAny: 'Try any plan for as long as you like — nothing is charged.',
       freeWhileTesting: 'FREE WHILE YOU TEST',
       /** `name` arrives already in capitals, set for the active language. */
-      switchNamed: 'SWITCH TO {{name}}',
+      switchNamed: 'Switch to {{name}}',
       compNote:
         'Beta access is free while you test. If it ends, Ogen tells you first and nothing you made is touched.',
       /** The tier held is one the Ogen team set up and nobody can choose. */
@@ -7030,8 +7043,8 @@ export const en = {
       openedCharged: "You're charged when you complete the checkout.",
       openedBody:
         'This page carries on by itself once Lemon Squeezy confirms, and opens {{workspace}}.',
-      reopen: 'OPEN CHECKOUT AGAIN',
-      back: 'CHOOSE ANOTHER PLAN',
+      reopen: 'Open checkout again',
+      back: 'Choose another plan',
       slowTitle: 'Taking longer than usual',
       slowBody:
         "Leave this open, or come back later — you won't be charged twice. Your receipt from Lemon Squeezy has the order reference.",
@@ -7043,9 +7056,9 @@ export const en = {
       body: 'Lemon Squeezy works out the difference: a move up starts today, a move down waits for the end of the period you have paid for.',
       trialBody:
         'This ends the free month on {{name}} today, and {{target}} is charged now.',
-      cancel: 'CANCEL',
+      cancel: 'Cancel',
       /** `name` arrives already in capitals. */
-      confirm: 'MOVE TO {{name}}',
+      confirm: 'Move to {{name}}',
       blockedTitle: 'Not during the free month',
       blockedBody:
         "{{name}} can't be changed until its free month ends on {{when}}. Choose again then, or end the free month in Lemon Squeezy and come back.",
@@ -7077,7 +7090,7 @@ export const en = {
     perMonth: '{{price}} / month',
     perYear: '{{price}} / year',
     /** `name` arrives already in capitals. */
-    keepPlan: 'KEEP {{name}}',
+    keepPlan: 'Keep {{name}}',
     notInPlan: 'Not in your plan',
     notInPlanBody:
       "This isn't part of the plan your workspace is on. Upgrading turns it on for everyone here.",
@@ -7135,7 +7148,7 @@ export const en = {
     unlimited: 'Unlimited',
 
     /** Capitalised like every other action label in the app. */
-    upgrade: 'UPGRADE',
+    upgrade: 'Upgrade',
     /**
      * The upgrade dialog (CON-232): one recommended plan argued for, with what
      * it adds beside it.
@@ -7185,7 +7198,7 @@ export const en = {
       perMonth: '<price>{{price}}</price> / month',
       billedYearly: '{{total}} billed yearly',
       billedYearlySaving: '{{total}} billed yearly, save {{saving}}',
-      upgradeTo: 'UPGRADE TO {{plan}}',
+      upgradeTo: 'Upgrade to {{plan}}',
       /** The offered plan's name on its card; `plan` is the server's tier name. */
       planName: 'Ogen {{plan}}',
       comparePlans: 'Compare every plan',
@@ -7277,7 +7290,7 @@ export const en = {
       planPitch: 'Everything on {{current}}, with more room to grow.',
       unpriced: 'Pricing is not published yet.',
     },
-    seePlans: 'SEE PLANS',
+    seePlans: 'See plans',
     /**
      * For the half of the workspace that cannot act on any of the above
      * (CON-232). "For everyone here" is the part worth saying: a plan is not a
@@ -7303,7 +7316,7 @@ export const en = {
      * Inside the plan's own card, where the card names what is being changed —
      * the same shape, and the same word, as a campaign's type.
      */
-    changePlan: 'CHANGE',
+    changePlan: 'Change',
 
     /**
      * Plan & billing — one card in Workspace Settings, with no screen behind
@@ -7351,7 +7364,7 @@ export const en = {
     providerHolds:
       'Your payment method, billing address, tax ID, invoices and cancellation are handled by Lemon Squeezy, which sells Ogen as merchant of record.',
     /** The row title says what is managed, the way SWITCH sits under a name. */
-    managePortal: 'MANAGE',
+    managePortal: 'Manage',
     portalFailed: 'The billing portal could not be opened.',
 
     /**
@@ -7415,7 +7428,7 @@ export const en = {
     /** For the button's accessible name, where "CHOOSE" alone says too little. */
     chooseNamed: 'Choose {{name}}',
     /** Undoing a scheduled downgrade — the only way back from one. */
-    cancelChange: 'CANCEL CHANGE',
+    cancelChange: 'Cancel change',
 
     /**
      * A change that has been made but has not happened yet. Both directions are
@@ -7449,7 +7462,7 @@ export const en = {
     leaveHidden: {
       title: 'Leave {{name}}?',
       body: 'Switching to {{target}} is free and takes effect at once. Only the Ogen team can move this workspace back to {{name}}.',
-      cancel: 'CANCEL',
+      cancel: 'Cancel',
     },
     /** The Plan & billing card while a workspace has complimentary beta access. */
     comp: {
@@ -7538,9 +7551,9 @@ export const en = {
       fact_other: '{{formatted}} facts selected',
       selectAll: 'Select every fact shown',
       clearAll: 'Clear the selection',
-      clear: 'CLEAR',
+      clear: 'Clear',
       /** The facts ledger's bulk removal, which asks first. */
-      remove: 'REMOVE',
+      remove: 'Remove',
     },
     binding: {
       voice: 'Voice',
@@ -7554,7 +7567,7 @@ export const en = {
       sourcePost: 'Set on this post',
       sourceCampaign: 'From the campaign',
       sourceLibrary: "The workspace's default",
-      reset: 'RESET',
+      reset: 'Reset',
       resetHint: 'Go back to what the campaign says',
       emptyTitle: 'Voice and audience',
       emptyBody:
@@ -7630,6 +7643,7 @@ export const en = {
 
     /** The facts ledger's refusals, said beside the statement (CON-316). */
     factsLedger: {
+      removeThis: 'Remove this fact',
       duplicate: 'This workspace already has that statement as a fact.',
       gone: 'Someone removed this fact while it was open. The ledger has been refreshed.',
       saveFailed: 'The fact could not be saved. Try again.',
@@ -7660,10 +7674,10 @@ export const en = {
           'Posts written from now on won’t be able to state it. Nothing brings it back.',
         body_other:
           'Posts written from now on won’t be able to state them. Nothing brings them back.',
-        keep_one: 'KEEP IT',
-        keep_other: 'KEEP THEM',
-        confirm_one: 'REMOVE FACT',
-        confirm_other: 'REMOVE {{formatted}} FACTS',
+        keep_one: 'Keep it',
+        keep_other: 'Keep them',
+        confirm_one: 'Remove fact',
+        confirm_other: 'Remove {{formatted}} facts',
       },
     },
     /**
@@ -7748,7 +7762,7 @@ export const en = {
      * what is kept. Everything under `components/brand/distill`.
      */
     distill: {
-      cancel: 'CANCEL',
+      cancel: 'Cancel',
       offer: {
         /** Before the two routes not chosen, demoted to links under a rule. */
         or: 'Or',
@@ -7767,7 +7781,7 @@ export const en = {
         placeholder: 'acme.com',
         invalid: "That doesn't look like a web address.",
         what: 'We read up to ten pages — home, about, what you sell, pricing, terms, and a couple of recent posts. They stay in Assets afterwards, like any page you add.',
-        read: 'READ THE SITE',
+        read: 'Read the site',
       },
       document: {
         formats:
@@ -7778,8 +7792,8 @@ export const en = {
         noMatch: 'Nothing in Assets matches that.',
         chosen_one: '{{count}} chosen',
         chosen_other: '{{count}} chosen',
-        read_one: 'READ {{count}} FILE',
-        read_other: 'READ {{count}} FILES',
+        read_one: 'Read {{count}} file',
+        read_other: 'Read {{count}} files',
         uploading: 'uploading {{percent}}%',
         processing: 'reading',
         ready: 'ready',
@@ -7913,7 +7927,7 @@ export const en = {
           questions:
             'Answering drafts the proposal again with these answers added. What you have kept, dropped or edited so far stays as you left it.',
         },
-        ask: 'ASK AGAIN WITH THESE',
+        ask: 'Ask again with these',
       },
       questions: {
         title: 'A handful of questions',
@@ -7922,7 +7936,7 @@ export const en = {
         placeholder: 'Skip, or say it in a line or two',
         unavailable: "The questions couldn't be loaded. Try again in a minute.",
         answered: '{{answered}} of {{count}} answered',
-        draft: 'DRAFT IT',
+        draft: 'Draft it',
         /** The server's seven starter questions, by their stable ids. */
         starter: {
           q_offer: 'What do you sell, and who buys it?',
@@ -7954,9 +7968,9 @@ export const en = {
         drop: 'Drop',
         keepLine: 'Keep “{{line}}”',
         dropLine: 'Drop “{{line}}”',
-        edit: 'EDIT',
-        done: 'DONE',
-        undo: 'UNDO',
+        edit: 'Edit',
+        done: 'Done',
+        undo: 'Undo',
         dropped: 'dropped',
         becomesDefault: 'becomes your default',
         voiceName: 'Name',
@@ -7979,7 +7993,7 @@ export const en = {
         line: 'Line',
         disclaimerDiffers:
           'The site’s differs from yours. Keep yours unless you choose it.',
-        compare: 'COMPARE',
+        compare: 'Compare',
         keepYours: 'Keep yours',
         useTheirs: 'Use the one from the site',
         writtenHereOn: 'Written here · {{date}}',
@@ -8301,10 +8315,10 @@ export const en = {
         addSample: 'Add a sample',
         editSample: 'Edit sample',
         samplePlaceholder: 'Paste a post you would be happy to have written.',
-        removeSample: 'REMOVE SAMPLE',
-        cancel: 'CANCEL',
-        addIt: 'ADD IT',
-        done: 'DONE',
+        removeSample: 'Remove sample',
+        cancel: 'Cancel',
+        addIt: 'Add it',
+        done: 'Done',
         resetSamples: 'Reset samples',
         rules: 'Rules',
         rulesHint:
@@ -8489,8 +8503,8 @@ export const en = {
       inherited:
         'Falling through to the default — nothing here is specific to this platform yet.',
       ownTemplate: 'Has a template of its own.',
-      giveItsOwn: 'GIVE IT ITS OWN',
-      replace: 'REPLACE',
+      giveItsOwn: 'Give it its own',
+      replace: 'Replace',
       nothingApplies:
         'Nothing applies here, and there is no default to fall back on.',
       drawnOver: 'drawn over the picture',
@@ -8512,7 +8526,7 @@ export const en = {
         'Missing {{ratios}} — that ratio goes out bare against {{needed}}.',
       coversSome_other:
         'Missing {{ratios}} — those ratios go out bare against {{needed}}.',
-      openInCompositor: 'OPEN IN COMPOSITOR',
+      openInCompositor: 'Open in compositor',
     },
 
     /** The singleton with real weight — `GuardrailsEditor.tsx`. */
@@ -8528,14 +8542,14 @@ export const en = {
       mayClaimHint:
         'Claims already checked, in the form they were checked in. This is what stops a sentence that took a lawyer an hour being written from scratch every time.',
       mayClaimPlaceholder: 'That setup takes two weeks, start to finish.',
-      addClaim: 'ADD A CLAIM',
+      addClaim: 'Add a claim',
       neverClaim: 'Never claim',
       neverClaimHint:
         'Write the claim itself rather than the topic — “any guaranteed outcome, in any form” rather than “results”. A topic is something to avoid mentioning; a claim is something a sentence can be checked against.',
       neverClaimEmpty:
         'Nothing is off limits yet. Every voice in the workspace may promise anything, in any words.',
       neverClaimPlaceholder: 'That the result is guaranteed, in any form.',
-      addRule: 'ADD A RULE',
+      addRule: 'Add a rule',
       bannedWords: 'Banned words',
       bannedWordsHint:
         'Words that may never appear, in any voice. Type one and press Enter; commas and pasted lists split into separate words.',
@@ -8632,7 +8646,7 @@ export const en = {
         title: 'Leave without creating it?',
         body: 'Nothing on this screen has been saved yet. Leaving now loses it.',
         stay: 'Keep editing',
-        discard: 'DISCARD',
+        discard: 'Discard',
       },
       /**
        * The fork note's first sentence. `<name>` is the starter's name, set in
@@ -8659,6 +8673,16 @@ export const en = {
   },
 
   campaigns: {
+    accounts: {
+      use: 'Use',
+      activate: 'Activate',
+    },
+    platforms: {
+      deactivateAll: 'Deactivate all',
+    },
+    create: {
+      submit: 'Create campaign',
+    },
     /** The posts list's and calendar's selection bar (CON-482). */
     bulk: {
       selected_one: '{{formatted}} selected',
@@ -8671,11 +8695,11 @@ export const en = {
       status: 'Status',
       unschedule: 'Unschedule',
       delete: 'Delete',
-      clear: 'CLEAR',
+      clear: 'Clear',
       deleted_one: '{{formatted}} post deleted',
       deleted_other: '{{formatted}} posts deleted',
     },
-    add: 'ADD CAMPAIGN',
+    add: 'Add campaign',
     error: 'Failed to load campaigns',
     /** The list's rows: the Overview in one row each, grouped by stage. */
     list: {
@@ -8737,7 +8761,7 @@ export const en = {
     archivedSection: 'Archived campaigns',
     archivedError: 'Failed to load archived campaigns',
     archivedOn: 'Archived {{archivedOn}}',
-    unarchive: 'UNARCHIVE',
+    unarchive: 'Unarchive',
     archivedEmpty:
       'Nothing is archived. Archiving a campaign takes it off the list without deleting anything: its posts, schedule and content stay exactly as they are.',
     // The two campaign section pages the drill-down left behind Strategy and
@@ -8786,7 +8810,7 @@ export const en = {
      */
     type: {
       label: 'Campaign type',
-      change: 'CHANGE',
+      change: 'Change',
       cancel: 'Cancel',
       locked_one:
         "Locked — {{count}} post is planned against this type's phases.",
@@ -8871,7 +8895,7 @@ export const en = {
       title: 'Assets',
       /** The ADD CONTENT menu (CON-484 moved it into the catalogue). */
       add: {
-        button: 'ADD CONTENT',
+        button: 'Add content',
         note: 'Write a note',
         upload: 'Upload file',
         webPage: 'Add a web page',
@@ -8879,7 +8903,7 @@ export const en = {
       /** The page the assistant opened for a source (CON-484). */
       openedForSource:
         'Opened by the assistant — the request waits until a file is read.',
-      back: 'BACK',
+      back: 'Back',
     },
 
     /**
@@ -8943,6 +8967,11 @@ export const en = {
      * shown only when something is off, and the Ideas column's verdict pill.
      */
     list: {
+      start: {
+        addWebPage: 'Add a web page',
+        upload: 'Upload files',
+        write: 'Write a note',
+      },
       /** The list's accessible name. */
       label: 'Documents',
       untitled: 'Untitled',
@@ -9053,7 +9082,7 @@ export const en = {
         from: 'From',
         to: 'To',
         on: 'Before',
-        apply: 'APPLY',
+        apply: 'Apply',
       },
       noCampaign: 'No campaign',
       noTags: 'No tags',
@@ -9310,7 +9339,7 @@ export const en = {
     selection: {
       count_one: '{{count}} selected',
       count_other: '{{count}} selected',
-      delete: 'DELETE',
+      delete: 'Delete',
       /** The head's box: the documents loaded, not every match. */
       selectPage: 'Select the documents shown',
       /** The named step from a ticked page to every match. */
@@ -9391,10 +9420,10 @@ export const en = {
         'This document will be permanently deleted, and any campaign using it will stop writing from it. This cannot be undone.',
       bodyBank_other:
         'These documents will be permanently deleted, and any campaign using them will stop writing from them. This cannot be undone.',
-      keep_one: 'KEEP DOCUMENT',
-      keep_other: 'KEEP DOCUMENTS',
-      confirm_one: 'DELETE DOCUMENT',
-      confirm_other: 'DELETE {{count}} DOCUMENTS',
+      keep_one: 'Keep document',
+      keep_other: 'Keep documents',
+      confirm_one: 'Delete document',
+      confirm_other: 'Delete {{count}} documents',
       done_one: '{{count}} document deleted',
       done_other: '{{count}} documents deleted',
       failed_one: '{{count}} document couldn’t be deleted',
@@ -9410,7 +9439,7 @@ export const en = {
      * row first.
      */
     tagging: {
-      action: 'TAG',
+      action: 'Tag',
       title_one: 'Tag this document',
       title_other: 'Tag {{count}} documents',
       addLabel: 'Add tags',
@@ -9422,8 +9451,8 @@ export const en = {
       removeNone: 'Nothing in this selection is tagged yet.',
       /** Sits inside the chip, so it is the count alone rather than a sentence. */
       onCount: 'on {{count}} of {{total}}',
-      cancel: 'CANCEL',
-      submit: 'APPLY',
+      cancel: 'Cancel',
+      submit: 'Apply',
       done_one: '{{count}} document updated',
       done_other: '{{count}} documents updated',
     },
@@ -9454,10 +9483,10 @@ export const en = {
     remove: 'Remove {{name}}',
     /** Last resort: the request died without the server wording anything. */
     failed: 'Upload failed',
-    cancel: 'CANCEL',
-    submit: 'UPLOAD',
+    cancel: 'Cancel',
+    submit: 'Upload',
     /** The count is what makes the button worth reading twice before clicking. */
-    submitCount: 'UPLOAD ({{n}})',
+    submitCount: 'Upload ({{n}})',
     /** Named while a drag is over the page — the one moment the destination
         can be stated without being asked for. */
     dropInto: 'Add these to {{scope}}',
@@ -9564,7 +9593,7 @@ export const en = {
       failed: {
         title: 'Couldn’t load help',
         body: 'Check your connection and try again.',
-        retry: 'TRY AGAIN',
+        retry: 'Try again',
       },
       none: {
         title: 'No help for this page yet',
@@ -9574,7 +9603,7 @@ export const en = {
         title: 'This article isn’t here',
         body: 'It may have been renamed or taken down. Ogen can answer the question instead.',
       },
-      askOgen: 'ASK OGEN',
+      askOgen: 'Ask Ogen',
     },
     /** A concept placed inside a page article, and the way to read it alone. */
     embed: {

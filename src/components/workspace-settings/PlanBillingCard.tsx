@@ -336,7 +336,7 @@ export function PlanBanner({
               loading={keeping}
             >
               {t('tiers.keepPlan', {
-                name: tier.name.toLocaleUpperCase(i18n.language),
+                name: tier.name,
               })}
             </Button>
           )}

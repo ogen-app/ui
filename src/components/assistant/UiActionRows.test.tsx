@@ -67,8 +67,8 @@ describe('a set_window row (CON-479)', () => {
     expect(
       screen.getByText('Analytics set to Mar 1 – Mar 31 · Instagram'),
     ).toBeTruthy()
-    expect(screen.getByText('BACK')).toBeTruthy()
-    expect(screen.queryByText('UNDO')).toBeNull()
+    expect(screen.getByText('Back')).toBeTruthy()
+    expect(screen.queryByText('Undo')).toBeNull()
   })
 
   it('shows each changed control before and after', async () => {
@@ -98,7 +98,7 @@ describe('a set_window row (CON-479)', () => {
       opened(),
     ])
     expect(screen.getByText('Opened Analytics · Last 90 days')).toBeTruthy()
-    expect(screen.getAllByText('BACK')).toHaveLength(1)
+    expect(screen.getAllByText('Back')).toHaveLength(1)
     expect(screen.getByText('Last 28 days').tagName).toBe('S')
     expect(screen.getByText('Period')).toBeTruthy()
     // The campaign was in scope already, so it isn't named as a change.
@@ -199,7 +199,7 @@ describe('an open_connect row (CON-480)', () => {
         'The sign-in is Instagram’s. Nothing changes until you finish it there.',
       ),
     ).toBeTruthy()
-    expect(screen.getByText('BACK')).toBeTruthy()
+    expect(screen.getByText('Back')).toBeTruthy()
   })
 
   it('says when the account isn’t connected here (bug 5)', async () => {

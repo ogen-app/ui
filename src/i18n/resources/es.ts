@@ -12,7 +12,14 @@ import type { Translation } from './en'
  * commit panel, destructive ones included.
  */
 export const es: Translation = {
+  tables: {
+    empty: {
+      resetFilters: 'Restablecer filtros',
+    },
+  },
   common: {
+    clear: 'Borrar',
+    today: 'Hoy',
     cancel: 'Cancelar',
     close: 'Cerrar',
     done: 'Listo',
@@ -81,7 +88,7 @@ export const es: Translation = {
     login: {
       title: 'Iniciar sesión',
       subtitle: 'Inicia sesión para seguir gestionando tu contenido',
-      submit: 'INICIAR SESIÓN',
+      submit: 'Iniciar sesión',
       expired:
         'Tu sesión ha caducado — inicia sesión de nuevo para continuar donde lo dejaste',
       afterReset: 'Tu contraseña se ha cambiado. Inicia sesión con la nueva',
@@ -97,7 +104,7 @@ export const es: Translation = {
     register: {
       title: 'Crea tu organización',
       subtitle: 'Regístrate para empezar a gestionar tu contenido',
-      submit: 'CREAR CUENTA',
+      submit: 'Crear cuenta',
       organizationLabel: 'Nombre de la organización',
       organizationPlaceholder: 'Introduce el nombre de tu organización',
       firstNameLabel: 'Nombre',
@@ -121,15 +128,15 @@ export const es: Translation = {
       expiredTitle: 'Esta invitación ha caducado',
       expiredBody:
         'El enlace ya no es válido. Puede que haya caducado, que lo haya sustituido una invitación más reciente o que ya se haya usado. Pide al equipo de Ogen que te envíe una nueva.',
-      logInInstead: 'INICIAR SESIÓN',
+      logInInstead: 'Iniciar sesión',
       previewFailedTitle: 'No hemos podido comprobar esta invitación',
       previewFailedSubtitle:
         'Algo ha fallado por nuestra parte; puede que el enlace siga siendo válido',
       signedInTitle: 'Has iniciado sesión como {{name}}',
       signedInBody:
         'Esta invitación es para {{email}}. Cierra la sesión para aceptarla con esa dirección. Tus espacios de trabajo actuales se quedan tal como están.',
-      signOutAndContinue: 'CERRAR SESIÓN Y CONTINUAR',
-      staySignedIn: 'SEGUIR CON ESTA SESIÓN',
+      signOutAndContinue: 'Cerrar sesión y continuar',
+      staySignedIn: 'Seguir con esta sesión',
     },
     privateBeta: {
       title: 'Ogen está en beta privada',
@@ -138,7 +145,7 @@ export const es: Translation = {
         '¿Aún no tienes invitación? Escribe a <mail>{{email}}</mail> y cuéntanos para qué usarías Ogen.',
     },
     google: {
-      continue: 'CONTINUAR CON GOOGLE',
+      continue: 'Continuar con Google',
       orWithEmail: 'o con tu correo electrónico',
       orSignUpWithEmail: 'o regístrate con tu correo electrónico',
       errors: {
@@ -178,7 +185,7 @@ export const es: Translation = {
       organizationLabel: 'Nombre de la organización',
       organizationHint:
         'Puedes cambiarlo más tarde en Ajustes del espacio de trabajo.',
-      submit: 'CREAR ESPACIO DE TRABAJO',
+      submit: 'Crear espacio de trabajo',
       notYou: '¿No eres tú?',
       logInLink: 'Inicia sesión',
       expiredTitle: 'Este enlace de registro ha caducado',
@@ -196,7 +203,7 @@ export const es: Translation = {
     forgot: {
       title: 'Restablece tu contraseña',
       subtitle: 'Te enviaremos un enlace por correo para elegir una nueva',
-      submit: 'ENVIAR ENLACE',
+      submit: 'Enviar enlace',
       emailLabel: 'Correo electrónico',
       emailPlaceholder: 'Introduce tu correo electrónico',
       remembered: '¿Ya te acuerdas?',
@@ -204,7 +211,7 @@ export const es: Translation = {
       sentTitle: 'Revisa tu bandeja de entrada',
       sentBody:
         'Si <strong>{{email}}</strong> tiene una cuenta de Ogen, va camino un enlace para elegir una contraseña nueva. Caduca en una hora.',
-      resend: 'ENVIAR DE NUEVO',
+      resend: 'Enviar de nuevo',
       resentNote: 'Enviado de nuevo — dale un minuto.',
       emailHint:
         'Usa la dirección con la que inicias sesión. El enlace deja de funcionar después de una hora.',
@@ -213,7 +220,7 @@ export const es: Translation = {
     reset: {
       title: 'Elige una contraseña nueva',
       subtitle: 'Elige una que no hayas usado aquí antes',
-      submit: 'GUARDAR CONTRASEÑA',
+      submit: 'Guardar contraseña',
       passwordLabel: 'Nueva contraseña',
       passwordPlaceholder: 'Introduce una contraseña nueva',
       confirmLabel: 'Confirma la nueva contraseña',
@@ -244,7 +251,7 @@ export const es: Translation = {
         '<strong>Como este inicio de sesión fue con Google, también desconectaremos Google.</strong> Vuelve a conectarlo desde tu Perfil cuando recuperes el acceso.',
       explainer:
         'Si no has sido tú, protege tu cuenta. Cerraremos todas las sesiones en todos los dispositivos — incluida esta — y elegirás una contraseña nueva enseguida.',
-      submit: 'PROTEGER MI CUENTA',
+      submit: 'Proteger mi cuenta',
       wasMe: 'He sido yo',
       failed:
         'No hemos podido conectar con Ogen, así que aún no ha cambiado nada. Inténtalo de nuevo.',
@@ -262,7 +269,7 @@ export const es: Translation = {
       expiredTitle: 'Este enlace ha caducado',
       expiredBody:
         'Los enlaces son válidos durante 24 horas. Restablecer la contraseña también cierra todas las sesiones.',
-      expiredSubmit: 'RESTABLECER MI CONTRASEÑA',
+      expiredSubmit: 'Restablecer mi contraseña',
       invalidTitle: 'Este enlace no es válido',
       invalidBody: 'Comprueba que has abierto el enlace completo del correo.',
       invalidReset:
@@ -276,7 +283,7 @@ export const es: Translation = {
       lastNameLabel: 'Apellidos',
       passwordLabel: 'Contraseña',
       passwordPlaceholder: 'Elige una contraseña',
-      submit: 'UNIRME AL ESPACIO',
+      submit: 'Unirme al espacio',
       haveAccount: '¿Ya tienes una cuenta de Ogen?',
       logInLink: 'Inicia sesión',
       brokenTitle: 'Este enlace de invitación ya no funciona',
@@ -289,7 +296,7 @@ export const es: Translation = {
         'Algo ha fallado por nuestra parte — puede que el enlace siga siendo válido',
       joinBody:
         'Has iniciado sesión como {{email}}, que es a quien va dirigida esta invitación. Al aceptarla, este espacio se añade a tu cuenta.',
-      joinSubmit: 'ACEPTAR INVITACIÓN',
+      joinSubmit: 'Aceptar invitación',
       wrongAccountBody:
         'Esta invitación es para {{invited}}, pero has iniciado sesión como {{current}}. Cierra sesión y vuelve a abrir el enlace para aceptarla.',
       logOutLink: 'Cerrar sesión',
@@ -303,8 +310,8 @@ export const es: Translation = {
       pendingMessage: 'Esto puede tardar unos segundos',
       doneTitle: 'Has cerrado sesión',
       doneMessage: '¡Hasta la próxima!',
-      home: 'IR AL INICIO',
-      footer: 'CIERRE DE SESIÓN',
+      home: 'Ir al inicio',
+      footer: 'Cierre de sesión',
     },
   },
 
@@ -529,9 +536,9 @@ export const es: Translation = {
         invalid: 'Revisa el foco y la cantidad, y vuelve a intentarlo.',
         failed:
           'No se pudieron pedir más ideas. Inténtalo de nuevo en un momento.',
-        cancel: 'CANCELAR',
-        submit_one: 'DESTILAR {{count}} IDEA',
-        submit_other: 'DESTILAR {{count}} IDEAS',
+        cancel: 'Cancelar',
+        submit_one: 'Destilar {{count}} idea',
+        submit_other: 'Destilar {{count}} ideas',
       },
     },
     ideaFit: {
@@ -726,16 +733,16 @@ export const es: Translation = {
       share: 'Compartir con el espacio de trabajo',
       what: 'Guarda los filtros, la agrupación y el orden, no lo que encuentran.',
       cancel: 'Cancelar',
-      confirm: 'GUARDAR GRUPO',
-      renameConfirm: 'GUARDAR',
+      confirm: 'Guardar grupo',
+      renameConfirm: 'Guardar',
     },
     remove: {
       title: '¿Eliminar «{{name}}»?',
       body: 'Se elimina el grupo; no se borra nada de lo que muestra.',
       bodyShared:
         'Se elimina el grupo para todos con quienes se comparte; no se borra nada de lo que muestra.',
-      keep: 'CONSERVAR GRUPO',
-      confirm: 'ELIMINAR GRUPO',
+      keep: 'Conservar grupo',
+      confirm: 'Eliminar grupo',
     },
   },
   postsFilter: {
@@ -837,7 +844,7 @@ export const es: Translation = {
       dismiss: 'Descartar',
       hintMultiline:
         'Mayús <key/> para otra línea · Intro <key/> para guardarla',
-      open: 'AÑADIR IDEA',
+      open: 'Añadir idea',
       close: 'Dejar de añadir ideas',
       keep: 'Guardar esta idea',
     },
@@ -851,7 +858,7 @@ export const es: Translation = {
       later: 'En el cajón',
       no: 'Apartar',
       undecide: 'Devolverla a la mesa',
-      delete: 'ELIMINAR IDEA',
+      delete: 'Eliminar idea',
     },
     horizon: {
       week: 'Recuérdamelo en una semana',
@@ -921,10 +928,10 @@ export const es: Translation = {
         'Esta idea se eliminará para siempre, con su veredicto. No se puede deshacer.',
       body_other:
         'Estas ideas se eliminarán para siempre, con sus veredictos. No se puede deshacer.',
-      keep_one: 'CONSERVAR IDEA',
-      keep_other: 'CONSERVAR IDEAS',
-      confirm_one: 'ELIMINAR IDEA',
-      confirm_other: 'ELIMINAR {{count}} IDEAS',
+      keep_one: 'Conservar idea',
+      keep_other: 'Conservar ideas',
+      confirm_one: 'Eliminar idea',
+      confirm_other: 'Eliminar {{count}} ideas',
     },
     filter: {
       origin: {
@@ -978,8 +985,8 @@ export const es: Translation = {
     },
     lifecycle: {
       slot: 'IDEA',
-      compile: 'COMPILAR',
-      draft: 'REDACTAR',
+      compile: 'Compilar',
+      draft: 'Redactar',
       compiled_one: 'Compilada en una publicación planificada',
       compiled_other: 'Compilada en {{formatted}} publicaciones planificadas',
       drafted_one: '{{formatted}} borrador escrito, sin programar',
@@ -990,7 +997,7 @@ export const es: Translation = {
         '{{formatted}} borrador escrito, {{unscheduled}} sin programar',
       draftedSome_other:
         '{{formatted}} borradores escritos, {{unscheduled}} sin programar',
-      show: 'VER',
+      show: 'Ver',
       inNotScheduled: 'En Sin programar, hasta que las arrastres a un día.',
       inCampaign: 'En {{campaign}}',
       aCampaign: 'una campaña',
@@ -1017,7 +1024,7 @@ export const es: Translation = {
         pickOne: 'Elige al menos una plataforma.',
         noPlatforms: 'Esta campaña aún no tiene plataformas.',
         platformsFailed: 'No se pudieron cargar las plataformas de la campaña.',
-        retry: 'REINTENTAR',
+        retry: 'Reintentar',
         noCampaign:
           'Estas ideas no están en una misma campaña, así que cada una va a la plataforma que indica su plan.',
         howMany: 'Cuántas',
@@ -1035,7 +1042,7 @@ export const es: Translation = {
           'Una publicación planificada por plataforma: las mismas tesis, cada una con el tipo de su plataforma.',
         compileNote:
           'Las publicaciones planificadas no tienen texto ni fecha; ESCRIBIR LA PUBLICACIÓN convierte cada una en un borrador.',
-        cancel: 'CANCELAR',
+        cancel: 'Cancelar',
         onDay: 'Con fecha {{date}}, el día de la idea.',
         unscheduled:
           'Sin programar, salvo que una idea tenga un día planificado.',
@@ -1043,12 +1050,12 @@ export const es: Translation = {
         undated_one: 'Sin programar: la idea no tiene un día planificado.',
         undated_other:
           'Sin programar: ninguna de las ideas tiene un día planificado.',
-        compile: 'COMPILAR',
-        compileCount_one: 'COMPILAR {{formatted}} PUBLICACIÓN PLANIFICADA',
-        compileCount_other: 'COMPILAR {{formatted}} PUBLICACIONES PLANIFICADAS',
-        draft: 'REDACTAR',
-        draftCount_one: 'REDACTAR {{formatted}} PUBLICACIÓN',
-        draftCount_other: 'REDACTAR {{formatted}} PUBLICACIONES',
+        compile: 'Compilar',
+        compileCount_one: 'Compilar {{formatted}} publicación planificada',
+        compileCount_other: 'Compilar {{formatted}} publicaciones planificadas',
+        draft: 'Redactar',
+        draftCount_one: 'Redactar {{formatted}} publicación',
+        draftCount_other: 'Redactar {{formatted}} publicaciones',
       },
       draftFailed: 'No se pudieron escribir todos los borradores',
       compileFailed: 'No se pudo compilar la idea',
@@ -1057,7 +1064,7 @@ export const es: Translation = {
       tooMany: 'Elige hasta 10 ideas para compilarlas o redactarlas',
       noBody: 'Aún sin cuerpo.',
       noBodyHint: 'Escríbela a partir de las tesis, o pídeselo al asistente.',
-      write: 'ESCRIBIR LA PUBLICACIÓN',
+      write: 'Escribir la publicación',
       writePrompt: 'Escribe esta publicación completa a partir de sus tesis.',
       builtFrom_one: 'Hecha a partir de {{count}} idea',
       builtFrom_other: 'Hecha a partir de {{count}} ideas',
@@ -1077,7 +1084,7 @@ export const es: Translation = {
       tooMany: 'Acota el filtro para seleccionarlas todas (hasta 5.000).',
       count_one: '{{count}} seleccionada',
       count_other: '{{count}} seleccionadas',
-      delete: 'ELIMINAR',
+      delete: 'Eliminar',
       done_one: 'Se eliminó {{count}} idea.',
       done_other: 'Se eliminaron {{count}} ideas.',
       partial_one:
@@ -1386,13 +1393,13 @@ export const es: Translation = {
 
   tasks: {
     title: 'Tareas',
-    add: 'AÑADIR TAREA',
+    add: 'Añadir tarea',
     newTask: 'Nueva tarea',
-    create: 'CREAR TAREA',
+    create: 'Crear tarea',
     cancel: 'Cancelar',
     complete: 'Marcar esta tarea como hecha',
     reopen: 'Reabrir esta tarea',
-    delete: 'ELIMINAR TAREA',
+    delete: 'Eliminar tarea',
     unassigned: 'Sin asignar',
     assignedTo: 'Asignada a {{name}}: cambiar',
     assign: 'Asignar esta tarea',
@@ -1469,8 +1476,8 @@ export const es: Translation = {
     },
     needsYou: {
       title: 'Te necesita',
-      showMore_one: 'VER {{formatted}} MÁS',
-      showMore_other: 'VER {{formatted}} MÁS',
+      showMore_one: 'Ver {{formatted}} más',
+      showMore_other: 'Ver {{formatted}} más',
       allSet: 'Nada te necesita',
       allSetBody:
         'Nada ha fallado, va con retraso ni está a punto de vencer en ninguna campaña. Si eso cambia, aparecerá aquí.',
@@ -1569,15 +1576,15 @@ export const es: Translation = {
   },
 
   campaignOverview: {
-    openOverview: 'ABRIR RESUMEN',
-    openPosts: 'ABRIR PUBLICACIONES',
-    openIdeas: 'ABRIR IDEAS',
-    openCalendar: 'ABRIR CALENDARIO',
-    openActivity: 'ABRIR ACTIVIDAD',
-    openAnalytics: 'ABRIR ANALÍTICAS',
-    openStrategy: 'ABRIR ESTRATEGIA',
-    openAssets: 'ABRIR RECURSOS',
-    openSettings: 'ABRIR AJUSTES',
+    openOverview: 'Abrir resumen',
+    openPosts: 'Abrir publicaciones',
+    openIdeas: 'Abrir ideas',
+    openCalendar: 'Abrir calendario',
+    openActivity: 'Abrir actividad',
+    openAnalytics: 'Abrir analíticas',
+    openStrategy: 'Abrir estrategia',
+    openAssets: 'Abrir recursos',
+    openSettings: 'Abrir ajustes',
 
     doors: {
       title: 'Todo lo de esta campaña',
@@ -1624,14 +1631,14 @@ export const es: Translation = {
       settings: 'Nombre, tipo, archivar o eliminar',
     },
     problems: {
-      ignore: 'IGNORAR',
+      ignore: 'Ignorar',
       ignoreFailed: 'No se pudo ignorar ese problema. Inténtalo de nuevo.',
       fixAll: 'Arreglar con Ogen',
       askAll: 'Arreglemos esto juntos.',
       askFix: '{{fix}}: {{problem}}',
     },
     todo: {
-      addPost: 'AÑADIR PUBLICACIÓN',
+      addPost: 'Añadir publicación',
     },
     stats: {
       dayOf: 'día {{day}} de {{total}}',
@@ -1695,23 +1702,23 @@ export const es: Translation = {
     },
     setup: {
       title: 'Prepara esta campaña',
-      withOgen: 'HACERLO CON OGEN',
+      withOgen: 'Hacerlo con Ogen',
       strategy: {
         title: 'Fechas y objetivo de publicaciones',
         detail: 'Cuándo se ejecuta y con qué frecuencia publica.',
-        action: 'FIJAR FECHAS',
+        action: 'Fijar fechas',
         ask: 'Sugiere fechas y un objetivo de publicaciones para esta campaña.',
       },
       channels: {
         title: 'Canales',
         detail: 'Dónde publica, con una cuenta conectada.',
-        action: 'ELEGIR CANALES',
+        action: 'Elegir canales',
         ask: 'Sugiere en qué canales debería publicar esta campaña.',
       },
       posts: {
         title: 'La primera publicación',
         detail: 'Escríbela tú o deja que Ogen prepare un plan.',
-        action: 'AÑADIR PUBLICACIÓN',
+        action: 'Añadir publicación',
         ask: 'Genera un plan de contenido para esta campaña.',
       },
     },
@@ -1736,7 +1743,7 @@ export const es: Translation = {
   },
 
   calendar: {
-    unscheduled: 'SIN PROGRAMAR',
+    unscheduled: 'Sin programar',
     unscheduledPosts: 'Publicaciones sin programar',
     settings: 'Ajustes del calendario',
     viewWeek: 'Semana',
@@ -1784,7 +1791,7 @@ export const es: Translation = {
     density_other: '{{count}} publicaciones el {{date}} — abrir esta semana',
     densityTicked_one: '{{formatted}} marcada',
     densityTicked_other: '{{formatted}} marcadas',
-    today: 'HOY',
+    today: 'Hoy',
 
     notScheduled: 'Sin programar',
     /**
@@ -1807,7 +1814,7 @@ export const es: Translation = {
     fromIdeas_other: 'de {{formatted}} ideas',
     notScheduledNoMatch:
       'Ninguna publicación sin fecha coincide con el filtro.',
-    addPost: 'AÑADIR PUBLICACIÓN',
+    addPost: 'Añadir publicación',
     dateLocked: 'La fecha de esta publicación está bloqueada',
 
     empty: {
@@ -2784,7 +2791,7 @@ export const es: Translation = {
         queued: 'Más ideas en camino',
         notQueued: 'No se pidieron más ideas',
         meta: 'se guardan en Ideas a medida que aparecen',
-        open: 'ABRIR IDEAS',
+        open: 'Abrir ideas',
       },
       state: {
         word: 'Recursos · ahora',
@@ -2801,14 +2808,14 @@ export const es: Translation = {
         lensIdeas: '{{lens}} {{ideas}}',
         namesAndMore_one: '{{names}} y {{formatted}} más',
         namesAndMore_other: '{{names}} y {{formatted}} más',
-        analyse: 'ANALIZAR',
-        retry: 'REINTENTAR',
-        triage: 'DECIDIR',
+        analyse: 'Analizar',
+        retry: 'Reintentar',
+        triage: 'Decidir',
       },
       ask: {
         chip: '{{title}} · {{pages}}',
         onlyThis: 'Solo este recurso.',
-        searchAll: 'BUSCAR EN TODOS LOS RECURSOS',
+        searchAll: 'Buscar en todos los recursos',
         searchAllPrompt: 'Búscalo en todos los recursos, no solo en este.',
       },
       lens: {
@@ -2841,14 +2848,14 @@ export const es: Translation = {
         lensIdeas_one: '{{formatted}} idea',
         lensIdeas_other: '{{formatted}} ideas',
         readOn: 'leído el {{date}}',
-        openIdeas: 'ABRIR IDEAS',
+        openIdeas: 'Abrir ideas',
         notReadFor: 'La {{lens}} no lo ha leído',
         readFor: 'Leído para {{owner}}',
         readForOn: 'Leído para {{owner}} el {{date}}',
-        showThat: 'MOSTRAR ESE',
+        showThat: 'Mostrar ese',
         analyseFor: 'Analizar para {{owner}}',
         analysePrompt: 'Analízalo para la {{lens}}.',
-        show: 'MOSTRAR',
+        show: 'Mostrar',
         showPrompt: '¿Qué encontró el análisis para la {{lens}}?',
         readFrom: 'Leído de',
         analysisOf: 'Análisis de {{title}}',
@@ -2863,7 +2870,7 @@ export const es: Translation = {
         partial_one: 'Solo {{formatted}}',
         partial_other: 'Solo {{formatted}}',
         conflicts: 'No coinciden',
-        askWhich: 'PREGUNTAR CUÁL',
+        askWhich: 'Preguntar cuál',
         askWhichPrompt: '¿Cuál es correcto: {{claim}}?',
         fromPassages_one:
           '{{titles}} no está analizado para esta lente, así que se leyó a partir de sus fragmentos.',
@@ -2890,14 +2897,14 @@ export const es: Translation = {
         countIdeas_other: '{{formatted}} ideas',
         workspaceOnly:
           'Los grupos inteligentes se abren en {{list}} del espacio de trabajo, fuera de esta campaña.',
-        open: 'ABRIR',
+        open: 'Abrir',
       },
       campaign: {
         sources_one: '{{formatted}} fuente adjunta',
         sources_other: '{{formatted}} fuentes adjuntas',
         sourcesNote:
           'Los documentos siguen en el banco; la campaña apunta a ellos.',
-        open: 'ABRIR',
+        open: 'Abrir',
       },
     },
 
@@ -2940,7 +2947,7 @@ export const es: Translation = {
         audience: 'audiencia',
         series: 'serie',
       },
-      open: 'ABRIR',
+      open: 'Abrir',
       unbound_one:
         'Retirado de {{formatted}} campaña o publicación que lo usaba',
       unbound_other:
@@ -3008,8 +3015,8 @@ export const es: Translation = {
         ofTotal_one: 'de {{formatted}}',
         ofTotal_other: 'de {{formatted}}',
         expiredOn: 'Caducó el {{date}}',
-        renew: 'RENOVAR',
-        edit: 'EDITAR',
+        renew: 'Renovar',
+        edit: 'Editar',
         renewPrompt: 'Renueva el dato «{{statement}}» para otra temporada.',
         editPrompt: 'Cambia el dato «{{statement}}» a ',
       },
@@ -3029,7 +3036,7 @@ export const es: Translation = {
         answered_one: 'Respondida {{formatted}} pregunta',
         answered_other: 'Respondidas {{formatted}} preguntas',
         answerFrom: '{{answer}}, de {{from}}',
-        open: 'ABRIR LA LECTURA',
+        open: 'Abrir la lectura',
         voices_one: '{{formatted}} voz',
         voices_other: '{{formatted}} voces',
         audiences_one: '{{formatted}} audiencia',
@@ -3174,7 +3181,7 @@ export const es: Translation = {
       sources: {
         word: 'FUENTES',
         title: '{{ready}} de {{attached}} listas',
-        open: 'ABRIR RECURSOS',
+        open: 'Abrir recursos',
         ready: 'lista',
         analysing: 'analizándose',
         unreadable: 'no se pudo leer',
@@ -3232,14 +3239,14 @@ export const es: Translation = {
       connectCampaignNote:
         'Añade {{platform}} a las plataformas de esta campaña cuando esté conectada, en Estrategia.',
       openAddSource: 'Abrió {{screen}} para añadir una fuente',
-      back: 'VOLVER',
+      back: 'Volver',
       putBack: 'Restablecido',
     },
 
     proposal: {
       placeholder: 'Responde «sí» para ejecutarla, o di qué cambiar',
-      confirm: 'CONFIRMAR',
-      dismiss: 'DESCARTAR',
+      confirm: 'Confirmar',
+      dismiss: 'Descartar',
       gone: 'Esta propuesta ya no existe.',
       failed: 'No se completó. Pídelo de nuevo para reintentarlo.',
       stopped:
@@ -3254,7 +3261,7 @@ export const es: Translation = {
       working: '{{summary}} · en marcha…',
       answeredElsewhere: 'Esta oferta ya tiene respuesta.',
       sourceReady: 'Fuente lista: «{{title}}»',
-      import: 'IMPORTAR',
+      import: 'Importar',
       inputRequired: 'Pega el enlace de la página para importarla.',
       badLink: 'Eso no parece una dirección web.',
       checked: 'Comprobado de nuevo — nada ha cambiado',
@@ -3270,7 +3277,7 @@ export const es: Translation = {
         title: 'Esa oferta caducó',
         nothing: 'No se ejecutó nada',
         hint: 'Vuelve a pedirlo y se preparará con las cosas como están ahora.',
-        askAgain: 'PEDIR DE NUEVO',
+        askAgain: 'Pedir de nuevo',
       },
       recommended: 'RECOMENDADA',
       row: {
@@ -3290,26 +3297,26 @@ export const es: Translation = {
       or: 'o {{fix}}',
       dismissed_one: 'Se ha omitido {{formatted}} hallazgo descartado.',
       dismissed_other: 'Se han omitido {{formatted}} hallazgos descartados.',
-      ignore: 'IGNORAR',
+      ignore: 'Ignorar',
       ignored: 'Ignorado: {{finding}}',
       ignoreFailed: 'No se pudo ignorar. Inténtalo de nuevo.',
       ignoredCount_one: '{{formatted}} ignorado en esta campaña',
       ignoredCount_other: '{{formatted}} ignorados en esta campaña',
-      show: 'VER',
-      hide: 'OCULTAR',
-      restore: 'RECUPERAR',
+      show: 'Ver',
+      hide: 'Ocultar',
+      restore: 'Recuperar',
       restoreFailed: 'No se pudo recuperar. Inténtalo de nuevo.',
       fixed: 'Arreglado: {{fix}}',
       fixedChose: 'Arreglado: {{fix}} · {{choice}}',
       fixedSince: 'Arreglado desde entonces: {{fix}}',
       fixedSinceMoved: 'Arreglado desde entonces: movido al {{when}}',
       fixing: 'Arreglando…',
-      assist: 'ARREGLAR CON EL ASISTENTE',
+      assist: 'Arreglar con el asistente',
       orAssist: 'o arréglalo con el asistente',
       fromIdea: 'Todo de «{{title}}»',
-      back: 'VOLVER A LOS ARREGLOS',
+      back: 'Volver a los arreglos',
       readAt: 'Leído el {{when}}.',
-      checkAgain: 'REVISAR DE NUEVO',
+      checkAgain: 'Revisar de nuevo',
       checkPrompt: 'Revisa el calendario de nuevo.',
     },
 
@@ -3418,7 +3425,7 @@ export const es: Translation = {
         highestOn_other: 'Las {{formatted}} más altas en {{platform}}',
         sortedBy: 'ordenadas por {{measure}}',
         figures: '{{reach}} de alcance · {{rate}}',
-        open: 'ABRIR',
+        open: 'Abrir',
       },
       compare: {
         word: 'Comparado',
@@ -3446,12 +3453,12 @@ export const es: Translation = {
         planned_one: 'Planificada {{formatted}} idea',
         planned_other: 'Planificadas {{formatted}} ideas',
         onIdeas: 'en Ideas · nada en el calendario',
-        open: 'ABRIR',
+        open: 'Abrir',
       },
     },
 
     workspace: {
-      open: 'ABRIR',
+      open: 'Abrir',
       allCampaigns: 'Todo el espacio de trabajo',
       activity: {
         day: 'Día',
@@ -3586,7 +3593,7 @@ export const es: Translation = {
         connected: 'Conectada',
         expiresIn_one: 'caduca en {{formatted}} día',
         expiresIn_other: 'caduca en {{formatted}} días',
-        reconnect: 'RECONECTAR {{platform}}',
+        reconnect: 'Reconectar {{platform}}',
         zone: 'Horas en {{zone}}',
       },
       autoRead: {
@@ -3634,8 +3641,8 @@ export const es: Translation = {
         group_other: 'SIN HACER · {{formatted}}',
         title_one: '{{formatted}} sin hacer',
         title_other: '{{formatted}} sin hacer',
-        retryCount_one: 'REINTENTAR {{formatted}}',
-        retryCount_other: 'REINTENTAR {{formatted}}',
+        retryCount_one: 'Reintentar {{formatted}}',
+        retryCount_other: 'Reintentar {{formatted}}',
         lapsed: 'La oferta caducó; vuelve a pedirlo para hacerlas.',
         unnamed_one: '{{formatted}} elemento',
         unnamed_other: '{{formatted}} elementos',
@@ -3693,14 +3700,14 @@ export const es: Translation = {
         changedSince: '{{changed}} de {{of}} reetiquetados desde entonces',
         cantHint:
           'Deshacer pisaría ese cambio; quita la etiqueta a mano desde Recursos.',
-        open: 'ABRIR',
+        open: 'Abrir',
       },
     },
 
     ideas: {
       untitled: 'Idea sin título',
-      open: 'ABRIR',
-      openAll: 'ABRIR TODAS',
+      open: 'Abrir',
+      openAll: 'Abrir todas',
       noDate: 'sin fecha',
       backOn: 'vuelve el {{day}}',
       more_one: 'y {{formatted}} más',
@@ -3716,7 +3723,7 @@ export const es: Translation = {
         titleNamed_other: '{{formatted}} ideas {{clauses}}',
         none: 'Ninguna idea coincide',
         ofPile: 'de {{total}} · {{pile}}',
-        show: 'MOSTRAR EN PANTALLA',
+        show: 'Mostrar en pantalla',
         fit: 'encaje {{score}}',
       },
       decided: {
@@ -3764,7 +3771,7 @@ export const es: Translation = {
         title_other: '{{formatted}} publicaciones',
         fromIdeas_one: '{{drafts}} a partir de {{formatted}} idea',
         fromIdeas_other: '{{drafts}} a partir de {{formatted}} ideas',
-        show: 'VER',
+        show: 'Ver',
         notScheduled: 'Sin programar',
         datedPlan: '{{date}} · la fecha del plan de la idea',
         datedAsked: '{{date}} · el día que elegiste',
@@ -3774,7 +3781,7 @@ export const es: Translation = {
         notGrounded: 'sin fuentes',
         dropped_one: 'No se pudo redactar {{formatted}} borrador',
         dropped_other: 'No se pudieron redactar {{formatted}} borradores',
-        openAll: 'ABRIR TODOS',
+        openAll: 'Abrir todos',
         fromIdea_one:
           'La idea no cita ningún documento; escrito con sus propias palabras.',
         fromIdea_other:
@@ -3874,7 +3881,7 @@ export const es: Translation = {
         meta: 'reescrita',
         inVoice: 'Una versión nueva, con la voz {{voice}}',
         newVersion: 'Una versión nueva',
-        open: 'ABRIR',
+        open: 'Abrir',
         notRevised: 'La publicación se quedó como estaba',
         versioned: 'La anterior sigue en las versiones de la publicación',
         unversioned:
@@ -3891,7 +3898,7 @@ export const es: Translation = {
         ownUnnamed: 'Ahora con una voz propia',
         copyKept:
           'El texto se queda como está; las revisiones y reescrituras lo leen con esta voz',
-        open: 'ABRIR',
+        open: 'Abrir',
       },
       converted: {
         word: 'Convertidas',
@@ -3984,8 +3991,8 @@ export const es: Translation = {
         more_one: 'y {{formatted}} más',
         more_other: 'y {{formatted}} más',
         window: 'entre {{from}} y {{to}}',
-        confirm_one: 'MOVER {{formatted}} PUBLICACIÓN',
-        confirm_other: 'MOVER {{formatted}} PUBLICACIONES',
+        confirm_one: 'Mover {{formatted}} publicación',
+        confirm_other: 'Mover {{formatted}} publicaciones',
         before: 'Antes',
         after: 'Después',
         legendMoved: 'movida',
@@ -3994,7 +4001,7 @@ export const es: Translation = {
     },
 
     undo: {
-      undo: 'DESHACER',
+      undo: 'Deshacer',
       undone: 'Deshecho',
       changed: 'No se puede deshacer: ha vuelto a cambiar desde entonces.',
       gone: 'Ya no se puede deshacer.',
@@ -4034,8 +4041,8 @@ export const es: Translation = {
       drafted_one: '{{formatted}} publicación',
       drafted_other: '{{formatted}} publicaciones',
       notScheduled: 'sin programar',
-      openPost: 'ABRIR',
-      openPosts: 'ABRIR TODAS',
+      openPost: 'Abrir',
+      openPosts: 'Abrir todas',
       platformsUpdated: 'Plataformas actualizadas',
       platformsAdded: 'añadido: {{what}}',
       platformsRemoved: 'quitado: {{what}}',
@@ -4054,7 +4061,7 @@ export const es: Translation = {
       unscheduled_other:
         '{{formatted}} publicaciones desprogramadas antes. DESHACER devuelve la plataforma, no la programación.',
       ideasWindow: 'para {{range}}',
-      openIdeas: 'ABRIR',
+      openIdeas: 'Abrir',
       goal: {
         week_one: 'Objetivo ampliado a {{formatted}} publicación por semana',
         week_other:
@@ -4095,7 +4102,7 @@ export const es: Translation = {
   workspaces: {
     title: 'Tus espacios',
     loadFailed: 'No se han podido cargar tus espacios.',
-    create: 'NUEVO ESPACIO',
+    create: 'Nuevo espacio',
     current: 'Actual',
     memberCount_one: '{{count}} miembro',
     memberCount_other: '{{count}} miembros',
@@ -4134,8 +4141,8 @@ export const es: Translation = {
     password: {
       sentBody:
         'Un enlace para establecer una nueva contraseña va de camino a <email>{{email}}</email>. Caduca en una hora, y usarlo cierra la sesión en todos los dispositivos — incluido este.',
-      send: 'ENVIARME UN ENLACE DE RESTABLECIMIENTO',
-      resend: 'ENVIARLO DE NUEVO',
+      send: 'Enviarme un enlace de restablecimiento',
+      resend: 'Enviarlo de nuevo',
       resentNote: 'Enviado de nuevo — dale un minuto.',
     },
     signInMethods: {
@@ -4144,12 +4151,12 @@ export const es: Translation = {
       password: 'Contraseña',
       passwordSet: 'Correo y contraseña',
       passwordNotSet: 'Sin contraseña — inicias sesión con Google',
-      setPassword: 'ELEGIR UNA CONTRASEÑA',
+      setPassword: 'Elegir una contraseña',
       google: 'Google',
       googleConnected: '{{email}} · conectado el {{date}}',
       googleNotConnected: 'Sin conectar',
-      connect: 'CONECTAR',
-      disconnect: 'DESCONECTAR',
+      connect: 'Conectar',
+      disconnect: 'Desconectar',
       onlyWayIn:
         'Google es tu única forma de entrar. Elige primero una contraseña y después podrás desconectarlo.',
       connectedToast: 'Google conectado',
@@ -4167,8 +4174,8 @@ export const es: Translation = {
         'Tu cuenta de acceso sigue funcionando: cualquier otro espacio al que pertenezcas no se toca, y <strong>{{workspace}}</strong> continúa sin ti. Si eres su único propietario, nombra antes a otro propietario — un espacio no puede quedarse sin propietario.',
       thisWorkspace: 'este espacio',
       confirmLabel: 'Escribe <email>{{email}}</email> para confirmar',
-      keep: 'QUEDARME EN ESTE ESPACIO',
-      confirm: 'SALIR DE ESTE ESPACIO',
+      keep: 'Quedarme en este espacio',
+      confirm: 'Salir de este espacio',
     },
   },
 
@@ -4242,8 +4249,8 @@ export const es: Translation = {
       confirmBody:
         'Todo lo que hay en este espacio se elimina, para todos los miembros, y no puedes restaurarlo tú mismo. Escribe <strong>{{name}}</strong> para confirmar.',
       confirmLabel: 'Nombre del espacio',
-      keep: 'MANTENER ESPACIO',
-      confirm: 'ELIMINAR ESPACIO',
+      keep: 'Mantener espacio',
+      confirm: 'Eliminar espacio',
       onlyWorkspace: 'Este es tu único espacio',
       onlyWorkspaceNote: 'Crea otro espacio antes de eliminar este.',
       deleteFailed: 'No se ha podido eliminar el espacio',
@@ -4258,8 +4265,8 @@ export const es: Translation = {
       reconnectDialog: {
         title: 'Reconectar {{platform}}',
         body: 'Iniciarás sesión en {{platform}} y volverás aquí. Tus publicaciones y ajustes no cambian, y las publicaciones programadas en esta cuenta saldrán en cuanto vuelva.',
-        continue: 'CONTINUAR EN {{platform}}',
-        cancel: 'CANCELAR',
+        continue: 'Continuar en {{platform}}',
+        cancel: 'Cancelar',
       },
       reconnect: 'Reconectar',
       disconnectAccount: 'Desconectar {{name}}',
@@ -4279,8 +4286,8 @@ export const es: Translation = {
       blockedTitle: 'Publicación automática no permitida',
       blockedBody:
         'Las publicaciones programadas esperan a que las publiques a mano.',
-      allow: 'PERMITIR',
-      disallow: 'NO PERMITIR',
+      allow: 'Permitir',
+      disallow: 'No permitir',
       checkFailed:
         'No se han podido consultar las publicaciones programadas de {{platform}}',
       pending: {
@@ -4360,8 +4367,8 @@ export const es: Translation = {
       body: 'Ogen dejará de publicar en esta cuenta de {{platform}}, y la conexión también se elimina en el proveedor de publicación — así que no volverá en la siguiente sincronización.',
       published:
         'Las publicaciones ya publicadas siguen visibles en {{platform}}. Puedes volver a conectar la cuenta más adelante, pero tendrá que pasar otra vez por el flujo de autorización.',
-      keep: 'MANTENER CONECTADA',
-      confirm: 'DESCONECTAR CUENTA',
+      keep: 'Mantener conectada',
+      confirm: 'Desconectar cuenta',
       succeeded: '{{name}} desconectada',
       blocked: {
         title: 'Esta cuenta tiene publicaciones programadas',
@@ -4373,7 +4380,7 @@ export const es: Translation = {
           'Para conservarla, cierra esto y desprográmala primero — después podrás elegirle otra cuenta.',
         keep_other:
           'Para conservarlas, cierra esto y desprograma esas publicaciones primero — después podrás elegir otra cuenta para cada una.',
-        confirm: 'DESCONECTAR IGUALMENTE',
+        confirm: 'Desconectar igualmente',
       },
     },
   },
@@ -4452,7 +4459,7 @@ export const es: Translation = {
         failed:
           'No se pudo desconectar el plugin. Inténtalo de nuevo en un momento.',
         keep: 'Mantener conectado',
-        confirm: 'DESCONECTAR',
+        confirm: 'Desconectar',
         succeeded: '{{label}} desconectado',
       },
     },
@@ -5043,9 +5050,9 @@ export const es: Translation = {
       period: 'Periodo',
       compare: 'Comparar',
       by: 'Por',
-      selectAll: 'SELECCIONAR TODAS',
-      deselectAll: 'DESELECCIONAR TODAS',
-      allPlatforms: 'TODAS LAS PLATAFORMAS',
+      selectAll: 'Seleccionar todas',
+      deselectAll: 'Deseleccionar todas',
+      allPlatforms: 'Todas las plataformas',
       accounts_one: '{{count}} cuenta',
       accounts_other: '{{count}} cuentas',
       platformAccounts: '{{platform}} — {{accounts}}',
@@ -5134,6 +5141,9 @@ export const es: Translation = {
   },
 
   posts: {
+    delete: {
+      keep: 'Conservar publicación',
+    },
     publishStatus: {
       auto: 'Publicación automática {{when}}',
       manual: 'Recordatorio {{when}}',
@@ -5241,7 +5251,7 @@ export const es: Translation = {
       back: 'Volver a las publicaciones',
       more: 'Más acciones',
       downloadMarkdown: 'Descargar como Markdown',
-      delete: 'ELIMINAR PUBLICACIÓN',
+      delete: 'Eliminar publicación',
       previous: 'Publicación anterior',
       next: 'Publicación siguiente',
       position: '{{position}} de {{total}}',
@@ -5441,9 +5451,9 @@ export const es: Translation = {
         placeholder: 'p. ej., Un barista dibuja arte latte en una taza blanca',
         count: '{{length}} / {{limit}} caracteres',
         over: '{{length}} / {{limit}} caracteres — {{over}} de más',
-        save: 'GUARDAR',
-        cancel: 'CANCELAR',
-        close: 'CERRAR',
+        save: 'Guardar',
+        cancel: 'Cancelar',
+        close: 'Cerrar',
       },
     },
 
@@ -5485,7 +5495,7 @@ export const es: Translation = {
     sources: {
       heading: 'Fuentes',
       sectionTitle: 'FUENTES',
-      add: 'AÑADIR UNA FUENTE',
+      add: 'Añadir una fuente',
       fromBank: 'Elegir del banco de contenido',
       upload: 'Subir archivos',
       webPage: 'Añadir una página web',
@@ -5703,6 +5713,9 @@ export const es: Translation = {
     },
 
     versions: {
+      create: 'Crear nueva versión',
+      restore: 'Restaurar esta versión',
+      deleteVersion: 'Eliminar',
       liveDraft: 'Borrador',
       liveDraftTime: 'Sin guardar',
       liveDraftNote: 'Todavía sin instantánea',
@@ -5774,7 +5787,7 @@ export const es: Translation = {
     },
 
     duplicate: {
-      action: 'DUPLICAR COMO BORRADOR',
+      action: 'Duplicar como borrador',
       pending: 'Duplicando…',
       success: 'Borrador creado',
       error: 'No se pudo duplicar la publicación. Inténtalo de nuevo.',
@@ -5783,10 +5796,10 @@ export const es: Translation = {
 
     notes: {
       heading: 'Notas',
-      add: 'AÑADIR NOTA',
-      save: 'GUARDAR',
-      cancel: 'CANCELAR',
-      delete: 'ELIMINAR',
+      add: 'Añadir nota',
+      save: 'Guardar',
+      cancel: 'Cancelar',
+      delete: 'Eliminar',
       edit: 'Editar la nota',
 
       titlePlaceholder: 'Título (opcional)',
@@ -5819,8 +5832,8 @@ export const es: Translation = {
       waitingTitle: 'A la espera de la persona propietaria',
       waitingBody:
         'Solo una persona propietaria de {{workspace}} puede elegir un plan. Esta página abre el espacio de trabajo en cuanto lo haga.',
-      switchWorkspace: 'CAMBIAR DE ESPACIO',
-      signOut: 'CERRAR SESIÓN',
+      switchWorkspace: 'Cambiar de espacio',
+      signOut: 'Cerrar sesión',
       save: 'AHORRA UN {{percent}} %',
       mostPopular: 'EL MÁS ELEGIDO',
       chargedToday: 'SE COBRA HOY',
@@ -5830,11 +5843,11 @@ export const es: Translation = {
       billedMonthly: 'Facturado cada mes · IVA no incluido',
       billedYearly: 'Facturado {{total}} al año · IVA no incluido',
       allowances: 'INCLUYE',
-      chooseNamed: 'ELEGIR {{name}}',
-      startFreeMonth: 'EMPEZAR EL MES GRATIS',
-      currentPlan: 'PLAN ACTUAL',
-      scheduled: 'PROGRAMADO',
-      unavailable: 'AÚN NO DISPONIBLE',
+      chooseNamed: 'Elegir {{name}}',
+      startFreeMonth: 'Empezar el mes gratis',
+      currentPlan: 'Plan actual',
+      scheduled: 'Programado',
+      unavailable: 'Aún no disponible',
       noneOnSale: 'Ahora mismo no hay ningún plan a la venta.',
       vatNote:
         'Los precios no incluyen IVA. Lemon Squeezy vende Ogen como comerciante registrado y lo añade al pagar.',
@@ -5843,7 +5856,7 @@ export const es: Translation = {
       compTryAny:
         'Prueba cualquier plan todo el tiempo que quieras: no se cobra nada.',
       freeWhileTesting: 'GRATIS MIENTRAS PRUEBAS',
-      switchNamed: 'CAMBIAR A {{name}}',
+      switchNamed: 'Cambiar a {{name}}',
       compNote:
         'El acceso a la beta es gratuito mientras pruebas. Si termina, Ogen te avisa antes y no se toca nada de lo que hayas creado.',
       hiddenTierTitle:
@@ -5868,8 +5881,8 @@ export const es: Translation = {
       openedCharged: 'Se te cobra al completar el pago.',
       openedBody:
         'Esta página continúa sola en cuanto Lemon Squeezy lo confirme y abre {{workspace}}.',
-      reopen: 'VOLVER A ABRIR EL PAGO',
-      back: 'ELEGIR OTRO PLAN',
+      reopen: 'Volver a abrir el pago',
+      back: 'Elegir otro plan',
       slowTitle: 'Está tardando más de lo normal',
       slowBody:
         'Deja esta página abierta o vuelve más tarde: no se te cobrará dos veces. El recibo de Lemon Squeezy tiene la referencia del pedido.',
@@ -5880,15 +5893,15 @@ export const es: Translation = {
       body: 'Lemon Squeezy calcula la diferencia: subir de plan empieza hoy; bajar espera al final del periodo que ya has pagado.',
       trialBody:
         'Esto termina hoy el mes gratis de {{name}} y se cobra {{target}} ahora.',
-      cancel: 'CANCELAR',
-      confirm: 'PASAR A {{name}}',
+      cancel: 'Cancelar',
+      confirm: 'Pasar a {{name}}',
       blockedTitle: 'No durante el mes gratis',
       blockedBody:
         '{{name}} no se puede cambiar hasta que termine su mes gratis el {{when}}. Vuelve a elegir entonces, o termina el mes gratis en Lemon Squeezy y vuelve.',
       blockedBodyBare:
         '{{name}} no se puede cambiar hasta que termine su mes gratis. Termínalo en Lemon Squeezy o vuelve a elegir cuando acabe.',
       nothingCharged: 'No se ha cobrado nada y sigues en {{name}}.',
-      ok: 'ACEPTAR',
+      ok: 'Aceptar',
     },
     planError: {
       stale:
@@ -5910,7 +5923,7 @@ export const es: Translation = {
     priceExclVat: '{{price}}, IVA no incluido',
     perMonth: '{{price}} / mes',
     perYear: '{{price}} / año',
-    keepPlan: 'MANTENER {{name}}',
+    keepPlan: 'Mantener {{name}}',
     notInPlan: 'No está en tu plan',
     notInPlanBody:
       'Esto no forma parte del plan de tu espacio de trabajo. Al mejorarlo, se activa para todo el equipo.',
@@ -5930,7 +5943,7 @@ export const es: Translation = {
     limitOnly: '{{limit}} incluidos',
     unlimited: 'Sin límite',
 
-    upgrade: 'MEJORAR PLAN',
+    upgrade: 'Mejorar plan',
 
     paywall: {
       label: 'Mejora tu plan',
@@ -5970,7 +5983,7 @@ export const es: Translation = {
       perMonth: '<price>{{price}}</price> / mes',
       billedYearly: '{{total}} facturados al año',
       billedYearlySaving: '{{total}} facturados al año, ahorras {{saving}}',
-      upgradeTo: 'PASAR A {{plan}}',
+      upgradeTo: 'Pasar a {{plan}}',
       planName: 'Ogen {{plan}}',
       comparePlans: 'Comparar todos los planes',
       seeAllFeatures: 'Ver todas las funciones',
@@ -6054,7 +6067,7 @@ export const es: Translation = {
       planPitch: 'Todo lo de {{current}}, con más margen para crecer.',
       unpriced: 'El precio aún no está publicado.',
     },
-    seePlans: 'VER PLANES',
+    seePlans: 'Ver planes',
     ownersOnlyPlan:
       'Solo un propietario del espacio puede cambiar el plan para todo el equipo.',
 
@@ -6065,7 +6078,7 @@ export const es: Translation = {
 
     planLoadFailed: 'No se han podido cargar los planes.',
     plansClose: 'Cerrar los planes',
-    changePlan: 'CAMBIAR',
+    changePlan: 'Cambiar',
 
     billingTitle: 'Plan y facturación',
     paymentMethod: 'Método de pago y datos de facturación',
@@ -6079,7 +6092,7 @@ export const es: Translation = {
 
     providerHolds:
       'Tu método de pago, tu dirección de facturación, tu NIF/CIF, tus facturas y la cancelación los gestiona Lemon Squeezy, que vende Ogen como comerciante registrado.',
-    managePortal: 'GESTIONAR',
+    managePortal: 'Gestionar',
     portalFailed: 'No se ha podido abrir el portal de facturación.',
 
     statusPastDue: 'Pago fallido',
@@ -6106,7 +6119,7 @@ export const es: Translation = {
     autoRenewsIn: 'Se renueva automáticamente {{relative}}, el {{when}}.',
 
     chooseNamed: 'Elegir {{name}}',
-    cancelChange: 'CANCELAR EL CAMBIO',
+    cancelChange: 'Cancelar el cambio',
 
     changeScheduled: 'Pasarás a {{name}} el {{when}}.',
     changeScheduledUp: '{{name}} empieza el {{when}}.',
@@ -6122,7 +6135,7 @@ export const es: Translation = {
     leaveHidden: {
       title: '¿Dejar {{name}}?',
       body: 'Cambiar a {{target}} es gratis y se aplica al momento. Solo el equipo de Ogen puede volver a poner este espacio en {{name}}.',
-      cancel: 'CANCELAR',
+      cancel: 'Cancelar',
     },
     comp: {
       tag: 'Acceso beta',
@@ -6167,8 +6180,8 @@ export const es: Translation = {
       fact_other: '{{formatted}} datos seleccionados',
       selectAll: 'Seleccionar todos los datos mostrados',
       clearAll: 'Quitar la selección',
-      clear: 'QUITAR',
-      remove: 'ELIMINAR',
+      clear: 'Quitar',
+      remove: 'Eliminar',
     },
     binding: {
       voice: 'Voz',
@@ -6182,7 +6195,7 @@ export const es: Translation = {
       sourcePost: 'Definida en esta publicación',
       sourceCampaign: 'De la campaña',
       sourceLibrary: 'La predeterminada del espacio de trabajo',
-      reset: 'RESTABLECER',
+      reset: 'Restablecer',
       resetHint: 'Volver a lo que dice la campaña',
       emptyTitle: 'Voz y audiencia',
       emptyBody:
@@ -6244,6 +6257,7 @@ export const es: Translation = {
     },
 
     factsLedger: {
+      removeThis: 'Eliminar este dato',
       duplicate: 'Este espacio de trabajo ya tiene esa afirmación como dato.',
       gone: 'Alguien eliminó este dato mientras estaba abierto. El registro se ha actualizado.',
       saveFailed: 'No se pudo guardar el dato. Inténtalo de nuevo.',
@@ -6272,10 +6286,10 @@ export const es: Translation = {
           'Las publicaciones que se escriban a partir de ahora no podrán afirmarlo. No se puede recuperar.',
         body_other:
           'Las publicaciones que se escriban a partir de ahora no podrán afirmarlos. No se pueden recuperar.',
-        keep_one: 'CONSERVARLO',
-        keep_other: 'CONSERVARLOS',
-        confirm_one: 'ELIMINAR DATO',
-        confirm_other: 'ELIMINAR {{formatted}} DATOS',
+        keep_one: 'Conservarlo',
+        keep_other: 'Conservarlos',
+        confirm_one: 'Eliminar dato',
+        confirm_other: 'Eliminar {{formatted}} datos',
       },
     },
     facts: {
@@ -6328,7 +6342,7 @@ export const es: Translation = {
     },
 
     distill: {
-      cancel: 'CANCELAR',
+      cancel: 'Cancelar',
       offer: {
         or: 'O',
         resumeReading: 'Leyendo {{what}}',
@@ -6346,7 +6360,7 @@ export const es: Translation = {
         placeholder: 'acme.com',
         invalid: 'Eso no parece una dirección web.',
         what: 'Leemos hasta diez páginas: inicio, quiénes sois, lo que vendes, precios, condiciones y un par de publicaciones recientes. Después se quedan en Recursos, como cualquier página que añadas.',
-        read: 'LEER EL SITIO',
+        read: 'Leer el sitio',
       },
       document: {
         formats:
@@ -6357,8 +6371,8 @@ export const es: Translation = {
         noMatch: 'Nada en Recursos coincide con eso.',
         chosen_one: '{{count}} elegido',
         chosen_other: '{{count}} elegidos',
-        read_one: 'LEER {{count}} ARCHIVO',
-        read_other: 'LEER {{count}} ARCHIVOS',
+        read_one: 'Leer {{count}} archivo',
+        read_other: 'Leer {{count}} archivos',
         uploading: 'subiendo {{percent}} %',
         processing: 'leyendo',
         ready: 'listo',
@@ -6499,7 +6513,7 @@ export const es: Translation = {
           questions:
             'Responder vuelve a redactar la propuesta con estas respuestas añadidas. Lo que has conservado, descartado o editado hasta ahora se queda como lo dejaste.',
         },
-        ask: 'PREGUNTAR DE NUEVO CON ESTAS',
+        ask: 'Preguntar de nuevo con estas',
       },
       questions: {
         title: 'Unas cuantas preguntas',
@@ -6509,7 +6523,7 @@ export const es: Translation = {
         unavailable:
           'No se han podido cargar las preguntas. Vuelve a intentarlo en un minuto.',
         answered: '{{answered}} de {{count}} respondidas',
-        draft: 'REDACTARLO',
+        draft: 'Redactarlo',
         starter: {
           q_offer: '¿Qué vendes y quién te lo compra?',
           q_three_words: 'Tres palabras que un cliente usaría sobre ti.',
@@ -6540,9 +6554,9 @@ export const es: Translation = {
         drop: 'Descartar',
         keepLine: 'Conservar «{{line}}»',
         dropLine: 'Descartar «{{line}}»',
-        edit: 'EDITAR',
-        done: 'HECHO',
-        undo: 'DESHACER',
+        edit: 'Editar',
+        done: 'Hecho',
+        undo: 'Deshacer',
         dropped: 'descartada',
         becomesDefault: 'pasa a ser la predeterminada',
         voiceName: 'Nombre',
@@ -6567,7 +6581,7 @@ export const es: Translation = {
         line: 'Línea',
         disclaimerDiffers:
           'El del sitio es distinto del tuyo. Conserva el tuyo salvo que elijas el otro.',
-        compare: 'COMPARAR',
+        compare: 'Comparar',
         keepYours: 'Conservar el tuyo',
         useTheirs: 'Usar el del sitio',
         writtenHereOn: 'Escrito aquí · {{date}}',
@@ -6845,10 +6859,10 @@ export const es: Translation = {
         editSample: 'Editar ejemplo',
         samplePlaceholder:
           'Pega una publicación que te habría gustado escribir.',
-        removeSample: 'QUITAR EJEMPLO',
-        cancel: 'CANCELAR',
-        addIt: 'AÑADIRLO',
-        done: 'LISTO',
+        removeSample: 'Quitar ejemplo',
+        cancel: 'Cancelar',
+        addIt: 'Añadirlo',
+        done: 'Listo',
         resetSamples: 'Restablecer ejemplos',
         rules: 'Reglas',
         rulesHint:
@@ -7016,8 +7030,8 @@ export const es: Translation = {
       inherited:
         'Recurre a la predeterminada: todavía no hay nada específico de esta plataforma.',
       ownTemplate: 'Tiene una plantilla propia.',
-      giveItsOwn: 'DARLE UNA PROPIA',
-      replace: 'SUSTITUIR',
+      giveItsOwn: 'Darle una propia',
+      replace: 'Sustituir',
       nothingApplies:
         'Aquí no se aplica nada, y no hay ninguna predeterminada a la que recurrir.',
       drawnOver: 'se dibuja sobre la imagen',
@@ -7034,7 +7048,7 @@ export const es: Translation = {
         'Falta {{ratios}}: esa proporción sale desnuda frente a {{needed}}.',
       coversSome_other:
         'Faltan {{ratios}}: esas proporciones salen desnudas frente a {{needed}}.',
-      openInCompositor: 'ABRIR EN EL COMPOSITOR',
+      openInCompositor: 'Abrir en el compositor',
     },
 
     guardrails: {
@@ -7050,7 +7064,7 @@ export const es: Translation = {
         'Afirmaciones ya revisadas, con la formulación con la que se revisaron. Esto es lo que evita que una frase que le costó una hora a un abogado se reescriba desde cero cada vez.',
       mayClaimPlaceholder:
         'Que la puesta en marcha lleva dos semanas, de principio a fin.',
-      addClaim: 'AÑADIR UNA AFIRMACIÓN',
+      addClaim: 'Añadir una afirmación',
       neverClaim: 'No se puede afirmar nunca',
       neverClaimHint:
         'Escribe la afirmación en sí y no el tema: «cualquier resultado garantizado, en cualquier forma» y no «resultados». Un tema es algo que evitar mencionar; una afirmación es algo con lo que se puede contrastar una frase.',
@@ -7058,7 +7072,7 @@ export const es: Translation = {
         'Todavía no hay nada prohibido. Cualquier voz del espacio de trabajo puede prometer lo que sea, con las palabras que sea.',
       neverClaimPlaceholder:
         'Que el resultado está garantizado, en cualquier forma.',
-      addRule: 'AÑADIR UNA REGLA',
+      addRule: 'Añadir una regla',
       bannedWords: 'Palabras prohibidas',
       bannedWordsHint:
         'Palabras que no pueden aparecer nunca, en ninguna voz. Escribe una y pulsa Intro; las comas y las listas pegadas se separan en palabras sueltas.',
@@ -7137,7 +7151,7 @@ export const es: Translation = {
         title: '¿Salir sin crearlo?',
         body: 'Aún no se ha guardado nada de esta pantalla. Si sales ahora, se pierde.',
         stay: 'Seguir editando',
-        discard: 'DESCARTAR',
+        discard: 'Descartar',
       },
       forkedFrom:
         'Partió de <name>{{name}}</name>, y se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
@@ -7154,6 +7168,16 @@ export const es: Translation = {
   },
 
   campaigns: {
+    accounts: {
+      use: 'Usar',
+      activate: 'Activar',
+    },
+    platforms: {
+      deactivateAll: 'Desactivar todas',
+    },
+    create: {
+      submit: 'Crear campaña',
+    },
     bulk: {
       selected_one: '{{formatted}} seleccionada',
       selected_other: '{{formatted}} seleccionadas',
@@ -7166,11 +7190,11 @@ export const es: Translation = {
       status: 'Estado',
       unschedule: 'Desprogramar',
       delete: 'Eliminar',
-      clear: 'BORRAR SELECCIÓN',
+      clear: 'Borrar selección',
       deleted_one: '{{formatted}} publicación eliminada',
       deleted_other: '{{formatted}} publicaciones eliminadas',
     },
-    add: 'AÑADIR CAMPAÑA',
+    add: 'Añadir campaña',
     error: 'No se pudieron cargar las campañas',
     list: {
       group: {
@@ -7225,7 +7249,7 @@ export const es: Translation = {
     archivedSection: 'Campañas archivadas',
     archivedError: 'No se pudieron cargar las campañas archivadas',
     archivedOn: 'Archivada el {{archivedOn}}',
-    unarchive: 'DESARCHIVAR',
+    unarchive: 'Desarchivar',
     archivedEmpty:
       'No hay nada archivado. Archivar una campaña la quita de la lista sin borrar nada: sus publicaciones, su calendario y su contenido siguen tal cual.',
     strategy: {
@@ -7259,7 +7283,7 @@ export const es: Translation = {
     },
     type: {
       label: 'Tipo de campaña',
-      change: 'CAMBIAR',
+      change: 'Cambiar',
       cancel: 'Cancelar',
       locked_one:
         'Bloqueado: {{count}} publicación está planificada en las fases de este tipo.',
@@ -7327,14 +7351,14 @@ export const es: Translation = {
     page: {
       title: 'Recursos',
       add: {
-        button: 'AÑADIR CONTENIDO',
+        button: 'Añadir contenido',
         note: 'Escribir una nota',
         upload: 'Subir archivo',
         webPage: 'Añadir una página web',
       },
       openedForSource:
         'Abierto por el asistente — la petición espera a que se lea un archivo.',
-      back: 'VOLVER',
+      back: 'Volver',
     },
 
     kinds: {
@@ -7373,6 +7397,11 @@ export const es: Translation = {
     },
 
     list: {
+      start: {
+        addWebPage: 'Añadir una página web',
+        upload: 'Subir archivos',
+        write: 'Escribir una nota',
+      },
       label: 'Documentos',
       untitled: 'Sin título',
       selectRow: 'Seleccionar {{title}}',
@@ -7464,7 +7493,7 @@ export const es: Translation = {
         from: 'Desde',
         to: 'Hasta',
         on: 'Antes de',
-        apply: 'APLICAR',
+        apply: 'Aplicar',
       },
       noCampaign: 'Sin campaña',
       noTags: 'Sin etiquetas',
@@ -7684,7 +7713,7 @@ export const es: Translation = {
     selection: {
       count_one: '{{count}} seleccionado',
       count_other: '{{count}} seleccionados',
-      delete: 'ELIMINAR',
+      delete: 'Eliminar',
       selectPage: 'Seleccionar los documentos que se muestran',
       selectAll_one: 'Seleccionar el documento',
       selectAll_other: 'Seleccionar los {{formatted}} documentos',
@@ -7739,10 +7768,10 @@ export const es: Translation = {
         'Este documento se eliminará de forma permanente y cualquier campaña que lo use dejará de escribir a partir de él. Esto no se puede deshacer.',
       bodyBank_other:
         'Estos documentos se eliminarán de forma permanente y cualquier campaña que los use dejará de escribir a partir de ellos. Esto no se puede deshacer.',
-      keep_one: 'CONSERVAR DOCUMENTO',
-      keep_other: 'CONSERVAR DOCUMENTOS',
-      confirm_one: 'ELIMINAR DOCUMENTO',
-      confirm_other: 'ELIMINAR {{count}} DOCUMENTOS',
+      keep_one: 'Conservar documento',
+      keep_other: 'Conservar documentos',
+      confirm_one: 'Eliminar documento',
+      confirm_other: 'Eliminar {{count}} documentos',
       done_one: '{{count}} documento eliminado',
       done_other: '{{count}} documentos eliminados',
       failed_one: 'No se ha podido eliminar {{count}} documento',
@@ -7750,7 +7779,7 @@ export const es: Translation = {
     },
 
     tagging: {
-      action: 'ETIQUETAR',
+      action: 'Etiquetar',
       title_one: 'Etiquetar este documento',
       title_other: 'Etiquetar {{count}} documentos',
       addLabel: 'Añadir etiquetas',
@@ -7762,8 +7791,8 @@ export const es: Translation = {
         'Haz clic en una etiqueta para quitarla de los documentos que la llevan.',
       removeNone: 'Nada de esta selección tiene etiquetas todavía.',
       onCount: 'en {{count}} de {{total}}',
-      cancel: 'CANCELAR',
-      submit: 'APLICAR',
+      cancel: 'Cancelar',
+      submit: 'Aplicar',
       done_one: '{{count}} documento actualizado',
       done_other: '{{count}} documentos actualizados',
     },
@@ -7781,9 +7810,9 @@ export const es: Translation = {
     browse: 'Suelta los archivos aquí o haz clic para elegirlos',
     remove: 'Quitar {{name}}',
     failed: 'No se ha podido subir',
-    cancel: 'CANCELAR',
-    submit: 'SUBIR',
-    submitCount: 'SUBIR ({{n}})',
+    cancel: 'Cancelar',
+    submit: 'Subir',
+    submitCount: 'Subir ({{n}})',
     dropInto: 'Añadir a {{scope}}',
     duplicate: 'Ya está en el banco de contenido como «{{title}}»',
 
@@ -7834,7 +7863,7 @@ export const es: Translation = {
       failed: {
         title: 'No se pudo cargar la ayuda',
         body: 'Comprueba tu conexión e inténtalo de nuevo.',
-        retry: 'REINTENTAR',
+        retry: 'Reintentar',
       },
       none: {
         title: 'Todavía no hay ayuda para esta página',
@@ -7844,7 +7873,7 @@ export const es: Translation = {
         title: 'Este artículo no está aquí',
         body: 'Puede que se haya renombrado o retirado. Ogen puede responder a tu pregunta.',
       },
-      askOgen: 'PREGUNTAR A OGEN',
+      askOgen: 'Preguntar a Ogen',
     },
     embed: {
       open: 'Abrir',

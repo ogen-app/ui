@@ -1013,7 +1013,7 @@ function SetupCard({
               }
             >
               {t('assistant.workspace.setup.reconnect', {
-                platform: nameOf(a.platform).toUpperCase(),
+                platform: nameOf(a.platform),
               })}
             </Button>
           ))}

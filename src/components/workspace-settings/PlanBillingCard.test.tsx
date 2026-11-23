@@ -180,7 +180,7 @@ describe('PlanBillingCard', () => {
       billing: { subscription: null, portal: false, testMode: false },
     })
 
-    expect(screen.getByRole('button', { name: /MANAGE/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Manage/ })).toBeDisabled()
   })
 
   it('says why MANAGE is dead when the billing read fails', async () => {
@@ -189,7 +189,7 @@ describe('PlanBillingCard', () => {
     at(NOW)
     await render({ billing: undefined, billingFailed: true })
 
-    expect(screen.getByRole('button', { name: /MANAGE/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Manage/ })).toBeDisabled()
     expect(
       screen.getByText(/Billing details aren't available right now/),
     ).toBeInTheDocument()
@@ -206,7 +206,7 @@ describe('PlanBillingCard', () => {
       screen.getByText('Only workspace owners can see billing details.'),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: /MANAGE/ }),
+      screen.queryByRole('button', { name: /Manage/ }),
     ).not.toBeInTheDocument()
   })
 
@@ -233,7 +233,7 @@ describe('PlanBillingCard', () => {
         screen.getByText('Complimentary — nothing to pay.'),
       ).toBeInTheDocument()
       expect(screen.queryByText(/auto-renews/)).not.toBeInTheDocument()
-      expect(screen.getByRole('link', { name: 'CHANGE' })).toHaveAttribute(
+      expect(screen.getByRole('link', { name: 'Change' })).toHaveAttribute(
         'href',
         '/plans',
       )
@@ -249,7 +249,7 @@ describe('PlanBillingCard', () => {
         ),
       ).toBeInTheDocument()
       expect(
-        screen.queryByRole('button', { name: /MANAGE/ }),
+        screen.queryByRole('button', { name: /Manage/ }),
       ).not.toBeInTheDocument()
       expect(screen.queryByText('Sandbox')).not.toBeInTheDocument()
       expect(

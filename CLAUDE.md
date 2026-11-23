@@ -132,11 +132,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   [`docs/colors.md`](./docs/colors.md).
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
-- **Button labels on cards and the commit panel are sentence case** —
-  `Delete campaign`, `Fix with Ogen`, `Save`, destructive or not (decided
-  2026-11-19, replacing the old literal-capitals rule). Write the casing into
-  the copy, never with an `uppercase` class. Labels elsewhere that are still in
-  capitals move to sentence case as their screens join `ui/card`.
+- **Button labels are sentence case, everywhere** — `Delete campaign`,
+  `Fix with Ogen`, `Save`, destructive or not (decided 2026-11-19 for cards,
+  extended to every button 2026-11-23). Write the casing into the copy, never
+  with an `uppercase` class, and never upper-case a name put into a label.
+  The assistant's small-caps status words (DONE, PROPOSAL) are not buttons.
 - **A destructive button is red in its body or in its icon** — never grey, and
   never a pale red tint. The way in (Danger Zone, Remove) is `destructive`:
   white with a border and the icon in the danger colour, so it always has an

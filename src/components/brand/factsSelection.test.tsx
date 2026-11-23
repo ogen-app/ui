@@ -86,7 +86,7 @@ describe('the facts ledger’s selection (CON-486)', () => {
     expect(
       screen.getByText('Remove “The pool is heated to 29°C”?'),
     ).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'REMOVE FACT' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove fact' }))
     await waitFor(() => expect(onRemove).toHaveBeenCalledWith('f1'))
   })
 
@@ -94,10 +94,10 @@ describe('the facts ledger’s selection (CON-486)', () => {
     const onRemove = await show()
     tick('The pool is heated to 29°C')
     tick('Breakfast is served until eleven')
-    fireEvent.click(screen.getByRole('button', { name: 'REMOVE' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
     expect(screen.getByText('Remove 2 facts?')).toBeTruthy()
     expect(onRemove).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'REMOVE 2 FACTS' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove 2 facts' }))
     await waitFor(() => expect(onRemove).toHaveBeenCalledTimes(2))
     expect(onRemove).toHaveBeenCalledWith('f1')
     expect(onRemove).toHaveBeenCalledWith('f2')

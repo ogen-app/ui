@@ -626,7 +626,7 @@ function FactModal({
               onClick={() => submit('remove', onRemove)}
             >
               <TrashIcon />
-              <span>REMOVE THIS FACT</span>
+              <span>{t('brand.factsLedger.removeThis')}</span>
             </Button>
           )}
           <div className="ml-auto flex items-center gap-2">
@@ -636,7 +636,7 @@ function FactModal({
                 and a note explaining that a save saves is a screen talking
                 about itself. */}
             <Button variant="ghost" size="sm" onClick={onClose}>
-              <span>CANCEL</span>
+              <span>{t('common.cancel')}</span>
             </Button>
             <Button
               variant="outline"

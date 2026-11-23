@@ -39,7 +39,7 @@ describe('removing a platform (CON-483)', () => {
     expect(screen.getByText('REMOVED')).toBeTruthy()
     expect(screen.getByText('Facebook is off the campaign')).toBeTruthy()
     expect(screen.getByText('no posts on it')).toBeTruthy()
-    expect(screen.getByText('UNDO')).toBeTruthy()
+    expect(screen.getByText('Undo')).toBeTruthy()
   })
 
   it('names the posts it left, flagged, and what it unscheduled first', () => {
@@ -144,10 +144,10 @@ describe('ideas saved instead', () => {
     )
     expect(screen.getByText('+12 ideas on the Ideas tab')).toBeTruthy()
     expect(screen.getByText(/^targeting Apr 1/)).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/campaigns/c1/ideas',
     )
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(onUndo).toHaveBeenCalledWith('u9')
   })
 })
@@ -193,7 +193,7 @@ describe('the budget guard', () => {
     expect(screen.getByText('LinkedIn · fit 31')).toBeTruthy()
     expect(screen.getAllByText('and 11 more')).toHaveLength(2)
     // The drafts are deleted for good: no UNDO.
-    expect(screen.queryByText('UNDO')).toBeNull()
+    expect(screen.queryByText('Undo')).toBeNull()
   })
 
   it('shows a draft’s fit once its scoring lands, and nothing on a failure (CON-511)', async () => {
@@ -456,7 +456,7 @@ describe('what it knows', () => {
       'text-warning-ink',
     )
     expect(screen.getByText('couldn’t be read')).toBeTruthy()
-    expect(screen.getByText('OPEN ASSETS').getAttribute('href')).toBe(
+    expect(screen.getByText('Open assets').getAttribute('href')).toBe(
       '/campaigns/c1/assets',
     )
   })

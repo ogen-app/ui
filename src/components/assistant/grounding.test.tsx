@@ -76,7 +76,7 @@ describe('a draft from chat', () => {
     expect(screen.getByText('1 post')).toBeTruthy()
     expect(screen.getByText(/^Threads · Thu/)).toBeTruthy()
     expect(screen.getByText('Threads · Text')).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/campaigns/c1/posts/p1',
     )
     // Bug 3: a dated draft is never "not scheduled".
@@ -128,7 +128,7 @@ describe('an enriched brief', () => {
     expect(screen.getByText('1 field')).toBeTruthy()
     expect(screen.getByText('Key messages')).toBeTruthy()
     expect(screen.getByText('A house to slow down in.')).toBeTruthy()
-    expect(screen.getByText('UNDO')).toBeTruthy()
+    expect(screen.getByText('Undo')).toBeTruthy()
   })
 })
 
@@ -164,7 +164,7 @@ describe('a choice that asks for a link', () => {
     fireEvent.change(screen.getByLabelText('Page link'), {
       target: { value: ' villaaurora.it/spa ' },
     })
-    fireEvent.click(screen.getByText('IMPORT'))
+    fireEvent.click(screen.getByText('Import'))
     // Typed without its scheme, sent as a page on the web.
     expect(confirm).toHaveBeenCalledWith(
       't',
@@ -179,7 +179,7 @@ describe('a choice that asks for a link', () => {
     fireEvent.change(screen.getByLabelText('Page link'), {
       target: { value: 'not a link' },
     })
-    fireEvent.click(screen.getByText('IMPORT'))
+    fireEvent.click(screen.getByText('Import'))
     expect(confirm).not.toHaveBeenCalled()
     expect(
       screen.getByText('That doesn’t look like a web address.'),
@@ -262,7 +262,7 @@ describe('the assets pack’s import and distill', () => {
       },
     })
     expect(screen.getByText('More ideas on the way')).toBeTruthy()
-    expect(screen.getByText('OPEN IDEAS').getAttribute('href')).toBe(
+    expect(screen.getByText('Open ideas').getAttribute('href')).toBe(
       '/campaigns/c1/ideas',
     )
     expect(screen.getByRole('link', { name: 'B' })).toBeTruthy()

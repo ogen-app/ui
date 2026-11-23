@@ -385,7 +385,7 @@ function AccountRow({
               }}
             >
               {t('workspaceSettings.platforms.reconnectDialog.continue', {
-                platform: view.info.name.toUpperCase(),
+                platform: view.info.name,
               })}
             </Button>
             <Button

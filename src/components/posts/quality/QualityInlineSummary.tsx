@@ -132,7 +132,7 @@ export function QualityInlineSummary({
               variant="ghost"
               size="sm"
               onClick={onOpenPanel}
-              className="-ml-3 uppercase"
+              className="-ml-3"
             >
               {suggestions.length > 0
                 ? t('posts.quality.inline.seeAll', {
