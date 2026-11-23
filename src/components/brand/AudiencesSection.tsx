@@ -76,7 +76,7 @@ export function AudiencesSection({
   )
 }
 
-/** Two cards, not three — the page's intro card states the absence. */
+/** Two cards, not three — the page's About card states the absence. */
 function AudiencesEmpty({
   onStart,
 }: {

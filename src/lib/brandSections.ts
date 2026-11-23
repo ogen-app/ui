@@ -181,12 +181,12 @@ export function brandSection(id: BrandSectionId): BrandSectionInfo {
  * What a section is called and what it is for, in the active language.
  *
  * Three strings rather than three call sites, because the places that want one
- * of them want all three: the Overview's card and the section's own intro card
- * are two renderings of the same entry, and splitting them into
+ * of them want all three: the Overview's card and the section's own page (its
+ * header and its About card) are two renderings of the same entry, and splitting them into
  * `brandSectionLabel` / `brandSectionDescription` would be three chances to
  * read a different section's copy into one card.
  *
- * - `label` — sentence case. It heads the Overview's card *and* the intro card
+ * - `label` — sentence case. It heads the Overview's card *and* the header
  *   of the page that card opens, so arriving somewhere confirms you clicked the
  *   right thing rather than making you check.
  * - `description` — what the material has to be, not what the screen does. "A
@@ -195,8 +195,8 @@ export function brandSection(id: BrandSectionId): BrandSectionInfo {
  *   all.
  * - `whenEmpty` — what the section's absence costs, in one line, worded as a
  *   consequence and never as a scold. Two places read it and both get the same
- *   string: the Overview card with no rows to show, and the intro card while
- *   the section is empty.
+ *   string: the Overview card with no rows to show, and the section's About card
+ *   while the section is empty.
  */
 export function brandSectionCopy(
   t: TFunction,

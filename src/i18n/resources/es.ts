@@ -6717,6 +6717,14 @@ export const es: Translation = {
         'Puede que se haya eliminado, o que el enlace sea de otro espacio de trabajo.',
       deleted: 'Se eliminó {{name}}.',
       guardrailsDeleted: 'Se eliminaron los límites.',
+      about: 'Acerca de',
+      usedBy: {
+        title: 'Lo usan',
+        empty: 'Aún no hay campañas.',
+        noVoice: 'Sin voz',
+        noAudience: 'Sin audiencia',
+        defaultVoice: '{{voice}} (predeterminada)',
+      },
     },
 
     look: {

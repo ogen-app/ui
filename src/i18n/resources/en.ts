@@ -8155,6 +8155,16 @@ export const en = {
       /** The confirmations. `{{name}}` is the entry's own, always the user's words. */
       deleted: '{{name}} was deleted.',
       guardrailsDeleted: 'The guardrails were deleted.',
+      /** The side column's first card: what the section is for. */
+      about: 'About',
+      /** The side column's second card: each campaign, and what it picks here. */
+      usedBy: {
+        title: 'Used by',
+        empty: 'No campaigns yet.',
+        noVoice: 'No voice',
+        noAudience: 'No audience',
+        defaultVoice: '{{voice}} (default)',
+      },
     },
 
     /** The visual half — `LookSection.tsx`. */

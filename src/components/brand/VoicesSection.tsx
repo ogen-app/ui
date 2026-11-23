@@ -84,7 +84,7 @@ export function VoicesSection({
 
 /**
  * What an empty section offers, which is no longer *three* cards but two: the
- * page's own intro card states the absence above this, so the old "Nothing here
+ * page's About card states the absence beside this, so the old "Nothing here
  * sounds like you yet" card would have been the second heading in a row saying
  * roughly one thing.
  */

@@ -93,6 +93,7 @@ export function CampaignSwitcher() {
             </>
           ) : (
             <>
+              <AllCampaignsMark className="size-2.5" />
               <span className="truncate font-medium text-primary-foreground">
                 {t('nav.scope.all')}
               </span>
@@ -110,7 +111,8 @@ export function CampaignSwitcher() {
           onCloseAutoFocus={(event) => event.preventDefault()}
         >
           <ChromeMenuItem on={!campaignId} onSelect={() => go(null)}>
-            {t('nav.scope.all')}
+            <AllCampaignsMark />
+            <span className="truncate">{t('nav.scope.all')}</span>
           </ChromeMenuItem>
           <ChromeMenuRule />
           {campaigns.map((campaign) => (
@@ -186,6 +188,27 @@ function CampaignDot({ id, className }: { id: string; className?: string }) {
       style={{ backgroundColor: identityColorVar(id) }}
       className={cn('size-2 shrink-0 rounded-full', className)}
     />
+  )
+}
+
+/**
+ * "All campaigns" as four dots in a square, in the box one campaign's dot
+ * takes, so the scope's mark sits where a campaign's would. In the text's own
+ * colour rather than the campaigns': it stands for all of them, not for four.
+ */
+function AllCampaignsMark({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'grid size-2 shrink-0 grid-cols-2 grid-rows-2 gap-px',
+        className,
+      )}
+    >
+      {[0, 1, 2, 3].map((i) => (
+        <span key={i} className="rounded-full bg-primary-foreground" />
+      ))}
+    </span>
   )
 }
 
