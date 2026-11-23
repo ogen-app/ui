@@ -7,8 +7,8 @@ import { stickyColumns } from '@/lib/stickyColumns'
 const SIDE_BY_SIDE = '(min-width: 64rem)'
 /** The left column's sticky `top` (`lg:top-4`). */
 const TOP = 16
-/** Kept clear at the bottom: the page's 80px bottom fade, and a margin. */
-const BOTTOM = 96
+/** Kept clear at the bottom: the same margin as the top. */
+const BOTTOM = 16
 
 /**
  * Lays out a pinned column beside a longer one that is read (CON-373), as

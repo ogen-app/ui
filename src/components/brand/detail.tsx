@@ -3,111 +3,60 @@ import { CaretLeftIcon } from '@phosphor-icons/react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { PageColumns } from '@/components/page-primitives/PageColumns'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { useBrand } from '@/hooks/useBrand'
-import {
-  brandSection,
-  brandSectionCopy,
-  type BrandSectionId,
-} from '@/lib/brandSections'
-import { readByStatus } from './shell'
+import { brandSectionCopy, type BrandSectionId } from '@/lib/brandSections'
+import { BrandSectionAside } from './sectionAside'
 import type { BrandData } from './types'
 
 /**
  * A Brand section, as a screen you go into and come back from.
  *
- * ## The shape is the post details screen's, on purpose
+ * ## The hub's frame, one level down
  *
- * A caret back at top-left, and one column under it, against the left edge. That is what every
- * other *drilldown* in this app looks like — a post, an asset — and Brand's
- * sections are drilldowns now rather than tabs, so they should look like one. It
- * is not decoration: the caret in that corner is the app's one promise that
- * there is somewhere above here, and a screen that reaches the same depth by
- * other means has to keep it.
+ * The same two columns as the Strategy hub above it (`PageColumns`, the side
+ * one sticky), so going in keeps the frame and only changes what is in it:
+ * the section's entries in the main column, and beside them what the section
+ * is for and who it reaches (`BrandSectionAside`). The intro card used to open
+ * the main column and carry the section's name; that put a paragraph of
+ * explanation between the header and the list every visit, and left most of a
+ * wide screen empty beside a 740px column.
  *
- * **And the shape is structural, not just visual.** The header sits *inside*
- * the scroller, sticky and solid — so the column passes under it. The first
- * build put the header above the scroller as a sibling, which is a different
- * screen with the same parts: the content stops at a hard horizontal edge and
- * cards slide under a cut. Every other scrolling screen in this app (post
- * details, Profile, Workspace Settings) wraps its header in the scroll
- * container. `ScrollArea` rather than a bare `overflow-y-auto`, for the same
- * reason the post uses it: an overlay scrollbar that does not take a
- * column of width away from the content while it is idle.
+ * ## The header names the place
  *
- * What that buys over the tab bar it replaces: the Overview gets its whole
- * header back, going somewhere is one gesture and coming back is one gesture,
- * and no screen you are working on offers four sideways exits along its top
- * edge. See `lib/brandSections` for the argument in full.
+ * A caret back at top-left and the section's name after it — "‹ Voices" —
+ * the way every other page header names its place. It used to be a caret
+ * alone, because the intro card carried the name; with that card moved to the
+ * side, the header is the one place left that says where you are.
+ *
+ * It scrolls away like the hub's, and the bar over the page takes over the
+ * title (`scrollAway`): the side column pins 16px from the top, which only
+ * works with nothing pinned above it.
+ *
+ * The header sits *inside* the scroller, so the columns pass under it.
+ * `ScrollArea` rather than a bare `overflow-y-auto`, for the reason the post
+ * uses it: an overlay scrollbar that takes no width from the content while
+ * idle.
  *
  * Top-right is empty and stays that way — CON-178 gives it to views, and a
  * section has none. Creating goes at the end of the list it adds to
- * (`BrandLibrary`), which is where you are looking once you have read the list
- * and found nothing that does the job.
- *
- * ## The header carries no name
- *
- * It did — the section's label sat beside the caret, which is the ordinary
- * arrangement and was not wrong. What replaced it is better rather than
- * cheaper: the column now opens on an intro card (`BrandSectionIntro`) carrying
- * the same label as its title *and* the sentences saying what the section is
- * for. A header can only ever state the name. Naming the place twice, once in
- * the header and once on the card with the explanation attached, is the
- * version where one of them is redundant — so the header's went.
- *
- * The post editor reaches the same arrangement from the other direction: no
- * title there either, because the name is in the document. Here the name is in
- * the first card. Either way the header is a caret and the screen says where
- * you are in its own words.
- *
- * ## Why the data gate is in the same component as the chrome
- *
- * Five routes asked the same query and wrote the same three branches —
- * pending, failed, here — which is five chances for one of them to answer
- * differently. It is a render prop rather than a `data` prop because the point
- * is that **the body never runs without data**: a section cannot accidentally
- * read `data?.voices` and quietly draw an empty library while the fetch is
- * still in flight. An empty Brand section is a real state with its own copy,
- * and showing it to somebody whose brand is merely still loading is the one lie
- * this module is written to avoid.
- *
- * The header renders either way, so the wait happens *inside* the screen you
- * asked for rather than on a blank page that becomes it.
+ * (`BrandLibrary`).
  */
-export function BrandDetail({
+export function BrandSectionFrame({
   section,
-  scroll = true,
+  aside,
   children,
 }: {
   section: BrandSectionId
-  /** `false` for a section that owns its own scrollers. Templates is the one. */
-  scroll?: boolean
-  children: (data: BrandData) => ReactNode
+  aside: ReactNode
+  children: ReactNode
 }) {
-  // A section that owns its own scrollers cannot hand the page one: Templates
-  // is a platform rail pinned to the full height of a panel beside it, and a
-  // page scroller would drag the rail off the top with everything else. It
-  // keeps the header above the frame, where nothing passes under it anyway.
-  if (!scroll) {
-    return (
-      <BrandPage>
-        <div className="flex h-full min-h-0 flex-col">
-          <PageHeader back={<BrandBackButton />} />
-          <div className="flex min-h-0 flex-1 flex-col gap-3 px-3 lg:px-6">
-            <BrandDetailBody section={section} fixed>
-              {children}
-            </BrandDetailBody>
-          </div>
-        </div>
-      </BrandPage>
-    )
-  }
-
+  const { t } = useTranslation()
   return (
     <BrandPage>
       <div className="relative flex min-h-0 flex-1">
@@ -116,13 +65,71 @@ export function BrandDetail({
           type="scroll"
           scrollHideDelay={350}
         >
-          <PageHeader back={<BrandBackButton />} />
-          <div className="px-3 pb-10 lg:px-6">
-            <BrandDetailBody section={section}>{children}</BrandDetailBody>
-          </div>
+          <PageHeader
+            back={<BrandBackButton />}
+            title={brandSectionCopy(t, section).label}
+            scrollAway
+          />
+          <PageColumns aside={aside} stickyAside>
+            {children}
+          </PageColumns>
         </ScrollArea>
       </div>
     </BrandPage>
+  )
+}
+
+/**
+ * `BrandSectionFrame` over the brand query, for the sections whose entries are
+ * on `BrandData` — Voices and Audiences.
+ *
+ * ## Why the data gate is in the same component as the chrome
+ *
+ * The routes asked the same query and wrote the same three branches —
+ * pending, failed, here — which is a chance for one of them to answer
+ * differently. It is a render prop rather than a `data` prop because the point
+ * is that **the body never runs without data**: a section cannot accidentally
+ * read `data?.voices` and quietly draw an empty library while the fetch is
+ * still in flight. An empty Brand section is a real state with its own copy,
+ * and showing it to somebody whose brand is merely still loading is the one lie
+ * this module is written to avoid.
+ *
+ * The header and the About card render either way, so the wait happens
+ * *inside* the screen you asked for rather than on a blank page that becomes
+ * it.
+ */
+export function BrandDetail({
+  section,
+  children,
+}: {
+  section: 'voices' | 'audiences'
+  children: (data: BrandData) => ReactNode
+}) {
+  const { t } = useTranslation()
+  const { data, isPending, isError } = useBrand()
+
+  return (
+    <BrandSectionFrame
+      section={section}
+      aside={
+        <BrandSectionAside
+          section={section}
+          empty={data ? isSectionEmpty(section, data) : false}
+          brand={data}
+        />
+      }
+    >
+      {isPending ? (
+        <PageLoader />
+      ) : isError || !data ? (
+        <PageError
+          header={t('brand.detail.errorHeader')}
+          message={t('brand.detail.errorMessage')}
+        />
+      ) : (
+        children(data)
+      )}
+    </BrandSectionFrame>
   )
 }
 
@@ -192,120 +199,15 @@ export function BrandBackButton({
   )
 }
 
-function BrandDetailBody({
-  section,
-  fixed,
-  children,
-}: {
-  section: BrandSectionId
-  /** The section owns its own scrollers and must fill the height it is given. */
-  fixed?: boolean
-  children: (data: BrandData) => ReactNode
-}) {
-  const { t } = useTranslation()
-  const { data, isPending, isError } = useBrand()
-
-  if (isPending) return <PageLoader />
-  if (isError || !data) {
-    return (
-      <PageError
-        header={t('brand.detail.errorHeader')}
-        message={t('brand.detail.errorMessage')}
-      />
-    )
-  }
-
-  if (fixed) {
-    return (
-      <>
-        <BrandSectionIntro section={section} data={data} wide />
-        <div className="min-h-0 flex-1">{children(data)}</div>
-      </>
-    )
-  }
-
-  return (
-    <BrandColumn>
-      <BrandSectionIntro section={section} data={data} />
-      {children(data)}
-    </BrandColumn>
-  )
-}
-
 /**
- * The stack a section's cards sit in — the same 12px rhythm the Overview uses,
- * so going into a section does not change the spacing of the column you were
- * just looking at.
- */
-export function BrandColumn({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-3">{children}</div>
-}
-
-/**
- * The card a section opens with, filled from the table.
- *
- * Exported because the harness draws sections without the page — and without a
- * query to draw them from — around them, and a harness that assembles its own
- * intro card is a harness that can keep passing after the app stops matching
- * it.
- */
-export function BrandSectionIntro({
-  section,
-  data,
-  wide,
-}: {
-  section: BrandSectionId
-  data: BrandData
-  wide?: boolean
-}) {
-  const { t } = useTranslation()
-  const info = brandSection(section)
-  const copy = brandSectionCopy(t, section)
-  return (
-    // `wide` spans the panel instead of the column: Templates is a platform
-    // rail beside a detail panel, edge to edge, and a capped card above it
-    // reads as a card belonging to some other screen.
-    <Card
-      heading="h1"
-      icon={info.icon}
-      tone={info.tone}
-      title={copy.label}
-      status={readByStatus(t, info.readBy)}
-      capped={!wide}
-    >
-      <p className="text-sm text-secondary-foreground">{copy.description}</p>
-      {isSectionEmpty(section, data) && (
-        <p className="text-sm text-secondary-foreground">{copy.whenEmpty}</p>
-      )}
-    </Card>
-  )
-}
-
-/**
- * Whether the section has anything at all behind it — the one line the intro
+ * Whether the section has anything at all behind it — the one line the About
  * card gains while it does not.
- *
- * Local rather than on `brandSections`: it is the only question this file asks
- * of the data, and a `switch` here is cheaper to read than a fifth column on a
- * table whose other four are copy.
  */
-function isSectionEmpty(section: BrandSectionId, data: BrandData): boolean {
-  switch (section) {
-    case 'voices':
-      return data.voices.length === 0
-    case 'audiences':
-      return data.audiences.length === 0
-    case 'guardrails':
-      return data.guardrails === null
-    case 'look':
-      return data.look === null
-    case 'templates':
-      return data.templates.length === 0
-    case 'facts':
-      return (data.guardrails?.facts.length ?? 0) === 0
-    // Never asked: the series screen is a `SeriesDetail`, gated on its own
-    // query, because the entries are not on `BrandData` and never will be.
-    case 'series':
-      return false
-  }
+function isSectionEmpty(
+  section: 'voices' | 'audiences',
+  data: BrandData,
+): boolean {
+  return section === 'voices'
+    ? data.voices.length === 0
+    : data.audiences.length === 0
 }

@@ -1,11 +1,4 @@
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -46,7 +39,6 @@ import {
   CARD_SELECTED,
   opensCard,
 } from '@/components/page-primitives/listCards'
-import { SurfaceFader } from '@/components/page-primitives/SurfaceFader'
 import { CampaignMark } from './asset-page/CampaignMark'
 import { AssetKindMark } from './AssetKindMark'
 import { FitRing } from './FitRing'
@@ -458,10 +450,6 @@ function VerdictMark({ verdict }: { verdict: VerdictKey }) {
  */
 const CARD_MAX_HEIGHT = 4 + 77 * 5.5
 
-/** The edge fades: a short solid run, then the ramp, as the rail's are. */
-const CARD_FADE_SOLID = 4
-const CARD_FADE = 32
-
 /**
  * Where the card's first line sits below its top, and its last line above its
  * bottom, in px: the list's own padding, the item's, and half the line. The
@@ -601,10 +589,8 @@ function WaitingIdeas({
 
 /**
  * The card's list, five and a half ideas tall at most and scrolling past
- * that, with the rail's edge fades (`SurfaceFader`): the foot fades while
- * anything is below, the head once anything has scrolled above, so the list
- * never ends on a hard cut. Every idea is here — the card scrolls rather than
- * stopping at a count and saying "and N more".
+ * that. Every idea is here — the card scrolls rather than stopping at a count
+ * and saying "and N more".
  *
  * The rules are inset by the list's own padding, so they stop short of the
  * card's edges. Score, then words, then the verdict: the scores make one
@@ -618,68 +604,30 @@ function IdeaScroller({
   children: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [edges, setEdges] = useState({ above: false, below: false })
-
-  const measure = useCallback(() => {
-    const el = ref.current
-    if (!el) return
-    const above = el.scrollTop > 1
-    const below = el.scrollTop + el.clientHeight < el.scrollHeight - 1
-    setEdges((was) =>
-      was.above === above && was.below === below ? was : { above, below },
-    )
-  }, [])
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    measure()
-    onOverflow(el.scrollHeight > el.clientHeight + 1)
+    const report = () => onOverflow(el.scrollHeight > el.clientHeight + 1)
+    report()
     if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => {
-      measure()
-      onOverflow(el.scrollHeight > el.clientHeight + 1)
-    })
+    const observer = new ResizeObserver(report)
     observer.observe(el)
     if (el.firstElementChild) observer.observe(el.firstElementChild)
     return () => observer.disconnect()
-  }, [measure, onOverflow])
-
-  const fade =
-    'transition-opacity duration-150 ease-out motion-reduce:transition-none'
+  }, [onOverflow])
 
   return (
     // Its own clip, not the tooltip's: the tooltip carries the arrow, which
     // has to stand outside the card.
-    <div className="relative overflow-hidden rounded-lg">
+    <div className="overflow-hidden rounded-lg">
       <div
         ref={ref}
-        onScroll={measure}
         className="overflow-y-auto overscroll-contain [scrollbar-width:thin]"
         style={{ maxHeight: CARD_MAX_HEIGHT }}
       >
         <ul className="flex flex-col px-3 py-1">{children}</ul>
       </div>
-      <SurfaceFader
-        edge="top"
-        solid={`${CARD_FADE_SOLID}px`}
-        fade={CARD_FADE}
-        className={cn('top-0', fade)}
-        style={{
-          height: CARD_FADE_SOLID + CARD_FADE,
-          opacity: edges.above ? 1 : 0,
-        }}
-      />
-      <SurfaceFader
-        edge="bottom"
-        solid={`${CARD_FADE_SOLID}px`}
-        fade={CARD_FADE}
-        className={cn('bottom-0', fade)}
-        style={{
-          height: CARD_FADE_SOLID + CARD_FADE,
-          opacity: edges.below ? 1 : 0,
-        }}
-      />
     </div>
   )
 }

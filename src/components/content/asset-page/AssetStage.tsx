@@ -72,10 +72,6 @@ export function AssetStage({ asset, audioRef, onAudioTime }: Props) {
           onError={onError(hero)}
           className="block aspect-[16/9] w-full bg-secondary object-cover"
         />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-b from-transparent to-primary lg:h-24"
-        />
         {domain && (
           // Where the picture is from, on the picture: a page's lead image
           // says little until you know whose page it is.
@@ -119,7 +115,6 @@ function NoteTile({ lines }: { lines: string[] }) {
           {line}
         </p>
       ))}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-b from-transparent to-secondary" />
     </div>
   )
 }
