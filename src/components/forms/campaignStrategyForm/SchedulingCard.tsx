@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 import { useFormContext } from 'react-hook-form'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 
 import { Explainer } from '@/components/page-primitives/Explainer'
 import { Card } from '@/components/ui/card'
@@ -203,7 +205,7 @@ export function SchedulingCard() {
                 aria-label={DAY_NAMES[token]}
                 onClick={() => toggleDay(token)}
                 className={cn(
-                  'flex h-16 min-w-0 items-center justify-center rounded-lg border',
+                  'flex h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border',
                   'px-2 text-[13px] font-medium',
                   'transition-colors cursor-pointer',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -212,6 +214,15 @@ export function SchedulingCard() {
                     : 'border-senary-foreground bg-transparent text-tertiary-foreground line-through',
                 )}
               >
+                {/* A tick on a day that publishes and a cross on one that is
+                    skipped: the strike-through alone read as a day that was
+                    merely greyed out, not as a choice somebody made. */}
+                <HugeiconsIcon
+                  icon={on ? Tick02Icon : Cancel01Icon}
+                  size={16}
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
                 {DAY_LABELS[token]}
               </button>
             )
