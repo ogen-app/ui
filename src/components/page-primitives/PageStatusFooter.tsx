@@ -13,8 +13,8 @@ export type PageStatusFooterProps = {
  * one line tall by construction (140px of type in a 140px box), so a message
  * with a space in it — `NOT FOUND` — wrapped to two lines and had its second
  * one sliced off by the row's `overflow-hidden`. The copies are meant to run
- * off both edges under the fader; letting them shrink to fit is what turned an
- * overflowing band into a broken one.
+ * off both edges; letting them shrink to fit is what turned an overflowing
+ * band into a broken one.
  */
 const WORD =
   'font-display font-black uppercase tracking-[0.05em] opacity-50 text-senary-foreground text-center text-[140px] leading-none pt-2 whitespace-nowrap shrink-0'
@@ -34,12 +34,10 @@ export function PageStatusFooter({ message = 'ERROR' }: PageStatusFooterProps) {
         className={'flex h-[140px] gap-24 justify-center items-center relative'}
       >
         {/* Three copies so the row reads as a repeating band rather than one
-            centred word; the fader over them takes the outer two down at the
-            edges, so they never look cropped. */}
+            centred word. */}
         <div className={WORD}>{message}</div>
         <div className={WORD}>{message}</div>
         <div className={WORD}>{message}</div>
-        <div className={'absolute inset-0 background-fader-2'} />
       </div>
     </div>
   )
