@@ -300,10 +300,7 @@ export function AssetDocument({
 
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
-      {/* `relative` so the fader anchors to the content column rather than
-          the window: the right rail is a sibling of this container, so it
-          recedes when a panel opens instead of spanning the whole app. */}
-      <div className="relative flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0">
         <ScrollArea
           className="flex-1 min-h-0"
           type="scroll"

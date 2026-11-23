@@ -4,7 +4,7 @@ export type ColumnHeights = {
   viewport: number
   /** Room kept above a pinned column — its sticky `top`. */
   top: number
-  /** Room kept below a column held by its foot (the page's bottom fade). */
+  /** Room kept below a column held by its foot. */
   bottom: number
   /** The pinned column's height. */
   left: number
