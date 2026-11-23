@@ -6,7 +6,7 @@ import {
 } from './auth-validation.ts'
 // The real, initialised instance — English is bundled, so `t` resolves
 // synchronously. That makes these assertions a check on the catalogue too: a
-// key renamed in `en.ts` without updating the schema fails here.
+// key renamed in the catalogue without updating the schema fails here.
 import { i18next } from '@/i18n'
 
 const t = i18next.t
