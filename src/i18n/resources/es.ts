@@ -681,7 +681,6 @@ export const es: Translation = {
     remove: 'Quitar: {{clause}}',
     removeDetail: 'Quitar este detalle',
     done: 'Hecho',
-    clear: 'Borrar',
     clearAll: 'Quitar filtros',
     more: '+{{formatted}}',
     removeLast: 'quitar el último detalle',
@@ -747,8 +746,6 @@ export const es: Translation = {
       no: 'Sin fecha',
     },
     sentence: {
-      showing: 'Mostrando publicaciones <clauses></clauses>',
-      showingAll: 'Mostrando <v>todas las publicaciones</v>',
       clause: {
         status: 'que son <v>{{values}}</v>',
         status_not: 'que no son <v>{{values}}</v>',
@@ -1087,8 +1084,6 @@ export const es: Translation = {
       failed: 'No se pudieron eliminar las ideas. Puede que algunas sigan ahí.',
     },
     sentence: {
-      showing: 'Mostrando ideas <clauses></clauses>',
-      showingAll: 'Mostrando <v>todas las ideas</v>',
       clause: {
         origin: '<v>{{values}}</v>',
         origin_not: 'no <v>{{values}}</v>',
@@ -7489,9 +7484,6 @@ export const es: Translation = {
       },
     },
     sentence: {
-      showing: 'Mostrando recursos <clauses></clauses>',
-      showingSubject: 'Mostrando <clauses></clauses>',
-      showingAll: 'Mostrando <v>todos los recursos</v>',
       clause: {
         kind: '<v>{{values}}</v>',
         kind_not: 'que no son <v>{{values}}</v>',

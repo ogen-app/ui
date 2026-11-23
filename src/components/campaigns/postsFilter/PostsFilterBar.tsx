@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FilterSentence } from '@/components/smartFilter/FilterSentence'
+import { FilterPills } from '@/components/smartFilter/FilterPills'
+import { FilterButton } from '@/components/smartFilter/ListStrip'
 import { NoMatches } from '@/components/smartFilter/NoMatches'
 import { viewerTimeZone } from '@/lib/assetFilter'
+import { formatNumber } from '@/lib/intl'
 import { filteredCampaignPostsKey } from '@/lib/queryKeys'
 import {
   POST_FILTER_MODEL,
@@ -28,8 +31,10 @@ function countQueryFor(campaignId: string): CountQuery<PostFilter> {
 }
 
 /**
- * The posts filter as a sentence (CON-472), over a campaign's posts list and
- * its calendar: the Ideas list's `FilterSentence` on the posts model.
+ * The posts filter (CON-472) over a campaign's posts list and its calendar,
+ * on the Assets list's head line: `Filter`, then the filter as pills, which
+ * show only while something narrows the list. With nothing chosen the line
+ * is the button alone — an unfiltered list says nothing about itself.
  */
 export function PostsFilterBar({
   campaignId,
@@ -48,33 +53,52 @@ export function PostsFilterBar({
   /** The assistant put this filter here (CON-482), and it hasn't changed. */
   setByAssistant?: boolean
   /**
-   * The list shows it only while a filter narrows it ("3 of 21"): it has no
-   * count line of its own, and an unfiltered total is not news.
+   * Whether the pills end on how many match ("3 of 21"): off while the list
+   * is still answering, when the number would be the last filter's.
    */
   showCount?: boolean
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const vocabulary = usePostVocabulary(campaignId)
   const countQuery = countQueryFor(campaignId)
+  const [adding, setAdding] = useState(false)
+  const locale = i18n.language
   return (
-    <FilterSentence
-      trailing={
-        setByAssistant ? (
-          <span className="rounded-sm bg-accent/10 px-1.5 py-0.5 text-[12px] text-accent-ink">
-            {t('postsFilter.setByAssistant')}
-          </span>
-        ) : undefined
-      }
-      filter={filter}
-      model={POST_FILTER_MODEL}
-      onChange={onChange}
-      vocabulary={vocabulary}
-      total={total}
-      totalUnfiltered={totalUnfiltered}
-      countQuery={countQuery}
-      clearable
-      showCount={showCount}
-    />
+    <div className="flex min-w-0 items-start gap-x-4">
+      <FilterButton
+        count={POST_FILTER_MODEL.tokensOf(filter).length}
+        onClick={() => setAdding(true)}
+      />
+      <FilterPills
+        inline
+        filter={filter}
+        onChange={onChange}
+        model={POST_FILTER_MODEL}
+        vocabulary={vocabulary}
+        countQuery={countQuery}
+        adding={adding}
+        onAddingChange={setAdding}
+        clearable
+        trailing={
+          <>
+            {showCount && (
+              <span aria-live="polite" className="tabular-nums">
+                {t('content.filter.count', {
+                  count: total,
+                  shown: formatNumber(total, {}, locale),
+                  total: formatNumber(totalUnfiltered, {}, locale),
+                })}
+              </span>
+            )}
+            {setByAssistant && (
+              <span className="rounded-sm bg-accent/10 px-1.5 py-0.5 text-xs/4 text-accent-ink">
+                {t('postsFilter.setByAssistant')}
+              </span>
+            )}
+          </>
+        }
+      />
+    </div>
   )
 }
 

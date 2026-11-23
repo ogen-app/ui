@@ -833,7 +833,6 @@ export const en = {
     remove: 'Remove: {{clause}}',
     removeDetail: 'Remove this detail',
     done: 'Done',
-    clear: 'Clear',
     /** The pills row's end: every filter off at once. */
     clearAll: 'Clear filters',
     /** A pill naming its first value only: how many more it holds. */
@@ -914,8 +913,6 @@ export const en = {
       no: 'Without a date',
     },
     sentence: {
-      showing: 'Showing posts <clauses></clauses>',
-      showingAll: 'Showing <v>all posts</v>',
       clause: {
         status: 'that are <v>{{values}}</v>',
         status_not: 'that aren’t <v>{{values}}</v>',
@@ -1315,14 +1312,10 @@ export const en = {
       failed: 'Could not delete the ideas. Some may still be there.',
     },
     /**
-     * The filter as a sentence you edit (CON-391). One sentence per field
-     * and operator, its chosen words marked `<v>`, so a language orders the
-     * words its own way; the clauses are joined by `Intl.ListFormat`.
+     * The filter's pills (CON-391): one sentence per field and operator, its
+     * chosen words marked `<v>`, so a language orders the words its own way.
      */
     sentence: {
-      /** `<clauses>` is the list of clauses, already joined. */
-      showing: 'Showing ideas <clauses></clauses>',
-      showingAll: 'Showing <v>all ideas</v>',
       clause: {
         origin: '<v>{{values}}</v>',
         origin_not: 'not <v>{{values}}</v>',
@@ -9074,15 +9067,10 @@ export const en = {
       },
     },
     /**
-     * The Assets filter as a sentence you edit (CON-392). The type is the
-     * subject when chosen — "Showing PDFs, in …" — so a list of documents is
-     * named by what they are; every other field is one clause, one catalogue
-     * sentence per field and operator, its chosen words marked `<v>`.
+     * The Assets filter's pills (CON-392): one catalogue sentence per field
+     * and operator, its chosen words marked `<v>`.
      */
     sentence: {
-      showing: 'Showing assets <clauses></clauses>',
-      showingSubject: 'Showing <clauses></clauses>',
-      showingAll: 'Showing <v>all assets</v>',
       clause: {
         kind: '<v>{{values}}</v>',
         kind_not: 'that aren’t <v>{{values}}</v>',

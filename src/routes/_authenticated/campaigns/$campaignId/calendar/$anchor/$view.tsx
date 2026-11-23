@@ -193,7 +193,7 @@ function CalendarView() {
     () => postsInRange(rows, range, hiddenDays),
     [rows, range, hiddenDays],
   )
-  // The sentence counts the days on screen (CON-486), matching and in all —
+  // The pills count the days on screen (CON-486), matching and in all —
   // "3 of 5" over a week showing three, not the campaign's whole match.
   const onScreenUnfiltered = useMemo(
     () => postsInRange(allPosts.data ?? NO_POSTS, range, hiddenDays),
@@ -305,7 +305,7 @@ function CalendarView() {
       />
       <div className="flex flex-1 min-h-0 min-w-0 flex-col px-3 pt-3 lg:px-6">
         {!campaignEmpty && (
-          <div className="px-6 pb-3">
+          <div className="pb-3">
             <PostsFilterBar
               campaignId={campaignId}
               filter={filter}

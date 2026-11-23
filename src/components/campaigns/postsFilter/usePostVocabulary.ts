@@ -202,8 +202,6 @@ export function usePostVocabulary(campaignId: string) {
     () => ({
       fields: POST_FILTER_FIELDS,
       order: POST_FILTER_FIELDS,
-      showingKey: 'postsFilter.sentence.showing',
-      showingAllKey: 'postsFilter.sentence.showingAll',
       clause,
       tokenText,
       options,

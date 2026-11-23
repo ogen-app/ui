@@ -79,7 +79,7 @@ function CampaignListView() {
     [navigate],
   )
   const postsQuery = useCampaignPosts(campaignId, params)
-  // The sentence says how many there are in all; a filtered read is a second
+  // The pills say how many there are in all; a filtered read is a second
   // query, and the unfiltered one is usually in the cache already.
   const allPosts = useCampaignPosts(campaignId)
   const posts = postsQuery.data
@@ -193,10 +193,10 @@ function CampaignListView() {
         )
       }
     >
-      {/* The sentence, then the table, both on the table's left edge. There
-          is no count line: an unfiltered list's length is not news, and a
-          filtered one's is said once, at the sentence's end ("3 of 21").
-          ADD POST is the header's. */}
+      {/* The filter line, then the table, both on the table's left edge.
+          There is no count line: an unfiltered list's length is not news, and
+          a filtered one's is said once, at the pills' end ("3 of 21"). ADD
+          POST is the header's. */}
       {(filtered || (allPosts.data?.length ?? 0) > 0) && (
         <div className="shrink-0 pt-3 pb-2">
           <PostsFilterBar
