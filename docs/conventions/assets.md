@@ -39,14 +39,15 @@ keep it accurate when these rules change.
 
 - **The asset page is the reading, then the thing read, and those screens
   are its Source card** (CON-366, shipped unflagged; `docs/asset-page.md`).
-  `AssetDocument` renders `AssetPage`: the asset's own bar (`AssetBar`)
-  across the top, a main column of `ui/card` cards — the **title**, edited
-  there and nowhere else, then **Summary** (the lead, the rest on request),
-  **Ideas** (the Ideas list's cards, `IdeaRow` with `atSource`) and last the
-  **Source** card holding `assetScreen`'s screen with no title field of its
-  own — and an untabbed side column (`page-primitives/SidePanel`,
-  `AssetOverview`) with the picture, the facts, a way to each card, what it
-  covers, campaigns and tags. Until there is a reading, Summary and Ideas
+  `AssetDocument` renders `AssetPage`, the post editor's frame: the asset's
+  own bar (`AssetBar`) over a main column of `ui/card` cards — **Summary**
+  (the lead, the rest on request), **Ideas** (the Ideas list's cards,
+  `IdeaRow` with `atSource`) and last the **Source** card, holding the
+  **title**, edited there and nowhere else, over `assetScreen`'s screen with
+  no title field of its own — and a side column of tabs level with the bar
+  (`page-primitives/SideColumn`), one for now: **Overview** (`AssetOverview`,
+  the picture, the facts, a way to each card, what it covers, campaigns and
+  tags). Until there is a reading, Summary and Ideas
   are one short card. A recording has **one** `<audio>`, over every card;
   the transcript, commitment and idea chips drive it through `useAudioSeek`.
   Don't give a screen its own title or player back — two title fields edit

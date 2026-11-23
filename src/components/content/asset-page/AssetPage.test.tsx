@@ -88,7 +88,7 @@ beforeEach(() => {
 })
 
 describe('AssetPage', () => {
-  it('reads the summary, then the ideas, then the source, with the facts beside them', async () => {
+  it('starts with the summary, then the ideas, then the source, with the facts in Overview', async () => {
     api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
     await renderPage(asset())
     expect(
@@ -97,7 +97,10 @@ describe('AssetPage', () => {
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent),
     ).toEqual(['Summary', 'Ideas', 'Document'])
-    const side = screen.getByRole('complementary', { name: 'About this asset' })
+    expect(
+      screen.getByRole('tablist', { name: 'About this asset' }),
+    ).toHaveTextContent('Overview')
+    const side = screen.getByRole('tabpanel')
     expect(within(side).getByText('Anna K.')).toBeInTheDocument()
     expect(
       within(side).getByRole('button', { name: /Ideas/ }),

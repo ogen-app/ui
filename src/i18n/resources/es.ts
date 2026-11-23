@@ -414,6 +414,7 @@ export const es: Translation = {
     notFound: 'Documento no encontrado',
     overview: {
       label: 'Sobre este recurso',
+      tab: 'Vista general',
       about: 'Acerca de',
       onThisPage: 'En esta página',
       kind: 'Tipo',

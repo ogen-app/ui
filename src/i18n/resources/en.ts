@@ -536,6 +536,7 @@ export const en = {
     /** The side column: everything about the asset. */
     overview: {
       label: 'About this asset',
+      tab: 'Overview',
       about: 'About',
       onThisPage: 'On this page',
       kind: 'Kind',

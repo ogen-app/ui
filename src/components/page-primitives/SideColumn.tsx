@@ -16,33 +16,9 @@ export type SideTab<Id extends string> = {
   warn?: number
 }
 
-/** The side column's surface and width, the post editor's and the asset page's. */
-const SIDE =
-  'flex w-[24rem] shrink-0 flex-col border-l border-border bg-primary xl:w-[27rem]'
-
-/**
- * A side column with one thing in it, so no strip of tabs over it — the asset
- * page's, where the main column holds the reading and this holds what is
- * known about the asset. It scrolls on its own.
- */
-export function SidePanel({
-  label,
-  children,
-}: {
-  /** The column's accessible name. */
-  label: string
-  children: ReactNode
-}) {
-  return (
-    <aside aria-label={label} className={cn(SIDE, 'overflow-y-auto')}>
-      <RailPanelEmbeddedProvider value>{children}</RailPanelEmbeddedProvider>
-    </aside>
-  )
-}
-
 /**
  * The strip of tabs over one tab's body, beside an editor's main column — the
- * post editor's.
+ * post editor's first, then the asset page's.
  *
  * Everything about the thing that is not the thing itself lives here, so the
  * right rail is left to the assistant. Only the tab on show is mounted: the
@@ -70,7 +46,7 @@ export function SideColumn<Id extends string>({
   children: ReactNode
 }) {
   return (
-    <aside className={SIDE}>
+    <aside className="flex w-[24rem] shrink-0 flex-col border-l border-border bg-primary xl:w-[27rem]">
       <div
         role="tablist"
         aria-label={label}

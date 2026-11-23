@@ -1,14 +1,14 @@
 # The asset page — the reading, then the thing read (CON-366)
 
-`/assets/:id` and `/campaigns/:id/assets/:assetId`: the asset's own 48px bar
-across the top, a **main column of cards** under it — the reading first,
-then the asset — and a **side column** beside them with everything known
-about the asset (`page-primitives/SidePanel`), so the right rail stays the
-assistant's. Shipped unflagged. It replaced, in order, the two columns of
-2026-10 (what it is on the left, Insights | Source on the right) and, on
-2026-11-23, the post editor's frame (the asset in the content column, its
-Overview, Ideas and Summary as side-column tabs) — which put the reading,
-the reason to open the page, in 24rem beside a document often three lines
+`/assets/:id` and `/campaigns/:id/assets/:assetId` are framed like the post
+editor: under the global header, one line holding the asset's own 48px bar
+over the **main column** and, level with it, the tab strip of a **side
+column** (`page-primitives/SideColumn`, shared with `PostSideColumn`), so the
+right rail stays the assistant's. Shipped unflagged. The main column is
+cards and starts with the reading. It replaced the two columns of 2026-10
+(what it is on the left, Insights | Source on the right) and, on 2026-11-23,
+a first cut of this frame that put Ideas and Summary in side-column tabs —
+the reason to open the page in 24rem, beside a document often three lines
 long.
 
 Code: `components/content/asset-page/` (`AssetPage`, `AssetBar`,
@@ -18,7 +18,7 @@ Code: `components/content/asset-page/` (`AssetPage`, `AssetBar`,
 
 ## The bar
 
-`AssetBar`, the post's `PostBar` for a document, across both columns: ← back
+`AssetBar`, the post's `PostBar` for a document, over the main column: ← back
 to the assets list it came from (the campaign's or all), the title,
 `SaveStatus`; a bordered ⋮ (read the page again, download as Markdown,
 delete) and, last, **Download** for the original file. No black button — a
@@ -26,18 +26,18 @@ document saves as it is typed and has no status to move along.
 
 ## Main column
 
-The **title** (edited here and nowhere else; a file name reads as words
-until renamed, `readableTitle`) and under it the lens line, then `ui/card`
-cards, one after another:
+`ui/card` cards, one after another, starting with the reading:
 
-- **Summary** — the relevance panel (campaign lens), the summary's **lead**
+- **Summary**, with the lens line at the card's end — the relevance panel (campaign lens), the summary's **lead**
   (its first paragraph) with **Read the whole summary** for the rest, the key
   points, and a recording's meeting notes. Folded because it sits over the
   ideas: unfolded, a four-paragraph summary pushed them off the screen.
 - **Ideas** — the piles, then every idea as the Ideas list's card
   (`ideas/IdeaRow` with `atSource`, below), then **Distill more ideas**.
 - **Source**, titled by kind (Note, Document, Page, Spreadsheet, Image,
-  Transcript) — `assetScreen`'s screen: the editor, the extracted text, the
+  Transcript) — the asset's **title** (edited here and nowhere else; a file
+  name reads as words until renamed, `readableTitle`), then `assetScreen`'s
+  screen: the editor, the extracted text, the
   image, a spreadsheet's table, a recording's transcript.
 
 Until there is a reading, Summary and Ideas are **one short card** ("Summary
@@ -59,7 +59,8 @@ the banner over them, since the sheet is a card further down.
 
 ## Side column
 
-One column, no tabs (`AssetOverview`): the asset's picture edge to edge where
+One tab for now, **Overview** (`AssetOverview`), in the post's strip so
+there is room for the next: the asset's picture edge to edge where
 it has one worth a look (a PDF's cover, a page's hero, a sheet's grid, a
 Word file's headings or a deck's slide titles, else a format tile; never an
 image or a note, which the Source card already shows); **About** in the
@@ -71,7 +72,7 @@ covers** (topics and mentions, once there is a reading: context, not
 something to act on); **Campaigns** with their fit, the open reading's
 marked, and **Add to campaign**; **Tags**.
 
-- **Lens picker** (a dropdown, under the title): the
+- **Lens picker** (a dropdown, at the end of the Summary card's header): the
   workspace reading and one per campaign, with fit, a spinner while one is in
   flight, and `?lens=` in the address. A campaign the asset joined before
   analysis existed has no row; it is listed and answers "not analysed". With

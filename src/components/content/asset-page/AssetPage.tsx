@@ -2,10 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { BookOpenTextIcon, LightbulbIcon } from '@phosphor-icons/react'
+import {
+  BookOpenTextIcon,
+  LayoutIcon,
+  LightbulbIcon,
+} from '@phosphor-icons/react'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { SidePanel } from '@/components/page-primitives/SideColumn'
+import {
+  SideColumn,
+  type SideTab,
+} from '@/components/page-primitives/SideColumn'
 import { ASSET_KIND_ICON } from '@/components/content/assetKindIcons'
 import { AssetTitle } from '@/components/content/AssetTitle'
 import { AudioSeekContext, type AudioSeek } from '@/hooks/useAudioSeek'
@@ -79,15 +86,15 @@ function readsInSource(
 }
 
 /**
- * The asset page: the asset's own bar across the top, a main column of cards
- * under it, and a side column beside them, so the right rail is left to the
- * assistant.
+ * The asset page, framed like the post editor (`$postId.tsx`): a main column
+ * under the asset's own bar, and a side column of tabs beside it, the tab
+ * strip level with the bar, so the right rail is left to the assistant.
  *
- * The **main column** is the reading, then the thing read. Under the title —
- * edited here and nowhere else — and the lens it is read for: **Summary**
- * (why it fits the campaign, the summary's lead and key points, a
- * recording's meeting notes), **Ideas** (the ideas one reading distilled,
- * CON-364, as the Ideas list's cards), and last the **Source** card, holding
+ * The **main column** starts with the reading: **Summary** (why it fits the
+ * campaign, the summary's lead and key points, a recording's meeting notes),
+ * with the lens it is read for at the card's end; **Ideas** (the ideas one
+ * reading distilled, CON-364, as the Ideas list's cards); and last the
+ * **Source** card — the asset's title, edited there and nowhere else, over
  * `assetScreen`'s screen: the editor for a note, the extracted text for a
  * PDF, the transcript for a recording, the image, a spreadsheet's table.
  * Until there is a reading, Summary and Ideas are one short card saying why,
@@ -95,9 +102,10 @@ function readsInSource(
  * them all, since every chip on the page seeks it. An image is never
  * analysed, so it has the Source card alone.
  *
- * The **side column** is what is known about the asset rather than what was
- * read in it (`AssetOverview`): its picture, its facts, a way to each card,
- * what the reading covers, its campaigns and tags.
+ * The **side column** has one tab for now, **Overview** (`AssetOverview`):
+ * what is known about the asset rather than what was read in it — its
+ * picture, its facts, a way to each card, what the reading covers, its
+ * campaigns and tags.
  *
  * A spreadsheet's rows read badly as extracted text (§5.4), so it gets a
  * table rebuilt from its row chunks, and an idea's "rows 10–24" chip opens
@@ -376,9 +384,7 @@ export function AssetPage({
         onChange={onLensChange}
       />
     ) : (
-      <p className="text-xs/4 text-secondary-foreground">
-        {t('assetInsights.lens.workspaceOnly')}
-      </p>
+      <span>{t('assetInsights.lens.workspaceOnly')}</span>
     ))
 
   const jump = useCallback((id: string) => {
@@ -436,32 +442,33 @@ export function AssetPage({
     { id: SOURCE_CARD, icon: ASSET_KIND_ICON[kind], label: sourceTitle },
   ]
 
+  // One tab for now, so the strip is level with the bar as on a post, and has
+  // room for the next.
+  const tabs: SideTab<'overview'>[] = [
+    {
+      id: 'overview',
+      label: t('assetInsights.overview.tab'),
+      icon: LayoutIcon,
+    },
+  ]
+
   return (
     <AudioSeekContext.Provider value={player}>
       <SheetCiteContext.Provider value={citer}>
-        <div className="flex min-h-0 flex-1 flex-col">
-          {bar}
-          <div className="flex min-h-0 flex-1">
-            {/* The main column: the reading first, then the asset itself. */}
+        <div className="flex min-h-0 flex-1">
+          {/* The main column: the reading first, then the asset itself, under
+              its own bar — level with the side column's tabs. */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            {bar}
             <ScrollArea
-              className="min-h-0 min-w-0 flex-1"
+              className="min-h-0 flex-1"
               type="scroll"
               scrollHideDelay={350}
             >
               <div
-                className="flex flex-col gap-4 px-3 pt-6 pb-40 lg:px-6"
+                className="flex flex-col gap-4 px-3 pt-4 pb-40 lg:px-6"
                 aria-busy={busy}
               >
-                <div className="flex flex-col gap-2 px-1">
-                  {/* A file name reads as words until someone renames it. */}
-                  <AssetTitle
-                    initialTitle={readableTitle(asset.title)}
-                    onChange={onTitleChange}
-                    onDirty={onDirty}
-                  />
-                  {analyzable && lensLine}
-                </div>
-
                 {/* A recording's one player, over everything that seeks it. */}
                 {playerStage && (
                   <div className="overflow-hidden rounded-md border border-border bg-primary">
@@ -473,7 +480,10 @@ export function AssetPage({
                   (ready ? (
                     <>
                       <div id={SUMMARY_CARD} className="scroll-mt-4">
-                        <Card title={t('assetInsights.cards.summary')}>
+                        <Card
+                          title={t('assetInsights.cards.summary')}
+                          aside={lensLine}
+                        >
                           {panel('summary')}
                         </Card>
                       </div>
@@ -500,21 +510,40 @@ export function AssetPage({
                     // Nothing to read yet: one short card saying why, so the
                     // asset is on the first screen.
                     <div id={READING_CARD} className="scroll-mt-4">
-                      <Card title={t('assetInsights.cards.reading')}>
+                      <Card
+                        title={t('assetInsights.cards.reading')}
+                        aside={lensLine || undefined}
+                      >
                         {panel('summary')}
                       </Card>
                     </div>
                   ))}
 
+                {/* The asset, under its own title — edited here and nowhere
+                    else; a file name reads as words until someone renames it. */}
                 <div id={SOURCE_CARD} className="scroll-mt-4">
                   <Card title={sourceTitle}>
+                    <AssetTitle
+                      initialTitle={readableTitle(asset.title)}
+                      onChange={onTitleChange}
+                      onDirty={onDirty}
+                      className="text-2xl"
+                    />
                     <div className="min-w-0">{sourceBody}</div>
                   </Card>
                 </div>
               </div>
             </ScrollArea>
+          </div>
 
-            <SidePanel label={t('assetInsights.overview.label')}>
+          <SideColumn
+            tabs={tabs}
+            current="overview"
+            onSelect={noop}
+            label={t('assetInsights.overview.label')}
+            idPrefix="asset"
+          >
+            <div className="h-full overflow-y-auto">
               <AssetOverview
                 asset={asset}
                 lenses={lenses}
@@ -525,8 +554,8 @@ export function AssetPage({
                 parts={parts}
                 onJump={jump}
               />
-            </SidePanel>
-          </div>
+            </div>
+          </SideColumn>
         </div>
       </SheetCiteContext.Provider>
     </AudioSeekContext.Provider>
