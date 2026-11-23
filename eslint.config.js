@@ -220,6 +220,16 @@ export default tseslint.config(
     },
   },
 
+  // ------------------------------------------------------- public/ scripts
+  // Served as-is, outside the bundle — `env.js` is overwritten at container
+  // start (CON-518) — so they run in the browser with only its globals.
+  {
+    files: ['public/**/*.js'],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
+
   // Last, so it wins: Prettier owns formatting.
   prettier,
 )

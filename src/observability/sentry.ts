@@ -11,20 +11,25 @@
  *  - D3  Conservative capture — no session replay (the integration is simply
  *        never added), request bodies and query strings are scrubbed, and only
  *        stable ids (user, tenant) leave the browser.
- *  - D4  Fail-open — with `VITE_SENTRY_DSN` unset the SDK is never initialised
+ *  - D4  Fail-open — with no `SENTRY_DSN` the SDK is never initialised
  *        and the app behaves exactly as it did before this feature existed.
  *        This is env-gated, not a feature flag: a flag means "not built yet",
  *        whereas telemetry is built and toggled by whether a DSN is configured,
  *        mirroring the server's `ANALYTICS_DSN` fail-open pattern.
+ *
+ * The DSN, environment and sample rate are the container's, read at page load
+ * (`config/runtimeConfig.ts`), so one image reports as `development` on dev and
+ * `production` on prod. The release is compiled in: one image is one release.
  */
 import * as Sentry from '@sentry/react'
 import type { AnyRouter } from '@tanstack/react-router'
 
+import { runtimeConfig } from '@/config/runtimeConfig'
 import { ApiError, ServerUnavailableError } from '@/services/api/errors'
 import { useAuthStore } from '@/stores/authStore'
 import type { User } from '@/types/user'
 
-const DSN = import.meta.env.VITE_SENTRY_DSN ?? ''
+const DSN = runtimeConfig.sentryDsn
 
 /**
  * `@sentry/react` v10 does not re-export `TransactionEvent`, so derive it from
@@ -54,12 +59,6 @@ function tracePropagationTargets(): (string | RegExp)[] {
   const apiOrigin = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
   if (apiOrigin) targets.push(apiOrigin)
   return targets
-}
-
-/** Clamp the env-supplied head sample rate to [0, 1], defaulting to 0.1 (D3). */
-function parseSampleRate(raw: string | undefined): number {
-  const n = Number(raw)
-  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 0.1
 }
 
 /**
@@ -185,13 +184,11 @@ export function initTelemetry(router: AnyRouter): void {
 
   Sentry.init({
     dsn: DSN,
-    environment: import.meta.env.VITE_SENTRY_ENVIRONMENT ?? 'development',
+    environment: runtimeConfig.sentryEnvironment,
     release: import.meta.env.VITE_APP_RELEASE || undefined,
     // No `replayIntegration` — session replay is off by design (D3).
     integrations: [Sentry.tanstackRouterBrowserTracingIntegration(router)],
-    tracesSampleRate: parseSampleRate(
-      import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE,
-    ),
+    tracesSampleRate: runtimeConfig.sentryTracesSampleRate,
     tracePropagationTargets: tracePropagationTargets(),
     beforeSend,
     beforeSendTransaction,

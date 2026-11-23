@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   bootstrapFlagOverrides,
@@ -10,9 +10,9 @@ import {
 import { buildFlagValue, FLAG_IDS, isFeatureEnabled } from './featureFlags'
 
 /**
- * These run with `DEV_TOOLS` on, because vitest runs in dev mode — which is
- * the only configuration in which there is behaviour to test. The production
- * half is a build-time fold, asserted by the build rather than here: see
+ * Most of these run with `DEV_TOOLS` on, because vitest runs in dev mode. The
+ * production half — the same code with dev tools off, as the production
+ * container serves it — is the last block: see
  * `docs/technical-decisions.md#staging-flag-overrides`.
  */
 const KNOWN = ['tasks', 'help-center', 'series']
@@ -149,5 +149,55 @@ describe('serializeFlagOverrides', () => {
     bootstrapFlagOverrides(KNOWN)
 
     expect(readFlagOverrides()).toEqual(set)
+  })
+})
+
+describe('with dev tools off, as production serves it', () => {
+  /** A fresh copy of the module, loaded the way the production image loads it. */
+  async function loadOff() {
+    vi.stubEnv('DEV', false)
+    window.__OGEN_CONFIG__ = {}
+    vi.resetModules()
+    return import('./flagOverrides')
+  }
+
+  afterEach(() => {
+    delete window.__OGEN_CONFIG__
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  })
+
+  it('never reads a stored override', async () => {
+    localStorage.setItem('ogen.flagOverrides', JSON.stringify({ tasks: true }))
+    const getItem = vi.spyOn(Storage.prototype, 'getItem')
+
+    const mod = await loadOff()
+
+    expect(mod.DEV_TOOLS).toBe(false)
+    expect(mod.readFlagOverrides()).toEqual({})
+    expect(getItem).not.toHaveBeenCalled()
+  })
+
+  it('leaves the resolver on the build’s value', async () => {
+    localStorage.setItem('ogen.flagOverrides', JSON.stringify({ tasks: true }))
+    await loadOff()
+    const { isFeatureEnabled: resolve } = await import('./featureFlags')
+
+    // `tasks` ships off; the stored override must not turn it on.
+    expect(resolve('tasks')).toBe(false)
+  })
+
+  it('refuses to write, from code or from a link', async () => {
+    const mod = await loadOff()
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+
+    mod.setFlagOverride('tasks', true)
+    visit('/campaigns?ff=tasks')
+    mod.bootstrapFlagOverrides(KNOWN)
+
+    expect(mod.readFlagOverrides()).toEqual({})
+    expect(setItem).not.toHaveBeenCalled()
+    // Not an instruction it acts on, so not one it strips either.
+    expect(window.location.search).toBe('?ff=tasks')
   })
 })

@@ -6,25 +6,34 @@ interface ImportMetaEnv {
   readonly VITE_API_URL?: string
 
   /**
-   * `"1"` builds the staging dev tools in — the per-browser flag overrides and
-   * the `/flags` panel (`config/flagOverrides.ts`). Set on the staging service
-   * only; anything else, including omitting it, folds them out of the bundle.
+   * Local fallbacks for the runtime keys in `Window['__OGEN_CONFIG__']`, used
+   * only when `env.js` leaves a key out — `pnpm dev`, `vite preview`, tests.
+   * An image sets these at container start instead; the Dockerfile does not
+   * pass them. See `config/runtimeConfig.ts`.
    */
   readonly VITE_DEV_TOOLS?: string
-
-  /**
-   * Sentry error monitoring + tracing (CON-304). Empty ⇒ telemetry off
-   * (fail-open); dev is unaffected. See `observability/sentry.ts`.
-   */
   readonly VITE_SENTRY_DSN?: string
-  /** Sentry environment tag, e.g. `production`. Defaults to `development`. */
   readonly VITE_SENTRY_ENVIRONMENT?: string
-  /** Browser-trace head sample rate, `0`–`1`. Defaults to `0.1`. */
   readonly VITE_SENTRY_TRACES_SAMPLE_RATE?: string
+
   /** Release tag (build SHA), aligned with the API's `SENTRY_RELEASE`. */
   readonly VITE_APP_RELEASE?: string
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv
+}
+
+interface Window {
+  /**
+   * Written by `docker/entrypoint.sh` into `/env.js` at container start, from
+   * the container's environment — these keys and no others. A key the
+   * container leaves unset is absent. See `config/runtimeConfig.ts`.
+   */
+  __OGEN_CONFIG__?: {
+    SENTRY_DSN?: string
+    SENTRY_ENVIRONMENT?: string
+    SENTRY_TRACES_SAMPLE_RATE?: string
+    DEV_TOOLS?: string
+  }
 }
