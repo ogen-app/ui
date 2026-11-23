@@ -86,7 +86,7 @@ page.
 The page uses the post page's scroll frame (CON-392). `PageHeader` (the title
 and ADD CONTENT) is sticky inside one `ScrollArea`, carrying its own 80px fade.
 The sentence, the Group by / Sort line and the list scroll together under it,
-and `PageBottomFader` runs along the bottom. The list has no scroller of its
+and nothing fades at the bottom edge. The list has no scroller of its
 own: paging watches the page's.
 
 - **Pinning:** a band pins at 80px, the foot of the header's fade. While
@@ -95,8 +95,8 @@ own: paging watches the page's.
   transparent half.
 - **The cap only while pinned:** a cap on every band would cover the last rows
   of the group above it.
-- **The selection bar** is sticky at the scroller's foot, so it floats over the
-  bottom fade in line with the assistant trigger.
+- **The selection bar** is sticky at the scroller's foot, in line with the
+  assistant trigger.
 
 ## The filter sentence
 
@@ -209,8 +209,7 @@ room instead.
     whose day has come is undecided again; the word is the mark's name and
     tooltip), and up to two lines of its note. The list stops at five and a
     half ideas and scrolls past that, every idea included (no "and N more"),
-    with the rail's edge fades (`SurfaceFader`): the foot while anything is
-    below, the head once anything has scrolled above. The card stays open
+    with no fade at either edge. The card stays open
     while the pointer is on it, so it can be scrolled. Opening downward, the card's first title is level with the
     row's idea line; when the line sits in the lower part of the screen the
     card opens upward and its last line is level with it instead, or its foot

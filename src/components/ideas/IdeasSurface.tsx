@@ -1,7 +1,4 @@
-import { useRef, useState } from 'react'
-import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
-import { useAtScrollEnd } from '@/components/page-primitives/useAtScrollEnd'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { IdeaListSearch } from '@/lib/ideaFilter'
 import { IdeasQuerySurface } from './query/IdeasQuerySurface'
@@ -36,7 +33,7 @@ import { IdeasQuerySurface } from './query/IdeasQuerySurface'
  * **The post page's scroll frame** (CON-392), at both levels: the header
  * sticky inside one `ScrollArea` — drawn by the list, since it carries the
  * piles and ADD IDEA — and the list scrolling under it, its head pinning at
- * the header's foot (`pinnedBands`); `PageBottomFader` along the bottom. The
+ * the header's foot (`pinnedBands`). The
  * campaign layout hands this section its whole page, as it does Assets.
  */
 export function IdeasSurface({
@@ -52,17 +49,12 @@ export function IdeasSurface({
   search: IdeaListSearch
   onSearchChange: (next: IdeaListSearch) => void
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const atEnd = useAtScrollEnd(scrollRef)
-  /** Whether the list has a further page to load, as the list reports it. */
-  const [hasMore, setHasMore] = useState(false)
   const body = (
     <IdeasQuerySurface
       heading={heading}
       campaignId={campaignId}
       search={search}
       onSearchChange={onSearchChange}
-      onHasMoreChange={setHasMore}
     />
   )
 
@@ -70,16 +62,12 @@ export function IdeasSurface({
     <PageContainer variant="fullFlex" className="page-content-motion">
       <div className="relative flex min-h-0 flex-1">
         <ScrollArea
-          ref={scrollRef}
           className="min-h-0 flex-1"
           type="scroll"
           scrollHideDelay={350}
         >
           {body}
         </ScrollArea>
-        {/* Gone once the list has nothing below it: scrolled to its end
-            with no further page to load. */}
-        <PageBottomFader hidden={atEnd && !hasMore} />
       </div>
     </PageContainer>
   )

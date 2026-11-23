@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
-import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -301,10 +300,7 @@ export function AssetDocument({
 
   return (
     <PageContainer variant="fullFlex" className="page-content-motion">
-      {/* `relative` so the fader anchors to the content column rather than
-          the window: the right rail is a sibling of this container, so it
-          recedes when a panel opens instead of spanning the whole app. */}
-      <div className="relative flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0">
         <ScrollArea
           className="flex-1 min-h-0"
           type="scroll"
@@ -350,10 +346,6 @@ export function AssetDocument({
             <div className="h-40 shrink-0" aria-hidden />
           </div>
         </ScrollArea>
-
-        {/* The header's fade, mirrored — the document dissolves into the page
-            on its way out instead of being sliced off by the bottom edge. */}
-        <PageBottomFader />
       </div>
 
       <DeleteAssetDialog
