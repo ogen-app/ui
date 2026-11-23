@@ -57,7 +57,7 @@ keep it accurate when these rules change.
   line's end**, before Group and Sort, the open group's name leading the
   pills and closed there; there is no "All ideas" to pick. Both pages use the post
   page's scroll frame (CON-392): `PageHeader` sticky inside one `ScrollArea`,
-  the whole page scrolling under it, `PageBottomFader` along the bottom.
+  the whole page scrolling under it, with no fade along the bottom.
   The campaign layout hands both sections their whole page.
   **The two lists are cards** (design/ideas-cards, `page-primitives/listCards`):
   two text sizes (14/20 read, 12/16 glanced at), a 4px rhythm, each card its

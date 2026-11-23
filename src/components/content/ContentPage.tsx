@@ -12,8 +12,6 @@ import {
   UploadSimpleIcon,
 } from '@phosphor-icons/react'
 import { PageError } from '@/components/page-primitives/PageError'
-import { PageBottomFader } from '@/components/page-primitives/PageBottomFader'
-import { useAtScrollEnd } from '@/components/page-primitives/useAtScrollEnd'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { HeaderTabs } from '@/components/page-primitives/listCards'
 import { formatNumber } from '@/lib/intl'
@@ -176,8 +174,6 @@ export function ContentPage({
   )
   const params = useMemo(() => paramsFor(filter), [paramsFor, filter])
   const list = useAssetList(params, { facets: facetsFor(scope) })
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const atEnd = useAtScrollEnd(scrollRef)
   const vocabulary = useFilterVocabulary({
     facets: list.facets,
     scoped: !!campaign,
@@ -540,11 +536,9 @@ export function ContentPage({
       onDrop={handleDrop}
     >
       {/* The post page's scroll frame (CON-392): the header sticky inside the
-          one scroller; the content scrolls under it; `PageBottomFader` along the bottom, a sibling after the scroll
-          area so it covers the content without scrolling away. */}
+          one scroller, the content scrolling under it. */}
       <div className="relative flex min-h-0 flex-1">
         <ScrollArea
-          ref={scrollRef}
           className="min-h-0 flex-1"
           type="scroll"
           scrollHideDelay={350}
@@ -788,9 +782,6 @@ export function ContentPage({
             )}
           </div>
         </ScrollArea>
-        {/* Gone once the list has nothing below it: scrolled to its end
-            with no further page to load. */}
-        <PageBottomFader hidden={atEnd && !list.query.hasNextPage} />
       </div>
 
       {isDragging && (
