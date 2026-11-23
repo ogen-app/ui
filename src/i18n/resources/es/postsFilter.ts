@@ -1,0 +1,78 @@
+import type { Translation } from '../en'
+
+export const postsFilter: Translation['postsFilter'] = {
+  setByAssistant: 'puesto por el asistente',
+  unknownPlatform: 'Una plataforma retirada',
+  unknownCampaign: 'Una campaña archivada',
+  nothingMatches: 'Ninguna publicación coincide con estos filtros',
+  scheduled: {
+    yes: 'Con fecha',
+    no: 'Sin fecha',
+  },
+  sentence: {
+    clause: {
+      campaign_id: 'en <v>{{values}}</v>',
+      campaign_id_not: 'fuera de <v>{{values}}</v>',
+      status: 'que son <v>{{values}}</v>',
+      status_not: 'que no son <v>{{values}}</v>',
+      platform: 'en <v>{{values}}</v>',
+      platform_not: 'fuera de <v>{{values}}</v>',
+      post_type: 'en formato <v>{{values}}</v>',
+      post_type_not: 'que no están en formato <v>{{values}}</v>',
+      scheduled: '<v>{{values}}</v>',
+      date: 'programadas <v>desde el {{values}}</v>',
+      date_range: 'programadas <v>entre el {{from}} y el {{to}}</v>',
+      date_not: 'programadas <v>antes del {{values}}</v>',
+    },
+    status: {
+      planned: 'planificadas',
+      draft: 'borradores',
+      ready_for_publish: 'listas para publicar',
+      scheduled: 'programadas',
+      scheduled_for_manual_publishing: 'programadas para publicar a mano',
+      failed: 'fallidas',
+      published: 'publicadas',
+      not_published: 'no publicadas',
+    },
+    scheduled: {
+      yes: 'con fecha',
+      no: 'sin fecha',
+    },
+    question: {
+      campaign_id: 'Publicaciones en…',
+      status: 'Publicaciones que son…',
+      platform: 'Publicaciones en…',
+      post_type: 'Publicaciones en formato…',
+      scheduled: 'Publicaciones…',
+      date: 'Publicaciones programadas…',
+    },
+    include: {
+      campaign_id: 'en',
+      status: 'son',
+      platform: 'en',
+      post_type: 'en',
+      date: 'entre',
+    },
+    exclude: {
+      campaign_id: 'fuera de',
+      status: 'no son',
+      platform: 'fuera de',
+      post_type: 'no en',
+      date: 'antes',
+    },
+    starter: {
+      campaign_id: 'en una campaña…',
+      status: 'que son…',
+      platform: 'en una plataforma…',
+      post_type: 'en un formato…',
+      scheduled: 'con fecha, o sin ella…',
+      date: 'programadas…',
+    },
+    starterHint: {
+      status: 'borradores, fallidas',
+    },
+    findCampaign: 'Buscar una campaña',
+    posts_one: '{{formatted}} publicación',
+    posts_other: '{{formatted}} publicaciones',
+  },
+}

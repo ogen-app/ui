@@ -240,7 +240,7 @@ no entry falls back to the server's English — correct, and untranslated.
 ## Keeping this current
 
 A new producer changes three things at once: a type in the tables above, a copy
-entry in `src/i18n/resources/en.ts` (and every other catalogue), and a routing
+entry in its section of `src/i18n/resources/en/` (and of every other locale), and a routing
 decision in `lib/eventRouting.ts` or `lib/notifications.ts`. Add the row here in
 the same change — a catalogue that lags the code is worse than none, because it
 is the thing people check instead of reading the producer.

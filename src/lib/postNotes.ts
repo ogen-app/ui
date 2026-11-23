@@ -3,7 +3,7 @@ import type { PostNote, PostNoteType } from '@/services/api/postNotes'
 /**
  * The catalogue keys `noteTypeKey` can answer with. Spelled out rather than
  * `string`, so `t()` still type-checks them against the catalogue at the call
- * site — a key renamed in `en.ts` has to break here, not at run time.
+ * site — a key renamed in the catalogue has to break here, not at run time.
  */
 export type NoteTypeKey =
   | 'posts.notes.type.note'
