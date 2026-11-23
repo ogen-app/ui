@@ -416,19 +416,12 @@ export const es: Translation = {
       label: 'Sobre este recurso',
       tab: 'Vista general',
       about: 'Acerca de',
-      onThisPage: 'En esta página',
       kind: 'Tipo',
       status: 'Estado',
       from: 'Origen',
-      ideasComing: 'Las ideas están en camino',
-      noIdeas: 'Ninguna idea de este',
-      waiting_one: '{{count}} idea en la mesa',
-      waiting_other: '{{count}} ideas en la mesa',
-      allAnswered_one: '{{count}} idea, respondida',
-      allAnswered_other: '{{count}} ideas, todas respondidas',
     },
     lens: {
-      /** An asset in no campaign: the Summary card's line instead of a dropdown. */
+      /** An asset in no campaign: the asset bar's line instead of a dropdown. */
       workspaceOnly: 'Para tu espacio de trabajo',
       /** Set back before the dropdown's value: "For  Spring launch · 88% fit". */
       for: 'Para',
@@ -480,7 +473,7 @@ export const es: Translation = {
     keyPoints: 'Puntos clave',
     topics: 'Temas',
     relevance: {
-      title: 'Leído para {{campaign}}',
+      title: 'Por qué encaja',
     },
     partialSource:
       'Parte de este archivo no se pudo leer, así que esta lectura solo cubre el resto.',

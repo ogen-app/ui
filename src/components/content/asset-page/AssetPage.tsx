@@ -1,19 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
-import {
-  BookOpenTextIcon,
-  LayoutIcon,
-  LightbulbIcon,
-} from '@phosphor-icons/react'
+import { LayoutIcon } from '@phosphor-icons/react'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   SideColumn,
   type SideTab,
 } from '@/components/page-primitives/SideColumn'
-import { ASSET_KIND_ICON } from '@/components/content/assetKindIcons'
 import { AssetTitle } from '@/components/content/AssetTitle'
 import { AudioSeekContext, type AudioSeek } from '@/hooks/useAudioSeek'
 import {
@@ -34,8 +28,6 @@ import {
   pickLens,
   readableTitle,
 } from '@/lib/assetAnalysis'
-import { countIdeas } from '@/lib/ideas'
-import { ideaFromWire } from '@/services/api/ideas'
 import { retrievability } from '@/lib/campaignSources'
 import {
   isSpreadsheet,
@@ -48,11 +40,10 @@ import { assetKind } from '@/lib/assetKind'
 import { assetPlace, findPlace, type AssetPlace } from '@/lib/assetPlace'
 import { documentOutline } from '@/lib/documentOutline'
 import type { Asset } from '@/types/content'
-import type { AssetAnalysis } from '@/types/assetAnalysis'
-import { AssetOverview, type PagePart } from './AssetOverview'
+import { AssetOverview } from './AssetOverview'
 import { AssetStage } from './AssetStage'
 import { InsightsPanel, type PanelState } from './InsightsPanel'
-import { lensChoice } from './lensChoice'
+import { lensChoice, type LensControl } from './lensChoice'
 import { OutlineStage } from './OutlineStage'
 import { SheetStage } from './SheetStage'
 import { SheetView } from './SheetView'
@@ -68,8 +59,11 @@ type Props = {
   at?: string
   /** Drops `?at=` once the page has gone there, so a reload does not again. */
   onPlaceReached?: () => void
-  /** The asset's own bar, across the top of the page (`AssetBar`). */
-  bar: ReactNode
+  /**
+   * The asset's own bar over the main column (`AssetBar`), handed the
+   * reading picker to carry, since the picker governs every card under it.
+   */
+  bar: (lens: LensControl) => ReactNode
   /** Today's screen for this asset — the Source card's body. */
   source: ReactNode
   onTitleChange: (title: string) => void
@@ -91,21 +85,22 @@ function readsInSource(
  * strip level with the bar, so the right rail is left to the assistant.
  *
  * The **main column** starts with the reading: **Summary** (why it fits the
- * campaign, the summary's lead and key points, a recording's meeting notes),
- * with the lens it is read for at the card's end; **Ideas** (the ideas one
+ * campaign, the summary's lead and key points, a recording's meeting notes);
+ * **Ideas** (the ideas one
  * reading distilled, CON-364, as the Ideas list's cards); and last the
  * **Source** card — the asset's title, edited there and nowhere else, over
  * `assetScreen`'s screen: the editor for a note, the extracted text for a
  * PDF, the transcript for a recording, the image, a spreadsheet's table.
  * Until there is a reading, Summary and Ideas are one short card saying why,
- * so the asset is on the first screen. A recording's one player sits over
+ * so the asset is on the first screen. Which reading they show — the
+ * workspace's or a campaign's — is picked in the bar, over them both. A
+ * recording's one player sits over
  * them all, since every chip on the page seeks it. An image is never
  * analysed, so it has the Source card alone.
  *
  * The **side column** has one tab for now, **Overview** (`AssetOverview`):
  * what is known about the asset rather than what was read in it — its
- * picture, its facts, a way to each card, what the reading covers, its
- * campaigns and tags.
+ * picture, its facts, its campaigns and tags, and what the reading covers.
  *
  * A spreadsheet's rows read badly as extracted text (§5.4), so it gets a
  * table rebuilt from its row chunks, and an idea's "rows 10–24" chip opens
@@ -372,22 +367,14 @@ export function AssetPage({
   const playerStage = kind === 'audio' ? stage : null
   const overviewStage = kind === 'audio' ? null : stage
 
-  // The card's dropdown only when there is a reading to switch to: an asset
-  // in no campaign has the workspace's alone, and a one-item dropdown is a
-  // control with no choice in it.
-  const lensHeader = !current
-    ? {}
+  // A picker only when there is a reading to switch to: an asset in no
+  // campaign has the workspace's alone, and a one-item dropdown is a control
+  // with no choice in it.
+  const lensControl: LensControl = !current
+    ? null
     : lensOptions.some((l) => l.campaign_id !== null)
-      ? {
-          choice: lensChoice(
-            lensOptions,
-            current,
-            onLensChange,
-            t,
-            i18n.language,
-          ),
-        }
-      : { aside: t('assetInsights.lens.workspaceOnly') }
+      ? lensChoice(lensOptions, current, onLensChange, t, i18n.language)
+      : t('assetInsights.lens.workspaceOnly')
 
   const jump = useCallback((id: string) => {
     document
@@ -399,9 +386,6 @@ export function AssetPage({
   const sourceTitle = t(
     `assetInsights.cards.source.${spreadsheet ? 'sheet' : kind}`,
   )
-  const ideasSummary = analyzable
-    ? ideasLine(t, state, current, kind === 'text')
-    : undefined
   const panel = (part: 'ideas' | 'summary') => (
     <InsightsPanel
       state={state}
@@ -414,35 +398,6 @@ export function AssetPage({
       onOpenSource={() => jump(SOURCE_CARD)}
     />
   )
-
-  // The main column's cards, top to bottom, also listed in the side column.
-  const parts: PagePart[] = [
-    ...(!analyzable
-      ? []
-      : ready
-        ? [
-            {
-              id: SUMMARY_CARD,
-              icon: BookOpenTextIcon,
-              label: t('assetInsights.cards.summary'),
-            },
-            {
-              id: IDEAS_CARD,
-              icon: LightbulbIcon,
-              label: t('assetInsights.cards.ideas'),
-              line: ideasSummary,
-            },
-          ]
-        : [
-            {
-              id: READING_CARD,
-              icon: LightbulbIcon,
-              label: t('assetInsights.cards.reading'),
-              line: ideasSummary,
-            },
-          ]),
-    { id: SOURCE_CARD, icon: ASSET_KIND_ICON[kind], label: sourceTitle },
-  ]
 
   // One tab for now, so the strip is level with the bar as on a post, and has
   // room for the next.
@@ -461,7 +416,7 @@ export function AssetPage({
           {/* The main column: the reading first, then the asset itself, under
               its own bar — level with the side column's tabs. */}
           <div className="flex min-w-0 flex-1 flex-col">
-            {bar}
+            {bar(lensControl)}
             <ScrollArea
               className="min-h-0 flex-1"
               type="scroll"
@@ -481,44 +436,32 @@ export function AssetPage({
                 {analyzable &&
                   (ready ? (
                     <>
-                      <div id={SUMMARY_CARD} className="scroll-mt-4">
-                        <Card
-                          title={t('assetInsights.cards.summary')}
-                          {...lensHeader}
-                        >
-                          {panel('summary')}
-                        </Card>
-                      </div>
-                      <div id={IDEAS_CARD} className="scroll-mt-4">
-                        <Card title={t('assetInsights.cards.ideas')}>
-                          {/* Announced, and shown for a moment, when a
+                      <Card title={t('assetInsights.cards.summary')}>
+                        {panel('summary')}
+                      </Card>
+                      <Card title={t('assetInsights.cards.ideas')}>
+                        {/* Announced, and shown for a moment, when a
                               reading lands while the page is open. */}
-                          <div aria-live="polite" className="empty:hidden">
-                            {arrived !== null && (
-                              <p className="flex items-center gap-2 rounded-md bg-accent/10 px-4 py-3 text-sm font-medium text-foreground motion-safe:animate-in motion-safe:fade-in">
-                                <span
-                                  aria-hidden
-                                  className="size-2 rounded-full bg-accent"
-                                />
-                                {t('assetInsights.arrived', { count: arrived })}
-                              </p>
-                            )}
-                          </div>
-                          {panel('ideas')}
-                        </Card>
-                      </div>
+                        <div aria-live="polite" className="empty:hidden">
+                          {arrived !== null && (
+                            <p className="flex items-center gap-2 rounded-md bg-accent/10 px-4 py-3 text-sm font-medium text-foreground motion-safe:animate-in motion-safe:fade-in">
+                              <span
+                                aria-hidden
+                                className="size-2 rounded-full bg-accent"
+                              />
+                              {t('assetInsights.arrived', { count: arrived })}
+                            </p>
+                          )}
+                        </div>
+                        {panel('ideas')}
+                      </Card>
                     </>
                   ) : (
                     // Nothing to read yet: one short card saying why, so the
                     // asset is on the first screen.
-                    <div id={READING_CARD} className="scroll-mt-4">
-                      <Card
-                        title={t('assetInsights.cards.reading')}
-                        {...lensHeader}
-                      >
-                        {panel('summary')}
-                      </Card>
-                    </div>
+                    <Card title={t('assetInsights.cards.reading')}>
+                      {panel('summary')}
+                    </Card>
                   ))}
 
                 {/* The asset, under its own title — edited here and nowhere
@@ -553,8 +496,6 @@ export function AssetPage({
                 openCampaignId={current?.campaign_id ?? null}
                 stage={overviewStage}
                 sheets={sheetSummaries}
-                parts={parts}
-                onJump={jump}
               />
             </div>
           </SideColumn>
@@ -564,34 +505,7 @@ export function AssetPage({
   )
 }
 
-const SUMMARY_CARD = 'asset-summary'
-const IDEAS_CARD = 'asset-ideas'
-const READING_CARD = 'asset-reading'
 const SOURCE_CARD = 'asset-source'
-
-/** The ideas in a line, for the side column: how many wait to be answered. */
-function ideasLine(
-  t: TFunction,
-  state: PanelState,
-  lens: AssetAnalysis | undefined,
-  authored: boolean,
-): string {
-  if (state === 'reading' || state === 'analysing')
-    return t('assetInsights.overview.ideasComing')
-  // Otherwise the reason there are none, as the reading's card titles it.
-  if (state === 'empty')
-    return authored
-      ? t('assetInsights.state.emptyNote')
-      : t('assetInsights.state.emptySource')
-  if (state !== 'ready') return t(`assetInsights.state.${state}`)
-  if (!lens) return t('assetInsights.overview.noIdeas')
-  const total = lens.ideas.length
-  if (total === 0) return t('assetInsights.overview.noIdeas')
-  const waiting = countIdeas(lens.ideas.map(ideaFromWire), new Date()).waiting
-  return waiting > 0
-    ? t('assetInsights.overview.waiting', { count: waiting })
-    : t('assetInsights.overview.allAnswered', { count: total })
-}
 
 /** "DOCX" from "plan.docx". */
 function fileFormat(name: string | undefined): string | null {

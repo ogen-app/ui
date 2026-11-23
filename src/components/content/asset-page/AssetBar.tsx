@@ -22,13 +22,20 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { SaveStatus } from '@/components/page-primitives/SaveStatus'
+import { TextSelect } from '@/components/ui/text-select'
 import { cn } from '@/lib'
+import type { LensControl } from './lensChoice'
 
 type Props = {
   /** The campaign it was opened through, or null for the workspace's assets. */
   campaignId: string | null
   title: string
   saving: boolean
+  /**
+   * Which reading the cards under the bar show: the picker, or the line that
+   * stands in for it when only the workspace has read the asset.
+   */
+  lens?: LensControl
   /** The original file, when there is one to hand back. */
   file?: { url: string; name: string } | null
   onRefreshSource?: () => void
@@ -41,8 +48,9 @@ type Props = {
  * `PostBar`, for a document, level with the side column's tabs.
  *
  * On the left, ← back to the list it came from, the asset's title and whether
- * it is saving. On the right, a bordered ⋮ for the rest and, last, in the
- * corner, the one move forward a document has: handing back its file. A
+ * it is saving. On the right, the reading the cards below are showing — the
+ * workspace's or a campaign's, a card dropdown since it changes what they
+ * show — then a bordered ⋮ for the rest and, last, in the corner, the one move forward a document has: handing back its file. A
  * document saves as it is typed and has no status to move along, so there is
  * no black button here — a bar whose one button is a second way out would be
  * furniture.
@@ -51,6 +59,7 @@ export function AssetBar({
   campaignId,
   title,
   saving,
+  lens = null,
   file,
   onRefreshSource,
   onDownloadMarkdown,
@@ -75,7 +84,25 @@ export function AssetBar({
         <SaveStatus saving={saving} />
       </div>
 
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="ml-auto flex min-w-0 items-center gap-2">
+        {typeof lens === 'string' ? (
+          <span className="truncate text-[13px] text-tertiary-foreground">
+            {lens}
+          </span>
+        ) : (
+          lens && (
+            <TextSelect
+              variant="button"
+              size="sm"
+              lead={lens.lead}
+              ariaLabel={lens.label}
+              value={lens.value}
+              onValueChange={lens.onChange}
+              elements={lens.options}
+              className="min-w-0 max-w-80"
+            />
+          )
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

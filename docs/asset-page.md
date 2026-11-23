@@ -20,7 +20,8 @@ Code: `components/content/asset-page/` (`AssetPage`, `AssetBar`,
 
 `AssetBar`, the post's `PostBar` for a document, over the main column: ← back
 to the assets list it came from (the campaign's or all), the title,
-`SaveStatus`; a bordered ⋮ (read the page again, download as Markdown,
+`SaveStatus`; the **lens picker**, since it governs every card under the
+bar; a bordered ⋮ (read the page again, download as Markdown,
 delete) and, last, **Download** for the original file. No black button — a
 document saves as it is typed and has no status to move along.
 
@@ -28,7 +29,8 @@ document saves as it is typed and has no status to move along.
 
 `ui/card` cards, one after another, starting with the reading:
 
-- **Summary**, with the lens picker at the card's end — the relevance panel (campaign lens), the summary's **lead**
+- **Summary** — **Why it fits** (a campaign lens; the campaign is named in
+  the picker above), the summary's **lead**
   (its first paragraph) with **Read the whole summary** for the rest, the key
   points, and a recording's meeting notes. Folded because it sits over the
   ideas: unfolded, a four-paragraph summary pushed them off the screen.
@@ -63,22 +65,29 @@ One tab for now, **Overview** (`AssetOverview`), in the post's strip so
 there is room for the next: the asset's picture edge to edge where
 it has one worth a look (a PDF's cover, a page's hero, a sheet's grid, a
 Word file's headings or a deck's slide titles, else a format tile; never an
-image or a note, which the Source card already shows); **About** in the
-post's two columns (kind line, status, added by, added, file or source,
-updated and images for a page, sheets, language, a Figma frame); **On this
-page** — a row per card, the Ideas row saying how many wait ("6 ideas on the
-desk", or why there are none), each scrolling to its card; **What it
-covers** (topics and mentions, once there is a reading: context, not
-something to act on); **Campaigns** with their fit, the open reading's
-marked, and **Add to campaign**; **Tags**.
+image or a note, which the Source card already shows), then two sections in
+the post's two columns (`SettingList`), **every value led by its 16px mark**
+and a value of several items one a line (`ValueLines`):
 
-- **Lens picker**: the Summary card's `choice` (`lensChoice`), the outline
-  button with a chevron every card dropdown is — "For  Spring launch · 64%
-  fit". It lists the workspace reading and one per campaign with its fit, or
+- **About** — kind line, status, **Campaigns** (each with its fit, the open
+  reading's marked, then **Add to campaign**), added by, added, file or
+  source, updated and images for a page, sheets, language, a Figma frame,
+  **Tags**.
+- **What it covers**, once there is a reading — topics (#), then mentions
+  by kind (people, organisations, places, products, other), each with its
+  kind's mark, twelve before "+N more"; a sheet's sheets. Context, not
+  something to act on, so lines rather than pills.
+
+There is no index of the cards ("On this page", cut 2026-11-23): three cards a
+scroll apart, and the Ideas card counts its own piles.
+
+- **Lens picker**: in the bar (`lensChoice`, shaped as a card's `choice`
+  and drawn as one: the outline button with a chevron every card dropdown
+  is) — "For  Spring launch · 64% fit". It lists the workspace reading and one per campaign with its fit, or
   "analysing…" while one is in flight, and keeps `?lens=` in the address. A
   campaign the asset joined before analysis existed has no row; it is listed
   and answers "not analysed". With no campaign at all there is nothing to
-  pick, and the card's end says "For your workspace" instead.
+  pick, and the bar says "For your workspace" instead.
 - **Piles** (CON-370): the ideas by verdict, labelled; `?verdict=` picks one,
   which is where the Assets list's verdict pill sends a click. An idea
   answered No is left out unless that pile is chosen; an answered card stays

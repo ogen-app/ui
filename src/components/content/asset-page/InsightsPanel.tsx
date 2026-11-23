@@ -241,9 +241,8 @@ function Reading({
               />
               <div className="flex flex-col gap-0.5">
                 <p className="text-sm font-semibold text-foreground">
-                  {t('assetInsights.relevance.title', {
-                    campaign: lens.campaign_name ?? '',
-                  })}
+                  {/* The campaign is named in the bar's picker, over this. */}
+                  {t('assetInsights.relevance.title')}
                 </p>
                 <p className="text-sm text-secondary-foreground">
                   {lens.relevance.why}

@@ -3,6 +3,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import type { Asset, AssetChunkPage } from '@/types/content'
+import type { LensControl } from './lensChoice'
 
 const api = vi.hoisted(() => ({
   listAssetAnalyses: vi.fn(),
@@ -23,6 +24,17 @@ vi.mock('@/hooks/useWorkspaces', () => ({
 }))
 
 const { AssetPage } = await import('./AssetPage')
+const { AssetBar } = await import('./AssetBar')
+
+const bar = (lens: LensControl) => (
+  <AssetBar
+    campaignId={null}
+    title="Q3 Pipeline Review"
+    saving={false}
+    lens={lens}
+    onDelete={() => {}}
+  />
+)
 
 const asset = (over: Partial<Asset> = {}): Asset => ({
   id: 'a1',
@@ -73,7 +85,7 @@ function renderPage(
       lens={undefined}
       onLensChange={() => {}}
       {...place}
-      bar={<div />}
+      bar={bar}
       source={<p>legacy source</p>}
       onTitleChange={() => {}}
       onDirty={() => {}}
@@ -102,9 +114,8 @@ describe('AssetPage', () => {
     ).toHaveTextContent('Overview')
     const side = screen.getByRole('tabpanel')
     expect(within(side).getByText('Anna K.')).toBeInTheDocument()
-    expect(
-      within(side).getByRole('button', { name: /Ideas/ }),
-    ).toBeInTheDocument()
+    // No index of the cards: three, a scroll apart.
+    expect(within(side).queryByText('On this page')).not.toBeInTheDocument()
   })
 
   it('stands one short card for the reading until there is one', async () => {
@@ -185,8 +196,7 @@ describe('AssetPage', () => {
     campaigns.current = [{ id: 'c1', name: 'Old campaign', asset_ids: ['a1'] }]
     api.listAssetAnalyses.mockResolvedValue([workspaceLens()])
     await renderPage(asset(), 'c1')
-    // In the reading's card, and in its line in the side column.
-    expect((await screen.findAllByText('Not analysed')).length).toBe(2)
+    expect(await screen.findByText('Not analysed')).toBeInTheDocument()
     expect(screen.getAllByText('Old campaign').length).toBeGreaterThan(0)
   })
 
@@ -356,7 +366,7 @@ describe('AssetPage', () => {
           onLensChange={() => {}}
           at="pp. 5–6"
           onPlaceReached={onPlaceReached}
-          bar={<div />}
+          bar={bar}
           source={
             <ol>
               <li data-place data-page-from="1" data-page-to="4" />
@@ -410,7 +420,7 @@ describe('AssetPage', () => {
         onLensChange={() => {}}
         at="p. 6"
         onPlaceReached={onPlaceReached}
-        bar={<div />}
+        bar={bar}
         source={<AssetExtractedView asset={pdf} />}
         onTitleChange={() => {}}
         onDirty={() => {}}

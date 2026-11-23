@@ -5,9 +5,17 @@ import { formatNumber } from '@/lib/intl'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 
 /**
+ * What the asset bar says about the reading on screen: the picker, the line
+ * that stands in for it when only the workspace has read the asset, or
+ * nothing while there is no reading yet.
+ */
+export type LensControl = CardChoice | string | null
+
+/**
  * "For  Spring launch · 88% fit ⌄" — which reading of the asset the Summary
- * and Ideas cards show (CON-366), as the card's `choice`: the same outline
- * button with a chevron as every other card dropdown.
+ * and Ideas cards show (CON-366), in the asset bar over them both. Shaped as a
+ * card's `choice`, and drawn as one: the outline button with a chevron that
+ * every card dropdown is.
  *
  * A dropdown rather than tabs: an asset can serve any number of campaigns,
  * and a row of segments stops fitting at the third. Every campaign's reading

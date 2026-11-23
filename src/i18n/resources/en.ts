@@ -538,20 +538,13 @@ export const en = {
       label: 'About this asset',
       tab: 'Overview',
       about: 'About',
-      onThisPage: 'On this page',
       kind: 'Kind',
       status: 'Status',
       /** Where it was imported from — a Figma frame. */
       from: 'From',
-      ideasComing: 'Ideas are on their way',
-      noIdeas: 'No ideas from this one',
-      waiting_one: '{{count}} idea on the desk',
-      waiting_other: '{{count}} ideas on the desk',
-      allAnswered_one: '{{count}} idea, answered',
-      allAnswered_other: '{{count}} ideas, all answered',
     },
     lens: {
-      /** An asset in no campaign: the Summary card's line instead of a dropdown. */
+      /** An asset in no campaign: the asset bar's line instead of a dropdown. */
       workspaceOnly: 'For your workspace',
       /** Set back before the dropdown's value: "For  Spring launch · 88% fit". */
       for: 'For',
@@ -609,7 +602,7 @@ export const en = {
     keyPoints: 'Key points',
     topics: 'Topics',
     relevance: {
-      title: 'Read for {{campaign}}',
+      title: 'Why it fits',
     },
     partialSource:
       'Part of this file couldn’t be read, so this reading covers only the rest of it.',

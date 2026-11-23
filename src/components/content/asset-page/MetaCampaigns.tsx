@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { PlusIcon } from '@phosphor-icons/react'
+import { FlagIcon, PlusIcon } from '@phosphor-icons/react'
+import { Mark } from '@/components/posts/quickBar/parts'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,14 +17,16 @@ import { cn } from '@/lib'
 import { formatNumber } from '@/lib/intl'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { CampaignMark } from './CampaignMark'
+import { ValueLine, ValueLines } from './ValueLines'
 
 /** How many campaigns show before "+N more". */
 const FIRST_CAMPAIGNS = 5
 
 /**
  * The campaigns an asset serves, each with how well it fits that campaign
- * when its lens has said, and the way to add it to another. The campaign whose
- * reading is open on the right is marked, so the fit beside it is the one the
+ * when its lens has said, and the way to add it to another — the Overview's
+ * Campaigns row, one a line under About's rules. The campaign whose reading
+ * is open is marked, so the fit beside it is the one the
  * ideas were read for.
  *
  * Adding goes through the same membership write the Content page uses
@@ -60,74 +63,86 @@ export function MetaCampaigns({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {memberOf.length === 0 ? (
-        <p className="text-sm text-secondary-foreground">
+    <ValueLines>
+      {memberOf.length === 0 && (
+        <ValueLine mark={<FlagIcon />} className="text-secondary-foreground">
           {t('assetInsights.meta.noCampaigns')}
-        </p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {shown.map((c) => {
-            const score = lenses.find((l) => l.campaign_id === c.id)?.relevance
-              ?.score
-            const open = c.id === openCampaignId
-            return (
-              <li key={c.id}>
-                <Link
-                  to="/campaigns/$campaignId/assets/$assetId"
-                  params={{ campaignId: c.id, assetId }}
-                  aria-current={open ? 'true' : undefined}
-                  className={cn(
-                    '-mx-2 flex items-center gap-3 rounded-md px-2 py-1 text-sm text-foreground hover:text-primary-foreground',
-                    open && 'bg-accent/10 font-medium',
-                  )}
-                >
-                  <CampaignMark id={c.id} name={c.name} />
-                  <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                  {score !== undefined && (
-                    <span className="shrink-0 text-xs tabular-nums text-secondary-foreground">
-                      {t('assetInsights.fit', {
-                        score: formatNumber(score, {}, i18n.language),
-                      })}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+        </ValueLine>
       )}
+      {shown.map((c) => {
+        const score = lenses.find((l) => l.campaign_id === c.id)?.relevance
+          ?.score
+        const open = c.id === openCampaignId
+        return (
+          <li key={c.id} className="flex min-w-0">
+            <Link
+              to="/campaigns/$campaignId/assets/$assetId"
+              params={{ campaignId: c.id, assetId }}
+              aria-current={open ? 'true' : undefined}
+              className={cn(
+                '-mx-1.5 flex min-h-6 min-w-0 flex-1 items-center gap-1.5 rounded-button px-1.5 text-foreground hover:bg-secondary',
+                open && 'bg-accent/10 font-medium hover:bg-accent/10',
+              )}
+            >
+              <Mark>
+                <CampaignMark
+                  id={c.id}
+                  name={c.name}
+                  className="size-4 rounded-[3px] text-[10px]"
+                />
+              </Mark>
+              <span className="min-w-0 flex-1 truncate">{c.name}</span>
+              {score !== undefined && (
+                <span className="shrink-0 text-xs font-normal tabular-nums text-secondary-foreground">
+                  {t('assetInsights.fit', {
+                    score: formatNumber(score, {}, i18n.language),
+                  })}
+                </span>
+              )}
+            </Link>
+          </li>
+        )
+      })}
       {hidden > 0 && (
-        <button
-          type="button"
-          onClick={() => setShowAll(true)}
-          className="cursor-pointer self-start text-sm text-secondary-foreground hover:text-foreground"
-        >
-          {t('assetInsights.meta.moreCampaigns', { count: hidden })}
-        </button>
+        <li className="flex min-h-6 items-center pl-5.5">
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="cursor-pointer text-secondary-foreground hover:text-foreground"
+          >
+            {t('assetInsights.meta.moreCampaigns', { count: hidden })}
+          </button>
+        </li>
       )}
       {others.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              disabled={adding}
-              className="flex cursor-pointer items-center gap-1.5 self-start text-sm font-medium text-accent hover:underline disabled:opacity-50"
+        <li className="flex">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                disabled={adding}
+                className="flex min-h-6 cursor-pointer items-center gap-1.5 font-medium text-accent hover:underline disabled:opacity-50"
+              >
+                <Mark>
+                  <PlusIcon className="text-accent" />
+                </Mark>
+                {t('assetInsights.meta.addToCampaign')}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="max-h-72 min-w-[240px]"
             >
-              <PlusIcon className="size-4" aria-hidden />
-              {t('assetInsights.meta.addToCampaign')}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="max-h-72 min-w-[240px]">
-            {others.map((c) => (
-              <DropdownMenuItem key={c.id} onSelect={() => void add(c.id)}>
-                <CampaignMark id={c.id} name={c.name} />
-                <span className="truncate">{c.name}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {others.map((c) => (
+                <DropdownMenuItem key={c.id} onSelect={() => void add(c.id)}>
+                  <CampaignMark id={c.id} name={c.name} />
+                  <span className="truncate">{c.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </li>
       )}
-    </div>
+    </ValueLines>
   )
 }

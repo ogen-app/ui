@@ -3,13 +3,22 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import {
   ArrowSquareOutIcon,
+  CalendarBlankIcon,
+  ClockCounterClockwiseIcon,
   FigmaLogoIcon,
-  type Icon,
+  GlobeIcon,
+  ImagesIcon,
+  PaperclipIcon,
+  TableIcon,
+  TagIcon,
+  TranslateIcon,
+  UserIcon,
 } from '@phosphor-icons/react'
 import {
+  Mark,
+  Marked,
   SettingList,
   SettingRow,
-  SummaryLine,
 } from '@/components/posts/quickBar/parts'
 import { SideSection } from '@/components/page-primitives/SideColumn'
 import {
@@ -34,17 +43,8 @@ import { pageUrlLabel } from '@/lib/webPageUrl'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import type { Asset, AudioStatus, FigmaOriginRef } from '@/types/content'
 import { MetaCampaigns } from './MetaCampaigns'
+import { ValueLine, ValueLines } from './ValueLines'
 import { WhatItCovers } from './WhatItCovers'
-
-/** One card down the main column, as a way to it from here. */
-export type PagePart = {
-  /** The card's element id, scrolled to. */
-  id: string
-  icon: Icon
-  label: string
-  /** What is in it, in a line — "4 ideas on the desk". */
-  line?: string
-}
 
 type Props = {
   asset: Asset
@@ -56,9 +56,6 @@ type Props = {
   /** The asset's picture — a PDF's cover, a page's hero, a sheet's grid. */
   stage: ReactNode
   sheets?: SheetSummary[]
-  /** The main column's cards, top to bottom, each a way to it. */
-  parts: PagePart[]
-  onJump: (id: string) => void
 }
 
 const STATUS_DOT: Record<MetaStatus, string> = {
@@ -76,16 +73,18 @@ const STATUS_DOT: Record<MetaStatus, string> = {
  * column, the post editor's Overview tab for a document:
  *
  *   - its **picture** edge to edge, where it has one worth a look;
- *   - **About** — what kind of thing it is, where it stands, who added it
- *     and when, the file or the address, the sheets, the language;
- *   - **On this page** — the main column's cards, a line each, each a jump;
+ *   - **About** — what kind of thing it is, where it stands, its campaigns
+ *     with their fit (and the way to add it to another), who added it and
+ *     when, the file or the address, the sheets, the language, its tags;
  *   - **What it covers** — the reading's topics and mentions, once it has
- *     them: context for the ideas rather than something to act on;
- *   - **Campaigns** — with their fit, and the way to add it to another;
- *   - **Tags**, left out while there are none.
+ *     them: context for the ideas rather than something to act on.
  *
- * The facts are the post's two columns (`SettingList`), so the values read
- * straight down the column.
+ * Both are the post's two columns (`SettingList`), and every value starts
+ * with its 16px mark, so the values read straight down the column. A value
+ * of several items — campaigns, tags, topics — takes a line per item.
+ *
+ * There is no index of the main column's cards: there are three, a scroll
+ * apart, and the Ideas card says itself how many wait.
  */
 export function AssetOverview({
   asset,
@@ -94,8 +93,6 @@ export function AssetOverview({
   openCampaignId,
   stage,
   sheets,
-  parts,
-  onJump,
 }: Props) {
   const { t, i18n } = useTranslation()
   const members = useWorkspaceMembers()
@@ -145,23 +142,37 @@ export function AssetOverview({
                 )}
               </span>
             </SettingRow>
+            <SettingRow label={t('assetInsights.meta.campaigns')}>
+              <MetaCampaigns
+                assetId={asset.id}
+                lenses={lenses}
+                openCampaignId={openCampaignId}
+              />
+            </SettingRow>
             {addedBy && (
               <SettingRow label={t('assetInsights.meta.addedBy')}>
-                {addedBy}
+                <Marked mark={<UserIcon />}>{addedBy}</Marked>
               </SettingRow>
             )}
             <SettingRow label={t('assetInsights.meta.added')}>
-              {when(asset.created_at)}
+              <Marked mark={<CalendarBlankIcon />}>
+                {when(asset.created_at)}
+              </Marked>
             </SettingRow>
             {asset.file?.original_name ? (
               <SettingRow label={t('assetInsights.meta.file')}>
-                <span className="min-w-0 break-words">
-                  {asset.file.original_name}
-                </span>
+                <ValueLines>
+                  <ValueLine mark={<PaperclipIcon />}>
+                    {asset.file.original_name}
+                  </ValueLine>
+                </ValueLines>
               </SettingRow>
             ) : (
               asset.source_url && (
                 <SettingRow label={t('assetInsights.meta.source')}>
+                  <Mark>
+                    <GlobeIcon />
+                  </Mark>
                   <a
                     href={asset.source_url}
                     target="_blank"
@@ -184,26 +195,32 @@ export function AssetOverview({
               // There is no scrape timestamp on the asset: `updated_at` moves
               // on a re-read and on an edit alike, so it is named as an update.
               <SettingRow label={t('assetInsights.meta.updated')}>
-                {when(asset.updated_at)}
+                <Marked mark={<ClockCounterClockwiseIcon />}>
+                  {when(asset.updated_at)}
+                </Marked>
               </SettingRow>
             )}
             {kind === 'page' && (asset.images?.length ?? 0) > 0 && (
               <SettingRow label={t('assetInsights.meta.images')}>
-                {formatNumber(asset.images?.length ?? 0, {}, i18n.language)}
+                <Marked mark={<ImagesIcon />}>
+                  {formatNumber(asset.images?.length ?? 0, {}, i18n.language)}
+                </Marked>
               </SettingRow>
             )}
             {sheets && sheets.length > 0 && (
               <SettingRow label={t('assetInsights.sheet.fact')}>
-                <span className="min-w-0">
-                  {sheetNames(sheets, (count) =>
-                    t('assetInsights.sheet.moreSheets', { count }),
-                  )}
-                </span>
+                <ValueLines>
+                  <ValueLine mark={<TableIcon />}>
+                    {sheetNames(sheets, (count) =>
+                      t('assetInsights.sheet.moreSheets', { count }),
+                    )}
+                  </ValueLine>
+                </ValueLines>
               </SettingRow>
             )}
             {language && (
               <SettingRow label={t('assetInsights.meta.language')}>
-                {language}
+                <Marked mark={<TranslateIcon />}>{language}</Marked>
               </SettingRow>
             )}
             {asset.origin === 'figma' && (
@@ -211,58 +228,23 @@ export function AssetOverview({
                 <FromFigma frame={asset.origin_ref ?? null} />
               </SettingRow>
             )}
+            {asset.tags.length > 0 && (
+              <SettingRow label={t('assetInsights.meta.tags')}>
+                <ValueLines>
+                  {asset.tags.map((tag) => (
+                    <ValueLine key={tag.id} mark={<TagIcon />}>
+                      {tag.name}
+                    </ValueLine>
+                  ))}
+                </ValueLines>
+              </SettingRow>
+            )}
           </SettingList>
         </SideSection>
-
-        {parts.length > 1 && (
-          <SideSection title={t('assetInsights.overview.onThisPage')}>
-            <ul className="flex flex-col gap-1">
-              {parts.map((part) => (
-                <li key={part.id} className="flex flex-col">
-                  <SummaryLine
-                    onOpen={() => onJump(part.id)}
-                    label={part.label}
-                  >
-                    <part.icon className="size-4 shrink-0 text-tertiary-foreground" />
-                    <span className="shrink-0 text-sm">{part.label}</span>
-                    {part.line && (
-                      <span className="min-w-0 truncate text-sm text-secondary-foreground">
-                        {part.line}
-                      </span>
-                    )}
-                  </SummaryLine>
-                </li>
-              ))}
-            </ul>
-          </SideSection>
-        )}
 
         {current && coversAnything(current, sheets) && (
           <SideSection title={t('assetInsights.covers')}>
             <WhatItCovers lens={current} sheets={sheets} />
-          </SideSection>
-        )}
-
-        <SideSection title={t('assetInsights.meta.campaigns')}>
-          <MetaCampaigns
-            assetId={asset.id}
-            lenses={lenses}
-            openCampaignId={openCampaignId}
-          />
-        </SideSection>
-
-        {asset.tags.length > 0 && (
-          <SideSection title={t('assetInsights.meta.tags')}>
-            <ul className="flex flex-wrap gap-2">
-              {asset.tags.map((tag) => (
-                <li
-                  key={tag.id}
-                  className="rounded-full bg-tertiary px-3 py-1 text-xs text-secondary-foreground"
-                >
-                  {tag.name}
-                </li>
-              ))}
-            </ul>
           </SideSection>
         )}
       </div>

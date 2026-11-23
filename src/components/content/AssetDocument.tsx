@@ -46,8 +46,8 @@ type Props = {
 /**
  * A document, open for writing.
  *
- * Its own bar across the top, then the reading and the document as cards in
- * one column, with what is known about it in a side column (`AssetPage`).
+ * Its own bar across the top — carrying the picker for which reading the
+ * cards show — then the reading and the document as cards in one column, with what is known about it in a side column (`AssetPage`).
  *
  * A document scraped from a web page (CON-222) shows its progress here instead
  * of its body until it has one — see `ScrapeState`. Everything else about the
@@ -304,9 +304,10 @@ export function AssetDocument({
         onLensChange={onLensChange}
         at={at}
         onPlaceReached={onPlaceReached}
-        bar={
+        bar={(lens) => (
           <AssetBar
             campaignId={campaignId}
+            lens={lens}
             title={title ?? readableTitle(asset.title)}
             saving={isDirty}
             file={
@@ -318,7 +319,7 @@ export function AssetDocument({
             onDownloadMarkdown={editable ? handleDownloadMarkdown : undefined}
             onDelete={() => setDeleteOpen(true)}
           />
-        }
+        )}
         source={source}
         onTitleChange={handleTitleChange}
         onDirty={markDirty}

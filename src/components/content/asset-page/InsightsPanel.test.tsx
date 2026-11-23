@@ -79,7 +79,7 @@ describe('InsightsPanel', () => {
     await renderPanel('ready', lens({ ideas: [idea(1), idea(2)] }), {
       part: 'summary',
     })
-    expect(screen.getByText('Read for Spring launch')).toBeInTheDocument()
+    expect(screen.getByText('Why it fits')).toBeInTheDocument()
     expect(screen.getByText('Settles the launch date.')).toBeInTheDocument()
     // Folded to its lead, the key points under it.
     expect(screen.getByText('First paragraph.')).toBeInTheDocument()

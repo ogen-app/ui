@@ -1,27 +1,46 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+  BuildingsIcon,
+  HashIcon,
+  MapPinIcon,
+  PackageIcon,
+  ShapesIcon,
+  TableIcon,
+  UserIcon,
+  type Icon,
+} from '@phosphor-icons/react'
+import { SettingList, SettingRow } from '@/components/posts/quickBar/parts'
 import {
   coversAnything,
   groupMentions,
   type MentionGroup,
 } from '@/lib/assetAnalysis'
-import { formatList, formatNumber } from '@/lib/intl'
+import { formatNumber } from '@/lib/intl'
 import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
+import { ValueLine, ValueLines } from './ValueLines'
 
 /** How many mentions show before "+N more". */
 const FIRST_MENTIONS = 12
 
+const KIND_ICON: Record<MentionGroup['kind'], Icon> = {
+  org: BuildingsIcon,
+  product: PackageIcon,
+  person: UserIcon,
+  place: MapPinIcon,
+  other: ShapesIcon,
+}
+
 /**
  * What the asset is about, in the side column (CON-369) under the caller's
- * heading: its topics as one line
- * of text, the things it mentions grouped by kind — the kind written out, not
- * hidden in a tooltip — and, for a spreadsheet, the sheets it read.
+ * heading, in About's two columns: its topics, the things it mentions grouped
+ * by kind — the kind written out, not hidden in a tooltip — and, for a
+ * spreadsheet, the sheets it read.
  *
- * Text rather than pills on purpose. Thirty-odd rounded chips read as
- * controls, and none of them did anything; a line of words reads as what it
- * is, the context behind the ideas above.
+ * One item a line, each with its kind's mark: a run of words joined by dots
+ * wrapped mid-item and read as one long sentence, and pills would read as
+ * controls, which none of these are.
  */
 export function WhatItCovers({
   lens,
@@ -43,55 +62,64 @@ export function WhatItCovers({
 
   return (
     <div className="flex flex-col gap-3">
-      <dl className="grid grid-cols-[112px_1fr] gap-x-4 gap-y-3 text-sm leading-6">
+      <SettingList>
         {lens.topics.length > 0 && (
-          <Row label={t('assetInsights.topics')}>{lens.topics.join(' · ')}</Row>
+          <SettingRow label={t('assetInsights.topics')}>
+            <ValueLines>
+              {lens.topics.map((topic) => (
+                <ValueLine key={topic} mark={<HashIcon />}>
+                  {topic}
+                </ValueLine>
+              ))}
+            </ValueLines>
+          </SettingRow>
         )}
-        {shown.map((group) => (
-          <Row
-            key={group.kind}
-            label={t(`assetInsights.mentionKind.${group.kind}`)}
-          >
-            {formatList(group.names, 'conjunction', i18n.language)}
-          </Row>
-        ))}
+        {shown.map((group) => {
+          const KindIcon = KIND_ICON[group.kind]
+          return (
+            <SettingRow
+              key={group.kind}
+              label={t(`assetInsights.mentionKind.${group.kind}`)}
+            >
+              <ValueLines>
+                {group.names.map((name) => (
+                  <ValueLine key={name} mark={<KindIcon />}>
+                    {name}
+                  </ValueLine>
+                ))}
+              </ValueLines>
+            </SettingRow>
+          )
+        })}
         {hasSheets && (
-          <Row label={t('assetInsights.sheet.fact')}>
-            {formatList(
-              sheets.map((sheet) =>
-                sheet.rows === null
-                  ? sheet.name
-                  : t('assetInsights.sheet.chip', {
-                      name: sheet.name,
-                      count: sheet.rows,
-                      formatted: formatNumber(sheet.rows, {}, i18n.language),
-                    }),
-              ),
-              'conjunction',
-              i18n.language,
-            )}
-          </Row>
+          <SettingRow label={t('assetInsights.sheet.fact')}>
+            <ValueLines>
+              {sheets.map((sheet) => (
+                <ValueLine key={sheet.name} mark={<TableIcon />}>
+                  {sheet.rows === null
+                    ? sheet.name
+                    : t('assetInsights.sheet.chip', {
+                        name: sheet.name,
+                        count: sheet.rows,
+                        formatted: formatNumber(sheet.rows, {}, i18n.language),
+                      })}
+                </ValueLine>
+              ))}
+            </ValueLines>
+          </SettingRow>
         )}
-      </dl>
+      </SettingList>
       {hidden > 0 && (
+        // Under the values, where the next one would have started.
         <button
           type="button"
           onClick={() => setShowAll(true)}
-          className="cursor-pointer self-start pl-[128px] text-sm font-medium text-accent hover:underline"
+          className="ml-[calc(6.5rem+1rem+1.375rem)] cursor-pointer self-start text-sm font-medium text-accent hover:underline"
         >
           {t('assetInsights.moreMentions', { count: hidden })}
         </button>
       )}
     </div>
-  )
-}
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <>
-      <dt className="font-medium text-secondary-foreground">{label}</dt>
-      <dd className="min-w-0 text-foreground">{children}</dd>
-    </>
   )
 }
 
