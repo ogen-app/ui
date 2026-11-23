@@ -52,6 +52,7 @@ export function AudiencesSection({
           <NewCard
             capped
             label={t('brand.audiences.describeYourself')}
+            hint={t('brand.audiences.describeYourselfHint')}
             onClick={onAdd}
           />
         ) : (

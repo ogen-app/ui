@@ -1216,9 +1216,10 @@ export const es: Translation = {
 
   series: {
     library: {
-      add: 'AÑADIR SERIE',
+      add: 'Añadir serie',
       addHint: 'Otra cosa que este espacio de trabajo hace una y otra vez.',
       writeYourOwn: 'Escribe la tuya',
+      writeYourOwnHint: 'Una serie propia, desde una página en blanco.',
       starterGroupTitle: 'Tres para empezar',
       starterGroupBody:
         'Cada una es un ejemplo trabajado de lo más difícil de inventar desde un formulario en blanco: la receta. Toma una y reescríbela hasta que sea tuya.',
@@ -5096,9 +5097,10 @@ export const es: Translation = {
       silentTitle: 'La plataforma todavía no ha dicho nada',
       silentBody:
         'Esta publicación ya ha salido. La plataforma no ha reportado ningún número sobre ella — eso suele tardar unas horas.',
+      reading: 'Cómo leerlo',
       readingTotal: 'Total acumulado',
-      readingHour: '1H',
-      readingDay: '1D',
+      readingHour: 'Por hora',
+      readingDay: 'Por día',
       noHistoryLabel: 'No hay historial registrado de esta publicación',
       noHistoryBasis:
         '{{measure}} se recogió como total. No se registró cómo llegó, así que no hay forma que dibujar.',
@@ -5508,14 +5510,13 @@ export const es: Translation = {
     },
 
     performance: {
+      title: 'Analíticas',
       unlinked: {
-        title: 'Nada conecta esta publicación con lo que se publicó',
-        body: 'Salió a mano, así que no podemos encontrarla en la plataforma ni tenemos cifras suyas. Añadir el enlace conecta las dos — a partir de ahí se mide como cualquier otra.',
-        action: 'AÑADIR ENLACE',
+        body: 'Nada conecta esta publicación con lo que se publicó. Salió a mano, así que no podemos encontrarla en la plataforma ni tenemos cifras suyas. Añadir el enlace conecta las dos — a partir de ahí se mide como cualquier otra.',
+        action: 'Añadir enlace',
       },
       waiting: {
-        title: 'Las cifras están en camino',
-        body: 'Esta publicación ya salió y aún no han vuelto las primeras cifras. Suelen llegar en unas horas; esto se rellenará solo.',
+        body: 'Las cifras están en camino. Esta publicación ya salió y aún no han vuelto las primeras cifras. Suelen llegar en unas horas; esto se rellenará solo.',
       },
       unavailable: {
         body: 'Las analíticas no están activadas en esta instalación, así que no se recogen cifras de las publicaciones.',
@@ -6740,8 +6741,10 @@ export const es: Translation = {
     },
 
     voices: {
-      writeFromScratch: 'ESCRIBIR UNA DESDE CERO',
-      add: 'AÑADIR VOZ',
+      writeFromScratch: 'Escribir una desde cero',
+      writeFromScratchHint:
+        'Empieza con una página en blanco y define tú sus reglas.',
+      add: 'Añadir voz',
       addHint:
         'Otra más, para las publicaciones a las que ninguna de las anteriores les va bien.',
       starterGroupTitle: 'Empieza con una plantilla',
@@ -6897,8 +6900,9 @@ export const es: Translation = {
     },
 
     audiences: {
-      describeYourself: 'DESCRIBIR UNA TÚ MISMO',
-      add: 'AÑADIR AUDIENCIA',
+      describeYourself: 'Describir una tú mismo',
+      describeYourselfHint: 'Di quiénes son con tus propias palabras.',
+      add: 'Añadir audiencia',
       addHint:
         'Otra más, para las publicaciones a las que no van dirigidas las demás.',
       starterGroupTitle: 'Empieza con una plantilla',

@@ -54,6 +54,7 @@ export function SeriesSection({
           <NewCard
             capped
             label={t('series.library.writeYourOwn')}
+            hint={t('series.library.writeYourOwnHint')}
             onClick={onAdd}
           />
         ) : (

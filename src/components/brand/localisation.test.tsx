@@ -185,9 +185,9 @@ describe('the voices library in Spanish', () => {
     render(<VoicesSection voices={[]} />)
 
     expect(screen.getByText('Clara y directa')).toBeInTheDocument()
-    expect(screen.getByText('ESCRIBIR UNA DESDE CERO')).toBeInTheDocument()
+    expect(screen.getByText('Escribir una desde cero')).toBeInTheDocument()
     expect(screen.queryByText('Plain and direct')).not.toBeInTheDocument()
-    expect(screen.queryByText('WRITE ONE FROM SCRATCH')).not.toBeInTheDocument()
+    expect(screen.queryByText('Write one from scratch')).not.toBeInTheDocument()
   })
 
   /**

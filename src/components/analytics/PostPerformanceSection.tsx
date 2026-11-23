@@ -1,6 +1,6 @@
-import { ChartLineIcon, LinkSimpleIcon } from '@phosphor-icons/react'
+import { Link01Icon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import type { PostPerformanceResult } from '@/hooks/usePostPerformance'
 import { PostAnalyticsSurface } from './PostPerformance'
 
@@ -52,25 +52,21 @@ export function PostPerformanceSection({
 
     case 'unlinked':
       return (
-        <Note
-          title={t('posts.performance.unlinked.title')}
-          body={t('posts.performance.unlinked.body')}
-          action={
-            <Button variant="secondary" size="sm" onClick={onAddPostLink}>
-              <LinkSimpleIcon weight="bold" className="size-4" />
-              {t('posts.performance.unlinked.action')}
-            </Button>
-          }
-        />
+        <Card
+          capped
+          title={t('posts.performance.title')}
+          action={{
+            label: t('posts.performance.unlinked.action'),
+            icon: Link01Icon,
+            onClick: onAddPostLink,
+          }}
+        >
+          <Body>{t('posts.performance.unlinked.body')}</Body>
+        </Card>
       )
 
     case 'waiting':
-      return (
-        <Note
-          title={t('posts.performance.waiting.title')}
-          body={t('posts.performance.waiting.body')}
-        />
-      )
+      return <Note body={t('posts.performance.waiting.body')} />
 
     case 'unavailable':
       return <Note body={t('posts.performance.unavailable.body')} />
@@ -81,33 +77,20 @@ export function PostPerformanceSection({
 }
 
 /**
- * One quiet line, optionally with the thing to do about it.
+ * One of the answers that are not numbers, on the app's card.
  *
- * Not a `SectionCard`: those carry a heading and a scope note and are a promise
- * that figures are inside. None of these states has figures, and dressing them
- * as a measurement card would make the screen look like it is reporting zero.
+ * Titled "Analytics" rather than by the answer: the card is the place the
+ * figures will be, and the sentence under it says why they are not.
  */
-function Note({
-  title,
-  body,
-  action,
-}: {
-  title?: string
-  body: string
-  action?: React.ReactNode
-}) {
+function Note({ body }: { body: string }) {
+  const { t } = useTranslation()
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-border px-5 py-4">
-      <ChartLineIcon
-        weight="bold"
-        className="mt-0.5 size-4 shrink-0 text-quaternary-foreground"
-        aria-hidden
-      />
-      <div className="flex min-w-0 flex-col gap-1">
-        {title && <p className="text-sm font-medium">{title}</p>}
-        <p className="text-xs text-secondary-foreground">{body}</p>
-        {action && <div className="mt-2">{action}</div>}
-      </div>
-    </div>
+    <Card capped title={t('posts.performance.title')}>
+      <Body>{body}</Body>
+    </Card>
   )
+}
+
+function Body({ children }: { children: string }) {
+  return <p className="text-sm text-secondary-foreground">{children}</p>
 }

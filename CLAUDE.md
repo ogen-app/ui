@@ -143,7 +143,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   icon. The step that does it (a dialog's confirm) is `destructiveInverted`.
   A Danger Zone card holds its buttons in its body, never in the header.
 - **What makes a new card looks like a blank one** — `NewCard`: the card's
-  outline dashed, on no surface, a plus and what it makes, at the end of the
+  outline dashed, on no surface, one leading plus, what it makes in the card
+  header's type and a line under it saying what it will be, at the end of the
   cards it joins. A tile that adds a file (the post's Add media) is the same.
 - **Design harnesses live on `design/*` branches, never on `develop`.** A
   harness is a `/design/<feature>` route rendering every state of a component

@@ -58,6 +58,7 @@ export function VoicesSection({
           <NewCard
             capped
             label={t('brand.voices.writeFromScratch')}
+            hint={t('brand.voices.writeFromScratchHint')}
             onClick={onAdd}
           />
         ) : (

@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { LinkSquare02Icon } from '@hugeicons/core-free-icons'
 import { Card } from '@/components/ui/card'
 import { EmptyChart, PostSeriesChart } from './charts'
-import { Segmented } from './ComparisonBar'
 import { InsightLine } from './ComparisonSections'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import {
@@ -17,7 +17,7 @@ import {
   verdict,
 } from './format'
 import { DeltaChip, PostMeasureTile, VerdictLine } from './MeasureTile'
-import { Basis, FigureGrid, NotYet, SectionCard } from './shell'
+import { Basis, FigureGrid, NotYet } from './shell'
 import {
   readingShape,
   type Insight,
@@ -96,23 +96,24 @@ export function PostIdentityCard({ post }: { post: PostIdentity }) {
   const { t } = useTranslation()
   const info = usePlatformCatalog().resolve(post.platform)
   const Icon = info?.icon
+  const { permalink } = post
 
   return (
-    <SectionCard
+    <Card
+      capped
       title={t('analytics.post.identityTitle')}
-      status={
-        post.permalink ? (
-          <a
-            href={post.permalink}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-xs font-medium underline underline-offset-2"
-          >
-            {t('analytics.post.openOn', {
-              platform: info?.name ?? post.platform,
-            })}
-          </a>
-        ) : undefined
+      // Out of the app, so a new tab: the post's own page on the network.
+      action={
+        permalink
+          ? {
+              label: t('analytics.post.openOn', {
+                platform: info?.name ?? post.platform,
+              }),
+              icon: LinkSquare02Icon,
+              onClick: () =>
+                window.open(permalink, '_blank', 'noopener,noreferrer'),
+            }
+          : undefined
       }
     >
       <div className="flex items-start gap-3">
@@ -167,7 +168,7 @@ export function PostIdentityCard({ post }: { post: PostIdentity }) {
           <Fact label={t('analytics.post.campaign')}>{post.campaign}</Fact>
         )}
       </dl>
-    </SectionCard>
+    </Card>
   )
 }
 
@@ -306,7 +307,7 @@ export function PostOverviewCard({ view }: { view: PostPerformanceView }) {
  * the measure, and a tile inside a card whose whole subject is that one measure
  * labels it twice and boxes a number with nothing beside it to be compared to.
  *
- * The reading switch takes the header's right-hand corner, alone — the one
+ * The reading is the card's `choice` — a dropdown at the header's end, the one
  * control a card is allowed. Each card keeps its own, which is half the point of
  * splitting them: reach is read as a running total and saves as a column per
  * day, and one switch above all of them forces the same answer onto both.
@@ -326,22 +327,19 @@ export function PostMeasureCard({
   const { mode, interval } = readingShape(reading)
 
   return (
-    <SectionCard
+    <Card
+      capped
       title={copy.label}
-      status={
-        <Segmented
-          value={reading}
-          onChange={setReading}
-          options={[
-            {
-              value: 'total' as const,
-              label: t('analytics.post.readingTotal'),
-            },
-            { value: 'hour' as const, label: t('analytics.post.readingHour') },
-            { value: 'day' as const, label: t('analytics.post.readingDay') },
-          ]}
-        />
-      }
+      choice={{
+        label: t('analytics.post.reading'),
+        value: reading,
+        onChange: (value) => setReading(value as PostSeriesReading),
+        options: [
+          { id: 'total', displayValue: t('analytics.post.readingTotal') },
+          { id: 'hour', displayValue: t('analytics.post.readingHour') },
+          { id: 'day', displayValue: t('analytics.post.readingDay') },
+        ],
+      }}
     >
       {metric && (
         <MeasureHeadline
@@ -404,7 +402,7 @@ export function PostMeasureCard({
           </div>
         </div>
       )}
-    </SectionCard>
+    </Card>
   )
 }
 

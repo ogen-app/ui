@@ -1463,9 +1463,10 @@ export const en = {
    */
   series: {
     library: {
-      add: 'ADD SERIES',
+      add: 'Add series',
       addHint: 'Something else this workspace makes again and again.',
       writeYourOwn: 'Write your own',
+      writeYourOwnHint: 'A series of your own, from a blank page.',
       starterGroupTitle: 'Three to start from',
       starterGroupBody:
         'Each one is a worked example of the part that is hard to invent from a blank form — the recipe. Take one, rewrite it until it is yours.',
@@ -5968,9 +5969,10 @@ export const en = {
       silentTitle: 'Nothing back from the platform yet',
       silentBody:
         "This post is out. The platform hasn't reported any numbers for it — that usually takes a few hours.",
+      reading: 'How to read it',
       readingTotal: 'Running total',
-      readingHour: '1H',
-      readingDay: '1D',
+      readingHour: 'Per hour',
+      readingDay: 'Per day',
       noHistoryLabel: 'No history recorded for this post',
       noHistoryBasis:
         '{{measure}} was collected as a total. Nothing recorded how it arrived, so there is no shape to draw.',
@@ -6554,14 +6556,13 @@ export const en = {
      * clock, and one is a fact about the deployment that no reader can act on.
      */
     performance: {
+      title: 'Analytics',
       unlinked: {
-        title: 'Nothing links this post to what was published',
-        body: 'It went out by hand, so we have no way to find it on the platform and no figures for it. Adding the post link connects the two — from then on it is measured like any other.',
-        action: 'ADD POST LINK',
+        body: 'Nothing links this post to what was published. It went out by hand, so we have no way to find it on the platform and no figures for it. Adding the post link connects the two — from then on it is measured like any other.',
+        action: 'Add post link',
       },
       waiting: {
-        title: 'Numbers are on their way',
-        body: 'This post has gone out and the first figures have not come back yet. They usually arrive within a few hours; this will fill in on its own.',
+        body: 'Numbers are on their way. This post has gone out and the first figures have not come back yet. They usually arrive within a few hours; this will fill in on its own.',
       },
       unavailable: {
         body: 'Analytics is not switched on for this deployment, so no figures are collected for published posts.',
@@ -8180,8 +8181,10 @@ export const en = {
 
     /** The cast — `VoicesSection.tsx`. */
     voices: {
-      writeFromScratch: 'WRITE ONE FROM SCRATCH',
-      add: 'ADD VOICE',
+      writeFromScratch: 'Write one from scratch',
+      writeFromScratchHint:
+        'Start from a blank page and set its rules yourself.',
+      add: 'Add voice',
       addHint: 'Another one, for the posts none of the above are right for.',
       starterGroupTitle: 'Start from a template',
       starterGroupBody:
@@ -8364,8 +8367,9 @@ export const en = {
 
     /** Who the content is for — `AudiencesSection.tsx`. */
     audiences: {
-      describeYourself: 'DESCRIBE ONE YOURSELF',
-      add: 'ADD AUDIENCE',
+      describeYourself: 'Describe one yourself',
+      describeYourselfHint: 'Say who they are in your own words.',
+      add: 'Add audience',
       addHint: 'Another one, for the posts the others are not written to.',
       starterGroupTitle: 'Start from a template',
       starterGroupBody:
