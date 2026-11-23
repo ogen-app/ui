@@ -64,7 +64,7 @@ export { i18next }
 
 /**
  * Types every `t()` key against the English catalogue, so a typo or a key
- * removed from `en.ts` is a compile error rather than a string that silently
+ * removed from the English catalogue is a compile error rather than a string that silently
  * renders as itself.
  */
 declare module 'i18next' {

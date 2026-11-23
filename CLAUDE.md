@@ -110,8 +110,8 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
 - **Every user-facing string is a catalogue entry — never a literal in a
-  component.** New UI adds its keys to `src/i18n/resources/en.ts` *and* its
-  translation to every other catalogue, and reads them through `t()`. This
+  component.** New UI adds its keys to its section's file in `src/i18n/resources/en/`
+  *and* its translation to the same file in every other locale's folder, and reads them through `t()`. This
   covers all of it, not just the obvious labels: button and menu text, headings,
   placeholders, empty and error states, toast and validation messages, tooltips,
   and the accessible strings nobody sees — `aria-label`, `title`, `alt`, visually
@@ -239,7 +239,7 @@ Loaded automatically in `src/components/campaigns`, `src/components/strategy`, `
 
 Loaded automatically in `src/i18n`.
 
-- How the catalogues work: `en.ts` is the shape, keys name the place, plurals are written out whole, and anything that bakes in copy takes `t`.
+- How the catalogues work: one file per section in each locale's folder, English is the shape, keys name the place, plurals are written out whole, and anything that bakes in copy takes `t`.
 - A conversion is only proved by rendering in another language.
 - A language is released by one boolean.
 - Dates, times, numbers and joined lists go through `lib/intl.ts`.

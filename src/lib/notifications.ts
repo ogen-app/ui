@@ -135,7 +135,7 @@ const LIMIT_TYPE: Record<string, LimitState> = {
  *
  * i18next types `t()` against the catalogue, so a plain `string` here would not
  * type-check at the call site — and that is the feature: a key written into
- * this table but never added to `en.ts` fails the build instead of rendering
+ * this table but never added to the catalogue fails the build instead of rendering
  * its own name on screen.
  */
 export type NotificationCopyKey =
