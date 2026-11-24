@@ -15,8 +15,8 @@ export const profile: Translation['profile'] = {
   password: {
     sentBody:
       'Un enlace para establecer una nueva contraseña va de camino a <email>{{email}}</email>. Caduca en una hora, y usarlo cierra la sesión en todos los dispositivos — incluido este.',
-    send: 'ENVIARME UN ENLACE DE RESTABLECIMIENTO',
-    resend: 'ENVIARLO DE NUEVO',
+    send: 'Enviarme un enlace de restablecimiento',
+    resend: 'Enviarlo de nuevo',
     resentNote: 'Enviado de nuevo — dale un minuto.',
   },
   signInMethods: {
@@ -25,12 +25,12 @@ export const profile: Translation['profile'] = {
     password: 'Contraseña',
     passwordSet: 'Correo y contraseña',
     passwordNotSet: 'Sin contraseña — inicias sesión con Google',
-    setPassword: 'ELEGIR UNA CONTRASEÑA',
+    setPassword: 'Elegir una contraseña',
     google: 'Google',
     googleConnected: '{{email}} · conectado el {{date}}',
     googleNotConnected: 'Sin conectar',
-    connect: 'CONECTAR',
-    disconnect: 'DESCONECTAR',
+    connect: 'Conectar',
+    disconnect: 'Desconectar',
     onlyWayIn:
       'Google es tu única forma de entrar. Elige primero una contraseña y después podrás desconectarlo.',
     connectedToast: 'Google conectado',
@@ -48,7 +48,7 @@ export const profile: Translation['profile'] = {
       'Tu cuenta de acceso sigue funcionando: cualquier otro espacio al que pertenezcas no se toca, y <strong>{{workspace}}</strong> continúa sin ti. Si eres su único propietario, nombra antes a otro propietario — un espacio no puede quedarse sin propietario.',
     thisWorkspace: 'este espacio',
     confirmLabel: 'Escribe <email>{{email}}</email> para confirmar',
-    keep: 'QUEDARME EN ESTE ESPACIO',
-    confirm: 'SALIR DE ESTE ESPACIO',
+    keep: 'Quedarme en este espacio',
+    confirm: 'Salir de este espacio',
   },
 }

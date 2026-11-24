@@ -68,7 +68,7 @@ export const integrations = {
         'Only the member who connected this plugin, or a workspace owner, can disconnect it.',
       failed: 'The plugin could not be disconnected. Try again in a moment.',
       keep: 'Keep connected',
-      confirm: 'DISCONNECT',
+      confirm: 'Disconnect',
       succeeded: '{{label}} disconnected',
     },
   },

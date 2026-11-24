@@ -350,9 +350,7 @@ function ReplaceChoice({
           aria-hidden
           className="size-4 shrink-0 text-tertiary-foreground"
         />
-        <p className="min-w-0 flex-1 text-sm text-secondary-foreground">
-          {t(copy.differs)}
-        </p>
+        <p className="min-w-0 flex-1 text-sm">{t(copy.differs)}</p>
         <Button variant="outline" size="sm" onClick={() => setComparing(true)}>
           {t('brand.distill.review.compare')}
         </Button>
@@ -464,9 +462,7 @@ function ChoiceCard({
           {meta}
         </span>
       </span>
-      <span className="pl-7 text-sm leading-5 text-secondary-foreground">
-        {text}
-      </span>
+      <span className="pl-7 text-sm leading-5">{text}</span>
     </button>
   )
 }

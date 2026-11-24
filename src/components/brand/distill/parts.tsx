@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
 import { evidenceLabel } from '@/lib/brandDistillCopy'
 import type { DistillAnswer, DistillEvidence } from '@/types/brandDistill'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * The small furniture of a brand read's review (CON-400). Everything here is
@@ -174,13 +175,11 @@ export function GroupLabel({
   children: ReactNode
   htmlFor?: string
 }) {
-  const className =
-    'font-grotesk text-xs font-medium uppercase tracking-wide text-secondary-foreground'
   return htmlFor ? (
-    <label htmlFor={htmlFor} className={className}>
+    <SmallHeading as="label" htmlFor={htmlFor}>
       {children}
-    </label>
+    </SmallHeading>
   ) : (
-    <p className={className}>{children}</p>
+    <SmallHeading as="p">{children}</SmallHeading>
   )
 }

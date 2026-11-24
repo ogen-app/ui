@@ -26,7 +26,7 @@ export function LeaveHiddenTierDialog({
   onConfirm,
   onClose,
 }: Props) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   return (
     <ModalContainer
       isOpen
@@ -50,7 +50,7 @@ export function LeaveHiddenTierDialog({
           </Button>
           <Button variant="defaultInverted" onClick={onConfirm} loading={busy}>
             {t('tiers.ledger.switchNamed', {
-              name: target.name.toLocaleUpperCase(i18n.language),
+              name: target.name,
             })}
           </Button>
         </div>

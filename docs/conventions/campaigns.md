@@ -75,8 +75,8 @@ keep it accurate when these rules change.
   (`derived`), a hand-edited plan (`manual`), or no dates yet
   (`unscheduled`) — and that split is what content generation plans into, so
   the client never works one out. `CampaignPhasesCard`, in Strategy's second
-  column, only moves the boundary between two phases — from the calendar on
-  each row but the last, whose end is the campaign's (`lib/phasePlan`), which keeps the plan back
+  column, only moves the boundary between two phases — from the
+  "Ends [date]" button on each row but the last, whose end is the campaign's (`lib/phasePlan`), which keeps the plan back
   to back, and PUTs it **whole**; `DELETE` is "split evenly again". The query
   sits under the campaign's key, so every campaign save re-reads it — which is
   how a save the server answered with `phase_plan_reset: true` (a type change,

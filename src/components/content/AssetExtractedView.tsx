@@ -9,6 +9,7 @@ import { useAssetChunks } from '@/hooks/useContent'
 import { isTerminalStatus } from '@/lib/assetStatus'
 import { formatNumber } from '@/lib/intl'
 import type { Asset, AssetChunk } from '@/types/content'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 type Props = {
   asset: Asset
@@ -111,11 +112,7 @@ function ChunkSection({ chunk }: { chunk: AssetChunk }) {
       data-page-to={chunk.page_end > 0 ? chunk.page_end : undefined}
       data-label={chunk.source_label?.trim() || undefined}
     >
-      {label && (
-        <h3 className="text-xs font-medium uppercase tracking-wide text-tertiary-foreground">
-          {label}
-        </h3>
-      )}
+      {label && <SmallHeading as="h3">{label}</SmallHeading>}
       {/* Plain text, as extracted. Whitespace is kept because a sheet's rows
           and an email's quoting are carried by it. */}
       <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">

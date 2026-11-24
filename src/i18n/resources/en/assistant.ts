@@ -1026,7 +1026,7 @@ export const assistant = {
       queued: 'More ideas on the way',
       notQueued: 'No more ideas were asked for',
       meta: 'saved to Ideas as they’re found',
-      open: 'OPEN IDEAS',
+      open: 'Open ideas',
     },
     /** The bank's state a turn read (`readAssetsState`, CON-476). */
     state: {
@@ -1046,15 +1046,15 @@ export const assistant = {
       /** The first few by name, then how many more. */
       namesAndMore_one: '{{names}} and {{formatted}} more',
       namesAndMore_other: '{{names}} and {{formatted}} more',
-      analyse: 'ANALYSE',
-      retry: 'RETRY',
-      triage: 'TRIAGE',
+      analyse: 'Analyse',
+      retry: 'Retry',
+      triage: 'Triage',
     },
     ask: {
       /** A cited passage from one of several assets. */
       chip: '{{title}} · {{pages}}',
       onlyThis: 'Only this asset.',
-      searchAll: 'SEARCH ALL ASSETS',
+      searchAll: 'Search all assets',
       searchAllPrompt: 'Search all the assets for that, not only this one.',
     },
     lens: {
@@ -1091,15 +1091,15 @@ export const assistant = {
       lensIdeas_one: '{{formatted}} idea',
       lensIdeas_other: '{{formatted}} ideas',
       readOn: 'read {{date}}',
-      openIdeas: 'OPEN IDEAS',
+      openIdeas: 'Open ideas',
       notReadFor: '{{lens}} hasn’t read it',
       /** Where another lens has: "Read for the workspace on 2 Nov". */
       readFor: 'Read for {{owner}}',
       readForOn: 'Read for {{owner}} on {{date}}',
-      showThat: 'SHOW THAT',
+      showThat: 'Show that',
       analyseFor: 'Analyse for {{owner}}',
       analysePrompt: 'Analyse it for the {{lens}}.',
-      show: 'SHOW',
+      show: 'Show',
       showPrompt: 'What did the analysis find for the {{lens}}?',
       readFrom: 'Read from',
       analysisOf: 'Analysis of {{title}}',
@@ -1115,7 +1115,7 @@ export const assistant = {
       partial_one: 'Only {{formatted}}',
       partial_other: 'Only {{formatted}}',
       conflicts: 'They disagree',
-      askWhich: 'ASK WHICH',
+      askWhich: 'Ask which',
       askWhichPrompt: 'Which is right: {{claim}}?',
       fromPassages_one:
         '{{titles}} isn’t analysed for this lens, so it was read from its passages.',
@@ -1145,14 +1145,14 @@ export const assistant = {
       /** Inside a campaign: smart groups are the workspace's. */
       workspaceOnly:
         'Smart groups open on the workspace’s {{list}}, outside this campaign.',
-      open: 'OPEN',
+      open: 'Open',
     },
     campaign: {
       sources_one: '{{formatted}} source attached',
       sources_other: '{{formatted}} sources attached',
       sourcesNote:
         'The documents stay in the bank; the campaign points at them.',
-      open: 'OPEN',
+      open: 'Open',
     },
   },
 
@@ -1199,7 +1199,7 @@ export const assistant = {
       audience: 'audience',
       series: 'series',
     },
-    open: 'OPEN',
+    open: 'Open',
     unbound_one: 'Taken off {{formatted}} campaign or post that used it',
     unbound_other: 'Taken off {{formatted}} campaigns and posts that used it',
     voice: {
@@ -1269,8 +1269,8 @@ export const assistant = {
       ofTotal_one: 'of {{formatted}}',
       ofTotal_other: 'of {{formatted}}',
       expiredOn: 'Expired {{date}}',
-      renew: 'RENEW',
-      edit: 'EDIT',
+      renew: 'Renew',
+      edit: 'Edit',
       renewPrompt: 'Renew the fact “{{statement}}” for another season.',
       editPrompt: 'Change the fact “{{statement}}” to ',
     },
@@ -1292,7 +1292,7 @@ export const assistant = {
       answered_one: 'Answered {{formatted}} question',
       answered_other: 'Answered {{formatted}} questions',
       answerFrom: '{{answer}}, from {{from}}',
-      open: 'OPEN THE READ',
+      open: 'Open the read',
       voices_one: '{{formatted}} voice',
       voices_other: '{{formatted}} voices',
       audiences_one: '{{formatted}} audience',
@@ -1458,7 +1458,7 @@ export const assistant = {
     sources: {
       word: 'SOURCES',
       title: '{{ready}} of {{attached}} ready',
-      open: 'OPEN ASSETS',
+      open: 'Open assets',
       ready: 'ready',
       analysing: 'analysing',
       unreadable: 'couldn’t be read',
@@ -1523,7 +1523,7 @@ export const assistant = {
     connectCampaignNote:
       'Add {{platform}} to this campaign’s platforms once it is connected — on Strategy.',
     openAddSource: 'Opened {{screen}} to add a source',
-    back: 'BACK',
+    back: 'Back',
     putBack: 'Put back',
   },
 
@@ -1534,8 +1534,8 @@ export const assistant = {
   proposal: {
     /** The composer, while an offer is waiting. */
     placeholder: 'Reply “yes” to run it, or say what to change',
-    confirm: 'CONFIRM',
-    dismiss: 'DISMISS',
+    confirm: 'Confirm',
+    dismiss: 'Dismiss',
     gone: 'This offer no longer exists.',
     failed: 'It didn’t go through. Ask again to retry.',
     stopped:
@@ -1554,7 +1554,7 @@ export const assistant = {
     /** The request that waited on a source, back once it is read (CON-484). */
     sourceReady: 'Source ready: “{{title}}”',
     /** An option's own small form: the page's link, then IMPORT (CON-484). */
-    import: 'IMPORT',
+    import: 'Import',
     inputRequired: 'Paste the page’s link to import it.',
     badLink: 'That doesn’t look like a web address.',
     /** Before a confirmed run: every confirm re-checks the offer first. */
@@ -1574,7 +1574,7 @@ export const assistant = {
       title: 'That offer lapsed',
       nothing: 'Nothing ran',
       hint: 'Ask again and it will be built from things as they are now.',
-      askAgain: 'ASK AGAIN',
+      askAgain: 'Ask again',
     },
     recommended: 'RECOMMENDED',
     /** Beside an offer's detail rows (CON-476): what each one is. */
@@ -1600,15 +1600,15 @@ export const assistant = {
     or: 'or {{fix}}',
     dismissed_one: '{{formatted}} dismissed finding left out.',
     dismissed_other: '{{formatted}} dismissed findings left out.',
-    ignore: 'IGNORE',
+    ignore: 'Ignore',
     ignored: 'Ignored: {{finding}}',
     ignoreFailed: 'Couldn’t ignore that. Try again.',
     /** The campaign's ignored findings, behind SHOW, each with RESTORE. */
     ignoredCount_one: '{{formatted}} ignored on this campaign',
     ignoredCount_other: '{{formatted}} ignored on this campaign',
-    show: 'SHOW',
-    hide: 'HIDE',
-    restore: 'RESTORE',
+    show: 'Show',
+    hide: 'Hide',
+    restore: 'Restore',
     restoreFailed: 'Couldn’t restore that. Try again.',
     /** A finding whose fix ran; `choice` is the slot or option picked. */
     fixed: 'Fixed: {{fix}}',
@@ -1624,15 +1624,15 @@ export const assistant = {
      * A post finding's way to its post's thread (CON-495): the row's button
      * when no fix runs on its own, else the last "or …".
      */
-    assist: 'FIX WITH ASSISTANT',
+    assist: 'Fix with assistant',
     orAssist: 'or fix with assistant',
     /** The idea a same-idea finding's posts share (CON-495). */
     fromIdea: 'All from “{{title}}”',
     /** Under a fix's offer opened in the row: back to the row's fixes. */
-    back: 'BACK TO THE FIXES',
+    back: 'Back to the fixes',
     /** When the check read the calendar: "Read Wed 12 Nov, 16:40." */
     readAt: 'Read {{when}}.',
-    checkAgain: 'CHECK AGAIN',
+    checkAgain: 'Check again',
     checkPrompt: 'Check the calendar again.',
   },
 
@@ -1743,7 +1743,7 @@ export const assistant = {
       highestOn_other: '{{formatted}} highest on {{platform}}',
       sortedBy: 'sorted by {{measure}}',
       figures: '{{reach}} reach · {{rate}}',
-      open: 'OPEN',
+      open: 'Open',
     },
     compare: {
       word: 'Compared',
@@ -1771,13 +1771,13 @@ export const assistant = {
       planned_one: 'Planned {{formatted}} idea',
       planned_other: 'Planned {{formatted}} ideas',
       onIdeas: 'on Ideas · nothing on the calendar',
-      open: 'OPEN',
+      open: 'Open',
     },
   },
 
   /** The workspace pack's cards (CON-464). */
   workspace: {
-    open: 'OPEN',
+    open: 'Open',
     allCampaigns: 'The whole workspace',
     activity: {
       day: 'Day',
@@ -1914,7 +1914,7 @@ export const assistant = {
       connected: 'Connected',
       expiresIn_one: 'expires in {{formatted}} day',
       expiresIn_other: 'expires in {{formatted}} days',
-      reconnect: 'RECONNECT {{platform}}',
+      reconnect: 'Reconnect {{platform}}',
       zone: 'Times in {{zone}}',
     },
     autoRead: {
@@ -1968,8 +1968,8 @@ export const assistant = {
       group_other: 'NOT MADE · {{formatted}}',
       title_one: '{{formatted}} not made',
       title_other: '{{formatted}} not made',
-      retryCount_one: 'RETRY {{formatted}}',
-      retryCount_other: 'RETRY {{formatted}}',
+      retryCount_one: 'Retry {{formatted}}',
+      retryCount_other: 'Retry {{formatted}}',
       lapsed: 'The offer behind them lapsed; ask again to make them.',
       /** Items the server names no title for, under one reason. */
       unnamed_one: '{{formatted}} item',
@@ -2035,16 +2035,16 @@ export const assistant = {
       cantTitle: 'Tags changed since',
       changedSince: '{{changed}} of {{of}} retagged since',
       cantHint: 'Undo would overwrite that change; untag by hand from Assets.',
-      open: 'OPEN',
+      open: 'Open',
     },
   },
 
   /** The ideas pack's cards (CON-465/466). */
   ideas: {
     untitled: 'Untitled idea',
-    open: 'OPEN',
+    open: 'Open',
     /** Exactly a card's ideas, on the Ideas list (CON-510). */
-    openAll: 'OPEN ALL',
+    openAll: 'Open all',
     noDate: 'no date',
     backOn: 'back on {{day}}',
     more_one: 'and {{formatted}} more',
@@ -2065,7 +2065,7 @@ export const assistant = {
       none: 'No ideas match',
       /** The pile the filter named, counted whole: "of 14 · On the desk". */
       ofPile: 'of {{total}} · {{pile}}',
-      show: 'SHOW ON SCREEN',
+      show: 'Show on screen',
       fit: 'fit {{score}}',
     },
     decided: {
@@ -2115,7 +2115,7 @@ export const assistant = {
       fromIdeas_one: '{{drafts}} from {{formatted}} idea',
       fromIdeas_other: '{{drafts}} from {{formatted}} ideas',
       /** Opens the calendar's Not scheduled panel (CON-485). */
-      show: 'SHOW',
+      show: 'Show',
       /** A row's day, and why it is that day (CON-485). */
       notScheduled: 'Not scheduled',
       datedPlan: '{{date}} · the idea’s plan date',
@@ -2126,7 +2126,7 @@ export const assistant = {
       notGrounded: 'not grounded',
       dropped_one: '{{formatted}} draft couldn’t be written',
       dropped_other: '{{formatted}} drafts couldn’t be written',
-      openAll: 'OPEN ALL',
+      openAll: 'Open all',
       fromIdea_one: 'The idea cites no document; written from its own words.',
       fromIdea_other:
         'Its ideas cite no document; written from their own words.',
@@ -2228,7 +2228,7 @@ export const assistant = {
       meta: 'rewritten',
       inVoice: 'A new version, in {{voice}}',
       newVersion: 'A new version',
-      open: 'OPEN',
+      open: 'Open',
       notRevised: 'Post left as it was',
       versioned: 'The old one stays in the post’s versions',
       unversioned:
@@ -2250,7 +2250,7 @@ export const assistant = {
       ownUnnamed: 'Now in a voice of its own',
       copyKept:
         'The copy stays as it is; checks and rewrites read it in this voice',
-      open: 'OPEN',
+      open: 'Open',
     },
     converted: {
       word: 'Converted',
@@ -2365,8 +2365,8 @@ export const assistant = {
       more_other: 'and {{formatted}} more',
       /** After the headline: "within Mon 13–Sun 19". */
       window: 'within {{from}} – {{to}}',
-      confirm_one: 'MOVE {{formatted}} POST',
-      confirm_other: 'MOVE {{formatted}} POSTS',
+      confirm_one: 'Move {{formatted}} post',
+      confirm_other: 'Move {{formatted}} posts',
       before: 'Before',
       after: 'After',
       legendMoved: 'moved',
@@ -2376,7 +2376,7 @@ export const assistant = {
 
   /** Reversing a change a turn made. */
   undo: {
-    undo: 'UNDO',
+    undo: 'Undo',
     undone: 'Undone',
     changed: 'Can’t undo: it was changed again since.',
     gone: 'This can no longer be undone.',
@@ -2425,8 +2425,8 @@ export const assistant = {
     drafted_one: '{{formatted}} post',
     drafted_other: '{{formatted}} posts',
     notScheduled: 'not scheduled',
-    openPost: 'OPEN',
-    openPosts: 'OPEN ALL',
+    openPost: 'Open',
+    openPosts: 'Open all',
     platformsUpdated: 'Platforms updated',
     /** The server's words for what changed, e.g. "Threads". */
     platformsAdded: 'added {{what}}',
@@ -2452,7 +2452,7 @@ export const assistant = {
       '{{formatted}} posts unscheduled first. UNDO puts the platform back, not the schedule.',
     /** The days saved ideas target, after their count. */
     ideasWindow: 'targeting {{range}}',
-    openIdeas: 'OPEN',
+    openIdeas: 'Open',
     /** The goal is a rate; the total is the whole campaign's. */
     goal: {
       week_one: 'Goal raised to {{formatted}} post a week',

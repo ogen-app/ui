@@ -104,9 +104,7 @@ function AudienceEditorPage() {
             message={t('brand.detail.missingMessage')}
             action={
               <Button variant="ghost" size="sm" onClick={back}>
-                <span className="uppercase">
-                  {t('brand.detail.backToAudiences')}
-                </span>
+                {t('brand.detail.backToAudiences')}
               </Button>
             }
           />

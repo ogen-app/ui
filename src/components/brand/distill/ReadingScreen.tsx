@@ -3,7 +3,6 @@ import {
   CheckCircleIcon,
   CheckIcon,
   CircleIcon,
-  InfoIcon,
   ProhibitIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react'
@@ -11,6 +10,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Loading03Icon } from '@hugeicons/core-free-icons'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib'
 import {
   currentStep,
@@ -45,36 +45,26 @@ export function ReadingScreen({ run }: { run: DistillRun }) {
   const route = runRoute(run)
 
   return (
-    <>
-      <section className="flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6">
-        <Checklist run={run} />
-        {run.sources.length > 0 && (
-          <ul className="flex flex-col border-t border-quaternary">
-            {run.sources.map((source, i) => (
-              <SourceRow
-                key={source.assetId || i}
-                source={source}
-                active={i === firstPending(run.sources)}
-              />
-            ))}
-          </ul>
-        )}
-        <p className="text-sm leading-5 text-secondary-foreground">
-          {t('brand.distill.reading.leave')}
-        </p>
-      </section>
-      {route === 'website' && (
-        <aside className="flex w-full max-w-content items-start gap-3 bg-primary px-6 py-5">
-          <InfoIcon
-            aria-hidden
-            className="mt-0.5 size-4 shrink-0 text-tertiary-foreground"
-          />
-          <p className="text-sm leading-5 text-secondary-foreground">
-            {t('brand.distill.reading.pagesLand')}
-          </p>
-        </aside>
+    <Card capped title={t('brand.distill.reading.title')}>
+      <Checklist run={run} />
+      {run.sources.length > 0 && (
+        <ul className="flex flex-col border-t border-quaternary">
+          {run.sources.map((source, i) => (
+            <SourceRow
+              key={source.assetId || i}
+              source={source}
+              active={i === firstPending(run.sources)}
+            />
+          ))}
+        </ul>
       )}
-    </>
+      <p className="text-sm">{t('brand.distill.reading.leave')}</p>
+      {/* Where the pages go, under what the read is doing — one card, not a
+          second one for a sentence. */}
+      {route === 'website' && (
+        <p className="text-sm">{t('brand.distill.reading.pagesLand')}</p>
+      )}
+    </Card>
   )
 }
 

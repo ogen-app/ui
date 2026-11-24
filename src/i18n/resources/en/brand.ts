@@ -33,23 +33,26 @@ export const brand = {
     fact_other: '{{formatted}} facts selected',
     selectAll: 'Select every fact shown',
     clearAll: 'Clear the selection',
-    clear: 'CLEAR',
+    clear: 'Clear',
     /** The facts ledger's bulk removal, which asks first. */
-    remove: 'REMOVE',
+    remove: 'Remove',
   },
   binding: {
     voice: 'Voice',
     audience: 'Audience',
     campaignVoiceHint:
-      'The voice this campaign writes in. Posts open in it and can be changed one by one; leave it unset to use the workspace default.',
+      'Every post in this campaign is written in this voice. One post can still pick another, on the post.',
     campaignAudienceHint:
-      'Who this campaign is written to. A post that addresses somebody else says so on the post.',
+      'Every post in this campaign is written to these people. One post can still address somebody else, on the post.',
+    workspaceDefault: 'Workspace default — {{name}}',
+    manageVoices: 'Edit voices',
+    manageAudiences: 'Edit audiences',
     noVoice: 'No voice',
     noAudience: 'No audience',
     sourcePost: 'Set on this post',
     sourceCampaign: 'From the campaign',
     sourceLibrary: "The workspace's default",
-    reset: 'RESET',
+    reset: 'Reset',
     resetHint: 'Go back to what the campaign says',
     emptyTitle: 'Voice and audience',
     emptyBody:
@@ -124,6 +127,7 @@ export const brand = {
 
   /** The facts ledger's refusals, said beside the statement (CON-316). */
   factsLedger: {
+    removeThis: 'Remove this fact',
     duplicate: 'This workspace already has that statement as a fact.',
     gone: 'Someone removed this fact while it was open. The ledger has been refreshed.',
     saveFailed: 'The fact could not be saved. Try again.',
@@ -154,10 +158,10 @@ export const brand = {
         'Posts written from now on won’t be able to state it. Nothing brings it back.',
       body_other:
         'Posts written from now on won’t be able to state them. Nothing brings them back.',
-      keep_one: 'KEEP IT',
-      keep_other: 'KEEP THEM',
-      confirm_one: 'REMOVE FACT',
-      confirm_other: 'REMOVE {{formatted}} FACTS',
+      keep_one: 'Keep it',
+      keep_other: 'Keep them',
+      confirm_one: 'Remove fact',
+      confirm_other: 'Remove {{formatted}} facts',
     },
   },
   /**
@@ -176,6 +180,18 @@ export const brand = {
     usagePublished: '{{count}} published',
     usageDrafts: '{{count}} in draft',
     usageNever: 'never used',
+    /**
+     * Which campaigns use a voice or an audience (`useUsedBy`). A voice a
+     * campaign does not choose is the workspace default's, and says so;
+     * `{{campaigns}}` is a joined list of names, the last item possibly
+     * `usedByMore`.
+     */
+    usedByChosen: 'Chosen by {{campaigns}}',
+    usedByDefault: 'The default for {{campaigns}}',
+    usedByBoth: 'Chosen by {{chosen}}; the default for {{inherited}}',
+    usedByNone: 'No campaign uses it',
+    usedByMore_one: '{{count}} more',
+    usedByMore_other: '{{count}} more',
     /**
      * How the parts of a fact are joined — a comma and a space in English.
      * On the catalogue rather than in the helper because the separator is a
@@ -242,7 +258,7 @@ export const brand = {
    * what is kept. Everything under `components/brand/distill`.
    */
   distill: {
-    cancel: 'CANCEL',
+    cancel: 'Cancel',
     offer: {
       /** Before the two routes not chosen, demoted to links under a rule. */
       or: 'Or',
@@ -261,7 +277,7 @@ export const brand = {
       placeholder: 'acme.com',
       invalid: "That doesn't look like a web address.",
       what: 'We read up to ten pages — home, about, what you sell, pricing, terms, and a couple of recent posts. They stay in Assets afterwards, like any page you add.',
-      read: 'READ THE SITE',
+      read: 'Read the site',
     },
     document: {
       formats:
@@ -272,8 +288,8 @@ export const brand = {
       noMatch: 'Nothing in Assets matches that.',
       chosen_one: '{{count}} chosen',
       chosen_other: '{{count}} chosen',
-      read_one: 'READ {{count}} FILE',
-      read_other: 'READ {{count}} FILES',
+      read_one: 'Read {{count}} file',
+      read_other: 'Read {{count}} files',
       uploading: 'uploading {{percent}}%',
       processing: 'reading',
       ready: 'ready',
@@ -326,6 +342,7 @@ export const brand = {
       thin: 'too little text',
       timedOut: 'took too long',
       failed: "couldn't be read",
+      title: 'Progress',
       leave:
         'This takes a few minutes. You can leave — it carries on, and Ogen lets you know when it is ready to look at. Nothing is saved to your Foundation until you say so.',
       pagesLand:
@@ -348,6 +365,7 @@ export const brand = {
       positioning_other: '{{count}} lines on what sets you apart',
     },
     summary: {
+      title: 'Summary',
       fromPages_one: 'From {{count}} page of {{site}}',
       fromPages_other: 'From {{count}} pages of {{site}}',
       fromFile: 'From {{title}}',
@@ -407,16 +425,17 @@ export const brand = {
         questions:
           'Answering drafts the proposal again with these answers added. What you have kept, dropped or edited so far stays as you left it.',
       },
-      ask: 'ASK AGAIN WITH THESE',
+      ask: 'Ask again with these',
     },
     questions: {
       title: 'A handful of questions',
+      cardTitle: 'Questions',
       intro:
         'Answer what you can and skip the rest. Ogen drafts voices, audiences, guardrails and facts from your words, and you review them before anything is saved — the same as reading a website.',
       placeholder: 'Skip, or say it in a line or two',
       unavailable: "The questions couldn't be loaded. Try again in a minute.",
       answered: '{{answered}} of {{count}} answered',
-      draft: 'DRAFT IT',
+      draft: 'Draft it',
       /** The server's eight starter questions, by their stable ids. */
       starter: {
         q_offer: 'What do you sell, and who buys it?',
@@ -449,9 +468,9 @@ export const brand = {
       drop: 'Drop',
       keepLine: 'Keep “{{line}}”',
       dropLine: 'Drop “{{line}}”',
-      edit: 'EDIT',
-      done: 'DONE',
-      undo: 'UNDO',
+      edit: 'Edit',
+      done: 'Done',
+      undo: 'Undo',
       dropped: 'dropped',
       becomesDefault: 'becomes your default',
       voiceName: 'Name',
@@ -474,7 +493,7 @@ export const brand = {
       line: 'Line',
       disclaimerDiffers:
         'The site’s differs from yours. Keep yours unless you choose it.',
-      compare: 'COMPARE',
+      compare: 'Compare',
       keepYours: 'Keep yours',
       useTheirs: 'Use the one from the site',
       writtenHereOn: 'Written here · {{date}}',
@@ -658,16 +677,8 @@ export const brand = {
     /** The confirmations. `{{name}}` is the entry's own, always the user's words. */
     deleted: '{{name}} was deleted.',
     guardrailsDeleted: 'The guardrails were deleted.',
-    /** The side column's first card: what the section is for. */
+    /** The side column's card: what the section is for. */
     about: 'About',
-    /** The side column's second card: each campaign, and what it picks here. */
-    usedBy: {
-      title: 'Used by',
-      empty: 'No campaigns yet.',
-      noVoice: 'No voice',
-      noAudience: 'No audience',
-      defaultVoice: '{{voice}} (default)',
-    },
   },
 
   /** The visual half — `LookSection.tsx`. */
@@ -802,10 +813,10 @@ export const brand = {
       addSample: 'Add a sample',
       editSample: 'Edit sample',
       samplePlaceholder: 'Paste a post you would be happy to have written.',
-      removeSample: 'REMOVE SAMPLE',
-      cancel: 'CANCEL',
-      addIt: 'ADD IT',
-      done: 'DONE',
+      removeSample: 'Remove sample',
+      cancel: 'Cancel',
+      addIt: 'Add it',
+      done: 'Done',
       resetSamples: 'Reset samples',
       rules: 'Rules',
       rulesHint:
@@ -990,8 +1001,8 @@ export const brand = {
     inherited:
       'Falling through to the default — nothing here is specific to this platform yet.',
     ownTemplate: 'Has a template of its own.',
-    giveItsOwn: 'GIVE IT ITS OWN',
-    replace: 'REPLACE',
+    giveItsOwn: 'Give it its own',
+    replace: 'Replace',
     nothingApplies:
       'Nothing applies here, and there is no default to fall back on.',
     drawnOver: 'drawn over the picture',
@@ -1012,7 +1023,7 @@ export const brand = {
       'Missing {{ratios}} — that ratio goes out bare against {{needed}}.',
     coversSome_other:
       'Missing {{ratios}} — those ratios go out bare against {{needed}}.',
-    openInCompositor: 'OPEN IN COMPOSITOR',
+    openInCompositor: 'Open in compositor',
   },
 
   /** The singleton with real weight — `GuardrailsEditor.tsx`. */
@@ -1028,14 +1039,14 @@ export const brand = {
     mayClaimHint:
       'Claims already checked, in the form they were checked in. This is what stops a sentence that took a lawyer an hour being written from scratch every time.',
     mayClaimPlaceholder: 'That setup takes two weeks, start to finish.',
-    addClaim: 'ADD A CLAIM',
+    addClaim: 'Add a claim',
     neverClaim: 'Never claim',
     neverClaimHint:
       'Write the claim itself rather than the topic — “any guaranteed outcome, in any form” rather than “results”. A topic is something to avoid mentioning; a claim is something a sentence can be checked against.',
     neverClaimEmpty:
       'Nothing is off limits yet. Every voice in the workspace may promise anything, in any words.',
     neverClaimPlaceholder: 'That the result is guaranteed, in any form.',
-    addRule: 'ADD A RULE',
+    addRule: 'Add a rule',
     bannedWords: 'Banned words',
     bannedWordsHint:
       'Words that may never appear, in any voice. Type one and press Enter; commas and pasted lists split into separate words.',
@@ -1132,16 +1143,12 @@ export const brand = {
       title: 'Leave without creating it?',
       body: 'Nothing on this screen has been saved yet. Leaving now loses it.',
       stay: 'Keep editing',
-      discard: 'DISCARD',
+      discard: 'Discard',
     },
-    /**
-     * The fork note's first sentence. `<name>` is the starter's name, set in
-     * the foreground colour — a `<Trans>` rather than three JSX fragments,
-     * because where the emphasis falls inside a sentence is the translator's
-     * decision and not the layout's.
-     */
+    /** The fork note: its title names the starter, its body begins with this. */
+    forkedTitle: 'Started from {{name}}',
     forkedFrom:
-      'Started from <name>{{name}}</name>, and copied rather than linked — ours changing will never change yours.',
+      'Copied rather than linked — ours changing will never change yours.',
     danger: {
       title: 'Danger zone',
       /**

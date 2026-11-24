@@ -1,6 +1,22 @@
 import type { Translation } from '../en'
 
 export const campaigns: Translation['campaigns'] = {
+  accounts: {
+    groups: {
+      available_other: 'Cuentas disponibles',
+      available_one: 'Cuenta disponible',
+      inactive: 'Inactivas',
+      active: 'Activas',
+    },
+    use: 'Usar',
+    activate: 'Activar',
+  },
+  platforms: {
+    deactivateAll: 'Desactivar todas',
+  },
+  create: {
+    submit: 'Crear campaña',
+  },
   bulk: {
     selected_one: '{{formatted}} seleccionada',
     selected_other: '{{formatted}} seleccionadas',
@@ -13,11 +29,11 @@ export const campaigns: Translation['campaigns'] = {
     status: 'Estado',
     unschedule: 'Desprogramar',
     delete: 'Eliminar',
-    clear: 'BORRAR SELECCIÓN',
+    clear: 'Borrar selección',
     deleted_one: '{{formatted}} publicación eliminada',
     deleted_other: '{{formatted}} publicaciones eliminadas',
   },
-  add: 'AÑADIR CAMPAÑA',
+  add: 'Añadir campaña',
   error: 'No se pudieron cargar las campañas',
   list: {
     group: {
@@ -70,7 +86,7 @@ export const campaigns: Translation['campaigns'] = {
   archivedSection: 'Campañas archivadas',
   archivedError: 'No se pudieron cargar las campañas archivadas',
   archivedOn: 'Archivada el {{archivedOn}}',
-  unarchive: 'DESARCHIVAR',
+  unarchive: 'Desarchivar',
   archivedEmpty:
     'No hay nada archivado. Archivar una campaña la quita de la lista sin borrar nada: sus publicaciones, su calendario y su contenido siguen tal cual.',
   strategy: {
@@ -104,7 +120,7 @@ export const campaigns: Translation['campaigns'] = {
   },
   type: {
     label: 'Tipo de campaña',
-    change: 'CAMBIAR',
+    change: 'Cambiar',
     cancel: 'Cancelar',
     locked_one:
       'Bloqueado: {{count}} publicación está planificada en las fases de este tipo.',
@@ -131,7 +147,18 @@ export const campaigns: Translation['campaigns'] = {
     pendingType: 'Guarda el nuevo tipo para ver sus fases.',
     empty: 'Este tipo de campaña no tiene fases.',
     loadError: 'No se pudieron cargar las fases.',
-    meta: '{{range}} · {{posts}}',
+    meta: '{{range}} · {{days}} · {{posts}}',
+    explainer:
+      'Una campaña avanza por sus fases en orden, y Ogen escribe cada publicación para la fase en la que cae su fecha — así, una publicación de la primera fase se escribe para lo que esa fase busca. Las fechas deciden cuándo pasa la campaña a la siguiente.',
+    howToMove:
+      'Cambia cuándo termina una fase para darle más o menos tiempo; la siguiente empieza al día siguiente.',
+    timeline: 'Cuándo se ejecuta cada fase',
+    now: 'Ahora',
+    done: 'Terminada',
+    days_one: '{{count}} día',
+    days_other: '{{count}} días',
+    ends: 'Termina',
+    endsWithCampaign: 'Termina con la campaña, el {{date}}',
     posts_one: '{{count}} publicación',
     posts_other: '{{count}} publicaciones',
     endsLabel: 'Cuándo termina {{phase}}',

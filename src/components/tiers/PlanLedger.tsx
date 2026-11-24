@@ -314,7 +314,6 @@ function ColumnButton({
   busy: boolean
   t: TFunction
 }) {
-  const { i18n } = useTranslation()
   if (action.kind === 'none') return null
   const className = 'w-full justify-center'
   if (action.kind === 'switch') {
@@ -329,7 +328,7 @@ function ColumnButton({
         aria-label={t('tiers.switchNamed', { name: tier.name })}
       >
         {t('tiers.ledger.switchNamed', {
-          name: tier.name.toLocaleUpperCase(i18n.language),
+          name: tier.name,
         })}
       </Button>
     )
@@ -368,7 +367,7 @@ function ColumnButton({
       {action.freeMonth
         ? t('tiers.ledger.startFreeMonth')
         : t('tiers.ledger.chooseNamed', {
-            name: tier.name.toLocaleUpperCase(i18n.language),
+            name: tier.name,
           })}
     </Button>
   )

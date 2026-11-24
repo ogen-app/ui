@@ -183,7 +183,7 @@ describe('an analytics read', () => {
         'All time · LinkedIn · All campaigns · sorted by engagement rate',
       ),
     ).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/analytics?platform=linkedin',
     )
   })
@@ -336,7 +336,7 @@ describe('more like these', () => {
     expect(trail.pathname).toBe('/assets/a1')
     expect(trail.searchParams.get('at')).toBe('p. 12')
     expect(trail.searchParams.get('lens')).toBe('workspace')
-    expect(screen.getByText('OPEN').getAttribute('href')).toContain(
+    expect(screen.getByText('Open').getAttribute('href')).toContain(
       '/campaigns/c1/ideas',
     )
   })

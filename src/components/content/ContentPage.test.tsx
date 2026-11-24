@@ -173,7 +173,7 @@ describe('ContentPage', () => {
         'Opened by the assistant — the request waits until a file is read.',
       ),
     ).toBeInTheDocument()
-    fireEvent.click(screen.getByText('BACK'))
+    fireEvent.click(screen.getByText('Back'))
     expect(undoUiAction).toHaveBeenCalledWith('workspace', 't1', 0)
   })
 

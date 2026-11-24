@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { VoicesSection } from '@/components/brand/VoicesSection'
 import { BrandDetail } from '@/components/brand/detail'
+import type { BrandData } from '@/components/brand/types'
+import { useUsedBy } from '@/components/brand/usedBy'
 
 /**
  * `/foundation/voices` — the cast, one level down from the Overview.
@@ -19,31 +21,41 @@ export const Route = createFileRoute('/_authenticated/foundation/voices')({
 })
 
 function VoicesPage() {
-  const navigate = useNavigate()
-
   return (
     <BrandDetail section="voices">
-      {(brand) => (
-        <VoicesSection
-          voices={brand.voices}
-          onAdd={() =>
-            navigate({
-              to: '/foundation/voices/$voiceId',
-              params: { voiceId: 'new' },
-            })
-          }
-          onOpen={(voiceId) =>
-            navigate({ to: '/foundation/voices/$voiceId', params: { voiceId } })
-          }
-          onStart={(from) =>
-            navigate({
-              to: '/foundation/voices/$voiceId',
-              params: { voiceId: 'new' },
-              search: { from },
-            })
-          }
-        />
-      )}
+      {(brand) => <VoicesList brand={brand} />}
     </BrandDetail>
+  )
+}
+
+/**
+ * The list in a component of its own, so the campaigns that say what uses
+ * each voice (`useUsedBy`) are read by a hook that runs once the brand has.
+ */
+function VoicesList({ brand }: { brand: BrandData }) {
+  const navigate = useNavigate()
+  const usedBy = useUsedBy('voices', brand)
+
+  return (
+    <VoicesSection
+      voices={brand.voices}
+      usedBy={usedBy}
+      onAdd={() =>
+        navigate({
+          to: '/foundation/voices/$voiceId',
+          params: { voiceId: 'new' },
+        })
+      }
+      onOpen={(voiceId) =>
+        navigate({ to: '/foundation/voices/$voiceId', params: { voiceId } })
+      }
+      onStart={(from) =>
+        navigate({
+          to: '/foundation/voices/$voiceId',
+          params: { voiceId: 'new' },
+          search: { from },
+        })
+      }
+    />
   )
 }

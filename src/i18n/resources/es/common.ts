@@ -1,6 +1,8 @@
 import type { Translation } from '../en'
 
 export const common: Translation['common'] = {
+  clear: 'Borrar',
+  today: 'Hoy',
   cancel: 'Cancelar',
   close: 'Cerrar',
   done: 'Listo',

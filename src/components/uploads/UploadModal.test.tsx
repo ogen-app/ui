@@ -108,7 +108,7 @@ describe('a staged image already in the workspace', () => {
     await stage(new File([BYTES], 'logo-again.png'))
 
     await screen.findByText(/Already in the content bank/)
-    expect(screen.getByRole('button', { name: 'UPLOAD (1)' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Upload (1)' })).toBeEnabled()
   })
 })
 

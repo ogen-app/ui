@@ -111,9 +111,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
       </p>
 
       {runs.length === 0 ? (
-        <p className="text-sm leading-5 text-secondary-foreground">
-          {t('series.campaign.empty')}
-        </p>
+        <p className="text-sm leading-5">{t('series.campaign.empty')}</p>
       ) : (
         <ul className="flex flex-col">
           {runs.map((run) => {
@@ -138,7 +136,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
                   <span className="truncate text-sm font-medium">
                     {series.name}
                   </span>
-                  <span className="truncate text-sm text-secondary-foreground">
+                  <span className="truncate text-sm">
                     {supplyLine(t, series.supply)}
                     {local ? ` · ${t('series.campaign.localOnly')}` : ''}
                   </span>
@@ -179,9 +177,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
                     title={t('series.campaign.promoteHint')}
                   >
                     <ArrowUpRightIcon className="size-4" />
-                    <span className="uppercase">
-                      {t('series.campaign.promote')}
-                    </span>
+                    {t('series.campaign.promote')}
                   </Button>
                 ) : null}
 

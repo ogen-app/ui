@@ -113,8 +113,6 @@ export function LeaveWorkspaceDialog({ user, isOpen, onClose }: Props) {
             disabled={!confirmed || isPending}
             loading={isPending}
           >
-            {/* Literal caps in the catalogue, not an `uppercase` class — see
-                CLAUDE.md on destructive labels. Every translation keeps them. */}
             <span>{t('profile.leave.confirm')}</span>
           </Button>
         </div>

@@ -30,10 +30,12 @@ keep it accurate when these rules change.
   hub's frame (`brand/detail`'s `BrandSectionFrame`): the caret back and the
   section's name in a header that scrolls away, its entries in the main
   column, and beside them, sticky, **About** (what the section is for, and
-  "Nothing reads this yet" where that is true) and **Used by** — every
-  campaign in the hub's order (`lib/campaignOrder`) with what it picks here,
-  the default voice saying so. Series has About alone: a campaign's series
-  are its runs, one request per campaign, and Used by waits on a series list
+  "Nothing reads this yet" where that is true). Which campaigns use an entry
+  is a line on the entry's own card (`brand/usedBy`, 2026-11-23) — "Chosen by
+  …; the default for …", in the hub's order (`lib/campaignOrder`) — not a
+  Used by card beside the list, which named every campaign again and stood
+  taller than the list. Series cards go without it: a campaign's series are
+  its runs, one request per campaign, and the line waits on a series list
   that says where each one runs. Guardrails and Facts are an editor and a
   ledger, not lists, and keep their own shapes.
   For one, the same two columns: what it
@@ -125,11 +127,23 @@ keep it accurate when these rules change.
   ("16–22 November 2026"), with its controls on the same row
   (`calendar/CalendarHeader`) — the grid already says it is a calendar.
 
+- **A small heading is `SmallHeading`, one look everywhere** (2026-11-23):
+  Grotesk 12/16, medium, tertiary grey, in capitals by the class
+  (`page-primitives/SmallHeading`; `SMALL_HEADING` for a primitive that takes
+  a class, like a menu label). It goes over a group of rows, a section inside
+  a card or panel, or a group of choices in a menu; the copy stays sentence
+  case. Spacing is the caller's; the size, weight, tracking and colour are
+  not. Amber over what wasn't done (`OfferOutcome`) is the one colour
+  override. Not small headings, and not drawn with it: an assistant card's
+  status word (`ResultBlock`), a table's column heads, tags and marks
+  (`BandTag`, a fit or severity tag), and a card's title.
+
 - **There are no centred columns.** The content column is `max-w-content`
   (740px) against the page's left gutter, under the header's title — never
   `mx-auto`. `PageActionBar` spans that column, not the page.
-  Full-screen flows outside the app frame (auth, `/plans`, checkout) are the
-  exception.
+  Full-screen flows outside the app frame (auth, `/plans`, checkout, the
+  workspace chooser, the Figma consent) are the exception — and their cards
+  are still `ui/card`.
 
 - **A page that is more than one column of cards uses one of two layouts**
   (`page-primitives`), never a hand-rolled grid. Both switch on the page's own
@@ -150,7 +164,7 @@ keep it accurate when these rules change.
     rides up until its foot shows (`useStickyColumns`, first written for
     the asset page's old two columns). It carries the page's gutters. Strategy at both
     levels: the Campaigns card sticky for all campaigns, the phases for one;
-    and a Foundation section, with About and Used by.
+    and a Foundation section, with About.
     Activity, with Needs you sticky beside the day cards: the live
     warnings (`workspaceWarnings`, alert and risk only), never unread
     notifications, which the feed marks read on sight.
@@ -217,7 +231,7 @@ keep it accurate when these rules change.
   that campaign's Analytics — and one connected platform still shows its
   mark, as a mark rather than a toggle. The period does not
   reach the all-time lessons card; what makes the corner safe anyway is that
-  the cards answer back — `SectionCard`'s `scope` prints one line under the
+  the cards answer back — `ScopeNote` prints one line under the
   heading when the period does *not* reach it. A card silently ignoring a
   control above it is worse than not offering the control. A card's own
   control (the board's basis, the lessons' metric) stays in that card.

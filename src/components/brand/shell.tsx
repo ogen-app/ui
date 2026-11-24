@@ -79,7 +79,7 @@ export function Gap({
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-md border border-dashed border-quaternary p-4">
-      <p className="text-sm text-secondary-foreground">{what}</p>
+      <p className="text-sm">{what}</p>
       {offers.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {offers.map((offer, i) => (
@@ -199,7 +199,7 @@ export function WholeBrandOffer({
           rule that Spanish does not follow. `i18n.language` is passed rather
           than read inside, so the switch that re-renders this component is
           the same one that changes the join. */}
-      <p className="text-sm text-secondary-foreground">
+      <p className="text-sm">
         {t('brand.shell.offer.body', {
           fills: formatList(fills, 'conjunction', i18n.language),
         })}
@@ -209,14 +209,6 @@ export function WholeBrandOffer({
     </Card>
   )
 }
-
-/**
- * The measure every Brand screen is set to. The Overview's cards sit on it, so
- * a section opened from one of them has to as well — otherwise going in shifts
- * the column under you, and so does the editor a level below that: opening an
- * entry would move the column the entry was just sitting on.
- */
-export const COLUMN = 'w-full max-w-content'
 
 /**
  * A library section rendered as its own screen: a stack of full-width entries
@@ -263,14 +255,18 @@ export function BrandLibrary({
  *
  * 1. **The name**, display size, with the default star beside it when there is
  *    one — the only mark allowed on the heading line.
- * 2. **One line** under it, secondary: what somebody picks this one for.
+ * 2. **One line** under it: what somebody picks this one for.
  * 3. **The substance**, in a ruled block — the thing that makes this entry
  *    different from its siblings (a sample, the three consequence lines, the
  *    recipe). Text is clamped to four lines, because a card is a preview and
  *    the editor is one click away. When there is none, the same block says so
  *    in tertiary, in the same place, so an empty entry is the same card with
  *    different words rather than a shorter one.
- * 4. **The facts**, bulleted at the foot, in the line-under-the-name colour.
+ * 4. **The facts**, bulleted at the foot — the campaigns that use it among
+ *    them (`useUsedBy`).
+ *
+ * All of it in the body's colour, black: a card ranks its lines by size,
+ * weight and place, and grey body text read as disabled (2026-11-23).
  */
 export function LibraryEntry({
   name,
@@ -294,9 +290,7 @@ export function LibraryEntry({
 }) {
   const body = (
     <>
-      {line ? (
-        <p className="text-sm leading-5 text-secondary-foreground">{line}</p>
-      ) : null}
+      {line ? <p className="text-sm leading-5">{line}</p> : null}
 
       <div className="border-l-2 border-quaternary pl-3 text-sm leading-5">
         {typeof substance === 'string' ? (
@@ -310,7 +304,7 @@ export function LibraryEntry({
 
       {/* A list rather than stacked lines, because a fact wraps on a narrow
           column and without markers the wrapped half reads as another fact. */}
-      <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
+      <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5">
         {facts.map((fact, i) => (
           <li key={i}>{fact}</li>
         ))}
@@ -391,7 +385,7 @@ export function StarterCard({
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-base font-medium">{title}</span>
-        <span className="text-sm text-secondary-foreground">{body}</span>
+        <span className="text-sm">{body}</span>
       </span>
       {caret && (
         <Caret

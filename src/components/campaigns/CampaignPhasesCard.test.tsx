@@ -73,13 +73,21 @@ describe('CampaignPhasesCard', () => {
     hooks.plan = plan('derived', DATED)
     render(<CampaignPhasesCard campaignId="c1" pending={null} />)
 
-    expect(screen.getByText('Oct 1 – 16 · 2 posts')).toBeInTheDocument()
-    expect(screen.getByText('Oct 17 – 31 · 0 posts')).toBeInTheDocument()
+    expect(
+      screen.getByText('Oct 1 – 16 · 16 days · 2 posts'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Oct 17 – 31 · 15 days · 0 posts'),
+    ).toBeInTheDocument()
     expect(screen.getByText('Why a')).toBeInTheDocument()
-    // Only the first phase has a boundary after it.
+    // Only the first phase has a boundary after it; the last ends with the
+    // campaign, and says so.
     expect(boundaries()).toHaveLength(1)
     expect(
-      screen.getByText('Split evenly across the campaign dates.'),
+      screen.getByText('Ends with the campaign, Oct 31'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/^Split evenly across the campaign dates\./),
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Split evenly again' }),
@@ -103,7 +111,7 @@ describe('CampaignPhasesCard', () => {
     hooks.plan = plan('manual', DATED)
     render(<CampaignPhasesCard campaignId="c1" pending={null} />)
 
-    expect(screen.getByText('Dates set by hand.')).toBeInTheDocument()
+    expect(screen.getByText(/^Dates set by hand\./)).toBeInTheDocument()
     await userEvent.click(
       screen.getByRole('button', { name: 'Split evenly again' }),
     )
@@ -169,8 +177,8 @@ describe('CampaignPhasesCard', () => {
 
       expect(screen.getByText('Fases')).toBeInTheDocument()
       expect(screen.getByText(/ · 2 publicaciones$/)).toBeInTheDocument()
-      expect(screen.getByText('Fechas fijadas a mano.')).toBeInTheDocument()
-      expect(screen.queryByText('Dates set by hand.')).not.toBeInTheDocument()
+      expect(screen.getByText(/^Fechas fijadas a mano\./)).toBeInTheDocument()
+      expect(screen.queryByText(/Dates set by hand/)).not.toBeInTheDocument()
       expect(screen.queryByText(/posts/)).not.toBeInTheDocument()
     } finally {
       await i18next.changeLanguage('en')

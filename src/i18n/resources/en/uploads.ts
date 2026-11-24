@@ -23,10 +23,10 @@ export const uploads = {
   remove: 'Remove {{name}}',
   /** Last resort: the request died without the server wording anything. */
   failed: 'Upload failed',
-  cancel: 'CANCEL',
-  submit: 'UPLOAD',
+  cancel: 'Cancel',
+  submit: 'Upload',
   /** The count is what makes the button worth reading twice before clicking. */
-  submitCount: 'UPLOAD ({{n}})',
+  submitCount: 'Upload ({{n}})',
   /** Named while a drag is over the page — the one moment the destination
       can be stated without being asked for. */
   dropInto: 'Add these to {{scope}}',

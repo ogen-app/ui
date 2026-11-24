@@ -108,7 +108,7 @@ describe('publishing without verification', () => {
   it('still offers a plain cancel on a published post with nothing typed', async () => {
     await open('published')
 
-    expect(screen.getByRole('button', { name: 'CANCEL' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: /WITHOUT CHECKING/ }),
     ).not.toBeInTheDocument()

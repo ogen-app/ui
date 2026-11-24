@@ -84,9 +84,7 @@ function SeriesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
   const { tone } = brandSection('series')
   return (
     <Card title={t('series.library.starterGroupTitle')} capped>
-      <p className="text-sm text-secondary-foreground">
-        {t('series.library.starterGroupBody')}
-      </p>
+      <p className="text-sm">{t('series.library.starterGroupBody')}</p>
       <div className="grid gap-3">
         {SERIES_STARTERS.map((starter) => {
           const copy = seriesStarterCopy(t, starter)

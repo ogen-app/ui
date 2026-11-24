@@ -29,6 +29,7 @@ import { formatNumber } from '@/lib/intl'
 import { QualityInlineSummary } from '../quality/QualityInlineSummary'
 import type { PostEvaluation } from '@/types/quality'
 import type { PostStatus } from '@/types/posts'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 type Props = {
   checks: PostCheck[]
@@ -113,9 +114,9 @@ export function PostChecksTab({
                 are measured against. */}
             {!awaiting && (
               <>
-                <h3 className="pt-2 font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
+                <SmallHeading as="h3" className="pt-2">
                   {heading}
-                </h3>
+                </SmallHeading>
                 <ul className="flex flex-col gap-1.5">
                   {rows.map((check) => (
                     <li key={check.id} className="flex items-start gap-2">
@@ -154,9 +155,9 @@ export function PostChecksTab({
             )}
           >
             <div className="flex items-center justify-between gap-3">
-              <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
+              <SmallHeading as="h3">
                 {t('posts.quality.inlineHeading')}
-              </h3>
+              </SmallHeading>
               {canAssess && (
                 <AssessLink
                   assessment={assessment}

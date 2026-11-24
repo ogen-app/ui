@@ -204,9 +204,9 @@ export const assetInsights: Translation['assetInsights'] = {
       invalid: 'Revisa el foco y la cantidad, y vuelve a intentarlo.',
       failed:
         'No se pudieron pedir más ideas. Inténtalo de nuevo en un momento.',
-      cancel: 'CANCELAR',
-      submit_one: 'DESTILAR {{count}} IDEA',
-      submit_other: 'DESTILAR {{count}} IDEAS',
+      cancel: 'Cancelar',
+      submit_one: 'Destilar {{count}} idea',
+      submit_other: 'Destilar {{count}} ideas',
     },
   },
   ideaFit: {

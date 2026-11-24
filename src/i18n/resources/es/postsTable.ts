@@ -4,7 +4,7 @@ export const postsTable: Translation['postsTable'] = {
   sortSaveFailed: 'No se ha podido guardar el orden que has elegido',
   view: {
     groupBy: 'Agrupar por',
-    groupByHeading: 'AGRUPAR POR',
+    groupByHeading: 'Agrupar por',
     group: {
       status: 'Estado',
       campaign: 'Campaña',

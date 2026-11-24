@@ -70,7 +70,7 @@ describe('triage', () => {
     })
     expect(screen.getByText('In the drawer: The pool')).toBeTruthy()
     expect(screen.getByText('back on May 1')).toBeTruthy()
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u1')
   })
 
@@ -113,8 +113,8 @@ describe('triage', () => {
       '/campaigns/c1/ideas?ids=i1&idea=i1',
     )
     // SHOW ON SCREEN can run, so there is no OPEN ALL beside it.
-    expect(screen.queryByText('OPEN ALL')).toBeNull()
-    fireEvent.click(screen.getByText('SHOW ON SCREEN'))
+    expect(screen.queryByText('Open all')).toBeNull()
+    fireEvent.click(screen.getByText('Show on screen'))
     expect(runUiAction).toHaveBeenCalledWith('campaign:c1', 't1', {
       type: 'set_filter',
       screen: 'campaign.ideas',
@@ -162,7 +162,7 @@ describe('triage', () => {
     await show({ deleted: { done: 3, failed: 1 } })
     expect(screen.getByText('3 ideas deleted')).toBeTruthy()
     expect(screen.getByText('1 idea couldn’t be changed')).toBeTruthy()
-    expect(screen.queryByText('UNDO')).toBeNull()
+    expect(screen.queryByText('Undo')).toBeNull()
   })
 
   it('counts every merged group, with no UNDO', async () => {
@@ -176,9 +176,9 @@ describe('triage', () => {
     })
     expect(screen.getByText('2 groups merged')).toBeTruthy()
     expect(screen.getByText('4 ideas → 2')).toBeTruthy()
-    expect(screen.queryByText('UNDO')).toBeNull()
+    expect(screen.queryByText('Undo')).toBeNull()
     // The survivors, exactly, on the workspace's list (CON-510).
-    expect(screen.getByText('OPEN ALL').getAttribute('href')).toBe(
+    expect(screen.getByText('Open all').getAttribute('href')).toBe(
       '/ideas?ids=i1%2Ci2',
     )
   })
@@ -194,7 +194,7 @@ describe('triage', () => {
         ],
       },
     })
-    expect(screen.getByText('OPEN ALL').getAttribute('href')).toBe(
+    expect(screen.getByText('Open all').getAttribute('href')).toBe(
       '/campaigns/c1/ideas?ids=i1%2Ci2%2Ci3&pile=yes',
     )
   })
@@ -294,10 +294,10 @@ describe('compile and draft', () => {
     expect(
       screen.getByText('Thermal pool at dusk · Six rooms, one pool'),
     ).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/campaigns/c1/posts/p1',
     )
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u3')
   })
 
@@ -364,7 +364,7 @@ describe('compile and draft', () => {
       '/campaigns/c2/posts/p2',
     )
     // One undated: SHOW opens the campaign's Not scheduled panel.
-    expect(screen.getByText('SHOW')).toBeTruthy()
+    expect(screen.getByText('Show')).toBeTruthy()
   })
 
   it('draws drafts as they are written, then the next as a placeholder', async () => {
@@ -541,7 +541,7 @@ describe('reads', () => {
     expect(
       screen.getByText('Villa Aurora brochure · lens: Spring reopening'),
     ).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/campaigns/c1/assets/a1?lens=c1',
     )
   })
@@ -580,7 +580,7 @@ describe('reads', () => {
         'Villa Aurora brochure · p. 12 · lens: Spring reopening',
       ),
     ).toBeTruthy()
-    const href = screen.getByText('OPEN').getAttribute('href') ?? ''
+    const href = screen.getByText('Open').getAttribute('href') ?? ''
     const url = new URL(href, 'http://app')
     expect(url.pathname).toBe('/campaigns/c1/assets/a1')
     expect(url.searchParams.get('lens')).toBe('c1')
@@ -679,12 +679,12 @@ describe('review fixes', () => {
     await show({
       found: { total: 2, ideas: [{ id: 'i1', title: 'The pool' }] },
     })
-    expect(screen.queryByText('SHOW ON SCREEN')).toBeNull()
+    expect(screen.queryByText('Show on screen')).toBeNull()
   })
 
   it('keeps UNDO on a compile that names no ideas', async () => {
     await show({ compiled: { ...compiled, builtFrom: [] } })
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u3')
   })
 

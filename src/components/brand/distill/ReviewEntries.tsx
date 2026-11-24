@@ -168,7 +168,7 @@ function VoiceProposal({
                 {draft.name}
               </h3>
               {becomesDefault && (
-                <span className="flex items-center gap-1.5 text-sm text-secondary-foreground">
+                <span className="flex items-center gap-1.5 text-sm">
                   <StarIcon
                     weight="fill"
                     aria-hidden
@@ -179,9 +179,7 @@ function VoiceProposal({
               )}
             </div>
             {draft.whenToUse && (
-              <p className="text-sm leading-5 text-secondary-foreground">
-                {draft.whenToUse}
-              </p>
+              <p className="text-sm leading-5">{draft.whenToUse}</p>
             )}
           </>
         )}
@@ -245,7 +243,7 @@ function VoiceProposal({
         )}
       </ul>
 
-      <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
+      <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5">
         <li>{rulesLine(t, voice.rules)}</li>
         {!thin && (
           <li>
@@ -328,7 +326,7 @@ function AddSample({
       onClick={() => setWriting(true)}
       className="group flex min-h-[86px] w-full cursor-pointer items-center justify-center rounded-md border border-dashed border-quaternary transition-colors hover:border-foreground"
     >
-      <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium uppercase text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
+      <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
         <PlusIcon className="size-4" weight="bold" />
         {t('brand.voices.editor.addSample')}
       </span>
@@ -338,7 +336,7 @@ function AddSample({
   return (
     <>
       <li>{cell}</li>
-      <li className="text-sm leading-5 text-secondary-foreground">{note}</li>
+      <li className="text-sm leading-5">{note}</li>
     </>
   )
 }
@@ -455,11 +453,7 @@ function AudienceProposal({
             <h3 className="font-display text-xl font-medium leading-7 tracking-tight">
               {draft.name}
             </h3>
-            {draft.who && (
-              <p className="text-sm leading-5 text-secondary-foreground">
-                {draft.who}
-              </p>
-            )}
+            {draft.who && <p className="text-sm leading-5">{draft.who}</p>}
           </header>
           {/* AudiencesSection's definition list: 144px terms against a rule. */}
           <div className="flex flex-col gap-2">

@@ -122,7 +122,7 @@ export function ConnectPicker({
               submit()
             }}
           >
-            <p className="text-sm text-secondary-foreground">
+            <p className="text-sm">
               {t('workspaceSettings.connect.picker.body', {
                 platform: platformName,
               })}
@@ -290,7 +290,7 @@ function Explanation({ body, back }: { body: string; back: Back }) {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col items-start gap-4">
-      <p className="text-sm text-secondary-foreground">{body}</p>
+      <p className="text-sm">{body}</p>
       <Button size="sm" variant="outline" asChild>
         <Link to={back}>
           {t('workspaceSettings.connect.picker.backToAccounts')}

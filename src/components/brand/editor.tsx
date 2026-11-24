@@ -7,14 +7,14 @@ import {
   type ReactNode,
 } from 'react'
 import { useBlocker } from '@tanstack/react-router'
-import { type Icon } from '@phosphor-icons/react'
 import {
   AlertCircleIcon,
+  Copy01Icon,
   Delete02Icon,
   RefreshIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ModalContainer } from '@/components/ui/modal'
@@ -27,7 +27,8 @@ import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { SaveStatus } from '@/components/page-primitives/SaveStatus'
 import { brandSection, type BrandSectionId } from '@/lib/brandSections'
 import { cn } from '@/lib'
-import { COLUMN, readByStatus } from './shell'
+import { readByStatus } from './shell'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * What every Brand editor is made of.
@@ -331,9 +332,7 @@ export function BrandEditorFrame({
         size="small"
       >
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-secondary-foreground">
-            {t('brand.editor.leave.body')}
-          </p>
+          <p className="text-sm">{t('brand.editor.leave.body')}</p>
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -403,57 +402,9 @@ export function EditorIntro({
       status={readByStatus(t, readBy)}
       capped
     >
-      <p className="text-sm text-secondary-foreground">{body}</p>
-      {missing && (
-        <p className="text-sm text-secondary-foreground">{missing}</p>
-      )}
+      <p className="text-sm">{body}</p>
+      {missing && <p className="text-sm">{missing}</p>}
     </Card>
-  )
-}
-
-/** One card in an editor's column: a heading, a line under it, and fields. */
-export function EditorCard({
-  title,
-  hint,
-  action,
-  children,
-}: {
-  title: string
-  /**
-   * The line under the heading. A node rather than a string because the samples
-   * card puts its reading up here — one line of it is set in the foreground
-   * colour — and a card whose sub-heading is a different element from every
-   * other card's would be a second way of saying the same thing.
-   */
-  hint?: ReactNode
-  /**
-   * One control on the heading's line, opposite the title.
-   *
-   * For something that is true of the card as a whole rather than of a field
-   * in it — being the default voice, the samples overflow. A field goes in the
-   * body with the other fields; this corner is not an overflow for the ones
-   * that would not fit.
-   */
-  action?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section className="flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6">
-      <header className="flex items-start justify-between gap-4">
-        <div className="flex max-w-2xl flex-col gap-1">
-          <h2 className="font-display text-lg font-medium leading-6 tracking-tight">
-            {title}
-          </h2>
-          {hint && (
-            <div className="flex flex-col gap-1 text-sm leading-5 text-secondary-foreground">
-              {hint}
-            </div>
-          )}
-        </div>
-        {action}
-      </header>
-      {children}
-    </section>
   )
 }
 
@@ -473,9 +424,7 @@ export function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
-        {label}
-      </span>
+      <SmallHeading as="span">{label}</SmallHeading>
       {children}
       {hint && (
         <span className="max-w-2xl text-xs text-tertiary-foreground">
@@ -501,33 +450,24 @@ export function Field({
  * concrete.
  */
 export function ForkedNote({
-  icon: Glyph,
-  title,
+  name,
   children,
 }: {
-  icon: Icon
-  title: string
+  /** The starter's name. */
+  name: string
   children: ReactNode
 }) {
+  const { t } = useTranslation()
   return (
-    <div className={cn(COLUMN, 'flex gap-3 bg-primary px-6 py-5')}>
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary">
-        <Glyph className="size-5" />
-      </span>
-      <p className="max-w-2xl text-sm leading-5 text-secondary-foreground">
-        {/* The emphasis sits inside the sentence, so the sentence is one
-            catalogue entry with the mark in it rather than three fragments
-            assembled here — where the starter's name falls is a fact about the
-            language. The caller's second sentence follows as a sibling: it is
-            a whole sentence of its own, not a fragment of this one. */}
-        <Trans
-          i18nKey="brand.editor.forkedFrom"
-          values={{ name: title }}
-          components={{ name: <span className="text-foreground" /> }}
-        />{' '}
-        {children}
+    <Card
+      capped
+      icon={Copy01Icon}
+      title={t('brand.editor.forkedTitle', { name })}
+    >
+      <p className="text-sm">
+        {t('brand.editor.forkedFrom')} {children}
       </p>
-    </div>
+    </Card>
   )
 }
 
@@ -576,7 +516,7 @@ export function DangerCard({
   // control, and this card can hold two.
   return (
     <Card title={t('brand.editor.danger.title')} capped>
-      <p className="text-sm text-secondary-foreground">{cost}</p>
+      <p className="text-sm">{cost}</p>
       <div className="flex flex-wrap items-center gap-2">
         {reset && (
           <Button
@@ -612,7 +552,7 @@ export function DangerCard({
               a literal beside it: "this cannot be undone" is the second half
               of a sentence the first half sets up, and a language may want
               them the other way round. */}
-          <p className="text-sm text-secondary-foreground">
+          <p className="text-sm">
             {t('brand.editor.danger.confirmBody', { cost })}
           </p>
           <div className="flex justify-end gap-2">

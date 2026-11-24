@@ -136,7 +136,7 @@ describe('the Assets page’s smart groups', () => {
     await userEvent.click(
       await screen.findByRole('button', { name: 'Save as group' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: 'SAVE GROUP' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Save group' }))
     await waitFor(() =>
       expect(groups.createSavedView).toHaveBeenCalledWith({
         surface: 'assets',

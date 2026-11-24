@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { AudiencesSection } from '@/components/brand/AudiencesSection'
 import { BrandDetail } from '@/components/brand/detail'
+import type { BrandData } from '@/components/brand/types'
+import { useUsedBy } from '@/components/brand/usedBy'
 
 /**
  * `/foundation/audiences` — who the content is for.
@@ -15,34 +17,41 @@ export const Route = createFileRoute('/_authenticated/foundation/audiences')({
 })
 
 function AudiencesPage() {
-  const navigate = useNavigate()
-
   return (
     <BrandDetail section="audiences">
-      {(brand) => (
-        <AudiencesSection
-          audiences={brand.audiences}
-          onAdd={() =>
-            navigate({
-              to: '/foundation/audiences/$audienceId',
-              params: { audienceId: 'new' },
-            })
-          }
-          onOpen={(audienceId) =>
-            navigate({
-              to: '/foundation/audiences/$audienceId',
-              params: { audienceId },
-            })
-          }
-          onStart={(from) =>
-            navigate({
-              to: '/foundation/audiences/$audienceId',
-              params: { audienceId: 'new' },
-              search: { from },
-            })
-          }
-        />
-      )}
+      {(brand) => <AudiencesList brand={brand} />}
     </BrandDetail>
+  )
+}
+
+/** Voices' arrangement: the list reads what uses each audience (`useUsedBy`). */
+function AudiencesList({ brand }: { brand: BrandData }) {
+  const navigate = useNavigate()
+  const usedBy = useUsedBy('audiences', brand)
+
+  return (
+    <AudiencesSection
+      audiences={brand.audiences}
+      usedBy={usedBy}
+      onAdd={() =>
+        navigate({
+          to: '/foundation/audiences/$audienceId',
+          params: { audienceId: 'new' },
+        })
+      }
+      onOpen={(audienceId) =>
+        navigate({
+          to: '/foundation/audiences/$audienceId',
+          params: { audienceId },
+        })
+      }
+      onStart={(from) =>
+        navigate({
+          to: '/foundation/audiences/$audienceId',
+          params: { audienceId: 'new' },
+          search: { from },
+        })
+      }
+    />
   )
 }

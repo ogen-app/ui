@@ -25,8 +25,8 @@ export const activity: Translation['activity'] = {
   },
   needsYou: {
     title: 'Te necesita',
-    showMore_one: 'VER {{formatted}} MÁS',
-    showMore_other: 'VER {{formatted}} MÁS',
+    showMore_one: 'Ver {{formatted}} más',
+    showMore_other: 'Ver {{formatted}} más',
     allSet: 'Nada te necesita',
     allSetBody:
       'Nada ha fallado, va con retraso ni está a punto de vencer en ninguna campaña. Si eso cambia, aparecerá aquí.',

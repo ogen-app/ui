@@ -4,7 +4,7 @@ export const auth: Translation['auth'] = {
   login: {
     title: 'Iniciar sesión',
     subtitle: 'Inicia sesión para seguir gestionando tu contenido',
-    submit: 'INICIAR SESIÓN',
+    submit: 'Iniciar sesión',
     expired:
       'Tu sesión ha caducado — inicia sesión de nuevo para continuar donde lo dejaste',
     afterReset: 'Tu contraseña se ha cambiado. Inicia sesión con la nueva',
@@ -20,7 +20,7 @@ export const auth: Translation['auth'] = {
   register: {
     title: 'Crea tu organización',
     subtitle: 'Regístrate para empezar a gestionar tu contenido',
-    submit: 'CREAR CUENTA',
+    submit: 'Crear cuenta',
     organizationLabel: 'Nombre de la organización',
     organizationPlaceholder: 'Introduce el nombre de tu organización',
     firstNameLabel: 'Nombre',
@@ -44,15 +44,15 @@ export const auth: Translation['auth'] = {
     expiredTitle: 'Esta invitación ha caducado',
     expiredBody:
       'El enlace ya no es válido. Puede que haya caducado, que lo haya sustituido una invitación más reciente o que ya se haya usado. Pide al equipo de Ogen que te envíe una nueva.',
-    logInInstead: 'INICIAR SESIÓN',
+    logInInstead: 'Iniciar sesión',
     previewFailedTitle: 'No hemos podido comprobar esta invitación',
     previewFailedSubtitle:
       'Algo ha fallado por nuestra parte; puede que el enlace siga siendo válido',
     signedInTitle: 'Has iniciado sesión como {{name}}',
     signedInBody:
       'Esta invitación es para {{email}}. Cierra la sesión para aceptarla con esa dirección. Tus espacios de trabajo actuales se quedan tal como están.',
-    signOutAndContinue: 'CERRAR SESIÓN Y CONTINUAR',
-    staySignedIn: 'SEGUIR CON ESTA SESIÓN',
+    signOutAndContinue: 'Cerrar sesión y continuar',
+    staySignedIn: 'Seguir con esta sesión',
   },
   privateBeta: {
     title: 'Ogen está en beta privada',
@@ -61,7 +61,7 @@ export const auth: Translation['auth'] = {
       '¿Aún no tienes invitación? Escribe a <mail>{{email}}</mail> y cuéntanos para qué usarías Ogen.',
   },
   google: {
-    continue: 'CONTINUAR CON GOOGLE',
+    continue: 'Continuar con Google',
     orWithEmail: 'o con tu correo electrónico',
     orSignUpWithEmail: 'o regístrate con tu correo electrónico',
     errors: {
@@ -99,7 +99,7 @@ export const auth: Translation['auth'] = {
     organizationLabel: 'Nombre de la organización',
     organizationHint:
       'Puedes cambiarlo más tarde en Ajustes del espacio de trabajo.',
-    submit: 'CREAR ESPACIO DE TRABAJO',
+    submit: 'Crear espacio de trabajo',
     notYou: '¿No eres tú?',
     logInLink: 'Inicia sesión',
     expiredTitle: 'Este enlace de registro ha caducado',
@@ -117,7 +117,7 @@ export const auth: Translation['auth'] = {
   forgot: {
     title: 'Restablece tu contraseña',
     subtitle: 'Te enviaremos un enlace por correo para elegir una nueva',
-    submit: 'ENVIAR ENLACE',
+    submit: 'Enviar enlace',
     emailLabel: 'Correo electrónico',
     emailPlaceholder: 'Introduce tu correo electrónico',
     remembered: '¿Ya te acuerdas?',
@@ -125,7 +125,7 @@ export const auth: Translation['auth'] = {
     sentTitle: 'Revisa tu bandeja de entrada',
     sentBody:
       'Si <strong>{{email}}</strong> tiene una cuenta de Ogen, va camino un enlace para elegir una contraseña nueva. Caduca en una hora.',
-    resend: 'ENVIAR DE NUEVO',
+    resend: 'Enviar de nuevo',
     resentNote: 'Enviado de nuevo — dale un minuto.',
     emailHint:
       'Usa la dirección con la que inicias sesión. El enlace deja de funcionar después de una hora.',
@@ -134,7 +134,7 @@ export const auth: Translation['auth'] = {
   reset: {
     title: 'Elige una contraseña nueva',
     subtitle: 'Elige una que no hayas usado aquí antes',
-    submit: 'GUARDAR CONTRASEÑA',
+    submit: 'Guardar contraseña',
     passwordLabel: 'Nueva contraseña',
     passwordPlaceholder: 'Introduce una contraseña nueva',
     confirmLabel: 'Confirma la nueva contraseña',
@@ -165,7 +165,7 @@ export const auth: Translation['auth'] = {
       '<strong>Como este inicio de sesión fue con Google, también desconectaremos Google.</strong> Vuelve a conectarlo desde tu Perfil cuando recuperes el acceso.',
     explainer:
       'Si no has sido tú, protege tu cuenta. Cerraremos todas las sesiones en todos los dispositivos — incluida esta — y elegirás una contraseña nueva enseguida.',
-    submit: 'PROTEGER MI CUENTA',
+    submit: 'Proteger mi cuenta',
     wasMe: 'He sido yo',
     failed:
       'No hemos podido conectar con Ogen, así que aún no ha cambiado nada. Inténtalo de nuevo.',
@@ -183,7 +183,7 @@ export const auth: Translation['auth'] = {
     expiredTitle: 'Este enlace ha caducado',
     expiredBody:
       'Los enlaces son válidos durante 24 horas. Restablecer la contraseña también cierra todas las sesiones.',
-    expiredSubmit: 'RESTABLECER MI CONTRASEÑA',
+    expiredSubmit: 'Restablecer mi contraseña',
     invalidTitle: 'Este enlace no es válido',
     invalidBody: 'Comprueba que has abierto el enlace completo del correo.',
     invalidReset:
@@ -197,7 +197,7 @@ export const auth: Translation['auth'] = {
     lastNameLabel: 'Apellidos',
     passwordLabel: 'Contraseña',
     passwordPlaceholder: 'Elige una contraseña',
-    submit: 'UNIRME AL ESPACIO',
+    submit: 'Unirme al espacio',
     haveAccount: '¿Ya tienes una cuenta de Ogen?',
     logInLink: 'Inicia sesión',
     brokenTitle: 'Este enlace de invitación ya no funciona',
@@ -210,7 +210,7 @@ export const auth: Translation['auth'] = {
       'Algo ha fallado por nuestra parte — puede que el enlace siga siendo válido',
     joinBody:
       'Has iniciado sesión como {{email}}, que es a quien va dirigida esta invitación. Al aceptarla, este espacio se añade a tu cuenta.',
-    joinSubmit: 'ACEPTAR INVITACIÓN',
+    joinSubmit: 'Aceptar invitación',
     wrongAccountBody:
       'Esta invitación es para {{invited}}, pero has iniciado sesión como {{current}}. Cierra sesión y vuelve a abrir el enlace para aceptarla.',
     logOutLink: 'Cerrar sesión',
@@ -224,7 +224,7 @@ export const auth: Translation['auth'] = {
     pendingMessage: 'Esto puede tardar unos segundos',
     doneTitle: 'Has cerrado sesión',
     doneMessage: '¡Hasta la próxima!',
-    home: 'IR AL INICIO',
-    footer: 'CIERRE DE SESIÓN',
+    home: 'Ir al inicio',
+    footer: 'Cierre de sesión',
   },
 }

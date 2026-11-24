@@ -5,7 +5,7 @@ import { QuestionsScreen } from '@/components/brand/distill/QuestionsScreen'
 
 /**
  * `/foundation/questions` — the offer's third route (CON-400 board 5A): a
- * handful of questions for a brand nothing is written down for. DRAFT IT
+ * handful of questions for a brand nothing is written down for. Draft it
  * starts a read and moves to it, so this page is only ever the way in.
  */
 export const Route = createFileRoute('/_authenticated/foundation/questions')({

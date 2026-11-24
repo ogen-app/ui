@@ -11,7 +11,6 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   BrandEditorFrame,
   DangerCard,
-  EditorCard,
   EditorIntro,
   Field,
   ForkedNote,
@@ -29,6 +28,7 @@ import {
   type BrandVoice,
   type VoiceRules,
 } from './types'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * The one place a voice is written — the editor the library has been promising
@@ -149,10 +149,7 @@ export function VoiceEditor({
       <VoiceIntro name={voice?.name} />
 
       {starter && !voice && (
-        <ForkedNote
-          icon={starter.icon}
-          title={voiceStarterCopy(t, starter).title}
-        >
+        <ForkedNote name={voiceStarterCopy(t, starter).title}>
           {t('brand.voices.editor.forkedNote')}
         </ForkedNote>
       )}
@@ -212,9 +209,7 @@ export function VoiceEditor({
       />
 
       <Card title={t('brand.voices.editor.rules')} capped>
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.voices.editor.rulesHint')}
-        </p>
+        <p className="text-sm">{t('brand.voices.editor.rulesHint')}</p>
         {/* Two columns, and the only two on the screen. It is affordable
             here for the reason it was not when these were one-line
             controls: a stacked radio group is a block with a straight left
@@ -285,9 +280,7 @@ export function VoiceEditor({
       </Card>
 
       <Card title={t('brand.voices.editor.channels')} capped>
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.voices.editor.channelsHint')}
-        </p>
+        <p className="text-sm">{t('brand.voices.editor.channelsHint')}</p>
         {/* Collapsed to a placeholder on purpose. It was six inputs — one
             per platform — which is a lot of screen spent on a question
             nobody has answered yet: whether a per-channel note is a free
@@ -519,9 +512,8 @@ function SamplesCard({
   const isNewSample = editing !== null && editing >= samples.length
 
   return (
-    <EditorCard
-      title={t('brand.voices.editor.samples')}
-      /*
+    <Card title={t('brand.voices.editor.samples')} capped>
+      {/*
        * The reading first, in the foreground colour, where the description used
        * to be — because once there are samples it is the more useful of the two
        * and the only one that is about *this* voice. The description is a
@@ -531,25 +523,22 @@ function SamplesCard({
        *
        * The count went with it. "4 samples" over four visible cards is the
        * screen counting to itself.
-       */
-      hint={
-        <>
-          {summary ? (
-            <span>
-              <span className="text-primary-foreground">
-                {t('brand.voices.editor.readsAs')}
-              </span>{' '}
-              {summary}
-            </span>
-          ) : (
-            samples.length > 0 && (
-              <span>{t('brand.voices.editor.summaryPending')}</span>
-            )
-          )}
-          {short && <span>{t('brand.voices.editor.samplesShort')}</span>}
-        </>
-      }
-    >
+       */}
+      {summary ? (
+        <p className="text-sm">
+          <span className="text-primary-foreground">
+            {t('brand.voices.editor.readsAs')}
+          </span>{' '}
+          {summary}
+        </p>
+      ) : (
+        samples.length > 0 && (
+          <p className="text-sm">{t('brand.voices.editor.summaryPending')}</p>
+        )
+      )}
+      {short && (
+        <p className="text-sm">{t('brand.voices.editor.samplesShort')}</p>
+      )}
       <ul className="grid gap-3 sm:grid-cols-2">
         {samples.map((sample, i) => (
           // Index as key: samples are positional, unidentified strings, and
@@ -573,7 +562,7 @@ function SamplesCard({
             than one that does not. */}
         <li className="flex">
           <SampleCard blank onClick={() => open(samples.length)}>
-            <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium uppercase text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
+            <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
               <PlusIcon className="size-4" weight="bold" />
               {t('brand.voices.editor.addSample')}
             </span>
@@ -630,7 +619,7 @@ function SamplesCard({
           </div>
         </div>
       </ModalContainer>
-    </EditorCard>
+    </Card>
   )
 }
 
@@ -724,9 +713,9 @@ function ChoiceRow<T extends string>({
   const name = useId()
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="mb-2 font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
+      <SmallHeading as="legend" className="mb-2">
         {label}
-      </legend>
+      </SmallHeading>
       {options.map((option) => (
         <label
           key={option.value}

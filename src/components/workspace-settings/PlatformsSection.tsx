@@ -371,7 +371,7 @@ function AccountRow({
         size="default"
       >
         <div className="flex flex-col gap-5">
-          <p className="text-sm text-secondary-foreground">
+          <p className="text-sm">
             {t('workspaceSettings.platforms.reconnectDialog.body', {
               platform: view.info.name,
             })}
@@ -385,7 +385,7 @@ function AccountRow({
               }}
             >
               {t('workspaceSettings.platforms.reconnectDialog.continue', {
-                platform: view.info.name.toUpperCase(),
+                platform: view.info.name,
               })}
             </Button>
             <Button
