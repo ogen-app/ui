@@ -218,12 +218,14 @@ export function SourcesStep({
                   {t('onboarding.sources.stop.go')}
                 </Button>
               </div>
-            ) : error ? (
-              // The read could not start — no scraper, the read switched off,
-              // a server that did not answer. Setup must not end there: the
-              // brand can be read from Foundation later.
+            ) : error && anyRead && !reading ? (
+              // The brand could not be read from what was — no scraper, the
+              // read switched off, a server that did not answer. Setup must
+              // not end there: the brand can be read from Foundation later.
+              // A source that could not be added is not this: its error is
+              // the note, and the way on is the usual one.
               <div className="flex gap-2">
-                <Button variant="ghost" loading={starting} onClick={onContinue}>
+                <Button variant="ghost" loading={starting} onClick={onRead}>
                   {t('onboarding.sources.tryAgain')}
                 </Button>
                 <Button variant="accent" onClick={onLater}>

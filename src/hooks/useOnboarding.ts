@@ -54,10 +54,17 @@ const withSetup = (setup: WireSetup) => (tenant: Tenant | undefined) =>
 /**
  * Saves where setup stands. The cache takes the new value at once, so the
  * guard's next read agrees with the screen even before the write lands.
+ *
+ * One at a time, in the order they were made (`scope`): each step saves
+ * without waiting for the last, and an older answer landing after a newer one
+ * would put the cache back a step. No toast — this is a resume point written
+ * behind every step, and a failed one costs a reload its place, nothing more.
  */
 export function useSaveOnboarding() {
   const qc = useQueryClient()
   return useMutation({
+    scope: { id: 'onboarding-setup' },
+    meta: { errorToast: false },
     mutationFn: (state: OnboardingState) => putOnboarding(state),
     onMutate: (state) => {
       const current = qc.getQueryData<Tenant>(WORKSPACE_KEY)?.setup

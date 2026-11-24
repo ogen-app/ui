@@ -371,11 +371,11 @@ function answerValues(read: DistillRead): Record<string, string> {
 }
 
 /**
- * A 409 `distill_in_progress` for a read that is not setup's — one started on
- * Foundation, still going. The brand step follows that one instead, so there
- * is nothing to say about it here.
+ * Nothing to say: a 409 `distill_in_progress` for a read that is not setup's
+ * — one started on Foundation, still going, which the brand step follows
+ * instead — or an answer that came back after the person left the step.
  */
-class FollowedElsewhere extends Error {}
+class NothingToSay extends Error {}
 
 function Sources({
   name,
@@ -409,8 +409,21 @@ function Sources({
   const [error, setError] = useState<string | undefined>()
   const [composing, setComposing] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
-  // Taken back while still uploading: the upload lands in Assets, unread.
+  // Sources taken back before they became reads, by their pending id: an
+  // upload lands in Assets unread, a read that lands anyway is stopped.
   const withdrawn = useRef(new Set<string>())
+  // The answers being added, by their pending id.
+  const answersOp = useRef<string | null>(null)
+  // Set once the person has gone on: anything answering after that is not
+  // this screen's to adopt or show.
+  const left = useRef(false)
+  useEffect(() => {
+    // Reset on mount too: StrictMode mounts twice in development.
+    left.current = false
+    return () => {
+      left.current = true
+    }
+  }, [])
   // The read setup is opening, asked for once however many sources arrive
   // together. Forgotten when the run it opened stops taking sources.
   const opening = useRef<Promise<string> | null>(null)
@@ -436,8 +449,14 @@ function Sources({
   const mark = (id: string, status: SourceStatus) =>
     setPending((all) => all.map((p) => (p.id === id ? { ...p, status } : p)))
 
+  /** Goes on from the step; nothing still in flight comes back to it. */
+  const leave = (to: () => void) => {
+    left.current = true
+    to()
+  }
+
   const refuse = (err: unknown) => {
-    if (err instanceof FollowedElsewhere) return
+    if (err instanceof NothingToSay) return
     // The plan's refusal is the toast the rest of the app answers one with.
     if (err instanceof ApiError && err.code === 'entitlement_exceeded') {
       toast.error(err.message, { description: denialReason(err) })
@@ -446,6 +465,12 @@ function Sources({
   }
 
   const adopt = (opened: DistillRun) => {
+    // Opened after the person went on: it would hold the workspace's only
+    // slot, and setup has no step left to show it.
+    if (left.current) {
+      discardDistill(opened.id).catch(() => undefined)
+      throw new NothingToSay()
+    }
     qc.setQueryData(distillRunKey(opened.id), opened)
     // A 409's run comes without its reads; the run's own read has them.
     refresh(opened.id)
@@ -470,9 +495,11 @@ function Sources({
         if (isCollecting(open ?? undefined)) return adopt(open as DistillRun)
         opening.current = null
         if (open) {
-          qc.setQueryData(distillRunKey(open.id), open)
-          onComposed(open.id)
-          throw new FollowedElsewhere()
+          if (!left.current) {
+            qc.setQueryData(distillRunKey(open.id), open)
+            leave(() => onComposed(open.id))
+          }
+          throw new NothingToSay()
         }
         throw err
       },
@@ -480,21 +507,26 @@ function Sources({
     return opening.current
   }
 
-  /** Reads one more source, at once and on its own. */
-  const addRead = async (source: DistillReadRequest, site?: string) => {
+  /**
+   * Reads one more source, at once and on its own. `op` is its pending id: a
+   * source taken back, or left behind, before its read lands is stopped on
+   * the run it landed in rather than shown.
+   */
+  const addRead = async (
+    source: DistillReadRequest,
+    op: string,
+    site?: string,
+  ) => {
     setError(undefined)
     const id = await openRun()
     const read = await addDistillRead(id, source)
+    if (withdrawn.current.has(op) || left.current) {
+      stopDistillRead(id, read.id).catch(() => undefined)
+      return
+    }
     if (site) setTyped((all) => ({ ...all, [read.id]: site }))
     patchReads(id, (all) => [...all.filter((r) => r.id !== read.id), read])
     refresh(id)
-    return read
-  }
-
-  /** A source is a read now; one taken back meanwhile is stopped. */
-  const landed = (id: string) => (read: DistillRead) => {
-    settle(id)
-    if (withdrawn.current.has(id)) removeRead(read.id).catch(() => undefined)
   }
 
   const addWebsite = (url: string) => {
@@ -503,8 +535,8 @@ function Sources({
       ...all,
       { kind: 'website', id, url, status: 'reading' },
     ])
-    addRead({ websiteUrl: `https://${url}` }, url).then(
-      landed(id),
+    addRead({ websiteUrl: `https://${url}` }, id, url).then(
+      () => settle(id),
       (err: unknown) => {
         settle(id)
         refuse(err)
@@ -534,11 +566,11 @@ function Sources({
         }
         void qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
         invalidateEntitlements(qc)
-        if (withdrawn.current.has(id)) return
+        if (withdrawn.current.has(id) || left.current) return
         // Read as soon as it lands; the read waits out the ingest.
         mark(id, 'reading')
-        addRead({ assetId: result.asset_id }).then(
-          landed(id),
+        addRead({ assetId: result.asset_id }, id).then(
+          () => settle(id),
           (err: unknown) => {
             settle(id)
             refuse(err)
@@ -552,25 +584,37 @@ function Sources({
   const addAnswers = (values: Record<string, string>) => {
     const filled = filledAnswers(t, questions.data ?? [], values)
     if (filled.length === 0) return
+    const op = `answers-${crypto.randomUUID()}`
+    answersOp.current = op
     setPendingAnswers(values)
-    addRead({ answers: filled }).then(
-      () => setPendingAnswers(null),
-      (err: unknown) => {
-        setPendingAnswers(null)
-        refuse(err)
-      },
-    )
+    const done = () => {
+      if (answersOp.current !== op) return
+      answersOp.current = null
+      setPendingAnswers(null)
+    }
+    addRead({ answers: filled }, op).then(done, (err: unknown) => {
+      done()
+      refuse(err)
+    })
+  }
+
+  /** Takes back answers still being added; their read is stopped as it lands. */
+  const withdrawAnswers = () => {
+    if (answersOp.current) withdrawn.current.add(answersOp.current)
+    answersOp.current = null
+    setPendingAnswers(null)
   }
 
   /** Stops a read still going, or takes a finished one back out. */
   const removeRead = async (readId: string) => {
     if (!run) return
+    const id = run.id
     setError(undefined)
-    patchReads(run.id, (all) => all.filter((r) => r.id !== readId))
+    patchReads(id, (all) => all.filter((r) => r.id !== readId))
     try {
-      await stopDistillRead(run.id, readId)
+      await stopDistillRead(id, readId)
     } finally {
-      refresh(run.id)
+      refresh(id)
     }
   }
 
@@ -599,14 +643,14 @@ function Sources({
             : null
     if (!source) return
     removeRead(readId)
-      .then(() => addRead(source, typed[readId]))
+      .then(() => addRead(source, `retry-${readId}`, typed[readId]))
       .catch(refuse)
   }
 
   /** On to the brand: composed from every finished read. */
   const compose = async () => {
     if (!run) {
-      onLater()
+      leave(onLater)
       return
     }
     setError(undefined)
@@ -615,12 +659,12 @@ function Sources({
       const composed = await composeDistill(run.id)
       qc.setQueryData(distillRunKey(composed.id), composed)
       void qc.invalidateQueries({ queryKey: DISTILL_LIST_KEY })
-      onComposed(composed.id)
+      leave(() => onComposed(composed.id))
     } catch (err) {
       setComposing(false)
       const code = err instanceof ApiError ? err.code : undefined
       // Composed in another tab already: follow it there.
-      if (code === 'run_not_collecting') onComposed(run.id)
+      if (code === 'run_not_collecting') leave(() => onComposed(run.id))
       else if (code === 'nothing_read')
         setError(t('onboarding.sources.nothingRead'))
       else if (code === 'reads_in_progress') {
@@ -639,15 +683,18 @@ function Sources({
           () => void qc.invalidateQueries({ queryKey: DISTILL_LIST_KEY }),
         )
     }
-    onLater()
+    leave(onLater)
   }
 
   /** On while something is still being read: it stops, asked first. */
   const goOn = async () => {
     for (const p of pending) withdrawn.current.add(p.id)
     setPending([])
+    withdrawAnswers()
+    // Nothing is a read yet; whatever lands from here is stopped, and a run
+    // still being opened is discarded (`adopt`).
     if (!run) {
-      onLater()
+      leave(onLater)
       return
     }
     const open = reads.filter((r) => isRunOpen(r.status))
@@ -739,7 +786,7 @@ function Sources({
         onAnswers={(a) => {
           if (Object.keys(a).length > 0) addAnswers(a)
           else if (answersRead) removeRead(answersRead.id).catch(refuse)
-          else setPendingAnswers(null)
+          else withdrawAnswers()
         }}
         onBack={onBack}
         onRead={() => void compose()}
