@@ -4,8 +4,9 @@ import {
   addSourceSearch,
   connectSearch,
   destinationFor,
+  isDashboard,
+  searchCampaign,
   searchFromFilter,
-  windowCampaign,
   type UIAction,
 } from '@/lib/assistantUiActions'
 import { offeredPeriod } from '@/lib/analyticsWindow'
@@ -41,8 +42,8 @@ export function useAssistantUiActions() {
           case 'navigate': {
             if (!destination) return undefined
             const windowed =
-              Boolean(action.window) && destination.to === '/analytics'
-            // A navigate to the dashboard may carry the window it opens on
+              Boolean(action.window) && isDashboard(action.screen)
+            // A navigate to a dashboard may carry the window it opens on
             // (CON-479): "Opened Analytics · last 90 days".
             await go(
               destination.to,
@@ -50,7 +51,7 @@ export function useAssistantUiActions() {
               windowed && action.window
                 ? searchFromWindow({
                     ...offeredPeriod(action.window),
-                    campaignId: windowCampaign(action),
+                    campaignId: searchCampaign(action),
                   })
                 : undefined,
             )
@@ -86,13 +87,19 @@ export function useAssistantUiActions() {
               shown &&
               shown.from === action.window.from &&
               shown.to === action.window.to
+            // The dashboard the window lands on, the workspace's or a
+            // campaign's tab, as the address bar spells it.
+            const landing = router.buildLocation({
+              to: destination.to,
+              params: destination.params,
+            } as never).pathname
             await go(
               destination.to,
               destination.params,
               searchFromWindow(
                 {
                   ...offeredPeriod(action.window),
-                  campaignId: windowCampaign(action),
+                  campaignId: searchCampaign(action),
                 },
                 // A preset other than the one shown is a different period,
                 // even over the same dates: "last 7 days" moves, a range
@@ -101,7 +108,7 @@ export function useAssistantUiActions() {
                   (!action.window.preset ||
                     action.window.preset === here.window) &&
                   router.state.location.pathname.replace(/\/$/, '') ===
-                    destination.to
+                    landing.replace(/\/$/, '')
                   ? { window: here.window, from: here.from, to: here.to }
                   : undefined,
               ),
