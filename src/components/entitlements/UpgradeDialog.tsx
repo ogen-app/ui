@@ -370,13 +370,13 @@ function OfferColumn({
               >
                 <TabsTrigger
                   value="month"
-                  className="h-7 rounded px-3 text-xs lg:text-xs data-[state=active]:bg-popover data-[state=active]:text-foreground data-[state=active]:inset-ring data-[state=active]:inset-ring-border"
+                  className="h-7 rounded px-3 data-[state=active]:bg-popover data-[state=active]:text-foreground data-[state=active]:inset-ring data-[state=active]:inset-ring-border"
                 >
                   {t('tiers.paywall.monthly')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="year"
-                  className="h-7 rounded px-3 text-xs lg:text-xs data-[state=active]:bg-popover data-[state=active]:text-foreground data-[state=active]:inset-ring data-[state=active]:inset-ring-border"
+                  className="h-7 rounded px-3 data-[state=active]:bg-popover data-[state=active]:text-foreground data-[state=active]:inset-ring data-[state=active]:inset-ring-border"
                 >
                   {t('tiers.paywall.yearly')}
                 </TabsTrigger>

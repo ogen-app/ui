@@ -18,7 +18,7 @@ import type { SavedView } from '@/services/api/savedViews'
  * a pill (28px), so a line of pills that wraps leaves them on its first row.
  */
 export const LINE_CONTROL =
-  'flex h-7 shrink-0 cursor-pointer items-center gap-1.5 text-sm/5 text-secondary-foreground outline-none hover:text-foreground focus-visible:underline data-[state=open]:text-foreground'
+  'flex h-7 shrink-0 cursor-pointer items-center gap-1.5 text-control text-secondary-foreground outline-none hover:text-foreground focus-visible:underline data-[state=open]:text-foreground'
 
 /** Filter, opening the pills row's add field; how many filters are on. */
 export function FilterButton({

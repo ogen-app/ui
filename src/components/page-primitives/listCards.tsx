@@ -95,7 +95,7 @@ export function HeaderTabs({
           onClick={() => onPick?.(tab.id)}
           aria-current={tab.id === current}
           className={cn(
-            'flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-button border px-3 text-sm/5 outline-none focus-visible:ring-2 focus-visible:ring-accent',
+            'flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-button border px-3 text-control outline-none focus-visible:ring-2 focus-visible:ring-accent',
             tab.id === current
               ? 'border-border bg-primary font-medium text-foreground'
               : 'border-transparent text-secondary-foreground hover:bg-secondary hover:text-foreground',

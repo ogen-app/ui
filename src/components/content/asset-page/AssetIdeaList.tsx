@@ -198,7 +198,7 @@ function Piles({
           aria-label={`${counts[v]} ${t(`assetInsights.ideas.pile.${v}`)}`}
           onClick={() => onChoose(v)}
           className={cn(
-            'flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs tabular-nums transition-colors',
+            'flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-control tabular-nums transition-colors',
             active === v
               ? 'border-accent bg-accent/10 text-foreground'
               : 'border-quaternary text-secondary-foreground hover:border-tertiary-foreground hover:text-foreground',
@@ -252,7 +252,7 @@ function FreshChip({
       aria-label={t('assetInsights.distill.freshLabel', { count })}
       onClick={onToggle}
       className={cn(
-        'flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-semibold tabular-nums text-accent transition-colors',
+        'flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-control font-semibold tabular-nums text-accent transition-colors',
         active
           ? 'border-accent bg-accent/10'
           : 'border-transparent bg-accent/10 hover:border-accent',

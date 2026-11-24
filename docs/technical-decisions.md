@@ -1448,7 +1448,10 @@ each for one job:
 
 - `text-control` (13/16): the words on a control — a button, a tab, a
   field's label, a dropdown button, a chip, a toggle in a bar — and a table's
-  cells (`.table-text`).
+  cells (`.table-text`). That includes a button built by hand (the bar's
+  Help and Work with Ogen) and the list head's Filter, Views, Group and Sort.
+  A row is not a control: the rail's rows and a menu's items stay at 14, the
+  chrome's own rule (`Button`'s `menu` variant).
 - `text-mark` (10px): a letter or figure drawn inside a fixed-size mark — an
   initial in a 24px square, a count on an icon, a chart's tick. Never words.
 - `text-figure` (44px): the one big number a card is about (a price, a

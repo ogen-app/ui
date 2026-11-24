@@ -85,7 +85,7 @@ function HelpButton() {
         else useHelpStore.getState().open(pageArticle)
       }}
       className={cn(
-        'flex h-9 items-center gap-2 rounded-button border border-border bg-primary px-3 text-sm font-medium text-primary-foreground outline-none transition-colors',
+        'flex h-9 items-center gap-2 rounded-button border border-border bg-primary px-3 text-control font-medium text-primary-foreground outline-none transition-colors',
         'hover:bg-secondary aria-pressed:bg-secondary',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-primary',
       )}
@@ -117,7 +117,7 @@ function WorkWithOgen() {
       aria-pressed={on}
       onClick={() => toggle('assistant')}
       className={cn(
-        'relative flex h-9 items-center gap-2 rounded-button bg-accent px-3 text-sm font-medium text-primary outline-none transition-colors',
+        'relative flex h-9 items-center gap-2 rounded-button bg-accent px-3 text-control font-medium text-primary outline-none transition-colors',
         'hover:bg-accent/90 aria-pressed:bg-accent/85',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-primary',
       )}
