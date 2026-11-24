@@ -17,6 +17,10 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Read-only by default; a job that needs more (publish) asks for it itself.
+permissions:
+  contents: read
+
 jobs:
   check:
     name: typecheck · lint · format · test · build
@@ -119,11 +123,26 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Best effort: a missing ogen-release repo or token must not fail develop.
+      # The release App's token, limited to ogen-release, sends the bump. Both
+      # steps are best effort: a missing App or ogen-release must not fail
+      # develop.
+      - name: Release App token
+        id: release-token
+        continue-on-error: true
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ogen-app
+          repositories: ogen-release
+          permission-contents: write
+
       - name: Dispatch bump to ogen-release
+        id: dispatch
+        if: steps.release-token.outcome == 'success'
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_DISPATCH_TOKEN }}
+          GH_TOKEN: ${{ steps.release-token.outputs.token }}
           BUILD: ${{ steps.build.outputs.number }}
         run: |
           gh api repos/ogen-app/ogen-release/dispatches \
@@ -131,3 +150,11 @@ jobs:
             -f 'client_payload[service]=ui' \
             -F "client_payload[build]=$BUILD" \
             -f "client_payload[revision]=$GITHUB_SHA"
+
+      # The two steps above can't fail the job, so say so when no bump went out:
+      # the image is published but ogen-release never hears about it.
+      - name: Warn when the bump was not sent
+        if: steps.release-token.outcome != 'success' || steps.dispatch.outcome != 'success'
+        env:
+          BUILD: ${{ steps.build.outputs.number }}
+        run: echo "::warning title=Bump not sent::ghcr.io/ogen-app/ui:$BUILD was published, but ogen-release was not asked to bump the ui to it. Check the release App (RELEASE_APP_CLIENT_ID, RELEASE_APP_PRIVATE_KEY, its installation on ogen-release)."
