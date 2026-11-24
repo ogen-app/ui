@@ -115,12 +115,7 @@ export function InsightsPanel({
         >
           {/* Starts the missing lens through the retry endpoint, which
               creates it when there is none (CON-367). */}
-          <Button
-            variant="outline"
-
-            onClick={onRetry}
-            loading={retrying}
-          >
+          <Button variant="outline" onClick={onRetry} loading={retrying}>
             <ArrowsClockwiseIcon />
             <span>{t('assetInsights.state.analyseNow')}</span>
           </Button>
@@ -134,11 +129,7 @@ export function InsightsPanel({
           body={t('assetInsights.state.emptyNoteBody')}
         >
           {onOpenSource && (
-            <Button
-              variant="outline"
-
-              onClick={onOpenSource}
-            >
+            <Button variant="outline" onClick={onOpenSource}>
               {t('assetInsights.state.startWriting')}
             </Button>
           )}
@@ -371,12 +362,7 @@ function RetryButton({
 }) {
   const { t } = useTranslation()
   return (
-    <Button
-      variant="outline"
-
-      onClick={onRetry}
-      loading={retrying}
-    >
+    <Button variant="outline" onClick={onRetry} loading={retrying}>
       <ArrowsClockwiseIcon />
       <span>{t('assetInsights.retry')}</span>
     </Button>

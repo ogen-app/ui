@@ -61,12 +61,12 @@ describe('IdeaSlotCard', () => {
       </QueryWrapper>,
     )
     expect(screen.getByText('IDEA')).toBeTruthy()
-    fireEvent.click(screen.getByText('COMPILE'))
+    fireEvent.click(screen.getByText('Compile'))
     // The plan's platform is ticked, and the day is said rather than asked.
     expect(screen.getByText('from the idea’s plan')).toBeTruthy()
     expect(screen.getByText('Dated Fri, Apr 17, the idea’s day.')).toBeTruthy()
     fireEvent.click(screen.getByRole('checkbox', { name: /X/ }))
-    fireEvent.click(screen.getByText('COMPILE 2 PLANNED POSTS'))
+    fireEvent.click(screen.getByText('Compile 2 planned posts'))
     await waitFor(() =>
       expect(api.compile).toHaveBeenCalledWith(['i1'], {
         campaign_id: 'c1',
@@ -82,11 +82,11 @@ describe('IdeaSlotCard', () => {
         <IdeaSlotCard slot={slot} showCampaign={false} />
       </QueryWrapper>,
     )
-    fireEvent.click(screen.getByText('COMPILE'))
+    fireEvent.click(screen.getByText('Compile'))
     fireEvent.click(screen.getByRole('checkbox', { name: /LinkedIn/ }))
     expect(screen.getByText('Pick at least one platform.')).toBeTruthy()
     // The trigger and, last, the form's own confirm.
-    const confirm = screen.getAllByRole('button', { name: 'COMPILE' }).pop()
+    const confirm = screen.getAllByRole('button', { name: 'Compile' }).pop()
     expect((confirm as HTMLButtonElement).disabled).toBe(true)
   })
 

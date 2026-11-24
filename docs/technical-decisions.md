@@ -719,9 +719,9 @@ place, never quote their own English; one key per sentence the user reads, with
 i18next's `_one`/`_other` and spell out each form whole, because English
 pronouns and Spanish agreement do not survive being stitched at runtime. Even
 the list separators are translated — English writes "a, b, c, and d" where
-Spanish writes "a, b, c y d". Button labels on cards are sentence case in
-every language, destructive ones included (`Delete campaign` / `Eliminar
-campaña`).
+Spanish writes "a, b, c y d". Button labels, destructive or not, are sentence
+case in every language (`Delete account` / `Eliminar cuenta`), written into
+the copy.
 
 **Where.** `src/i18n/` (config, resources, boot messages),
 `stores/localeStore.ts`, `components/layout/{AppLoader,LocaleSwitchOverlay}.tsx`,

@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
- * The heading over a group of rows — ACTIVE, INACTIVE, and the offered
- * accounts inside a placeholder. Literal caps, matching every other group
- * label in the app.
+ * The heading over a group of rows — Active, Inactive, and the offered
+ * accounts inside a placeholder: the app's one small heading.
  */
 export function GroupLabel({
   children,
@@ -14,13 +14,8 @@ export function GroupLabel({
   className?: string
 }) {
   return (
-    <p
-      className={cn(
-        'mb-1 text-xs font-medium text-tertiary-foreground',
-        className,
-      )}
-    >
+    <SmallHeading as="p" className={cn('mb-1', className)}>
       {children}
-    </p>
+    </SmallHeading>
   )
 }

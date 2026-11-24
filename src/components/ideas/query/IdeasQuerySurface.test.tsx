@@ -98,7 +98,7 @@ const onSearchChange = vi.fn()
 
 /** ADD IDEA in the header opens the capture field across it. */
 async function openCapture() {
-  await userEvent.click(screen.getByRole('button', { name: 'ADD IDEA' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Add idea' }))
   return screen.getByRole('textbox', { name: 'Write down an idea' })
 }
 
@@ -257,13 +257,13 @@ describe('IdeasQuerySurface', () => {
     await userEvent.click(
       screen.getByRole('checkbox', { name: 'Select “Idea b”' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: 'DELETE' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
     expect(api.bulkDeleteIdeas).not.toHaveBeenCalled()
 
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('Delete “Idea b”?')).toBeInTheDocument()
     await userEvent.click(
-      within(dialog).getByRole('button', { name: 'DELETE IDEA' }),
+      within(dialog).getByRole('button', { name: 'Delete idea' }),
     )
 
     await waitFor(() => expect(api.bulkDeleteIdeas).toHaveBeenCalledWith(['b']))
@@ -285,7 +285,7 @@ describe('capturing', () => {
     expect(
       screen.queryByRole('textbox', { name: 'Write down an idea' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'ADD IDEA' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add idea' })).toBeInTheDocument()
   })
 
   it('shows a new idea at once on the undecided pile, and not on Yes', async () => {
@@ -384,10 +384,10 @@ describe('deleting the open idea', () => {
       page({ ideas: [page().ideas[0]], total: 1 }),
     )
 
-    await userEvent.click(screen.getByRole('button', { name: 'DELETE IDEA' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Delete idea' }))
     const dialog = await screen.findByRole('dialog')
     await userEvent.click(
-      within(dialog).getByRole('button', { name: 'DELETE IDEA' }),
+      within(dialog).getByRole('button', { name: 'Delete idea' }),
     )
 
     await waitFor(() => expect(api.bulkDeleteIdeas).toHaveBeenCalledWith(['b']))
@@ -476,7 +476,7 @@ describe('smart groups', () => {
     await userEvent.clear(name)
     await userEvent.type(name, 'Mine')
     await userEvent.click(
-      within(dialog).getByRole('button', { name: 'SAVE GROUP' }),
+      within(dialog).getByRole('button', { name: 'Save group' }),
     )
 
     await waitFor(() =>

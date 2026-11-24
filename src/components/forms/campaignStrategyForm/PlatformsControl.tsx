@@ -1,4 +1,5 @@
 import { useMemo, useRef, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 
 import { Button } from '@/components/ui/button'
@@ -198,6 +199,7 @@ function PlatformRow({
   onDeactivate,
   was,
 }: PlatformRowProps) {
+  const { t } = useTranslation()
   const { info, available, unavailable } = view
   const selected = selection !== undefined
 
@@ -289,7 +291,7 @@ function PlatformRow({
               onClick={onDeactivate}
               className="mt-1 ml-13 self-start"
             >
-              DEACTIVATE ALL
+              {t('campaigns.platforms.deactivateAll')}
             </Button>
           </div>
         </div>

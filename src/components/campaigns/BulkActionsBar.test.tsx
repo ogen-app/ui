@@ -24,7 +24,7 @@ describe('the posts selection bar (CON-482)', () => {
   it('says when every matching post is ticked', async () => {
     await show(true)
     expect(screen.getByText('All 2 matching posts selected')).toBeTruthy()
-    expect(screen.getByText('CLEAR')).toBeTruthy()
+    expect(screen.getByText('Clear')).toBeTruthy()
   })
 
   it('counts a plain selection', async () => {

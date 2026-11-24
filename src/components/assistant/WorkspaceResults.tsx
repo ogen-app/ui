@@ -32,6 +32,7 @@ import type {
 } from '@/types/assistant'
 import { ResultBlock, ResultRow, TEXT_ACTION_CLASS, TextAction } from './blocks'
 import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * What the workspace pack read or changed this turn (CON-464, drawn as CON-480
@@ -140,9 +141,9 @@ function CiteFooter({ children }: { children: ReactNode }) {
 /** A small-caps group label inside a card. */
 function Group({ children }: { children: ReactNode }) {
   return (
-    <p className="pt-3 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-tertiary-foreground">
+    <SmallHeading as="p" className="pt-3 pb-1">
       {children}
-    </p>
+    </SmallHeading>
   )
 }
 
@@ -1013,7 +1014,7 @@ function SetupCard({
               }
             >
               {t('assistant.workspace.setup.reconnect', {
-                platform: nameOf(a.platform).toUpperCase(),
+                platform: nameOf(a.platform),
               })}
             </Button>
           ))}

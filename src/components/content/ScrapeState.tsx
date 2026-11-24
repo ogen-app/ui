@@ -1,4 +1,5 @@
 import { ArrowsClockwiseIcon, WarningIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { AssetStateFrame as Frame } from '@/components/content/AssetStateFrame'
@@ -31,6 +32,7 @@ type Props = {
  * upstream, not something to work around by holding event payloads in a store.
  */
 export function ScrapeState({ sourceUrl, failed, onRetry, retrying }: Props) {
+  const { t } = useTranslation()
   const label = pageUrlLabel(sourceUrl)
 
   if (failed) {
@@ -46,7 +48,7 @@ export function ScrapeState({ sourceUrl, failed, onRetry, retrying }: Props) {
         </p>
         <Button variant="outline" onClick={onRetry} loading={retrying}>
           <ArrowsClockwiseIcon />
-          <span>TRY AGAIN</span>
+          <span>{t('common.tryAgain')}</span>
         </Button>
       </Frame>
     )

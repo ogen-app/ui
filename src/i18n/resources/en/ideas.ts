@@ -34,7 +34,7 @@ export const ideas = {
     dismiss: 'Dismiss',
     hintMultiline: 'Shift <key/> for a new line · Return <key/> to keep it',
     /** The header's button that opens the field, and the way out of it. */
-    open: 'ADD IDEA',
+    open: 'Add idea',
     close: 'Stop adding ideas',
     /** The field's send button: Return, for the mouse. */
     keep: 'Keep this idea',
@@ -51,7 +51,7 @@ export const ideas = {
     later: 'In the drawer',
     no: 'Set aside',
     undecide: 'Put it back on the desk',
-    delete: 'DELETE IDEA',
+    delete: 'Delete idea',
   },
   horizon: {
     week: 'Ask me in a week',
@@ -139,10 +139,10 @@ export const ideas = {
       'This idea will be permanently deleted, with its verdict. This cannot be undone.',
     body_other:
       'These ideas will be permanently deleted, with their verdicts. This cannot be undone.',
-    keep_one: 'KEEP IDEA',
-    keep_other: 'KEEP IDEAS',
-    confirm_one: 'DELETE IDEA',
-    confirm_other: 'DELETE {{count}} IDEAS',
+    keep_one: 'Keep idea',
+    keep_other: 'Keep ideas',
+    confirm_one: 'Delete idea',
+    confirm_other: 'Delete {{count}} ideas',
   },
   /** The smart filter on the Ideas list (CON-388 §4). */
   filter: {
@@ -209,8 +209,8 @@ export const ideas = {
   lifecycle: {
     /** Literal capitals: the slot's tag on the calendar. */
     slot: 'IDEA',
-    compile: 'COMPILE',
-    draft: 'DRAFT',
+    compile: 'Compile',
+    draft: 'Draft',
     compiled_one: 'Compiled into a planned post',
     compiled_other: 'Compiled into {{formatted}} planned posts',
     /**
@@ -226,7 +226,7 @@ export const ideas = {
     draftedSome_other:
       '{{formatted}} drafts written, {{unscheduled}} not scheduled',
     /** The toast's way to the drafts: the calendar's Not scheduled panel. */
-    show: 'SHOW',
+    show: 'Show',
     inNotScheduled: 'In Not scheduled, until you drag them onto a day.',
     /** Drafts that went to several campaigns: one toast each (CON-485). */
     inCampaign: 'In {{campaign}}',
@@ -262,7 +262,7 @@ export const ideas = {
       pickOne: 'Pick at least one platform.',
       noPlatforms: 'This campaign has no platforms yet.',
       platformsFailed: 'Couldn’t load the campaign’s platforms.',
-      retry: 'TRY AGAIN',
+      retry: 'Try again',
       noCampaign:
         'These ideas aren’t filed under one campaign, so each goes to the platform its plan names.',
       howMany: 'How many',
@@ -282,7 +282,7 @@ export const ideas = {
         'One planned post per platform: the same theses, each with its platform’s type.',
       compileNote:
         'Planned posts have no body and no date; WRITE THE POST turns each into a draft.',
-      cancel: 'CANCEL',
+      cancel: 'Cancel',
       onDay: 'Dated {{date}}, the idea’s day.',
       unscheduled: 'Not scheduled, unless an idea has a day planned.',
       /** Every idea has a day planned (CON-485). */
@@ -290,12 +290,12 @@ export const ideas = {
       /** No idea has a day planned (CON-485). */
       undated_one: 'Not scheduled: the idea has no day planned.',
       undated_other: 'Not scheduled: none of the ideas has a day planned.',
-      compile: 'COMPILE',
-      compileCount_one: 'COMPILE {{formatted}} PLANNED POST',
-      compileCount_other: 'COMPILE {{formatted}} PLANNED POSTS',
-      draft: 'DRAFT',
-      draftCount_one: 'DRAFT {{formatted}} POST',
-      draftCount_other: 'DRAFT {{formatted}} POSTS',
+      compile: 'Compile',
+      compileCount_one: 'Compile {{formatted}} planned post',
+      compileCount_other: 'Compile {{formatted}} planned posts',
+      draft: 'Draft',
+      draftCount_one: 'Draft {{formatted}} post',
+      draftCount_other: 'Draft {{formatted}} posts',
     },
     draftFailed: 'The drafts could not all be written',
     compileFailed: 'Couldn’t compile the idea',
@@ -304,7 +304,7 @@ export const ideas = {
     tooMany: 'Pick up to 10 ideas to compile or draft them',
     noBody: 'No body yet.',
     noBodyHint: 'Write it from the theses, or ask the assistant.',
-    write: 'WRITE THE POST',
+    write: 'Write the post',
     writePrompt: 'Write this post in full from its theses.',
     builtFrom_one: 'Built from {{count}} idea',
     builtFrom_other: 'Built from {{count}} ideas',
@@ -326,7 +326,7 @@ export const ideas = {
     tooMany: 'Narrow the filter to select all (up to 5,000).',
     count_one: '{{count}} selected',
     count_other: '{{count}} selected',
-    delete: 'DELETE',
+    delete: 'Delete',
     done_one: 'Deleted {{count}} idea.',
     done_other: 'Deleted {{count}} ideas.',
     partial_one: 'Deleted {{count}} idea; {{failed}} couldn’t be deleted.',

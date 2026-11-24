@@ -3,7 +3,7 @@ export const postsTable = {
   /** Group by, at the end of the filter line; the table's group heads. */
   view: {
     groupBy: 'Group by',
-    groupByHeading: 'GROUP BY',
+    groupByHeading: 'Group by',
     group: {
       status: 'Status',
       campaign: 'Campaign',

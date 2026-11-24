@@ -641,6 +641,7 @@ function EmptyBank({
   onUpload: () => void
   onAddWebPage: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <PageGridEmptyState
       title={
@@ -660,15 +661,15 @@ function EmptyBank({
         <div className="flex items-center gap-2">
           <Button variant="defaultInverted" onClick={onWrite}>
             <FileTextIcon />
-            <span>WRITE A NOTE</span>
+            <span>{t('content.list.start.write')}</span>
           </Button>
           <Button variant="outline" onClick={onUpload}>
             <UploadSimpleIcon />
-            <span>UPLOAD FILES</span>
+            <span>{t('content.list.start.upload')}</span>
           </Button>
           <Button variant="outline" onClick={onAddWebPage}>
             <GlobeSimpleIcon />
-            <span>ADD A WEB PAGE</span>
+            <span>{t('content.list.start.addWebPage')}</span>
           </Button>
         </div>
       }

@@ -313,7 +313,7 @@ describe('/auth/secure-account in Spanish', () => {
     await open()
 
     expect(
-      await screen.findByRole('button', { name: 'PROTEGER MI CUENTA' }),
+      await screen.findByRole('button', { name: 'Proteger mi cuenta' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Protege tu cuenta de Ogen')).toBeInTheDocument()
     expect(screen.getByText('Dispositivo')).toBeInTheDocument()
@@ -321,7 +321,7 @@ describe('/auth/secure-account in Spanish', () => {
 
     for (const english of [
       'Secure your Ogen account',
-      'SECURE MY ACCOUNT',
+      'Secure my account',
       'Device',
       'IP address',
       'This was me',

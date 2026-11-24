@@ -8,8 +8,8 @@ export const tiers: Translation['tiers'] = {
     waitingTitle: 'A la espera de la persona propietaria',
     waitingBody:
       'Solo una persona propietaria de {{workspace}} puede elegir un plan. Esta página abre el espacio de trabajo en cuanto lo haga.',
-    switchWorkspace: 'CAMBIAR DE ESPACIO',
-    signOut: 'CERRAR SESIÓN',
+    switchWorkspace: 'Cambiar de espacio',
+    signOut: 'Cerrar sesión',
     save: 'AHORRA UN {{percent}} %',
     mostPopular: 'EL MÁS ELEGIDO',
     chargedToday: 'SE COBRA HOY',
@@ -19,11 +19,11 @@ export const tiers: Translation['tiers'] = {
     billedMonthly: 'Facturado cada mes · IVA no incluido',
     billedYearly: 'Facturado {{total}} al año · IVA no incluido',
     allowances: 'INCLUYE',
-    chooseNamed: 'ELEGIR {{name}}',
-    startFreeMonth: 'EMPEZAR EL MES GRATIS',
-    currentPlan: 'PLAN ACTUAL',
-    scheduled: 'PROGRAMADO',
-    unavailable: 'AÚN NO DISPONIBLE',
+    chooseNamed: 'Elegir {{name}}',
+    startFreeMonth: 'Empezar el mes gratis',
+    currentPlan: 'Plan actual',
+    scheduled: 'Programado',
+    unavailable: 'Aún no disponible',
     noneOnSale: 'Ahora mismo no hay ningún plan a la venta.',
     vatNote:
       'Los precios no incluyen IVA. Lemon Squeezy vende Ogen como comerciante registrado y lo añade al pagar.',
@@ -32,7 +32,7 @@ export const tiers: Translation['tiers'] = {
     compTryAny:
       'Prueba cualquier plan todo el tiempo que quieras: no se cobra nada.',
     freeWhileTesting: 'GRATIS MIENTRAS PRUEBAS',
-    switchNamed: 'CAMBIAR A {{name}}',
+    switchNamed: 'Cambiar a {{name}}',
     compNote:
       'El acceso a la beta es gratuito mientras pruebas. Si termina, Ogen te avisa antes y no se toca nada de lo que hayas creado.',
     hiddenTierTitle:
@@ -57,8 +57,8 @@ export const tiers: Translation['tiers'] = {
     openedCharged: 'Se te cobra al completar el pago.',
     openedBody:
       'Esta página continúa sola en cuanto Lemon Squeezy lo confirme y abre {{workspace}}.',
-    reopen: 'VOLVER A ABRIR EL PAGO',
-    back: 'ELEGIR OTRO PLAN',
+    reopen: 'Volver a abrir el pago',
+    back: 'Elegir otro plan',
     slowTitle: 'Está tardando más de lo normal',
     slowBody:
       'Deja esta página abierta o vuelve más tarde: no se te cobrará dos veces. El recibo de Lemon Squeezy tiene la referencia del pedido.',
@@ -69,15 +69,15 @@ export const tiers: Translation['tiers'] = {
     body: 'Lemon Squeezy calcula la diferencia: subir de plan empieza hoy; bajar espera al final del periodo que ya has pagado.',
     trialBody:
       'Esto termina hoy el mes gratis de {{name}} y se cobra {{target}} ahora.',
-    cancel: 'CANCELAR',
-    confirm: 'PASAR A {{name}}',
+    cancel: 'Cancelar',
+    confirm: 'Pasar a {{name}}',
     blockedTitle: 'No durante el mes gratis',
     blockedBody:
       '{{name}} no se puede cambiar hasta que termine su mes gratis el {{when}}. Vuelve a elegir entonces, o termina el mes gratis en Lemon Squeezy y vuelve.',
     blockedBodyBare:
       '{{name}} no se puede cambiar hasta que termine su mes gratis. Termínalo en Lemon Squeezy o vuelve a elegir cuando acabe.',
     nothingCharged: 'No se ha cobrado nada y sigues en {{name}}.',
-    ok: 'ACEPTAR',
+    ok: 'Aceptar',
   },
   planError: {
     stale:
@@ -99,7 +99,7 @@ export const tiers: Translation['tiers'] = {
   priceExclVat: '{{price}}, IVA no incluido',
   perMonth: '{{price}} / mes',
   perYear: '{{price}} / año',
-  keepPlan: 'MANTENER {{name}}',
+  keepPlan: 'Mantener {{name}}',
   notInPlan: 'No está en tu plan',
   notInPlanBody:
     'Esto no forma parte del plan de tu espacio de trabajo. Al mejorarlo, se activa para todo el equipo.',
@@ -119,7 +119,7 @@ export const tiers: Translation['tiers'] = {
   limitOnly: '{{limit}} incluidos',
   unlimited: 'Sin límite',
 
-  upgrade: 'MEJORAR PLAN',
+  upgrade: 'Mejorar plan',
 
   paywall: {
     label: 'Mejora tu plan',
@@ -159,7 +159,7 @@ export const tiers: Translation['tiers'] = {
     perMonth: '<price>{{price}}</price> / mes',
     billedYearly: '{{total}} facturados al año',
     billedYearlySaving: '{{total}} facturados al año, ahorras {{saving}}',
-    upgradeTo: 'PASAR A {{plan}}',
+    upgradeTo: 'Pasar a {{plan}}',
     planName: 'Ogen {{plan}}',
     comparePlans: 'Comparar todos los planes',
     seeAllFeatures: 'Ver todas las funciones',
@@ -240,7 +240,7 @@ export const tiers: Translation['tiers'] = {
     planPitch: 'Todo lo de {{current}}, con más margen para crecer.',
     unpriced: 'El precio aún no está publicado.',
   },
-  seePlans: 'VER PLANES',
+  seePlans: 'Ver planes',
   ownersOnlyPlan:
     'Solo un propietario del espacio puede cambiar el plan para todo el equipo.',
 
@@ -251,7 +251,7 @@ export const tiers: Translation['tiers'] = {
 
   planLoadFailed: 'No se han podido cargar los planes.',
   plansClose: 'Cerrar los planes',
-  changePlan: 'CAMBIAR',
+  changePlan: 'Cambiar',
 
   billingTitle: 'Plan y facturación',
   paymentMethod: 'Método de pago y datos de facturación',
@@ -265,7 +265,7 @@ export const tiers: Translation['tiers'] = {
 
   providerHolds:
     'Tu método de pago, tu dirección de facturación, tu NIF/CIF, tus facturas y la cancelación los gestiona Lemon Squeezy, que vende Ogen como comerciante registrado.',
-  managePortal: 'GESTIONAR',
+  managePortal: 'Gestionar',
   portalFailed: 'No se ha podido abrir el portal de facturación.',
 
   statusPastDue: 'Pago fallido',
@@ -292,7 +292,7 @@ export const tiers: Translation['tiers'] = {
   autoRenewsIn: 'Se renueva automáticamente {{relative}}, el {{when}}.',
 
   chooseNamed: 'Elegir {{name}}',
-  cancelChange: 'CANCELAR EL CAMBIO',
+  cancelChange: 'Cancelar el cambio',
 
   changeScheduled: 'Pasarás a {{name}} el {{when}}.',
   changeScheduledUp: '{{name}} empieza el {{when}}.',
@@ -308,7 +308,7 @@ export const tiers: Translation['tiers'] = {
   leaveHidden: {
     title: '¿Dejar {{name}}?',
     body: 'Cambiar a {{target}} es gratis y se aplica al momento. Solo el equipo de Ogen puede volver a poner este espacio en {{name}}.',
-    cancel: 'CANCELAR',
+    cancel: 'Cancelar',
   },
   comp: {
     tag: 'Acceso beta',

@@ -18,7 +18,7 @@ const RIBBON_HEIGHT = '2.5rem'
  * for a light surface.
  */
 const RIBBON_CTA =
-  'shrink-0 border-primary/40 text-primary uppercase hover:border-primary hover:bg-primary/10'
+  'shrink-0 border-primary/40 text-primary hover:border-primary hover:bg-primary/10'
 
 /**
  * The newest operator announcement (CON-230), as a one-line ribbon across the

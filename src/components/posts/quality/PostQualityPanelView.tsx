@@ -154,7 +154,7 @@ export function PostQualityPanelView({
               // `justify-center`: the button base is `inline-flex` with no
               // justification, so at full width the label would sit against
               // the left edge with the rest of the row empty.
-              className="w-full justify-center uppercase"
+              className="w-full justify-center"
               onClick={onAssess}
               loading={busy}
               disabled={!canRun}
@@ -177,7 +177,7 @@ export function PostQualityPanelView({
             t('posts.quality.empty.unavailableHint'),
           ]}
           action={
-            <Button variant="outline" className="uppercase" asChild>
+            <Button variant="outline" asChild>
               <Link to="/workspace-settings">
                 <GearSixIcon />
                 <span>{t('posts.quality.empty.goToSettings')}</span>
@@ -200,7 +200,7 @@ export function PostQualityPanelView({
             t('posts.quality.empty.loadFailed'),
           ]}
           action={
-            <Button variant="outline" className="uppercase" onClick={onReload}>
+            <Button variant="outline" onClick={onReload}>
               <ArrowClockwiseIcon />
               {/* Reload, not re-assess: the score may well be sitting there
                   intact, and a failed fetch is no reason to pay for a run. */}
@@ -307,7 +307,6 @@ function AssessButton({
     <Button
       type="button"
       variant="outline"
-      className="uppercase"
       onClick={onAssess}
       disabled={disabled}
     >
@@ -488,7 +487,7 @@ function Summary({
               size="sm"
               // Cancels the ghost's own left padding so the label lines up
               // with the sentence above it.
-              className="-ml-3 uppercase"
+              className="-ml-3"
               onClick={onReassess}
             >
               <ArrowClockwiseIcon />

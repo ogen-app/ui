@@ -114,7 +114,7 @@ describe('Distill more ideas (CON-398)', () => {
       'objections from CFOs',
     )
     await user.click(
-      within(dialog).getByRole('button', { name: 'DISTILL 8 IDEAS' }),
+      within(dialog).getByRole('button', { name: 'Distill 8 ideas' }),
     )
 
     expect(api.request).toHaveBeenCalledWith('a1', null, {
@@ -145,7 +145,7 @@ describe('Distill more ideas (CON-398)', () => {
     await user.keyboard('{ArrowRight}{ArrowRight}')
     expect(within(dialog).getByRole('radio', { name: '7' })).toHaveFocus()
     expect(
-      within(dialog).getByRole('button', { name: 'DISTILL 7 IDEAS' }),
+      within(dialog).getByRole('button', { name: 'Distill 7 ideas' }),
     ).toBeInTheDocument()
   })
 
@@ -165,7 +165,7 @@ describe('Distill more ideas (CON-398)', () => {
     ).toBeInTheDocument()
     expect(within(dialog).getByText('301 / 300')).toBeInTheDocument()
     expect(
-      within(dialog).getByRole('button', { name: 'DISTILL 5 IDEAS' }),
+      within(dialog).getByRole('button', { name: 'Distill 5 ideas' }),
     ).toBeDisabled()
   })
 
@@ -200,7 +200,7 @@ describe('Distill more ideas (CON-398)', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Distill more ideas' }),
     )
-    await user.click(screen.getByRole('button', { name: 'DISTILL 5 IDEAS' }))
+    await user.click(screen.getByRole('button', { name: 'Distill 5 ideas' }))
     expect(
       await screen.findByText('This month’s idea runs are used up.'),
     ).toBeInTheDocument()

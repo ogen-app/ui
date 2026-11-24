@@ -152,8 +152,6 @@ export function DisconnectAccountDialog({
             onClick={() => run(forcing)}
             loading={isPending}
           >
-            {/* Literal caps in the catalogue, not an `uppercase` class — see
-                CLAUDE.md on destructive labels. Every translation keeps them. */}
             {forcing
               ? t('workspaceSettings.disconnect.blocked.confirm')
               : t('workspaceSettings.disconnect.confirm')}

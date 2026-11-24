@@ -87,7 +87,6 @@ export function DisconnectFigmaDialog({ connection, isOpen, onClose }: Props) {
             onClick={run}
             loading={isPending}
           >
-            {/* Literal caps in the catalogue — see CLAUDE.md on destructive labels. */}
             {t('integrations.figma.disconnect.confirm')}
           </Button>
         </div>

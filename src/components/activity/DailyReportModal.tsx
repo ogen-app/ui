@@ -11,6 +11,7 @@ import { useActivityFeed, useActivityReport } from '@/hooks/useActivity'
 import { useDayLabel } from '@/hooks/useActivityLabels'
 import { browserTimeZone } from '@/lib/timeZones'
 import type { ActivityReport } from '@/types/activity'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * One day, as a report — the entry the feed's report row opens (CON-225).
@@ -337,9 +338,7 @@ function CampaignRows({ ids }: { ids: string[] }) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
-        {title}
-      </h3>
+      <SmallHeading as="h3">{title}</SmallHeading>
       {children}
     </section>
   )

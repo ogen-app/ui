@@ -146,7 +146,7 @@ const ticked = (title: string) =>
   screen.getByRole('checkbox', { name: `Select ${title}` })
 /** DELETE in the list's head, over whatever is ticked. */
 const deleteTicked = () =>
-  userEvent.click(screen.getByRole('button', { name: 'DELETE' }))
+  userEvent.click(screen.getByRole('button', { name: 'Delete' }))
 
 describe('deleting one document', () => {
   /*
@@ -173,7 +173,7 @@ describe('deleting one document', () => {
     await tick('Interview transcript')
     await deleteTicked()
     await userEvent.click(
-      screen.getByRole('button', { name: 'DELETE DOCUMENT' }),
+      screen.getByRole('button', { name: 'Delete document' }),
     )
 
     expect(onDeleteMany).toHaveBeenCalledWith(['a2'])
@@ -185,7 +185,7 @@ describe('deleting one document', () => {
 
     await tick('Positioning')
     await deleteTicked()
-    await userEvent.click(screen.getByRole('button', { name: 'KEEP DOCUMENT' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Keep document' }))
 
     expect(onDeleteMany).not.toHaveBeenCalled()
     expect(screen.queryByText('Delete "Positioning"?')).not.toBeInTheDocument()
@@ -221,7 +221,7 @@ describe('deleting a selection', () => {
     ).toBeInTheDocument()
 
     await userEvent.click(
-      screen.getByRole('button', { name: 'DELETE 2 DOCUMENTS' }),
+      screen.getByRole('button', { name: 'Delete 2 documents' }),
     )
 
     expect(onDeleteMany).toHaveBeenCalledWith(['a1', 'a2'])
@@ -264,7 +264,7 @@ describe('select all', () => {
       screen.getByRole('heading', { name: 'Delete 5 documents?' }),
     ).toBeInTheDocument()
     await userEvent.click(
-      screen.getByRole('button', { name: 'DELETE 5 DOCUMENTS' }),
+      screen.getByRole('button', { name: 'Delete 5 documents' }),
     )
     expect(onDeleteMany).toHaveBeenCalledWith(['a1', 'a2', 'a3', 'a4', 'a5'])
   })
@@ -477,13 +477,13 @@ describe('in Spanish', () => {
     await userEvent.click(
       screen.getByRole('checkbox', { name: 'Seleccionar Positioning' }),
     )
-    await userEvent.click(screen.getByRole('button', { name: 'ELIMINAR' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
 
     expect(
       screen.getByRole('heading', { name: '¿Eliminar «Positioning»?' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'ELIMINAR DOCUMENTO' }),
+      screen.getByRole('button', { name: 'Eliminar documento' }),
     ).toBeInTheDocument()
     // The English that used to be written into the component.
     expect(screen.queryByText(/permanently deleted/)).not.toBeInTheDocument()
