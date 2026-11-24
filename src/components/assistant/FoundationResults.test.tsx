@@ -100,8 +100,8 @@ describe('a voice changed', () => {
     expect(screen.getByText('Emoji')).toBeTruthy()
     expect(screen.getByText('some emoji').tagName).toBe('S')
     expect(screen.getByText('Lead with the picture')).toBeTruthy()
-    expect(screen.queryByText('OPEN')).toBeNull()
-    fireEvent.click(screen.getByText('UNDO'))
+    expect(screen.queryByText('Open')).toBeNull()
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledWith('workspace', 't1', 'u1')
   })
 
@@ -171,7 +171,7 @@ describe('a fact', () => {
       },
     })
     expect(screen.getByText('Removed')).toBeTruthy()
-    expect(screen.getByText('UNDO')).toBeTruthy()
+    expect(screen.getByText('Undo')).toBeTruthy()
   })
 
   it('says it was renewed', async () => {
@@ -220,7 +220,7 @@ describe('a bulk change', () => {
     expect(screen.getByText('Updated 1 voice')).toBeTruthy()
     expect(screen.getByText('Kept 2')).toBeTruthy()
     expect(screen.getByText('a 2026 document also states it')).toBeTruthy()
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledTimes(3)
   })
 
@@ -256,12 +256,12 @@ describe('what getBrand read', () => {
     expect(screen.getByText('of 29')).toBeTruthy()
     // A fact with no expiry date says where it came from, and no empty date.
     expect(screen.getByText('Press kit')).toBeTruthy()
-    fireEvent.click(screen.getAllByText('RENEW')[0])
+    fireEvent.click(screen.getAllByText('Renew')[0])
     expect(send).toHaveBeenCalledWith(
       'workspace',
       'Renew the fact “Spring rate from €690” for another season.',
     )
-    fireEvent.click(screen.getAllByText('EDIT')[0])
+    fireEvent.click(screen.getAllByText('Edit')[0])
     expect(askFor).toHaveBeenCalled()
   })
 
@@ -359,7 +359,7 @@ describe('a brand reading', () => {
     expect(
       screen.getByText('About two minutes. You can leave this screen.'),
     ).toBeTruthy()
-    expect(screen.getByText('OPEN THE READ').getAttribute('href')).toBe(
+    expect(screen.getByText('Open the read').getAttribute('href')).toBe(
       '/foundation/read/r1',
     )
   })
@@ -447,7 +447,7 @@ describe('series', () => {
     expect(screen.getByText('In Spring reopening · Once a week')).toBeTruthy()
     expect(screen.getByText('Not running')).toBeTruthy()
     // The series' own screen is behind its flag: nothing links to it.
-    expect(screen.queryByText('OPEN')).toBeNull()
+    expect(screen.queryByText('Open')).toBeNull()
   })
 
   it('makes and runs one in a single card, with one UNDO', async () => {
@@ -472,10 +472,10 @@ describe('series', () => {
     })
     expect(screen.getByText('Recipe')).toBeTruthy()
     expect(screen.getByText('Runs in Spring reopening')).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/campaigns/c1/strategy',
     )
-    expect(screen.getAllByText('UNDO')).toHaveLength(1)
+    expect(screen.getAllByText('Undo')).toHaveLength(1)
   })
 })
 
@@ -533,7 +533,7 @@ describe('a brand check', () => {
       '/campaigns/c1/posts/p1',
     )
     // IGNORE dismisses against the finding's own campaign.
-    fireEvent.click(screen.getAllByText('IGNORE')[1])
+    fireEvent.click(screen.getAllByText('Ignore')[1])
     expect(ignoreFinding).toHaveBeenCalledWith('workspace', 't1', 'c2', 'k2')
     expect(
       screen.getByText('The other 2 follow the voice and the guardrails.'),
@@ -579,7 +579,7 @@ describe('a brand check', () => {
               kind: 'delete',
               title: 'Delete it',
               proposalId: 'del1',
-              card: { verb: 'DELETE', rows: [], sources: [] },
+              card: { verb: 'Delete', rows: [], sources: [] },
             },
           ]),
           finding(
@@ -617,7 +617,7 @@ describe('a brand check', () => {
     // A delete opens its card rather than running.
     fireEvent.click(screen.getByText('or Delete it'))
     expect(confirmProposal).not.toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'DELETE' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeTruthy()
     // So does the campaign's voice, with what it changes.
     fireEvent.click(screen.getByText('or Use Plain, the campaign’s voice'))
     expect(confirmProposal).not.toHaveBeenCalled()

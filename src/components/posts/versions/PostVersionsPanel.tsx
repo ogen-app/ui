@@ -369,7 +369,7 @@ function EntryRow({
               loading={removing}
               onClick={() => onDelete?.()}
             >
-              DELETE
+              {t('posts.versions.deleteVersion')}
             </Button>
             <Button
               type="button"
@@ -468,7 +468,7 @@ function VersionReader({
               onClick={onRestore}
             >
               <ArrowUUpLeftIcon />
-              <span>RESTORE THIS VERSION</span>
+              <span>{t('posts.versions.restore')}</span>
             </Button>
             <p className="text-xs text-tertiary-foreground">
               Saved as a new version on top — nothing is overwritten, and you
@@ -530,6 +530,7 @@ function SaveVersionForm({
   onSave: (note: string) => Promise<void>
   saving: boolean
 }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
 
@@ -542,7 +543,7 @@ function SaveVersionForm({
         onClick={() => setOpen(true)}
       >
         <PlusIcon />
-        <span>CREATE NEW VERSION</span>
+        <span>{t('posts.versions.create')}</span>
       </Button>
     )
   }

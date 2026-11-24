@@ -11,7 +11,7 @@ export const help: Translation['help'] = {
     failed: {
       title: 'No se pudo cargar la ayuda',
       body: 'Comprueba tu conexión e inténtalo de nuevo.',
-      retry: 'REINTENTAR',
+      retry: 'Reintentar',
     },
     none: {
       title: 'Todavía no hay ayuda para esta página',
@@ -21,7 +21,7 @@ export const help: Translation['help'] = {
       title: 'Este artículo no está aquí',
       body: 'Puede que se haya renombrado o retirado. Ogen puede responder a tu pregunta.',
     },
-    askOgen: 'PREGUNTAR A OGEN',
+    askOgen: 'Preguntar a Ogen',
   },
   embed: {
     open: 'Abrir',

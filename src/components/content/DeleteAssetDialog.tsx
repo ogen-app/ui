@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
 import { useDeleteAsset } from '@/hooks/useContent'
@@ -38,6 +39,7 @@ export function DeleteAssetDialog({
   isOpen,
   onClose,
 }: Props) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { mutate: deleteAsset, isPending: deleting } = useDeleteAsset()
 
@@ -83,7 +85,7 @@ export function DeleteAssetDialog({
             onClick={onClose}
             disabled={deleting}
           >
-            KEEP DOCUMENT
+            {t('content.delete.keep', { count: 1 })}
           </Button>
           <Button
             type="button"
@@ -91,7 +93,7 @@ export function DeleteAssetDialog({
             onClick={handleConfirm}
             loading={deleting}
           >
-            DELETE DOCUMENT
+            {t('content.delete.confirm', { count: 1 })}
           </Button>
         </div>
       </div>

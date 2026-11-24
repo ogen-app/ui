@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
 import { Explainer } from '@/components/page-primitives/Explainer'
 import { ModalContainer } from '@/components/ui/modal'
@@ -29,6 +30,7 @@ export function CreateCampaignDialog({
   open: boolean
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const typesQuery = useCampaignTypes()
   const types = typesQuery.data
   // `awaiting`, not `isLoading` — see `lib/fetched`.
@@ -142,7 +144,7 @@ export function CreateCampaignDialog({
             disabled={!canCreate}
             loading={createCampaign.isPending}
           >
-            CREATE CAMPAIGN
+            {t('campaigns.create.submit')}
           </Button>
         </div>
       </form>

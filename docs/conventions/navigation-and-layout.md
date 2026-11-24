@@ -127,6 +127,17 @@ keep it accurate when these rules change.
   ("16–22 November 2026"), with its controls on the same row
   (`calendar/CalendarHeader`) — the grid already says it is a calendar.
 
+- **A small heading is `SmallHeading`, one look everywhere** (2026-11-23):
+  Grotesk 12/16, medium, tertiary grey, in capitals by the class
+  (`page-primitives/SmallHeading`; `SMALL_HEADING` for a primitive that takes
+  a class, like a menu label). It goes over a group of rows, a section inside
+  a card or panel, or a group of choices in a menu; the copy stays sentence
+  case. Spacing is the caller's; the size, weight, tracking and colour are
+  not. Amber over what wasn't done (`OfferOutcome`) is the one colour
+  override. Not small headings, and not drawn with it: an assistant card's
+  status word (`ResultBlock`), a table's column heads, tags and marks
+  (`BandTag`, a fit or severity tag), and a card's title.
+
 - **There are no centred columns.** The content column is `max-w-content`
   (740px) against the page's left gutter, under the header's title — never
   `mx-auto`. `PageActionBar` spans that column, not the page.

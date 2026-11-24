@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -72,6 +73,7 @@ export function PublishedUrlDialog({
   verifyExternal,
   saveUnverified,
 }: Props) {
+  const { t } = useTranslation()
   const [url, setUrl] = useState('')
   const [stage, setStage] = useState<Stage>({ kind: 'input' })
   const [verifying, setVerifying] = useState(false)
@@ -244,7 +246,7 @@ export function PublishedUrlDialog({
               onClick={onClose}
               disabled={busy}
             >
-              CANCEL
+              {t('common.cancel')}
             </Button>
           ) : (
             <Button

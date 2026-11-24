@@ -177,9 +177,7 @@ export function CampaignSeriesCard({ campaign }: { campaign: Campaign }) {
                     title={t('series.campaign.promoteHint')}
                   >
                     <ArrowUpRightIcon className="size-4" />
-                    <span className="uppercase">
-                      {t('series.campaign.promote')}
-                    </span>
+                    {t('series.campaign.promote')}
                   </Button>
                 ) : null}
 

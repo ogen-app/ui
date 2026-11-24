@@ -54,13 +54,13 @@ describe('IdeaPostForm (CON-470)', () => {
     ).toBeTruthy()
     fireEvent.click(screen.getByRole('checkbox', { name: 'Instagram' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Threads' }))
-    expect(screen.getByText('DRAFT 6 POSTS')).toBeTruthy()
+    expect(screen.getByText('Draft 6 posts')).toBeTruthy()
     fireEvent.click(
       screen.getByRole('radio', {
         name: /^One post from all 3, per platform/,
       }),
     )
-    fireEvent.click(screen.getByText('DRAFT 2 POSTS'))
+    fireEvent.click(screen.getByText('Draft 2 posts'))
     expect(onSubmit).toHaveBeenCalledWith({
       platformIds: ['sq-ig', 'sq-th'],
       together: true,
@@ -70,7 +70,7 @@ describe('IdeaPostForm (CON-470)', () => {
   it('leaves the platform to the ideas’ plans when they share no campaign', () => {
     const onSubmit = open(null)
     expect(screen.getByText(/aren’t filed under one campaign/)).toBeTruthy()
-    fireEvent.click(screen.getAllByRole('button', { name: 'DRAFT' }).pop()!)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Draft' }).pop()!)
     expect(onSubmit).toHaveBeenCalledWith({ platformIds: [], together: false })
   })
 
@@ -80,7 +80,7 @@ describe('IdeaPostForm (CON-470)', () => {
     expect(
       screen.getByText(/Couldn’t load the campaign’s platforms/),
     ).toBeTruthy()
-    fireEvent.click(screen.getByText('TRY AGAIN'))
+    fireEvent.click(screen.getByText('Try again'))
     expect(query.refetch).toHaveBeenCalled()
     query.failed = false
   })
@@ -120,7 +120,7 @@ describe('IdeaPostForm, as CON-485 draws it', () => {
     expect(
       screen.getByText('1 of 3 has a date; the rest stay unscheduled.'),
     ).toBeTruthy()
-    fireEvent.click(screen.getByText('DRAFT 3 POSTS'))
+    fireEvent.click(screen.getByText('Draft 3 posts'))
     expect(onSubmit).toHaveBeenCalledWith({
       platformIds: ['sq-ig'],
       together: false,
@@ -143,7 +143,7 @@ describe('IdeaPostForm, as CON-485 draws it', () => {
     )
     fireEvent.click(screen.getByText('open'))
     expect(screen.getByText('Draft “The kitchen garden”')).toBeTruthy()
-    fireEvent.click(screen.getByText('CANCEL'))
+    fireEvent.click(screen.getByText('Cancel'))
     expect(onSubmit).not.toHaveBeenCalled()
     expect(screen.queryByText('Draft “The kitchen garden”')).toBeNull()
   })

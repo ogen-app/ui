@@ -54,7 +54,7 @@ describe('arriving at an account to reconnect (CON-480)', () => {
     expect(screen.getByText('Reconnect Instagram')).toBeTruthy()
     expect(screen.getByText('Needs reconnecting')).toBeTruthy()
     expect(start).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByText('CONTINUE TO INSTAGRAM'))
+    fireEvent.click(screen.getByText('Continue to Instagram'))
     expect(start).toHaveBeenCalledWith(instagram)
   })
 
@@ -63,7 +63,7 @@ describe('arriving at an account to reconnect (CON-480)', () => {
     await renderWithProviders(
       <PlatformsSection focus={{ accountId: 'a1', platform: 'instagram' }} />,
     )
-    fireEvent.click(screen.getByText('CANCEL'))
+    fireEvent.click(screen.getByText('Cancel'))
     expect(screen.queryByText('Reconnect Instagram')).toBeNull()
     expect(start).not.toHaveBeenCalled()
   })
@@ -78,7 +78,7 @@ describe('arriving at an account to reconnect (CON-480)', () => {
       <PlatformsSection focus={{ accountId: 'a1', platform: 'instagram' }} />,
     )
     expect(document.activeElement?.textContent).not.toBe('Reconnect')
-    fireEvent.click(screen.getByText('CANCEL'))
+    fireEvent.click(screen.getByText('Cancel'))
     expect(document.activeElement?.textContent).toBe('Reconnect')
   })
 

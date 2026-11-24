@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { ModalContainer } from '@/components/ui/modal'
 import { formatAnchor } from '@/components/campaigns/calendar/date'
@@ -80,6 +81,7 @@ function warningFor(status: PostStatus, when: string | null) {
 }
 
 export function DeletePostDialog({ post, isOpen, onClose, onDeleted }: Props) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { mutate: deletePost, isPending: deleting } = useDeletePost(
     post.campaign_id,
@@ -142,7 +144,7 @@ export function DeletePostDialog({ post, isOpen, onClose, onDeleted }: Props) {
             onClick={onClose}
             disabled={deleting}
           >
-            KEEP POST
+            {t('posts.delete.keep')}
           </Button>
           <Button
             type="button"

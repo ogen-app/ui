@@ -230,9 +230,9 @@ export const assetInsights = {
         'Ogen reads the source again for {{campaign}}. It won’t repeat the ideas already here, and keeps away from the ones you set aside. Every existing idea stays.',
       invalid: 'Check the focus and the count, then try again.',
       failed: 'Couldn’t ask for more ideas. Try again in a moment.',
-      cancel: 'CANCEL',
-      submit_one: 'DISTILL {{count}} IDEA',
-      submit_other: 'DISTILL {{count}} IDEAS',
+      cancel: 'Cancel',
+      submit_one: 'Distill {{count}} idea',
+      submit_other: 'Distill {{count}} ideas',
     },
   },
   /** Why an idea scores what it does, criterion by criterion (CON-385/387). */

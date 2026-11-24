@@ -17,8 +17,8 @@ export const profile = {
   password: {
     sentBody:
       'A link to set a new password is on its way to <email>{{email}}</email>. It expires in an hour, and using it signs out every device — including this one.',
-    send: 'EMAIL ME A RESET LINK',
-    resend: 'SEND IT AGAIN',
+    send: 'Email me a reset link',
+    resend: 'Send it again',
     resentNote: 'Sent again — give it a minute.',
   },
   /** Every way into the account, one row each (CON-396). */
@@ -29,12 +29,12 @@ export const profile = {
     passwordSet: 'Email and password',
     passwordNotSet: 'Not set — you sign in with Google',
     /** The same reset email: there is no current password to ask for. */
-    setPassword: 'SET A PASSWORD',
+    setPassword: 'Set a password',
     google: 'Google',
     googleConnected: '{{email}} · connected {{date}}',
     googleNotConnected: 'Not connected',
-    connect: 'CONNECT',
-    disconnect: 'DISCONNECT',
+    connect: 'Connect',
+    disconnect: 'Disconnect',
     onlyWayIn:
       'Google is your only way in. Set a password first, then you can disconnect it.',
     connectedToast: 'Google connected',
@@ -55,7 +55,7 @@ export const profile = {
       'Your login keeps working: any other workspace you belong to is untouched, and <strong>{{workspace}}</strong> itself carries on without you. If you are its only owner, appoint another owner first — a workspace can’t be left ownerless.',
     thisWorkspace: 'this workspace',
     confirmLabel: 'Type <email>{{email}}</email> to confirm',
-    keep: 'STAY IN THIS WORKSPACE',
-    confirm: 'LEAVE THIS WORKSPACE',
+    keep: 'Stay in this workspace',
+    confirm: 'Leave this workspace',
   },
 }

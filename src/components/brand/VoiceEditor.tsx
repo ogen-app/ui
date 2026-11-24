@@ -28,6 +28,7 @@ import {
   type BrandVoice,
   type VoiceRules,
 } from './types'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * The one place a voice is written — the editor the library has been promising
@@ -561,7 +562,7 @@ function SamplesCard({
             than one that does not. */}
         <li className="flex">
           <SampleCard blank onClick={() => open(samples.length)}>
-            <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium uppercase text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
+            <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
               <PlusIcon className="size-4" weight="bold" />
               {t('brand.voices.editor.addSample')}
             </span>
@@ -712,9 +713,9 @@ function ChoiceRow<T extends string>({
   const name = useId()
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="mb-2 font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
+      <SmallHeading as="legend" className="mb-2">
         {label}
-      </legend>
+      </SmallHeading>
       {options.map((option) => (
         <label
           key={option.value}

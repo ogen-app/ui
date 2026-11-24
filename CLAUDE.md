@@ -132,11 +132,11 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   [`docs/colors.md`](./docs/colors.md).
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
-- **Button labels on cards and the commit panel are sentence case** —
-  `Delete campaign`, `Fix with Ogen`, `Save`, destructive or not (decided
-  2026-11-19, replacing the old literal-capitals rule). Write the casing into
-  the copy, never with an `uppercase` class. Labels elsewhere that are still in
-  capitals move to sentence case as their screens join `ui/card`.
+- **Button labels are sentence case, everywhere** — `Delete campaign`,
+  `Fix with Ogen`, `Save`, destructive or not (decided 2026-11-19 for cards,
+  extended to every button 2026-11-23). Write the casing into the copy, never
+  with an `uppercase` class, and never upper-case a name put into a label.
+  The assistant's small-caps status words (DONE, PROPOSAL) are not buttons.
 - **A card's content is black** — body text, a row's second line and the
   facts at a card's foot are `text-foreground`, never
   `text-secondary-foreground`: grey body copy reads as disabled (2026-11-23).
@@ -185,6 +185,7 @@ Loaded automatically in `src/components/layout`, `src/components/page-primitives
 - The right rail is the assistant's, with help over it.
 - Explanatory copy goes in `<Explainer>`.
 - A page header names the place, and the switcher names the scope.
+- A small heading is `SmallHeading`, one look everywhere.
 - There are no centred columns.
 - A page that is more than one column of cards uses one of two layouts.
 - Screen corners have fixed jobs — top is about the object, bottom is about the work.

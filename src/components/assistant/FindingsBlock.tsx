@@ -290,10 +290,9 @@ export function FindingRow({
 
 /**
  * The one look every primary fix has, an offer or a post to open alike: a
- * bordered button in letter-spaced capitals, whatever case the server wrote.
+ * bordered button, its label in the case the server wrote.
  */
-const FIX_BUTTON_CLASS =
-  'rounded-none text-xs font-semibold uppercase tracking-[0.06em]'
+const FIX_BUTTON_CLASS = 'rounded-none text-xs font-semibold'
 
 const OR_CLASS =
   'cursor-pointer text-[12.5px] text-secondary-foreground underline-offset-2 hover:text-foreground hover:underline disabled:cursor-default'

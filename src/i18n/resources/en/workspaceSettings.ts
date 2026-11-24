@@ -71,8 +71,8 @@ export const workspaceSettings = {
     confirmBody:
       'Everything in this workspace is deleted, for every member, and you can’t restore it yourself. Type <strong>{{name}}</strong> to confirm.',
     confirmLabel: 'Workspace name',
-    keep: 'KEEP WORKSPACE',
-    confirm: 'DELETE WORKSPACE',
+    keep: 'Keep workspace',
+    confirm: 'Delete workspace',
     /** The server's own last-workspace guard, arriving from another tab's race. */
     onlyWorkspace: 'This is your only workspace',
     onlyWorkspaceNote: 'Create another workspace before deleting this one.',
@@ -88,8 +88,8 @@ export const workspaceSettings = {
     reconnectDialog: {
       title: 'Reconnect {{platform}}',
       body: 'You’ll sign in to {{platform}} and come back here. Your posts and settings stay as they are, and the posts scheduled through this account go out once it is back.',
-      continue: 'CONTINUE TO {{platform}}',
-      cancel: 'CANCEL',
+      continue: 'Continue to {{platform}}',
+      cancel: 'Cancel',
     },
     reconnect: 'Reconnect',
     disconnectAccount: 'Disconnect {{name}}',
@@ -107,8 +107,8 @@ export const workspaceSettings = {
     allowedBody: 'Scheduled posts go out on their own, across every campaign.',
     blockedTitle: 'Auto-publishing not allowed',
     blockedBody: 'Scheduled posts wait for you to publish them by hand.',
-    allow: 'ALLOW',
-    disallow: 'DISALLOW',
+    allow: 'Allow',
+    disallow: 'Disallow',
     checkFailed: "Unable to check {{platform}}'s scheduled posts",
     pending: {
       title_one: '{{platform}} has {{count}} post queued to publish',
@@ -187,8 +187,8 @@ export const workspaceSettings = {
     body: 'Ogen will stop publishing to this {{platform}} account, and the connection is removed on the publishing provider too — so it won’t come back on the next sync.',
     published:
       'Posts already published stay live on {{platform}}. You can reconnect the account later, but it has to go through the authorization flow again.',
-    keep: 'KEEP CONNECTED',
-    confirm: 'DISCONNECT ACCOUNT',
+    keep: 'Keep connected',
+    confirm: 'Disconnect account',
     succeeded: 'Disconnected {{name}}',
     blocked: {
       title: 'This account has scheduled posts',
@@ -200,7 +200,7 @@ export const workspaceSettings = {
         'To keep it, close this and unschedule the post first — then you can pick a different account for it.',
       keep_other:
         'To keep them, close this and unschedule those posts first — then you can pick a different account for each.',
-      confirm: 'DISCONNECT ANYWAY',
+      confirm: 'Disconnect anyway',
     },
   },
 }

@@ -22,7 +22,7 @@ export const ideas: Translation['ideas'] = {
     retry: 'Reintentar',
     dismiss: 'Descartar',
     hintMultiline: 'Mayús <key/> para otra línea · Intro <key/> para guardarla',
-    open: 'AÑADIR IDEA',
+    open: 'Añadir idea',
     close: 'Dejar de añadir ideas',
     keep: 'Guardar esta idea',
   },
@@ -36,7 +36,7 @@ export const ideas: Translation['ideas'] = {
     later: 'En el cajón',
     no: 'Apartar',
     undecide: 'Devolverla a la mesa',
-    delete: 'ELIMINAR IDEA',
+    delete: 'Eliminar idea',
   },
   horizon: {
     week: 'Recuérdamelo en una semana',
@@ -106,10 +106,10 @@ export const ideas: Translation['ideas'] = {
       'Esta idea se eliminará para siempre, con su veredicto. No se puede deshacer.',
     body_other:
       'Estas ideas se eliminarán para siempre, con sus veredictos. No se puede deshacer.',
-    keep_one: 'CONSERVAR IDEA',
-    keep_other: 'CONSERVAR IDEAS',
-    confirm_one: 'ELIMINAR IDEA',
-    confirm_other: 'ELIMINAR {{count}} IDEAS',
+    keep_one: 'Conservar idea',
+    keep_other: 'Conservar ideas',
+    confirm_one: 'Eliminar idea',
+    confirm_other: 'Eliminar {{count}} ideas',
   },
   filter: {
     origin: {
@@ -163,8 +163,8 @@ export const ideas: Translation['ideas'] = {
   },
   lifecycle: {
     slot: 'IDEA',
-    compile: 'COMPILAR',
-    draft: 'REDACTAR',
+    compile: 'Compilar',
+    draft: 'Redactar',
     compiled_one: 'Compilada en una publicación planificada',
     compiled_other: 'Compilada en {{formatted}} publicaciones planificadas',
     drafted_one: '{{formatted}} borrador escrito, sin programar',
@@ -175,7 +175,7 @@ export const ideas: Translation['ideas'] = {
       '{{formatted}} borrador escrito, {{unscheduled}} sin programar',
     draftedSome_other:
       '{{formatted}} borradores escritos, {{unscheduled}} sin programar',
-    show: 'VER',
+    show: 'Ver',
     inNotScheduled: 'En Sin programar, hasta que las arrastres a un día.',
     inCampaign: 'En {{campaign}}',
     aCampaign: 'una campaña',
@@ -202,7 +202,7 @@ export const ideas: Translation['ideas'] = {
       pickOne: 'Elige al menos una plataforma.',
       noPlatforms: 'Esta campaña aún no tiene plataformas.',
       platformsFailed: 'No se pudieron cargar las plataformas de la campaña.',
-      retry: 'REINTENTAR',
+      retry: 'Reintentar',
       noCampaign:
         'Estas ideas no están en una misma campaña, así que cada una va a la plataforma que indica su plan.',
       howMany: 'Cuántas',
@@ -220,7 +220,7 @@ export const ideas: Translation['ideas'] = {
         'Una publicación planificada por plataforma: las mismas tesis, cada una con el tipo de su plataforma.',
       compileNote:
         'Las publicaciones planificadas no tienen texto ni fecha; ESCRIBIR LA PUBLICACIÓN convierte cada una en un borrador.',
-      cancel: 'CANCELAR',
+      cancel: 'Cancelar',
       onDay: 'Con fecha {{date}}, el día de la idea.',
       unscheduled:
         'Sin programar, salvo que una idea tenga un día planificado.',
@@ -228,12 +228,12 @@ export const ideas: Translation['ideas'] = {
       undated_one: 'Sin programar: la idea no tiene un día planificado.',
       undated_other:
         'Sin programar: ninguna de las ideas tiene un día planificado.',
-      compile: 'COMPILAR',
-      compileCount_one: 'COMPILAR {{formatted}} PUBLICACIÓN PLANIFICADA',
-      compileCount_other: 'COMPILAR {{formatted}} PUBLICACIONES PLANIFICADAS',
-      draft: 'REDACTAR',
-      draftCount_one: 'REDACTAR {{formatted}} PUBLICACIÓN',
-      draftCount_other: 'REDACTAR {{formatted}} PUBLICACIONES',
+      compile: 'Compilar',
+      compileCount_one: 'Compilar {{formatted}} publicación planificada',
+      compileCount_other: 'Compilar {{formatted}} publicaciones planificadas',
+      draft: 'Redactar',
+      draftCount_one: 'Redactar {{formatted}} publicación',
+      draftCount_other: 'Redactar {{formatted}} publicaciones',
     },
     draftFailed: 'No se pudieron escribir todos los borradores',
     compileFailed: 'No se pudo compilar la idea',
@@ -263,7 +263,7 @@ export const ideas: Translation['ideas'] = {
     tooMany: 'Acota el filtro para seleccionarlas todas (hasta 5.000).',
     count_one: '{{count}} seleccionada',
     count_other: '{{count}} seleccionadas',
-    delete: 'ELIMINAR',
+    delete: 'Eliminar',
     done_one: 'Se eliminó {{count}} idea.',
     done_other: 'Se eliminaron {{count}} ideas.',
     partial_one:

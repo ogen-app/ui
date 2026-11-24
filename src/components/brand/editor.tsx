@@ -28,6 +28,7 @@ import { SaveStatus } from '@/components/page-primitives/SaveStatus'
 import { brandSection, type BrandSectionId } from '@/lib/brandSections'
 import { cn } from '@/lib'
 import { readByStatus } from './shell'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * What every Brand editor is made of.
@@ -423,9 +424,7 @@ export function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
-        {label}
-      </span>
+      <SmallHeading as="span">{label}</SmallHeading>
       {children}
       {hint && (
         <span className="max-w-2xl text-xs text-tertiary-foreground">

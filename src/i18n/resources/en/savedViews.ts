@@ -34,15 +34,15 @@ export const savedViews = {
     share: 'Share with the workspace',
     what: 'Saves the filters, the grouping and the sort — not what they find.',
     cancel: 'Cancel',
-    confirm: 'SAVE GROUP',
-    renameConfirm: 'SAVE',
+    confirm: 'Save group',
+    renameConfirm: 'Save',
   },
   remove: {
     title: 'Delete “{{name}}”?',
     body: 'The group goes; nothing it shows is deleted.',
     bodyShared:
       'The group goes for everyone it is shared with; nothing it shows is deleted.',
-    keep: 'KEEP GROUP',
-    confirm: 'DELETE GROUP',
+    keep: 'Keep group',
+    confirm: 'Delete group',
   },
 }

@@ -10,15 +10,15 @@ export const campaignOverview = {
    * a name — the article and word order are not the same in every language.
    * Capitals are the copy, as with every other button in the app.
    */
-  openOverview: 'OPEN OVERVIEW',
-  openPosts: 'OPEN POSTS',
-  openIdeas: 'OPEN IDEAS',
-  openCalendar: 'OPEN CALENDAR',
-  openActivity: 'OPEN ACTIVITY',
-  openAnalytics: 'OPEN ANALYTICS',
-  openStrategy: 'OPEN STRATEGY',
-  openAssets: 'OPEN ASSETS',
-  openSettings: 'OPEN SETTINGS',
+  openOverview: 'Open overview',
+  openPosts: 'Open posts',
+  openIdeas: 'Open ideas',
+  openCalendar: 'Open calendar',
+  openActivity: 'Open activity',
+  openAnalytics: 'Open analytics',
+  openStrategy: 'Open strategy',
+  openAssets: 'Open assets',
+  openSettings: 'Open settings',
 
   /**
    * The row of doors at the foot of the Overview: one per place in the
@@ -76,7 +76,7 @@ export const campaignOverview = {
    * asked of the campaign's assistant, which offers it to confirm.
    */
   problems: {
-    ignore: 'IGNORE',
+    ignore: 'Ignore',
     ignoreFailed: 'Couldn’t ignore that problem. Try again.',
     /** The card's header: every problem, to the campaign's assistant. */
     fixAll: 'Fix with Ogen',
@@ -86,7 +86,7 @@ export const campaignOverview = {
   },
   /** The Before-launch list's first post. */
   todo: {
-    addPost: 'ADD POST',
+    addPost: 'Add post',
   },
   /** Shared by the band and the figures. */
   stats: {
@@ -171,23 +171,23 @@ export const campaignOverview = {
    */
   setup: {
     title: 'Set up this campaign',
-    withOgen: 'DO IT WITH OGEN',
+    withOgen: 'Do it with Ogen',
     strategy: {
       title: 'Dates and a post goal',
       detail: 'When it runs and how often it publishes.',
-      action: 'SET DATES',
+      action: 'Set dates',
       ask: 'Suggest dates and a post goal for this campaign.',
     },
     channels: {
       title: 'Channels',
       detail: 'Where it publishes, with an account connected.',
-      action: 'CHOOSE CHANNELS',
+      action: 'Choose channels',
       ask: 'Suggest which channels this campaign should publish on.',
     },
     posts: {
       title: 'The first post',
       detail: 'Write one yourself, or have Ogen draft a plan.',
-      action: 'ADD POST',
+      action: 'Add post',
       ask: 'Generate a content plan for this campaign.',
     },
   },

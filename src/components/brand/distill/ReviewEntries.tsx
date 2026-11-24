@@ -326,7 +326,7 @@ function AddSample({
       onClick={() => setWriting(true)}
       className="group flex min-h-[86px] w-full cursor-pointer items-center justify-center rounded-md border border-dashed border-quaternary transition-colors hover:border-foreground"
     >
-      <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium uppercase text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
+      <span className="flex items-center gap-1.5 font-grotesk text-xs font-medium text-tertiary-foreground transition-colors group-hover:text-primary-foreground">
         <PlusIcon className="size-4" weight="bold" />
         {t('brand.voices.editor.addSample')}
       </span>

@@ -1,6 +1,22 @@
 import type { Translation } from '../en'
 
 export const campaigns: Translation['campaigns'] = {
+  accounts: {
+    groups: {
+      available_other: 'Cuentas disponibles',
+      available_one: 'Cuenta disponible',
+      inactive: 'Inactivas',
+      active: 'Activas',
+    },
+    use: 'Usar',
+    activate: 'Activar',
+  },
+  platforms: {
+    deactivateAll: 'Desactivar todas',
+  },
+  create: {
+    submit: 'Crear campaña',
+  },
   bulk: {
     selected_one: '{{formatted}} seleccionada',
     selected_other: '{{formatted}} seleccionadas',
@@ -13,11 +29,11 @@ export const campaigns: Translation['campaigns'] = {
     status: 'Estado',
     unschedule: 'Desprogramar',
     delete: 'Eliminar',
-    clear: 'BORRAR SELECCIÓN',
+    clear: 'Borrar selección',
     deleted_one: '{{formatted}} publicación eliminada',
     deleted_other: '{{formatted}} publicaciones eliminadas',
   },
-  add: 'AÑADIR CAMPAÑA',
+  add: 'Añadir campaña',
   error: 'No se pudieron cargar las campañas',
   list: {
     group: {
@@ -70,7 +86,7 @@ export const campaigns: Translation['campaigns'] = {
   archivedSection: 'Campañas archivadas',
   archivedError: 'No se pudieron cargar las campañas archivadas',
   archivedOn: 'Archivada el {{archivedOn}}',
-  unarchive: 'DESARCHIVAR',
+  unarchive: 'Desarchivar',
   archivedEmpty:
     'No hay nada archivado. Archivar una campaña la quita de la lista sin borrar nada: sus publicaciones, su calendario y su contenido siguen tal cual.',
   strategy: {
@@ -104,7 +120,7 @@ export const campaigns: Translation['campaigns'] = {
   },
   type: {
     label: 'Tipo de campaña',
-    change: 'CAMBIAR',
+    change: 'Cambiar',
     cancel: 'Cancelar',
     locked_one:
       'Bloqueado: {{count}} publicación está planificada en las fases de este tipo.',

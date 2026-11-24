@@ -118,7 +118,7 @@ describe('PlanLedger', () => {
     expect(screen.getByText('FREE FOR A MONTH, THEN')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Choose Pro' }),
-    ).toHaveTextContent('START FREE MONTH')
+    ).toHaveTextContent('Start free month')
   })
 
   it('buys the price for the interval on show', async () => {
@@ -147,8 +147,8 @@ describe('PlanLedger', () => {
       { tier: PRO, label: 'current', action: { kind: 'held' } },
     ])
 
-    expect(screen.getByRole('button', { name: 'CURRENT PLAN' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'SCHEDULED' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Current plan' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Scheduled' })).toBeDisabled()
   })
 
   it('offers no button to a reader who cannot choose', () => {
@@ -204,14 +204,14 @@ describe('PlanLedger for a complimentary workspace (CON-402)', () => {
 
     expect(
       within(screen.getByRole('region', { name: 'Pro' })).getByRole('button', {
-        name: 'CURRENT PLAN',
+        name: 'Current plan',
       }),
     ).toBeDisabled()
     await userEvent.click(
       screen.getByRole('button', { name: 'Switch to Starter' }),
     )
     expect(onChoose).toHaveBeenCalledWith(STARTER, null)
-    expect(screen.getByText('SWITCH TO STARTER')).toBeInTheDocument()
+    expect(screen.getByText('Switch to Starter')).toBeInTheDocument()
   })
 })
 
@@ -234,9 +234,9 @@ describe('PlanLedger in Spanish', () => {
     ])
 
     expect(screen.getByText('UN MES GRATIS, LUEGO')).toBeInTheDocument()
-    expect(screen.getByText('EMPEZAR EL MES GRATIS')).toBeInTheDocument()
+    expect(screen.getByText('Empezar el mes gratis')).toBeInTheDocument()
     expect(screen.getByText('INCLUYE')).toBeInTheDocument()
     expect(screen.queryByText('ALLOWANCES')).not.toBeInTheDocument()
-    expect(screen.queryByText('START FREE MONTH')).not.toBeInTheDocument()
+    expect(screen.queryByText('Start free month')).not.toBeInTheDocument()
   })
 })

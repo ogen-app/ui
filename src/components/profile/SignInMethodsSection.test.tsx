@@ -140,7 +140,7 @@ describe('SignInMethodsSection', () => {
     expect(
       await screen.findByRole('button', { name: /email me a reset link/i }),
     ).toBeInTheDocument()
-    const connect = screen.getByRole('link', { name: 'CONNECT' })
+    const connect = screen.getByRole('link', { name: 'Connect' })
     const href = new URL(connect.getAttribute('href') ?? '', 'http://app.test')
     expect(href.pathname).toBe('/api/auth/google/start')
     expect(href.searchParams.get('intent')).toBe('link')
@@ -158,7 +158,7 @@ describe('SignInMethodsSection', () => {
     expect(
       await screen.findByText(/ada\.personal@gmail\.com/),
     ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'DISCONNECT' }))
+    await user.click(screen.getByRole('button', { name: 'Disconnect' }))
     await waitFor(() => expect(disconnectIdentity).toHaveBeenCalled())
     expect(disconnectIdentity.mock.calls[0][0]).toBe('google')
   })
@@ -173,7 +173,7 @@ describe('SignInMethodsSection', () => {
     await render()
 
     expect(
-      await screen.findByRole('button', { name: 'DISCONNECT' }),
+      await screen.findByRole('button', { name: 'Disconnect' }),
     ).toBeDisabled()
     expect(screen.getByText(/only way in/i)).toBeInTheDocument()
   })
@@ -189,7 +189,7 @@ describe('SignInMethodsSection', () => {
     await render()
 
     await user.click(
-      await screen.findByRole('button', { name: 'SET A PASSWORD' }),
+      await screen.findByRole('button', { name: 'Set a password' }),
     )
     await waitFor(() => expect(requestPasswordReset).toHaveBeenCalled())
     expect(requestPasswordReset.mock.calls[0][0]).toBe(USER.email)
@@ -223,7 +223,7 @@ describe('SignInMethodsSection', () => {
     const user = userEvent.setup()
     await render()
 
-    await user.click(await screen.findByRole('button', { name: 'DISCONNECT' }))
+    await user.click(await screen.findByRole('button', { name: 'Disconnect' }))
     expect(await screen.findByText(/only way in/i)).toBeInTheDocument()
   })
 
@@ -240,7 +240,7 @@ describe('SignInMethodsSection', () => {
         await screen.findByText('Formas de iniciar sesión'),
       ).toBeInTheDocument()
       expect(
-        screen.getByRole('button', { name: 'ELEGIR UNA CONTRASEÑA' }),
+        screen.getByRole('button', { name: 'Elegir una contraseña' }),
       ).toBeInTheDocument()
       expect(screen.queryByText('Sign-in methods')).not.toBeInTheDocument()
       expect(screen.queryByText(/only way in/i)).not.toBeInTheDocument()

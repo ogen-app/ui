@@ -2,7 +2,7 @@ export const auth = {
   login: {
     title: 'Log in',
     subtitle: 'Log in to continue managing your content',
-    submit: 'LOG IN',
+    submit: 'Log in',
     expired:
       'Your session expired — log in again to pick up where you left off',
     afterReset: 'Your password has been changed. Log in with the new one',
@@ -19,7 +19,7 @@ export const auth = {
   register: {
     title: 'Create your organization',
     subtitle: 'Sign up to start managing your content',
-    submit: 'SIGN UP',
+    submit: 'Sign up',
     organizationLabel: 'Organization Name',
     organizationPlaceholder: 'Enter your organization name',
     firstNameLabel: 'First Name',
@@ -47,7 +47,7 @@ export const auth = {
     expiredTitle: 'This invite has expired',
     expiredBody:
       'The link is no longer valid. It may have expired, been replaced by a newer invite, or already been used. Ask the Ogen team to send you a new one.',
-    logInInstead: 'LOG IN INSTEAD',
+    logInInstead: 'Log in instead',
     /** The preview failed for a reason that says nothing about the invite — retryable. */
     previewFailedTitle: "We couldn't check this invite",
     previewFailedSubtitle:
@@ -55,8 +55,8 @@ export const auth = {
     signedInTitle: "You're signed in as {{name}}",
     signedInBody:
       'This invite is for {{email}}. Sign out to accept it with that address. Your current workspaces stay exactly as they are.',
-    signOutAndContinue: 'SIGN OUT AND CONTINUE',
-    staySignedIn: 'STAY SIGNED IN',
+    signOutAndContinue: 'Sign out and continue',
+    staySignedIn: 'Stay signed in',
   },
   /** Self-registration is switched off and there is no invite (CON-402). */
   privateBeta: {
@@ -69,7 +69,7 @@ export const auth = {
   /** Sign in with Google (CON-396) — the button, the divider, and what each `?error=` says. */
   google: {
     /** Google's branding allows this wording; the caps are the app's CTA convention. */
-    continue: 'CONTINUE WITH GOOGLE',
+    continue: 'Continue with Google',
     orWithEmail: 'or with your email',
     orSignUpWithEmail: 'or sign up with your email',
     /** One sentence per callback code: plain, no blame, the next step included. */
@@ -109,7 +109,7 @@ export const auth = {
     subtitle: 'One last step — this is where your campaigns will live',
     organizationLabel: 'Organization name',
     organizationHint: 'You can rename it later in Workspace Settings.',
-    submit: 'CREATE WORKSPACE',
+    submit: 'Create workspace',
     /** Restarts at Google's account chooser. */
     notYou: 'Not you?',
     logInLink: 'Log in',
@@ -129,7 +129,7 @@ export const auth = {
   forgot: {
     title: 'Reset your password',
     subtitle: "We'll email you a link to set a new one",
-    submit: 'SEND RESET LINK',
+    submit: 'Send reset link',
     emailLabel: 'Email',
     emailPlaceholder: 'Enter your email',
     remembered: 'Remembered it?',
@@ -140,7 +140,7 @@ export const auth = {
      *  cannot make. */
     sentBody:
       'If <strong>{{email}}</strong> has an Ogen account, a link to set a new password is on its way. It expires in an hour.',
-    resend: 'SEND IT AGAIN',
+    resend: 'Send it again',
     resentNote: 'Sent again — give it a minute.',
     emailHint:
       'Use the address you log in with. The link stops working after an hour.',
@@ -149,7 +149,7 @@ export const auth = {
   reset: {
     title: 'Set a new password',
     subtitle: "Choose something you haven't used here before",
-    submit: 'SET NEW PASSWORD',
+    submit: 'Set new password',
     passwordLabel: 'New password',
     passwordPlaceholder: 'Enter a new password',
     confirmLabel: 'Confirm new password',
@@ -185,7 +185,7 @@ export const auth = {
       "<strong>Because this sign-in came through Google, we'll also disconnect Google.</strong> Connect it again from Profile once you're back in.",
     explainer:
       "If this wasn't you, secure your account. We'll sign out every session on every device — including this one — and you'll set a new password right away.",
-    submit: 'SECURE MY ACCOUNT',
+    submit: 'Secure my account',
     wasMe: 'This was me',
     /** Network or server failure — nothing was revoked, so retrying is safe. */
     failed: "We couldn't reach Ogen, so nothing has changed yet. Try again.",
@@ -201,7 +201,7 @@ export const auth = {
     expiredTitle: 'This link has expired',
     expiredBody:
       'Links are valid for 24 hours. Resetting your password also signs out every session.',
-    expiredSubmit: 'RESET MY PASSWORD',
+    expiredSubmit: 'Reset my password',
     invalidTitle: "This link isn't valid",
     invalidBody: 'Check you opened the full link from the email.',
     invalidReset:
@@ -217,7 +217,7 @@ export const auth = {
     lastNameLabel: 'Last name',
     passwordLabel: 'Password',
     passwordPlaceholder: 'Choose a password',
-    submit: 'JOIN THE WORKSPACE',
+    submit: 'Join the workspace',
     haveAccount: 'Already have an Ogen account?',
     logInLink: 'Log in',
     brokenTitle: 'This invitation link no longer works',
@@ -232,7 +232,7 @@ export const auth = {
     /** Already signed in as the invited address: nothing to create, one thing to confirm. */
     joinBody:
       "You're signed in as {{email}}, which is who this invitation is for. Accepting adds this workspace to your account.",
-    joinSubmit: 'ACCEPT INVITATION',
+    joinSubmit: 'Accept invitation',
     /** Signed in as somebody else — no form on this page can fix that. */
     wrongAccountBody:
       'This invitation is for {{invited}}, but you are signed in as {{current}}. Log out and open the link again to accept it.',
@@ -249,7 +249,7 @@ export const auth = {
     pendingMessage: 'This may take a few seconds',
     doneTitle: "You've Been Logged Out",
     doneMessage: 'See you next time!',
-    home: 'TAKE ME HOME',
-    footer: 'LOGOUT',
+    home: 'Take me home',
+    footer: 'Logout',
   },
 }

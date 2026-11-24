@@ -3,6 +3,7 @@ import { Link, type LinkProps } from '@tanstack/react-router'
 import { Trans, useTranslation } from 'react-i18next'
 import { CaretDownIcon } from '@phosphor-icons/react'
 import { LINE_CONTROL } from '@/components/smartFilter/ListStrip'
+import { SMALL_HEADING } from '@/components/page-primitives/SmallHeading'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -134,7 +135,7 @@ export function AssetViewBar({
           <CaretDownIcon className="size-3" aria-hidden />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={6} className="w-64">
-          <DropdownMenuLabel className="text-[11px] tracking-wide text-secondary-foreground">
+          <DropdownMenuLabel className={SMALL_HEADING}>
             {t('content.view.groupByHeading')}
           </DropdownMenuLabel>
           <DropdownMenuRadioGroup

@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/intl'
 import { useLocale } from '@/hooks/useLocale'
 import type { Locale } from '@/i18n/config'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { useTranslation } from 'react-i18next'
 
 // The library draws the weekday row and caption itself, so the app's language
 // has to be handed to it as one of its own locale objects — `formatMonthDropdown`
@@ -31,11 +32,12 @@ function Calendar({
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>['variant']
-  /** Renders a CLEAR action alongside TODAY in the footer when provided. */
+  /** Renders a Clear action alongside Today in the footer when provided. */
   onClear?: () => void
 }) {
   const defaultClassNames = getDefaultClassNames()
   const locale = useLocale()
+  const { t } = useTranslation()
 
   return (
     <DayPicker
@@ -53,7 +55,7 @@ function Calendar({
               }
             }}
           >
-            TODAY
+            {t('common.today')}
           </Button>
           {onClear && (
             <Button
@@ -61,7 +63,7 @@ function Calendar({
               className="flex-1 justify-end rounded-none border-0"
               onClick={onClear}
             >
-              CLEAR
+              {t('common.clear')}
             </Button>
           )}
         </div>

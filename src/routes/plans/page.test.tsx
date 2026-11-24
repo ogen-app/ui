@@ -145,7 +145,7 @@ describe('/plans for a complimentary workspace', () => {
       screen.queryByRole('tab', { name: /yearly/i }),
     ).not.toBeInTheDocument()
     expect(screen.queryByText('MOST POPULAR')).not.toBeInTheDocument()
-    expect(screen.queryByText('START FREE MONTH')).not.toBeInTheDocument()
+    expect(screen.queryByText('Start free month')).not.toBeInTheDocument()
     expect(screen.queryByText(/Prices exclude VAT/)).not.toBeInTheDocument()
     expect(
       screen.getByText(/Beta access is free while you test/),
@@ -161,7 +161,7 @@ describe('/plans for a complimentary workspace', () => {
 
     expect(
       within(screen.getByRole('region', { name: 'Pro' })).getByRole('button', {
-        name: 'CURRENT PLAN',
+        name: 'Current plan',
       }),
     ).toBeDisabled()
     await userEvent.click(screen.getByRole('button', { name: 'Switch to Max' }))
@@ -199,7 +199,7 @@ describe('/plans for a complimentary workspace', () => {
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('Leave Beta?')).toBeInTheDocument()
     await userEvent.click(
-      within(dialog).getByRole('button', { name: 'SWITCH TO MAX' }),
+      within(dialog).getByRole('button', { name: 'Switch to Max' }),
     )
     await waitFor(() =>
       expect(changePlan).toHaveBeenCalledWith({ tierId: 'max' }),
@@ -251,7 +251,7 @@ describe('/plans for a complimentary workspace', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Switch to Max' }))
     const dialog = await screen.findByRole('dialog')
     await userEvent.click(
-      within(dialog).getByRole('button', { name: 'SWITCH TO MAX' }),
+      within(dialog).getByRole('button', { name: 'Switch to Max' }),
     )
     await userEvent.keyboard('{Escape}')
 
@@ -284,7 +284,7 @@ describe('the owner gate after beta access ends', () => {
     expect(
       screen.getByText(/your first month is free on Pro/),
     ).toBeInTheDocument()
-    expect(screen.getByText('START FREE MONTH')).toBeInTheDocument()
+    expect(screen.getByText('Start free month')).toBeInTheDocument()
   })
 
   it('names no free month on a tier that cannot be bought right now', async () => {

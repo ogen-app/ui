@@ -283,18 +283,12 @@ function PendingPostsDialog({
           <Button
             type="button"
             variant="ghost"
-            className="uppercase"
             onClick={onClose}
             disabled={running}
           >
             {t('workspaceSettings.autoPublish.pending.keep')}
           </Button>
-          <Button
-            type="button"
-            className="uppercase"
-            onClick={handleConvert}
-            loading={running}
-          >
+          <Button type="button" onClick={handleConvert} loading={running}>
             {t('workspaceSettings.autoPublish.pending.convert', { count })}
           </Button>
         </div>

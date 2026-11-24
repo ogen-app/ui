@@ -1,4 +1,5 @@
 import { SwapIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 
 import { AccountAvatar } from '@/components/ui/account-avatar'
 import { Button } from '@/components/ui/button'
@@ -36,13 +37,16 @@ export function SupersedeOffer({
   platform: PlatformInfo
   onSupersede: (account: PublisherAccount) => void
 }) {
+  const { t } = useTranslation()
   return (
     // The rule is drawn by the block's own bottom edge, inset to the content
     // it is separating rather than run to the card's edges — a full-bleed line
     // would cut the row in half instead of ending a section inside it.
     <div className="ml-16 mr-5 mb-2 border-b border-border pb-2">
       <GroupLabel>
-        {accounts.length === 1 ? 'AVAILABLE ACCOUNT' : 'AVAILABLE ACCOUNTS'}
+        {t('campaigns.accounts.groups.available', {
+          count: accounts.length,
+        })}
       </GroupLabel>
       {accounts.map((account) => (
         <div
@@ -57,10 +61,9 @@ export function SupersedeOffer({
             onClick={() => onSupersede(account)}
             aria-label={`Use ${accountLabel(account)} instead of the placeholder`}
           >
-            {/* Literal caps, not `uppercase` — the caps are the copy. The
-                glyph is a swap, which is what this does: the placeholder
+            {/* The glyph is a swap, which is what this does: the placeholder
                 leaves as the account arrives, carrying its post types. */}
-            <span>USE</span>
+            <span>{t('campaigns.accounts.use')}</span>
             <SwapIcon />
           </Button>
         </div>

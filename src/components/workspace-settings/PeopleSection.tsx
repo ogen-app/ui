@@ -36,6 +36,7 @@ import {
   type WorkspaceRole,
 } from '@/types/workspace'
 import { awaiting } from '@/lib/fetched'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * Members and invitations are different rows saying the same thing, so their
@@ -47,11 +48,7 @@ const ACTION_COL = 'w-44 shrink-0 flex items-center justify-end gap-2'
 
 /** Section heading inside a card — quieter than the card's own title. */
 function SubHeader({ children }: { children: ReactNode }) {
-  return (
-    <h3 className="text-xs font-medium uppercase tracking-[0.01em] text-tertiary-foreground">
-      {children}
-    </h3>
-  )
+  return <SmallHeading as="h3">{children}</SmallHeading>
 }
 
 function initialsOf(name: string, email: string): string {

@@ -120,7 +120,7 @@ describe('TagDocumentsDialog', () => {
 
     await renderWithProviders(ui)
 
-    const apply = screen.getByRole('button', { name: 'APPLY' })
+    const apply = screen.getByRole('button', { name: 'Apply' })
     expect(apply).toBeDisabled()
 
     await userEvent.click(screen.getByRole('button', { name: /Brand/ }))

@@ -19,6 +19,7 @@ import {
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { awaiting } from '@/lib/fetched'
 import type { HelpBlock, HelpEmbeddedArticle } from '@/types/help'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * The help centre (CON-173): a right-rail panel, opened from Help in the bar
@@ -293,9 +294,9 @@ function RelatedArticles({ keys }: { keys: string[] }) {
   if (!keys.length) return null
   return (
     <nav className="border-border mt-4 border-t pt-4">
-      <h2 className="text-tertiary-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+      <SmallHeading as="h2" className="mb-2">
         {t('help.related')}
-      </h2>
+      </SmallHeading>
       <ul className="flex flex-col">
         {keys.map((key) => (
           <li key={key}>

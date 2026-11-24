@@ -34,15 +34,15 @@ export const savedViews: Translation['savedViews'] = {
     share: 'Compartir con el espacio de trabajo',
     what: 'Guarda los filtros, la agrupación y el orden, no lo que encuentran.',
     cancel: 'Cancelar',
-    confirm: 'GUARDAR GRUPO',
-    renameConfirm: 'GUARDAR',
+    confirm: 'Guardar grupo',
+    renameConfirm: 'Guardar',
   },
   remove: {
     title: '¿Eliminar «{{name}}»?',
     body: 'Se elimina el grupo; no se borra nada de lo que muestra.',
     bodyShared:
       'Se elimina el grupo para todos con quienes se comparte; no se borra nada de lo que muestra.',
-    keep: 'CONSERVAR GRUPO',
-    confirm: 'ELIMINAR GRUPO',
+    keep: 'Conservar grupo',
+    confirm: 'Eliminar grupo',
   },
 }

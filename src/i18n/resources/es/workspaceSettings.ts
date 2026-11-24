@@ -70,8 +70,8 @@ export const workspaceSettings: Translation['workspaceSettings'] = {
     confirmBody:
       'Todo lo que hay en este espacio se elimina, para todos los miembros, y no puedes restaurarlo tú mismo. Escribe <strong>{{name}}</strong> para confirmar.',
     confirmLabel: 'Nombre del espacio',
-    keep: 'MANTENER ESPACIO',
-    confirm: 'ELIMINAR ESPACIO',
+    keep: 'Mantener espacio',
+    confirm: 'Eliminar espacio',
     onlyWorkspace: 'Este es tu único espacio',
     onlyWorkspaceNote: 'Crea otro espacio antes de eliminar este.',
     deleteFailed: 'No se ha podido eliminar el espacio',
@@ -86,8 +86,8 @@ export const workspaceSettings: Translation['workspaceSettings'] = {
     reconnectDialog: {
       title: 'Reconectar {{platform}}',
       body: 'Iniciarás sesión en {{platform}} y volverás aquí. Tus publicaciones y ajustes no cambian, y las publicaciones programadas en esta cuenta saldrán en cuanto vuelva.',
-      continue: 'CONTINUAR EN {{platform}}',
-      cancel: 'CANCELAR',
+      continue: 'Continuar en {{platform}}',
+      cancel: 'Cancelar',
     },
     reconnect: 'Reconectar',
     disconnectAccount: 'Desconectar {{name}}',
@@ -107,8 +107,8 @@ export const workspaceSettings: Translation['workspaceSettings'] = {
     blockedTitle: 'Publicación automática no permitida',
     blockedBody:
       'Las publicaciones programadas esperan a que las publiques a mano.',
-    allow: 'PERMITIR',
-    disallow: 'NO PERMITIR',
+    allow: 'Permitir',
+    disallow: 'No permitir',
     checkFailed:
       'No se han podido consultar las publicaciones programadas de {{platform}}',
     pending: {
@@ -188,8 +188,8 @@ export const workspaceSettings: Translation['workspaceSettings'] = {
     body: 'Ogen dejará de publicar en esta cuenta de {{platform}}, y la conexión también se elimina en el proveedor de publicación — así que no volverá en la siguiente sincronización.',
     published:
       'Las publicaciones ya publicadas siguen visibles en {{platform}}. Puedes volver a conectar la cuenta más adelante, pero tendrá que pasar otra vez por el flujo de autorización.',
-    keep: 'MANTENER CONECTADA',
-    confirm: 'DESCONECTAR CUENTA',
+    keep: 'Mantener conectada',
+    confirm: 'Desconectar cuenta',
     succeeded: '{{name}} desconectada',
     blocked: {
       title: 'Esta cuenta tiene publicaciones programadas',
@@ -201,7 +201,7 @@ export const workspaceSettings: Translation['workspaceSettings'] = {
         'Para conservarla, cierra esto y desprográmala primero — después podrás elegirle otra cuenta.',
       keep_other:
         'Para conservarlas, cierra esto y desprograma esas publicaciones primero — después podrás elegir otra cuenta para cada una.',
-      confirm: 'DESCONECTAR IGUALMENTE',
+      confirm: 'Desconectar igualmente',
     },
   },
 }

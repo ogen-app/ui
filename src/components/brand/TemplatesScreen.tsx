@@ -9,6 +9,7 @@ import { PLATFORMS } from '@/lib/platformDictionary'
 import { cn } from '@/lib'
 import { Gap } from './shell'
 import { EXPECTED_RATIOS, type BrandTemplate } from './types'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * Templates — the section that made Brand a place rather than a page.
@@ -211,9 +212,9 @@ function RailGroup({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <p className="px-2 font-grotesk text-xs font-medium uppercase text-tertiary-foreground">
+      <SmallHeading as="p" className="px-2">
         {label}
-      </p>
+      </SmallHeading>
       {children}
     </div>
   )

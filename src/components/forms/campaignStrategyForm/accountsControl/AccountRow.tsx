@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CaretDownIcon, PlusIcon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
@@ -46,6 +47,7 @@ export function AccountRow({
   onTogglePostType: (slug: string) => void
   onDeactivate: () => void
 }) {
+  const { t } = useTranslation()
   const { view, account, selection, supersededBy } = row
   const { info, available, unavailable } = view
   const selected = selection !== undefined
@@ -111,8 +113,9 @@ export function AccountRow({
             aria-hidden
             className="flex shrink-0 items-center gap-2.5 text-tertiary-foreground transition-colors group-hover:text-primary-foreground"
           >
-            {/* Literal caps, matching every other action label in the app. */}
-            <span className="text-[13px]/4 font-medium">ACTIVATE</span>
+            <span className="text-[13px]/4 font-medium">
+              {t('campaigns.accounts.activate')}
+            </span>
             <PlusIcon className="size-4" weight="bold" />
           </span>
         )}
@@ -170,8 +173,7 @@ export function AccountRow({
                 Settings' Disconnect is a red plug icon that ends the
                 connection for the whole tenant; this one is words only, and
                 the line beside it names what it removes — a campaign's
-                targeting comes back with one click, an OAuth grant does not.
-                Literal caps, per the app's action-label convention. */}
+                targeting comes back with one click, an OAuth grant does not. */}
             <div className="flex items-center justify-between gap-4 pl-16 pr-5 py-2">
               <Button
                 type="button"

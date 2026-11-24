@@ -78,9 +78,7 @@ function ReadPage() {
               size="sm"
               onClick={() => navigate({ to: '/foundation' })}
             >
-              <span className="uppercase">
-                {t('brand.distill.closed.back')}
-              </span>
+              {t('brand.distill.closed.back')}
             </Button>
           }
         />
