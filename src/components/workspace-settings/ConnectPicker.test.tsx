@@ -68,6 +68,24 @@ describe('ConnectPicker', () => {
     expect(router.state.location.search).toEqual({ connected: 'linkedin' })
   })
 
+  it('returns to setup when the connect was started there', async () => {
+    getPendingConnection.mockResolvedValue({
+      ...PENDING,
+      returnTo: 'onboarding',
+    })
+    const user = userEvent.setup()
+    const { router } = await render()
+
+    await screen.findByRole('radio', { name: /Ogen/ })
+    await user.click(screen.getByRole('radio', { name: /Ogen/ }))
+    await user.click(screen.getByRole('button', { name: /connect linkedin/i }))
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/onboarding'),
+    )
+    expect(router.state.location.search).toEqual({ connected: 'linkedin' })
+  })
+
   it('cannot submit until something is chosen', async () => {
     await render()
 

@@ -55,6 +55,18 @@ export type DistillWebsite = {
   /** False when the site map failed and only the homepage was read. */
   mapped: boolean
   pagesFound: number
+  /**
+   * The business's name as its homepage states it (`og:site_name`, then
+   * `application-name`, then the title's name part); empty until the
+   * homepage is read, or when it states none.
+   */
+  siteName: string
+  /**
+   * The site's icon, copied into our storage. A signed link that expires —
+   * refetch the run for a fresh one — and null when the site has no icon that
+   * could be copied (an SVG never is).
+   */
+  faviconUrl: string | null
 }
 
 export type DistillAnswer = {
@@ -125,7 +137,29 @@ export type ProposedFact = {
   evidence: DistillEvidence[]
 }
 
-export type DistillSection = 'voices' | 'audiences' | 'guardrails' | 'facts'
+export type DistillSection =
+  'voices' | 'audiences' | 'guardrails' | 'facts' | 'positioning'
+
+/**
+ * How much a section rests on. On a proposal it is the model's verdict; on a
+ * run still collecting, and on each of its reads, it is the server's count of
+ * the passages and answers read so far.
+ */
+export type DistillCoverage = Partial<
+  Record<DistillSection, { level: 'found' | 'thin' | 'none'; note: string }>
+>
+
+/** A positioning statement a read proposes; `current` is the workspace's own. */
+export type ProposedStatement = ProposedLine & { current: string | null }
+
+/**
+ * What sets the brand apart. A statement replaces the workspace's own only
+ * when one is committed; differentiators are added to what it has.
+ */
+export type ProposedPositioning = {
+  statement: ProposedStatement | null
+  differentiators: ProposedLine[]
+}
 
 export type DistillQuestion = {
   id: string
@@ -146,10 +180,9 @@ export type DistillProposal = {
     disclaimer: ProposedDisclaimer | null
   }
   facts: ProposedFact[]
+  positioning: ProposedPositioning
   questions: DistillQuestion[]
-  coverage: Partial<
-    Record<DistillSection, { level: 'found' | 'thin' | 'none'; note: string }>
-  >
+  coverage: DistillCoverage
   /** What was left out, by reason — counted, never listed. */
   dropped: { ungrounded: number; duplicate: number; limit: number }
 }
@@ -164,9 +197,41 @@ export type DistillFailureCode =
   | 'entitlement_disabled'
   | 'limit_reached'
 
+/** What one read of an incremental run reads. */
+export type DistillReadKind = 'website' | 'asset' | 'answers'
+
+/**
+ * One source of an incremental run, read on its own and stopped on its own.
+ * Answers are `ready` the moment they are added; a website or a document
+ * takes about a minute. A stopped read is `discarded`.
+ */
+export type DistillRead = {
+  id: string
+  kind: DistillReadKind
+  status: DistillStatus
+  /** Null until the website read has prepared, and on any other kind. */
+  website: DistillWebsite | null
+  sources: DistillSource[]
+  answers: DistillAnswer[]
+  /** What this source adds to each section; empty until it is read. */
+  coverage: DistillCoverage
+  failure: { code: DistillFailureCode | string; reason: string } | null
+  createdAt: string
+  finishedAt: string | null
+}
+
 export type DistillRun = {
   id: string
   status: DistillStatus
+  /**
+   * Read a source at a time: the run stays `collecting` while sources are
+   * added as reads, and is composed once, on request.
+   */
+  incremental: boolean
+  /** Every finished read's coverage together; empty on a run that isn't incremental. */
+  coverage: DistillCoverage
+  /** An incremental run's reads, oldest first; empty on any other run and on the list. */
+  reads: DistillRead[]
   parentRunId: string | null
   childRunId: string | null
   website: DistillWebsite | null
@@ -182,12 +247,20 @@ export type DistillRun = {
   committedAt: string | null
 }
 
-/** What to read: at least one of the three. */
+/**
+ * What to read: at least one of the three — or, `incremental`, none at all,
+ * for a run its sources are added to one at a time.
+ */
 export type DistillRequest = {
   websiteUrl?: string
   assetIds?: string[]
   answers?: DistillAnswer[]
+  incremental?: boolean
 }
+
+/** One source for an incremental run: exactly one of the three. */
+export type DistillReadRequest =
+  { websiteUrl: string } | { assetId: string } | { answers: DistillAnswer[] }
 
 export type CommitLine = { proposalId: string; text: string }
 
@@ -211,6 +284,11 @@ export type DistillCommit = {
     disclaimer?: CommitLine
   }
   facts: Omit<ProposedFact, 'evidence'>[]
+  positioning: {
+    /** Sent only when the read's statement was picked over the workspace's. */
+    statement?: CommitLine
+    differentiators: CommitLine[]
+  }
 }
 
 export type DistillSkipReason = 'duplicate' | 'limit' | string
@@ -221,6 +299,8 @@ export type DistillCommitResult = {
     audiences: { proposalId: string; id: string }[]
     guardrails: string[]
     facts: { proposalId: string; id: string }[]
+    /** The positioning proposal ids saved. */
+    positioning: string[]
   }
   skipped: { proposalId: string; reason: DistillSkipReason }[]
 }

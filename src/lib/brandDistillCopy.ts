@@ -58,6 +58,7 @@ const STARTER_IDS: string[] = [
   'q_three_words',
   'q_never_post',
   'q_not_for',
+  'q_apart',
   'q_proof',
   'q_legal',
   'q_disclaimer',
@@ -68,6 +69,7 @@ type StarterId =
   | 'q_three_words'
   | 'q_never_post'
   | 'q_not_for'
+  | 'q_apart'
   | 'q_proof'
   | 'q_legal'
   | 'q_disclaimer'
@@ -130,6 +132,10 @@ export function savedSentence(
     disclaimer && t('brand.distill.count.disclaimer'),
     applied.facts.length > 0 &&
       t('brand.distill.count.facts', { count: applied.facts.length }),
+    applied.positioning.length > 0 &&
+      t('brand.distill.count.positioning', {
+        count: applied.positioning.length,
+      }),
   ].filter((p): p is string => Boolean(p))
 
   const what =

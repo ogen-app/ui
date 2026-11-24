@@ -344,6 +344,8 @@ export const brand = {
       disclaimer: 'the disclaimer',
       facts_one: '{{count}} fact',
       facts_other: '{{count}} facts',
+      positioning_one: '{{count}} line on what sets you apart',
+      positioning_other: '{{count}} lines on what sets you apart',
     },
     summary: {
       fromPages_one: 'From {{count}} page of {{site}}',
@@ -415,12 +417,13 @@ export const brand = {
       unavailable: "The questions couldn't be loaded. Try again in a minute.",
       answered: '{{answered}} of {{count}} answered',
       draft: 'DRAFT IT',
-      /** The server's seven starter questions, by their stable ids. */
+      /** The server's eight starter questions, by their stable ids. */
       starter: {
         q_offer: 'What do you sell, and who buys it?',
         q_three_words: 'Three words a customer would use about you.',
         q_never_post: 'A sentence you would never post.',
         q_not_for: 'Who are you not for?',
+        q_apart: 'What do you do that the alternatives don’t?',
         q_proof: 'What can you prove?',
         q_legal: 'What does legal not let you say?',
         q_disclaimer: 'The disclaimer you already run, if any.',
@@ -476,6 +479,15 @@ export const brand = {
       useTheirs: 'Use the one from the site',
       writtenHereOn: 'Written here · {{date}}',
       disclaimerRule: 'Nothing is replaced unless you pick the site’s.',
+      positioning: {
+        title: 'What sets you apart',
+        statement: 'Statement',
+        differentiators: 'What backs it up',
+        differs:
+          'Ogen read a different statement from yours. Keep yours unless you choose it.',
+        useRead: 'Use the one Ogen read',
+        rule: 'Nothing is replaced unless you pick the one Ogen read.',
+      },
       factColumns: {
         statement: 'Statement',
         about: 'About',

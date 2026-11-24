@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   CheckCircleIcon,
   CircleDashedIcon,
@@ -52,6 +53,7 @@ export function NeedsSheet({
   role,
   site,
   favicon,
+  onFaviconError,
   needs,
   active,
   blank,
@@ -60,7 +62,10 @@ export function NeedsSheet({
   role: OnboardingRole | null
   /** The website's host, once one is given. */
   site?: string
+  /** The site's icon, once its homepage is read — a link that expires. */
   favicon?: string
+  /** The icon didn't load: its link may have run out, so ask for a fresh one. */
+  onFaviconError?: () => void
   needs: Need[]
   /** The need the current step is filling — lit on the sheet. */
   active?: Need['id'][]
@@ -75,14 +80,25 @@ export function NeedsSheet({
         : 'onboarding.sheet.unnamedClient',
     )
   const enough = needs.filter((n) => n.level === 'enough').length
+  // A link that failed once is not tried again; a fresh one is.
+  const [broken, setBroken] = useState<string[]>([])
+  const icon = favicon && !broken.includes(favicon) ? favicon : undefined
 
   return (
     <section className={cn(SURFACE, 'flex flex-col lg:sticky lg:top-18')}>
       <div className="flex flex-col">
         <div className={cn(SURFACE_HEAD, 'gap-3 px-5')}>
           <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-secondary">
-            {favicon ? (
-              <img src={favicon} alt="" className="size-6" />
+            {icon ? (
+              <img
+                src={icon}
+                alt=""
+                className="size-6"
+                onError={() => {
+                  setBroken((b) => [...b, icon])
+                  onFaviconError?.()
+                }}
+              />
             ) : (
               <span
                 aria-hidden

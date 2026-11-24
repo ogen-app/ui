@@ -27,7 +27,7 @@ import {
 import type { DistillProposal, DistillRun } from '@/types/brandDistill'
 import type { BrandData } from '../types'
 import { GapQuestions } from './Questions'
-import { FactsReview, GuardrailsReview } from './ReviewLines'
+import { FactsReview, GuardrailsReview, PositioningReview } from './ReviewLines'
 import { AudiencesReview, VoicesReview, type SourceNoun } from './ReviewEntries'
 
 /**
@@ -66,6 +66,7 @@ export function ReviewScreen({
 
   const route = runRoute(run)
   const g = proposal.guardrails
+  const p = proposal.positioning
   const hasGuardrails =
     g.mayClaim.length + g.neverClaim.length + g.bannedWords.length > 0 ||
     g.disclaimer !== null
@@ -101,6 +102,13 @@ export function ReviewScreen({
           )
         }}
       />
+      {(p.statement !== null || p.differentiators.length > 0) && (
+        <PositioningReview
+          proposal={proposal}
+          currentWrittenAt={brand?.positioning?.updatedAt ?? null}
+          {...ctx}
+        />
+      )}
       {proposal.voices.length > 0 && (
         <VoicesReview
           voices={proposal.voices}
@@ -234,7 +242,12 @@ function Summary({
   const route = runRoute(run)
   const g = proposal.guardrails
   const lines = g.mayClaim.length + g.neverClaim.length + (g.disclaimer ? 1 : 0)
+  const positioning =
+    (proposal.positioning.statement ? 1 : 0) +
+    proposal.positioning.differentiators.length
   const parts = [
+    positioning > 0 &&
+      t('brand.distill.count.positioning', { count: positioning }),
     proposal.voices.length > 0 &&
       t('brand.distill.count.voices', { count: proposal.voices.length }),
     proposal.audiences.length > 0 &&

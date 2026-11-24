@@ -212,6 +212,43 @@ Things to keep:
   (`lib/complimentaryMemory`), since the plan read cannot say the workspace
   used to be free.
 
+### 7. Setup after signup — `/onboarding` (CON-513/525)
+
+A new workspace opens on a four-step setup before the app: who it is for,
+what Ogen can read about them, the brand read off that, and the accounts it
+posts to. It ends on the Campaigns list's empty state, where the first
+campaign is made the ordinary way. Live and unflagged since CON-525.
+
+- **Whether setup is owed is the workspace's `setup`**, on
+  `GET /api/tenants/current`: `{status, step, reached, role, runId, …}`, null
+  for a workspace made before setup existed (never sent there). The server
+  writes `pending` when a workspace is made — at signup and from the switcher
+  — so the client writes nothing at signup. `PUT /api/tenants/current/setup`
+  saves each step; it is **owner-only** (a member gets 403), so the root guard
+  sends only an owner to `/onboarding`. A teammate invited later finds it done.
+  `services/api/onboarding.ts` and `hooks/useOnboarding.ts` read it off the
+  workspace's own query; the `/flags` panel puts it back to `pending`.
+- **Each source is read the moment it is added.** The first one opens an
+  incremental brand read (`POST /api/brand/distills {"incremental": true}`;
+  a 409 `distill_in_progress` that carries setup's own open run resumes it),
+  and every website, document (uploaded as `brand_source`) and set of answers
+  is a read of its own (`POST …/{id}/reads`), stopped or taken back out with
+  `DELETE …/reads/{readId}`. The sheet moves from the run's `coverage`; each
+  card says what its own read added. Continue composes (`POST …/{id}/compose`)
+  and the brand step follows the run to `ready` and commits it, as Foundation
+  does. Going on while something is still being read asks first, then stops
+  it. Going on without a read discards the open one, which would otherwise
+  hold the workspace's only slot.
+- **The website names the business.** `website.siteName` feeds the brand
+  step's "the website says…", and `website.faviconUrl` the sheet's mark — a
+  signed link that expires, so a failed load refetches the run once.
+- **Accounts come back to setup.** The connect link asks for
+  `returnTo: "onboarding"`, so Zernio's callback lands on
+  `/onboarding?connected=…` (or `connect_error=…`). A login with several
+  targets goes through the picker at
+  `/workspace-settings/connect/<id>?returnTo=onboarding`, which goes back to
+  setup once one is chosen.
+
 ## The root guard — `src/routes/__root.tsx`
 
 Auth is guarded **once**, in the root route's `beforeLoad` (never on
@@ -243,7 +280,11 @@ Details that matter:
   `/auth/login`, `/auth/register`, `/auth/forgot`, `/auth/reset` each
   `beforeLoad`-redirect to `/`).
 - **First-run instance setup no longer exists.** CON-97 removed the
-  `setup_complete` bootstrap; onboarding is only the signup above.
+  `setup_complete` bootstrap. What a new *workspace* owes is setup after
+  signup (§7): an owner of a workspace whose `setup` is `pending` is sent to
+  `/onboarding` from anywhere but the billing gate's exempt paths and the
+  connect picker, and `/onboarding` sends anyone it is not owed to into the
+  app.
 - **The guard only runs on a page load, so it can't catch a session that dies
   mid-visit.** That case belongs to `src/lib/sessionExpiry.ts`: any 401 from
   `services/api/http.ts` drops the persisted user and reloads onto
@@ -285,7 +326,8 @@ Details that matter:
 | `POST /api/sessions` / `DELETE` | public / cookie | login / logout | ✅ `/auth/login`, logout |
 | `GET /api/current_user` | session | user + embedded tenant | ✅ session probe + store |
 | `GET /api/tenants/current` | session | caller's tenant | ✅ workspace settings |
-| `PUT /api/tenants/:id` | session, own tenant | rename tenant | ✅ workspace settings |
+| `PUT /api/tenants/:id` | session, own tenant | rename tenant | ✅ workspace settings, setup |
+| `PUT /api/tenants/current/setup` | session, owner | where setup after signup stands | ✅ `/onboarding`, `/flags` |
 | `POST /api/users` | session | add teammate to caller's tenant | ❌ no invite UI |
 | `POST /api/password-reset` | public | email a one-time reset link | ⏳ UI built, **endpoint missing** |
 | `POST /api/password-reset/confirm` | public (token) | spend the token, set the password | ⏳ UI built, **endpoint missing** |

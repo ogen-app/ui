@@ -1,27 +1,27 @@
 /**
- * Whether this workspace still owes its setup, and how far it got.
+ * Whether this workspace still owes its setup, and how far it got — the
+ * workspace's own `setup` (CON-513), read off `GET /api/tenants/current` and
+ * written with `PUT /api/tenants/current/setup`.
  *
- * The API has no onboarding state of its own, so this is one row in the
- * workspace's settings (`/api/settings`, key `onboarding`). **The workspace's,
- * not a person's**: what setup produces — the brand, the accounts — belongs to
- * the workspace, so a teammate invited later lands in a workspace that is
- * already set up and is never sent through it. Nothing here is sensitive.
+ * **The workspace's, not a person's**: what setup produces — the brand, the
+ * accounts — belongs to the workspace, so a teammate invited later lands in a
+ * workspace that is already set up and is never sent through it. Only an
+ * owner may write it (a member gets 403), which is why only owners are sent
+ * to setup at all.
  *
- * No row means the workspace predates setup, or was made before the flag was
- * on: it is never sent here. Signup writes `pending`; finishing writes `done`,
- * skipping `skipped`. The flag's comment says what the server should replace
- * this with.
+ * `null` means the workspace predates setup: it is never sent here. The server
+ * writes `pending` itself when a workspace is made — at signup and from the
+ * switcher — and stamps who finished or skipped it, and when.
  */
 import {
   ONBOARDING_STEPS,
   type OnboardingRole,
   type OnboardingStep,
 } from '@/components/onboarding/flow'
-import { getSetting, putSetting } from './settings'
+import type { Tenant, WireSetup } from '@/types/tenant'
+import { apiJson } from './http'
 
-export const ONBOARDING_SETTING = 'onboarding'
-
-export type OnboardingStatus = 'pending' | 'done' | 'skipped'
+export type OnboardingStatus = WireSetup['status']
 
 export type OnboardingState = {
   status: OnboardingStatus
@@ -32,50 +32,51 @@ export type OnboardingState = {
   role: OnboardingRole | null
   /** The brand read setup started, so a reload finds it again. */
   runId: string | null
-  updatedAt: string
 }
-
-const STATUSES: OnboardingStatus[] = ['pending', 'done', 'skipped']
 
 const isStep = (v: unknown): v is OnboardingStep =>
   ONBOARDING_STEPS.includes(v as OnboardingStep)
 
-/** A row anyone in the workspace can write, so it is read defensively. */
-function parse(raw: string): OnboardingState | null {
-  let v: Record<string, unknown>
-  try {
-    v = JSON.parse(raw) as Record<string, unknown>
-  } catch {
-    return null
-  }
-  if (!v || typeof v !== 'object') return null
-  if (!STATUSES.includes(v.status as OnboardingStatus)) return null
-  const step = isStep(v.step) ? v.step : 'you'
+/**
+ * The server keeps whatever step names the client sends, so a name this
+ * build doesn't have (one a later build wrote) opens on the first step.
+ */
+function fromWire(setup: WireSetup): OnboardingState {
+  const step = isStep(setup.step) ? setup.step : 'you'
   return {
-    status: v.status as OnboardingStatus,
+    status: setup.status,
     step,
-    reached: isStep(v.reached) ? v.reached : step,
-    role: v.role === 'client' || v.role === 'own' ? v.role : null,
-    runId: typeof v.runId === 'string' ? v.runId : null,
-    updatedAt: typeof v.updatedAt === 'string' ? v.updatedAt : '',
+    reached: isStep(setup.reached) ? setup.reached : step,
+    role: setup.role === '' ? null : setup.role,
+    runId: setup.runId,
   }
 }
 
-/** `null` when setup was never owed here. */
-export async function getOnboarding(): Promise<OnboardingState | null> {
-  const raw = await getSetting(ONBOARDING_SETTING)
-  return raw === null ? null : parse(raw)
+/** The workspace's setup, `null` when it was never owed. */
+export function setupOf(tenant: Tenant): OnboardingState | null {
+  return tenant.setup ? fromWire(tenant.setup) : null
 }
 
-export function putOnboarding(
-  state: Omit<OnboardingState, 'updatedAt'>,
-): Promise<OnboardingState> {
-  const row = { ...state, updatedAt: new Date().toISOString() }
-  return putSetting(ONBOARDING_SETTING, JSON.stringify(row)).then(() => row)
+/** The write's body, as the server takes it. */
+export function setupToWire(
+  state: OnboardingState,
+): Pick<WireSetup, 'status' | 'step' | 'reached' | 'role' | 'runId'> {
+  return { ...state, role: state.role ?? '' }
 }
 
-/** Setup from the start — written at signup, and by the `/flags` reset. */
-export function startOnboarding(): Promise<OnboardingState> {
+/** Owners only: 403 for a member, 422 `invalid_setup` naming a bad field. */
+export async function putOnboarding(
+  state: OnboardingState,
+): Promise<WireSetup> {
+  return apiJson<WireSetup>(
+    '/api/tenants/current/setup',
+    'Unable to save where setup is',
+    { method: 'PUT', body: setupToWire(state) },
+  )
+}
+
+/** Setup from the start — the `/flags` reset. */
+export function startOnboarding(): Promise<WireSetup> {
   return putOnboarding({
     status: 'pending',
     step: 'you',

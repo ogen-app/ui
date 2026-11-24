@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   buildFlagValue,
   FLAG_IDS,
-  isFeatureEnabled,
   type FeatureFlag,
 } from '@/config/featureFlags'
 import {
@@ -222,14 +221,13 @@ const SETUP_WORDS: Record<OnboardingStatus, string> = {
 }
 
 /**
- * Setup's state for the workspace this tab is in (the `onboarding` setting),
+ * Setup's state for the workspace this tab is in (the workspace's `setup`),
  * and a way to owe it again — the only way back to it after finishing, short
- * of signing up a new workspace.
+ * of making a new workspace. Owners only, like the write.
  */
 function OnboardingReset() {
   const state = useOnboarding()
   const [busy, setBusy] = useState(false)
-  const on = isFeatureEnabled('onboarding')
 
   const write = async (change: () => Promise<unknown>, then: string) => {
     setBusy(true)
@@ -253,16 +251,10 @@ function OnboardingReset() {
     <div className="flex flex-col gap-2">
       <h2 className="text-sm font-medium">Setup</h2>
       <p className="text-sm text-tertiary-foreground">
-        Whether this workspace still owes its setup is a workspace setting,
-        written at signup. Starting over puts it back to the first step and
-        opens it; the brand, accounts and name it already changed stay as they
-        are.{' '}
-        {!on && (
-          <>
-            The <code className="font-mono">onboarding</code> flag is off, so
-            the app will not send anyone there.
-          </>
-        )}
+        Whether this workspace still owes its setup is the workspace’s own,
+        started when it is made. Starting over puts it back to the first step
+        and opens it; the brand, accounts and name it already changed stay as
+        they are. Only an owner can write it, and only an owner is sent there.
       </p>
       <p className="text-sm">
         This workspace: <span className="font-mono text-xs">{now}</span>
@@ -271,7 +263,7 @@ function OnboardingReset() {
         <Button
           variant="outline"
           size="sm"
-          disabled={busy || !on}
+          disabled={busy}
           onClick={() => void write(startOnboarding, '/onboarding')}
         >
           Start setup over

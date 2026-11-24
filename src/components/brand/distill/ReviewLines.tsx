@@ -6,6 +6,7 @@ import {
   InfoIcon,
   QuotesIcon,
 } from '@phosphor-icons/react'
+import { Target02Icon } from '@hugeicons/core-free-icons'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -21,6 +22,7 @@ import {
   isDropped,
   lineText,
   primaryEvidence,
+  statementIsChoice,
   toggleDropped,
   type DistillReview,
   type FactDraft,
@@ -120,7 +122,8 @@ export function GuardrailsReview({
       {g.disclaimer && (
         <Group label={t('brand.overview.guardrails.disclaimer')}>
           {choice ? (
-            <DisclaimerChoice
+            <ReplaceChoice
+              field="disclaimer"
               current={g.disclaimer.current ?? ''}
               proposed={g.disclaimer}
               writtenAt={currentWrittenAt}
@@ -129,6 +132,62 @@ export function GuardrailsReview({
           ) : (
             <LineRow line={g.disclaimer} {...ctx} />
           )}
+        </Group>
+      )}
+    </Card>
+  )
+}
+
+/**
+ * What sets the brand apart: one statement and the differences behind it.
+ *
+ * The differentiators are lines like any guardrail's, added to what the
+ * workspace has. The statement is a line too, until the workspace already has
+ * one — then it is the disclaimer's choice, yours kept unless theirs is picked,
+ * because a commit sending it replaces the workspace's own.
+ */
+export function PositioningReview({
+  proposal,
+  currentWrittenAt,
+  ...ctx
+}: Context & {
+  proposal: DistillProposal
+  /** When the workspace's positioning was last saved — dates "yours". */
+  currentWrittenAt: string | null
+}) {
+  const { t } = useTranslation()
+  const positioning = proposal.positioning
+  const statement = positioning.statement
+  const count = (statement ? 1 : 0) + positioning.differentiators.length
+
+  return (
+    <Card
+      capped
+      icon={Target02Icon}
+      tone="var(--brand-positioning)"
+      title={t('brand.distill.review.positioning.title')}
+      qualifier={t('brand.distill.review.proposed', { count })}
+    >
+      {statement && (
+        <Group label={t('brand.distill.review.positioning.statement')}>
+          {statementIsChoice(proposal) ? (
+            <ReplaceChoice
+              field="statement"
+              current={statement.current ?? ''}
+              proposed={statement}
+              writtenAt={currentWrittenAt}
+              {...ctx}
+            />
+          ) : (
+            <LineRow line={statement} {...ctx} />
+          )}
+        </Group>
+      )}
+      {positioning.differentiators.length > 0 && (
+        <Group label={t('brand.distill.review.positioning.differentiators')}>
+          {positioning.differentiators.map((line) => (
+            <LineRow key={line.proposalId} line={line} {...ctx} />
+          ))}
         </Group>
       )}
     </Card>
@@ -238,16 +297,33 @@ function WordChip({ word, review, update }: Context & { word: ProposedLine }) {
   )
 }
 
+/** The words of each choice, by the review field it decides. */
+const CHOICE_COPY = {
+  disclaimer: {
+    label: 'brand.overview.guardrails.disclaimer',
+    differs: 'brand.distill.review.disclaimerDiffers',
+    theirs: 'brand.distill.review.useTheirs',
+    rule: 'brand.distill.review.disclaimerRule',
+  },
+  statement: {
+    label: 'brand.distill.review.positioning.statement',
+    differs: 'brand.distill.review.positioning.differs',
+    theirs: 'brand.distill.review.positioning.useRead',
+    rule: 'brand.distill.review.positioning.rule',
+  },
+} as const
+
 /**
- * The one place a review can replace something the workspace already has.
+ * The two places a review can replace something the workspace already has:
+ * the disclaimer and the positioning statement.
  *
  * Not a checkbox: it shows both texts and keeps **yours** selected, and only an
- * explicit pick sends the site's on commit. Folded to one line until somebody
+ * explicit pick sends the read's on commit. Folded to one line until somebody
  * asks to compare, because most people keep their own and a second paragraph
- * of legal text in the middle of the review is the screen asking them to read
- * it.
+ * in the middle of the review is the screen asking them to read it.
  */
-function DisclaimerChoice({
+function ReplaceChoice({
+  field,
   current,
   proposed,
   writtenAt,
@@ -255,14 +331,17 @@ function DisclaimerChoice({
   update,
   answers,
 }: Context & {
+  field: keyof typeof CHOICE_COPY
   current: string
   proposed: ProposedLine
   writtenAt: string | null
 }) {
   const { t, i18n } = useTranslation()
-  const [comparing, setComparing] = useState(review.disclaimer === 'site')
-  const pick = (which: DistillReview['disclaimer']) =>
-    update((r) => ({ ...r, disclaimer: which }))
+  const copy = CHOICE_COPY[field]
+  const chosen = review[field] ?? 'yours'
+  const [comparing, setComparing] = useState(chosen === 'site')
+  const pick = (which: DistillReview[typeof field]) =>
+    update((r) => ({ ...r, [field]: which }))
 
   if (!comparing) {
     return (
@@ -272,7 +351,7 @@ function DisclaimerChoice({
           className="size-4 shrink-0 text-tertiary-foreground"
         />
         <p className="min-w-0 flex-1 text-sm text-secondary-foreground">
-          {t('brand.distill.review.disclaimerDiffers')}
+          {t(copy.differs)}
         </p>
         <Button variant="outline" size="sm" onClick={() => setComparing(true)}>
           {t('brand.distill.review.compare')}
@@ -287,17 +366,17 @@ function DisclaimerChoice({
 
   // The radio pattern: one stop in the Tab order — the chosen card — and the
   // arrow keys move the choice, which with two options is always the other.
-  const other = () => pick(review.disclaimer === 'yours' ? 'site' : 'yours')
+  const other = () => pick(chosen === 'yours' ? 'site' : 'yours')
 
   return (
     <div className="flex flex-col gap-3">
       <div
         role="radiogroup"
-        aria-label={t('brand.overview.guardrails.disclaimer')}
+        aria-label={t(copy.label)}
         className="flex flex-col gap-3"
       >
         <ChoiceCard
-          selected={review.disclaimer === 'yours'}
+          selected={chosen === 'yours'}
           onSelect={() => pick('yours')}
           onArrow={other}
           title={t('brand.distill.review.keepYours')}
@@ -309,10 +388,10 @@ function DisclaimerChoice({
           text={current}
         />
         <ChoiceCard
-          selected={review.disclaimer === 'site'}
+          selected={chosen === 'site'}
           onSelect={() => pick('site')}
           onArrow={other}
-          title={t('brand.distill.review.useTheirs')}
+          title={t(copy.theirs)}
           meta={
             <SourceLabel
               evidence={proposed.evidence.slice(0, 1)}
@@ -323,9 +402,7 @@ function DisclaimerChoice({
           text={lineText(proposed, review)}
         />
       </div>
-      <p className="text-xs text-tertiary-foreground">
-        {t('brand.distill.review.disclaimerRule')}
-      </p>
+      <p className="text-xs text-tertiary-foreground">{t(copy.rule)}</p>
     </div>
   )
 }

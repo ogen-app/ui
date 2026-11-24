@@ -4,8 +4,11 @@ import type {
   DistillCommit,
   DistillCommitResult,
   DistillQuestion,
+  DistillRead,
+  DistillReadRequest,
   DistillRequest,
   DistillRun,
+  DistillWebsite,
   ProposedVoice,
 } from '@/types/brandDistill'
 import { apiJson, apiVoid } from './http'
@@ -38,12 +41,46 @@ function rulesToWire({ person, ...rest }: VoiceRules): WireRules {
   return { ...rest, person: person === 'none' ? '' : person }
 }
 
-type WireRun = Omit<DistillRun, 'proposal'> & {
+type WireWebsite = Omit<DistillWebsite, 'siteName' | 'faviconUrl'> & {
+  siteName?: string | null
+  faviconUrl?: string | null
+}
+
+type WireRead = Omit<DistillRead, 'website' | 'coverage'> & {
+  website: WireWebsite | null
+  coverage: DistillRead['coverage'] | null
+}
+
+type WireRun = Omit<
+  DistillRun,
+  'proposal' | 'website' | 'incremental' | 'coverage' | 'reads'
+> & {
+  website: WireWebsite | null
+  incremental?: boolean
+  coverage?: DistillRun['coverage'] | null
+  /** Left out of the list, and of runs that are not incremental. */
+  reads?: WireRead[] | null
   proposal:
     | (Omit<NonNullable<DistillRun['proposal']>, 'voices'> & {
         voices: (Omit<ProposedVoice, 'rules'> & { rules: WireRules })[]
       })
     | null
+}
+
+function websiteFromWire(w: WireWebsite | null): DistillWebsite | null {
+  return w
+    ? { ...w, siteName: w.siteName ?? '', faviconUrl: w.faviconUrl ?? null }
+    : null
+}
+
+function readFromWire(read: WireRead): DistillRead {
+  return {
+    ...read,
+    website: websiteFromWire(read.website),
+    sources: read.sources ?? [],
+    answers: read.answers ?? [],
+    coverage: read.coverage ?? {},
+  }
 }
 
 /**
@@ -55,6 +92,10 @@ function runFromWire(run: WireRun): DistillRun {
   const p = run.proposal
   return {
     ...run,
+    website: websiteFromWire(run.website),
+    incremental: run.incremental ?? false,
+    coverage: run.coverage ?? {},
+    reads: (run.reads ?? []).map(readFromWire),
     sources: run.sources ?? [],
     answers: run.answers ?? [],
     proposal: p
@@ -73,6 +114,10 @@ function runFromWire(run: WireRun): DistillRun {
             disclaimer: p.guardrails?.disclaimer ?? null,
           },
           facts: p.facts ?? [],
+          positioning: {
+            statement: p.positioning?.statement ?? null,
+            differentiators: p.positioning?.differentiators ?? [],
+          },
           questions: p.questions ?? [],
           coverage: p.coverage ?? {},
           dropped: p.dropped ?? { ungrounded: 0, duplicate: 0, limit: 0 },
@@ -83,11 +128,14 @@ function runFromWire(run: WireRun): DistillRun {
 
 /**
  * Starts a run. Answers 202 with it — `collecting` for a website or uploads
- * still being ingested, further along for answers alone.
+ * still being ingested, further along for answers alone. An `incremental` run
+ * stays `collecting`: its sources are added with `addDistillRead` and it is
+ * written with `composeDistill`.
  *
  * Refusals worth knowing: 409 `distill_in_progress` (one open run per
- * workspace — open that one instead), 402 `entitlement_exceeded`, 403
- * `feature_not_available`, 409 `scraping_unavailable`, 422 `invalid_url`.
+ * workspace — open that one instead; the body's `run` is it), 402
+ * `entitlement_exceeded`, 403 `feature_not_available`, 409
+ * `scraping_unavailable`, 422 `invalid_url`.
  */
 export async function requestDistill(
   request: DistillRequest,
@@ -116,7 +164,58 @@ export async function getDistillRun(id: string): Promise<DistillRun> {
   return runFromWire(run)
 }
 
-/** The seven questions for a brand nothing is written down for. */
+/** The open run a 409 `distill_in_progress` carries, when it carries one. */
+export function openRunOf(body: Record<string, unknown> | undefined) {
+  const run = body?.run
+  return run && typeof run === 'object' ? runFromWire(run as WireRun) : null
+}
+
+/**
+ * Reads one more source of an incremental run, at once and on its own.
+ * Answers 202 with the read; answers come back `ready`. Its progress, and the
+ * run's coverage as each read finishes, arrive as `brand.distill.updated`.
+ *
+ * Refusals worth knowing: 409 `run_not_collecting` (the run was composed or
+ * closed), 422 `already_read`, `too_many`, `invalid_url`, `asset_failed`.
+ */
+export async function addDistillRead(
+  runId: string,
+  source: DistillReadRequest,
+): Promise<DistillRead> {
+  const read = await apiJson<WireRead>(
+    `${BASE}/${encodeURIComponent(runId)}/reads`,
+    'Unable to read this',
+    { method: 'POST', body: source },
+  )
+  return readFromWire(read)
+}
+
+/** Stops a read still in progress, or takes a finished one out of the run. */
+export function stopDistillRead(runId: string, readId: string): Promise<void> {
+  return apiVoid(
+    `${BASE}/${encodeURIComponent(runId)}/reads/${encodeURIComponent(readId)}`,
+    'Unable to stop reading this',
+    { method: 'DELETE' },
+  )
+}
+
+/**
+ * Writes an incremental run's proposal from every finished read. The run then
+ * moves like any other, to `ready`.
+ *
+ * Refusals worth knowing: 409 `reads_in_progress` (stop the open reads or
+ * wait), 422 `nothing_read` (no source gave anything).
+ */
+export async function composeDistill(runId: string): Promise<DistillRun> {
+  const run = await apiJson<WireRun>(
+    `${BASE}/${encodeURIComponent(runId)}/compose`,
+    'Unable to read the brand',
+    { method: 'POST' },
+  )
+  return runFromWire(run)
+}
+
+/** The eight questions for a brand nothing is written down for. */
 export async function listStarterQuestions(): Promise<DistillQuestion[]> {
   const body = await apiJson<{ questions: DistillQuestion[] | null }>(
     `${BASE}/starter-questions`,
@@ -144,7 +243,8 @@ export async function answerDistill(
 
 /**
  * Saves the kept items in one transaction. Additive: nothing the workspace
- * already has is changed, except the disclaimer when one is sent. Repeats and
+ * already has is changed, except the disclaimer and the positioning statement
+ * when one is sent. Repeats and
  * items over a cap come back in `skipped` rather than failing the save.
  */
 export async function commitDistill(
@@ -171,6 +271,7 @@ export async function commitDistill(
       audiences: body.applied?.audiences ?? [],
       guardrails: body.applied?.guardrails ?? [],
       facts: body.applied?.facts ?? [],
+      positioning: body.applied?.positioning ?? [],
     },
     skipped: body.skipped ?? [],
   }

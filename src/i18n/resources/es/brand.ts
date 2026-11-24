@@ -267,6 +267,8 @@ export const brand: Translation['brand'] = {
       disclaimer: 'el aviso legal',
       facts_one: '{{count}} dato',
       facts_other: '{{count}} datos',
+      positioning_one: '{{count}} línea sobre lo que te distingue',
+      positioning_other: '{{count}} líneas sobre lo que te distingue',
     },
     summary: {
       fromPages_one: 'A partir de {{count}} página de {{site}}',
@@ -351,6 +353,7 @@ export const brand: Translation['brand'] = {
         q_three_words: 'Tres palabras que un cliente usaría sobre ti.',
         q_never_post: 'Una frase que nunca publicarías.',
         q_not_for: '¿Para quién no eres?',
+        q_apart: '¿Qué haces tú que las alternativas no hacen?',
         q_proof: '¿Qué puedes demostrar?',
         q_legal: '¿Qué no te deja decir el departamento legal?',
         q_disclaimer: 'El aviso legal que ya usas, si lo hay.',
@@ -408,6 +411,15 @@ export const brand: Translation['brand'] = {
       useTheirs: 'Usar el del sitio',
       writtenHereOn: 'Escrito aquí · {{date}}',
       disclaimerRule: 'No se sustituye nada salvo que elijas el del sitio.',
+      positioning: {
+        title: 'Lo que te distingue',
+        statement: 'Declaración',
+        differentiators: 'Lo que la respalda',
+        differs:
+          'Ogen ha leído una declaración distinta de la tuya. Conserva la tuya salvo que elijas la otra.',
+        useRead: 'Usar la que ha leído Ogen',
+        rule: 'No se sustituye nada salvo que elijas la que ha leído Ogen.',
+      },
       factColumns: {
         statement: 'Afirmación',
         about: 'Sobre',

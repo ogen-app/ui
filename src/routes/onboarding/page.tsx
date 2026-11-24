@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { NeedsSheet } from '@/components/onboarding/NeedsSheet'
 import { OnboardingFrame } from '@/components/onboarding/OnboardingFrame'
 import {
@@ -15,10 +11,15 @@ import {
   type OnboardingRole,
   type OnboardingStep,
 } from '@/components/onboarding/flow'
-import { needsFrom, type NeedId } from '@/components/onboarding/needs'
+import {
+  needsAdded,
+  needsFrom,
+  type NeedId,
+} from '@/components/onboarding/needs'
 import { AccountsStep } from '@/components/onboarding/steps/AccountsStep'
 import { BrandStep } from '@/components/onboarding/steps/BrandStep'
 import {
+  ANSWERS_ID,
   SourcesStep,
   type OnboardingSource,
   type SourceInput,
@@ -44,17 +45,20 @@ import {
   buildCommit,
   commitIsEmpty,
   isRunOpen,
-  resumableRun,
   siteHost,
 } from '@/lib/brandDistill'
 import { filledAnswers, questionText } from '@/lib/brandDistillCopy'
+import { formatList } from '@/lib/intl'
 import { denialReason } from '@/lib/queryClient'
 import {
+  addDistillRead,
+  composeDistill,
+  discardDistill,
   getDistillRun,
-  listDistillRuns,
+  openRunOf,
   requestDistill,
+  stopDistillRead,
 } from '@/services/api/brandDistill'
-import { getAsset } from '@/services/api/content'
 import { ApiError } from '@/services/api/errors'
 import type { OnboardingState } from '@/services/api/onboarding'
 import { uploadAssetFile } from '@/services/api/uploads'
@@ -63,8 +67,12 @@ import {
   useDistillReview,
 } from '@/stores/brandDistillStore'
 import { toast } from '@/stores/toastStore'
-import type { Asset } from '@/types/content'
-import type { DistillRequest, DistillRun } from '@/types/brandDistill'
+import type {
+  DistillCoverage,
+  DistillRead,
+  DistillReadRequest,
+  DistillRun,
+} from '@/types/brandDistill'
 import type { Workspace } from '@/types/workspace'
 
 /** Which needs on the sheet each step is about. */
@@ -74,27 +82,26 @@ const LIT: Partial<Record<OnboardingStep, NeedId[]>> = {
   accounts: ['channels'],
 }
 
-/** How often an uploaded document's ingest is asked after. */
-const INGEST_POLL_MS = 4000
 /** How long to wait for an account Zernio just connected to be listed. */
 const CONNECTED_WAIT_MS = 30_000
 
 const at = (s: OnboardingStep) => ONBOARDING_STEPS.indexOf(s)
 
-/** A document as setup holds it: the card, and the asset once it exists. */
-type Source = OnboardingSource & { assetId?: string }
+/** A run still taking sources: setup's own, before Continue composes it. */
+const isCollecting = (run: DistillRun | undefined) =>
+  run?.incremental === true && run.status === 'collecting'
 
 /**
- * `/onboarding` — setup, against the real API (behind `onboarding`).
+ * `/onboarding` — setup after signup.
  *
- * The same four screens the design harness runs from fixtures; what differs is
- * where each answer goes. Who the workspace is for and the step reached are
- * the workspace's `onboarding` setting, so a reload — or OAuth's round trip —
- * resumes where the person was. The name renames the workspace. Documents
- * upload as brand sources and show their ingest; everything given goes to one
- * brand read on Continue, which the brand step follows and commits. Accounts
- * connect through Zernio, leaving the app and coming back here through the
- * root guard. Finishing or skipping writes the setting and lets go.
+ * Who the workspace is for and the step reached are the workspace's own
+ * `setup`, so a reload — or OAuth's round trip — resumes where the person
+ * was. The name renames the workspace. Each source is read the moment it is
+ * added, as a read of one brand read that setup opens and keeps; the sheet
+ * moves as each finishes, and Continue composes the brand from all of them,
+ * which the brand step follows and commits. Accounts connect through Zernio,
+ * which brings the browser back here. Finishing or skipping writes the setup
+ * and lets go.
  */
 export default function OnboardingPage() {
   const onboarding = useOnboarding()
@@ -133,7 +140,7 @@ function Setup({
   // Past the first screen, the workspace's name is the name.
   const [name, setName] = useState(firstStep === 'you' ? '' : workspace.name)
 
-  const persist = (patch: Partial<Omit<OnboardingState, 'updatedAt'>>) =>
+  const persist = (patch: Partial<OnboardingState>) =>
     save.mutate({
       status: 'pending',
       step,
@@ -188,7 +195,25 @@ function Setup({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [child])
 
+  const collecting = isCollecting(run.data) ? run.data : undefined
+  // A read still taking sources has nothing to review: its step is sources.
+  const shown = step === 'brand' && collecting ? 'sources' : step
   const proposal = run.data?.proposal ?? null
+  // The site as the website read found it — on the run once composed, on its
+  // read before.
+  const website =
+    run.data?.website ??
+    run.data?.reads.find((r) => r.kind === 'website' && r.website)?.website ??
+    null
+
+  // The icon's link expires; a failed load asks for the run again, once.
+  const refreshedIcon = useRef(false)
+  const refetchRun = run.refetch
+  const refreshIcon = useCallback(() => {
+    if (refreshedIcon.current) return
+    refreshedIcon.current = true
+    void refetchRun()
+  }, [refetchRun])
 
   // ---- Accounts ------------------------------------------------------------
   const accounts = useZernioAccounts()
@@ -196,7 +221,10 @@ function Setup({
     .filter((a) => a.isActive)
     .map((a) => ({ platform: a.platform, handle: a.displayName || a.username }))
 
-  const needs = needsFrom({ proposal, connected: connected.length })
+  const needs = needsFrom({
+    coverage: proposal?.coverage ?? run.data?.coverage,
+    connected: connected.length,
+  })
   // Unnamed, a business is the workspace's own name and a client is "your
   // client" — the workspace's name came from signup, and is the agency's.
   const shownName =
@@ -210,7 +238,7 @@ function Setup({
 
   return (
     <OnboardingFrame
-      step={step}
+      step={shown}
       reached={STAGE_OF[reached]}
       onStage={(stage) => {
         const target =
@@ -224,14 +252,16 @@ function Setup({
         <NeedsSheet
           name={name.trim() || (role === 'own' ? workspace.name : '')}
           role={role}
-          site={run.data?.website ? siteHost(run.data.website.url) : undefined}
+          site={website ? siteHost(website.url) : undefined}
+          favicon={website?.faviconUrl ?? undefined}
+          onFaviconError={refreshIcon}
           needs={needs}
-          active={LIT[step]}
-          blank={step === 'you'}
+          active={LIT[shown]}
+          blank={shown === 'you'}
         />
       }
     >
-      {step === 'you' && (
+      {shown === 'you' && (
         <YouStep
           role={role}
           name={name}
@@ -243,21 +273,30 @@ function Setup({
           }}
         />
       )}
-      {step === 'sources' && (
+      {shown === 'sources' && (
         <Sources
           name={shownName}
+          run={collecting}
+          onRun={(id) => {
+            setRunId(id)
+            persist({ step: 'sources', runId: id })
+          }}
           onBack={() => go('you')}
-          onLater={() => go('accounts')}
-          onStarted={(id) => {
+          onLater={() => {
+            setRunId(null)
+            go('accounts', { runId: null })
+          }}
+          onComposed={(id) => {
             setRunId(id)
             go('brand', { runId: id })
           }}
         />
       )}
-      {step === 'brand' && runId && run.data && (
+      {shown === 'brand' && runId && run.data && (
         <Brand
           run={run.data}
           name={name}
+          siteName={website?.siteName || undefined}
           onName={setName}
           onBack={() => go('sources')}
           onDone={() => {
@@ -266,8 +305,8 @@ function Setup({
           }}
         />
       )}
-      {step === 'brand' && runId && !run.data && <PageLoader />}
-      {step === 'accounts' && (
+      {shown === 'brand' && runId && !run.data && <PageLoader />}
+      {shown === 'accounts' && (
         <Accounts
           name={shownName}
           role={role}
@@ -287,6 +326,17 @@ function Setup({
 // ---------------------------------------------------------------------------
 // Sources
 
+/** A source given but not yet a read: a document uploading, a request out. */
+type Pending =
+  | { kind: 'website'; id: string; url: string; status: SourceStatus }
+  | {
+      kind: 'document'
+      id: string
+      name: string
+      type: string
+      status: SourceStatus
+    }
+
 const DOC_TYPE: Record<string, string> = {
   pdf: 'PDF',
   doc: 'DOC',
@@ -296,66 +346,177 @@ const DOC_TYPE: Record<string, string> = {
   txt: 'MD',
 }
 
-/** An ingest's status, as the card says it. */
-function ingestStatus(asset: Asset | undefined): SourceStatus {
-  if (!asset) return 'reading'
-  if (asset.status === 'ready' || asset.status === 'partial') return 'read'
-  if (asset.status === 'failed') return 'failed'
+/** A read's status, as its card says it. */
+function readStatus(read: DistillRead): SourceStatus {
+  if (read.status === 'ready') return 'read'
+  if (read.status === 'failed') return 'readFailed'
   return 'reading'
 }
 
+/** "Adds tone of voice and who they talk to" — a read's own coverage. */
+function addedText(t: TFunction, coverage: DistillCoverage): string {
+  const added = needsAdded(coverage)
+  return added.length === 0
+    ? t('onboarding.sources.addedNothing')
+    : t('onboarding.sources.added', {
+        needs: formatList(
+          added.map((id) => t(`onboarding.sources.adds.${id}`)),
+        ),
+      })
+}
+
+/** The answers a read was given, as the form holds them. */
+function answerValues(read: DistillRead): Record<string, string> {
+  return Object.fromEntries(read.answers.map((a) => [a.questionId, a.answer]))
+}
+
+/**
+ * A 409 `distill_in_progress` for a read that is not setup's — one started on
+ * Foundation, still going. The brand step follows that one instead, so there
+ * is nothing to say about it here.
+ */
+class FollowedElsewhere extends Error {}
+
 function Sources({
   name,
+  run,
+  onRun,
   onBack,
   onLater,
-  onStarted,
+  onComposed,
 }: {
   name: string
+  /** Setup's read, while it still takes sources; none until the first one. */
+  run: DistillRun | undefined
+  /** A read was opened for setup — the first source given. */
+  onRun: (runId: string) => void
   onBack: () => void
   onLater: () => void
-  onStarted: (runId: string) => void
+  /** The brand is being read from what was given; the brand step follows. */
+  onComposed: (runId: string) => void
 }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const questions = useStarterQuestions()
-  const [sources, setSources] = useState<Source[]>([])
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [pending, setPending] = useState<Pending[]>([])
+  const [pendingAnswers, setPendingAnswers] = useState<Record<
+    string,
+    string
+  > | null>(null)
+  // What the person typed for a website, by read: the read names its site
+  // only once the site has been mapped.
+  const [typed, setTyped] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | undefined>()
+  const [composing, setComposing] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  // Taken back while still uploading: the upload lands in Assets, unread.
+  const withdrawn = useRef(new Set<string>())
+  // The read setup is opening, asked for once however many sources arrive
+  // together. Forgotten when the run it opened stops taking sources.
+  const opening = useRef<Promise<string> | null>(null)
+  const runId = run?.id
+  useEffect(() => {
+    if (!runId) opening.current = null
+  }, [runId])
 
-  const patch = (id: string, change: Partial<Source>) =>
-    setSources((all) =>
-      all.map((s) => (s.id === id ? ({ ...s, ...change } as Source) : s)),
+  const reads = (run?.reads ?? []).filter((r) => r.status !== 'discarded')
+  const answersRead = reads.find((r) => r.kind === 'answers')
+
+  const patchReads = (
+    id: string,
+    fn: (reads: DistillRead[]) => DistillRead[],
+  ) =>
+    qc.setQueryData<DistillRun>(distillRunKey(id), (r) =>
+      r ? { ...r, reads: fn(r.reads) } : r,
     )
+  const refresh = (id: string) =>
+    void qc.invalidateQueries({ queryKey: distillRunKey(id) })
+  const settle = (id: string) =>
+    setPending((all) => all.filter((p) => p.id !== id))
+  const mark = (id: string, status: SourceStatus) =>
+    setPending((all) => all.map((p) => (p.id === id ? { ...p, status } : p)))
 
-  // Each uploaded document is asked after until its ingest settles.
-  const ingests = useQueries({
-    queries: sources
-      .filter((s) => s.assetId)
-      .map((s) => ({
-        queryKey: ['onboarding', 'ingest', s.assetId],
-        queryFn: () => getAsset(s.assetId as string),
-        refetchInterval: (query: { state: { data?: Asset } }) =>
-          ingestStatus(query.state.data) === 'reading' ? INGEST_POLL_MS : false,
-      })),
-  })
-  const assetOf = new Map(
-    ingests.flatMap((q) => (q.data ? [[q.data.id, q.data] as const] : [])),
-  )
-  const shown: OnboardingSource[] = sources.map((s) => {
-    if (!s.assetId) return s
-    const asset = assetOf.get(s.assetId)
-    const pages = asset?.file?.page_count ?? undefined
-    return s.kind === 'document'
-      ? { ...s, status: ingestStatus(asset), pages: pages || undefined }
-      : s
-  })
+  const refuse = (err: unknown) => {
+    if (err instanceof FollowedElsewhere) return
+    // The plan's refusal is the toast the rest of the app answers one with.
+    if (err instanceof ApiError && err.code === 'entitlement_exceeded') {
+      toast.error(err.message, { description: denialReason(err) })
+    }
+    setError(t(`brand.distill.refusal.${refusalOf(err) ?? 'failed'}`))
+  }
+
+  const adopt = (opened: DistillRun) => {
+    qc.setQueryData(distillRunKey(opened.id), opened)
+    // A 409's run comes without its reads; the run's own read has them.
+    refresh(opened.id)
+    void qc.invalidateQueries({ queryKey: DISTILL_LIST_KEY })
+    invalidateEntitlements(qc)
+    onRun(opened.id)
+    return opened.id
+  }
+
+  /** The read sources are added to — setup's own, opened on the first. */
+  const openRun = (): Promise<string> => {
+    if (run) return Promise.resolve(run.id)
+    opening.current ??= requestDistill({ incremental: true }).then(
+      adopt,
+      (err: unknown) => {
+        const open =
+          err instanceof ApiError && err.code === 'distill_in_progress'
+            ? openRunOf(err.body)
+            : null
+        // One read per workspace: one open and taking sources is setup's
+        // own, from before a reload; any other is followed where it is.
+        if (isCollecting(open ?? undefined)) return adopt(open as DistillRun)
+        opening.current = null
+        if (open) {
+          qc.setQueryData(distillRunKey(open.id), open)
+          onComposed(open.id)
+          throw new FollowedElsewhere()
+        }
+        throw err
+      },
+    )
+    return opening.current
+  }
+
+  /** Reads one more source, at once and on its own. */
+  const addRead = async (source: DistillReadRequest, site?: string) => {
+    setError(undefined)
+    const id = await openRun()
+    const read = await addDistillRead(id, source)
+    if (site) setTyped((all) => ({ ...all, [read.id]: site }))
+    patchReads(id, (all) => [...all.filter((r) => r.id !== read.id), read])
+    refresh(id)
+    return read
+  }
+
+  /** A source is a read now; one taken back meanwhile is stopped. */
+  const landed = (id: string) => (read: DistillRead) => {
+    settle(id)
+    if (withdrawn.current.has(id)) removeRead(read.id).catch(() => undefined)
+  }
+
+  const addWebsite = (url: string) => {
+    const id = `web-${crypto.randomUUID()}`
+    setPending((all) => [
+      ...all,
+      { kind: 'website', id, url, status: 'reading' },
+    ])
+    addRead({ websiteUrl: `https://${url}` }, url).then(
+      landed(id),
+      (err: unknown) => {
+        settle(id)
+        refuse(err)
+      },
+    )
+  }
 
   const upload = (file: File) => {
     setError(undefined)
     const id = `doc-${crypto.randomUUID()}`
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
-    setSources((all) => [
+    setPending((all) => [
       ...all,
       {
         kind: 'document',
@@ -367,70 +528,176 @@ function Sources({
     ])
     uploadAssetFile(file, { purpose: 'brand_source' }).then(
       (result) => {
-        if (result.status === 'created' && result.asset_id) {
-          patch(id, { assetId: result.asset_id, status: 'reading' })
-          void qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
-          invalidateEntitlements(qc)
-        } else patch(id, { status: 'failed' })
+        if (result.status !== 'created' || !result.asset_id) {
+          mark(id, 'failed')
+          return
+        }
+        void qc.invalidateQueries({ queryKey: ASSET_LIST_KEY })
+        invalidateEntitlements(qc)
+        if (withdrawn.current.has(id)) return
+        // Read as soon as it lands; the read waits out the ingest.
+        mark(id, 'reading')
+        addRead({ assetId: result.asset_id }).then(
+          landed(id),
+          (err: unknown) => {
+            settle(id)
+            refuse(err)
+          },
+        )
       },
-      () => patch(id, { status: 'failed' }),
+      () => mark(id, 'failed'),
     )
   }
 
-  const start = useMutation({
-    mutationFn: (request: DistillRequest) => requestDistill(request),
-    meta: { errorToast: false },
-    onMutate: () => setError(undefined),
-    onSuccess: (run: DistillRun) => {
-      qc.setQueryData(distillRunKey(run.id), run)
-      void qc.invalidateQueries({ queryKey: DISTILL_LIST_KEY })
-      invalidateEntitlements(qc)
-      onStarted(run.id)
-    },
-    onError: async (err) => {
-      // One read per workspace: one already open is the one to follow.
-      if (err instanceof ApiError && err.code === 'distill_in_progress') {
-        try {
-          const open = resumableRun(await listDistillRuns())
-          if (open) {
-            qc.setQueryData(distillRunKey(open.id), open)
-            onStarted(open.id)
-            return
-          }
-        } catch {
-          // Said below.
-        }
-      }
-      if (err instanceof ApiError && err.code === 'entitlement_exceeded') {
-        toast.error(err.message, { description: denialReason(err) })
-      }
-      const refusal = refusalOf(err) ?? 'failed'
-      setError(t(`brand.distill.refusal.${refusal}`))
-    },
-  })
+  const addAnswers = (values: Record<string, string>) => {
+    const filled = filledAnswers(t, questions.data ?? [], values)
+    if (filled.length === 0) return
+    setPendingAnswers(values)
+    addRead({ answers: filled }).then(
+      () => setPendingAnswers(null),
+      (err: unknown) => {
+        setPendingAnswers(null)
+        refuse(err)
+      },
+    )
+  }
 
-  const read = () => {
-    const website = sources.find((s) => s.kind === 'website')
-    const assetIds = shown
-      .filter((s) => s.kind === 'document' && s.status !== 'failed')
-      .flatMap((s) => {
-        const assetId = sources.find((x) => x.id === s.id)?.assetId
-        return assetId ? [assetId] : []
-      })
-    const filled = filledAnswers(t, questions.data ?? [], answers)
-    if (!website && assetIds.length === 0 && filled.length === 0) {
+  /** Stops a read still going, or takes a finished one back out. */
+  const removeRead = async (readId: string) => {
+    if (!run) return
+    setError(undefined)
+    patchReads(run.id, (all) => all.filter((r) => r.id !== readId))
+    try {
+      await stopDistillRead(run.id, readId)
+    } finally {
+      refresh(run.id)
+    }
+  }
+
+  const remove = (id: string) => {
+    if (pending.some((p) => p.id === id)) {
+      // The upload stays in Assets, tagged as a brand source; taking it back
+      // here only leaves it unread.
+      withdrawn.current.add(id)
+      settle(id)
+      return
+    }
+    removeRead(id).catch(refuse)
+  }
+
+  /** A source that couldn't be read, read again — stopped, and added anew. */
+  const retry = (readId: string) => {
+    const read = reads.find((r) => r.id === readId)
+    const url = read?.website?.url ?? typed[readId]
+    const source: DistillReadRequest | null =
+      read?.kind === 'website' && url
+        ? { websiteUrl: url.startsWith('http') ? url : `https://${url}` }
+        : read?.kind === 'asset' && read.sources[0]
+          ? { assetId: read.sources[0].assetId }
+          : read?.kind === 'answers'
+            ? { answers: read.answers }
+            : null
+    if (!source) return
+    removeRead(readId)
+      .then(() => addRead(source, typed[readId]))
+      .catch(refuse)
+  }
+
+  /** On to the brand: composed from every finished read. */
+  const compose = async () => {
+    if (!run) {
       onLater()
       return
     }
-    start.mutate({
-      websiteUrl:
-        website?.kind === 'website' ? `https://${website.url}` : undefined,
-      assetIds: assetIds.length ? assetIds : undefined,
-      answers: filled.length ? filled : undefined,
-    })
+    setError(undefined)
+    setComposing(true)
+    try {
+      const composed = await composeDistill(run.id)
+      qc.setQueryData(distillRunKey(composed.id), composed)
+      void qc.invalidateQueries({ queryKey: DISTILL_LIST_KEY })
+      onComposed(composed.id)
+    } catch (err) {
+      setComposing(false)
+      const code = err instanceof ApiError ? err.code : undefined
+      // Composed in another tab already: follow it there.
+      if (code === 'run_not_collecting') onComposed(run.id)
+      else if (code === 'nothing_read')
+        setError(t('onboarding.sources.nothingRead'))
+      else if (code === 'reads_in_progress') {
+        refresh(run.id)
+        setError(t('onboarding.sources.stillReading'))
+      } else refuse(err)
+    }
   }
 
-  const answered = Object.values(answers).some((a) => a.trim())
+  /** On without a read. The open one would hold the workspace's only slot. */
+  const later = () => {
+    if (run) {
+      discardDistill(run.id)
+        .catch(() => undefined)
+        .finally(
+          () => void qc.invalidateQueries({ queryKey: DISTILL_LIST_KEY }),
+        )
+    }
+    onLater()
+  }
+
+  /** On while something is still being read: it stops, asked first. */
+  const goOn = async () => {
+    for (const p of pending) withdrawn.current.add(p.id)
+    setPending([])
+    if (!run) {
+      onLater()
+      return
+    }
+    const open = reads.filter((r) => isRunOpen(r.status))
+    await Promise.allSettled(open.map((r) => stopDistillRead(run.id, r.id)))
+    if (reads.some((r) => r.status === 'ready')) await compose()
+    else later()
+  }
+
+  const shown: OnboardingSource[] = [
+    ...reads.flatMap((read): OnboardingSource[] => {
+      const status = readStatus(read)
+      const added = status === 'read' ? addedText(t, read.coverage) : undefined
+      if (read.kind === 'website') {
+        const url = read.website?.url
+        return [
+          {
+            kind: 'website',
+            id: read.id,
+            url: url
+              ? siteHost(url)
+              : (typed[read.id] ?? t('onboarding.sources.website.title')),
+            status,
+            added,
+          },
+        ]
+      }
+      if (read.kind === 'asset') {
+        const source = read.sources[0]
+        return [
+          {
+            kind: 'document',
+            id: read.id,
+            name: source?.title ?? '',
+            type: source?.type ?? 'MD',
+            status,
+            added,
+          },
+        ]
+      }
+      return []
+    }),
+    ...pending,
+  ]
+  const answers =
+    pendingAnswers ?? (answersRead ? answerValues(answersRead) : {})
+  const answersStatus: SourceStatus | null = pendingAnswers
+    ? 'reading'
+    : answersRead
+      ? readStatus(answersRead)
+      : null
 
   return (
     <>
@@ -453,30 +720,31 @@ function Sources({
           text: questionText(t, q),
         }))}
         answers={answers}
-        answersStatus={answered ? 'queued' : null}
-        readsOnAdd={false}
-        starting={start.isPending}
+        answersStatus={answersStatus}
+        answersAdded={
+          answersRead && answersStatus === 'read'
+            ? addedText(t, answersRead.coverage)
+            : undefined
+        }
+        starting={composing}
         error={error}
         onAdd={(s: SourceInput) => {
-          setError(undefined)
-          setSources((all) => [...all, { ...s, status: 'queued' }])
+          if (s.kind === 'website') addWebsite(s.url)
         }}
-        // The upload stays in Assets, tagged as a brand source; removing it
-        // here only leaves it out of the read.
-        onRemove={(id) => {
-          setError(undefined)
-          setSources((all) => all.filter((s) => s.id !== id))
-        }}
-        onRetry={() => undefined}
+        onRemove={remove}
+        onRetry={(id) =>
+          retry(id === ANSWERS_ID && answersRead ? answersRead.id : id)
+        }
         onChooseFiles={() => fileInput.current?.click()}
         onAnswers={(a) => {
-          setError(undefined)
-          setAnswers(a)
+          if (Object.keys(a).length > 0) addAnswers(a)
+          else if (answersRead) removeRead(answersRead.id).catch(refuse)
+          else setPendingAnswers(null)
         }}
         onBack={onBack}
-        onRead={read}
-        onStop={read}
-        onLater={onLater}
+        onRead={() => void compose()}
+        onStop={() => void goOn()}
+        onLater={later}
       />
     </>
   )
@@ -488,12 +756,15 @@ function Sources({
 function Brand({
   run,
   name,
+  siteName,
   onName,
   onBack,
   onDone,
 }: {
   run: DistillRun
   name: string
+  /** What the website calls the business, once its homepage is read. */
+  siteName?: string
   onName: (name: string) => void
   onBack: () => void
   onDone: () => void
@@ -526,6 +797,7 @@ function Brand({
       run={run}
       name={name}
       nameFrom={null}
+      siteName={siteName}
       onName={onName}
       onBack={onBack}
       onSave={save}
@@ -561,7 +833,7 @@ function Accounts({
 }) {
   const { t } = useTranslation()
   const views = usePlatformViews()
-  const link = useCreateConnectLink()
+  const link = useCreateConnectLink('onboarding')
 
   // Back from Zernio. The account is listed a few seconds after the redirect,
   // once the sync has run, so ask again until it is — or give up quietly.
@@ -589,8 +861,8 @@ function Accounts({
   const connect = (platform: string) => {
     const info = views.find((v) => v.info.zernioId === platform)?.info
     link.mutate(platform, {
-      // The whole window goes: Zernio brings it back to Settings, and the
-      // root guard brings it on here (see `setupRedirect`).
+      // The whole window goes, and Zernio brings it back here — to the
+      // picker under Settings first when the login covers several targets.
       onSuccess: (r) => window.location.assign(r.connectUrl),
       onError: (err) => {
         if (err instanceof ApiError && err.code === 'entitlement_exceeded') {
