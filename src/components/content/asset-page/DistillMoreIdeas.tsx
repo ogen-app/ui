@@ -20,6 +20,7 @@ import {
 } from '@/lib/ideaDistill'
 import type { AssetAnalysis, IdeaDistillRun } from '@/types/assetAnalysis'
 import { DistillIdeasModal, type DistillDraft } from './DistillIdeasModal'
+import { TextButton } from '@/components/ui/text-button'
 
 type Distill = ReturnType<typeof useIdeaDistill>
 
@@ -187,14 +188,13 @@ function OutcomeRow({
 }) {
   const { t } = useTranslation()
   const tryAgain = run && (
-    <button
-      type="button"
+    <TextButton
+      className="text-sm"
       disabled={pending}
       onClick={() => onTryAgain(run)}
-      className="cursor-pointer text-sm font-medium text-accent hover:underline disabled:cursor-default disabled:opacity-50"
     >
       {t('assetInsights.distill.tryAgain')}
-    </button>
+    </TextButton>
   )
   const seePlans = (
     <Link

@@ -6,6 +6,7 @@ import { useCompileIdeas, useDraftIdeas } from '@/hooks/useIdeaPosts'
 import { cn } from '@/lib/styles'
 import type { IdeaSlot } from '@/services/api/ideaPosts'
 import { SeriesMark } from '@/components/series/SeriesMark'
+import { Button } from '@/components/ui/button'
 
 /** The slot's fixed height, which the week's ladder reserves per slot. */
 export const IDEA_SLOT_HEIGHT = 52
@@ -102,26 +103,23 @@ export function IdeaSlotCard({
           {...form}
           onSubmit={({ platformIds }) => compile.mutate(request(platformIds))}
         >
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="xs"
+            className="bg-primary"
             disabled={busy}
-            className="cursor-pointer border border-border bg-primary px-2 py-1 text-xs font-medium tracking-[0.03em] text-foreground hover:border-foreground disabled:cursor-default disabled:text-quinary-foreground"
           >
             {t('ideas.lifecycle.compile')}
-          </button>
+          </Button>
         </IdeaPostForm>
         <IdeaPostForm
           verb="draft"
           {...form}
           onSubmit={({ platformIds }) => draft.mutate(request(platformIds))}
         >
-          <button
-            type="button"
-            disabled={busy}
-            className="cursor-pointer bg-primary-foreground px-2 py-1 text-xs font-medium tracking-[0.03em] text-primary disabled:cursor-default disabled:opacity-50"
-          >
+          <Button variant="defaultInverted" size="xs" disabled={busy}>
             {t('ideas.lifecycle.draft')}
-          </button>
+          </Button>
         </IdeaPostForm>
       </div>
     </div>

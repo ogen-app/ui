@@ -601,17 +601,18 @@ function WordField({
           className="inline-flex items-center gap-1.5 rounded-full bg-quaternary py-0.5 pl-2.5 pr-1 text-xs font-medium text-primary-foreground"
         >
           {word}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xsIcon"
+            className="rounded-full"
             onClick={(e) => {
               e.stopPropagation()
               onChange(words.filter((w) => w !== word))
             }}
             aria-label={t('brand.guardrails.removeWord', { word })}
-            className="flex size-4 cursor-pointer items-center justify-center rounded-full hover:bg-foreground/10"
           >
             <XIcon className="size-3" />
-          </button>
+          </Button>
         </span>
       ))}
       <input

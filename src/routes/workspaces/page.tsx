@@ -14,6 +14,7 @@ import { ROLE_LABEL_KEYS, type WorkspaceChoice } from '@/types/workspace'
 import { toast } from '@/stores/toastStore'
 import { cn } from '@/lib'
 import { awaiting } from '@/lib/fetched'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * The workspace chooser — a full page, on its own, with no app chrome around
@@ -121,13 +122,12 @@ export default function WorkspacesPage() {
         </p>
         <p>
           {t('workspaces.wrongAccount')}{' '}
-          <button
-            type="button"
+          <TextButton
+            tone="quiet"
             onClick={() => navigate({ to: '/auth/logout' })}
-            className="cursor-pointer underline underline-offset-4 hover:text-primary-foreground"
           >
             {t('workspaces.logOut')}
-          </button>
+          </TextButton>
         </p>
       </div>
 

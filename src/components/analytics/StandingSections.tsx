@@ -20,6 +20,7 @@ import type {
   ShelfLife,
   Urgency,
 } from './types'
+import { TextButton } from '@/components/ui/text-button'
 
 /* ------------------------------------------------------------- patterns -- */
 
@@ -320,12 +321,7 @@ export function NextSection({ view }: { view: NextView }) {
                   {a.detail}
                 </span>
               </div>
-              <button
-                type="button"
-                className="shrink-0 text-xs font-medium underline underline-offset-2"
-              >
-                {a.target}
-              </button>
+              <TextButton className="shrink-0 text-xs">{a.target}</TextButton>
             </li>
           ))}
         </ul>

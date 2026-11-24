@@ -278,14 +278,15 @@ function End({
     )
   if (onDismiss)
     return (
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="rowIcon"
+        className="-m-1"
         onClick={onDismiss}
         aria-label={dismissLabel ?? t('common.close')}
-        className="-m-1 cursor-pointer p-1 text-tertiary-foreground hover:text-foreground"
       >
         <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.5} />
-      </button>
+      </Button>
     )
   return null
 }

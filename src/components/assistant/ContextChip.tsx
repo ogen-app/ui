@@ -5,6 +5,7 @@ import { chipText } from '@/lib/assistantView'
 import { useViewContextStore } from '@/stores/viewContextStore'
 import { useWindowWords } from './useWindowWords'
 import type { ThreadSubject } from '@/types/assistant'
+import { Button } from '@/components/ui/button'
 
 /**
  * What goes with the next message (CON-451): the selection, or the detail
@@ -50,14 +51,15 @@ export function ContextChip({
           className="size-1.5 shrink-0 rounded-full bg-accent"
         />
         <span className="min-w-0 truncate">{text}</span>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="xsIcon"
+          className="shrink-0"
           onClick={dismiss}
           aria-label={t('assistant.chip.dismiss')}
-          className="flex size-4 shrink-0 cursor-pointer items-center justify-center text-tertiary-foreground hover:text-foreground"
         >
           <XIcon className="size-3" weight="bold" />
-        </button>
+        </Button>
       </span>
       {firstRun && (
         <span className="min-w-0 truncate text-xs text-tertiary-foreground">

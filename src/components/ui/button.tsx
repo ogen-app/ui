@@ -127,8 +127,20 @@ const buttonVariants = cva(
         default: "h-10 px-4 [&_svg:not([class*='size-'])]:size-4",
         defaultIcon:
           "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
-        xsIcon: "h-4 p-0 justify-center [&_svg:not([class*='size-'])]:size-3",
+        // The × inside a chip or a pill: 16px square, a 12px glyph.
+        xsIcon:
+          "h-4 w-4 p-0 justify-center [&_svg:not([class*='size-'])]:size-3",
+        // An icon button in a line of text or a card's head — close, refresh —
+        // where a 32px box would push the line taller than its words.
+        rowIcon:
+          "h-6 w-6 p-0 justify-center [&_svg:not([class*='size-'])]:size-4",
+        // A small card's own action (a calendar slot's Compile and Draft),
+        // where 32px would be taller than the card's lines.
+        xs: "h-6 px-2 gap-1 [&_svg:not([class*='size-'])]:size-3.5",
         sm: "h-8 px-3 [&_svg:not([class*='size-'])]:size-4",
+        // The top bar's buttons (Help, Work with Ogen): 36px, centred on the
+        // 56px bar with the switcher beside them.
+        bar: "h-9 px-3 [&_svg:not([class*='size-'])]:size-4",
         smIcon:
           "h-8 p-0 w-8 justify-center [&_svg:not([class*='size-'])]:size-4",
         lg: "h-10 px-4 [&_svg:not([class*='size-'])]:size-4",

@@ -9,6 +9,7 @@ import { isRunOpen, keptTally } from '@/lib/brandDistill'
 import { useDistillReview } from '@/stores/brandDistillStore'
 import type { DistillRun } from '@/types/brandDistill'
 import { LABEL_TEXT, StepCard, StepFooter, SURFACE } from '../OnboardingFrame'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * The brand, read from what was given — the brand read's own screens, not a
@@ -184,13 +185,9 @@ function NameField({
           <>
             {' · '}
             {t('onboarding.brand.siteSays', { name: siteName })}{' '}
-            <button
-              type="button"
-              onClick={() => onName(siteName)}
-              className="cursor-pointer font-medium text-accent hover:underline"
-            >
+            <TextButton onClick={() => onName(siteName)}>
               {t('onboarding.brand.useSite')}
-            </button>
+            </TextButton>
           </>
         )}
       </p>

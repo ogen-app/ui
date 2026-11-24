@@ -32,6 +32,7 @@ import type { AssetListItem } from '@/types/assetList'
 import type { DistillRun } from '@/types/brandDistill'
 import { StarterCard } from '../shell'
 import { GroupLabel } from './parts'
+import { TextButton } from '@/components/ui/text-button'
 
 type Route = 'website' | 'document' | 'questions'
 
@@ -131,13 +132,9 @@ export function OfferRoutes() {
                 ·
               </span>
             )}
-            <button
-              type="button"
-              onClick={() => choose(route)}
-              className="cursor-pointer font-medium text-accent hover:underline"
-            >
+            <TextButton onClick={() => choose(route)}>
               {t(`brand.shell.offer.${route}.title`)}
-            </button>
+            </TextButton>
           </span>
         ))}
       </p>

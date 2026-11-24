@@ -18,6 +18,7 @@ import { formatNumber } from '@/lib/intl'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { CampaignMark } from './CampaignMark'
 import { ValueLine, ValueLines } from './ValueLines'
+import { TextButton } from '@/components/ui/text-button'
 
 /** How many campaigns show before "+N more". */
 const FIRST_CAMPAIGNS = 5
@@ -105,29 +106,24 @@ export function MetaCampaigns({
       })}
       {hidden > 0 && (
         <li className="flex min-h-6 items-center pl-5.5">
-          <button
-            type="button"
-            onClick={() => setShowAll(true)}
-            className="cursor-pointer text-secondary-foreground hover:text-foreground"
-          >
+          <TextButton tone="quiet" onClick={() => setShowAll(true)}>
             {t('assetInsights.meta.moreCampaigns', { count: hidden })}
-          </button>
+          </TextButton>
         </li>
       )}
       {others.length > 0 && (
         <li className="flex">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
-                type="button"
+              <TextButton
+                className="flex min-h-6 items-center gap-1.5"
                 disabled={adding}
-                className="flex min-h-6 cursor-pointer items-center gap-1.5 font-medium text-accent hover:underline disabled:opacity-50"
               >
                 <Mark>
                   <PlusIcon className="text-accent" />
                 </Mark>
                 {t('assetInsights.meta.addToCampaign')}
-              </button>
+              </TextButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"

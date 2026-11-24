@@ -30,6 +30,7 @@ import { QualityInlineSummary } from '../quality/QualityInlineSummary'
 import type { PostEvaluation } from '@/types/quality'
 import type { PostStatus } from '@/types/posts'
 import { SmallHeading } from '@/components/page-primitives/SmallHeading'
+import { TextButton } from '@/components/ui/text-button'
 
 type Props = {
   checks: PostCheck[]
@@ -379,16 +380,15 @@ function AssessLink({
   }
 
   return (
-    <button
-      type="button"
+    <TextButton
+      className="inline-flex shrink-0 items-center gap-1.5"
       onClick={onAssess}
-      className="flex shrink-0 items-center gap-1.5 text-tertiary-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
     >
       <SparkleIcon className="size-4" />
       <span>
         {assessment ? t('posts.quality.reassess') : t('posts.quality.assess')}
       </span>
-    </button>
+    </TextButton>
   )
 }
 

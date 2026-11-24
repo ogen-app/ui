@@ -38,6 +38,7 @@ import type {
   WorkspacePlan,
 } from '@/types/entitlements'
 import type { Tier } from '@/types/tiers'
+import { TextButton } from '@/components/ui/text-button'
 
 type Denied = Extract<Entitlement, { state: 'denied' }>
 
@@ -577,14 +578,14 @@ function LinkOut({
   children: ReactNode
 }) {
   return (
-    <button
-      type="button"
+    <TextButton
+      tone="quiet"
+      className="inline-flex items-center gap-1.5 self-center pt-2 text-control"
       onClick={onClick}
-      className="inline-flex cursor-pointer items-center gap-1.5 self-center pt-2 text-control font-medium text-tertiary-foreground hover:text-foreground"
     >
       {children}
       <ArrowRightIcon size={14} aria-hidden />
-    </button>
+    </TextButton>
   )
 }
 

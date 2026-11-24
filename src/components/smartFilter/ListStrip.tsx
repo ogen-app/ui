@@ -6,6 +6,7 @@ import {
 } from '@phosphor-icons/react'
 import { formatNumber } from '@/lib/intl'
 import type { SavedView } from '@/services/api/savedViews'
+import { Button } from '@/components/ui/button'
 
 /**
  * The card lists' tab strip and pills row share these (design/ideas-cards):
@@ -66,14 +67,15 @@ export function OpenView({
           {t('savedViews.edited')}
         </span>
       )}
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="xsIcon"
+        className="shrink-0"
         onClick={onClose}
         aria-label={t('savedViews.close', { name: view.name })}
-        className="flex size-4 shrink-0 cursor-pointer items-center justify-center text-secondary-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-accent"
       >
         <XIcon className="size-3" />
-      </button>
+      </Button>
     </span>
   )
 }

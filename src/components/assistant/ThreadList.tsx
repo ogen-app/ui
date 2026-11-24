@@ -26,6 +26,7 @@ import type {
   AssistantThread,
   ThreadSubject,
 } from '@/types/assistant'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * Every thread the workspace has talked in, so a run started on one campaign
@@ -250,13 +251,7 @@ function ListError({ t, onRetry }: { t: TFunction; onRetry: () => void }) {
   return (
     <p className="flex items-center justify-center gap-2 py-3 text-sm text-tertiary-foreground">
       {t('assistant.list.loadFailed')}
-      <button
-        type="button"
-        onClick={onRetry}
-        className="cursor-pointer text-foreground underline-offset-2 hover:underline"
-      >
-        {t('common.tryAgain')}
-      </button>
+      <TextButton onClick={onRetry}>{t('common.tryAgain')}</TextButton>
     </p>
   )
 }

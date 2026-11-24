@@ -6,6 +6,7 @@ import { XIcon } from '@phosphor-icons/react'
 import { ZIndex } from '@/config/zIndex'
 import type { Tag } from '@/types/content'
 import { useCreateTag, useTags } from '@/hooks/useTags'
+import { Button } from '@/components/ui/button'
 
 /** The field box itself — worn by the real input and by its loading state. */
 const FIELD_CLASS =
@@ -173,18 +174,19 @@ export function TagsInput({
             className="inline-flex items-center gap-1.5 rounded-full bg-quaternary text-primary-foreground text-xs font-medium pl-2.5 pr-1 py-0.5"
           >
             {t.name}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xsIcon"
+              className="rounded-full"
               onClick={(e) => {
                 e.stopPropagation()
                 removeAt(i)
               }}
-              className="flex items-center justify-center size-4 rounded-full cursor-pointer hover:bg-foreground/10"
               aria-label={`Remove ${t.name}`}
               disabled={disabled}
             >
               <XIcon className="size-3" />
-            </button>
+            </Button>
           </span>
         ))}
         <input

@@ -44,6 +44,7 @@ import { AssetKindMark } from './AssetKindMark'
 import { FitRing } from './FitRing'
 import { MatchSnippet } from './MatchSnippet'
 import { VERDICT_ICON } from './verdictIcons'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * One document on the Assets list, as a card (design/ideas-cards): its own
@@ -350,9 +351,7 @@ function Details({
     ) : state === 'noIdeas' ? (
       <span className="flex shrink-0 items-center gap-1.5">
         {t('content.list.noIdeas')}
-        <button
-          type="button"
-          className="cursor-pointer font-medium text-foreground outline-none hover:underline focus-visible:underline disabled:opacity-50"
+        <TextButton
           disabled={retry.isPending}
           onClick={() =>
             retry.mutate(null, {
@@ -364,7 +363,7 @@ function Details({
           }
         >
           {t('content.list.analyseAgain')}
-        </button>
+        </TextButton>
       </span>
     ) : null,
   )

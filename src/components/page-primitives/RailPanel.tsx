@@ -1,8 +1,10 @@
 import { createContext, useContext, type ReactNode, type Ref } from 'react'
 import { XIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { ZIndex } from '@/config/zIndex.ts'
 import { CHROME_BAR_H } from '@/components/layout/chrome'
 import { cn } from '@/lib'
+import { Button } from '@/components/ui/button'
 
 /**
  * Set by a host that already names the panel — the post editor's tabs. Inside
@@ -65,6 +67,7 @@ export function RailPanel({
   titleLabel,
   footerClassName,
 }: RailPanelProps) {
+  const { t } = useTranslation()
   const embedded = useContext(RailPanelEmbedded)
   return (
     <div className={cn('h-full flex flex-col', className)}>
@@ -110,14 +113,14 @@ export function RailPanel({
             <div className="flex shrink-0 items-center gap-2">
               {actions}
               {onClose && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="rowIcon"
                   onClick={onClose}
-                  aria-label="Close"
-                  className="flex items-center justify-center size-6 text-secondary-foreground hover:text-foreground cursor-pointer"
+                  aria-label={t('common.close')}
                 >
                   <XIcon className="size-5" />
-                </button>
+                </Button>
               )}
             </div>
           </div>

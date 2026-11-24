@@ -2,6 +2,7 @@ import { QuestionIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { CampaignSwitcher } from '@/components/layout/CampaignSwitcher'
 import { Logo } from '@/components/Logo'
+import { Button } from '@/components/ui/button'
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
 import {
   selectAnyRunning,
@@ -9,7 +10,6 @@ import {
   useAssistantStore,
 } from '@/stores/assistantStore'
 import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
-import { cn } from '@/lib'
 import { usePageCrumbStore } from '@/stores/pageCrumbStore'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useHelpStore } from '@/stores/helpStore'
@@ -77,22 +77,19 @@ function HelpButton() {
   const pageArticle = usePageHelpArticle({ enabled: true })
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
+      size="bar"
+      active={on}
       aria-pressed={on}
       onClick={() => {
         if (on) useSettingsStore.getState().closeRightPanel()
         else useHelpStore.getState().open(pageArticle)
       }}
-      className={cn(
-        'flex h-9 items-center gap-2 rounded-button border border-border bg-primary px-3 text-control font-medium text-primary-foreground outline-none transition-colors',
-        'hover:bg-secondary aria-pressed:bg-secondary',
-        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-primary',
-      )}
     >
-      <QuestionIcon className="size-5 shrink-0" />
+      <QuestionIcon className="size-5" />
       {t('nav.openHelp')}
-    </button>
+    </Button>
   )
 }
 
@@ -112,15 +109,12 @@ function WorkWithOgen() {
   const unread = useAssistantStore(selectAnyUnread)
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="accent"
+      size="bar"
+      active={on}
       aria-pressed={on}
       onClick={() => toggle('assistant')}
-      className={cn(
-        'relative flex h-9 items-center gap-2 rounded-button bg-accent px-3 text-control font-medium text-primary outline-none transition-colors',
-        'hover:bg-accent/90 aria-pressed:bg-accent/85',
-        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-primary',
-      )}
     >
       {/* The mark's fill and the loading stroke are set here rather than left
           to `currentColor`, so nothing that recolours logos app-wide (the dev
@@ -137,6 +131,6 @@ function WorkWithOgen() {
           className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-notification ring-2 ring-primary"
         />
       )}
-    </button>
+    </Button>
   )
 }

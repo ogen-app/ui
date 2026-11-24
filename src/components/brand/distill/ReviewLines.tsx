@@ -44,6 +44,8 @@ import {
   type FactSubject,
 } from '../facts'
 import { GroupLabel, KeepDrop, KeepMark, SourceLabel } from './parts'
+import { TextButton } from '@/components/ui/text-button'
+import { ChipButton } from '@/components/ui/chip'
 
 /**
  * The small items of a review — guardrail lines, banned words, the
@@ -217,8 +219,8 @@ function WordChip({ word, review, update }: Context & { word: ProposedLine }) {
   const dropped = isDropped(review, word.proposalId)
   const text = lineText(word, review)
   return (
-    <button
-      type="button"
+    <ChipButton
+      crossed={dropped}
       aria-pressed={!dropped}
       aria-label={
         dropped
@@ -226,15 +228,9 @@ function WordChip({ word, review, update }: Context & { word: ProposedLine }) {
           : t('brand.distill.review.dropLine', { line: text })
       }
       onClick={() => update((r) => toggleDropped(r, word.proposalId))}
-      className={cn(
-        'cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-        dropped
-          ? 'border-dashed border-quaternary text-tertiary-foreground line-through'
-          : 'border-transparent bg-tertiary text-foreground hover:bg-quaternary',
-      )}
     >
       {text}
-    </button>
+    </ChipButton>
   )
 }
 
@@ -439,13 +435,9 @@ export function FactsReview({
         ))}
       </div>
       {rest > 0 && (
-        <button
-          type="button"
-          onClick={() => setAll(true)}
-          className="cursor-pointer self-start text-sm font-medium text-accent hover:underline"
-        >
+        <TextButton className="self-start text-sm" onClick={() => setAll(true)}>
           {t('brand.distill.review.moreFacts', { count: rest })}
-        </button>
+        </TextButton>
       )}
     </Card>
   )

@@ -100,6 +100,7 @@ import {
   OpenView,
 } from '@/components/smartFilter/ListStrip'
 import { useIdeaVocabulary, type IdeaVocabulary } from './useIdeaVocabulary'
+import { TextButton } from '@/components/ui/text-button'
 
 /** What the delete dialog is asking about. */
 type Confirming = {
@@ -390,13 +391,9 @@ export function IdeasQuerySurface({
     viewWriter.update.mutate({ id: active.id, query: ideaViewQuery(search) })
   // Saving is on demand: with filters on and no group open, the bar offers it.
   const saveAsGroup = groupsOn && !active && narrowed && (
-    <button
-      type="button"
-      onClick={() => setSaving({ mode: 'new' })}
-      className="cursor-pointer font-medium text-accent outline-none hover:underline focus-visible:underline"
-    >
+    <TextButton onClick={() => setSaving({ mode: 'new' })}>
       {t('savedViews.saveAs')}
-    </button>
+    </TextButton>
   )
 
   /** The last box pressed, which Shift extends a range from. */
@@ -1155,13 +1152,9 @@ function IdeaRows({
       {moreFailed && !loadingMore && (
         <p className="flex justify-center gap-2 py-3 text-xs/4 text-destructive">
           {t('ideas.list.moreFailed')}
-          <button
-            type="button"
-            onClick={onRetryMore}
-            className="cursor-pointer font-medium text-foreground underline underline-offset-3"
-          >
+          <TextButton onClick={onRetryMore}>
             {t('ideas.capture.retry')}
-          </button>
+          </TextButton>
         </p>
       )}
     </div>
@@ -1320,26 +1313,25 @@ function SelectionLine({
           : t('ideas.bulk.count', { count })}
       </span>
       {allMatching ? (
-        <button
-          type="button"
+        <TextButton
+          tone="quiet"
+          className="truncate text-sm/5"
           onClick={onClear}
-          className="cursor-pointer truncate text-sm/5 text-secondary-foreground outline-none hover:text-foreground hover:underline focus-visible:underline"
         >
           {t('ideas.bulk.clearAll')}
-        </button>
+        </TextButton>
       ) : canWiden ? (
-        <button
-          type="button"
+        <TextButton
+          className="truncate text-sm/5"
           onClick={onWiden}
           disabled={resolving}
-          className="cursor-pointer truncate text-sm/5 font-medium text-accent outline-none hover:underline focus-visible:underline disabled:opacity-60"
         >
           {t('ideas.bulk.selectAllIn', {
             count: total,
             formatted: n(total),
             pile: pileLabel,
           })}
-        </button>
+        </TextButton>
       ) : (
         elsewhere > 0 && (
           <span className="truncate text-sm/5 text-secondary-foreground">

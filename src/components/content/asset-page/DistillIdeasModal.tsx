@@ -1,7 +1,8 @@
-import { useId, useRef, type KeyboardEvent } from 'react'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Segmented } from '@/components/ui/segmented'
 import { ModalContainer } from '@/components/ui/modal'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib'
@@ -75,11 +76,16 @@ export function DistillIdeasModal({
           <span id={countLabelId} className="text-control text-input-label">
             {t('assetInsights.distill.modal.howMany')}
           </span>
-          <CountPicker
+          <Segmented
+            fill
             value={draft.count}
             onChange={(count) => onDraftChange({ ...draft, count })}
-            labelledBy={countLabelId}
-            describedBy={countHintId}
+            options={DISTILL_COUNTS.map((n) => ({
+              value: n,
+              label: String(n),
+            }))}
+            aria-labelledby={countLabelId}
+            aria-describedby={countHintId}
           />
           <p id={countHintId} className="text-xs text-tertiary-foreground">
             {t('assetInsights.distill.modal.howManyHint', {
@@ -164,69 +170,5 @@ export function DistillIdeasModal({
         </div>
       </form>
     </ModalContainer>
-  )
-}
-
-/**
- * The count, as the segmented control's look over a radio group's semantics:
- * one choice of eight, so a tab list would announce the wrong thing. Arrow
- * keys move the choice and the focus together, as a radio group's do.
- */
-function CountPicker({
-  value,
-  onChange,
-  labelledBy,
-  describedBy,
-}: {
-  value: number
-  onChange: (count: number) => void
-  labelledBy: string
-  describedBy: string
-}) {
-  const refs = useRef<(HTMLButtonElement | null)[]>([])
-  const move = (e: KeyboardEvent, index: number) => {
-    const step =
-      e.key === 'ArrowRight' || e.key === 'ArrowDown'
-        ? 1
-        : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
-          ? -1
-          : 0
-    if (step === 0) return
-    e.preventDefault()
-    const next = Math.min(DISTILL_COUNTS.length - 1, Math.max(0, index + step))
-    onChange(DISTILL_COUNTS[next])
-    refs.current[next]?.focus()
-  }
-  return (
-    <div
-      role="radiogroup"
-      aria-labelledby={labelledBy}
-      aria-describedby={describedBy}
-      className="flex h-10 gap-1 rounded-md bg-quaternary p-1"
-    >
-      {DISTILL_COUNTS.map((n, index) => (
-        <button
-          key={n}
-          ref={(el) => {
-            refs.current[index] = el
-          }}
-          type="button"
-          role="radio"
-          aria-checked={n === value}
-          tabIndex={n === value ? 0 : -1}
-          onClick={() => onChange(n)}
-          onKeyDown={(e) => move(e, index)}
-          className={cn(
-            'h-8 flex-1 cursor-pointer rounded-md text-control font-medium tabular-nums transition-colors outline-none',
-            'focus-visible:inset-ring-[2px] focus-visible:inset-ring-ring',
-            n === value
-              ? 'bg-primary text-primary-foreground'
-              : 'text-secondary-foreground hover:text-foreground',
-          )}
-        >
-          {n}
-        </button>
-      ))}
-    </div>
   )
 }

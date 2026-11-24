@@ -63,6 +63,7 @@ import { HORIZON_KEYS, VERDICTS, VERDICT_ORDER, type Decide } from './verdicts'
 import { NotGroundedMark } from '@/components/grounding/NotGroundedMark'
 import { isNotGrounded } from '@/lib/grounding'
 import { SeriesMark } from '@/components/series/SeriesMark'
+import { TextButton } from '@/components/ui/text-button'
 
 /** An idea on its own source's page — see `IdeaRow`'s `atSource`. */
 type AtSource = {
@@ -925,13 +926,9 @@ function WrittenBody({
         }
         trailing={
           // The only irreversible thing on the card, and it asks first.
-          <button
-            type="button"
-            onClick={onDelete}
-            className="cursor-pointer font-medium text-destructive hover:underline"
-          >
+          <TextButton tone="destructive" onClick={onDelete}>
             {t('ideas.action.delete')}
-          </button>
+          </TextButton>
         }
       />
     </div>

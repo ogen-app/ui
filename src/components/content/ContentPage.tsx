@@ -76,6 +76,7 @@ import { ASSET_MODEL } from './smartFilter/assetModel'
 import { useFilterVocabulary } from './smartFilter/useFilterVocabulary'
 import { awaiting } from '@/lib/fetched'
 import { useAssistantRequest } from '@/hooks/useAssistantContext'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * Documents, in the scope that holds them.
@@ -739,13 +740,11 @@ export function ContentPage({
                           />
                         )
                       : narrowed && (
-                          <button
-                            type="button"
+                          <TextButton
                             onClick={() => setSaving({ mode: 'new' })}
-                            className="cursor-pointer font-medium text-accent outline-none hover:underline focus-visible:underline"
                           >
                             {t('savedViews.saveAs')}
-                          </button>
+                          </TextButton>
                         )
                 }
                 groupNotice={

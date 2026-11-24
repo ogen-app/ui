@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
 import { useHelpStore } from '@/stores/helpStore'
 import type { HelpBlock, HelpEmbeddedArticle } from '@/types/help'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * Renders an article's Portable Text (CON-173).
@@ -90,15 +91,15 @@ function Embed({ value }: { value: HelpBlock }) {
     <section className="border-border mt-6 border-t pt-4">
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <h2 className="text-base font-semibold">{article.title}</h2>
-        <button
-          type="button"
+        <TextButton
+          tone="quiet"
+          className="inline-flex shrink-0 items-center gap-1 text-xs"
           onClick={() => push(article.key)}
           aria-label={t('help.embed.openLabel', { title: article.title })}
-          className="text-tertiary-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 text-xs"
         >
           {t('help.embed.open')}
           <ArrowSquareOutIcon className="size-3.5" />
-        </button>
+        </TextButton>
       </div>
       <div className="space-y-3">
         <PortableText value={article.body as never} components={embedded} />

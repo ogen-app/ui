@@ -14,6 +14,7 @@ import { counted, formatDate, formatNumber } from '@/lib/intl'
 import { cn } from '@/lib/styles'
 import type { IdeaPlan } from '@/lib/ideas'
 import { SmallHeading } from '@/components/page-primitives/SmallHeading'
+import { TextButton } from '@/components/ui/text-button'
 
 export type IdeaPostAnswer = {
   /** Empty when the campaign is unknown: the ideas' plans decide. */
@@ -195,13 +196,9 @@ function FormBody({
         ) : campaign.isError ? (
           <p className="text-sm text-secondary-foreground">
             {t('ideas.lifecycle.form.platformsFailed')}{' '}
-            <button
-              type="button"
-              onClick={() => void campaign.refetch()}
-              className="cursor-pointer font-medium text-foreground hover:underline"
-            >
+            <TextButton onClick={() => void campaign.refetch()}>
               {t('ideas.lifecycle.form.retry')}
-            </button>
+            </TextButton>
           </p>
         ) : campaign.isPending ? null : platforms.length === 0 ? (
           <p className="text-sm text-secondary-foreground">
@@ -336,13 +333,9 @@ function FormBody({
         >
           {confirm}
         </Button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="cursor-pointer text-xs font-semibold tracking-[0.06em] text-secondary-foreground hover:text-foreground"
-        >
+        <TextButton tone="quiet" className="text-xs" onClick={onCancel}>
           {t('ideas.lifecycle.form.cancel')}
-        </button>
+        </TextButton>
       </div>
     </div>
   )

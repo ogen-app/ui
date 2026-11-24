@@ -3,6 +3,7 @@ import { cn } from '@/lib'
 import { FIT_CRITERIA, fitLevelStrength, fitRows } from '@/lib/ideaFit'
 import { isWaiting, type Idea, type IdeaVerdict } from '@/lib/ideas'
 import { formatDate } from '@/lib/intl'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * The idea card's parts (CON-387), shared by every list that draws one: the
@@ -200,14 +201,13 @@ export function AnswerRecord({
         ? t('ideas.record.returns', { at: day(idea.remindAt) })
         : t(`ideas.record.${current}`, { at: day(idea.decidedAt) })}
       {' · '}
-      <button
-        type="button"
+      <TextButton
+        tone="quiet"
         disabled={pending}
         onClick={() => onAnswer(null)}
-        className="cursor-pointer underline decoration-quinary underline-offset-3 hover:decoration-foreground disabled:cursor-default disabled:opacity-60"
       >
         {t('ideas.action.undecide')}
-      </button>
+      </TextButton>
     </>
   )
 }
