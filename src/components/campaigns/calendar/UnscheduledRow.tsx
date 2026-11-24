@@ -70,14 +70,14 @@ export function UnscheduledRow({
       )}
     >
       {justWritten && (
-        <span className="text-[10.5px] font-semibold tracking-[0.08em] text-accent-ink">
+        <span className="text-xs font-semibold tracking-[0.08em] text-accent-ink">
           {t('calendar.justWritten')}
         </span>
       )}
       <span className="text-sm font-medium text-foreground">
         {formatTitle(post.title)}
       </span>
-      <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] text-tertiary-foreground">
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-tertiary-foreground">
         <span>{meta.join(' · ')}</span>
         <NotGroundedMark mode={post.grounding_mode} />
         <OutsideCampaignMark outside={outside} />

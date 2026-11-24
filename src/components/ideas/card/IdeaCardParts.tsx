@@ -106,7 +106,7 @@ export function FitSection({
             <li
               key={row.key}
               className={cn(
-                'grid items-start gap-x-3 text-[12.5px]/[18px]',
+                'grid items-start gap-x-3 text-xs/[18px]',
                 compact
                   ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-0.5'
                   : 'grid-cols-[minmax(0,1fr)_auto] gap-y-0.5 @md:grid-cols-[8.5rem_auto_minmax(0,1fr)] @md:gap-y-0',
@@ -123,7 +123,7 @@ export function FitSection({
               >
                 <span
                   aria-hidden
-                  className="-mt-px flex size-5 items-center justify-center rounded-full font-mono text-[11px] font-semibold text-secondary-foreground"
+                  className="-mt-px flex size-5 items-center justify-center rounded-full font-mono text-mark font-semibold text-secondary-foreground"
                   style={{ background: tone }}
                 >
                   {row.level}
@@ -150,7 +150,7 @@ export function FitSection({
                 )}
               >
                 {row.hint && (
-                  <span className="mr-1 inline-block rounded-full bg-border px-1.5 text-[11.5px]/[18px] font-medium text-foreground">
+                  <span className="mr-1 inline-block rounded-full bg-border px-1.5 text-xs/[18px] font-medium text-foreground">
                     {row.hint}
                   </span>
                 )}

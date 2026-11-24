@@ -129,7 +129,7 @@ export function LineItem({
                   // 14px the description carried the same weight as the thing
                   // it describes and the row had no top line; one step down is
                   // enough to rank them without dropping to caption size.
-                  'line-clamp-2 text-[13px] leading-5'
+                  'line-clamp-2 text-sm leading-5'
                 : 'text-xs leading-4 text-tertiary-foreground',
             )}
           >
@@ -140,7 +140,7 @@ export function LineItem({
           <span
             className={cn(
               'leading-5 text-secondary-foreground',
-              entry ? 'text-[13px]' : 'text-xs leading-4',
+              entry ? 'text-sm' : 'text-xs leading-4',
             )}
           >
             {meta}

@@ -292,7 +292,7 @@ function StatusRow({
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-sm/6 font-medium text-foreground">{title}</p>
         {body && (
-          <p className="text-[13px]/[19px] text-secondary-foreground">{body}</p>
+          <p className="text-sm/[19px] text-secondary-foreground">{body}</p>
         )}
       </div>
       {action && <span className="flex h-6 items-center">{action}</span>}

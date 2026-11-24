@@ -280,7 +280,7 @@ function PileWord({ pile }: { pile: Pile }) {
   return (
     <span
       className={cn(
-        'shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em]',
+        'shrink-0 text-xs font-semibold uppercase tracking-[0.06em]',
         pile === 'waiting'
           ? 'text-warning-ink'
           : pile === 'yes'
@@ -321,9 +321,7 @@ function IdeaLine({
           {idea.title || t('assistant.ideas.untitled')}
         </IdeasLink>
         {detail && (
-          <span className="text-[12.5px] text-tertiary-foreground">
-            {detail}
-          </span>
+          <span className="text-xs text-tertiary-foreground">{detail}</span>
         )}
       </span>
       {pile && <PileWord pile={pileOf(idea)} />}
@@ -336,7 +334,7 @@ function More({ count }: { count: number }) {
   const { t } = useTranslation()
   if (count <= 0) return null
   return (
-    <p className="pt-2.5 text-[12.5px] text-tertiary-foreground">
+    <p className="pt-2.5 text-xs text-tertiary-foreground">
       {t('assistant.ideas.more', counted(count))}
     </p>
   )
@@ -534,12 +532,12 @@ function Problems({ t, change }: { t: TFunction; change: IdeasChanged }) {
   return (
     <>
       {change.failed > 0 && (
-        <ResultRow className="text-[12.5px] text-warning-ink">
+        <ResultRow className="text-xs text-warning-ink">
           {t('assistant.ideas.failed', counted(change.failed))}
         </ResultRow>
       )}
       {change.stopped && (
-        <ResultRow className="text-[12.5px] text-warning-ink">
+        <ResultRow className="text-xs text-warning-ink">
           {t('assistant.ideas.stopped')}
         </ResultRow>
       )}
@@ -659,7 +657,7 @@ function CompiledCard({
         c.posts.map((p) => (
           <ResultRow
             key={p.postId}
-            className="flex items-baseline gap-3 text-[12.5px]"
+            className="flex items-baseline gap-3 text-xs"
           >
             <span className="min-w-0 flex-1 truncate text-secondary-foreground">
               {meta(p)}
@@ -669,13 +667,13 @@ function CompiledCard({
         ))}
       {c.theses.map((th, i) => (
         <ResultRow key={i} className="flex items-baseline gap-3 text-sm">
-          <span className="w-5 shrink-0 font-mono text-[12px] text-tertiary-foreground">
+          <span className="w-5 shrink-0 font-mono text-xs text-tertiary-foreground">
             {String(i + 1).padStart(2, '0')}
           </span>
           <span className="min-w-0 flex-1 text-foreground">
             {th.title}
             {th.points.length > 0 && (
-              <span className="block text-[12.5px] text-tertiary-foreground">
+              <span className="block text-xs text-tertiary-foreground">
                 {th.points.join(' · ')}
               </span>
             )}
@@ -699,7 +697,7 @@ function CompiledCard({
                 ...i,
                 campaignId: c.campaignId,
               }))}
-              className="text-[12.5px] text-tertiary-foreground hover:text-foreground hover:underline"
+              className="text-xs text-tertiary-foreground hover:text-foreground hover:underline"
             >
               {c.builtFrom.map((i) => i.title).join(' · ')}
             </IdeasLink>
@@ -920,7 +918,7 @@ function DraftedCard({
                   {p.title || t('assistant.ideas.untitled')}
                 </span>
               )}
-              <span className="flex flex-wrap items-center gap-x-2 text-[12.5px] text-tertiary-foreground">
+              <span className="flex flex-wrap items-center gap-x-2 text-xs text-tertiary-foreground">
                 {[platform?.name, type].filter(Boolean).join(' · ')}
                 <NotGroundedMark mode={p.grounding.mode} />
               </span>
@@ -930,7 +928,7 @@ function DraftedCard({
         )
       })}
       {d.warnings.length > 0 && (
-        <ResultRow className="text-[12.5px] text-warning-ink">
+        <ResultRow className="text-xs text-warning-ink">
           {t('assistant.ideas.drafted.dropped', counted(d.warnings.length))}
         </ResultRow>
       )}
@@ -962,13 +960,13 @@ function WhenLabel({
 }) {
   if (!date)
     return (
-      <span className="shrink-0 text-[12.5px] text-tertiary-foreground">
+      <span className="shrink-0 text-xs text-tertiary-foreground">
         {t('assistant.ideas.drafted.notScheduled')}
       </span>
     )
   const day = dayLabel(date)
   return (
-    <span className="shrink-0 text-[12.5px] text-accent-ink">
+    <span className="shrink-0 text-xs text-accent-ink">
       {from === 'plan'
         ? t('assistant.ideas.drafted.datedPlan', { date: day })
         : from === 'asked'
@@ -1093,7 +1091,7 @@ function IdeaCard({
             <span className="text-sm text-foreground">
               {t('assistant.ideas.idea.from')}
             </span>
-            <span className="text-[12.5px] text-tertiary-foreground">
+            <span className="text-xs text-tertiary-foreground">
               {place
                 ? t('assistant.ideas.idea.fromLensAt', {
                     asset: asset.title,
@@ -1106,7 +1104,7 @@ function IdeaCard({
                   })}
             </span>
             {read.analysisGist && (
-              <span className="text-[12.5px] text-tertiary-foreground">
+              <span className="text-xs text-tertiary-foreground">
                 {read.analysisGist}
               </span>
             )}
@@ -1133,10 +1131,7 @@ function IdeaCard({
         </ResultRow>
       )}
       {read.posts.map((p) => (
-        <ResultRow
-          key={p.id}
-          className="flex items-baseline gap-3 text-[12.5px]"
-        >
+        <ResultRow key={p.id} className="flex items-baseline gap-3 text-xs">
           <span className="min-w-0 flex-1 truncate">
             <span className="text-tertiary-foreground">
               {t('assistant.ideas.idea.post')}
@@ -1156,9 +1151,7 @@ function Labelled({ label, children }: { label: string; children: ReactNode }) {
   return (
     <ResultRow className="flex flex-col gap-0.5">
       <span className="text-sm text-foreground">{label}</span>
-      <span className="text-[12.5px] text-secondary-foreground">
-        {children}
-      </span>
+      <span className="text-xs text-secondary-foreground">{children}</span>
     </ResultRow>
   )
 }
@@ -1218,7 +1211,7 @@ function EditedCard({
         {label}
       </span>
       {from !== undefined && (
-        <s className="text-[12.5px] text-tertiary-foreground">{from}</s>
+        <s className="text-xs text-tertiary-foreground">{from}</s>
       )}
       {to !== undefined && (
         <span className="text-sm text-foreground">{to}</span>
@@ -1255,7 +1248,7 @@ function EditedCard({
             )}
         </>
       ) : (
-        <ResultRow className="text-[12.5px] text-tertiary-foreground">
+        <ResultRow className="text-xs text-tertiary-foreground">
           {changedFields(t, edited.changed)}
         </ResultRow>
       )}
@@ -1309,7 +1302,7 @@ export function IdeaReadOnly() {
         <span className="text-sm text-foreground">
           {t('assistant.ideas.readOnly.why')}
         </span>
-        <span className="text-[12.5px] text-tertiary-foreground">
+        <span className="text-xs text-tertiary-foreground">
           {t('assistant.ideas.readOnly.instead')}
         </span>
       </ResultRow>
@@ -1343,7 +1336,7 @@ function SimilarCard({
       ))}
       <More count={similar.items.length - shown.length} />
       {similar.items.length > 0 && (
-        <p className="border-t border-border pt-2.5 text-[12.5px] text-tertiary-foreground">
+        <p className="border-t border-border pt-2.5 text-xs text-tertiary-foreground">
           {t('assistant.ideas.similar.note')}
         </p>
       )}
@@ -1408,7 +1401,7 @@ function CommonCard({ common }: { common: NonNullable<Results['common']> }) {
             {t('assistant.ideas.common.splitTitle')}
           </span>
           {common.splits.map((sp) => (
-            <span key={sp.field} className="text-[12.5px] text-warning-ink">
+            <span key={sp.field} className="text-xs text-warning-ink">
               {t(
                 SPLIT_FIELDS[sp.field as keyof typeof SPLIT_FIELDS] ??
                   'assistant.ideas.common.split.other',
@@ -1501,7 +1494,7 @@ function MergedCard({ merged }: { merged: NonNullable<Results['merged']> }) {
       ))}
       <OpenAllIdeas ideas={merged.groups.map((g) => g.idea)} />
       {merged.stopped && (
-        <ResultRow className="text-[12.5px] text-warning-ink">
+        <ResultRow className="text-xs text-warning-ink">
           {t('assistant.ideas.stopped')}
         </ResultRow>
       )}

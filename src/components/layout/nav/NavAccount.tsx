@@ -43,7 +43,7 @@ export function NavAccount() {
         aria-label={t('nav.accountMenu')}
         className={cn(CHROME_ROW, 'group-data-[collapsible=icon]:px-1.5')}
       >
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-foreground text-[10px] font-medium text-primary">
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-foreground text-mark font-medium text-primary">
           {initials}
         </span>
         <span className="min-w-0 flex-1 truncate font-medium text-primary-foreground group-data-[collapsible=icon]:hidden">

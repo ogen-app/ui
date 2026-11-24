@@ -600,7 +600,7 @@ export function StarterChips({
           disabled={disabled}
           onClick={() => onPick(text)}
           title={text}
-          className="flex items-center gap-1.5 rounded-full bg-tertiary px-3 py-1.5 text-[12.5px] text-secondary-foreground transition-colors cursor-pointer hover:bg-quaternary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-full bg-tertiary px-3 py-1.5 text-xs text-secondary-foreground transition-colors cursor-pointer hover:bg-quaternary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
         >
           <Icon className="size-3.5 shrink-0 text-tertiary-foreground" />
           {label}

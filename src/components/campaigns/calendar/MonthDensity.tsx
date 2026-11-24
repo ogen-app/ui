@@ -90,7 +90,7 @@ function MonthDensityComponent({ campaignId, day, posts }: Props) {
         return (
           <span
             key={id || 'unassigned'}
-            className="flex shrink-0 items-center gap-1 text-[11px]/4 text-secondary-foreground"
+            className="flex shrink-0 items-center gap-1 text-xs text-secondary-foreground"
           >
             <Icon
               weight="fill"
@@ -106,7 +106,7 @@ function MonthDensityComponent({ campaignId, day, posts }: Props) {
         )
       })}
       {ticked > 0 && (
-        <span className="flex shrink-0 items-center gap-0.5 text-[11px]/4 font-medium text-foreground">
+        <span className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-foreground">
           <CheckIcon weight="bold" className="size-3 shrink-0" aria-hidden />
           <span className="tabular-nums">
             {t('calendar.densityTicked', counted(ticked))}

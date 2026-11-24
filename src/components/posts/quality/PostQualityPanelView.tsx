@@ -426,7 +426,7 @@ function Summary({
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <p className="font-display text-[44px]/none font-medium tracking-[-0.03em] text-foreground tabular-nums">
+        <p className="font-display text-figure/none font-medium tracking-[-0.03em] text-foreground tabular-nums">
           {pct}
         </p>
         <div className="flex min-w-0 flex-col items-start gap-1.5">
@@ -455,7 +455,7 @@ function Summary({
         </div>
       </div>
 
-      <div className="flex flex-col gap-0.5 text-[13px]/[1.5] text-secondary-foreground">
+      <div className="flex flex-col gap-0.5 text-sm/[1.5] text-secondary-foreground">
         <p>
           {when
             ? cached
@@ -478,7 +478,7 @@ function Summary({
       {stale && (
         <div className="flex flex-col items-start gap-1.5">
           <StatusBadge tone="warn" label={t('posts.quality.stale.badge')} />
-          <p className="text-[13px]/[1.5] text-secondary-foreground">
+          <p className="text-sm/[1.5] text-secondary-foreground">
             {t(`posts.quality.stale.${stale}`)}
           </p>
           {onReassess && (

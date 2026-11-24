@@ -103,7 +103,7 @@ export function LookSection({
                       <span className="text-xs text-secondary-foreground">
                         {color.role}
                       </span>
-                      <span className="font-mono text-[11px] text-tertiary-foreground">
+                      <span className="font-mono text-xs text-tertiary-foreground">
                         {color.hex}
                       </span>
                     </span>

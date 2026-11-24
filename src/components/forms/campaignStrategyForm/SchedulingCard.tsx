@@ -204,7 +204,7 @@ export function SchedulingCard() {
                 onClick={() => toggleDay(token)}
                 className={cn(
                   'flex h-16 min-w-0 items-center justify-center rounded-lg border',
-                  'px-2 text-[13px] font-medium',
+                  'px-2 text-control font-medium',
                   'transition-colors cursor-pointer',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   on

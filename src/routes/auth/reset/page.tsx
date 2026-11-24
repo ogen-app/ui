@@ -30,7 +30,7 @@ function ResetPasswordPage() {
         title={t('auth.reset.brokenTitle')}
         subtitle={t('auth.reset.brokenSubtitle')}
         form={
-          <p className="text-[13px] leading-5 text-secondary-foreground">
+          <p className="text-sm leading-5 text-secondary-foreground">
             {/* The link sits mid-sentence, so the sentence stays one key and
                 `<Trans>` places the anchor — translations move it. */}
             <Trans

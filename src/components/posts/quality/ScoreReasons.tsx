@@ -27,7 +27,7 @@ export function ScoreReasons({ evaluation }: { evaluation: PostEvaluation }) {
   return (
     <section className="flex flex-col gap-1">
       {/* One row so the icon and the title share a vertical centre. */}
-      <h3 className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <HugeiconsIcon
           icon={InformationSquareIcon}
           size={24}
@@ -72,7 +72,7 @@ export function ScoreReasons({ evaluation }: { evaluation: PostEvaluation }) {
               {d.verdict && (
                 <EmphasisText
                   text={d.verdict}
-                  className="text-[13px]/[1.5] text-secondary-foreground"
+                  className="text-sm/[1.5] text-secondary-foreground"
                 />
               )}
             </li>

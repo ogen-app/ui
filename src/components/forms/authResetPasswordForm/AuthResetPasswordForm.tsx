@@ -130,7 +130,7 @@ export function AuthResetPasswordForm({ token }: Props) {
         <FormError message={error?.message}>
           <Link
             to="/auth/forgot"
-            className="text-primary-foreground text-[13px] font-medium"
+            className="text-primary-foreground text-control font-medium"
           >
             {t('auth.reset.requestNewLink')}
           </Link>

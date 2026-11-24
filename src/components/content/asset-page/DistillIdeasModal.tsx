@@ -72,7 +72,7 @@ export function DistillIdeasModal({
         }}
       >
         <div className="flex flex-col gap-2">
-          <span id={countLabelId} className="text-[13px]/4 text-input-label">
+          <span id={countLabelId} className="text-control text-input-label">
             {t('assetInsights.distill.modal.howMany')}
           </span>
           <CountPicker
@@ -217,7 +217,7 @@ function CountPicker({
           onClick={() => onChange(n)}
           onKeyDown={(e) => move(e, index)}
           className={cn(
-            'h-8 flex-1 cursor-pointer rounded-md text-[13px]/4 font-medium tabular-nums transition-colors outline-none',
+            'h-8 flex-1 cursor-pointer rounded-md text-control font-medium tabular-nums transition-colors outline-none',
             'focus-visible:inset-ring-[2px] focus-visible:inset-ring-ring',
             n === value
               ? 'bg-primary text-primary-foreground'

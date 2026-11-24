@@ -223,7 +223,7 @@ const FADE_BACKGROUNDS: Record<CardBand, string> = Object.fromEntries(
 function titleSize(title: string): string {
   if (title.length <= 30) return 'text-[clamp(12px,9cqw,14px)]'
   if (title.length <= 48) return 'text-[clamp(12px,8cqw,13px)]'
-  return 'text-[12px]'
+  return 'text-xs'
 }
 
 function PostCardComponent({
@@ -478,7 +478,7 @@ function PostCardComponent({
         {(showStatus || showTime || flag) && (
           <div
             className={cn(
-              'flex items-center gap-1 text-[12px]/[16px]',
+              'flex items-center gap-1 text-xs',
               // A tone darker on a backed card, and haloed — see `ROW_HALO`.
               // Both only where there is a picture: on the plain card this row
               // is quiet on purpose, and darkening it there would put the
@@ -533,7 +533,7 @@ function PostCardComponent({
         {showStatus && showTime && (
           <div
             className={cn(
-              'text-[12px]/[16px] tabular-nums',
+              'text-xs tabular-nums',
               // Treated as the row above it, because it *is* the row above it —
               // one statement the status word pushed onto two lines. Leaving
               // this one pale and unhaloed would read as a rendering fault
@@ -571,7 +571,7 @@ function PostCardComponent({
 
         {/* Row 3 — platform */}
         {fields.platform && (
-          <div className="flex items-center gap-1 text-[12px]/[16px] text-tertiary-foreground min-w-0">
+          <div className="flex items-center gap-1 text-xs text-tertiary-foreground min-w-0">
             <PlatformIcon
               weight="fill"
               color={platformInfo?.color}
@@ -588,7 +588,7 @@ function PostCardComponent({
             The warning mark above says *that* something is wrong; this says
             what. */}
         {fields.account && (
-          <div className="flex items-center gap-1 text-[12px]/[16px] text-tertiary-foreground min-w-0">
+          <div className="flex items-center gap-1 text-xs text-tertiary-foreground min-w-0">
             <UserCircleIcon className="size-3.5 shrink-0" />
             <span className="truncate">
               {account.name ?? t('posts.noAccount')}
@@ -609,7 +609,7 @@ function PostCardComponent({
             sidebar's own mark for Campaigns, so the row is recognisable as a
             campaign without the word. */}
         {fields.campaign && post.campaign && (
-          <div className="flex items-center gap-1 text-[12px]/[16px] text-tertiary-foreground min-w-0">
+          <div className="flex items-center gap-1 text-xs text-tertiary-foreground min-w-0">
             <ToolboxIcon className="size-3.5 shrink-0" />
             <span className="truncate">
               {formatTitle(post.campaign.name, t('calendar.untitledCampaign'))}

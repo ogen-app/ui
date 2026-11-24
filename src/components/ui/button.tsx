@@ -15,7 +15,7 @@ const buttonIconContext = { weight: 'bold' as const }
 
 const buttonVariants = cva(
   'relative inline-flex items-center cursor-pointer whitespace-nowrap shrink-0 outline-none ' +
-    'gap-2 rounded-button text-[13px]/4 font-medium select-none transition-all ' +
+    'gap-2 rounded-button text-control font-medium select-none transition-all ' +
     'disabled:pointer-events-none ' +
     // Icon sizing is owned by the `size` variant below (16px everywhere except
     // the 16px-tall xsIcon); an explicit `size-*` on the icon still wins.

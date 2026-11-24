@@ -4,7 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib'
 
 const inputVariants = cva(
-  'text-[14px] font-medium ' +
+  'text-sm font-medium ' +
     'placeholder:text-tertiary-foreground selection:bg-selection/20 border-input flex w-full min-w-0 bg-transparent ' +
     'transition-[color,border-color,box-shadow] duration-300 outline-none file:inline-flex ' +
     'file:text-foreground file:border-0 file:bg-transparent file:font-medium ' +

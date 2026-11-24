@@ -161,7 +161,7 @@ export function PostsGroupMenu({
         <CaretDownIcon className="size-3" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={6} className="w-56">
-        <DropdownMenuLabel className="text-[11px] tracking-wide text-secondary-foreground">
+        <DropdownMenuLabel className="text-xs tracking-wide text-secondary-foreground">
           {t('postsTable.view.groupByHeading')}
         </DropdownMenuLabel>
         <DropdownMenuRadioGroup

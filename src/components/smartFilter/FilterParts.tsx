@@ -354,7 +354,7 @@ export function AddDetail<F, Field extends string>({
         </div>
         <div
           aria-hidden
-          className="flex items-center gap-3 border-t border-quaternary px-3.5 py-1.5 text-[11px] text-tertiary-foreground"
+          className="flex items-center gap-3 border-t border-quaternary px-3.5 py-1.5 text-xs text-tertiary-foreground"
         >
           {(
             [
@@ -548,7 +548,7 @@ export function ClausePanel<F, Field extends string>({
               aria-checked={n === negated}
               onClick={() => negate(n)}
               className={cn(
-                'flex-1 cursor-pointer py-1.5 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-accent',
+                'flex-1 cursor-pointer py-1.5 text-control outline-none focus-visible:ring-2 focus-visible:ring-accent',
                 n === negated
                   ? 'bg-secondary font-medium text-foreground'
                   : 'text-secondary-foreground hover:text-foreground',
@@ -600,7 +600,7 @@ export function ClausePanel<F, Field extends string>({
         />
       )}
 
-      <div className="flex items-center justify-between border-t border-quaternary px-3.5 py-2 text-[13px]">
+      <div className="flex items-center justify-between border-t border-quaternary px-3.5 py-2 text-control">
         {token ? (
           <button
             type="button"
@@ -656,12 +656,12 @@ function ChoiceStep({
           placeholder={findLabel}
           aria-label={findLabel}
           autoFocus
-          className="mx-3.5 mb-1.5 h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-[13px] outline-none focus:border-foreground"
+          className="mx-3.5 mb-1.5 h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-control outline-none focus:border-foreground"
         />
       )}
       <div className="max-h-72 overflow-y-auto pb-1">
         {shown.length === 0 ? (
-          <p className="px-3.5 py-2 text-[13px] text-tertiary-foreground">
+          <p className="px-3.5 py-2 text-xs text-tertiary-foreground">
             {options.length
               ? t('content.filter.nothingMatches')
               : t('sentence.noValues')}
@@ -896,7 +896,7 @@ function TextStep({
         aria-label={placeholder}
         maxLength={max}
         autoFocus
-        className="h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-[13px] outline-none focus:border-foreground"
+        className="h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-control outline-none focus:border-foreground"
       />
       {!ready && trimmed.length > 0 && (
         <p className="text-xs text-tertiary-foreground">

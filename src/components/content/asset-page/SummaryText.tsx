@@ -18,7 +18,7 @@ export function SummaryText({ text }: { text: string }) {
             aria-level={Math.min(part.level + 2, 6)}
             className={cn(
               'font-semibold text-foreground',
-              part.level <= 2 ? 'text-base' : 'text-[15px]',
+              part.level <= 2 ? 'text-base' : 'text-sm',
             )}
           >
             <HeadingSpans text={part.text} />

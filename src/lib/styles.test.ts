@@ -13,4 +13,14 @@ describe('cn', () => {
   it('still lets a later font size replace a theme one', () => {
     expect(cn('text-display', 'text-sm')).toBe('text-sm')
   })
+
+  it.each(['text-control', 'text-mark', 'text-figure'])(
+    'keeps %s beside a text colour, and lets a later size replace it',
+    (size) => {
+      expect(cn(size, 'text-tertiary-foreground')).toBe(
+        `${size} text-tertiary-foreground`,
+      )
+      expect(cn(size, 'text-xs')).toBe('text-xs')
+    },
+  )
 })

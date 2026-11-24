@@ -92,7 +92,7 @@ export type CardFacts = {
  */
 const CARD_PADDING = 16 // p-2, top and bottom
 const CARD_ROW_GAP = 6 // gap-1.5
-const TEXT_ROW = 16 // text-[12px]/[16px] — status, time, platform, account, campaign
+const TEXT_ROW = 16 // text-xs — status, time, platform, account, campaign
 const TITLE_LINE = 17 // 14px at leading-[1.2], rounded up so the ceiling holds
 
 /**

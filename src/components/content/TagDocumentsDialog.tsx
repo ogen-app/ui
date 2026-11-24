@@ -119,7 +119,7 @@ export function TagDocumentsDialog({
                       onClick={() => toggleRemove(tag.id)}
                       aria-pressed={marked}
                       className={cn(
-                        'inline-flex items-center gap-1.5 border px-2 py-1 text-[13px]/4',
+                        'inline-flex items-center gap-1.5 border px-2 py-1 text-control',
                         marked
                           ? 'border-destructive text-destructive line-through'
                           : 'border-tertiary bg-secondary text-primary-foreground',

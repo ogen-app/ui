@@ -82,7 +82,7 @@ export function AuthForgotPasswordForm() {
 
                 One key, not three fragments — `<Trans>` keeps the sentence
                 whole so a translator can move the address within it. */}
-            <p className="text-[13px] leading-5 text-secondary-foreground">
+            <p className="text-sm leading-5 text-secondary-foreground">
               <Trans
                 i18nKey="auth.forgot.sentBody"
                 values={{ email: values.email }}
@@ -115,7 +115,7 @@ export function AuthForgotPasswordForm() {
           <p
             role="status"
             className={cn(
-              'min-h-5 text-[13px] leading-5',
+              'min-h-5 text-sm leading-5',
               error ? 'text-destructive' : 'text-tertiary-foreground',
             )}
           >
@@ -123,7 +123,7 @@ export function AuthForgotPasswordForm() {
           </p>
           <Link
             to="/auth/login"
-            className="text-primary-foreground text-[13px] font-medium"
+            className="text-primary-foreground text-control font-medium"
           >
             {t('auth.forgot.backToLogin')}
           </Link>

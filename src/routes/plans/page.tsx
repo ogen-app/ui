@@ -266,7 +266,7 @@ export function PlansPage() {
         </div>
 
         {!mayChange && (
-          <p className="text-center text-[13px] text-secondary-foreground">
+          <p className="text-center text-sm text-secondary-foreground">
             {t('tiers.ownersOnlyPlan')}
           </p>
         )}
@@ -297,7 +297,7 @@ export function PlansPage() {
           </p>
         )}
 
-        <p className="text-center text-[13px] text-secondary-foreground">
+        <p className="text-center text-sm text-secondary-foreground">
           {t('tiers.ledger.compNote')}
         </p>
 
@@ -468,7 +468,7 @@ export function PlansPage() {
       {/* A member of a workspace that is not gated reads the plans and cannot
           choose; one line says why, rather than a column of dead buttons. */}
       {!mayChange && !gated && (
-        <p className="text-center text-[13px] text-secondary-foreground">
+        <p className="text-center text-sm text-secondary-foreground">
           {t('tiers.ownersOnlyPlan')}
         </p>
       )}
@@ -521,7 +521,7 @@ export function PlansPage() {
             </TabsList>
           </Tabs>
           {saving !== null && (
-            <span className="rounded-[2px] bg-accent/15 px-2 py-1 text-[11px] font-medium leading-none tracking-[0.1em] text-accent">
+            <span className="rounded-[2px] bg-accent/15 px-2 py-1 text-xs font-medium leading-none tracking-[0.1em] text-accent">
               {t('tiers.ledger.save', { percent: saving })}
             </span>
           )}
@@ -543,7 +543,7 @@ export function PlansPage() {
         </p>
       )}
 
-      <p className="text-center text-[13px] text-secondary-foreground">
+      <p className="text-center text-sm text-secondary-foreground">
         {t('tiers.ledger.vatNote')}
       </p>
 
@@ -629,7 +629,7 @@ function PlansFrame({
       >
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 lg:px-6">
           {/* The workspace this is about, as the page's section tag. */}
-          <p className="flex min-w-0 items-center gap-2 text-[11px] font-medium tracking-[0.1em]">
+          <p className="flex min-w-0 items-center gap-2 text-xs font-medium tracking-[0.1em]">
             <span aria-hidden className="size-2.5 shrink-0 bg-accent" />
             {/* Capitals by CSS here, unlike copy: a workspace's name is data,
                 and the screen reader should read it as it was typed. */}

@@ -170,7 +170,7 @@ export function TagsInput({
         {selected.map((t, i) => (
           <span
             key={t.id}
-            className="inline-flex items-center gap-1.5 rounded-full bg-quaternary text-primary-foreground text-[12px] font-medium pl-2.5 pr-1 py-0.5"
+            className="inline-flex items-center gap-1.5 rounded-full bg-quaternary text-primary-foreground text-xs font-medium pl-2.5 pr-1 py-0.5"
           >
             {t.name}
             <button
@@ -204,7 +204,7 @@ export function TagsInput({
           }}
           onKeyDown={onKeyDown}
           disabled={disabled}
-          className="flex-1 min-w-[8ch] bg-transparent outline-none text-[14px] font-medium placeholder:text-tertiary-foreground"
+          className="flex-1 min-w-[8ch] bg-transparent outline-none text-sm font-medium placeholder:text-tertiary-foreground"
         />
       </div>
 

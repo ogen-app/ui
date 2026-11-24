@@ -30,7 +30,7 @@ export function Collapse({
         className="flex flex-col gap-1 py-2 text-left cursor-pointer pr-1"
       >
         <span className="flex items-center justify-between gap-3">
-          <span className="text-[13px] leading-4 tracking-[0.03em] font-medium text-foreground">
+          <span className="text-control leading-4 tracking-[0.03em] font-medium text-foreground">
             {title}
             {meta !== undefined && meta !== null && (
               <span className="ml-2 text-tertiary-foreground font-normal">

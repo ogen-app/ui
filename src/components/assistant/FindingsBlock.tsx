@@ -187,7 +187,7 @@ export function IgnoredList({
             key={item.key}
             className="flex items-baseline gap-3 border-t border-border py-2"
           >
-            <span className="min-w-0 flex-1 text-[12.5px] text-secondary-foreground">
+            <span className="min-w-0 flex-1 text-xs text-secondary-foreground">
               {item.title}
             </span>
             <TextAction onClick={() => void restore(campaignId, item.key)}>
@@ -220,7 +220,7 @@ export function CheckedFooter({
   if (!when) return null
   return (
     <div className="flex flex-col items-start gap-2 border-t border-border pt-2.5">
-      <p className="text-[12.5px] text-secondary-foreground">
+      <p className="text-xs text-secondary-foreground">
         {t('assistant.findings.readAt', { when })}
       </p>
       <Button
@@ -278,9 +278,7 @@ export function FindingRow({
           )}
         </div>
         {detail && (
-          <p className="-mt-1 text-[12.5px] text-secondary-foreground">
-            {detail}
-          </p>
+          <p className="-mt-1 text-xs text-secondary-foreground">{detail}</p>
         )}
         {children}
       </div>
@@ -296,7 +294,7 @@ const FIX_BUTTON_CLASS =
   'rounded-none text-xs font-semibold uppercase tracking-[0.06em]'
 
 const OR_CLASS =
-  'cursor-pointer text-[12.5px] text-secondary-foreground underline-offset-2 hover:text-foreground hover:underline disabled:cursor-default'
+  'cursor-pointer text-xs text-secondary-foreground underline-offset-2 hover:text-foreground hover:underline disabled:cursor-default'
 
 /**
  * A finding's fixes: the first as the row's one button, the rest as words

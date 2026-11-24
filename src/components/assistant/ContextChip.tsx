@@ -60,7 +60,7 @@ export function ContextChip({
         </button>
       </span>
       {firstRun && (
-        <span className="min-w-0 truncate text-[11px] text-tertiary-foreground">
+        <span className="min-w-0 truncate text-xs text-tertiary-foreground">
           {t('assistant.chip.helper')}
         </span>
       )}

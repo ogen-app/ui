@@ -59,7 +59,7 @@ export function AuthAcceptInviteForm({ token, email, hasAccount }: Props) {
         action={
           <Link
             to="/auth/logout"
-            className="text-primary-foreground text-[13px] font-medium"
+            className="text-primary-foreground text-control font-medium"
           >
             {t('auth.invite.logOutLink')}
           </Link>
@@ -93,7 +93,7 @@ function ExistingAccount({ token, email }: { token: string; email: string }) {
             search={{
               redirect: window.location.pathname + window.location.search,
             }}
-            className="text-primary-foreground text-[13px] font-medium"
+            className="text-primary-foreground text-control font-medium"
           >
             {t('auth.invite.logInLink')}
           </Link>
@@ -115,7 +115,7 @@ function ExistingAccount({ token, email }: { token: string; email: string }) {
  */
 function GoogleInviteHint({ email }: { email: string }) {
   return (
-    <p className="text-[13px] leading-5 text-secondary-foreground">
+    <p className="text-sm leading-5 text-secondary-foreground">
       <Trans
         i18nKey="auth.invite.googleHint"
         values={{ email }}
@@ -135,7 +135,7 @@ function AcceptAsSelf({ token, email }: { token: string; email: string }) {
 
   return (
     <div className="flex flex-col gap-4 shrink-0 animate-in fade-in duration-500">
-      <p className="text-[13px] leading-5 text-secondary-foreground">
+      <p className="text-sm leading-5 text-secondary-foreground">
         {t('auth.invite.joinBody', { email })}
       </p>
       <Button
@@ -301,7 +301,7 @@ function CreateAccount({ token, email }: { token: string; email: string }) {
         <FormError message={error?.message}>
           <Link
             to="/auth/login"
-            className="text-primary-foreground text-[13px] font-medium"
+            className="text-primary-foreground text-control font-medium"
           >
             {t('auth.invite.logInLink')}
           </Link>
@@ -315,7 +315,7 @@ function CreateAccount({ token, email }: { token: string; email: string }) {
 function Panel({ body, action }: { body: string; action: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3 shrink-0 animate-in fade-in duration-500">
-      <p className="text-[13px] leading-5 text-secondary-foreground">{body}</p>
+      <p className="text-sm leading-5 text-secondary-foreground">{body}</p>
       {action}
     </div>
   )

@@ -61,7 +61,7 @@ export function QualityInlineSummary({
         <div className="flex items-center gap-4">
           <QualityRadarMini evaluation={assessment} previous={previous} />
           <div className="flex flex-col items-start gap-1.5">
-            <p className="font-display text-[34px]/none font-medium tracking-[-0.03em] text-foreground tabular-nums">
+            <p className="font-display text-4xl/none font-medium tracking-[-0.03em] text-foreground tabular-nums">
               {pct}
             </p>
             <BandTag band={band} />

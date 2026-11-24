@@ -414,7 +414,7 @@ function IdeaMark({ idea }: { idea: Idea }) {
     <span
       role="img"
       aria-label={t('ideas.card.writtenBy', { name: who })}
-      className={cn(circle, 'text-[9px] text-primary')}
+      className={cn(circle, 'text-mark text-primary')}
       style={{ background: identityColorVar(idea.createdBy ?? who) }}
     >
       {identityAbbr(who)}

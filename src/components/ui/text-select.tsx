@@ -37,9 +37,9 @@ const selectTriggerVariants = cva(
         // the three sit next to each other in a settings card, and this used
         // to be the one with a `border-border` edge instead of `quaternary`.
         default:
-          'bg-input border-b-1 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
+          'bg-input border-b-1 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-sm leading-3 w-full transition-colors duration-200',
         primary:
-          'bg-input-secondary border-b-2 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-[14px] leading-3 w-full transition-colors duration-200',
+          'bg-input-secondary border-b-2 border-quaternary focus-visible:border-foreground data-[state=open]:border-foreground rounded-none px-4 py-1 shadow-none text-sm leading-3 w-full transition-colors duration-200',
         ghost:
           'border-0 rounded-md bg-transparent px-3 py-1 shadow-none text-sm',
         // Reads as text, not as a field: no rule under it and the caret sits
@@ -49,7 +49,7 @@ const selectTriggerVariants = cva(
         // A card's or a bar's dropdown, drawn as the outline `Button` with a
         // chevron at its end: it is a control you press, not a field you fill.
         button:
-          'border rounded-button bg-transparent px-3 shadow-none text-[13px]/4 text-primary-foreground w-fit hover:bg-quaternary hover:border-quaternary data-[state=open]:bg-quaternary data-[state=open]:border-quaternary',
+          'border rounded-button bg-transparent px-3 shadow-none text-control text-primary-foreground w-fit hover:bg-quaternary hover:border-quaternary data-[state=open]:bg-quaternary data-[state=open]:border-quaternary',
       },
       size: {
         sm: 'h-8',

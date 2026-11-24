@@ -88,7 +88,7 @@ export function MetaCampaigns({
                 <CampaignMark
                   id={c.id}
                   name={c.name}
-                  className="size-4 rounded-[3px] text-[10px]"
+                  className="size-4 rounded-[3px] text-mark"
                 />
               </Mark>
               <span className="min-w-0 flex-1 truncate">{c.name}</span>

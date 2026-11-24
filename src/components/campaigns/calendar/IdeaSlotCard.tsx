@@ -70,7 +70,7 @@ export function IdeaSlotCard({
       className="group relative shrink-0 overflow-hidden border border-dashed border-quinary-foreground px-2 py-1.5 outline-none"
       style={{ height: IDEA_SLOT_HEIGHT }}
     >
-      <p className="flex items-center gap-1 text-[10px] font-semibold tracking-[0.08em] text-tertiary-foreground">
+      <p className="flex items-center gap-1 text-xs font-semibold tracking-[0.08em] text-tertiary-foreground">
         <LightbulbIcon aria-hidden className="size-3 shrink-0" />
         {t('ideas.lifecycle.slot')}
         {showCampaign && slot.campaign_name && (
@@ -105,7 +105,7 @@ export function IdeaSlotCard({
           <button
             type="button"
             disabled={busy}
-            className="cursor-pointer border border-border bg-primary px-2 py-1 text-[11px] font-medium tracking-[0.03em] text-foreground hover:border-foreground disabled:cursor-default disabled:text-quinary-foreground"
+            className="cursor-pointer border border-border bg-primary px-2 py-1 text-xs font-medium tracking-[0.03em] text-foreground hover:border-foreground disabled:cursor-default disabled:text-quinary-foreground"
           >
             {t('ideas.lifecycle.compile')}
           </button>
@@ -118,7 +118,7 @@ export function IdeaSlotCard({
           <button
             type="button"
             disabled={busy}
-            className="cursor-pointer bg-primary-foreground px-2 py-1 text-[11px] font-medium tracking-[0.03em] text-primary disabled:cursor-default disabled:opacity-50"
+            className="cursor-pointer bg-primary-foreground px-2 py-1 text-xs font-medium tracking-[0.03em] text-primary disabled:cursor-default disabled:opacity-50"
           >
             {t('ideas.lifecycle.draft')}
           </button>

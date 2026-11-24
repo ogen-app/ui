@@ -161,13 +161,13 @@ function ImportCard({ t, page }: { t: TFunction; page: PageImport }) {
           >
             {live?.title || page.title || bareUrl(page.url)}
           </Link>
-          <span className="text-[12.5px] text-tertiary-foreground">
+          <span className="text-xs text-tertiary-foreground">
             {t('assistant.assets.import.webPage')}
           </span>
         </span>
         <span
           className={cn(
-            'shrink-0 text-[12.5px]',
+            'shrink-0 text-xs',
             reading || failed ? 'text-warning-ink' : 'text-tertiary-foreground',
           )}
         >
@@ -180,7 +180,7 @@ function ImportCard({ t, page }: { t: TFunction; page: PageImport }) {
       </ResultRow>
       {page.attachError && (
         <ResultRow>
-          <p className="text-[12.5px] text-warning-ink">{page.attachError}</p>
+          <p className="text-xs text-warning-ink">{page.attachError}</p>
         </ResultRow>
       )}
     </ResultBlock>
@@ -350,7 +350,7 @@ function StateRow({
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-sm text-foreground">{label}</span>
         {sub && (
-          <span className="text-[12.5px] text-secondary-foreground">{sub}</span>
+          <span className="text-xs text-secondary-foreground">{sub}</span>
         )}
       </span>
       <span className="shrink-0">{action}</span>
@@ -401,7 +401,7 @@ function AskScope({
         </ul>
       )}
       {ask.scope === 'open_asset' && (
-        <p className="flex items-baseline gap-2.5 border-t border-border pt-2.5 text-[12.5px] text-secondary-foreground">
+        <p className="flex items-baseline gap-2.5 border-t border-border pt-2.5 text-xs text-secondary-foreground">
           {t('assistant.assets.ask.onlyThis')}
           <TextAction
             disabled={disabled}
@@ -526,7 +526,7 @@ function AnalysisCard({
               {t('assistant.assets.analysis.ideas', counted(total))}
             </span>
             {total > 0 && (
-              <span className="text-[12.5px] text-secondary-foreground">
+              <span className="text-xs text-secondary-foreground">
                 {pilesLine(t, read.ideas)}
               </span>
             )}
@@ -556,7 +556,7 @@ function AnalysisCard({
               <span className="text-sm text-foreground">
                 {lensName(t, other)}
               </span>
-              <span className="text-[12.5px] text-secondary-foreground">
+              <span className="text-xs text-secondary-foreground">
                 {[
                   other.ideaCount !== undefined &&
                     t(
@@ -667,7 +667,7 @@ function NotReadRows({
                   : t('assistant.assets.analysis.readFor', { owner })}
               </span>
               {i === 0 && (
-                <span className="text-[12.5px] text-secondary-foreground">
+                <span className="text-xs text-secondary-foreground">
                   {absent}
                 </span>
               )}
@@ -688,7 +688,7 @@ function Letters({ letters }: { letters: string[] }) {
       {letters.map((letter) => (
         <span
           key={letter}
-          className="ml-1 border border-accent/20 px-1 font-mono text-[10.5px] text-accent-ink"
+          className="ml-1 border border-accent/20 px-1 font-mono text-xs text-accent-ink"
         >
           {letter}
         </span>
@@ -758,7 +758,7 @@ function CompareCard({
                 {labelOf(claim)}
                 {lettered && <Letters letters={claim.letters} />}
               </span>
-              <span className="text-[12.5px] text-secondary-foreground">
+              <span className="text-xs text-secondary-foreground">
                 {claim.text}
               </span>
             </span>
@@ -780,7 +780,7 @@ function CompareCard({
         )),
       )}
       {fromPassages.length > 0 && (
-        <p className="border-t border-border pt-2.5 pb-2.5 text-[12.5px] text-secondary-foreground">
+        <p className="border-t border-border pt-2.5 pb-2.5 text-xs text-secondary-foreground">
           {t('assistant.assets.compare.fromPassages', {
             count: fromPassages.length,
             titles: formatList(fromPassages.map((a) => a.title)),
@@ -789,7 +789,7 @@ function CompareCard({
       )}
       {compare.skipped.length > 0 && (
         <ResultRow>
-          <p className="text-[12.5px] text-secondary-foreground">
+          <p className="text-xs text-secondary-foreground">
             {t('assistant.assets.compare.skipped', {
               count: compare.skipped.length,
               titles: formatList(compare.skipped.map((a) => a.title)),
@@ -799,7 +799,7 @@ function CompareCard({
       )}
       {compare.missing > 0 && (
         <ResultRow>
-          <p className="text-[12.5px] text-warning-ink">
+          <p className="text-xs text-warning-ink">
             {t('assistant.assets.compare.missing', counted(compare.missing))}
           </p>
         </ResultRow>
@@ -877,9 +877,7 @@ function SavedViewsCard({
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="text-sm text-foreground">{view.name}</span>
               {sub && (
-                <span className="text-[12.5px] text-secondary-foreground">
-                  {sub}
-                </span>
+                <span className="text-xs text-secondary-foreground">{sub}</span>
               )}
             </span>
             <TextAction
@@ -898,7 +896,7 @@ function SavedViewsCard({
         )
       })}
       {inCampaign && views.views.length > 0 && (
-        <p className="border-t border-border pt-2.5 text-[12.5px] text-secondary-foreground">
+        <p className="border-t border-border pt-2.5 text-xs text-secondary-foreground">
           {t('assistant.assets.views.workspaceOnly', {
             list: screenName(t, views.list),
           })}
@@ -943,7 +941,7 @@ function CampaignCard({
               counted(campaign.assetIds.length),
             )}
           </span>
-          <span className="text-[12.5px] text-secondary-foreground">
+          <span className="text-xs text-secondary-foreground">
             {t('assistant.assets.campaign.sourcesNote')}
           </span>
         </span>

@@ -204,7 +204,7 @@ function PlatformMark({
           read at the same moment as the platform it qualifies. */}
       <span
         className={cn(
-          'absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[10px] font-medium tabular-nums ring-2 ring-primary',
+          'absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-mark font-medium tabular-nums ring-2 ring-primary',
           on
             ? 'bg-foreground text-primary'
             : 'bg-quaternary text-tertiary-foreground',

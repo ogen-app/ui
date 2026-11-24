@@ -149,7 +149,7 @@ function PlatformTile({
         {locked ? (
           // In place of the caption, not beside it: "1 connected" and a lock
           // are the same fact said twice, and the lock is the half that is news.
-          <LockedBadge className="text-[11px]" />
+          <LockedBadge className="text-xs" />
         ) : count === 0 ? (
           <span className="text-xs text-tertiary-foreground">
             {t('workspaceSettings.connect.connect')}

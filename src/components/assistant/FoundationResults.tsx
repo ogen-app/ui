@@ -242,9 +242,7 @@ function changeWord(t: TFunction, change: BrandChangeKind): string {
 }
 
 function Muted({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-[12.5px] text-secondary-foreground">{children}</span>
-  )
+  return <span className="text-xs text-secondary-foreground">{children}</span>
 }
 
 function Row({
@@ -625,7 +623,7 @@ function BulkCard({
       {bulk.stopped && <Row title={<Muted>{bulk.stopped}</Muted>} />}
       {allUndone && <ResolvedLine>{t('assistant.undo.undone')}</ResolvedLine>}
       {undone > 0 && !allUndone && (
-        <p className="text-[12.5px] text-secondary-foreground">
+        <p className="text-xs text-secondary-foreground">
           {t('assistant.foundation.bulk.undonePart', {
             undone: formatNumber(undone),
             total: formatNumber(bulk.undoIds.length),
@@ -633,12 +631,12 @@ function BulkCard({
         </p>
       )}
       {changed > 0 && (
-        <p className="text-[12.5px] text-secondary-foreground">
+        <p className="text-xs text-secondary-foreground">
           {t('assistant.foundation.bulk.undoChanged', counted(changed))}
         </p>
       )}
       {gone > 0 && (
-        <p className="text-[12.5px] text-secondary-foreground">
+        <p className="text-xs text-secondary-foreground">
           {t('assistant.foundation.bulk.undoGone', counted(gone))}
         </p>
       )}
@@ -1081,7 +1079,7 @@ function SeriesCard({
       )}
       {series.notRun && (
         <ResultRow>
-          <p className="text-[12.5px] text-warning-ink">
+          <p className="text-xs text-warning-ink">
             {t('assistant.foundation.series.notRun', { reason: series.notRun })}
           </p>
         </ResultRow>

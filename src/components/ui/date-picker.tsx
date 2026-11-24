@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const datePickerTriggerVariants = cva(
-  'flex w-full items-center justify-between gap-2 bg-transparent font-medium text-[14px] ' +
+  'flex w-full items-center justify-between gap-2 bg-transparent font-medium text-sm ' +
     'transition-[color,border-color,box-shadow] duration-300 outline-none cursor-pointer ' +
     'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
   {

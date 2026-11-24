@@ -288,7 +288,7 @@ function ImageChoice({
         {badge && (
           <span
             className={cn(
-              'absolute inset-x-0 bottom-0 truncate bg-primary/90 px-1 py-0.5 text-left text-[11px]',
+              'absolute inset-x-0 bottom-0 truncate bg-primary/90 px-1 py-0.5 text-left text-xs',
               asset.status === 'failed' && !attached
                 ? 'text-warning'
                 : 'text-tertiary-foreground',

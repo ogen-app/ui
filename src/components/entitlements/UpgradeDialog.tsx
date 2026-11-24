@@ -303,7 +303,7 @@ function Heading({
         <GradientMark icon={StarIcon} size={26} weight="fill" />
       </span>
       <div className="flex flex-col gap-2">
-        <h2 className="font-display text-2xl font-medium tracking-tight md:text-[28px] md:leading-tight">
+        <h2 className="font-display text-2xl font-medium tracking-tight md:text-3xl md:leading-tight">
           {title}
         </h2>
         {/* Two whole sentences side by side, each its own catalogue entry. */}
@@ -394,13 +394,13 @@ function OfferColumn({
               <h3 className="font-display text-3xl font-medium tracking-tight">
                 {t('tiers.paywall.planName', { plan: tier.name })}
               </h3>
-              <p className="text-[13px] text-tertiary-foreground">
+              <p className="text-xs text-tertiary-foreground">
                 {t('tiers.paywall.planPitch', { current: currentName })}
               </p>
             </div>
 
             {complimentary ? (
-              <p className="text-[11px] font-medium leading-4 tracking-[0.1em] text-secondary-foreground">
+              <p className="text-xs font-medium leading-4 tracking-[0.1em] text-secondary-foreground">
                 {t('tiers.ledger.freeWhileTesting')}
               </p>
             ) : (
@@ -464,7 +464,7 @@ function MonthlyPrice({ price }: { price: TierVersionPrice }) {
       <BigPrice amount={price.amount} currency={price.currency} />
       {/* A line's worth of room kept in both states, so flipping the switcher
           does not move the button under the cursor. */}
-      <p className="text-[13px] text-tertiary-foreground" aria-hidden>
+      <p className="text-xs text-tertiary-foreground" aria-hidden>
         &nbsp;
       </p>
     </>
@@ -490,7 +490,7 @@ function YearlyPrice({
         amount={Math.round(price.amount / 12)}
         currency={price.currency}
       />
-      <p className="text-[13px] text-tertiary-foreground">
+      <p className="text-xs text-tertiary-foreground">
         {saving > 0
           ? t('tiers.paywall.billedYearlySaving', {
               total,
@@ -511,7 +511,7 @@ function BigPrice({ amount, currency }: { amount: number; currency: string }) {
         values={{ price: money(amount, currency) }}
         components={{
           price: (
-            <span className="font-display text-[44px] leading-none font-medium tracking-tight text-foreground" />
+            <span className="font-display text-figure leading-none font-medium tracking-tight text-foreground" />
           ),
         }}
       />
@@ -562,7 +562,7 @@ function BenefitsColumn({
 function OwnersOnly() {
   const { t } = useTranslation()
   return (
-    <p className="text-[13px] text-tertiary-foreground">
+    <p className="text-xs text-tertiary-foreground">
       {t('tiers.ownersOnlyPlan')}
     </p>
   )
@@ -580,7 +580,7 @@ function LinkOut({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex cursor-pointer items-center gap-1.5 self-center pt-2 text-[13px] font-medium text-tertiary-foreground hover:text-foreground"
+      className="inline-flex cursor-pointer items-center gap-1.5 self-center pt-2 text-control font-medium text-tertiary-foreground hover:text-foreground"
     >
       {children}
       <ArrowRightIcon size={14} aria-hidden />

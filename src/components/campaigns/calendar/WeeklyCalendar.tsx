@@ -387,7 +387,7 @@ function WeeklyCalendarComponent({
                     // same thing, so only their weight in the page should
                     // differ — this one says it in a dashed outline that
                     // isn't there until you look for it.
-                    'border border-dashed border-border text-[13px]/4 font-medium text-tertiary-foreground',
+                    'border border-dashed border-border text-control font-medium text-tertiary-foreground',
                     'transition-[opacity,background-color,color]',
                     hoverKey === col.key ? 'opacity-100' : 'opacity-0',
                     'focus-visible:opacity-100 data-[state=open]:opacity-100',

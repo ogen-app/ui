@@ -56,7 +56,7 @@ function LogoutPage() {
     <PageContainer variant="fullscreen">
       <div className="flex-1 flex h-0 items-center justify-center gap-4 text-center">
         <div className="flex flex-col gap-4 items-center justify-stretch max-w-xl px-4">
-          <span className="text-[11px] leading-[16px] font-medium font-sans tracking-[0.03em] text-tertiary-foreground">
+          <span className="text-xs leading-[16px] font-medium font-sans tracking-[0.03em] text-tertiary-foreground">
             &nbsp;
           </span>
           <span className="text-[2rem] leading-[46px] font-medium font-display tracking-tight">
@@ -67,7 +67,7 @@ function LogoutPage() {
           {/* Matches PageError's description — same size, same tone. These two
               are the only screens in the app that are a single sentence and
               nothing else, and they should read alike. */}
-          <p className="text-[16px] leading-7 text-secondary-foreground">
+          <p className="text-base leading-7 text-secondary-foreground">
             {isDone
               ? t('auth.logout.doneMessage')
               : t('auth.logout.pendingMessage')}

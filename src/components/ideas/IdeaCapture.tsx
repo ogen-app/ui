@@ -150,7 +150,7 @@ export function IdeaCapture({
       <div className="flex min-w-0 items-start gap-3 py-[7px] pr-[7px] pl-3">
         <span
           aria-hidden
-          className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-primary"
+          className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-mark font-semibold text-primary"
           style={{ background: identityColorVar(writer.id ?? writer.name) }}
         >
           {identityAbbr(writer.name)}

@@ -105,7 +105,7 @@ const VARIANT_BADGE: Record<
   // A bare letter, not Phosphor's `InfoIcon` — that one is a circled i, which
   // inside the square badge reads as a circle in a box rather than as a mark.
   info: {
-    glyph: <span className="text-[11px] font-bold leading-none">i</span>,
+    glyph: <span className="text-mark font-bold leading-none">i</span>,
     className: 'bg-foreground',
   },
   success: {

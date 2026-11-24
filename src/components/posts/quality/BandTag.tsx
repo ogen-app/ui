@@ -13,7 +13,7 @@ export function BandTag({ band }: { band: QualityBand }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground',
+        'inline-flex items-center gap-1.5 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-foreground',
         BAND_WASH[band],
       )}
     >

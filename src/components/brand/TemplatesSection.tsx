@@ -148,8 +148,8 @@ function TemplateCard({
                 key={ratio}
                 className={
                   have.has(ratio)
-                    ? 'rounded border border-quaternary px-1.5 py-0.5 font-mono text-[11px] text-secondary-foreground'
-                    : 'rounded border border-dashed border-quaternary px-1.5 py-0.5 font-mono text-[11px] text-tertiary-foreground'
+                    ? 'rounded border border-quaternary px-1.5 py-0.5 font-mono text-xs text-secondary-foreground'
+                    : 'rounded border border-dashed border-quaternary px-1.5 py-0.5 font-mono text-xs text-tertiary-foreground'
                 }
               >
                 {ratio}

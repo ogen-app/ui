@@ -32,8 +32,8 @@ export function NotGroundedMark({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center gap-1.5 text-[11.5px]/4 font-semibold whitespace-nowrap text-warning-ink',
-        caps && 'text-[10.5px] uppercase tracking-[0.06em]',
+        'inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-warning-ink',
+        caps && 'text-xs uppercase tracking-[0.06em]',
         className,
       )}
     >

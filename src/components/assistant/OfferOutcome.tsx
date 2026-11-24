@@ -151,7 +151,7 @@ export function OfferOutcome({
           <NotMadeRows t={t} items={notMade} />
           {retry && retryLapsed ? (
             <ResultRow className="flex items-baseline gap-3">
-              <span className="min-w-0 flex-1 text-[12.5px] text-secondary-foreground">
+              <span className="min-w-0 flex-1 text-xs text-secondary-foreground">
                 {t('assistant.answered.notMade.lapsed')}
               </span>
               <TextAction
@@ -286,7 +286,7 @@ function ReplacedCard({
 function KeptRow({ t, kept }: { t: TFunction; kept: number }) {
   return (
     <ResultRow>
-      <p className="text-[12.5px] text-secondary-foreground">
+      <p className="text-xs text-secondary-foreground">
         {t('assistant.answered.replaced.kept', counted(kept))}
       </p>
     </ResultRow>
@@ -311,7 +311,7 @@ function SwapRow({
   return (
     <ResultRow className="flex flex-col gap-0.5">
       <span className="text-sm text-foreground">{post.title}</span>
-      <span className="text-[12.5px] text-tertiary-foreground">
+      <span className="text-xs text-tertiary-foreground">
         {[
           post.platform,
           score !== undefined &&
@@ -350,7 +350,7 @@ function SwapList({
         <SwapRow key={post.id} t={t} post={post} />
       ))}
       {more > 0 && (
-        <p className="pt-2.5 text-[12.5px] text-tertiary-foreground">
+        <p className="pt-2.5 text-xs text-tertiary-foreground">
           {t('assistant.answered.notMade.more', counted(more))}
         </p>
       )}
@@ -411,7 +411,7 @@ function TaggedCard({
         {tagged.assets.map((a) => (
           <ResultRow key={a.id} className="flex flex-col gap-0.5">
             <span className="text-sm text-foreground">{a.title}</span>
-            <span className="text-[12.5px] text-tertiary-foreground">
+            <span className="text-xs text-tertiary-foreground">
               {a.added.length > 0 && a.removed.length > 0
                 ? t('assistant.answered.tagged.addedRemoved', {
                     added: quoted(t, a.added),
@@ -430,7 +430,7 @@ function TaggedCard({
           </ResultRow>
         ))}
         {tagged.more > 0 && (
-          <p className="pt-2.5 text-[12.5px] text-tertiary-foreground">
+          <p className="pt-2.5 text-xs text-tertiary-foreground">
             {t('assistant.answered.notMade.more', counted(tagged.more))}
           </p>
         )}
@@ -452,7 +452,7 @@ function TaggedCard({
         {named &&
           tagged.changed !== undefined &&
           tagged.changed < tagged.count && (
-            <p className="border-t border-border pt-2.5 text-[12.5px] text-secondary-foreground">
+            <p className="border-t border-border pt-2.5 text-xs text-secondary-foreground">
               {t('assistant.answered.tagged.note')}
             </p>
           )}
@@ -473,7 +473,7 @@ function TaggedCard({
                     })
                   : t('assistant.undo.changed')}
               </span>
-              <span className="text-[12.5px] text-secondary-foreground">
+              <span className="text-xs text-secondary-foreground">
                 {t('assistant.answered.tagged.cantHint')}
               </span>
             </span>
@@ -527,12 +527,12 @@ function NotMadeRows({ t, items }: { t: TFunction; items: OfferNotMade[] }) {
         <ResultRow key={row.key}>
           <p className="text-sm text-foreground">{row.title}</p>
           {row.reason && (
-            <p className="text-[12.5px] text-warning-ink">{row.reason}</p>
+            <p className="text-xs text-warning-ink">{row.reason}</p>
           )}
         </ResultRow>
       ))}
       {rest > 0 && (
-        <p className="pt-1.5 text-[12.5px] text-tertiary-foreground">
+        <p className="pt-1.5 text-xs text-tertiary-foreground">
           {t('assistant.answered.notMade.more', counted(rest))}
         </p>
       )}

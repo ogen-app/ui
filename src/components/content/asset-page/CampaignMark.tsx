@@ -19,7 +19,7 @@ export function CampaignMark({
     <span
       aria-hidden
       className={cn(
-        'inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] text-[11px] font-semibold text-primary',
+        'inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] text-mark font-semibold text-primary',
         className,
       )}
       style={{ backgroundColor: `hsl(${hue(id)} 45% 42%)` }}

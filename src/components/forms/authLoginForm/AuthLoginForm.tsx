@@ -122,7 +122,7 @@ export function AuthLoginForm() {
           The row sits in the secondary colour and the link inside it lifts to
           the primary one on hover, so it reads as an aside until you reach for
           it rather than competing with the form for attention. */}
-      <p className="text-[13px] leading-5 text-secondary-foreground">
+      <p className="text-sm leading-5 text-secondary-foreground">
         {/* One key with the link inside it, not prompt + action + a glued-on
             period: the full stop belongs to the sentence, and a translator has
             to be able to move the link within it. */}

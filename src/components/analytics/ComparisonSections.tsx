@@ -66,7 +66,7 @@ export function NowSection({
     return (
       <Card title={t('analytics.now.title')} qualifier={window}>
         <EmptyChart />
-        <p className="text-[13px] text-secondary-foreground">
+        <p className="text-sm text-secondary-foreground">
           {view.coverage.published === 0
             ? t('analytics.now.noDataNothingOut')
             : t('analytics.now.noDataNotReported', {

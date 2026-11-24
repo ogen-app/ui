@@ -598,7 +598,7 @@ function WordField({
       {words.map((word) => (
         <span
           key={word}
-          className="inline-flex items-center gap-1.5 rounded-full bg-quaternary py-0.5 pl-2.5 pr-1 text-[12px] font-medium text-primary-foreground"
+          className="inline-flex items-center gap-1.5 rounded-full bg-quaternary py-0.5 pl-2.5 pr-1 text-xs font-medium text-primary-foreground"
         >
           {word}
           <button
@@ -640,7 +640,7 @@ function WordField({
             onChange(words.slice(0, -1))
           }
         }}
-        className="min-w-[10ch] flex-1 bg-transparent text-[14px] font-medium outline-none placeholder:text-tertiary-foreground"
+        className="min-w-[10ch] flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-tertiary-foreground"
       />
     </div>
   )

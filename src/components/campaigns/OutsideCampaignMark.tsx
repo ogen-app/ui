@@ -25,7 +25,7 @@ export function OutsideCampaignMark({
     <span
       title={compact ? label : undefined}
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 text-[12px]/[16px] font-medium whitespace-nowrap text-warning',
+        'inline-flex shrink-0 items-center gap-1 text-xs font-medium whitespace-nowrap text-warning',
         className,
       )}
     >

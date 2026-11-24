@@ -170,12 +170,12 @@ function ChipGroup({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[13px] font-normal text-input-label h-4">
+      <span className="text-control font-normal text-input-label h-4">
         {label}
       </span>
       {items.length === 0 ? (
         <div className="h-10 py-1 border-b border-transparent flex items-center gap-2 flex-wrap">
-          <span className="text-[13px] leading-4 text-primary-foreground">
+          <span className="text-sm leading-4 text-primary-foreground">
             {emptyText}
           </span>
         </div>

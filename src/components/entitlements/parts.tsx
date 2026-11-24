@@ -103,7 +103,7 @@ export function NoticeShell({
         {/* Capped for readability, like the Explainer: this is a block meant to
             be read rather than scanned, and it can sit in a full-width panel. */}
         {children && (
-          <div className="max-w-150 text-[13px] leading-normal text-tertiary-foreground">
+          <div className="max-w-150 text-sm leading-normal text-tertiary-foreground">
             {children}
           </div>
         )}

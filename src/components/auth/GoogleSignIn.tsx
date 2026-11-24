@@ -85,9 +85,7 @@ export function GoogleSignInOption({
       <div className="flex flex-col gap-3">
         <GoogleSignInButton {...props} />
         {hint && (
-          <p className="text-[13px] leading-5 text-secondary-foreground">
-            {hint}
-          </p>
+          <p className="text-sm leading-5 text-secondary-foreground">{hint}</p>
         )}
       </div>
       <AuthDivider label={divider} />

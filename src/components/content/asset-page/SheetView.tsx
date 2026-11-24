@@ -146,7 +146,7 @@ export function SheetView({
                   aria-selected={active}
                   onClick={() => onSelect(s.name)}
                   className={cn(
-                    'flex h-8 cursor-pointer items-center gap-2 rounded-md px-3 text-[13px] font-medium',
+                    'flex h-8 cursor-pointer items-center gap-2 rounded-md px-3 text-control font-medium',
                     active
                       ? 'bg-primary-foreground text-primary'
                       : 'bg-tertiary text-secondary-foreground hover:text-foreground',

@@ -32,7 +32,7 @@ export function AltTextControl({ attachment, limit, frozen, onSave }: Props) {
   // Nothing to read on a frozen post with no description, so nothing to open.
   if (frozen && state === 'missing') {
     return (
-      <span className="w-32 px-1.5 py-1 text-[11px] text-tertiary-foreground">
+      <span className="w-32 px-1.5 py-1 text-xs text-tertiary-foreground">
         {t('posts.media.altText.state.missing')}
       </span>
     )
@@ -47,12 +47,12 @@ export function AltTextControl({ attachment, limit, frozen, onSave }: Props) {
           frozen ? 'posts.media.altText.view' : 'posts.media.altText.edit',
         )}
         className={cn(
-          'flex w-32 items-center gap-1.5 px-1.5 py-1 cursor-pointer text-[11px]',
+          'flex w-32 items-center gap-1.5 px-1.5 py-1 cursor-pointer text-xs',
           'bg-tertiary hover:bg-quaternary',
           state === 'missing' ? 'text-warning' : 'text-tertiary-foreground',
         )}
       >
-        <span className="shrink-0 border border-current px-0.5 text-[9px] font-medium leading-tight">
+        <span className="shrink-0 border border-current px-0.5 text-mark font-medium leading-tight">
           ALT
         </span>
         <span className="truncate">

@@ -48,7 +48,7 @@ export function LibrarySelectionBar({
         <span
           role="status"
           aria-live="polite"
-          className="text-[13px]/4 font-medium tabular-nums whitespace-nowrap"
+          className="text-control font-medium tabular-nums whitespace-nowrap"
         >
           {t(`brand.selection.${kind}`, counted(n))}
         </span>
