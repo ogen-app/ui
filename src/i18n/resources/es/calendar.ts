@@ -1,7 +1,7 @@
 import type { Translation } from '../en'
 
 export const calendar: Translation['calendar'] = {
-  unscheduled: 'SIN PROGRAMAR',
+  unscheduled: 'Sin programar',
   unscheduledPosts: 'Publicaciones sin programar',
   settings: 'Ajustes del calendario',
   viewWeek: 'Semana',
@@ -49,7 +49,7 @@ export const calendar: Translation['calendar'] = {
   density_other: '{{count}} publicaciones el {{date}} — abrir esta semana',
   densityTicked_one: '{{formatted}} marcada',
   densityTicked_other: '{{formatted}} marcadas',
-  today: 'HOY',
+  today: 'Hoy',
 
   notScheduled: 'Sin programar',
   /**
@@ -70,7 +70,7 @@ export const calendar: Translation['calendar'] = {
   justWritten: 'RECIÉN ESCRITA',
   fromIdeas_one: 'de {{formatted}} idea',
   fromIdeas_other: 'de {{formatted}} ideas',
-  addPost: 'AÑADIR PUBLICACIÓN',
+  addPost: 'Añadir publicación',
   dateLocked: 'La fecha de esta publicación está bloqueada',
 
   empty: {

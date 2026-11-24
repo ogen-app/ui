@@ -7,8 +7,8 @@ export const brand: Translation['brand'] = {
     fact_other: '{{formatted}} datos seleccionados',
     selectAll: 'Seleccionar todos los datos mostrados',
     clearAll: 'Quitar la selección',
-    clear: 'QUITAR',
-    remove: 'ELIMINAR',
+    clear: 'Quitar',
+    remove: 'Eliminar',
   },
   binding: {
     voice: 'Voz',
@@ -22,7 +22,7 @@ export const brand: Translation['brand'] = {
     sourcePost: 'Definida en esta publicación',
     sourceCampaign: 'De la campaña',
     sourceLibrary: 'La predeterminada del espacio de trabajo',
-    reset: 'RESTABLECER',
+    reset: 'Restablecer',
     resetHint: 'Volver a lo que dice la campaña',
     emptyTitle: 'Voz y audiencia',
     emptyBody:
@@ -83,6 +83,7 @@ export const brand: Translation['brand'] = {
   },
 
   factsLedger: {
+    removeThis: 'Eliminar este dato',
     duplicate: 'Este espacio de trabajo ya tiene esa afirmación como dato.',
     gone: 'Alguien eliminó este dato mientras estaba abierto. El registro se ha actualizado.',
     saveFailed: 'No se pudo guardar el dato. Inténtalo de nuevo.',
@@ -111,10 +112,10 @@ export const brand: Translation['brand'] = {
         'Las publicaciones que se escriban a partir de ahora no podrán afirmarlo. No se puede recuperar.',
       body_other:
         'Las publicaciones que se escriban a partir de ahora no podrán afirmarlos. No se pueden recuperar.',
-      keep_one: 'CONSERVARLO',
-      keep_other: 'CONSERVARLOS',
-      confirm_one: 'ELIMINAR DATO',
-      confirm_other: 'ELIMINAR {{formatted}} DATOS',
+      keep_one: 'Conservarlo',
+      keep_other: 'Conservarlos',
+      confirm_one: 'Eliminar dato',
+      confirm_other: 'Eliminar {{formatted}} datos',
     },
   },
   facts: {
@@ -167,7 +168,7 @@ export const brand: Translation['brand'] = {
   },
 
   distill: {
-    cancel: 'CANCELAR',
+    cancel: 'Cancelar',
     offer: {
       or: 'O',
       resumeReading: 'Leyendo {{what}}',
@@ -185,7 +186,7 @@ export const brand: Translation['brand'] = {
       placeholder: 'acme.com',
       invalid: 'Eso no parece una dirección web.',
       what: 'Leemos hasta diez páginas: inicio, quiénes sois, lo que vendes, precios, condiciones y un par de publicaciones recientes. Después se quedan en Recursos, como cualquier página que añadas.',
-      read: 'LEER EL SITIO',
+      read: 'Leer el sitio',
     },
     document: {
       formats:
@@ -196,8 +197,8 @@ export const brand: Translation['brand'] = {
       noMatch: 'Nada en Recursos coincide con eso.',
       chosen_one: '{{count}} elegido',
       chosen_other: '{{count}} elegidos',
-      read_one: 'LEER {{count}} ARCHIVO',
-      read_other: 'LEER {{count}} ARCHIVOS',
+      read_one: 'Leer {{count}} archivo',
+      read_other: 'Leer {{count}} archivos',
       uploading: 'subiendo {{percent}} %',
       processing: 'leyendo',
       ready: 'listo',
@@ -335,7 +336,7 @@ export const brand: Translation['brand'] = {
         questions:
           'Responder vuelve a redactar la propuesta con estas respuestas añadidas. Lo que has conservado, descartado o editado hasta ahora se queda como lo dejaste.',
       },
-      ask: 'PREGUNTAR DE NUEVO CON ESTAS',
+      ask: 'Preguntar de nuevo con estas',
     },
     questions: {
       title: 'Unas cuantas preguntas',
@@ -345,7 +346,7 @@ export const brand: Translation['brand'] = {
       unavailable:
         'No se han podido cargar las preguntas. Vuelve a intentarlo en un minuto.',
       answered: '{{answered}} de {{count}} respondidas',
-      draft: 'REDACTARLO',
+      draft: 'Redactarlo',
       starter: {
         q_offer: '¿Qué vendes y quién te lo compra?',
         q_three_words: 'Tres palabras que un cliente usaría sobre ti.',
@@ -376,9 +377,9 @@ export const brand: Translation['brand'] = {
       drop: 'Descartar',
       keepLine: 'Conservar «{{line}}»',
       dropLine: 'Descartar «{{line}}»',
-      edit: 'EDITAR',
-      done: 'HECHO',
-      undo: 'DESHACER',
+      edit: 'Editar',
+      done: 'Hecho',
+      undo: 'Deshacer',
       dropped: 'descartada',
       becomesDefault: 'pasa a ser la predeterminada',
       voiceName: 'Nombre',
@@ -403,7 +404,7 @@ export const brand: Translation['brand'] = {
       line: 'Línea',
       disclaimerDiffers:
         'El del sitio es distinto del tuyo. Conserva el tuyo salvo que elijas el otro.',
-      compare: 'COMPARAR',
+      compare: 'Comparar',
       keepYours: 'Conservar el tuyo',
       useTheirs: 'Usar el del sitio',
       writtenHereOn: 'Escrito aquí · {{date}}',
@@ -679,10 +680,10 @@ export const brand: Translation['brand'] = {
       addSample: 'Añadir un ejemplo',
       editSample: 'Editar ejemplo',
       samplePlaceholder: 'Pega una publicación que te habría gustado escribir.',
-      removeSample: 'QUITAR EJEMPLO',
-      cancel: 'CANCELAR',
-      addIt: 'AÑADIRLO',
-      done: 'LISTO',
+      removeSample: 'Quitar ejemplo',
+      cancel: 'Cancelar',
+      addIt: 'Añadirlo',
+      done: 'Listo',
       resetSamples: 'Restablecer ejemplos',
       rules: 'Reglas',
       rulesHint:
@@ -849,8 +850,8 @@ export const brand: Translation['brand'] = {
     inherited:
       'Recurre a la predeterminada: todavía no hay nada específico de esta plataforma.',
     ownTemplate: 'Tiene una plantilla propia.',
-    giveItsOwn: 'DARLE UNA PROPIA',
-    replace: 'SUSTITUIR',
+    giveItsOwn: 'Darle una propia',
+    replace: 'Sustituir',
     nothingApplies:
       'Aquí no se aplica nada, y no hay ninguna predeterminada a la que recurrir.',
     drawnOver: 'se dibuja sobre la imagen',
@@ -867,7 +868,7 @@ export const brand: Translation['brand'] = {
       'Falta {{ratios}}: esa proporción sale desnuda frente a {{needed}}.',
     coversSome_other:
       'Faltan {{ratios}}: esas proporciones salen desnudas frente a {{needed}}.',
-    openInCompositor: 'ABRIR EN EL COMPOSITOR',
+    openInCompositor: 'Abrir en el compositor',
   },
 
   guardrails: {
@@ -883,7 +884,7 @@ export const brand: Translation['brand'] = {
       'Afirmaciones ya revisadas, con la formulación con la que se revisaron. Esto es lo que evita que una frase que le costó una hora a un abogado se reescriba desde cero cada vez.',
     mayClaimPlaceholder:
       'Que la puesta en marcha lleva dos semanas, de principio a fin.',
-    addClaim: 'AÑADIR UNA AFIRMACIÓN',
+    addClaim: 'Añadir una afirmación',
     neverClaim: 'No se puede afirmar nunca',
     neverClaimHint:
       'Escribe la afirmación en sí y no el tema: «cualquier resultado garantizado, en cualquier forma» y no «resultados». Un tema es algo que evitar mencionar; una afirmación es algo con lo que se puede contrastar una frase.',
@@ -891,7 +892,7 @@ export const brand: Translation['brand'] = {
       'Todavía no hay nada prohibido. Cualquier voz del espacio de trabajo puede prometer lo que sea, con las palabras que sea.',
     neverClaimPlaceholder:
       'Que el resultado está garantizado, en cualquier forma.',
-    addRule: 'AÑADIR UNA REGLA',
+    addRule: 'Añadir una regla',
     bannedWords: 'Palabras prohibidas',
     bannedWordsHint:
       'Palabras que no pueden aparecer nunca, en ninguna voz. Escribe una y pulsa Intro; las comas y las listas pegadas se separan en palabras sueltas.',
@@ -970,7 +971,7 @@ export const brand: Translation['brand'] = {
       title: '¿Salir sin crearlo?',
       body: 'Aún no se ha guardado nada de esta pantalla. Si sales ahora, se pierde.',
       stay: 'Seguir editando',
-      discard: 'DESCARTAR',
+      discard: 'Descartar',
     },
     forkedFrom:
       'Partió de <name>{{name}}</name>, y se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',

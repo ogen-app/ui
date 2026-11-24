@@ -39,6 +39,7 @@ import {
   TextAction,
 } from './blocks'
 import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /** Rows a list card shows before it sums up the rest. */
 const LIST_ROWS = 8
@@ -1207,9 +1208,7 @@ function EditedCard({
     to: string | undefined,
   ) => (
     <ResultRow className="flex flex-col gap-0.5">
-      <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-tertiary-foreground">
-        {label}
-      </span>
+      <SmallHeading as="span">{label}</SmallHeading>
       {from !== undefined && (
         <s className="text-xs text-tertiary-foreground">{from}</s>
       )}

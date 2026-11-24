@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCampaignAccounts } from '@/hooks/useCampaignAccounts'
@@ -47,6 +48,7 @@ export function AccountsControl({
   targetPlatforms,
   onCommitPlatforms,
 }: Props) {
+  const { t } = useTranslation()
   const views = usePlatformViews()
   // The hook owns both writes — the account choice into the settings key and
   // the platform-level view of it onto the campaign — so a burst of clicks
@@ -131,11 +133,13 @@ export function AccountsControl({
   return (
     <div className="flex flex-col gap-1">
       <AccountsSummary targets={targets} />
-      <GroupLabel>ACTIVE</GroupLabel>
+      <GroupLabel>{t('campaigns.accounts.groups.active')}</GroupLabel>
       {active.length > 0 ? active.map(renderRow) : <NoneActive />}
       {inactive.length > 0 && (
         <>
-          <GroupLabel className="mt-4">INACTIVE</GroupLabel>
+          <GroupLabel className="mt-4">
+            {t('campaigns.accounts.groups.inactive')}
+          </GroupLabel>
           {inactive.map(renderRow)}
         </>
       )}

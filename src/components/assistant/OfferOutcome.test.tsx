@@ -92,20 +92,20 @@ describe('OfferOutcome (CON-482)', () => {
     ).toContain('text-warning-ink')
     // Items the server names no title for are counted under their reason.
     expect(screen.getByText('2 items')).toBeTruthy()
-    fireEvent.click(screen.getByText('RETRY 3'))
+    fireEvent.click(screen.getByText('Retry 3'))
     expect(confirm).toHaveBeenCalledWith('campaign:c1', 'pr9')
   })
 
   it('asks again once the retry offer has lapsed', async () => {
     await show(partial, { proposal: { ...retry, status: 'expired' } })
-    expect(screen.queryByText('RETRY 3')).toBeNull()
-    fireEvent.click(screen.getByText('ASK AGAIN'))
+    expect(screen.queryByText('Retry 3')).toBeNull()
+    fireEvent.click(screen.getByText('Ask again'))
     expect(send).toHaveBeenCalledWith('campaign:c1', retry.summary)
   })
 
   it('drops RETRY once the retry offer is answered', async () => {
     await show(partial, { proposal: { ...retry, status: 'confirmed' } })
-    expect(screen.queryByText('RETRY 3')).toBeNull()
+    expect(screen.queryByText('Retry 3')).toBeNull()
   })
 
   it('sums a retry that made the rest with the run it retried', async () => {
@@ -139,7 +139,7 @@ describe('a tagging', () => {
     expect(screen.getByText('“spa” added')).toBeTruthy()
     expect(screen.getByText('already as asked')).toBeTruthy()
     expect(screen.getByText('and 12 more')).toBeTruthy()
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u1')
   })
 
@@ -188,7 +188,7 @@ describe('a tagging', () => {
     )
     expect(screen.getByText('CAN’T UNDO')).toBeTruthy()
     expect(screen.getByText('4 of 14 retagged since')).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe('/assets')
+    expect(screen.getByText('Open').getAttribute('href')).toBe('/assets')
   })
 })
 
@@ -210,7 +210,7 @@ describe('the budget guard’s replace (CON-468)', () => {
       screen.getByText('1 kept: it changed since the offer, or wasn’t needed.'),
     ).toBeTruthy()
     // Deleted for good: nothing to undo.
-    expect(screen.queryByText('UNDO')).toBeNull()
+    expect(screen.queryByText('Undo')).toBeNull()
   })
 })
 
@@ -248,7 +248,7 @@ describe('in Spanish', () => {
     await i18next.changeLanguage('es')
     await show(partial, { proposal: retry })
     expect(screen.getByText('9 de 12 hechas')).toBeTruthy()
-    expect(screen.getByText('REINTENTAR 3')).toBeTruthy()
-    expect(screen.queryByText('RETRY 3')).toBeNull()
+    expect(screen.getByText('Reintentar 3')).toBeTruthy()
+    expect(screen.queryByText('Retry 3')).toBeNull()
   })
 })

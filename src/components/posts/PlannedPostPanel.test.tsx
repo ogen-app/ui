@@ -54,7 +54,7 @@ describe('a planned post', () => {
     useAssistantStore.setState({ askFor })
     render(<PlannedPostPanel post={planned} />)
     expect(screen.getByText('No body yet.')).toBeTruthy()
-    fireEvent.click(screen.getByText('WRITE THE POST'))
+    fireEvent.click(screen.getByText('Write the post'))
     expect(askFor).toHaveBeenCalledWith(
       'post:p1',
       'Write this post in full from its theses.',

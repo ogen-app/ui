@@ -1,6 +1,12 @@
 import type { Translation } from '../en'
 
 export const posts: Translation['posts'] = {
+  preview: {
+    notesHeading: 'Notas',
+  },
+  delete: {
+    keep: 'Conservar publicación',
+  },
   publishStatus: {
     auto: 'Publicación automática {{when}}',
     manual: 'Recordatorio {{when}}',
@@ -106,7 +112,7 @@ export const posts: Translation['posts'] = {
     back: 'Volver a las publicaciones',
     more: 'Más acciones',
     downloadMarkdown: 'Descargar como Markdown',
-    delete: 'ELIMINAR PUBLICACIÓN',
+    delete: 'Eliminar publicación',
     previous: 'Publicación anterior',
     next: 'Publicación siguiente',
     position: '{{position}} de {{total}}',
@@ -306,9 +312,9 @@ export const posts: Translation['posts'] = {
       placeholder: 'p. ej., Un barista dibuja arte latte en una taza blanca',
       count: '{{length}} / {{limit}} caracteres',
       over: '{{length}} / {{limit}} caracteres — {{over}} de más',
-      save: 'GUARDAR',
-      cancel: 'CANCELAR',
-      close: 'CERRAR',
+      save: 'Guardar',
+      cancel: 'Cancelar',
+      close: 'Cerrar',
     },
   },
 
@@ -349,7 +355,7 @@ export const posts: Translation['posts'] = {
   sources: {
     heading: 'Fuentes',
     sectionTitle: 'FUENTES',
-    add: 'AÑADIR UNA FUENTE',
+    add: 'Añadir una fuente',
     fromBank: 'Elegir del banco de contenido',
     upload: 'Subir archivos',
     webPage: 'Añadir una página web',
@@ -566,6 +572,9 @@ export const posts: Translation['posts'] = {
   },
 
   versions: {
+    create: 'Crear nueva versión',
+    restore: 'Restaurar esta versión',
+    deleteVersion: 'Eliminar',
     liveDraft: 'Borrador',
     liveDraftTime: 'Sin guardar',
     liveDraftNote: 'Todavía sin instantánea',
@@ -637,7 +646,7 @@ export const posts: Translation['posts'] = {
   },
 
   duplicate: {
-    action: 'DUPLICAR COMO BORRADOR',
+    action: 'Duplicar como borrador',
     pending: 'Duplicando…',
     success: 'Borrador creado',
     error: 'No se pudo duplicar la publicación. Inténtalo de nuevo.',
@@ -646,10 +655,10 @@ export const posts: Translation['posts'] = {
 
   notes: {
     heading: 'Notas',
-    add: 'AÑADIR NOTA',
-    save: 'GUARDAR',
-    cancel: 'CANCELAR',
-    delete: 'ELIMINAR',
+    add: 'Añadir nota',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    delete: 'Eliminar',
     edit: 'Editar la nota',
 
     titlePlaceholder: 'Título (opcional)',

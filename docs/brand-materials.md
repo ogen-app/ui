@@ -1157,9 +1157,8 @@ five of them down one card — FACTS, MAY CLAIM, NEVER CLAIM, BANNED WORDS — a
 the app's ordinary micro-label convention stops reading as a mark and starts
 reading as shouting at somebody about their own legal text. The hierarchy it
 was buying is bought instead by weight and colour, with the label a step darker
-than the hint beside it. Action labels keep their capitals everywhere,
-including here: an action shouts, a heading does not, and that line is easier
-to hold than "sentence case except in the Danger Zone".
+than the hint beside it. Action labels kept their capitals then; since 2026-11-23 every button
+label is sentence case as well.
 
 **`boilerplate` is now `disclaimer`,** field and label both. The word describes
 where the thing came from — a print shop's reusable slug — rather than what it

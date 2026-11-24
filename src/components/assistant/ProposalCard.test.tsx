@@ -19,7 +19,7 @@ describe('ProposalCard', () => {
     useAssistantStore.setState({ confirmProposal: confirm })
     render(<ProposalCard threadId="t" proposal={base} disabled={false} />)
     expect(screen.getByText('PROPOSAL')).toBeTruthy()
-    fireEvent.click(screen.getByText('CONFIRM'))
+    fireEvent.click(screen.getByText('Confirm'))
     expect(confirm).toHaveBeenCalledWith('t', 'pr1')
   })
 
@@ -170,8 +170,8 @@ describe('ProposalCard', () => {
       />,
     )
     expect(screen.getByText('EXPIRED')).toBeTruthy()
-    expect(screen.queryByText('CONFIRM')).toBeNull()
-    fireEvent.click(screen.getByText('ASK AGAIN'))
+    expect(screen.queryByText('Confirm')).toBeNull()
+    fireEvent.click(screen.getByText('Ask again'))
     expect(send).toHaveBeenCalledWith('t', base.summary)
   })
 
@@ -198,7 +198,7 @@ describe('ProposalCard', () => {
     expect(
       screen.getByText('Draft 2 posts from 3 ideas · confirmed'),
     ).toBeTruthy()
-    expect(screen.queryByText('CONFIRM')).toBeNull()
+    expect(screen.queryByText('Confirm')).toBeNull()
   })
 
   it('shows what an offer draws on and makes, and names its confirm (CON-476)', async () => {
@@ -254,7 +254,7 @@ describe('ProposalCard', () => {
     expect(screen.getByText('The 4 become its sources.')).toBeTruthy()
     fireEvent.click(screen.getByText('Use the campaign’s 6 assets'))
     expect(send).toHaveBeenCalledWith('t', 'Use all the campaign’s assets.')
-    expect(screen.queryByText('CONFIRM')).toBeNull()
+    expect(screen.queryByText('Confirm')).toBeNull()
     fireEvent.click(screen.getByText('Create campaign'))
     expect(confirm).toHaveBeenCalledWith('t', 'pr1')
   })

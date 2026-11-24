@@ -3,7 +3,7 @@ import type { Translation } from '../en'
 export const workspaces: Translation['workspaces'] = {
   title: 'Tus espacios',
   loadFailed: 'No se han podido cargar tus espacios.',
-  create: 'NUEVO ESPACIO',
+  create: 'Nuevo espacio',
   current: 'Actual',
   memberCount_one: '{{count}} miembro',
   memberCount_other: '{{count}} miembros',

@@ -127,7 +127,7 @@ export function ChangePlanDialog({
           </Button>
           <Button variant="defaultInverted" onClick={onConfirm} loading={busy}>
             {t('tiers.changeDialog.confirm', {
-              name: name.toLocaleUpperCase(locale),
+              name: name,
             })}
           </Button>
         </div>

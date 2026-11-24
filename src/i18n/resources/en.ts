@@ -68,6 +68,7 @@ import { help } from './en/help'
 import { announcements } from './en/announcements'
 import { errors } from './en/errors'
 import { onboarding } from './en/onboarding'
+import { tables } from './en/tables'
 
 export const en = {
   common,
@@ -107,6 +108,7 @@ export const en = {
   announcements,
   errors,
   onboarding,
+  tables,
 }
 
 export type Translation = typeof en

@@ -1,15 +1,15 @@
 import type { Translation } from '../en'
 
 export const campaignOverview: Translation['campaignOverview'] = {
-  openOverview: 'ABRIR RESUMEN',
-  openPosts: 'ABRIR PUBLICACIONES',
-  openIdeas: 'ABRIR IDEAS',
-  openCalendar: 'ABRIR CALENDARIO',
-  openActivity: 'ABRIR ACTIVIDAD',
-  openAnalytics: 'ABRIR ANALÍTICAS',
-  openStrategy: 'ABRIR ESTRATEGIA',
-  openAssets: 'ABRIR RECURSOS',
-  openSettings: 'ABRIR AJUSTES',
+  openOverview: 'Abrir resumen',
+  openPosts: 'Abrir publicaciones',
+  openIdeas: 'Abrir ideas',
+  openCalendar: 'Abrir calendario',
+  openActivity: 'Abrir actividad',
+  openAnalytics: 'Abrir analíticas',
+  openStrategy: 'Abrir estrategia',
+  openAssets: 'Abrir recursos',
+  openSettings: 'Abrir ajustes',
 
   doors: {
     title: 'Todo lo de esta campaña',
@@ -56,14 +56,14 @@ export const campaignOverview: Translation['campaignOverview'] = {
     settings: 'Nombre, tipo, archivar o eliminar',
   },
   problems: {
-    ignore: 'IGNORAR',
+    ignore: 'Ignorar',
     ignoreFailed: 'No se pudo ignorar ese problema. Inténtalo de nuevo.',
     fixAll: 'Arreglar con Ogen',
     askAll: 'Arreglemos esto juntos.',
     askFix: '{{fix}}: {{problem}}',
   },
   todo: {
-    addPost: 'AÑADIR PUBLICACIÓN',
+    addPost: 'Añadir publicación',
   },
   stats: {
     dayOf: 'día {{day}} de {{total}}',
@@ -127,23 +127,23 @@ export const campaignOverview: Translation['campaignOverview'] = {
   },
   setup: {
     title: 'Prepara esta campaña',
-    withOgen: 'HACERLO CON OGEN',
+    withOgen: 'Hacerlo con Ogen',
     strategy: {
       title: 'Fechas y objetivo de publicaciones',
       detail: 'Cuándo se ejecuta y con qué frecuencia publica.',
-      action: 'FIJAR FECHAS',
+      action: 'Fijar fechas',
       ask: 'Sugiere fechas y un objetivo de publicaciones para esta campaña.',
     },
     channels: {
       title: 'Canales',
       detail: 'Dónde publica, con una cuenta conectada.',
-      action: 'ELEGIR CANALES',
+      action: 'Elegir canales',
       ask: 'Sugiere en qué canales debería publicar esta campaña.',
     },
     posts: {
       title: 'La primera publicación',
       detail: 'Escríbela tú o deja que Ogen prepare un plan.',
-      action: 'AÑADIR PUBLICACIÓN',
+      action: 'Añadir publicación',
       ask: 'Genera un plan de contenido para esta campaña.',
     },
   },

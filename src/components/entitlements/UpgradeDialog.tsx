@@ -431,7 +431,7 @@ function OfferColumn({
                 onClick={onUpgrade}
               >
                 {t('tiers.paywall.upgradeTo', {
-                  plan: tier.name.toLocaleUpperCase(),
+                  plan: tier.name,
                 })}
                 <RocketLaunchIcon weight="fill" aria-hidden />
               </Button>

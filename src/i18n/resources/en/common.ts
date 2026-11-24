@@ -1,4 +1,6 @@
 export const common = {
+  clear: 'Clear',
+  today: 'Today',
   cancel: 'Cancel',
   close: 'Close',
   done: 'Done',

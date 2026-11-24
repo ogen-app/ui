@@ -5,7 +5,7 @@ export const calendar = {
    * it is capitalised like every other; `unscheduledPosts` is its accessible
    * name, and starts with the same word so voice control can reach it.
    */
-  unscheduled: 'UNSCHEDULED',
+  unscheduled: 'Unscheduled',
   unscheduledPosts: 'Unscheduled posts',
   settings: 'Calendar settings',
 
@@ -113,7 +113,7 @@ export const calendar = {
   densityTicked_one: '{{formatted}} ticked',
   densityTicked_other: '{{formatted}} ticked',
   /** The toolbar's way back to this week. */
-  today: 'TODAY',
+  today: 'Today',
 
   /** The right rail's holding pen for posts with no date yet. */
   notScheduled: 'Not scheduled',
@@ -147,7 +147,7 @@ export const calendar = {
    * other action; the month's is icon-only and takes `addPostOn` above as
    * its title instead.
    */
-  addPost: 'ADD POST',
+  addPost: 'Add post',
 
   /**
    * A post whose date can no longer be moved by dragging it. The mark is the

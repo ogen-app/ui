@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib'
 import portfolioEmptyImage from '@/assets/illustrations/folder-empty.webp'
 import { FunnelSimpleIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 
 type TableEmptyStateProps = {
   message?: string
@@ -11,6 +12,7 @@ type TableEmptyStateProps = {
 }
 
 export function TableEmptyState({ onAction, className }: TableEmptyStateProps) {
+  const { t } = useTranslation()
   return (
     <div
       className={cn(
@@ -37,7 +39,7 @@ export function TableEmptyState({ onAction, className }: TableEmptyStateProps) {
         {onAction ? (
           <Button variant={'defaultInverted'} onClick={onAction}>
             <FunnelSimpleIcon />
-            <span>RESET FILTERS</span>
+            <span>{t('tables.empty.resetFilters')}</span>
           </Button>
         ) : (
           <div className={'h-10'}></div>

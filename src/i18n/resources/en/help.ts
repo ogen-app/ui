@@ -23,7 +23,7 @@ export const help = {
     failed: {
       title: 'Couldn’t load help',
       body: 'Check your connection and try again.',
-      retry: 'TRY AGAIN',
+      retry: 'Try again',
     },
     none: {
       title: 'No help for this page yet',
@@ -33,7 +33,7 @@ export const help = {
       title: 'This article isn’t here',
       body: 'It may have been renamed or taken down. Ogen can answer the question instead.',
     },
-    askOgen: 'ASK OGEN',
+    askOgen: 'Ask Ogen',
   },
   /** A concept placed inside a page article, and the way to read it alone. */
   embed: {

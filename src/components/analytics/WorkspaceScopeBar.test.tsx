@@ -142,13 +142,13 @@ describe('WorkspaceScopeBar', () => {
       expect(mark).toHaveAttribute('aria-pressed', 'true')
     }
     expect(
-      screen.queryByRole('button', { name: 'ALL PLATFORMS' }),
+      screen.queryByRole('button', { name: 'All platforms' }),
     ).not.toBeInTheDocument()
   })
 
   it('offers a way back only while it is narrowed', async () => {
     const { onSelectedChange } = setup({ selected: ['linkedin', 'facebook'] })
-    const clear = screen.getByRole('button', { name: 'ALL PLATFORMS' })
+    const clear = screen.getByRole('button', { name: 'All platforms' })
     await userEvent.click(clear)
 
     expect(onSelectedChange).toHaveBeenCalledWith([])
@@ -158,7 +158,7 @@ describe('WorkspaceScopeBar', () => {
     setup()
 
     expect(
-      screen.queryByRole('button', { name: 'ALL PLATFORMS' }),
+      screen.queryByRole('button', { name: 'All platforms' }),
     ).not.toBeInTheDocument()
   })
 

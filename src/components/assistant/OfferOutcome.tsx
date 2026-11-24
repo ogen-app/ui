@@ -23,6 +23,7 @@ import { UndoAction, UndoNote, type ResultUndo } from './ResultCard'
 import { useLapsed } from './useLapsed'
 import { useFreshScore } from '@/stores/freshScoreStore'
 import { periodName } from '@/lib/goalPeriod'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /** Rows the not-done list shows before it sums up the rest. */
 const LIST_ROWS = 8
@@ -145,9 +146,9 @@ export function OfferOutcome({
               : t('assistant.answered.notMade.title', counted(notMade.length))
           }
         >
-          <p className="pt-2.5 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-warning-ink">
+          <SmallHeading as="p" className="pt-2.5 pb-1 text-warning-ink">
             {t('assistant.answered.notMade.group', counted(notMade.length))}
-          </p>
+          </SmallHeading>
           <NotMadeRows t={t} items={notMade} />
           {retry && retryLapsed ? (
             <ResultRow className="flex items-baseline gap-3">
@@ -343,9 +344,9 @@ function SwapList({
   const more = total - shown.length
   return (
     <>
-      <p className="pt-3 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-tertiary-foreground">
+      <SmallHeading as="p" className="pt-3 pb-1">
         {label}
-      </p>
+      </SmallHeading>
       {shown.map((post) => (
         <SwapRow key={post.id} t={t} post={post} />
       ))}

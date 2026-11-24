@@ -178,7 +178,7 @@ describe('results', () => {
     )
     expect(screen.getByText('Goal raised to 32 posts a month')).toBeTruthy()
     expect(screen.getByText('96 in all')).toBeTruthy()
-    expect(screen.getByText('UNDO')).toBeTruthy()
+    expect(screen.getByText('Undo')).toBeTruthy()
   })
 
   it('are never boxed', () => {

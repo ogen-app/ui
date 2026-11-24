@@ -50,6 +50,7 @@ import { help } from './es/help'
 import { announcements } from './es/announcements'
 import { errors } from './es/errors'
 import { onboarding } from './es/onboarding'
+import { tables } from './es/tables'
 
 export const es: Translation = {
   common,
@@ -89,4 +90,5 @@ export const es: Translation = {
   announcements,
   errors,
   onboarding,
+  tables,
 }

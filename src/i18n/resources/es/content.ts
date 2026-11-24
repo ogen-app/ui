@@ -7,14 +7,14 @@ export const content: Translation['content'] = {
   page: {
     title: 'Recursos',
     add: {
-      button: 'AÑADIR CONTENIDO',
+      button: 'Añadir contenido',
       note: 'Escribir una nota',
       upload: 'Subir archivo',
       webPage: 'Añadir una página web',
     },
     openedForSource:
       'Abierto por el asistente — la petición espera a que se lea un archivo.',
-    back: 'VOLVER',
+    back: 'Volver',
   },
 
   kinds: {
@@ -53,6 +53,11 @@ export const content: Translation['content'] = {
   },
 
   list: {
+    start: {
+      addWebPage: 'Añadir una página web',
+      upload: 'Subir archivos',
+      write: 'Escribir una nota',
+    },
     label: 'Documentos',
     untitled: 'Sin título',
     selectRow: 'Seleccionar {{title}}',
@@ -144,7 +149,7 @@ export const content: Translation['content'] = {
       from: 'Desde',
       to: 'Hasta',
       on: 'Antes de',
-      apply: 'APLICAR',
+      apply: 'Aplicar',
     },
     noCampaign: 'Sin campaña',
     noTags: 'Sin etiquetas',
@@ -360,7 +365,7 @@ export const content: Translation['content'] = {
   selection: {
     count_one: '{{count}} seleccionado',
     count_other: '{{count}} seleccionados',
-    delete: 'ELIMINAR',
+    delete: 'Eliminar',
     selectPage: 'Seleccionar los documentos que se muestran',
     selectAll_one: 'Seleccionar el documento',
     selectAll_other: 'Seleccionar los {{formatted}} documentos',
@@ -380,7 +385,7 @@ export const content: Translation['content'] = {
     documents_one: '{{formatted}} documento',
     documents_other: '{{formatted}} documentos',
     groupBy: 'Agrupar por',
-    groupByHeading: 'AGRUPAR POR',
+    groupByHeading: 'Agrupar por',
     sortBy: 'Ordenar',
     group: {
       created: 'Fecha de alta',
@@ -415,10 +420,10 @@ export const content: Translation['content'] = {
       'Este documento se eliminará de forma permanente y cualquier campaña que lo use dejará de escribir a partir de él. Esto no se puede deshacer.',
     bodyBank_other:
       'Estos documentos se eliminarán de forma permanente y cualquier campaña que los use dejará de escribir a partir de ellos. Esto no se puede deshacer.',
-    keep_one: 'CONSERVAR DOCUMENTO',
-    keep_other: 'CONSERVAR DOCUMENTOS',
-    confirm_one: 'ELIMINAR DOCUMENTO',
-    confirm_other: 'ELIMINAR {{count}} DOCUMENTOS',
+    keep_one: 'Conservar documento',
+    keep_other: 'Conservar documentos',
+    confirm_one: 'Eliminar documento',
+    confirm_other: 'Eliminar {{count}} documentos',
     done_one: '{{count}} documento eliminado',
     done_other: '{{count}} documentos eliminados',
     failed_one: 'No se ha podido eliminar {{count}} documento',
@@ -426,7 +431,7 @@ export const content: Translation['content'] = {
   },
 
   tagging: {
-    action: 'ETIQUETAR',
+    action: 'Etiquetar',
     title_one: 'Etiquetar este documento',
     title_other: 'Etiquetar {{count}} documentos',
     addLabel: 'Añadir etiquetas',
@@ -438,8 +443,8 @@ export const content: Translation['content'] = {
       'Haz clic en una etiqueta para quitarla de los documentos que la llevan.',
     removeNone: 'Nada de esta selección tiene etiquetas todavía.',
     onCount: 'en {{count}} de {{total}}',
-    cancel: 'CANCELAR',
-    submit: 'APLICAR',
+    cancel: 'Cancelar',
+    submit: 'Aplicar',
     done_one: '{{count}} documento actualizado',
     done_other: '{{count}} documentos actualizados',
   },

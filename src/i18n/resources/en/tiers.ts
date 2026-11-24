@@ -26,8 +26,8 @@ export const tiers = {
     waitingTitle: 'Waiting on the owner',
     waitingBody:
       'Only an owner of {{workspace}} can choose a plan. This page opens the workspace as soon as they do.',
-    switchWorkspace: 'SWITCH WORKSPACE',
-    signOut: 'SIGN OUT',
+    switchWorkspace: 'Switch workspace',
+    signOut: 'Sign out',
     /** The yearly saving, beside the billing switch. Floored, never rounded up. */
     save: 'SAVE {{percent}}%',
     mostPopular: 'MOST POPULAR',
@@ -39,11 +39,11 @@ export const tiers = {
     billedYearly: 'Billed {{total}} a year · excl. VAT',
     allowances: 'ALLOWANCES',
     /** `name` arrives already in capitals, set for the active language. */
-    chooseNamed: 'CHOOSE {{name}}',
-    startFreeMonth: 'START FREE MONTH',
-    currentPlan: 'CURRENT PLAN',
-    scheduled: 'SCHEDULED',
-    unavailable: 'NOT AVAILABLE YET',
+    chooseNamed: 'Choose {{name}}',
+    startFreeMonth: 'Start free month',
+    currentPlan: 'Current plan',
+    scheduled: 'Scheduled',
+    unavailable: 'Not available yet',
     noneOnSale: 'No plan is on sale right now.',
     vatNote:
       'Prices exclude VAT. Lemon Squeezy sells Ogen as merchant of record and adds it at checkout.',
@@ -56,7 +56,7 @@ export const tiers = {
     compTryAny: 'Try any plan for as long as you like — nothing is charged.',
     freeWhileTesting: 'FREE WHILE YOU TEST',
     /** `name` arrives already in capitals, set for the active language. */
-    switchNamed: 'SWITCH TO {{name}}',
+    switchNamed: 'Switch to {{name}}',
     compNote:
       'Beta access is free while you test. If it ends, Ogen tells you first and nothing you made is touched.',
     /** The tier held is one the Ogen team set up and nobody can choose. */
@@ -85,8 +85,8 @@ export const tiers = {
     openedCharged: "You're charged when you complete the checkout.",
     openedBody:
       'This page carries on by itself once Lemon Squeezy confirms, and opens {{workspace}}.',
-    reopen: 'OPEN CHECKOUT AGAIN',
-    back: 'CHOOSE ANOTHER PLAN',
+    reopen: 'Open checkout again',
+    back: 'Choose another plan',
     slowTitle: 'Taking longer than usual',
     slowBody:
       "Leave this open, or come back later — you won't be charged twice. Your receipt from Lemon Squeezy has the order reference.",
@@ -98,9 +98,9 @@ export const tiers = {
     body: 'Lemon Squeezy works out the difference: a move up starts today, a move down waits for the end of the period you have paid for.',
     trialBody:
       'This ends the free month on {{name}} today, and {{target}} is charged now.',
-    cancel: 'CANCEL',
+    cancel: 'Cancel',
     /** `name` arrives already in capitals. */
-    confirm: 'MOVE TO {{name}}',
+    confirm: 'Move to {{name}}',
     blockedTitle: 'Not during the free month',
     blockedBody:
       "{{name}} can't be changed until its free month ends on {{when}}. Choose again then, or end the free month in Lemon Squeezy and come back.",
@@ -132,7 +132,7 @@ export const tiers = {
   perMonth: '{{price}} / month',
   perYear: '{{price}} / year',
   /** `name` arrives already in capitals. */
-  keepPlan: 'KEEP {{name}}',
+  keepPlan: 'Keep {{name}}',
   notInPlan: 'Not in your plan',
   notInPlanBody:
     "This isn't part of the plan your workspace is on. Upgrading turns it on for everyone here.",
@@ -190,7 +190,7 @@ export const tiers = {
   unlimited: 'Unlimited',
 
   /** Capitalised like every other action label in the app. */
-  upgrade: 'UPGRADE',
+  upgrade: 'Upgrade',
   /**
    * The upgrade dialog (CON-232): one recommended plan argued for, with what
    * it adds beside it.
@@ -240,7 +240,7 @@ export const tiers = {
     perMonth: '<price>{{price}}</price> / month',
     billedYearly: '{{total}} billed yearly',
     billedYearlySaving: '{{total}} billed yearly, save {{saving}}',
-    upgradeTo: 'UPGRADE TO {{plan}}',
+    upgradeTo: 'Upgrade to {{plan}}',
     /** The offered plan's name on its card; `plan` is the server's tier name. */
     planName: 'Ogen {{plan}}',
     comparePlans: 'Compare every plan',
@@ -332,7 +332,7 @@ export const tiers = {
     planPitch: 'Everything on {{current}}, with more room to grow.',
     unpriced: 'Pricing is not published yet.',
   },
-  seePlans: 'SEE PLANS',
+  seePlans: 'See plans',
   /**
    * For the half of the workspace that cannot act on any of the above
    * (CON-232). "For everyone here" is the part worth saying: a plan is not a
@@ -358,7 +358,7 @@ export const tiers = {
    * Inside the plan's own card, where the card names what is being changed —
    * the same shape, and the same word, as a campaign's type.
    */
-  changePlan: 'CHANGE',
+  changePlan: 'Change',
 
   /**
    * Plan & billing — one card in Workspace Settings, with no screen behind
@@ -406,7 +406,7 @@ export const tiers = {
   providerHolds:
     'Your payment method, billing address, tax ID, invoices and cancellation are handled by Lemon Squeezy, which sells Ogen as merchant of record.',
   /** The row title says what is managed, the way SWITCH sits under a name. */
-  managePortal: 'MANAGE',
+  managePortal: 'Manage',
   portalFailed: 'The billing portal could not be opened.',
 
   /**
@@ -470,7 +470,7 @@ export const tiers = {
   /** For the button's accessible name, where "CHOOSE" alone says too little. */
   chooseNamed: 'Choose {{name}}',
   /** Undoing a scheduled downgrade — the only way back from one. */
-  cancelChange: 'CANCEL CHANGE',
+  cancelChange: 'Cancel change',
 
   /**
    * A change that has been made but has not happened yet. Both directions are
@@ -504,7 +504,7 @@ export const tiers = {
   leaveHidden: {
     title: 'Leave {{name}}?',
     body: 'Switching to {{target}} is free and takes effect at once. Only the Ogen team can move this workspace back to {{name}}.',
-    cancel: 'CANCEL',
+    cancel: 'Cancel',
   },
   /** The Plan & billing card while a workspace has complimentary beta access. */
   comp: {

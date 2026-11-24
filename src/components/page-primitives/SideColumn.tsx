@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { Icon } from '@phosphor-icons/react'
 import { RailPanelEmbeddedProvider } from '@/components/page-primitives/RailPanel'
 import { cn } from '@/lib'
+import { SmallHeading } from './SmallHeading'
 
 /**
  * One tab of a side column: its icon, its one-word name, and how many things
@@ -156,9 +157,7 @@ export function SideSection({
       )}
     >
       <div className="flex min-h-4 items-center justify-between gap-3">
-        <h3 className="font-grotesk text-xs/4 font-medium uppercase text-tertiary-foreground">
-          {title}
-        </h3>
+        <SmallHeading as="h3">{title}</SmallHeading>
         {aside}
       </div>
       {children}

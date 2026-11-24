@@ -2,13 +2,13 @@ import type { Translation } from '../en'
 
 export const tasks: Translation['tasks'] = {
   title: 'Tareas',
-  add: 'AÑADIR TAREA',
+  add: 'Añadir tarea',
   newTask: 'Nueva tarea',
-  create: 'CREAR TAREA',
+  create: 'Crear tarea',
   cancel: 'Cancelar',
   complete: 'Marcar esta tarea como hecha',
   reopen: 'Reabrir esta tarea',
-  delete: 'ELIMINAR TAREA',
+  delete: 'Eliminar tarea',
   unassigned: 'Sin asignar',
   assignedTo: 'Asignada a {{name}}: cambiar',
   assign: 'Asignar esta tarea',

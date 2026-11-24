@@ -14,7 +14,7 @@ export const content = {
     title: 'Assets',
     /** The ADD CONTENT menu (CON-484 moved it into the catalogue). */
     add: {
-      button: 'ADD CONTENT',
+      button: 'Add content',
       note: 'Write a note',
       upload: 'Upload file',
       webPage: 'Add a web page',
@@ -22,7 +22,7 @@ export const content = {
     /** The page the assistant opened for a source (CON-484). */
     openedForSource:
       'Opened by the assistant — the request waits until a file is read.',
-    back: 'BACK',
+    back: 'Back',
   },
 
   /**
@@ -86,6 +86,11 @@ export const content = {
    * shown only when something is off, and the Ideas column's verdict pill.
    */
   list: {
+    start: {
+      addWebPage: 'Add a web page',
+      upload: 'Upload files',
+      write: 'Write a note',
+    },
     /** The list's accessible name. */
     label: 'Documents',
     untitled: 'Untitled',
@@ -196,7 +201,7 @@ export const content = {
       from: 'From',
       to: 'To',
       on: 'Before',
-      apply: 'APPLY',
+      apply: 'Apply',
     },
     noCampaign: 'No campaign',
     noTags: 'No tags',
@@ -446,7 +451,7 @@ export const content = {
   selection: {
     count_one: '{{count}} selected',
     count_other: '{{count}} selected',
-    delete: 'DELETE',
+    delete: 'Delete',
     /** The head's box: the documents loaded, not every match. */
     selectPage: 'Select the documents shown',
     /** The named step from a ticked page to every match. */
@@ -477,7 +482,7 @@ export const content = {
     documents_one: '{{formatted}} document',
     documents_other: '{{formatted}} documents',
     groupBy: 'Group by',
-    groupByHeading: 'GROUP BY',
+    groupByHeading: 'Group by',
     sortBy: 'Sort',
     group: {
       created: 'Date added',
@@ -527,10 +532,10 @@ export const content = {
       'This document will be permanently deleted, and any campaign using it will stop writing from it. This cannot be undone.',
     bodyBank_other:
       'These documents will be permanently deleted, and any campaign using them will stop writing from them. This cannot be undone.',
-    keep_one: 'KEEP DOCUMENT',
-    keep_other: 'KEEP DOCUMENTS',
-    confirm_one: 'DELETE DOCUMENT',
-    confirm_other: 'DELETE {{count}} DOCUMENTS',
+    keep_one: 'Keep document',
+    keep_other: 'Keep documents',
+    confirm_one: 'Delete document',
+    confirm_other: 'Delete {{count}} documents',
     done_one: '{{count}} document deleted',
     done_other: '{{count}} documents deleted',
     failed_one: '{{count}} document couldn’t be deleted',
@@ -546,7 +551,7 @@ export const content = {
    * row first.
    */
   tagging: {
-    action: 'TAG',
+    action: 'Tag',
     title_one: 'Tag this document',
     title_other: 'Tag {{count}} documents',
     addLabel: 'Add tags',
@@ -558,8 +563,8 @@ export const content = {
     removeNone: 'Nothing in this selection is tagged yet.',
     /** Sits inside the chip, so it is the count alone rather than a sentence. */
     onCount: 'on {{count}} of {{total}}',
-    cancel: 'CANCEL',
-    submit: 'APPLY',
+    cancel: 'Cancel',
+    submit: 'Apply',
     done_one: '{{count}} document updated',
     done_other: '{{count}} documents updated',
   },

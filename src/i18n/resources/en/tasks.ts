@@ -6,13 +6,13 @@
  */
 export const tasks = {
   title: 'Tasks',
-  add: 'ADD TASK',
+  add: 'Add task',
   newTask: 'New task',
-  create: 'CREATE TASK',
+  create: 'Create task',
   cancel: 'Cancel',
   complete: 'Mark this task done',
   reopen: 'Reopen this task',
-  delete: 'DELETE TASK',
+  delete: 'Delete task',
   unassigned: 'Unassigned',
   /**
    * The assignee's picture is a button, and these name it: initials read out

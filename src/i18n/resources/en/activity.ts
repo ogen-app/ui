@@ -51,8 +51,8 @@ export const activity = {
    */
   needsYou: {
     title: 'Needs you',
-    showMore_one: 'SHOW {{formatted}} MORE',
-    showMore_other: 'SHOW {{formatted}} MORE',
+    showMore_one: 'Show {{formatted}} more',
+    showMore_other: 'Show {{formatted}} more',
     allSet: 'Nothing needs you',
     allSetBody:
       'Nothing is failing, overdue or about to lapse in any campaign. If that changes, it shows up here.',

@@ -38,11 +38,11 @@ describe('AltTextControl', () => {
     const user = await openEditor(onSave)
 
     await user.type(screen.getByRole('textbox'), 'A red bicycle')
-    await user.click(screen.getByRole('button', { name: 'SAVE' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(onSave).toHaveBeenCalledWith('A red bicycle')
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'SAVE' })).toBeEnabled(),
+      expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled(),
     )
     expect(screen.getByRole('textbox')).toHaveValue('A red bicycle')
   })
@@ -52,7 +52,7 @@ describe('AltTextControl', () => {
     const user = await openEditor(onSave)
 
     await user.type(screen.getByRole('textbox'), 'A red bicycle')
-    await user.click(screen.getByRole('button', { name: 'SAVE' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
       expect(screen.queryByRole('textbox')).not.toBeInTheDocument(),
@@ -72,6 +72,6 @@ describe('AltTextControl', () => {
     await user.click(screen.getByRole('button', { name: 'Edit alt text' }))
     await user.type(screen.getByRole('textbox'), 'too long')
 
-    expect(screen.getByRole('button', { name: 'SAVE' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   })
 })

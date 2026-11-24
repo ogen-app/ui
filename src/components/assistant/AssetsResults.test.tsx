@@ -64,7 +64,7 @@ describe('what a question searched', () => {
     expect(screen.getAllByRole('img', { name: 'PDF' })).toHaveLength(2)
     expect(screen.getByText('p. 12')).toBeTruthy()
     expect(screen.getByText('Only this asset.')).toBeTruthy()
-    fireEvent.click(screen.getByText('SEARCH ALL ASSETS'))
+    fireEvent.click(screen.getByText('Search all assets'))
     expect(send).toHaveBeenCalledWith(
       'workspace',
       'Search all the assets for that, not only this one.',
@@ -125,10 +125,10 @@ describe('what an analysis found', () => {
     expect(
       screen.getByText('5 on the desk · 2 making · 1 in the drawer'),
     ).toBeTruthy()
-    expect(screen.getByText('OPEN IDEAS')).toBeTruthy()
+    expect(screen.getByText('Open ideas')).toBeTruthy()
     expect(screen.getByText('4 ideas · read Nov 7')).toBeTruthy()
     expect(screen.getByText('Read from')).toBeTruthy()
-    fireEvent.click(screen.getByText('SHOW'))
+    fireEvent.click(screen.getByText('Show'))
     expect(send).toHaveBeenCalledWith(
       'workspace',
       'What did the analysis find for the Spring reopening’s lens?',
@@ -159,13 +159,13 @@ describe('what an analysis found', () => {
     })
     expect(screen.getByText('Not read for this lens')).toBeTruthy()
     expect(screen.getByText('18 min')).toBeTruthy()
-    expect(screen.queryByText('OPEN IDEAS')).toBeNull()
+    expect(screen.queryByText('Open ideas')).toBeNull()
     // One row: the reading that does exist, and this lens's absence under it.
     expect(screen.getByText('Read for the workspace on Nov 2')).toBeTruthy()
     expect(
       screen.getByText('Spring reopening’s lens hasn’t read it'),
     ).toBeTruthy()
-    fireEvent.click(screen.getByText('SHOW THAT'))
+    fireEvent.click(screen.getByText('Show that'))
     expect(send).toHaveBeenCalledWith(
       'workspace',
       'What did the analysis find for the Workspace lens?',
@@ -211,7 +211,7 @@ describe('a comparison', () => {
         'Spa menu isn’t analysed for this lens, so it was read from its passages.',
       ),
     ).toBeTruthy()
-    fireEvent.click(screen.getByText('ASK WHICH'))
+    fireEvent.click(screen.getByText('Ask which'))
     expect(send).toHaveBeenCalledWith(
       'workspace',
       'Which is right: Spa hours: 9–21 against 10–20?',
@@ -344,7 +344,7 @@ describe('smart groups', () => {
     // Each group as the filter it stands for, in the list's own sentence.
     expect(screen.getByText('Documents not analysed yet')).toBeTruthy()
     expect(screen.getByText('PDFs')).toBeTruthy()
-    fireEvent.click(screen.getAllByText('OPEN')[0])
+    fireEvent.click(screen.getAllByText('Open')[0])
     expect(apply).toHaveBeenCalledWith({
       type: 'open_saved_view',
       screen: 'assets',
@@ -390,7 +390,7 @@ describe('smart groups', () => {
         'Smart groups open on the workspace’s Ideas, outside this campaign.',
       ),
     ).toBeTruthy()
-    fireEvent.click(screen.getByText('OPEN'))
+    fireEvent.click(screen.getByText('Open'))
     expect(apply).toHaveBeenCalledWith(
       expect.objectContaining({ screen: 'ideas', savedViewId: 'v1' }),
     )
@@ -431,15 +431,15 @@ describe('the bank’s state', () => {
       screen.getByText('Founder interview, Wedding packages and 10 more'),
     ).toBeTruthy()
     // Nothing failed, so nothing offers a retry.
-    expect(screen.queryByText('RETRY')).toBeNull()
+    expect(screen.queryByText('Retry')).toBeNull()
     expect(screen.getByText('41 ideas undecided')).toBeTruthy()
     expect(
       screen.getByText('Workspace lens 29 · Spring reopening 12'),
     ).toBeTruthy()
-    expect(screen.getByText('TRIAGE').closest('a')?.getAttribute('href')).toBe(
+    expect(screen.getByText('Triage').closest('a')?.getAttribute('href')).toBe(
       '/ideas',
     )
-    fireEvent.click(screen.getByText('ANALYSE'))
+    fireEvent.click(screen.getByText('Analyse'))
     expect(askFor).toHaveBeenCalledWith(
       'workspace',
       'Analyse the documents that haven’t been analysed yet.',
@@ -470,8 +470,8 @@ describe('a campaign set up from assets', () => {
         'The documents stay in the bank; the campaign points at them.',
       ),
     ).toBeTruthy()
-    expect(screen.getByText('OPEN')).toBeTruthy()
-    expect(screen.getByText('UNDO')).toBeTruthy()
+    expect(screen.getByText('Open')).toBeTruthy()
+    expect(screen.getByText('Undo')).toBeTruthy()
   })
 })
 
@@ -575,14 +575,14 @@ describe('in Spanish', () => {
     })
     expect(screen.getByText('Recursos · ahora')).toBeTruthy()
     expect(screen.getByText('1 análisis fallido')).toBeTruthy()
-    expect(screen.getByText('REINTENTAR')).toBeTruthy()
+    expect(screen.getByText('Reintentar')).toBeTruthy()
     expect(
       screen.getByText(
         'Los documentos siguen en el banco; la campaña apunta a ellos.',
       ),
     ).toBeTruthy()
     expect(screen.queryByText('Assets · now')).toBeNull()
-    expect(screen.queryByText('RETRY')).toBeNull()
+    expect(screen.queryByText('Retry')).toBeNull()
     expect(screen.queryByText(/stay in the bank/)).toBeNull()
   })
 })

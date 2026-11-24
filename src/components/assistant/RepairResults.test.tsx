@@ -152,7 +152,7 @@ describe('a calendar finding', () => {
   it('runs a plain fix on the click, in one button style', async () => {
     await findings()
     const button = screen.getByText('Convert to image post')
-    expect(button.className).toContain('uppercase')
+    expect(button.className).toContain('rounded-none')
     fireEvent.click(button)
     expect(confirmProposal).toHaveBeenCalledWith('campaign:c1', 'pr1')
   })
@@ -207,7 +207,7 @@ describe('a calendar finding', () => {
 
   it('ignores by its key, in the campaign', async () => {
     await findings()
-    fireEvent.click(screen.getAllByText('IGNORE')[1])
+    fireEvent.click(screen.getAllByText('Ignore')[1])
     expect(ignoreFinding).toHaveBeenCalledWith(
       'campaign:c1',
       't1',
@@ -224,15 +224,15 @@ describe('a calendar finding', () => {
     ).toBeTruthy()
     // The one ignored before the check, and the one ignored since.
     expect(screen.getByText('2 ignored on this campaign')).toBeTruthy()
-    fireEvent.click(screen.getByText('SHOW'))
-    fireEvent.click(screen.getAllByText('RESTORE')[1])
+    fireEvent.click(screen.getByText('Show'))
+    fireEvent.click(screen.getAllByText('Restore')[1])
     expect(restoreFinding).toHaveBeenCalledWith('c1', 'quiet:c')
   })
 
   it('says when it read the calendar, and checks again', async () => {
     await findings()
     expect(screen.getByText(/^Read .+\.$/)).toBeTruthy()
-    fireEvent.click(screen.getByText('CHECK AGAIN'))
+    fireEvent.click(screen.getByText('Check again'))
     expect(send).toHaveBeenCalledWith(
       'campaign:c1',
       'Check the calendar again.',
@@ -305,7 +305,7 @@ describe('the review', () => {
     expect(screen.getByText('or Open the post').getAttribute('href')).toBe(
       '/campaigns/c1/posts/p2',
     )
-    fireEvent.click(screen.getByText('IGNORE'))
+    fireEvent.click(screen.getByText('Ignore'))
     expect(ignoreFinding).toHaveBeenCalledWith(
       'campaign:c1',
       't1',
@@ -356,13 +356,13 @@ describe('the optimise plan', () => {
   it('sits inside its offer, with the window, the grid and the moves', async () => {
     await show({ plan }, { proposals: [offer('pr5', 'pending')] })
     expect(screen.getByText('PROPOSAL')).toBeTruthy()
-    expect(screen.getByText('Move 1 post')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Move 1 post' })).toBeTruthy()
     expect(screen.getByText(/^within /)).toBeTruthy()
     expect(screen.getByText('Before')).toBeTruthy()
     expect(screen.getByText('After')).toBeTruthy()
     expect(screen.getByText(/^Fri, Apr 17 → Tue, Apr 14, /)).toBeTruthy()
     expect(screen.getByText(/^Stays Wed, Apr 15, /)).toBeTruthy()
-    fireEvent.click(screen.getByText('MOVE 1 POST'))
+    fireEvent.click(screen.getByRole('button', { name: 'Move 1 post' }))
     expect(confirmProposal).toHaveBeenCalledWith('campaign:c1', 'pr5')
   })
 
@@ -399,7 +399,7 @@ describe('a move that ran', () => {
     expect(screen.getByText('Moved')).toBeTruthy()
     expect(screen.getByText('Late check-out')).toBeTruthy()
     expect(screen.getByText(/^Sun, Apr 19, .+ → Tue, Apr 14, /)).toBeTruthy()
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u3')
   })
 
@@ -450,7 +450,7 @@ describe('a post fix', () => {
     expect(screen.getByText('story → image-post')).toBeTruthy()
     expect(screen.getByText('Kept caption and media')).toBeTruthy()
     expect(screen.getByText(/^Still scheduled /)).toBeTruthy()
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u1')
   })
 
@@ -519,10 +519,10 @@ describe('a rewritten post (CON-474)', () => {
     expect(screen.getByText('Chef’s table')).toBeTruthy()
     expect(screen.getByText('rewritten')).toBeTruthy()
     expect(screen.getByText('A new version, in Warm host')).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/campaigns/c1/posts/p1',
     )
-    expect(screen.getByText('UNDO')).toBeTruthy()
+    expect(screen.getByText('Undo')).toBeTruthy()
   })
 
   it('is REVISED, with how long it is now against before (CON-484)', async () => {
@@ -577,10 +577,10 @@ describe('a post given another voice (CON-505)', () => {
       screen.getByText('Formal → Plain, the campaign’s voice'),
     ).toBeTruthy()
     expect(screen.getByText(/The copy stays as it is/)).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/campaigns/c1/posts/p1',
     )
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledWith('campaign:c1', 't1', 'u1')
   })
 
@@ -594,8 +594,8 @@ describe('a post given another voice (CON-505)', () => {
     })
     expect(screen.getByText('Post voice changed')).toBeTruthy()
     expect(screen.getByText('Now in Warm host')).toBeTruthy()
-    expect(screen.queryByText('UNDO')).toBeNull()
-    expect(screen.queryByText('OPEN')).toBeNull()
+    expect(screen.queryByText('Undo')).toBeNull()
+    expect(screen.queryByText('Open')).toBeNull()
   })
 
   it('never calls an unnamed voice of its own the campaign’s', async () => {
@@ -606,7 +606,7 @@ describe('a post given another voice (CON-505)', () => {
 
   it('stops offering the post once undone', async () => {
     await show({ voiceChanged: change }, { undoStates: { u1: 'undone' } })
-    expect(screen.queryByText('OPEN')).toBeNull()
+    expect(screen.queryByText('Open')).toBeNull()
   })
 })
 
@@ -659,8 +659,8 @@ describe('in Spanish', () => {
     await i18next.changeLanguage('es')
     await findings()
     expect(screen.getByText('1 impide publicar')).toBeTruthy()
-    expect(screen.getByText('REVISAR DE NUEVO')).toBeTruthy()
-    expect(screen.queryByText('CHECK AGAIN')).toBeNull()
+    expect(screen.getByText('Revisar de nuevo')).toBeTruthy()
+    expect(screen.queryByText('Check again')).toBeNull()
   })
 })
 
@@ -710,7 +710,7 @@ describe('what CON-495 sends', () => {
       ),
     ).toBeTruthy()
     expect(screen.getByText('or Open the post')).toBeTruthy()
-    fireEvent.click(screen.getByText('FIX WITH ASSISTANT'))
+    fireEvent.click(screen.getByText('Fix with assistant'))
     expect(send).toHaveBeenCalledWith(
       'post:p2',
       'Fix this finding from the review.',
@@ -743,7 +743,7 @@ describe('what CON-495 sends', () => {
     })
     await show({ review: quoted })
     expect(
-      screen.getByText('FIX WITH ASSISTANT').closest('button')?.disabled,
+      screen.getByText('Fix with assistant').closest('button')?.disabled,
     ).toBe(true)
     useAssistantStore.setState({ threads: {} })
   })
@@ -848,8 +848,8 @@ describe('what CON-495 sends', () => {
     await loadLocaleResources('es')
     await i18next.changeLanguage('es')
     await show({ review: quoted })
-    expect(screen.getByText('ARREGLAR CON EL ASISTENTE')).toBeTruthy()
+    expect(screen.getByText('Arreglar con el asistente')).toBeTruthy()
     expect(screen.getByText('«Free parking for guests»')).toBeTruthy()
-    expect(screen.queryByText('FIX WITH ASSISTANT')).toBeNull()
+    expect(screen.queryByText('Fix with assistant')).toBeNull()
   })
 })

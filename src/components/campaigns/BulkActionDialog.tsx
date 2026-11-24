@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -225,10 +226,11 @@ function Actions({
   busy?: boolean
   destructive?: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex justify-end gap-2">
       <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
-        CANCEL
+        {t('common.cancel')}
       </Button>
       <Button
         type="button"

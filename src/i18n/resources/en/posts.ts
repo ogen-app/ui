@@ -1,4 +1,10 @@
 export const posts = {
+  preview: {
+    notesHeading: 'Notes',
+  },
+  delete: {
+    keep: 'Keep post',
+  },
   /**
    * The post statuses, as the app names them. Not the server's words: these
    * are read on a card at a glance, so `scheduled` is written as the thing
@@ -75,7 +81,7 @@ export const posts = {
     back: 'Back to posts',
     more: 'More actions',
     downloadMarkdown: 'Download as Markdown',
-    delete: 'DELETE POST',
+    delete: 'Delete post',
     previous: 'Previous post',
     next: 'Next post',
     /** The post's place in the campaign's timeline: "3 of 21". */
@@ -449,9 +455,9 @@ export const posts = {
       placeholder: 'e.g. A barista pouring latte art into a white cup',
       count: '{{length}} / {{limit}} characters',
       over: '{{length}} / {{limit}} characters — {{over}} over',
-      save: 'SAVE',
-      cancel: 'CANCEL',
-      close: 'CLOSE',
+      save: 'Save',
+      cancel: 'Cancel',
+      close: 'Close',
     },
   },
 
@@ -498,7 +504,7 @@ export const posts = {
     heading: 'Sources',
     /** The rail section's title. Its capitals are the copy, as everywhere. */
     sectionTitle: 'SOURCES',
-    add: 'ADD A SOURCE',
+    add: 'Add a source',
     fromBank: 'Choose from content bank',
     upload: 'Upload files',
     webPage: 'Add a web page',
@@ -788,6 +794,9 @@ export const posts = {
    * collapses into a numbered version.
    */
   versions: {
+    create: 'Create new version',
+    restore: 'Restore this version',
+    deleteVersion: 'Delete',
     liveDraft: 'Draft',
     liveDraftTime: 'Unsaved',
     liveDraftNote: 'Not snapshotted yet',
@@ -817,7 +826,7 @@ export const posts = {
    * where the copy lands rather than what happens to this one.
    */
   duplicate: {
-    action: 'DUPLICATE INTO DRAFT',
+    action: 'Duplicate into draft',
     pending: 'Duplicating…',
     success: 'Draft created',
     error: "The post couldn't be duplicated. Try again.",
@@ -893,10 +902,10 @@ export const posts = {
    */
   notes: {
     heading: 'Notes',
-    add: 'ADD NOTE',
-    save: 'SAVE',
-    cancel: 'CANCEL',
-    delete: 'DELETE',
+    add: 'Add note',
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
     edit: 'Edit note',
 
     titlePlaceholder: 'Title (optional)',

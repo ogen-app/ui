@@ -175,7 +175,6 @@ export function ProposalCard({
                     variant={recommended ? 'defaultInverted' : 'outline'}
                     size="sm"
                     disabled={disabled}
-                    className="uppercase tracking-[0.06em]"
                     onClick={() =>
                       // An option that needs a value asks for it below rather
                       // than running without it (CON-484).
@@ -229,9 +228,6 @@ export function ProposalCard({
             size="sm"
             disabled={disabled}
             onClick={() => void confirm(threadId, proposal.id)}
-            // The server's verb arrives in sentence case; the button's caps
-            // are this card's, like CONFIRM's.
-            className={card?.verb ? 'uppercase tracking-[0.06em]' : undefined}
           >
             {card?.verb || t('assistant.proposal.confirm')}
           </Button>
@@ -553,7 +549,7 @@ function Details({
               disabled={disabled}
               onClick={() => onWiden(widen.instruction)}
             >
-              <span className="uppercase">{widen.label}</span>
+              {widen.label}
             </TextAction>
           </span>
         </div>

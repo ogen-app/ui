@@ -131,7 +131,7 @@ describe("a decided idea's record in Spanish", () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'ELIMINAR IDEA' }),
+      screen.getByRole('button', { name: 'Eliminar idea' }),
     ).toBeInTheDocument()
   })
 })
@@ -291,7 +291,7 @@ describe('deleting an idea in Spanish', () => {
     )
     expect(screen.getByText('¿Eliminar «Cera»?')).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'CONSERVAR IDEA' }),
+      screen.getByRole('button', { name: 'Conservar idea' }),
     ).toBeInTheDocument()
     expect(screen.queryByText(/Delete/)).not.toBeInTheDocument()
   })

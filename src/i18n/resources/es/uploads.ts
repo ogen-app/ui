@@ -12,9 +12,9 @@ export const uploads: Translation['uploads'] = {
   browse: 'Suelta los archivos aquí o haz clic para elegirlos',
   remove: 'Quitar {{name}}',
   failed: 'No se ha podido subir',
-  cancel: 'CANCELAR',
-  submit: 'SUBIR',
-  submitCount: 'SUBIR ({{n}})',
+  cancel: 'Cancelar',
+  submit: 'Subir',
+  submitCount: 'Subir ({{n}})',
   dropInto: 'Añadir a {{scope}}',
   duplicate: 'Ya está en el banco de contenido como «{{title}}»',
 

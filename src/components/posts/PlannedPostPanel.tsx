@@ -5,6 +5,7 @@ import { usePostIdeas } from '@/hooks/useIdeaPosts'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { Post } from '@/types/posts'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * What a planned post is waiting for (CON-449): it holds a title and its
@@ -77,9 +78,9 @@ export function BuiltFromIdeas({ postId }: { postId: string }) {
   if (list.length === 0) return null
   return (
     <section className="flex flex-col bg-primary px-10 py-6">
-      <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-tertiary-foreground">
+      <SmallHeading as="h2" className="mb-2">
         {t('ideas.lifecycle.builtFrom', { count: list.length })}
-      </h2>
+      </SmallHeading>
       <ul className="flex flex-col">
         {list.map((idea) => (
           <li

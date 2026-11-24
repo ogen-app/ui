@@ -61,7 +61,7 @@ export const integrations: Translation['integrations'] = {
       failed:
         'No se pudo desconectar el plugin. Inténtalo de nuevo en un momento.',
       keep: 'Mantener conectado',
-      confirm: 'DESCONECTAR',
+      confirm: 'Desconectar',
       succeeded: '{{label}} desconectado',
     },
   },

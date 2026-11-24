@@ -205,7 +205,7 @@ keep it accurate when these rules change.
   since CON-478) are `RepairResults` — and so are the campaign pack's
   `briefReview` / `postsReview`, which answer in the review's shape. A
   finding offers 0..N fixes — the first as its button, the rest as "or …",
-  all in one bordered-capitals style — and says what it costs (`detail`); its
+  all in one bordered style — and says what it costs (`detail`); its
   number is amber when it `blocksPublishing`. **A fix whose offer carries its
   own `card` or `options`** (a delete naming its posts, a type put back, a
   move's free slots) opens that offer under the row through `ProposalCard`

@@ -1,4 +1,20 @@
 export const campaigns = {
+  accounts: {
+    groups: {
+      available_other: 'Available accounts',
+      available_one: 'Available account',
+      inactive: 'Inactive',
+      active: 'Active',
+    },
+    use: 'Use',
+    activate: 'Activate',
+  },
+  platforms: {
+    deactivateAll: 'Deactivate all',
+  },
+  create: {
+    submit: 'Create campaign',
+  },
   /** The posts list's and calendar's selection bar (CON-482). */
   bulk: {
     selected_one: '{{formatted}} selected',
@@ -11,11 +27,11 @@ export const campaigns = {
     status: 'Status',
     unschedule: 'Unschedule',
     delete: 'Delete',
-    clear: 'CLEAR',
+    clear: 'Clear',
     deleted_one: '{{formatted}} post deleted',
     deleted_other: '{{formatted}} posts deleted',
   },
-  add: 'ADD CAMPAIGN',
+  add: 'Add campaign',
   error: 'Failed to load campaigns',
   /** The list's rows: the Overview in one row each, grouped by stage. */
   list: {
@@ -76,7 +92,7 @@ export const campaigns = {
   archivedSection: 'Archived campaigns',
   archivedError: 'Failed to load archived campaigns',
   archivedOn: 'Archived {{archivedOn}}',
-  unarchive: 'UNARCHIVE',
+  unarchive: 'Unarchive',
   archivedEmpty:
     'Nothing is archived. Archiving a campaign takes it off the list without deleting anything: its posts, schedule and content stay exactly as they are.',
   // The two campaign section pages the drill-down left behind Strategy and
@@ -125,7 +141,7 @@ export const campaigns = {
    */
   type: {
     label: 'Campaign type',
-    change: 'CHANGE',
+    change: 'Change',
     cancel: 'Cancel',
     locked_one:
       "Locked — {{count}} post is planned against this type's phases.",

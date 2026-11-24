@@ -97,7 +97,7 @@ describe('the week card (CON-480)', () => {
     ).toContain('text-warning-ink')
     expect(screen.getByText('Instagram needs reconnecting')).toBeTruthy()
     expect(
-      screen.getAllByText('OPEN').map((a) => a.getAttribute('href')),
+      screen.getAllByText('Open').map((a) => a.getAttribute('href')),
     ).toEqual(['/activity/2026-04-13', '/activity/2026-04-16'])
     expect(
       screen.getByText('Tue, Wed, Fri, Sat, and Sun had nothing.'),
@@ -111,7 +111,7 @@ describe('the week card (CON-480)', () => {
     await show({
       activity: { ...week, from: '2026-04-16', to: '2026-04-16', days: [] },
     })
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/activity/2026-04-16',
     )
   })
@@ -259,7 +259,7 @@ describe('the weekly report', () => {
     expect(
       screen.getByText('Invite them first, from Settings › People'),
     ).toBeTruthy()
-    expect(screen.getByText('OPEN').getAttribute('href')).toBe(
+    expect(screen.getByText('Open').getAttribute('href')).toBe(
       '/workspace-settings',
     )
   })
@@ -429,7 +429,7 @@ describe('the connections', () => {
     expect(screen.getByText('Signed out')).toBeTruthy()
     expect(screen.getByText('since Apr 16')).toBeTruthy()
     expect(screen.getByText('2 scheduled posts')).toBeTruthy()
-    fireEvent.click(screen.getByText('RECONNECT INSTAGRAM'))
+    fireEvent.click(screen.getByText('Reconnect Instagram'))
     expect(runUiAction).toHaveBeenCalledWith('workspace', 't1', {
       type: 'open_connect',
       screen: 'settings',
@@ -464,7 +464,7 @@ describe('an auto-publish change', () => {
         'Posts scheduled from now on follow it; the 3 already scheduled keep how they were scheduled.',
       ),
     ).toBeTruthy()
-    fireEvent.click(screen.getByText('UNDO'))
+    fireEvent.click(screen.getByText('Undo'))
     expect(undo).toHaveBeenCalledWith('workspace', 't1', 'u9')
   })
 })
@@ -480,7 +480,7 @@ describe('in Spanish', () => {
     await show({ activity: week, setup })
     expect(screen.getByText('ideas decididas')).toBeTruthy()
     expect(screen.getByText('Sesión cerrada')).toBeTruthy()
-    expect(screen.getByText('RECONECTAR INSTAGRAM')).toBeTruthy()
+    expect(screen.getByText('Reconectar Instagram')).toBeTruthy()
     expect(screen.queryByText('ideas decided')).toBeNull()
     expect(screen.queryByText('Signed out')).toBeNull()
   })
