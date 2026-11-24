@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { t } from '@/test/i18n'
 import {
   demoLearnings,
@@ -22,8 +22,8 @@ import { buildLearningsView } from '@/lib/analyticsLearningsView'
  * produce, and the first person to notice would be whoever wires up the real
  * endpoint and finds the card was never tested against it.
  *
- * These run with `DEV_TOOLS` on, because vitest runs in dev mode — which is the
- * only mode where any of this exists at all.
+ * These run with `DEV_TOOLS` on, because vitest runs in dev mode — except the
+ * block that loads the module as production serves it, with dev tools off.
  */
 
 const NOW = new Date('2026-09-02T14:00:00Z')
@@ -40,6 +40,31 @@ describe('the mode is off unless it is asked for', () => {
     // because a demo that engaged by default would silently replace every
     // dashboard read in dev.
     await expect(fetchAnalyticsOverview({ window: '7d' })).rejects.toBeDefined()
+  })
+})
+
+describe('with dev tools off, as production serves it', () => {
+  afterEach(() => {
+    delete window.__OGEN_CONFIG__
+    vi.unstubAllEnvs()
+    localStorage.clear()
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('ignores a stored mode and a link, and serves the API', async () => {
+    localStorage.setItem('ogen.analyticsDemo', 'demo')
+    window.history.replaceState(null, '', '/analytics?analytics=demo')
+    vi.stubEnv('DEV', false)
+    window.__OGEN_CONFIG__ = {}
+    vi.resetModules()
+    const mod = await import('./analytics.demo')
+
+    mod.bootstrapAnalyticsDemo()
+    mod.setDemoMode('demo')
+
+    expect(mod.demoMode()).toBe('live')
+    expect(localStorage.getItem('ogen.analyticsDemo')).toBe('demo')
+    expect(window.location.search).toBe('?analytics=demo')
   })
 })
 

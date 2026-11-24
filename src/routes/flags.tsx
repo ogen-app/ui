@@ -12,11 +12,10 @@ import { DEV_TOOLS } from '@/config/flagOverrides'
  * below.
  *
  * The guard is the same shape the feature routes use — with `DEV_TOOLS` off the
- * URL behaves as though the page does not exist. What is different here is that
- * it also *doesn't* exist: `DEV_TOOLS` is a build-time constant, so in a
- * production build the ternary folds to `() => null`, the `import()` becomes
- * unreachable, and the panel's chunk is never emitted. All that survives is
- * this redirect.
+ * URL behaves as though the page does not exist. The panel's chunk is in every
+ * image (one image serves dev and production, CON-518), but behind `lazy()`:
+ * with `DEV_TOOLS` off the `import()` is never reached, so production never
+ * fetches it, and the overrides it would write are never read anyway.
  */
 const FlagsPanel = DEV_TOOLS
   ? lazy(() => import('@/devtools/FlagsPanel'))

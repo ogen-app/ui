@@ -68,9 +68,9 @@ http://localhost:9002/campaigns?ff=tasks,-ideas   # `-` forces off, ?ff= clears
 localStorage — nobody else on the deploy is affected and nothing is written to
 the workspace — and a badge above the assistant trigger shows when any are on.
 
-**None of this exists in a production build.** It is compiled in only when
-`VITE_DEV_TOOLS=1` is set at build time; without it the storage key is inert and
-the panel's chunk is not emitted. `pnpm dev` always has it. See
+**None of this works in production.** It is live only where the container
+sets `DEV_TOOLS=1` (the dev service); elsewhere the storage key is never read
+and the panel's chunk is never fetched. `pnpm dev` always has it. See
 [technical-decisions](docs/technical-decisions.md#staging-flag-overrides).
 
 ### Platform API keys (Zernio / Anthropic / Gemini)
@@ -101,16 +101,26 @@ All requests use app-relative `/api/...` paths routed through `apiUrl()`
 
 `Dockerfile` builds the SPA and serves it with Caddy; `Caddyfile` serves the
 static bundle with client-side-routing fallback and reverse-proxies `/api` to
-the backend (same-origin → no CORS). `railway.json` deploys it via the
-Dockerfile.
+the backend (same-origin → no CORS).
 
-Set on the Railway service:
+**One image for development and production (CON-518).** Every green push to
+`develop` builds `ghcr.io/ogen-app/ui:<build>` (the commit count), smoke-tests
+it (`scripts/smoke-image.sh`), pushes it and asks `ogen-release` to deploy it.
+Nothing environment-specific is compiled in: at container start
+`docker/entrypoint.sh` writes `/env.js` from the variables below — those four
+keys only, so no other variable on the service can reach the browser — and the
+page reads it before the bundle runs (`src/config/runtimeConfig.ts`).
 
-| Variable | Value | Notes |
-|---|---|---|
-| `API_ORIGIN` | `api.railway.internal:8080` | Backend's private address (API service name + its `ADDR` port). |
-| `PORT` | injected by Railway | Caddy listens on it automatically. |
-| `VITE_DEV_TOOLS` | `1` — **staging only** | Build variable. Enables the per-browser flag overrides and `/flags` (above). Leave unset in production: unset is off, and off means the code is not in the bundle. |
+Container variables on the Railway service (runtime, not build variables):
+
+| Variable | Development | Production | Notes |
+|---|---|---|---|
+| `API_ORIGIN` | `api.railway.internal:8080` | same | Backend's private address (API service name + its `ADDR` port). Caddy only — never sent to the browser. |
+| `PORT` | injected by Railway | same | Caddy listens on it automatically. |
+| `DEV_TOOLS` | `1` | unset | Turns on the per-browser flag overrides and `/flags` (above). Anything but `1` is off. |
+| `SENTRY_ENVIRONMENT` | `development` | `production` | Sentry environment tag. Defaults to `development`. |
+| `SENTRY_DSN` | set | set | Empty ⇒ telemetry off. |
+| `SENTRY_TRACES_SAMPLE_RATE` | e.g. `0.1` | e.g. `0.1` | Head sample rate, `0`–`1`. Defaults to `0.1`. |
 
 Add the custom domain (e.g. `app.getogen.com`) on the service. Keeping it on the
 same registrable domain as the API keeps cookies same-site. See the API deploy
@@ -118,22 +128,21 @@ runbook (ogen CON-95) for the backend side.
 
 ### Error monitoring & tracing (Sentry, CON-304)
 
-Off unless a DSN is set (fail-open) — dev and any build without `VITE_SENTRY_DSN`
-behave exactly as before. When on, the SDK captures unhandled UI errors and
+Off unless a DSN is set (fail-open) — `pnpm dev` and any container without
+`SENTRY_DSN` behave exactly as before. When on, the SDK captures unhandled UI errors and
 React render crashes, starts a browser trace per page load / navigation, and
 propagates `sentry-trace`/`baggage` **to the API origin only** so the browser
 span is the parent of the server trace. No session replay; request bodies, query
 strings and PII are scrubbed — only the user id and a `tenant_id` tag are sent.
 
-Build variables (`Dockerfile` args → Railway build variables):
+The DSN, environment and sample rate are container variables (above). What is
+still decided at build time — CI passes these, once per image:
 
-| Variable | Default | Notes |
+| Build input | CI source | Notes |
 |---|---|---|
-| `VITE_SENTRY_DSN` | empty | Empty ⇒ telemetry off. Set to turn it on. |
-| `VITE_SENTRY_ENVIRONMENT` | `production` | Sentry environment tag. |
-| `VITE_SENTRY_TRACES_SAMPLE_RATE` | `0.1` | Head sample rate, `0`–`1`. Errors are always sent. |
-| `VITE_APP_RELEASE` | empty | Release tag — use the commit SHA, matching the API's `SENTRY_RELEASE`. |
-| `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT` | empty | **Build-time only**, for source-map upload. No `VITE_` prefix, so never bundled; the build stage is discarded before the runtime image. Empty ⇒ no upload and no maps emitted. |
+| `VITE_APP_RELEASE` | the commit SHA | Release tag, matching the API's `SENTRY_RELEASE`. One image is one release. |
+| `SENTRY_ORG` / `SENTRY_PROJECT` | repo variables | For source-map upload. |
+| `sentry_auth_token` | repo secret `SENTRY_AUTH_TOKEN` | A BuildKit secret, not a build arg, so it stays out of the image history and the cache. Missing ⇒ no upload and no maps emitted. |
 
 Cross-origin deploys (`VITE_API_URL` set) also need the API to allow the
 `sentry-trace` and `baggage` request headers via CORS — see ogen CON-303. The
@@ -144,4 +153,8 @@ Locally:
 ```bash
 docker build -t ogen-ui .
 docker run --rm -p 8080:8080 -e API_ORIGIN=host.docker.internal:9001 ogen-ui
+# …as the dev deploy runs it: dev tools on, Sentry tagged development
+docker run --rm -p 8080:8080 -e API_ORIGIN=host.docker.internal:9001 \
+  -e DEV_TOOLS=1 -e SENTRY_ENVIRONMENT=development ogen-ui
+scripts/smoke-image.sh ogen-ui   # what CI checks before every push
 ```

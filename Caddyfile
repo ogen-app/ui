@@ -27,6 +27,12 @@
 	@secureAccount path /auth/secure-account /auth/secure-account/
 	header @secureAccount Referrer-Policy "no-referrer"
 
+	# The deploy's configuration, written at container start (CON-518). Never
+	# cached: a cached copy would keep a browser on the previous deploy's
+	# settings — Sentry environment, dev tools — after the variables change.
+	@envjs path /env.js
+	header @envjs Cache-Control "no-store"
+
 	# SPA: static assets, falling back to index.html for client-side routes.
 	handle {
 		root * /srv

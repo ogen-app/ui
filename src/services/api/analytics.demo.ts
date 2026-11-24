@@ -40,9 +40,9 @@ import type {
  *
  * ## Why it cannot reach production, and why that matters more here
  *
- * The same build-time gate as the flag overrides: `DEV_TOOLS` folds to a
- * literal `false` in a production build, every branch below collapses, and
- * `demoMode()` becomes the constant `'live'`. That gate is doing more work here
+ * The same gate as the flag overrides: with `DEV_TOOLS` off — the production
+ * container never sets it — the stored mode is never read, every writer
+ * returns early, and `demoMode()` is always `'live'`. That gate is doing more work here
  * than it does for a flag. A stubbed *tier* that leaked would show the wrong
  * plan; stubbed *analytics* that leaked would show a workspace invented numbers
  * about its own posts, indistinguishable from real ones, and someone would act

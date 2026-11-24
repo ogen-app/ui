@@ -176,6 +176,8 @@ function signature(view: ViewContext): string {
   const w = view.window
   return [
     view.screen,
+    // Another campaign's tab is another place (CON-498), window or not.
+    view.scope.kind === 'campaign' ? view.scope.id : '',
     view.focus?.id ?? '',
     selection ? `${selection.matching ? 'all' : ''}${selection.count}` : '',
     // A new period, platform or campaign on the dashboard is somewhere else

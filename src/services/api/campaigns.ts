@@ -19,11 +19,15 @@ const TYPES_BASE = '/api/campaign_types'
  * excludes archived campaigns from the default read, so an "archived" flag on
  * a row that was never sent could only ever be false.
  */
-export function listCampaigns(archived = false): Promise<Campaign[]> {
-  return apiJson<Campaign[]>(
+export async function listCampaigns(archived = false): Promise<Campaign[]> {
+  // A workspace with no campaigns has been answered `null` rather than `[]`
+  // (a nil slice on the server), and every reader takes this for an array —
+  // the top bar's switcher reads its length on every screen (CON-521).
+  const campaigns = await apiJson<Campaign[] | null>(
     archived ? `${BASE}?archived=true` : BASE,
     'Unable to fetch campaigns',
   )
+  return campaigns ?? []
 }
 
 export function getCampaign(id: string): Promise<Campaign> {

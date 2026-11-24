@@ -8,7 +8,7 @@ import { useAssistantStore } from '@/stores/assistantStore'
 import { usePlatformCatalog, usePlatformViews } from '@/hooks/usePlatforms'
 import { focusedAccount } from '@/lib/platformFocus'
 import {
-  destinationFor,
+  sameDestination,
   windowCampaign,
   type UIAction,
 } from '@/lib/assistantUiActions'
@@ -160,8 +160,9 @@ function folds(
     Boolean(first.before) &&
     Boolean(second.before) &&
     // Only a navigate to where the window lands: one into Assets followed by
-    // a window on the dashboard is two moves.
-    destinationFor(first.action)?.to === destinationFor(second.action)?.to
+    // a window on the dashboard is two moves, and so is one into a
+    // campaign's tab followed by a window over another campaign's.
+    sameDestination(first.action, second.action)
   )
 }
 
