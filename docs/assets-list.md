@@ -204,7 +204,7 @@ room instead.
     last, then oldest first, as the server picks `next_idea`). Each idea is
     its score on a track (`FitTrack`: a pill on a 64px line from pale sage at
     100 to pale sand at 10, its 2px ring the line's colour where it sits, a
-    dashed empty line when unscored), its title at 12.5px, its verdict as a
+    dashed empty line when unscored), its title at 12px (`text-xs`), its verdict as a
     mark alone on the right (the pill's marks and colours; a postponed idea
     whose day has come is undecided again; the word is the mark's name and
     tooltip), and up to two lines of its note. The list stops at five and a
