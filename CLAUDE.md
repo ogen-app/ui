@@ -110,16 +110,16 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   platform gating). The server is the source of truth; keep these in sync when
   the backend changes.
 - **Every user-facing string is a catalogue entry — never a literal in a
-  component.** New UI adds its keys to `src/i18n/resources/en.ts` *and* its
-  translation to every other catalogue, and reads them through `t()`. This
+  component.** New UI adds its keys to its section's file in `src/i18n/resources/en/`
+  *and* its translation to the same file in every other locale's folder, and reads them through `t()`. This
   covers all of it, not just the obvious labels: button and menu text, headings,
   placeholders, empty and error states, toast and validation messages, tooltips,
   and the accessible strings nobody sees — `aria-label`, `title`, `alt`, visually
   hidden text. Editing a screen that still holds hard-coded English? Move the
   strings you touch into the catalogue rather than adding a literal beside them.
   Genuinely exempt: developer-facing text (`console.*`, thrown `Error` messages,
-  test fixtures), `src/devtools/` (staging-only screens that a production build
-  compiles out — see `docs/technical-decisions.md#staging-flag-overrides`), and
+  test fixtures), `src/devtools/` (dev-deploy-only screens that production never
+  loads — see `docs/technical-decisions.md#staging-flag-overrides`), and
   `i18n/bootMessages.ts` — see the next bullet.
 - **All API calls go through `services/api/`** with `credentials: "include"`.
   Use `apiJson`/`apiVoid` from `http.ts` unless a resource needs progress
@@ -190,7 +190,7 @@ Loaded automatically in `src/components/smartFilter`, `src/components/content`, 
 - The Campaigns list reads one batched query, never one per card.
 - The asset list is the server's answer to the URL, a page at a time.
 - The Ideas list is the server's answer to the URL too.
-- A campaign's posts list and calendar read one filter.
+- The posts lists read one filter, a campaign's and the workspace's; the calendars have none for now.
 - The Ideas and Assets lists are cards on `listCards`' rules: tabs in the page header, and one pinned line for the filter, the arrangement and the selection.
 
 ### Posts — [`docs/conventions/posts.md`](./docs/conventions/posts.md)
@@ -215,7 +215,7 @@ Loaded automatically in `src/components/content`, `src/components/uploads`.
 
 - Video uploads take a different path from images and PDFs.
 - An asset only opens in the editor if `assetScreen` says so.
-- The asset page is two columns, and those screens are its Source tab.
+- The asset page is the reading, then the thing read, and those screens are its Source card.
 - An asset update is presence-aware, and a campaign's is not.
 - A bank image reaches a post as a copy, never a reference.
 - Tags are filed over a selection, not on a row.
@@ -240,7 +240,7 @@ Loaded automatically in `src/components/campaigns`, `src/components/strategy`, `
 
 Loaded automatically in `src/i18n`.
 
-- How the catalogues work: `en.ts` is the shape, keys name the place, plurals are written out whole, and anything that bakes in copy takes `t`.
+- How the catalogues work: one file per section in each locale's folder, English is the shape, keys name the place, plurals are written out whole, and anything that bakes in copy takes `t`.
 - A conversion is only proved by rendering in another language.
 - A language is released by one boolean.
 - Dates, times, numbers and joined lists go through `lib/intl.ts`.

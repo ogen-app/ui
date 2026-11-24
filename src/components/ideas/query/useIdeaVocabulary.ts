@@ -442,8 +442,6 @@ export function useIdeaVocabulary({
     () => ({
       fields,
       order: SENTENCE_ORDER,
-      showingKey: 'ideas.sentence.showing',
-      showingAllKey: 'ideas.sentence.showingAll',
       clause,
       tokenText,
       options,

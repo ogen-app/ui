@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   EMPTY_POST_FILTER,
+  parseCampaignPostListSearch,
   parsePostListSearch,
   postFilterFromSearch,
+  postGroupingFromSearch,
   postRequestParams,
   postTokensOf,
   searchFromPostFilter,
@@ -123,5 +125,39 @@ describe('the filter, its tokens and its request', () => {
     expect(
       withoutPostToken(filter, { field: 'status', negated: true }).status,
     ).toEqual({ any: ['draft'], not: [] })
+  })
+})
+
+describe('the workspace’s campaign field and the grouping', () => {
+  it('asks the workspace endpoint for campaigns, kept and left out', () => {
+    const search = parsePostListSearch({
+      campaign_id: 'c1,c2',
+      campaign_id_not: 'c3',
+    })
+    expect(postRequestParams(postFilterFromSearch(search), 'UTC')).toEqual({
+      campaign_id: 'c1,c2',
+      campaign_id_not: 'c3',
+    })
+  })
+
+  it('drops the campaign on a campaign’s own pages, which the address names', () => {
+    expect(
+      parseCampaignPostListSearch({
+        campaign_id: 'c1',
+        status: 'draft',
+        group: 'campaign',
+      }),
+    ).toEqual({ status: 'draft' })
+  })
+
+  it('keeps a grouping it knows, outside the request', () => {
+    const search = parsePostListSearch({ group: 'status', status: 'draft' })
+    expect(postGroupingFromSearch(search)).toBe('status')
+    expect(postRequestParams(postFilterFromSearch(search), 'UTC')).toEqual({
+      status: 'draft',
+    })
+    expect(postGroupingFromSearch(parsePostListSearch({ group: 'tag' }))).toBe(
+      'none',
+    )
   })
 })

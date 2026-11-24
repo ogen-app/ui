@@ -285,11 +285,18 @@ without a round-trip. **These mirror specific Go files and must be kept in sync*
   `format` / `format:check` (Prettier); `knip` (report-only).
 - **`tsconfig.json`** — strict, `noUnusedLocals/Parameters`,
   `allowImportingTsExtensions` (imports use explicit `.ts`/`.tsx`), `@/*` alias.
-- **`VITE_DEV_TOOLS`** — the one build-time *behaviour* switch. `"1"` compiles
-  in the staging feature-flag overrides and `src/devtools/`; anything else, and
-  the constant folds to `false`, the reader collapses and the panel's chunk is
-  never emitted. Set it on the staging deploy only. See
+- **One image, configured at start (CON-518).** What differs between
+  development and production is not compiled in: `docker/entrypoint.sh` writes
+  `/env.js` (`window.__OGEN_CONFIG__`) from an allow-list of the container's
+  environment — `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_TRACES_SAMPLE_RATE`,
+  `DEV_TOOLS` — and `index.html` loads it before the bundle. Caddy serves it
+  `no-store`. `config/runtimeConfig.ts` reads it, falling back to the build's
+  `VITE_*` for `pnpm dev` and tests (`public/env.js` is an empty object).
+  `DEV_TOOLS=1` turns on the feature-flag overrides and `src/devtools/`; set it
+  on the dev service only. See
   [technical-decisions](./technical-decisions.md#staging-flag-overrides).
+  Compiled in still: `VITE_APP_RELEASE` (one image is one release) and
+  `VITE_API_URL`.
 
 > **Quality tooling:** ESLint (flat config, `eslint.config.js`) and Prettier
 > (`.prettierrc`) are configured, stylelint is removed, and CI gates every PR

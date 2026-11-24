@@ -140,6 +140,7 @@ describe('SourceChip', () => {
     expect(cite).toHaveBeenCalledWith(
       'Sheet "Pipeline" rows 10-24',
       'EMEA first',
+      expect.any(HTMLElement),
     )
   })
 

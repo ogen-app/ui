@@ -71,6 +71,14 @@ describe('the campaign lifecycle', () => {
     ).toBe(true)
   })
 
+  it('reads a null list as no campaigns, for both sets', async () => {
+    stubFetch(jsonResponse(200, null))
+    await expect(listCampaigns()).resolves.toEqual([])
+
+    stubFetch(jsonResponse(200, null))
+    await expect(listCampaigns(true)).resolves.toEqual([])
+  })
+
   it('archives and unarchives by POST, and expects no body back', async () => {
     const fetchMock = stubFetch(new Response(null, { status: 204 }))
 

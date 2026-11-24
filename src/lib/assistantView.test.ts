@@ -193,6 +193,34 @@ describe('the analytics window (CON-479)', () => {
       })),
     ).toBe('Now on Analytics · linkedin')
   })
+
+  it('draws a marker between a campaign’s tab and the dashboard, and between two campaigns’ tabs (CON-498)', () => {
+    const tab = (id: string, w?: ViewContext['window']) =>
+      view({
+        screen: 'campaign.analytics',
+        scope: { kind: 'campaign', id },
+        ...(w ? { window: w } : {}),
+      })
+    const named = (v: ViewContext) => ({
+      item: v.window?.campaignId ?? v.scope.kind,
+    })
+    const spring = tab('c1', { ...window, campaignId: 'c1' })
+    const dashboard = view({
+      screen: 'analytics',
+      window: { ...window, campaignId: 'c1' },
+    })
+    expect(markerText(t, spring, spring)).toBeNull()
+    expect(markerText(t, dashboard, spring, named)).toBe(
+      'Now on Analytics · c1',
+    )
+    expect(markerText(t, spring, dashboard)).not.toBeNull()
+    expect(
+      markerText(t, tab('c2', { ...window, campaignId: 'c2' }), spring),
+    ).not.toBeNull()
+    // Before either tab has sent its window, the campaign still tells them apart.
+    expect(markerText(t, tab('c2'), tab('c1'))).not.toBeNull()
+    expect(markerText(t, tab('c1'), tab('c1'))).toBeNull()
+  })
 })
 
 describe('an idea open on the list (CON-481)', () => {

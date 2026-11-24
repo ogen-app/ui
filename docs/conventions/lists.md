@@ -46,10 +46,10 @@ keep it accurate when these rules change.
   filters are built from **one catalogue sentence per field and operator**
   over a per-list model and vocabulary (`lib/smartFilter`; CON-391 for Ideas,
   CON-392 for Assets), clauses in a fixed order — never a clause assembled
-  from fragments. On the posts list they still read as a sentence
-  (`FilterSentence`); on the card lists each clause is a **pill**
-  (`FilterPills`, `inline`) in the list's head line, after Filter, with the
-  sentence's own add field and clause panels; a choice of three or more reads
+  from fragments. On every list — Ideas, Assets, the posts lists — each clause is a **pill** (`FilterPills`, `inline`) in the
+  list's head line, after Filter, with `+ Add` and the clause panels
+  (`FilterParts`); with nothing chosen the line is Filter alone, never
+  "Showing all …"; a choice of three or more reads
   as its first value and how many more ("that are CSVs +9"), its full words
   the pill's name and tooltip.
   Both lists have smart groups through the same `SavedViewsMenu` and
@@ -86,12 +86,19 @@ keep it accurate when these rules change.
   `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
   `idea_read_only`); only its campaign may change.
 
-- **A campaign's posts list and calendar read one filter** (CON-472):
-  `lib/postFilter`, the endpoint's own params (`status`, `platform` — the
-  post's platform sqid —, `post_type`, `scheduled=yes|no`,
+- **The posts lists read one filter** (CON-472), a campaign's and the
+  workspace's alike: `lib/postFilter`, the endpoints' own params (`status`,
+  `platform` — the post's platform sqid —, `post_type`, `scheduled=yes|no`,
   `scheduled_after`/`scheduled_before` as days, `tz` only beside a date), in
-  the address of both pages and carried across WEEK/MONTH and the bare
-  calendar redirect. The sentence is the Ideas one on a third model; the
+  the list's address. **The calendars have no filter for now** (2026-11-23):
+  they draw every post, their address carries none, and an assistant
+  `set_filter` on `campaign.calendar` lands on the campaign's list
+  (`destinationFor`). `GET /api/posts` takes the same params plus
+  `campaign_id`, so the workspace's pages add a Campaign field
+  (`campaign_id`/`campaign_id_not`), offering the live campaigns and every
+  platform and post type they take; a campaign's list drops it from the
+  address (`parseCampaignPostListSearch`), which already names the campaign. The pills are the Assets ones on a third model
+  (`PostsFilterBar`: Filter, then the pills, ending "3 of 21"); the
   endpoint answers the whole match, unpaged and without facets, so the
   values carry no counts and the table still sorts on the client. A filtered
   read nests under `campaignPostsKey`, so post writes refresh it, but only
@@ -102,8 +109,7 @@ keep it accurate when these rules change.
   through `CalendarSelectionContext` — as the selection. The calendar keeps
   its toolbar while posts are ticked; the bulk bar floats over the grid's
   foot, and a month day too busy for cards says how many of its posts are
-  ticked (CON-486). The sentence counts the days on screen, idea slots hide
-  under a filter, and the Not scheduled panel reads the same filter.
+  ticked (CON-486).
   Foundation's facts tick the same way (`useLibrarySelection`), as
   something to ask about: the bar clears and REMOVEs, asking first through
   `RemoveFactsDialog` — the row's trash asks the same way. A fact selection
@@ -120,12 +126,17 @@ keep it accurate when these rules change.
   screen (CON-486); the posts list marks a filter the assistant set until it
   changes (`viewContextStore.assistantFilter`).
 
-- **The posts list is a header, a sentence and a table — nothing between.**
+- **The posts list is a header, a filter line and a table — nothing between.**
   Both lists, a campaign's and the workspace's, sit in `PostsListFrame`:
   ADD POST in the header's top-right (on the workspace list it asks which
-  campaign in a modal), then the filter sentence, then the table. There is no
-  count line: the sentence says "3 of 21" while a filter narrows the list and
-  nothing when it doesn't. The bulk bar floats over the list's foot, as on the
+  campaign in a modal), then Filter and its pills, then the table. There is
+  no count line: the pills end "3 of 21" while a filter narrows the list, and
+  with none there are no pills to say anything. **Group by** ends the line
+  (`PostsGroupMenu`): by status, in the order a post moves through them, or —
+  on the workspace's list — by campaign, by name; `group` sits in the address
+  beside the filter, survives it, and is never sent. The table draws a head
+  per group (`VirtualTable`'s `groupOf`), which folds it; the rows under each
+  keep the table's sort. The bulk bar floats over the list's foot, as on the
   calendar. **What is wrong with a post is one column of marks** after Status
   (`lib/postWarnings`): read off the list payload alone — a failed or missed
   publish, no platform, no account it can publish as, outside its campaign's

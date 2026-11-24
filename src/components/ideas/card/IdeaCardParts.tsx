@@ -1,25 +1,7 @@
-import { HugeiconsIcon } from '@hugeicons/react'
 import { useTranslation } from 'react-i18next'
-import { CaretDownIcon } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { VERDICT_ICON } from '@/components/content/verdictIcons'
-import { HORIZON_KEYS, VERDICTS } from '@/components/ideas/verdicts'
 import { cn } from '@/lib'
-import type { VerdictKey } from '@/lib/assetList'
 import { FIT_CRITERIA, fitLevelStrength, fitRows } from '@/lib/ideaFit'
-import {
-  POSTPONE_HORIZONS,
-  isWaiting,
-  postponeUntil,
-  type Idea,
-  type IdeaVerdict,
-} from '@/lib/ideas'
+import { isWaiting, type Idea, type IdeaVerdict } from '@/lib/ideas'
 import { formatDate } from '@/lib/intl'
 
 /**
@@ -33,36 +15,6 @@ export type Answer = (
   verdict: IdeaVerdict | null,
   remindAt?: string | null,
 ) => void
-
-/**
- * The verdict as its mark alone, in the pill's colours — undecided teal too,
- * which used to have no mark. The word is the mark's name and its tooltip.
- */
-export function VerdictMark({ verdict }: { verdict: VerdictKey }) {
-  const { t } = useTranslation()
-  const label = t(`assetInsights.ideas.pile.${verdict}`)
-  return (
-    <span
-      role="img"
-      aria-label={label}
-      title={label}
-      className={cn(
-        'flex h-6 items-center',
-        verdict === 'waiting' && 'text-accent',
-        verdict === 'yes' && 'text-positive',
-        (verdict === 'later' || verdict === 'no') &&
-          'text-secondary-foreground',
-      )}
-    >
-      <HugeiconsIcon
-        icon={VERDICT_ICON[verdict]}
-        size={16}
-        strokeWidth={1.8}
-        aria-hidden
-      />
-    </span>
-  )
-}
 
 /** A section of the opened row: a pale rule, then a small heading. */
 export function Part({
@@ -142,7 +94,9 @@ export function FitSection({
           {t(`assetInsights.ideaFit.cap.${cap}`)}
         </p>
       ))}
-      <ul className="flex flex-col gap-1.5">
+      {/* By the card's own width: in a side column the reason goes under its
+          criterion rather than into a strip beside the rating. */}
+      <ul className="@container flex flex-col gap-1.5">
         {rows.map((row) => {
           const name = KNOWN_CRITERIA.has(row.key)
             ? t(`assetInsights.ideaFit.criterion.${row.key as CriterionKey}`)
@@ -155,7 +109,7 @@ export function FitSection({
                 'grid items-start gap-x-3 text-[12.5px]/[18px]',
                 compact
                   ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-0.5'
-                  : 'grid-cols-[8.5rem_auto_minmax(0,1fr)]',
+                  : 'grid-cols-[minmax(0,1fr)_auto] gap-y-0.5 @md:grid-cols-[8.5rem_auto_minmax(0,1fr)] @md:gap-y-0',
               )}
             >
               <span className="text-foreground">{name}</span>
@@ -192,7 +146,7 @@ export function FitSection({
               <span
                 className={cn(
                   'text-secondary-foreground',
-                  compact && 'col-span-2',
+                  compact ? 'col-span-2' : 'col-span-2 @md:col-span-1',
                 )}
               >
                 {row.hint && (
@@ -217,119 +171,6 @@ export function FitSection({
     >
       {body}
     </Part>
-  )
-}
-
-/**
- * The answer, last — after everything that informs it. Yes / Not now / No as
- * one joined button group on the inbox's own rules: Yes
- * and No are one click and no confirmation, both being reversible; Not now
- * asks when, because a postponement that names no day is an archive. Choosing
- * another button changes the answer; the record line under the group says
- * when it was given and offers the way back.
- */
-export function AnswerGroup({
-  idea,
-  now,
-  onAnswer,
-  pending = false,
-  trailing,
-  record,
-}: {
-  idea: Idea
-  now: Date
-  onAnswer: Answer
-  /** While an answer is on its way the controls hold still. */
-  pending?: boolean
-  /** What sits at the far end of the group's line — a link onwards. */
-  trailing?: React.ReactNode
-  /** The line under the group; the answer's own record when not given. */
-  record?: React.ReactNode
-}) {
-  const { t } = useTranslation()
-  // A woken postponement is a question again, so nothing is held.
-  const current = isWaiting(idea, now) ? null : idea.verdict
-  const line =
-    record === undefined ? (
-      <AnswerRecord
-        idea={idea}
-        now={now}
-        onAnswer={onAnswer}
-        pending={pending}
-      />
-    ) : (
-      record
-    )
-
-  const YesIcon = VERDICTS.yes.icon
-  const LaterIcon = VERDICTS.later.icon
-  const NoIcon = VERDICTS.no.icon
-
-  return (
-    <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2.5 border-t border-quaternary pt-3">
-      <div
-        role="group"
-        aria-label={t('assetInsights.ideas.answer')}
-        aria-busy={pending || undefined}
-        className="flex [&>*:disabled]:opacity-60 [&>*]:rounded-none [&>*+*]:-ml-px [&>*:first-child]:rounded-l-md [&>*:last-child]:rounded-r-md [&>[data-active=true]]:z-10"
-      >
-        <Button
-          variant="outline"
-          size="sm"
-          active={current === 'yes'}
-          aria-pressed={current === 'yes'}
-          disabled={pending}
-          onClick={() => onAnswer('yes')}
-        >
-          <YesIcon className={VERDICTS.yes.tone} />
-          {t(VERDICTS.yes.actionKey)}
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              active={current === 'later'}
-              aria-pressed={current === 'later'}
-              disabled={pending}
-            >
-              <LaterIcon className={VERDICTS.later.tone} />
-              {t(VERDICTS.later.actionKey)}
-              <CaretDownIcon className="size-3 text-secondary-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" sideOffset={4}>
-            {POSTPONE_HORIZONS.map((horizon) => (
-              <DropdownMenuItem
-                key={horizon}
-                onSelect={() =>
-                  onAnswer('later', postponeUntil(new Date(), horizon))
-                }
-              >
-                {t(HORIZON_KEYS[horizon])}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Button
-          variant="outline"
-          size="sm"
-          active={current === 'no'}
-          aria-pressed={current === 'no'}
-          disabled={pending}
-          onClick={() => onAnswer('no')}
-        >
-          <NoIcon className={VERDICTS.no.tone} />
-          {t(VERDICTS.no.actionKey)}
-        </Button>
-      </div>
-      {trailing && <span className="ml-auto">{trailing}</span>}
-      {line && (
-        <div className="order-last basis-full text-xs text-secondary-foreground">
-          {line}
-        </div>
-      )}
-    </div>
   )
 }
 

@@ -25,9 +25,9 @@ vi.mock('@/hooks/usePlatforms', () => ({
   }),
 }))
 
-function sentence() {
-  // The sentence's words, whatever elements its clauses are drawn in.
-  return screen.getByText(/Mostrando/).closest('div')?.textContent ?? ''
+function pills() {
+  // The pills' words, whatever elements their clauses are drawn in.
+  return screen.getByRole('group', { name: 'Filtro' }).textContent ?? ''
 }
 
 describe('the posts filter in Spanish (CON-472)', () => {
@@ -55,7 +55,7 @@ describe('the posts filter in Spanish (CON-472)', () => {
       />,
       { wrapper: QueryWrapper },
     )
-    const words = sentence()
+    const words = pills()
     expect(words).toContain('borradores')
     expect(words).toContain('Instagram')
     expect(words).toContain('Carrusel')
@@ -63,7 +63,7 @@ describe('the posts filter in Spanish (CON-472)', () => {
     expect(words).not.toMatch(/Showing|drafts|with a date/)
   })
 
-  it('says it shows every post when nothing narrows it', () => {
+  it('is the Filter button alone when nothing narrows the list', () => {
     render(
       <PostsFilterBar
         campaignId="c1"
@@ -74,10 +74,26 @@ describe('the posts filter in Spanish (CON-472)', () => {
       />,
       { wrapper: QueryWrapper },
     )
-    expect(screen.getByText('todas las publicaciones')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Filtro' })).toBeTruthy()
+    expect(screen.queryByRole('group', { name: 'Filtro' })).toBeNull()
+    expect(screen.queryByText(/6 de 6|Mostrando/)).toBeNull()
   })
 
-  it('says a date range as scheduled, and leaves the count to the page that says it once (CON-486)', () => {
+  it('ends the pills on how many match', () => {
+    render(
+      <PostsFilterBar
+        campaignId="c1"
+        filter={postFilterFromSearch({ status: 'draft' })}
+        onChange={() => {}}
+        total={2}
+        totalUnfiltered={6}
+      />,
+      { wrapper: QueryWrapper },
+    )
+    expect(pills()).toContain('2 de 6')
+  })
+
+  it('says a date range as scheduled, and holds the count while the list answers', () => {
     render(
       <PostsFilterBar
         campaignId="c1"
@@ -92,7 +108,7 @@ describe('the posts filter in Spanish (CON-472)', () => {
       />,
       { wrapper: QueryWrapper },
     )
-    const words = sentence()
+    const words = pills()
     expect(words).toContain('programadas')
     expect(words).not.toContain('con fecha')
     expect(words).not.toMatch(/2 de 6/)

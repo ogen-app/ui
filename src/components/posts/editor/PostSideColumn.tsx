@@ -10,10 +10,9 @@ import {
   LayoutIcon,
   type Icon,
 } from '@phosphor-icons/react'
-import { RailPanelEmbeddedProvider } from '@/components/page-primitives/RailPanel'
+import { SideColumn } from '@/components/page-primitives/SideColumn'
 import { POST_TABS, type PostTab } from '@/lib/postTabs'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { cn } from '@/lib'
 
 const ICON: Record<PostTab, Icon> = {
   overview: LayoutIcon,
@@ -41,6 +40,8 @@ export type PostTabBadge = { warn?: number }
  * left to the assistant and Ogen can help with any of it. They used to be
  * four rail panels that took the assistant's place.
  *
+ * Drawn by `SideColumn`, which the asset page shares.
+ *
  * The tab is one remembered choice for every post (`settingsStore.postTab`):
  * reading the checks on one post and stepping to the next keeps the checks
  * open. Only the tab on show is mounted, so a tab that fetches (History) costs
@@ -57,93 +58,29 @@ export function PostSideColumn({
   const { t } = useTranslation()
   const tab = useSettingsStore((s) => s.postTab)
   const setTab = useSettingsStore((s) => s.setPostTab)
+  const tabs = POST_TABS.map((id) => {
+    const label = t(`posts.editor.tabs.${id}`)
+    const warn = badges[id]?.warn ?? 0
+    return {
+      id,
+      label,
+      icon: ICON[id],
+      warn,
+      warnLabel: warn
+        ? t('posts.editor.tabs.withWarnings', { label, count: warn })
+        : undefined,
+    }
+  })
 
   return (
-    <aside className="flex w-[24rem] shrink-0 flex-col border-l border-border bg-primary xl:w-[27rem]">
-      <div
-        role="tablist"
-        aria-label={t('posts.editor.tabs.label')}
-        className="grid h-12 shrink-0 grid-cols-7 items-center gap-0.5 border-b border-border px-2"
-      >
-        {POST_TABS.map((id) => (
-          <TabButton
-            key={id}
-            id={id}
-            label={t(`posts.editor.tabs.${id}`)}
-            selected={id === tab}
-            badge={badges[id]}
-            onSelect={() => setTab(id)}
-          />
-        ))}
-      </div>
-      <div
-        role="tabpanel"
-        id={`post-tab-${tab}`}
-        aria-labelledby={`post-tab-button-${tab}`}
-        className="relative min-h-0 flex-1"
-      >
-        <RailPanelEmbeddedProvider value>{children}</RailPanelEmbeddedProvider>
-      </div>
-    </aside>
-  )
-}
-
-/**
- * An icon over its name, small. Icon-only hid half the column: nobody goes
- * looking for Notes or Quality behind a glyph they have to hover to read. The
- * names are one short word each, so seven fit across the column at 12px and
- * the strip stays the 48px of the post's bar beside it.
- */
-function TabButton({
-  id,
-  label,
-  selected,
-  badge,
-  onSelect,
-}: {
-  id: PostTab
-  label: string
-  selected: boolean
-  badge?: PostTabBadge
-  onSelect: () => void
-}) {
-  const { t } = useTranslation()
-  const Glyph = ICON[id]
-  const warn = badge?.warn ?? 0
-  const name = warn
-    ? t('posts.editor.tabs.withWarnings', { label, count: warn })
-    : label
-
-  return (
-    <button
-      type="button"
-      role="tab"
-      id={`post-tab-button-${id}`}
-      aria-selected={selected}
-      aria-controls={`post-tab-${id}`}
-      aria-label={name}
-      title={name}
-      onClick={onSelect}
-      className={cn(
-        'relative flex h-10 min-w-0 flex-col items-center justify-center gap-0.5 rounded-button outline-none transition-colors',
-        'focus-visible:ring-2 focus-visible:ring-ring',
-        selected
-          ? 'bg-secondary text-foreground'
-          : 'text-tertiary-foreground hover:bg-secondary hover:text-foreground',
-      )}
+    <SideColumn
+      tabs={tabs}
+      current={tab}
+      onSelect={setTab}
+      label={t('posts.editor.tabs.label')}
+      idPrefix="post"
     >
-      <span className="relative flex">
-        <Glyph weight={selected ? 'fill' : 'regular'} className="size-4" />
-        {warn > 0 && (
-          <span
-            aria-hidden
-            className="absolute -top-0.5 -right-1 size-2 rounded-full bg-warning ring-2 ring-primary"
-          />
-        )}
-      </span>
-      <span className="max-w-full truncate px-0.5 text-[11px]/3.5">
-        {label}
-      </span>
-    </button>
+      {children}
+    </SideColumn>
   )
 }

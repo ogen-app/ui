@@ -143,17 +143,4 @@ describe('the Not scheduled panel (CON-485)', () => {
     await renderWithProviders(<NotScheduledPanel campaignId="c1" />)
     expect(useJustWrittenStore.getState().ids.has('Moving')).toBe(true)
   })
-
-  it('reads the posts screen’s filter off the address, and says when nothing undated matches (CON-486)', async () => {
-    data.posts = [post('Dated', { scheduled_at: '2026-11-26T09:00:00Z' })]
-    await renderWithProviders(<NotScheduledPanel campaignId="c1" />, {
-      search: '?status=draft',
-    })
-    expect(data.params[data.params.length - 1]).toMatchObject({
-      status: 'draft',
-    })
-    expect(
-      screen.getByText('No post without a date matches the filter.'),
-    ).toBeTruthy()
-  })
 })

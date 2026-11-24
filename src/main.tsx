@@ -28,16 +28,16 @@ bootstrapLocale()
 // Also before `createRouter`, and for the same two reasons: `?ff=` is stripped
 // from the address bar the router is about to read, and a flag forced by the
 // link has to be in force before the first `beforeLoad` guard consults one.
-// Folds away entirely in a production build. See `config/flagOverrides.ts`.
+// Does nothing unless the deploy turns dev tools on. See `config/flagOverrides.ts`.
 bootstrapFlagOverrides(FLAG_IDS)
 
 // `?analytics=demo` — simulated numbers for the dashboard on a machine that
-// measures nothing. Stripped here for the same reason, and folds away in a
-// production build. See `services/api/analytics.demo.ts`.
+// measures nothing. Stripped here for the same reason, and does nothing in
+// production. See `services/api/analytics.demo.ts`.
 bootstrapAnalyticsDemo()
 
-// Only ever mounted on staging and in dev: with `DEV_TOOLS` a build-time
-// `false` the ternary collapses and the marker's chunk is never emitted.
+// Only ever mounted on the dev deploy and in dev: with `DEV_TOOLS` off the
+// marker's chunk is never fetched.
 const OverrideMarker = DEV_TOOLS
   ? lazy(() => import('./devtools/OverrideMarker'))
   : () => null
@@ -76,8 +76,8 @@ router.subscribe('onResolved', () =>
 
 // After `createRouter` so browser-tracing can name transactions by route
 // template, and before render so the error boundary and API instrumentation are
-// in place for the first paint. A no-op unless `VITE_SENTRY_DSN` is set — dev is
-// unaffected. See `observability/sentry.ts`.
+// in place for the first paint. A no-op unless the deploy sets `SENTRY_DSN` —
+// dev is unaffected. See `observability/sentry.ts`.
 initTelemetry(router)
 
 createRoot(document.getElementById('root')!).render(

@@ -79,6 +79,8 @@ export type CardAction = {
 
 export type CardChoice = {
   label: string
+  /** Set back before the value: "For  Spring launch". */
+  lead?: string
   value: string
   options: readonly { id: string; displayValue: string }[]
   onChange: (value: string) => void
@@ -259,6 +261,7 @@ function End({
     return (
       <TextSelect
         ariaLabel={choice.label}
+        lead={choice.lead}
         value={choice.value}
         onValueChange={choice.onChange}
         elements={choice.options}

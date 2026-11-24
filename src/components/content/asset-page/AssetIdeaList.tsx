@@ -1,27 +1,14 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import type { TFunction } from 'i18next'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { AiIdeaIcon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
-import {
-  CaretDownIcon,
-  CaretRightIcon,
-  LightbulbIcon,
-} from '@phosphor-icons/react'
-import { FitTrack } from '@/components/content/FitTrack'
-import {
-  AnswerGroup,
-  FitSection,
-  Part,
-  VerdictMark,
-} from '@/components/ideas/card/IdeaCardParts'
-import { IDEA_ROW, pileOf } from '@/components/ideas/card/ideaRow'
+import { LightbulbIcon } from '@phosphor-icons/react'
+import { IdeaRow } from '@/components/ideas/IdeaRow'
+import { CARD_LIST } from '@/components/page-primitives/listCards'
 import { useAnswerIdea } from '@/hooks/useAssetAnalyses'
 import { useIdeaDistill } from '@/hooks/useIdeaDistill'
 import { useIdeaClock } from '@/hooks/useIdeaClock'
 import { cn } from '@/lib'
-import { mergePageRefs, pageSpan, parseIdeaNote } from '@/lib/assetAnalysis'
 import { VERDICT_ICON } from '@/components/content/verdictIcons'
 import { VERDICT_ORDER, type VerdictKey } from '@/lib/assetList'
 import { byFit } from '@/lib/ideaFit'
@@ -29,20 +16,19 @@ import { countIdeas, isWaiting, type Idea } from '@/lib/ideas'
 import { ideaFromWire } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { DistillMoreIdeas } from './DistillMoreIdeas'
-import { SourceChip } from './SourceChip'
 
 /**
- * The ideas one lens distilled (CON-364), in the Assets list card's language
- * (CON-387): best fit first, each with its score on a track, its title, its
- * verdict as a mark and its note — so an idea looks the same here as on the
- * row that led to it.
+ * The ideas one lens distilled (CON-364), as the Ideas list's cards
+ * (`ideas/IdeaRow`, design/ideas-cards): best fit first, each its own card
+ * with the fit ring, the title, the angle in two lines, the places it cites
+ * and the three answers always on it — so an idea looks the same here as in
+ * Ideas.
  *
- * A row opens in place to the whole of it: the angle, why it fits, why it
+ * A card opens in place to the whole of it: the angle, why it fits, why it
  * scores what it does (CON-385's breakdown), where in the source it comes
- * from — and then the answer. **Triage happens here too now**: the opened row
- * ends in Yes / Not now / No, the inbox's three verdicts on the inbox's rules,
- * so an idea can be answered beside the source it came from instead of in a
- * list that has lost it. An idea someone said no to is left out unless the No
+ * from — as chips that play or open in place — and the answer's record.
+ * **Triage happens here as well as in Ideas**, on the same rules, so an idea
+ * can be answered beside the source it came from. An idea someone said no to is left out unless the No
  * pile is chosen — it was answered, and this list is what is worth making.
  *
  * The piles above the list (CON-370) narrow it to one verdict. `?verdict=`
@@ -120,50 +106,23 @@ export function AssetIdeaList({
   const forCampaign = lens.campaign_id !== null && lens.campaign_name
 
   return (
-    <section className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        {/* The count alone: the line under it names the campaign. Regular
-            weight — the size carries it, and the list's titles are the
-            heaviest type in the column. */}
-        <h3 className="flex items-center gap-2.5 text-[22px] leading-8 font-normal text-foreground">
-          <HugeiconsIcon
-            icon={AiIdeaIcon}
-            size={26}
-            strokeWidth={1.5}
-            aria-hidden
-            className="shrink-0 text-accent"
-          />
-          {ideas.length === 0
-            ? t('assetInsights.ideas.heading')
-            : t('assetInsights.ideas.count', { count: ideas.length })}
-        </h3>
-        {ideas.length > 0 && (
-          <p className="text-sm text-secondary-foreground">
-            {forCampaign
-              ? t('assetInsights.ideas.waitingFor', {
-                  campaign: lens.campaign_name,
-                })
-              : t('assetInsights.ideas.waiting')}
-            {spreadsheet && ` ${t('assetInsights.sheet.footnote')}`}
-          </p>
-        )}
-        {all.length > 0 && (
-          <Piles
-            counts={counts}
-            active={onlyFresh ? undefined : pile}
-            onChoose={choosePile}
-            trailing={
-              freshCount > 0 && (
-                <FreshChip
-                  count={freshCount}
-                  active={onlyFresh}
-                  onToggle={() => setFreshOnly(!onlyFresh)}
-                />
-              )
-            }
-          />
-        )}
-      </header>
+    <section className="flex flex-col gap-3">
+      {all.length > 0 && (
+        <Piles
+          counts={counts}
+          active={onlyFresh ? undefined : pile}
+          onChoose={choosePile}
+          trailing={
+            freshCount > 0 && (
+              <FreshChip
+                count={freshCount}
+                active={onlyFresh}
+                onToggle={() => setFreshOnly(!onlyFresh)}
+              />
+            )
+          }
+        />
+      )}
 
       {ideas.length === 0 ? (
         <div className="flex items-start gap-3 py-2">
@@ -183,13 +142,10 @@ export function AssetIdeaList({
       ) : (
         // Every idea, not the first five: this list is what the page is for,
         // and a fold only hid the ones a reader came to compare.
-        // Hung out by the rows' own padding, so the score tracks line up with
-        // the heading rather than sitting a step inside it.
-        <ul className="-mx-3 flex flex-col">
-          {ideas.map((idea, index) => (
-            <IdeaRow
+        <ul className={CARD_LIST}>
+          {ideas.map((idea) => (
+            <AssetIdeaCard
               key={idea.id}
-              index={index}
               idea={idea}
               lens={lens}
               now={now}
@@ -199,6 +155,16 @@ export function AssetIdeaList({
             />
           ))}
         </ul>
+      )}
+      {ideas.length > 0 && (
+        <p className="text-xs/4 text-secondary-foreground">
+          {forCampaign
+            ? t('assetInsights.ideas.waitingFor', {
+                campaign: lens.campaign_name,
+              })
+            : t('assetInsights.ideas.waiting')}
+          {spreadsheet && ` ${t('assetInsights.sheet.footnote')}`}
+        </p>
       )}
       <DistillMoreIdeas lens={lens} distill={distill} />
     </section>
@@ -299,172 +265,51 @@ function FreshChip({
 }
 
 /**
- * One idea. No box: a pale rule between rows, inset by the row's padding, and
- * stepping aside for a row that is hovered or open, which take one pale fill.
- * What tells the opened row from a hovered one is its title turning semibold
- * — with the turned caret and everything under it.
+ * One idea, as the Ideas list draws it — answered here through the asset's
+ * own cache (`useAnswerIdea`), so the piles above move with it.
  */
-function IdeaRow({
-  index,
+function AssetIdeaCard({
   idea,
   lens,
   now,
   expanded,
-  fresh = false,
+  fresh,
   onToggle,
 }: {
-  /** Its place in the list — rows arrive one after another, not at once. */
-  index: number
   idea: Idea
   lens: AssetAnalysis
   now: Date
   expanded: boolean
-  /** It landed from a request for more ideas while this page was open. */
-  fresh?: boolean
+  fresh: boolean
   onToggle: () => void
 }) {
   const { t } = useTranslation()
-  const { angle, rationale, sources: cited } = parseIdeaNote(idea.note)
-  // Pages sorted and merged ("pp. 55–59", not "pp. 57–59, pp. 55–57").
-  const sources = mergePageRefs(cited)
-  const Caret = expanded ? CaretDownIcon : CaretRightIcon
+  const { answer } = useAnswerIdea(lens.asset_id, idea.id)
   return (
-    <li
-      data-open={expanded || undefined}
-      style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
-      className={cn(
-        IDEA_ROW,
-        'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:fill-mode-both',
-      )}
-    >
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={expanded}
-        className="grid w-full cursor-pointer grid-cols-[4rem_minmax(0,1fr)_16px_16px] gap-x-3 px-3 py-3.5 text-left"
-      >
-        <span className="flex h-6 items-center">
-          <FitTrack score={idea.fitScore} />
-        </span>
-        <span
-          className={cn(
-            'text-sm/6 text-foreground',
-            (expanded || fresh) && 'font-semibold',
-          )}
-        >
-          {fresh && (
-            // Before the title, inside its column, so the titles keep their line.
-            <span
-              role="img"
-              aria-label={t('assetInsights.distill.freshMark')}
-              className="mr-2 inline-block size-1.5 -translate-y-0.5 rounded-full bg-accent align-middle"
-            />
-          )}
-          {idea.title}
-        </span>
-        <VerdictMark verdict={pileOf(idea, now)} />
-        <Caret className="mt-1 size-4 shrink-0 text-secondary-foreground" />
-        {angle && !expanded && (
-          <span className="col-span-2 col-start-2 mt-0.5 line-clamp-2 text-[13px]/[19px] text-secondary-foreground">
-            {angle}
-          </span>
-        )}
-      </button>
-      {expanded && (
-        // In the title's column: the row's padding, the track and its gap.
-        <div className="flex flex-col gap-3 pr-3 pb-4 pl-[88px]">
-          {angle && (
-            <p className="text-sm leading-6 text-foreground">{angle}</p>
-          )}
-          {rationale && (
-            <p className="whitespace-pre-line text-sm leading-6 text-secondary-foreground">
-              {rationale}
-            </p>
-          )}
-          <FitSection idea={idea} scoredFor={scoredFor(t, idea, lens)} />
-          {sources.length > 0 && (
-            <Reference sources={sources} citedBy={idea.title} />
-          )}
-          <Answer idea={idea} lens={lens} now={now} />
-        </div>
-      )}
-    </li>
-  )
-}
-
-/**
- * Which reading the score is for. Usually the one on screen; an idea filed
- * into another campaign keeps the score it was given, and says so rather than
- * passing it off as this reading's.
- */
-function scoredFor(
-  t: TFunction,
-  idea: Idea,
-  lens: AssetAnalysis,
-): string | null {
-  const breakdown = idea.fitBreakdown
-  if (!breakdown) return null
-  if (breakdown.lens === 'workspace')
-    return lens.campaign_id === null
-      ? t('assetInsights.ideaFit.forWorkspace')
-      : t('assetInsights.ideaFit.scoredWorkspace')
-  if (breakdown.campaign_id === lens.campaign_id && lens.campaign_name)
-    return t('assetInsights.ideaFit.forCampaign', {
-      campaign: lens.campaign_name,
-    })
-  return t('assetInsights.ideaFit.scoredOther')
-}
-
-/** Where in the source the idea comes from, as chips that cite or play. */
-function Reference({
-  sources,
-  citedBy,
-}: {
-  sources: string[]
-  citedBy: string
-}) {
-  const { t } = useTranslation()
-  const span = pageSpan(sources)
-  const aside = !span
-    ? null
-    : span.from === span.to
-      ? t('assetInsights.reference.page', { from: span.from })
-      : t('assetInsights.reference.pages', { from: span.from, to: span.to })
-  return (
-    <Part heading={t('assetInsights.reference.heading')} aside={aside}>
-      <span className="flex flex-wrap gap-1.5">
-        {sources.map((s) => (
-          <SourceChip key={s} label={s} citedBy={citedBy} />
-        ))}
-      </span>
-    </Part>
-  )
-}
-
-/** The answer group, ending in the way to this reading's Ideas page. */
-function Answer({
-  idea,
-  lens,
-  now,
-}: {
-  idea: Idea
-  lens: AssetAnalysis
-  now: Date
-}) {
-  const { t } = useTranslation()
-  // While an answer is on its way the controls hold still: a second one
-  // racing it could land first (see `useAnswerIdea`).
-  const { answer, pending } = useAnswerIdea(lens.asset_id, idea.id)
-  return (
-    <AnswerGroup
+    <IdeaRow
       idea={idea}
       now={now}
-      onAnswer={answer}
-      pending={pending}
-      trailing={<InboxLink lens={lens} label={t('assetInsights.ideas.open')} />}
+      expanded={expanded}
+      onToggle={onToggle}
+      onDecide={(verdict, remindAt) => answer(verdict, remindAt)}
+      onUndecide={() => answer(null)}
+      // An analysed idea's words are the analysis's; it is filed from Ideas.
+      onEdit={noop}
+      onDelete={noop}
+      showCampaign={false}
+      fresh={fresh}
+      atSource={{
+        link: <InboxLink lens={lens} label={t('assetInsights.ideas.open')} />,
+        reading: {
+          campaignId: lens.campaign_id,
+          campaignName: lens.campaign_name,
+        },
+      }}
     />
   )
 }
+
+const noop = () => {}
 
 /**
  * The Ideas page these rows live on: the campaign's for a campaign lens, whose

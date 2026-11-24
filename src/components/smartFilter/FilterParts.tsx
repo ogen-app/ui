@@ -1,22 +1,14 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { CheckIcon, PlusIcon, XIcon } from '@phosphor-icons/react'
+import { CheckIcon, PlusIcon } from '@phosphor-icons/react'
 import { useQueries } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { ZIndex } from '@/config/zIndex'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { cn } from '@/lib'
 import { nextDay, previousDay } from '@/lib/assetFilter'
-import { formatListParts, formatNumber } from '@/lib/intl'
-import { ledBySubject, orderedTokens } from '@/lib/smartFilter'
+import { formatNumber } from '@/lib/intl'
 import type {
   Clause,
   CountQuery,
@@ -27,6 +19,14 @@ import type {
 } from '@/lib/smartFilter'
 import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
+/**
+ * The parts of a list's filter that `FilterPills` is built from: a pill's
+ * words (`ClauseWords`), `+ Add` and what it offers (`AddDetail`), and a
+ * clause's panel (`ClausePanel`) — the question, the two-word switch, the
+ * values with the server's counts. Nothing here filters anything: the filter
+ * is the URL, and every number is the server's answer to it.
+ */
+
 /** The value every list uses for "none" — no campaign, no tags, no document. */
 const NONE = 'none'
 
@@ -36,33 +36,10 @@ const FIND_FROM = 8
 /** How wide the panels are, to keep them inside the line. */
 const PANEL_WIDTH = 340
 
-type Opened<Field> = { field: Field; negated: boolean }
-
 type AddItem<Field> =
   | { kind: 'text'; field: Field }
   | { kind: 'quick'; field: Field; option: ValueOption }
   | { kind: 'starter'; field: Field }
-
-type Props<F, Field extends string> = {
-  filter: F
-  onChange: (next: F) => void
-  model: FilterModel<F, Field>
-  vocabulary: SentenceVocabulary<Field>
-  total: number
-  totalUnfiltered: number
-  countQuery: CountQuery<F>
-  /** The Views dropdown, at the line's start. */
-  leading?: ReactNode
-  /** At the line's end: Save as group, or an edited group's actions. */
-  trailing?: ReactNode
-  /** Whether Clear is offered — not while a smart group is open. */
-  clearable: boolean
-  /**
-   * Whether the line says how many match. Off where the page says it once
-   * already, on its own line — the posts list's toolbar (CON-486).
-   */
-  showCount?: boolean
-}
 
 /** The values a field's token holds for this operator. */
 function valuesOf<F, Field extends string>(
@@ -92,380 +69,8 @@ function splitText(text: string): string[] {
   ]
 }
 
-/**
- * A list's filter as a sentence you edit (CON-391, carried to Assets by
- * CON-392) — "Showing ideas *from documents*, in *Hotel de Russie*, with a
- * *high or medium* fit" — in place of the token bar, which read like a query
- * being built.
- *
- * The same filter underneath: the list's fields and operators (`model`), the
- * same address, the same counts. Only how it reads and how it is changed are
- * the sentence's. Each token is one **clause**, in a fixed order so the
- * sentence reads right however it was built, worded by one catalogue sentence
- * per field and operator (`vocabulary.clause`). A list may name a **subject**
- * — Assets' type — which, when chosen, reads first and names what is listed:
- * "Showing *PDFs*, in …". A clause's chosen words open its panel — the
- * question, the two-word switch, the values with the server's counts — and
- * its × removes it. `+ add a detail` is the one way in: sentence starters, or
- * typed words, which become a search ("mentioning …", "with … in the title")
- * or a matching name. `/` focuses it from anywhere on the page.
- *
- * Changing a value changes the filter at once; Done only closes the panel.
- * Nothing here filters anything — the filter is the URL, and every number is
- * the server's answer to it.
- */
-export function FilterSentence<F, Field extends string>({
-  filter,
-  onChange,
-  model,
-  vocabulary: vocab,
-  total,
-  totalUnfiltered,
-  countQuery,
-  leading,
-  trailing,
-  clearable,
-  showCount = true,
-}: Props<F, Field>) {
-  const { t, i18n } = useTranslation()
-  const locale = i18n.language
-  const boxRef = useRef<HTMLDivElement>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
-  const addRef = useRef<HTMLInputElement>(null)
-  const [opened, setOpened] = useState<Opened<Field> | null>(null)
-  const [adding, setAdding] = useState(false)
-
-  const tokens = useMemo(
-    () => orderedTokens(model, filter, vocab),
-    [model, filter, vocab],
-  )
-  const narrowed = tokens.length > 0
-  const led = ledBySubject(tokens, vocab.subject)
-
-  const startAdding = () => {
-    setOpened(null)
-    setAdding(true)
-    requestAnimationFrame(() => addRef.current?.focus())
-  }
-
-  // `/` starts a detail from anywhere on the page, unless something else is
-  // being typed into.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey)
-        return
-      const el = document.activeElement as HTMLElement | null
-      if (
-        el?.tagName === 'INPUT' ||
-        el?.tagName === 'TEXTAREA' ||
-        el?.tagName === 'SELECT' ||
-        el?.isContentEditable
-      )
-        return
-      event.preventDefault()
-      setOpened(null)
-      setAdding(true)
-      requestAnimationFrame(() => addRef.current?.focus())
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [])
-
-  // A press outside the open panel closes it. A press on a clause or on the
-  // add button is the clause's own click to answer, so it is left alone.
-  useEffect(() => {
-    if (!opened) return
-    const onDown = (event: MouseEvent) => {
-      const target = event.target as HTMLElement
-      if (panelRef.current?.contains(target)) return
-      if (target.closest('[data-clause],[data-add]')) return
-      setOpened(null)
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [opened])
-
-  // The panel opens under what it is about — the clause, or the add button
-  // for a clause not yet made — and never hangs off the line's right edge.
-  // Placed on the DOM, not in state: it follows the sentence as it rewraps.
-  useLayoutEffect(() => {
-    const box = boxRef.current
-    const panel = panelRef.current
-    if (!box || !panel) return
-    const anchor =
-      (opened &&
-        box.querySelector<HTMLElement>(
-          `[data-clause="${opened.field}:${opened.negated}"]`,
-        )) ||
-      box.querySelector<HTMLElement>('[data-add]')
-    if (!anchor) return
-    const outer = box.getBoundingClientRect()
-    const rect = anchor.getBoundingClientRect()
-    const left = Math.max(
-      0,
-      Math.min(rect.left - outer.left, outer.width - panel.offsetWidth),
-    )
-    panel.style.left = `${left}px`
-    panel.style.top = `${rect.bottom - outer.top + 6}px`
-  })
-
-  const removeToken = (token: SmartToken<Field>) => {
-    onChange(model.withoutToken(filter, token))
-    if (opened?.field === token.field && opened.negated === token.negated)
-      setOpened(null)
-  }
-  const clearAll = () => {
-    onChange(tokens.reduce((f, token) => model.withoutToken(f, token), filter))
-    setOpened(null)
-  }
-
-  const ids = tokens.map((token) => `${token.field}:${token.negated}`)
-  const clauses = tokens.map((token, i) => (
-    <ClauseButton
-      key={ids[i]}
-      id={ids[i]}
-      clause={vocab.clause(token)}
-      plain={vocab.tokenText(token)}
-      open={opened?.field === token.field && opened.negated === token.negated}
-      // A fixed set has nothing to change, only to drop (CON-510).
-      fixed={model.kindOf(token.field) === 'fixed'}
-      onOpen={() => {
-        setAdding(false)
-        setOpened((o) =>
-          o?.field === token.field && o.negated === token.negated
-            ? null
-            : { field: token.field, negated: token.negated },
-        )
-      }}
-      onRemove={() => removeToken(token)}
-    />
-  ))
-  // The language's own commas between the clauses: `Intl.ListFormat`, with
-  // the clauses standing in as their ids.
-  const joined = formatListParts(ids, 'unit', locale).map((part, i) =>
-    part.type === 'element' ? (
-      clauses[ids.indexOf(part.value)]
-    ) : (
-      <span key={`sep-${i}`}>{part.value}</span>
-    ),
-  )
-
-  const count = narrowed
-    ? t('content.filter.count', {
-        count: total,
-        shown: formatNumber(total, {}, locale),
-        total: formatNumber(totalUnfiltered, {}, locale),
-      })
-    : formatNumber(totalUnfiltered, {}, locale)
-
-  return (
-    <div className="flex items-start gap-2">
-      {leading}
-      <div
-        ref={boxRef}
-        role="group"
-        aria-label={t('sentence.label')}
-        // The first line sits level with the button's label: the button is
-        // 34px, a line 30px (CON-391 — top-aligned, never centred).
-        className={cn(
-          'relative min-w-0 flex-1 pt-0.5 text-[15px]/[30px] text-secondary-foreground',
-          !leading && 'pl-5',
-        )}
-      >
-        {narrowed ? (
-          <Trans
-            // One key of the list's own; the union is wider than `Trans`
-            // resolves.
-            i18nKey={
-              (led && vocab.showingSubjectKey
-                ? vocab.showingSubjectKey
-                : vocab.showingKey) as 'ideas.sentence.showing'
-            }
-            components={{ clauses: <Joined parts={joined} /> }}
-          />
-        ) : (
-          <Trans
-            i18nKey={vocab.showingAllKey as 'ideas.sentence.showingAll'}
-            components={{
-              v: <AllRows open={adding} onClick={startAdding} />,
-            }}
-          />
-        )}{' '}
-        <AddDetail
-          inputRef={addRef}
-          panelRef={panelRef}
-          adding={adding}
-          onStart={startAdding}
-          onStop={() => setAdding(false)}
-          filter={filter}
-          onChange={onChange}
-          model={model}
-          vocab={vocab}
-          countQuery={countQuery}
-          onRemoveLast={() => {
-            const last = tokens[tokens.length - 1]
-            if (last) removeToken(last)
-          }}
-          onStarter={(field) => {
-            setAdding(false)
-            setOpened({ field, negated: false })
-          }}
-        />
-        <span className="ml-2.5 inline-flex items-baseline gap-2.5 text-[13px] whitespace-nowrap text-tertiary-foreground">
-          {showCount && (
-            <span
-              aria-live="polite"
-              className="text-secondary-foreground tabular-nums"
-            >
-              {count}
-            </span>
-          )}
-          {clearable && narrowed && (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="cursor-pointer text-secondary-foreground underline decoration-quaternary underline-offset-3 hover:text-foreground"
-            >
-              {t('sentence.clear')}
-            </button>
-          )}
-        </span>
-        {trailing && (
-          <span className="ml-3 inline-flex items-center gap-1 align-middle">
-            {trailing}
-          </span>
-        )}
-        {opened && (
-          <ClausePanel
-            key={`${opened.field}:${opened.negated}`}
-            panelRef={panelRef}
-            field={opened.field}
-            negated={opened.negated}
-            filter={filter}
-            onChange={onChange}
-            model={model}
-            vocab={vocab}
-            onNegate={(negated) => setOpened({ field: opened.field, negated })}
-            onClose={() => setOpened(null)}
-          />
-        )}
-      </div>
-    </div>
-  )
-}
-
-/** The clauses, joined — drawn from its props, whatever `Trans` passes in. */
-function Joined({ parts }: { parts: ReactNode[]; children?: ReactNode }) {
-  return <>{parts}</>
-}
-
-/** "all ideas", with nothing chosen: a way into adding the first detail. */
-function AllRows({
-  open,
-  onClick,
-  children,
-}: {
-  open: boolean
-  onClick: () => void
-  children?: ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group/cl cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent"
-    >
-      <Chosen open={open}>{children}</Chosen>
-    </button>
-  )
-}
-
-/**
- * The chosen words of a clause: underlined, dotted at rest, solid on hover,
- * in the accent while their panel is open.
- */
-function Chosen({ open, children }: { open: boolean; children?: ReactNode }) {
-  return (
-    <span
-      className={cn(
-        'font-medium text-foreground underline decoration-[1.5px] underline-offset-[5px]',
-        open
-          ? 'decoration-accent decoration-solid'
-          : 'decoration-quaternary-foreground decoration-dotted group-hover/cl:decoration-foreground group-hover/cl:decoration-solid',
-      )}
-    >
-      {children}
-    </span>
-  )
-}
-
-/**
- * One clause: its words open its panel, its × (on hover) removes it. A fixed
- * clause's words open nothing — there is no panel for a set the page was
- * opened with — so they are plain words beside the ×.
- */
-function ClauseButton({
-  id,
-  clause,
-  plain,
-  open,
-  fixed = false,
-  onOpen,
-  onRemove,
-}: {
-  id: string
-  clause: Clause
-  plain: string
-  open: boolean
-  fixed?: boolean
-  onOpen: () => void
-  onRemove: () => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <span data-clause={id} className="group/cl">
-      {fixed ? (
-        <span>
-          <ClauseWords clause={clause} open={false} />
-        </span>
-      ) : (
-        <button
-          type="button"
-          onClick={onOpen}
-          aria-expanded={open}
-          aria-label={t('sentence.change', { clause: plain })}
-          className={cn(
-            '-mx-0.5 cursor-pointer rounded-xs px-0.5 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent',
-            open && 'bg-secondary',
-          )}
-        >
-          <ClauseWords clause={clause} open={open} />
-        </button>
-      )}
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label={t('sentence.remove', { clause: plain })}
-        // Zero-wide until hovered, and still reachable by keyboard.
-        className="inline-flex w-0 cursor-pointer items-center justify-center overflow-hidden align-middle text-tertiary-foreground outline-none group-hover/cl:w-4 hover:text-foreground focus-visible:w-4 focus-visible:ring-2 focus-visible:ring-accent"
-      >
-        <XIcon weight="bold" className="size-3" />
-      </button>
-    </span>
-  )
-}
-
-/** A clause's catalogue sentence, its chosen words marked. */
-export function ClauseWords({
-  clause,
-  open,
-  bold,
-}: {
-  clause: Clause
-  open?: boolean
-  /** In a list row: the chosen words in full ink, no underline. */
-  bold?: boolean
-}) {
+/** A clause's catalogue sentence, its chosen words in full ink. */
+export function ClauseWords({ clause }: { clause: Clause }) {
   return (
     <Trans
       // One key of the list's clause family; the union is wider than
@@ -473,13 +78,7 @@ export function ClauseWords({
       i18nKey={clause.key as 'ideas.sentence.clause.origin'}
       values={clause.values}
       count={clause.count}
-      components={{
-        v: bold ? (
-          <b className="font-medium text-foreground" />
-        ) : (
-          <Chosen open={!!open} />
-        ),
-      }}
+      components={{ v: <b className="font-medium text-foreground" /> }}
     />
   )
 }
@@ -503,7 +102,6 @@ export function AddDetail<F, Field extends string>({
   countQuery,
   onRemoveLast,
   onStarter,
-  variant = 'sentence',
 }: {
   inputRef: React.RefObject<HTMLInputElement | null>
   panelRef: React.RefObject<HTMLDivElement | null>
@@ -517,8 +115,6 @@ export function AddDetail<F, Field extends string>({
   countQuery: CountQuery<F>
   onRemoveLast: () => void
   onStarter: (field: Field) => void
-  /** In the pills row: a quiet `+ Add` at the pills' size. */
-  variant?: 'sentence' | 'pills'
 }) {
   const { t, i18n } = useTranslation()
   const [text, setText] = useState('')
@@ -669,18 +265,10 @@ export function AddDetail<F, Field extends string>({
         type="button"
         data-add
         onClick={onStart}
-        className={
-          variant === 'pills'
-            ? 'flex h-6 cursor-pointer items-center gap-1 px-1 whitespace-nowrap text-secondary-foreground outline-none hover:text-foreground focus-visible:underline'
-            : 'ml-1 inline-flex cursor-pointer items-baseline gap-0.5 font-medium whitespace-nowrap text-accent outline-none hover:underline focus-visible:ring-2 focus-visible:ring-accent'
-        }
+        className="flex h-6 cursor-pointer items-center gap-1 px-1 whitespace-nowrap text-secondary-foreground outline-none hover:text-foreground focus-visible:underline"
       >
-        <PlusIcon
-          weight={variant === 'pills' ? 'regular' : 'bold'}
-          className="size-3 self-center"
-          aria-hidden
-        />
-        {variant === 'pills' ? t('sentence.add') : t('sentence.addDetail')}
+        <PlusIcon className="size-3 self-center" aria-hidden />
+        {t('sentence.add')}
       </button>
     )
 
@@ -689,10 +277,7 @@ export function AddDetail<F, Field extends string>({
     <>
       <span
         data-add
-        className={cn(
-          'inline-flex items-baseline gap-0.5 rounded-xs bg-secondary px-1.5 font-medium text-accent',
-          variant === 'pills' ? 'h-6 items-center' : 'ml-1',
-        )}
+        className="inline-flex h-6 items-center gap-0.5 rounded-xs bg-secondary px-1.5 font-medium text-accent"
       >
         <PlusIcon weight="bold" className="size-3 self-center" aria-hidden />
         <input
@@ -828,7 +413,6 @@ function AddRow<Field extends string>({
                 negated: false,
                 values: [typed],
               })}
-              bold
             />
           </span>
           {count !== null && (
@@ -848,7 +432,6 @@ function AddRow<Field extends string>({
                 negated: false,
                 values: [item.option.value],
               })}
-              bold
             />
           </span>
           {item.option.count !== null && (

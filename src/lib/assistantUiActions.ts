@@ -125,11 +125,15 @@ const DETAIL_PATHS: Partial<Record<ViewScreen, [string, string]>> = {
 /** Where a screen is, from what the action says about it. */
 export function destinationFor(action: UIAction): Destination | null {
   const { screen, campaignId, focus } = action
-  // A window set from a campaign's Analytics tab lands on the workspace's
-  // dashboard narrowed to that campaign, where a change of campaign can land
-  // too; the applier's BACK and preset logic read that one address.
-  if (action.type === 'set_window' && screen === 'campaign.analytics') {
-    return { to: '/analytics', params: {} }
+  // A window set from a campaign's Analytics tab lands on the tab it names
+  // (CON-498): the server sends another campaign's tab for another campaign,
+  // and the workspace's dashboard for the whole workspace.
+  // The calendar has no filter for now, so a filter set on it lands on the
+  // campaign's posts list, which reads the same one.
+  if (action.type === 'set_filter' && screen === 'campaign.calendar') {
+    return campaignId
+      ? { to: '/campaigns/$campaignId/list', params: { campaignId } }
+      : null
   }
   const workspace = WORKSPACE_PATHS[screen]
   if (workspace) return { to: workspace, params: {} }
@@ -233,6 +237,17 @@ export function addSourceSearch(
     : { add }
 }
 
+/** Whether two actions land in the same place: one route, one campaign. */
+export function sameDestination(a: UIAction, b: UIAction): boolean {
+  const x = destinationFor(a)
+  const y = destinationFor(b)
+  return (
+    Boolean(x && y) &&
+    x?.to === y?.to &&
+    JSON.stringify(x?.params) === JSON.stringify(y?.params)
+  )
+}
+
 /**
  * The campaign a `set_window` narrows to: the window's, else — from a
  * campaign's own Analytics tab — that campaign.
@@ -242,4 +257,20 @@ export function windowCampaign(action: UIAction): string | undefined {
     action.window?.campaignId ||
     (action.screen === 'campaign.analytics' ? action.campaignId : undefined)
   )
+}
+
+/**
+ * The campaign a window's search narrows to: on the workspace's dashboard the
+ * window's (`campaign_id`); none on a campaign's tab, whose address names it
+ * and which drops a `campaign_id` (CON-498).
+ */
+export function searchCampaign(action: UIAction): string | undefined {
+  return action.screen === 'campaign.analytics'
+    ? undefined
+    : windowCampaign(action)
+}
+
+/** Whether a screen is an analytics dashboard: the workspace's, or a campaign's tab. */
+export function isDashboard(screen: ViewScreen): boolean {
+  return screen === 'analytics' || screen === 'campaign.analytics'
 }

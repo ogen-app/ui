@@ -109,19 +109,56 @@ jobs:
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      # The source label links the package to this repo, which is what lets
-      # GITHUB_TOKEN push to it.
-      - name: Build and push
+      # One image serves development and production (CON-518): Sentry and the
+      # dev tools are read at container start, so the only values compiled in
+      # are the release (the commit SHA, matching the API's SENTRY_RELEASE)
+      # and the source-map upload's. Without SENTRY_AUTH_TOKEN the upload is
+      # skipped and the build still succeeds.
+      #
+      # Built once into the runner's Docker for the smoke test, then again to
+      # push — the second build is the first one's cache, so the image pushed
+      # is the image tested.
+      - name: Build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          push: true
+          load: true
           tags: ghcr.io/ogen-app/ui:${{ steps.build.outputs.number }}
+          build-args: |
+            VITE_APP_RELEASE=${{ github.sha }}
+            SENTRY_ORG=${{ vars.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ vars.SENTRY_PROJECT }}
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=https://github.com/ogen-app/ui
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # /env.js carries the four allow-listed keys and nothing else, survives
+      # awkward values, and is never cached.
+      - name: Smoke test
+        run: scripts/smoke-image.sh ghcr.io/ogen-app/ui:${{ steps.build.outputs.number }}
+
+      # The source label links the package to this repo, which is what lets
+      # GITHUB_TOKEN push to it.
+      - name: Push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/ogen-app/ui:${{ steps.build.outputs.number }}
+          build-args: |
+            VITE_APP_RELEASE=${{ github.sha }}
+            SENTRY_ORG=${{ vars.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ vars.SENTRY_PROJECT }}
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/ogen-app/ui
+          cache-from: type=gha
 
       # The release App's token, limited to ogen-release, sends the bump. Both
       # steps are best effort: a missing App or ogen-release must not fail

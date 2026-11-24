@@ -3,6 +3,9 @@ import {
   addSourceSearch,
   connectSearch,
   destinationFor,
+  isDashboard,
+  sameDestination,
+  searchCampaign,
   searchFromFilter,
   windowCampaign,
 } from './assistantUiActions'
@@ -82,15 +85,66 @@ describe('a set_window', () => {
     ).toEqual({ to: '/analytics', params: {} })
   })
 
-  it('goes from a campaign’s Analytics tab to the dashboard, narrowed to it', () => {
+  it('stays on a campaign’s Analytics tab, whose address names the campaign (CON-498)', () => {
     const action = {
       type: 'set_window' as const,
       screen: 'campaign.analytics' as const,
       campaignId: 'c1',
       window,
     }
-    expect(destinationFor(action)).toEqual({ to: '/analytics', params: {} })
+    expect(destinationFor(action)).toEqual({
+      to: '/campaigns/$campaignId/analytics',
+      params: { campaignId: 'c1' },
+    })
     expect(windowCampaign(action)).toBe('c1')
+    expect(searchCampaign(action)).toBeUndefined()
+  })
+
+  it('lands another campaign’s window on that campaign’s tab, the whole workspace on the dashboard', () => {
+    const tab = {
+      type: 'set_window' as const,
+      screen: 'campaign.analytics' as const,
+      campaignId: 'c1',
+      window: { ...window, campaignId: 'c1' },
+    }
+    const other = {
+      ...tab,
+      campaignId: 'c2',
+      window: { ...window, campaignId: 'c2' },
+    }
+    const workspace = {
+      type: 'set_window' as const,
+      screen: 'analytics' as const,
+      window,
+    }
+    expect(destinationFor(other)?.params).toEqual({ campaignId: 'c2' })
+    expect(sameDestination(tab, other)).toBe(false)
+    expect(sameDestination(tab, { ...tab, window })).toBe(true)
+    expect(destinationFor(workspace)).toEqual({ to: '/analytics', params: {} })
+    expect(sameDestination(tab, workspace)).toBe(false)
+    expect(
+      searchCampaign({ ...workspace, window: { ...window, campaignId: 'c2' } }),
+    ).toBe('c2')
+  })
+
+  it('knows the dashboards', () => {
+    expect(isDashboard('analytics')).toBe(true)
+    expect(isDashboard('campaign.analytics')).toBe(true)
+    expect(isDashboard('campaign.overview')).toBe(false)
+  })
+
+  it('lands a filter set on the calendar on the campaign’s posts list', () => {
+    expect(
+      destinationFor({
+        type: 'set_filter',
+        screen: 'campaign.calendar',
+        campaignId: 'c1',
+        filter: 'status=draft',
+      }),
+    ).toEqual({
+      to: '/campaigns/$campaignId/list',
+      params: { campaignId: 'c1' },
+    })
   })
 
   it('narrows to the window’s own campaign first', () => {

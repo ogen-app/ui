@@ -20,8 +20,8 @@
  * It is already the seam for one thing: on staging and in local dev a flag can
  * be forced per browser, so one person can exercise a half-built feature while
  * everyone else keeps testing the app as it ships (`flagOverrides.ts`). That
- * layer folds away to nothing in a production build, so the two functions below
- * are the record and only the record there.
+ * layer is off in production — the container doesn't set `DEV_TOOLS` — so the
+ * two functions below are the record and only the record there.
  *
  * A flag is not a permission: it decides whether a feature is built yet, never
  * whether someone is allowed to use it. That stays server-side either way.

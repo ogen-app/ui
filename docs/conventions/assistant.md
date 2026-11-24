@@ -159,7 +159,7 @@ keep it accurate when these rules change.
   since smart groups load nowhere else, and the card says so inside a
   campaign. Each group is named by its stored filter in the list's own
   sentence (`useSavedViewText`, through `lib/smartFilter`'s
-  `orderedTokens`, which `FilterSentence` reads too). `readAssetsState`
+  `orderedTokens`, which `FilterPills` reads too). `readAssetsState`
   answers "how does the bank stand" as `results.assets.state`, in the REST
   endpoint's own shape (`parseAssetsState`). The Assets list's suggestions lead with
   what is waiting, read from `GET /api/content-bank/assets-state`
@@ -299,17 +299,19 @@ keep it accurate when these rules change.
   `campaign_id`), which is what `set_window` lands on. A campaign's Analytics
   tab is the same dashboard (`analytics/AnalyticsDashboard`) with the campaign
   fixed by its path and no picker, its period and platforms in its own
-  address; a `set_window` from it still lands on `/analytics` narrowed to the
-  campaign. The window the page sends carries the
+  address, never a `campaign_id`. It sends its window as the dashboard
+  does, with its campaign. A `set_window` from it lands on the tab the action
+  names (CON-498): the same tab, another campaign's tab for another campaign,
+  and `/analytics` (screen `analytics`) for the whole workspace. The window the page sends carries the
   campaign and the picker's `preset`, and is what the composer's chip and the
-  thread's markers say on the dashboard, through one wording
+  thread's markers say on either dashboard, through one wording
   (`assistant/useWindowWords`): a window the page sent is named as sent (it
   already holds only what the page counted, and a marker is history), and one
   the assistant set (`counted`) only by the platforms the page counts, its
   period as it lands (`offeredPeriod`). A set_window row names only what
   `changed`, offers BACK, and shows before → after — after a navigate too,
   where `before` is the window the dashboard opened with (CON-497/507); a
-  navigate to the same route and its window are one row, worded and drawn by
+  navigate to the same route and campaign and its window are one row, worded and drawn by
   what moved from that opening window; the scope bar tints what the assistant
   changed (`stores/analyticsHighlightStore`) until the user's next touch. A
   set_window whose dates are only the period on screen resolved keeps the

@@ -21,34 +21,22 @@ COPY . .
 ARG VITE_API_URL=""
 ENV VITE_API_URL=${VITE_API_URL}
 
-# "1" builds in the staging dev tools: per-browser feature-flag overrides and
-# the /flags panel (src/config/flagOverrides.ts). Set it on the **staging**
-# service only — it is what lets one teammate exercise a half-built feature
-# there without the rest of the team seeing it. Anything else, including
-# leaving it unset, folds the whole thing out of the bundle, which is why the
-# default here is empty: a production image gets it right by doing nothing.
-ARG VITE_DEV_TOOLS=""
-ENV VITE_DEV_TOOLS=${VITE_DEV_TOOLS}
+# Sentry, the dev tools (per-browser flag overrides and /flags) and anything
+# else that differs between development and production are NOT build args: the
+# same image runs in both, so they are read at container start from the
+# container's environment — SENTRY_DSN, SENTRY_ENVIRONMENT,
+# SENTRY_TRACES_SAMPLE_RATE, DEV_TOOLS (docker/entrypoint.sh, CON-518).
 
-# Sentry error monitoring + tracing (CON-304). All empty by default ⇒ telemetry
-# is off (fail-open) and the build ships no source maps. Set the DSN to turn it
-# on. VITE_APP_RELEASE should be the commit SHA, matching the API's
-# SENTRY_RELEASE so a UI error and its server trace share one release.
-ARG VITE_SENTRY_DSN=""
-ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
-ARG VITE_SENTRY_ENVIRONMENT="production"
-ENV VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT}
-ARG VITE_SENTRY_TRACES_SAMPLE_RATE="0.1"
-ENV VITE_SENTRY_TRACES_SAMPLE_RATE=${VITE_SENTRY_TRACES_SAMPLE_RATE}
+# The release is compiled in, because one image is one release: the commit SHA,
+# matching the API's SENTRY_RELEASE so a UI error and its server trace share it.
 ARG VITE_APP_RELEASE=""
 ENV VITE_APP_RELEASE=${VITE_APP_RELEASE}
 
-# Build-time only, for source-map upload — these have NO VITE_ prefix, so Vite
-# never injects them into the client bundle, and this build stage is discarded
-# before the runtime image, so the token never ships. Leaving the token empty
-# skips the upload entirely.
-ARG SENTRY_AUTH_TOKEN=""
-ENV SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
+# Source-map upload. The org and project are plain args; the auth token is a
+# BuildKit secret (`--secret id=sentry_auth_token,...`), never an ARG, so it
+# stays out of the image history and the build cache. No VITE_ prefix, so
+# none of these reach the bundle. Without the secret the upload is skipped and
+# no maps are emitted.
 ARG SENTRY_ORG=""
 ENV SENTRY_ORG=${SENTRY_ORG}
 ARG SENTRY_PROJECT=""
@@ -56,11 +44,18 @@ ENV SENTRY_PROJECT=${SENTRY_PROJECT}
 
 # Vite only: `pnpm build` would also run `tsc`, which repeats CI's typecheck
 # and adds ~35 s to every deploy.
-RUN pnpm exec vite build
+RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN \
+    pnpm exec vite build
 
 # ─── Stage 2: serve with Caddy ───────────────────────────────────────────────
 FROM caddy:2-alpine
+# jq builds /srv/env.js at start with proper JSON escaping.
+RUN apk add --no-cache jq
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /app/dist /srv
+COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/ogen-entrypoint
 # Railway injects $PORT; the Caddyfile listens on it (default 8080 locally).
 EXPOSE 8080
+# Setting ENTRYPOINT clears the base image's CMD, so it is restated here.
+ENTRYPOINT ["/usr/local/bin/ogen-entrypoint"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

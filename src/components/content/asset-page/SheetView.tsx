@@ -28,6 +28,8 @@ type Props = {
   onSelect: (name: string) => void
   cited: CitedRange | null
   onClearCited: () => void
+  /** Back to the idea whose chip opened the cited rows, when one did. */
+  onBack?: () => void
   loading: boolean
   failed: boolean
   hasMore: boolean
@@ -53,6 +55,7 @@ export function SheetView({
   onSelect,
   cited,
   onClearCited,
+  onBack,
   loading,
   failed,
   hasMore,
@@ -188,13 +191,24 @@ export function SheetView({
             {range.by &&
               ` ${t('assetInsights.sheet.citedBy', { idea: range.by })}`}
           </span>
-          <button
-            type="button"
-            onClick={onClearCited}
-            className="shrink-0 cursor-pointer font-medium text-accent hover:underline"
-          >
-            {t('assetInsights.sheet.clear')}
-          </button>
+          <span className="flex shrink-0 items-center gap-4">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="cursor-pointer font-medium text-accent hover:underline"
+              >
+                {t('assetInsights.sheet.backToIdea')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClearCited}
+              className="cursor-pointer font-medium text-accent hover:underline"
+            >
+              {t('assetInsights.sheet.clear')}
+            </button>
+          </span>
         </div>
       )}
 

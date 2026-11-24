@@ -37,22 +37,27 @@ keep it accurate when these rules change.
   rename on an ingested type is a title-only PUT. See
   `docs/technical-decisions.md#asset-opening`.
 
-- **The asset page is two columns, and those screens are its Source tab**
-  (CON-366, shipped unflagged; `docs/asset-page.md`). `AssetDocument` renders
-  `AssetPage`: what the asset is on the left (stage, facts, the **title** —
-  edited there and nowhere else), the LLM analysis and its ideas under
-  Insights on the right, and `assetScreen`'s screen under Source, with no title
-  field or page-width card of its own. A recording has **one** `<audio>`, the
-  stage's; the transcript, commitment and idea chips drive it through
-  `useAudioSeek`. Don't give a Source screen its own title or player back —
-  two title fields edit one value with two debounces, and two players play over
-  each other.
+- **The asset page is the reading, then the thing read, and those screens
+  are its Source card** (CON-366, shipped unflagged; `docs/asset-page.md`).
+  `AssetDocument` renders `AssetPage`, the post editor's frame: the asset's
+  own bar (`AssetBar`, which carries the lens picker) over a main column of `ui/card` cards — **Summary**
+  (the lead, the rest on request), **Ideas** (the Ideas list's cards,
+  `IdeaRow` with `atSource`) and last the **Source** card, holding the
+  **title**, edited there and nowhere else, over `assetScreen`'s screen with
+  no title field of its own — and a side column of tabs level with the bar
+  (`page-primitives/SideColumn`), one for now: **Overview** (`AssetOverview`,
+  the picture, then About — campaigns and tags among the facts — and what
+  it covers, all in two columns with a mark before every value). Until there is a reading, Summary and Ideas
+  are one short card. A recording has **one** `<audio>`, over every card;
+  the transcript, commitment and idea chips drive it through `useAudioSeek`.
+  Don't give a screen its own title or player back — two title fields edit
+  one value with two debounces, and two players play over each other.
 
 - **An asset update is presence-aware, and a campaign's is not.** Since CON-279
   the asset PUT reads `alt_text` and `tag_ids` as optional: omit one and the
   stored value is left alone, send it — including `""` or `[]` — and it is
   replaced. So a screen sends the fields it owns and nothing else: the document
-  editor sends `content` (the title comes from the page's left column), the
+  editor sends `content` (the title comes from the page's own title field), the
   image screen sends the three fields it shows. `assetToPayload` is gone with the bug it existed for; do not
   reintroduce a helper that round-trips fields the screen cannot see, because
   that is exactly what put a stale copy of the tags back over a bulk re-tag.

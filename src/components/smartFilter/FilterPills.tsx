@@ -17,7 +17,7 @@ import type {
   SentenceVocabulary,
   SmartToken,
 } from '@/lib/smartFilter'
-import { AddDetail, ClausePanel, ClauseWords } from './FilterSentence'
+import { AddDetail, ClausePanel, ClauseWords } from './FilterParts'
 
 type Opened<Field> = { field: Field; negated: boolean }
 
@@ -26,11 +26,9 @@ type Opened<Field> = { field: Field; negated: boolean }
  * the tabs: shown only while there is a filter, a group open, or a detail
  * being added — `Filter` beside the tabs starts one (`adding`).
  *
- * The same filter as `FilterSentence` and the same parts: each pill is one
- * token's catalogue clause ("in **Hotel de Russie**"), opening the clause's
- * own panel, its × removing it; `+ Add` is the sentence's add field, with its
- * starters, searches and counts. So nothing about how a filter is built,
- * worded or counted changes — only where it sits.
+ * Built from `FilterParts`: each pill is one token's catalogue clause ("in
+ * **Hotel de Russie**"), opening the clause's own panel, its × removing it;
+ * `+ Add` is the add field, with its starters, searches and counts.
  */
 export function FilterPills<F, Field extends string>({
   filter,
@@ -120,7 +118,7 @@ export function FilterPills<F, Field extends string>({
   }, [opened])
 
   // The panel opens under what it is about and never hangs off the row's
-  // right edge — placed on the DOM, as the sentence's is.
+  // right edge — placed on the DOM.
   useLayoutEffect(() => {
     const box = boxRef.current
     const panel = panelRef.current
@@ -181,7 +179,7 @@ export function FilterPills<F, Field extends string>({
           more > 1 ? { ...token, values: token.values.slice(0, 1) } : token
         const words = (
           <>
-            <ClauseWords clause={vocab.clause(shown)} bold />
+            <ClauseWords clause={vocab.clause(shown)} />
             {more > 1 && (
               <span className="ml-1 font-medium text-foreground tabular-nums">
                 {t('sentence.more', {
@@ -238,7 +236,6 @@ export function FilterPills<F, Field extends string>({
       })}
       {(!inline || adding) && (
         <AddDetail
-          variant="pills"
           inputRef={addRef}
           panelRef={panelRef}
           adding={adding}
