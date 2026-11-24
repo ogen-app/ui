@@ -1,7 +1,9 @@
-import { ChatCircleTextIcon } from '@phosphor-icons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { BubbleChatQuestionIcon } from '@hugeicons/core-free-icons'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { PageActionBar } from '@/components/page-primitives/PageActionBar'
 import {
   useAnswerDistill,
@@ -277,14 +279,14 @@ function Summary({
   const questions = proposal.questions.length
 
   return (
-    <section className="flex w-full max-w-content flex-col gap-3 bg-primary px-6 py-6">
-      <p className="text-base leading-6">
+    <Card capped title={t('brand.distill.summary.title')}>
+      <p className="text-sm">
         {parts.length > 0
           ? t('brand.distill.summary.proposes', { from, what })
           : t('brand.distill.summary.nothing', { from })}
       </p>
       {leftOut.length > 0 && (
-        <p className="text-sm leading-5 text-secondary-foreground">
+        <p className="text-sm leading-5">
           {t('brand.distill.summary.leftOut', {
             what: formatList(leftOut, 'conjunction', i18n.language),
           })}
@@ -292,9 +294,12 @@ function Summary({
       )}
       {questions > 0 && (
         <p className="flex items-start gap-2 border-t border-quaternary pt-3 text-sm leading-5">
-          <ChatCircleTextIcon
+          <HugeiconsIcon
+            icon={BubbleChatQuestionIcon}
+            size={16}
+            strokeWidth={1.5}
             aria-hidden
-            className="mt-0.5 size-4 shrink-0 text-accent"
+            className="mt-0.5 shrink-0 text-accent"
           />
           <span>
             {t(`brand.distill.summary.gaps.${route}` as const, {
@@ -310,7 +315,7 @@ function Summary({
           </span>
         </p>
       )}
-    </section>
+    </Card>
   )
 }
 

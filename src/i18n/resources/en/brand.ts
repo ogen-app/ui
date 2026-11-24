@@ -41,9 +41,12 @@ export const brand = {
     voice: 'Voice',
     audience: 'Audience',
     campaignVoiceHint:
-      'The voice this campaign writes in. Posts open in it and can be changed one by one; leave it unset to use the workspace default.',
+      'Every post in this campaign is written in this voice. One post can still pick another, on the post.',
     campaignAudienceHint:
-      'Who this campaign is written to. A post that addresses somebody else says so on the post.',
+      'Every post in this campaign is written to these people. One post can still address somebody else, on the post.',
+    workspaceDefault: 'Workspace default — {{name}}',
+    manageVoices: 'Edit voices',
+    manageAudiences: 'Edit audiences',
     noVoice: 'No voice',
     noAudience: 'No audience',
     sourcePost: 'Set on this post',
@@ -177,6 +180,18 @@ export const brand = {
     usagePublished: '{{count}} published',
     usageDrafts: '{{count}} in draft',
     usageNever: 'never used',
+    /**
+     * Which campaigns use a voice or an audience (`useUsedBy`). A voice a
+     * campaign does not choose is the workspace default's, and says so;
+     * `{{campaigns}}` is a joined list of names, the last item possibly
+     * `usedByMore`.
+     */
+    usedByChosen: 'Chosen by {{campaigns}}',
+    usedByDefault: 'The default for {{campaigns}}',
+    usedByBoth: 'Chosen by {{chosen}}; the default for {{inherited}}',
+    usedByNone: 'No campaign uses it',
+    usedByMore_one: '{{count}} more',
+    usedByMore_other: '{{count}} more',
     /**
      * How the parts of a fact are joined — a comma and a space in English.
      * On the catalogue rather than in the helper because the separator is a
@@ -327,6 +342,7 @@ export const brand = {
       thin: 'too little text',
       timedOut: 'took too long',
       failed: "couldn't be read",
+      title: 'Progress',
       leave:
         'This takes a few minutes. You can leave — it carries on, and Ogen lets you know when it is ready to look at. Nothing is saved to your Foundation until you say so.',
       pagesLand:
@@ -347,6 +363,7 @@ export const brand = {
       facts_other: '{{count}} facts',
     },
     summary: {
+      title: 'Summary',
       fromPages_one: 'From {{count}} page of {{site}}',
       fromPages_other: 'From {{count}} pages of {{site}}',
       fromFile: 'From {{title}}',
@@ -410,6 +427,7 @@ export const brand = {
     },
     questions: {
       title: 'A handful of questions',
+      cardTitle: 'Questions',
       intro:
         'Answer what you can and skip the rest. Ogen drafts voices, audiences, guardrails and facts from your words, and you review them before anything is saved — the same as reading a website.',
       placeholder: 'Skip, or say it in a line or two',
@@ -647,16 +665,8 @@ export const brand = {
     /** The confirmations. `{{name}}` is the entry's own, always the user's words. */
     deleted: '{{name}} was deleted.',
     guardrailsDeleted: 'The guardrails were deleted.',
-    /** The side column's first card: what the section is for. */
+    /** The side column's card: what the section is for. */
     about: 'About',
-    /** The side column's second card: each campaign, and what it picks here. */
-    usedBy: {
-      title: 'Used by',
-      empty: 'No campaigns yet.',
-      noVoice: 'No voice',
-      noAudience: 'No audience',
-      defaultVoice: '{{voice}} (default)',
-    },
   },
 
   /** The visual half — `LookSection.tsx`. */
@@ -1123,14 +1133,10 @@ export const brand = {
       stay: 'Keep editing',
       discard: 'Discard',
     },
-    /**
-     * The fork note's first sentence. `<name>` is the starter's name, set in
-     * the foreground colour — a `<Trans>` rather than three JSX fragments,
-     * because where the emphasis falls inside a sentence is the translator's
-     * decision and not the layout's.
-     */
+    /** The fork note: its title names the starter, its body begins with this. */
+    forkedTitle: 'Started from {{name}}',
     forkedFrom:
-      'Started from <name>{{name}}</name>, and copied rather than linked — ours changing will never change yours.',
+      'Copied rather than linked — ours changing will never change yours.',
     danger: {
       title: 'Danger zone',
       /**

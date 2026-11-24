@@ -37,8 +37,11 @@ export function VoicesSection({
   onAdd,
   onOpen,
   onStart,
+  usedBy,
 }: {
   voices: BrandVoice[]
+  /** Each voice's "Chosen by …" line (`useUsedBy`), once the campaigns load. */
+  usedBy?: Map<string, string>
   /** Write one from nothing. */
   onAdd?: () => void
   onOpen?: (id: string) => void
@@ -75,7 +78,12 @@ export function VoicesSection({
         <VoicesEmpty onStart={onStart} />
       ) : (
         voices.map((voice) => (
-          <VoiceCard key={voice.id} voice={voice} onOpen={onOpen} />
+          <VoiceCard
+            key={voice.id}
+            voice={voice}
+            usedBy={usedBy?.get(voice.id)}
+            onOpen={onOpen}
+          />
         ))
       )}
     </BrandLibrary>
@@ -93,9 +101,7 @@ function VoicesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
   const { tone } = brandSection('voices')
   return (
     <Card title={t('brand.voices.starterGroupTitle')} capped>
-      <p className="text-sm text-secondary-foreground">
-        {t('brand.voices.starterGroupBody')}
-      </p>
+      <p className="text-sm">{t('brand.voices.starterGroupBody')}</p>
       <div className="grid gap-3">
         {VOICE_STARTERS.map((starter) => {
           const copy = voiceStarterCopy(t, starter)
@@ -157,9 +163,11 @@ function VoicesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
  */
 function VoiceCard({
   voice,
+  usedBy,
   onOpen,
 }: {
   voice: BrandVoice
+  usedBy?: string
   onOpen?: (id: string) => void
 }) {
   const { t } = useTranslation()
@@ -202,6 +210,7 @@ function VoiceCard({
       facts={[
         rulesLine(t, voice.rules),
         facts.join(t('brand.facts.separator')),
+        ...(usedBy ? [usedBy] : []),
         <OriginLine key="origin" origin={voice.origin} />,
       ]}
     />

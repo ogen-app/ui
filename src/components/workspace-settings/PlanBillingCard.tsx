@@ -308,7 +308,7 @@ export function PlanBanner({
             one line of prose with a box drawn round part of it, and centring a
             padded box against text sits it a pixel or two high — the kind of
             misalignment you see without being able to name. */}
-        <span className="flex flex-wrap items-baseline gap-2 text-sm text-secondary-foreground">
+        <span className="flex flex-wrap items-baseline gap-2 text-sm">
           {complimentary ? (
             <Tag>{t('tiers.comp.tag')}</Tag>
           ) : (
@@ -316,11 +316,7 @@ export function PlanBanner({
           )}
           <span>{secondLine}</span>
         </span>
-        {failureLine && (
-          <span className="text-sm text-secondary-foreground">
-            {failureLine}
-          </span>
-        )}
+        {failureLine && <span className="text-sm">{failureLine}</span>}
       </span>
       <div className="ml-auto flex shrink-0 items-center gap-1 pl-3">
         {/* A scheduled downgrade can be called off from where it is stated.

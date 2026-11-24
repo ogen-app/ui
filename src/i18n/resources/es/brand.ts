@@ -14,9 +14,12 @@ export const brand: Translation['brand'] = {
     voice: 'Voz',
     audience: 'Audiencia',
     campaignVoiceHint:
-      'La voz en la que escribe esta campaña. Las publicaciones se abren con ella y pueden cambiarse una a una; déjala sin definir para usar la del espacio de trabajo.',
+      'Cada publicación de esta campaña se escribe con esta voz. Una publicación puede elegir otra, en la propia publicación.',
     campaignAudienceHint:
-      'A quién se dirige esta campaña. Una publicación que se dirija a otra persona lo indica en la propia publicación.',
+      'Cada publicación de esta campaña se dirige a estas personas. Una publicación puede dirigirse a otras, en la propia publicación.',
+    workspaceDefault: 'Predeterminada del espacio — {{name}}',
+    manageVoices: 'Editar voces',
+    manageAudiences: 'Editar audiencias',
     noVoice: 'Sin voz',
     noAudience: 'Sin audiencia',
     sourcePost: 'Definida en esta publicación',
@@ -125,6 +128,12 @@ export const brand: Translation['brand'] = {
     usagePublished: '{{count}} publicadas',
     usageDrafts: '{{count}} en borrador',
     usageNever: 'nunca usada',
+    usedByChosen: 'Elegida por {{campaigns}}',
+    usedByDefault: 'Predeterminada en {{campaigns}}',
+    usedByBoth: 'Elegida por {{chosen}}; predeterminada en {{inherited}}',
+    usedByNone: 'Ninguna campaña la usa',
+    usedByMore_one: '{{count}} más',
+    usedByMore_other: '{{count}} más',
     separator: ', ',
   },
 
@@ -251,6 +260,7 @@ export const brand: Translation['brand'] = {
       thin: 'demasiado poco texto',
       timedOut: 'tardó demasiado',
       failed: 'no se pudo leer',
+      title: 'Progreso',
       leave:
         'Esto tarda unos minutos. Puedes irte: sigue en marcha, y Ogen te avisa cuando esté listo para revisarlo. No se guarda nada en tus Fundamentos hasta que tú lo digas.',
       pagesLand:
@@ -270,6 +280,7 @@ export const brand: Translation['brand'] = {
       facts_other: '{{count}} datos',
     },
     summary: {
+      title: 'Resumen',
       fromPages_one: 'A partir de {{count}} página de {{site}}',
       fromPages_other: 'A partir de {{count}} páginas de {{site}}',
       fromFile: 'A partir de {{title}}',
@@ -340,6 +351,7 @@ export const brand: Translation['brand'] = {
     },
     questions: {
       title: 'Unas cuantas preguntas',
+      cardTitle: 'Preguntas',
       intro:
         'Responde lo que puedas y sáltate el resto. Ogen redacta voces, audiencias, límites y datos a partir de tus palabras, y tú los revisas antes de que se guarde nada, igual que al leer un sitio web.',
       placeholder: 'Sáltala, o dilo en una o dos líneas',
@@ -555,13 +567,6 @@ export const brand: Translation['brand'] = {
     deleted: 'Se eliminó {{name}}.',
     guardrailsDeleted: 'Se eliminaron los límites.',
     about: 'Acerca de',
-    usedBy: {
-      title: 'Lo usan',
-      empty: 'Aún no hay campañas.',
-      noVoice: 'Sin voz',
-      noAudience: 'Sin audiencia',
-      defaultVoice: '{{voice}} (predeterminada)',
-    },
   },
 
   look: {
@@ -973,8 +978,9 @@ export const brand: Translation['brand'] = {
       stay: 'Seguir editando',
       discard: 'Descartar',
     },
+    forkedTitle: 'Partió de {{name}}',
     forkedFrom:
-      'Partió de <name>{{name}}</name>, y se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
+      'Se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
     danger: {
       title: 'Zona de peligro',
       delete: 'Eliminar {{noun}}',

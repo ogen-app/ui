@@ -1,22 +1,24 @@
 import { useTranslation } from 'react-i18next'
 
+import { Explainer } from '@/components/page-primitives/Explainer'
 import { DatePicker } from '@/components/ui/date-picker'
-import { LineItem } from '@/components/ui/line-item'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card } from '@/components/ui/card'
+import { cn } from '@/lib'
 import {
   useCampaignPhases,
   useResetPhasePlan,
   useSavePhasePlan,
 } from '@/hooks/useCampaigns'
 import { useLocale } from '@/hooks/useLocale'
-import { formatDateRange } from '@/lib/intl'
+import { formatDate, formatDateRange } from '@/lib/intl'
 import { fetched } from '@/lib/fetched'
 import {
   boundaryRange,
   canSplit,
   isDated,
   moveBoundary,
+  windowDays,
   type DatedPhase,
 } from '@/lib/phasePlan'
 import type { CampaignPhasePlan } from '@/types/campaigns'
@@ -39,10 +41,25 @@ type Move = NonNullable<ReturnType<typeof moveBoundary>>
  * When each phase of the campaign's type runs (CON-166) — the second column of
  * a campaign's Strategy, beside what the campaign commits to.
  *
- * Drawn the way Strategy for all campaigns draws its cards: a heading, then
- * one `LineItem` per phase — its name, what it is for, and when it runs with
- * how many posts are planned into it. Nothing else: the number of days is in
- * the range, and the order is the list's.
+ * ## Why it says so much
+ *
+ * It used to be a bare list — a name, a purpose clamped to two lines, a range,
+ * and a calendar glyph on all but the last row — and nobody could tell what
+ * the dates were *for* or what moving one would do (2026-11-23). So the card
+ * now answers those three questions in order:
+ *
+ * 1. **What a phase does** — the explainer: each post is written for the phase
+ *    its date falls in, so the dates decide which goal a post serves.
+ * 2. **Where the campaign is** — a bar across the campaign, one segment per
+ *    phase at its share of the days, with today on it, and "Now" / "Done" on
+ *    the rows. Where you are is the first thing anybody asks of a timeline.
+ * 3. **What can be changed** — every phase but the last has "Ends [date]", a
+ *    button that prints the date it changes, and the last says it ends with
+ *    the campaign. A glyph alone said "a calendar" and nothing about which
+ *    date, or that the next phase moves with it.
+ *
+ * The purpose is printed whole: it is the one line that says what the phase
+ * is for, and clamping it is what left the dates meaningless.
  *
  * The windows come from `GET /phases` — the server's even split of the
  * campaign dates until someone edits them — and are never worked out here.
@@ -88,9 +105,7 @@ export function CampaignPhasesCard({ campaignId, pending }: Props) {
         </div>
       )}
       {plan.status === 'error' && (
-        <p className="text-sm text-secondary-foreground">
-          {t('campaigns.phases.loadError')}
-        </p>
+        <p className="text-sm">{t('campaigns.phases.loadError')}</p>
       )}
       {plan.status === 'ready' && (
         <PhaseList
@@ -120,27 +135,26 @@ function PhaseList({
   const { phases } = plan
 
   if (phases.length === 0) {
-    return (
-      <p className="text-sm text-secondary-foreground">
-        {t('campaigns.phases.empty')}
-      </p>
-    )
+    return <p className="text-sm">{t('campaigns.phases.empty')}</p>
   }
 
   const splittable = canSplit(phases)
   const editable = splittable && !pending
   const dated = phases.filter(isDated)
+  const allDated = dated.length === phases.length
+  // Local, as a calendar day, so it compares with the wire's dates as strings.
+  const today = localISO(new Date())
+  const day = (iso: string) => new Date(`${iso}T00:00:00`)
   const range = (phase: DatedPhase) =>
-    // Local midnight, so the calendar day on the wire is the one printed.
     formatDateRange(
-      new Date(`${phase.start_date}T00:00:00`),
-      new Date(`${phase.end_date}T00:00:00`),
+      day(phase.start_date),
+      day(phase.end_date),
       { month: 'short', day: 'numeric' },
       locale,
     )
 
   // One line stating where the dates stand. It changes with the campaign, so
-  // it is printed under the list rather than taught in a note.
+  // it is printed under the list rather than taught in the note.
   const status = pending
     ? t(
         pending === 'dates'
@@ -158,50 +172,161 @@ function PhaseList({
           )
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
+      <Explainer id="campaign-phases">
+        {t('campaigns.phases.explainer')}
+      </Explainer>
+
+      {allDated && <Timeline phases={dated} today={today} />}
+
       <ol className="flex flex-col">
         {phases.map((phase, i) => {
-          const posts = t('campaigns.phases.posts', { count: phase.post_count })
+          const when = isDated(phase) ? standing(phase, today) : null
+          const last = i === phases.length - 1
           return (
-            <li key={phase.phase_id}>
-              <LineItem
-                variant="entry"
-                indicator={{
-                  kind: 'custom',
-                  node: (
-                    <span className="text-xs tabular-nums text-tertiary-foreground">
-                      {i + 1}
+            <li
+              key={phase.phase_id}
+              className="flex gap-3 border-b border-tertiary py-3 first:pt-0 last:border-b-0 last:pb-0"
+            >
+              <span className="w-4 shrink-0 text-sm tabular-nums">{i + 1}</span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <p className="flex items-baseline justify-between gap-3">
+                  <span className="text-sm font-medium">{phase.name}</span>
+                  {when === 'now' && (
+                    <span className="text-xs font-medium text-info">
+                      {t('campaigns.phases.now')}
                     </span>
-                  ),
-                }}
-                label={phase.name}
-                details={phase.purpose || undefined}
-                meta={
-                  isDated(phase)
+                  )}
+                  {when === 'done' && (
+                    <span className="text-xs text-tertiary-foreground">
+                      {t('campaigns.phases.done')}
+                    </span>
+                  )}
+                </p>
+                {phase.purpose && <p className="text-sm">{phase.purpose}</p>}
+                <p className="text-sm">
+                  {isDated(phase)
                     ? t('campaigns.phases.meta', {
                         range: range(phase),
-                        posts,
+                        days: t('campaigns.phases.days', {
+                          count: windowDays(phase.start_date, phase.end_date),
+                        }),
+                        posts: t('campaigns.phases.posts', {
+                          count: phase.post_count,
+                        }),
                       })
-                    : posts
-                }
-                trailing={
-                  editable && i < phases.length - 1 ? (
-                    <BoundaryPicker
-                      phases={dated}
-                      index={i}
-                      disabled={busy}
-                      onMove={onMove}
-                    />
-                  ) : undefined
-                }
-              />
+                    : t('campaigns.phases.posts', { count: phase.post_count })}
+                </p>
+                {isDated(phase) &&
+                  (last ? (
+                    <p className="text-sm">
+                      {t('campaigns.phases.endsWithCampaign', {
+                        date: formatDate(
+                          day(phase.end_date),
+                          { month: 'short', day: 'numeric' },
+                          locale,
+                        ),
+                      })}
+                    </p>
+                  ) : editable ? (
+                    <div className="mt-1 flex items-center gap-2 text-sm">
+                      <span>{t('campaigns.phases.ends')}</span>
+                      <BoundaryPicker
+                        phases={dated}
+                        index={i}
+                        disabled={busy}
+                        onMove={onMove}
+                      />
+                    </div>
+                  ) : null)}
+              </div>
             </li>
           )
         })}
       </ol>
-      <p className="text-sm text-secondary-foreground">{status}</p>
+      <p className="text-sm">
+        {status}
+        {editable && <> {t('campaigns.phases.howToMove')}</>}
+      </p>
     </div>
   )
+}
+
+/**
+ * The campaign as one bar: a segment per phase at its share of the days, the
+ * current one in ink and the others in the track's grey, and a tick where
+ * today falls. The numbers match the rows under it.
+ */
+function Timeline({ phases, today }: { phases: DatedPhase[]; today: string }) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const first = phases[0]
+  const last = phases[phases.length - 1]
+  const total = windowDays(first.start_date, last.end_date)
+  const elapsed = windowDays(first.start_date, today) - 1
+  const inside = elapsed >= 0 && elapsed < total
+  const edge = (iso: string) =>
+    formatDate(
+      new Date(`${iso}T00:00:00`),
+      { month: 'short', day: 'numeric' },
+      locale,
+    )
+
+  return (
+    <figure
+      className="flex flex-col gap-1.5"
+      aria-label={t('campaigns.phases.timeline')}
+    >
+      <div className="relative flex h-6 gap-0.5">
+        {phases.map((phase, i) => {
+          const now = standing(phase, today) === 'now'
+          return (
+            <div
+              key={phase.phase_id}
+              className={cn(
+                'flex min-w-0 items-center justify-center rounded-sm text-xs tabular-nums',
+                now
+                  ? 'bg-foreground text-primary'
+                  : 'bg-tertiary text-foreground',
+              )}
+              style={{
+                flexGrow: windowDays(phase.start_date, phase.end_date),
+                flexBasis: 0,
+              }}
+              title={phase.name}
+            >
+              {i + 1}
+            </div>
+          )
+        })}
+        {inside && (
+          <span
+            aria-hidden
+            className="absolute -top-1 -bottom-1 w-0.5 rounded-full bg-info"
+            style={{ left: `${((elapsed + 0.5) / total) * 100}%` }}
+          />
+        )}
+      </div>
+      <figcaption className="flex justify-between text-xs text-tertiary-foreground">
+        <span>{edge(first.start_date)}</span>
+        <span>{edge(last.end_date)}</span>
+      </figcaption>
+    </figure>
+  )
+}
+
+/** Where today sits against one phase's window. */
+function standing(phase: DatedPhase, today: string): 'done' | 'now' | 'later' {
+  if (today > phase.end_date) return 'done'
+  if (today >= phase.start_date) return 'now'
+  return 'later'
+}
+
+function localISO(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 /** The day phase `index` ends — and so the day before the next one starts. */
@@ -221,7 +346,7 @@ function BoundaryPicker({
   const { min, max } = boundaryRange(phases, index)
   return (
     <DatePicker
-      variant="icon"
+      variant="button"
       size="sm"
       aria-label={t('campaigns.phases.endsLabel', { phase: phase.name })}
       value={`${phase.end_date}T00:00:00`}

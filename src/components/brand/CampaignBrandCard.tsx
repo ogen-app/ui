@@ -1,13 +1,13 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { brandSection } from '@/lib/brandSections'
-import { cn } from '@/lib'
 import { campaignToPayload } from '@/lib/campaignPayload'
 import { useBrand } from '@/hooks/useBrand'
 import { useCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
 import type { UpdateCampaignPayload } from '@/types/campaigns'
-import type { BrandAudience, BrandVoice } from './types'
+import type { BrandAudience, BrandData, BrandVoice } from './types'
 
 /**
  * What this campaign draws on out of the workspace's Brand (§8, middle level).
@@ -39,6 +39,17 @@ import type { BrandAudience, BrandVoice } from './types'
  * `FromTheWorkspace` — a rule nobody can see is a rule nobody believes is
  * running.
  *
+ * **A dropdown in each card's header, and the pick previewed under it**
+ * (2026-11-23). It was a list of rows you clicked to select, the chosen one on
+ * a grey face — and with one voice in the library that list was one grey row
+ * that read as a statement, not a choice: "how do I change the voice?" The
+ * header's `choice` is the card's own selector (`ui/card`), so it looks like
+ * every other thing on a card that can be changed, and the body shows what the
+ * pick means in the library card's own terms — the line, then the sample or
+ * the three consequences in a ruled block — so the campaign and Foundation
+ * describe a voice the same way. Unset is a named option, "Workspace default —
+ * <name>", rather than clicking the chosen row again to clear it.
+ *
  * **It saves on the spot**, not through the page's Save button, following
  * `PlatformsControl` — a selection that sat dirty until an unrelated Save would
  * be a lie about where it lives. The write is a whole-campaign PUT with the one
@@ -47,6 +58,7 @@ import type { BrandAudience, BrandVoice } from './types'
  */
 export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { data: brand, isLoading } = useBrand()
   const { data: campaign } = useCampaign(campaignId)
   const { mutate: update } = useUpdateCampaign({
@@ -55,16 +67,61 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
 
   if (isLoading || !brand || !campaign) return null
 
-  const voices = brandSection('voices')
-  const audiences = brandSection('audiences')
+  return (
+    <CampaignBrandCards
+      brand={brand}
+      voiceId={campaign.brand_voice_id}
+      audienceId={campaign.brand_audience_id}
+      onSet={(refs) =>
+        update({ id: campaignId, payload: campaignToPayload(campaign, refs) })
+      }
+      onManage={(section) =>
+        void navigate({
+          to:
+            section === 'voices'
+              ? '/foundation/voices'
+              : '/foundation/audiences',
+        })
+      }
+    />
+  )
+}
+
+/** The option that stands for "nothing set on the campaign". */
+const UNSET = 'unset'
+
+/**
+ * The two cards, from what they show rather than from the queries — so the
+ * design harness draws exactly what Strategy does.
+ */
+export function CampaignBrandCards({
+  brand,
+  voiceId,
+  audienceId,
+  onSet,
+  onManage,
+}: {
+  brand: BrandData
+  voiceId: string | null
+  audienceId: string | null
+  onSet: (
+    refs: Pick<UpdateCampaignPayload, 'brand_voice_id' | 'brand_audience_id'>,
+  ) => void
+  onManage: (section: 'voices' | 'audiences') => void
+}) {
+  const { t } = useTranslation()
 
   const empty = brand.voices.length === 0 && brand.audiences.length === 0
-  if (empty) return <NothingToPickFrom />
+  if (empty) return <NothingToPickFrom onOpen={() => onManage('voices')} />
 
-  function set(refs: Partial<UpdateCampaignPayload>) {
-    if (!campaign) return
-    update({ id: campaignId, payload: campaignToPayload(campaign, refs) })
-  }
+  const voices = brandSection('voices')
+  const audiences = brandSection('audiences')
+  const fallback = brand.voices.find((v) => v.isDefault)
+  // A ref to an entry that has since been deleted reads as unset, which is
+  // what the generator does with it too.
+  const voice = brand.voices.find((v) => v.id === voiceId)
+  const shownVoice = voice ?? fallback
+  const audience = brand.audiences.find((a) => a.id === audienceId)
 
   return (
     // Two cards, one per binding: each is its own question with its own
@@ -75,58 +132,122 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
         icon={voices.icon}
         tone={voices.tone}
         title={t('brand.binding.voice')}
+        choice={{
+          label: t('brand.binding.voice'),
+          value: voice ? voice.id : UNSET,
+          options: [
+            ...(fallback
+              ? [
+                  {
+                    id: UNSET,
+                    displayValue: t('brand.binding.workspaceDefault', {
+                      name: fallback.name,
+                    }),
+                  },
+                ]
+              : [{ id: UNSET, displayValue: t('brand.binding.noVoice') }]),
+            ...brand.voices.map((v) => ({ id: v.id, displayValue: v.name })),
+          ],
+          onChange: (id) => onSet({ brand_voice_id: id === UNSET ? null : id }),
+        }}
         capped
       >
-        <p className="text-sm text-tertiary-foreground">
-          {t('brand.binding.campaignVoiceHint')}
-        </p>
-        <div className="flex flex-col">
-          {brand.voices.map((voice) => (
-            <VoiceRow
-              key={voice.id}
-              voice={voice}
-              picked={campaign.brand_voice_id === voice.id}
-              // Clicking the chosen one again clears it, so "the workspace's
-              // default" stays reachable without a None row that would sit in the
-              // list pretending to be a voice.
-              onPick={() =>
-                set({
-                  brand_voice_id:
-                    campaign.brand_voice_id === voice.id ? null : voice.id,
-                })
-              }
-            />
-          ))}
-        </div>
+        <p className="text-sm">{t('brand.binding.campaignVoiceHint')}</p>
+        {shownVoice && <VoicePreview voice={shownVoice} />}
+        <Manage
+          label={t('brand.binding.manageVoices')}
+          onClick={() => onManage('voices')}
+        />
       </Card>
       <Card
         icon={audiences.icon}
         tone={audiences.tone}
         title={t('brand.binding.audience')}
+        choice={{
+          label: t('brand.binding.audience'),
+          value: audience ? audience.id : UNSET,
+          options: [
+            { id: UNSET, displayValue: t('brand.binding.noAudience') },
+            ...brand.audiences.map((a) => ({
+              id: a.id,
+              displayValue: a.name,
+            })),
+          ],
+          onChange: (id) =>
+            onSet({ brand_audience_id: id === UNSET ? null : id }),
+        }}
         capped
       >
-        <p className="text-sm text-tertiary-foreground">
-          {t('brand.binding.campaignAudienceHint')}
-        </p>
-        <div className="flex flex-col">
-          {brand.audiences.map((audience) => (
-            <AudienceRow
-              key={audience.id}
-              audience={audience}
-              picked={campaign.brand_audience_id === audience.id}
-              onPick={() =>
-                set({
-                  brand_audience_id:
-                    campaign.brand_audience_id === audience.id
-                      ? null
-                      : audience.id,
-                })
-              }
-            />
-          ))}
-        </div>
+        <p className="text-sm">{t('brand.binding.campaignAudienceHint')}</p>
+        {audience && <AudiencePreview audience={audience} />}
+        <Manage
+          label={t('brand.binding.manageAudiences')}
+          onClick={() => onManage('audiences')}
+        />
       </Card>
     </>
+  )
+}
+
+/**
+ * The picked voice as its library card describes it: when to use it, then a
+ * sample in the ruled block — the thing that actually tells two voices apart.
+ */
+function VoicePreview({ voice }: { voice: BrandVoice }) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col gap-2 text-sm leading-5">
+      {voice.whenToUse && <p>{voice.whenToUse}</p>}
+      <div className="border-l-2 border-quaternary pl-3">
+        {voice.samples[0] ? (
+          <p className="line-clamp-4 whitespace-pre-line">{voice.samples[0]}</p>
+        ) : (
+          <p className="text-tertiary-foreground">
+            {t('brand.voices.noSamples')}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** The picked audience the same way: who, then the three consequences. */
+function AudiencePreview({ audience }: { audience: BrandAudience }) {
+  const { t } = useTranslation()
+  const lines = [
+    [t('brand.audiences.readsOn'), audience.readsOn],
+    [t('brand.audiences.scrollsPast'), audience.scrollsPastWhen],
+    [t('brand.audiences.believesWhen'), audience.believesWhen],
+  ] as const
+  return (
+    <div className="flex flex-col gap-2 text-sm leading-5">
+      {audience.who && <p>{audience.who}</p>}
+      <dl className="flex flex-col gap-1.5 border-l-2 border-quaternary pl-3">
+        {lines.map(([label, value]) => (
+          <div key={label} className="flex gap-3">
+            <dt className="w-36 shrink-0 text-tertiary-foreground">{label}</dt>
+            <dd className="min-w-0">
+              {value || (
+                <span className="text-tertiary-foreground">
+                  {t('brand.audiences.notSaid')}
+                </span>
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
+/** Where the entries themselves are written — the campaign only picks. */
+function Manage({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <div>
+      <Button type="button" variant="outline" size="sm" onClick={onClick}>
+        {label}
+      </Button>
+    </div>
   )
 }
 
@@ -137,84 +258,15 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
  * work — samples, rules, the lot — and the campaign is the wrong place to start
  * it. Saying where it lives is the whole job here.
  */
-function NothingToPickFrom() {
+function NothingToPickFrom({ onOpen }: { onOpen: () => void }) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   return (
     <Card
       title={t('brand.binding.emptyTitle')}
-      action={{
-        label: t('brand.binding.openBrand'),
-        onClick: () => void navigate({ to: '/foundation' }),
-      }}
+      action={{ label: t('brand.binding.openBrand'), onClick: onOpen }}
       capped
     >
-      <p className="text-sm text-tertiary-foreground">
-        {t('brand.binding.emptyBody')}
-      </p>
+      <p className="text-sm">{t('brand.binding.emptyBody')}</p>
     </Card>
-  )
-}
-
-const ROW =
-  'flex items-start gap-3 border-b border-tertiary px-3 py-3 last:border-b-0 text-left w-full'
-
-function VoiceRow({
-  voice,
-  picked,
-  onPick,
-}: {
-  voice: BrandVoice
-  picked: boolean
-  onPick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onPick}
-      aria-pressed={picked}
-      className={cn(ROW, picked && 'bg-secondary')}
-    >
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-sm font-medium">{voice.name}</span>
-        {/* `whenToUse` and not `summary`: the question on this screen is which
-            voice this campaign wants, and that is what `whenToUse` answers.
-            The summary describes what the voice has become, which is the
-            library's question. */}
-        {voice.whenToUse && (
-          <span className="truncate text-xs text-tertiary-foreground">
-            {voice.whenToUse}
-          </span>
-        )}
-      </span>
-    </button>
-  )
-}
-
-function AudienceRow({
-  audience,
-  picked,
-  onPick,
-}: {
-  audience: BrandAudience
-  picked: boolean
-  onPick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onPick}
-      aria-pressed={picked}
-      className={cn(ROW, picked && 'bg-secondary')}
-    >
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-sm font-medium">{audience.name}</span>
-        {audience.who && (
-          <span className="truncate text-xs text-tertiary-foreground">
-            {audience.who}
-          </span>
-        )}
-      </span>
-    </button>
   )
 }

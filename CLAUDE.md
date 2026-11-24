@@ -137,6 +137,12 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   extended to every button 2026-11-23). Write the casing into the copy, never
   with an `uppercase` class, and never upper-case a name put into a label.
   The assistant's small-caps status words (DONE, PROPOSAL) are not buttons.
+- **A card's content is black** — body text, a row's second line and the
+  facts at a card's foot are `text-foreground`, never
+  `text-secondary-foreground`: grey body copy reads as disabled (2026-11-23).
+  A card ranks its lines by size, weight and place. Grey is left to labels
+  and captions — a field's label, a chart's axis and legend, a chip, a
+  timestamp — and tertiary to what is absent.
 - **A destructive button is red in its body or in its icon** — never grey, and
   never a pale red tint. The way in (Danger Zone, Remove) is `destructive`:
   white with a border and the icon in the danger colour, so it always has an
@@ -149,6 +155,9 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   outline dashed, on no surface, one leading plus as tall as its two lines,
   what it makes in the card header's type and a line under it saying what it will be, at the end of the
   cards it joins. A tile that adds a file (the post's Add media) is the same.
+- **Every card is `ui/card`** — no local `Card`, no hand-rolled
+  `bg-primary px-6 py-6` section, outside the frame too (2026-11-23). A page
+  with no header of its own (the Figma consent) titles its card `heading="h1"`.
 - **Design harnesses live on `design/*` branches, never on `develop`.** A
   harness is a `/design/<feature>` route rendering every state of a component
   from fixtures, and it needs an exemption in `__root.tsx` `beforeLoad` to open

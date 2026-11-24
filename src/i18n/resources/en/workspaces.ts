@@ -3,6 +3,7 @@ export const workspaces = {
   title: 'Your workspaces',
   loadFailed: 'Failed to load your workspaces.',
   create: 'New workspace',
+  createHint: 'Its own campaigns, content and social accounts.',
   /** Marks the workspace *this tab* is in — another tab may be somewhere else. */
   current: 'Current',
   memberCount_one: '{{count}} member',

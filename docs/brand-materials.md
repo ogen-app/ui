@@ -1055,7 +1055,7 @@ unknown id answers "no such audience" rather than falling through to a blank
 form that would save under whatever the address bar said.
 
 **Two of a thing is when it moves.** The frame (the scroller with the header
-inside it, the column, the commit bar), the intro card, `EditorCard`, `Field`,
+inside it, the column, the commit bar), the intro card, `Field`,
 the fork note and the danger zone are `components/brand/editor.tsx`. One editor
 could keep its furniture; two copies of it are two headers that fade
 differently and two columns spaced differently a year from now — the drift the

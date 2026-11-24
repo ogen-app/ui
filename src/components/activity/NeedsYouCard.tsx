@@ -79,9 +79,7 @@ export function NeedsYouCard() {
         tone="var(--positive)"
         title={t('activity.needsYou.allSet')}
       >
-        <p className="text-sm text-secondary-foreground">
-          {t('activity.needsYou.allSetBody')}
-        </p>
+        <p className="text-sm">{t('activity.needsYou.allSetBody')}</p>
       </Card>
     )
   }

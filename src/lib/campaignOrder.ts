@@ -20,8 +20,9 @@ export type CampaignRow = {
 /**
  * Campaigns in the order they start, a campaign with no dates last rather
  * than left off — with each one's window, for the rows that print it.
- * One order for the Strategy hub's Campaigns card and the Foundation
- * sections' Used by card, which list the same campaigns a level apart.
+ * One order for the Strategy hub's Campaigns card and the "Chosen by" line
+ * on a voice's or an audience's card, which name the same campaigns a level
+ * apart.
  */
 export function campaignsByStart(campaigns: Campaign[]): CampaignRow[] {
   const rows: CampaignRow[] = campaigns.map((campaign) => {

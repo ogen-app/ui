@@ -330,9 +330,7 @@ function Detail({
           disabled: !onAdd,
         }}
       >
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.templates.everywhereSubtitle')}
-        </p>
+        <p className="text-sm">{t('brand.templates.everywhereSubtitle')}</p>
         {fallback ? (
           <SetPanel
             template={fallback}
@@ -341,9 +339,7 @@ function Detail({
             onOpen={onOpen}
           />
         ) : (
-          <p className="text-sm text-secondary-foreground">
-            {t('brand.templates.noDefault')}
-          </p>
+          <p className="text-sm">{t('brand.templates.noDefault')}</p>
         )}
       </Card>
     )
@@ -377,7 +373,7 @@ function Detail({
         disabled: !onAdd,
       }}
     >
-      <p className="text-sm text-secondary-foreground">
+      <p className="text-sm">
         {inherited
           ? t('brand.templates.inherited')
           : t('brand.templates.ownTemplate')}
@@ -396,9 +392,7 @@ function Detail({
           onOpen={onOpen}
         />
       ) : (
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.templates.nothingApplies')}
-        </p>
+        <p className="text-sm">{t('brand.templates.nothingApplies')}</p>
       )}
     </Card>
   )
@@ -436,7 +430,7 @@ function SetPanel({
           before it is drawn. A grid of thumbnails answers "what does it look
           like"; only the sentence answers "will this work here". */}
       {missing.length === 0 ? (
-        <p className="flex items-center gap-1.5 text-sm text-secondary-foreground">
+        <p className="flex items-center gap-1.5 text-sm">
           <CheckIcon className="size-4 shrink-0" />
           {t('brand.templates.coversAll', { needed: neededLabel })}
         </p>
@@ -445,14 +439,14 @@ function SetPanel({
         // and the partial wording made it sound partial. A set that covers
         // nothing its platform posts in is not half-built — it is the wrong set
         // chosen, and the sentence has to say so or the row looks like progress.
-        <p className="flex items-start gap-1.5 text-sm text-secondary-foreground">
+        <p className="flex items-start gap-1.5 text-sm">
           <WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
           <span>
             {t('brand.templates.coversNone', { needed: neededLabel })}
           </span>
         </p>
       ) : (
-        <p className="flex items-start gap-1.5 text-sm text-secondary-foreground">
+        <p className="flex items-start gap-1.5 text-sm">
           <WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
           <span>
             {t('brand.templates.coversSome', {

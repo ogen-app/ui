@@ -226,7 +226,7 @@ function ImageForm({ asset, onChange, onDirty }: Props) {
             loading: reextract.isPending,
           }}
         >
-          <p className="text-sm text-secondary-foreground">
+          <p className="text-sm">
             {asset.status === 'failed'
               ? ingestFailureMessage(t, asset)
               : t('content.image.partial')}

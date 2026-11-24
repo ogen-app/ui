@@ -339,7 +339,7 @@ function RemoveMemberDialog({
           if (matches) handleRemove()
         }}
       >
-        <p className="text-sm text-secondary-foreground">
+        <p className="text-sm">
           {t('workspaceSettings.people.removeBody', { name: member.name })}
         </p>
         <div className="flex flex-col gap-1.5">

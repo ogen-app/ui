@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { ChatCircleTextIcon, XIcon } from '@phosphor-icons/react'
+import { BubbleChatQuestionIcon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { brandSectionCopy } from '@/lib/brandSections'
 import type { RunRoute } from '@/lib/brandDistill'
@@ -103,28 +104,17 @@ export function GapQuestions({
   const answers = filledAnswers(t, questions, values)
 
   return (
-    <section
+    <Card
       id="gap-questions"
-      className="relative flex w-full max-w-content flex-col gap-5 bg-primary px-6 py-6"
+      capped
+      icon={BubbleChatQuestionIcon}
+      tone="var(--accent)"
+      title={t(`brand.distill.gaps.title.${route}` as const, {
+        count: questions.length,
+      })}
+      onDismiss={onClose}
+      dismissLabel={t('brand.distill.gaps.close')}
     >
-      <Button
-        variant="ghost"
-        size="smIcon"
-        className="absolute top-3 right-3"
-        aria-label={t('brand.distill.gaps.close')}
-        onClick={onClose}
-      >
-        <XIcon />
-      </Button>
-      <h2 className="flex items-center gap-2 pr-10 font-display text-lg font-medium leading-6 tracking-tight">
-        <ChatCircleTextIcon
-          aria-hidden
-          className="size-5 shrink-0 text-accent"
-        />
-        {t(`brand.distill.gaps.title.${route}` as const, {
-          count: questions.length,
-        })}
-      </h2>
       <SmallHeading as="p">
         {t('brand.distill.gaps.label', counted(questions.length))}
       </SmallHeading>
@@ -158,6 +148,6 @@ export function GapQuestions({
           {t('brand.distill.gaps.ask')}
         </Button>
       </div>
-    </section>
+    </Card>
   )
 }

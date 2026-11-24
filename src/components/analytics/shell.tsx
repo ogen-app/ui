@@ -67,65 +67,6 @@ export function ScopeNote({ scope = 'lens' }: { scope?: SectionScope }) {
 }
 
 /**
- * The analytics card before the app's one `Card` (`ui/card`). Kept for the two
- * post cards whose header control the new card has no slot for: the
- * identity card's permalink (a link) and a measure card's reading switch (a
- * segmented toggle).
- */
-export function SectionCard({
-  title,
-  qualifier,
-  scope = 'lens',
-  status,
-  children,
-  className,
-}: {
-  title: string
-  /**
-   * The rest of the title, set back a shade — usually the window the card is
-   * describing.
-   *
-   * Part of the heading rather than a note beside it: "What happened" and "over
-   * last 28 days" are one phrase, and splitting them across the header put the
-   * window in the far corner where it read as a control someone could change.
-   * Faded because the reader needs it once, on the way in.
-   */
-  qualifier?: ReactNode
-  scope?: SectionScope
-  status?: ReactNode
-  children: ReactNode
-  className?: string
-}) {
-  const { t } = useTranslation()
-  const note = scopeNote(t, scope)
-  return (
-    <section
-      className={cn(
-        'flex w-full flex-col gap-3 rounded-lg border border-border bg-primary p-5',
-        className,
-      )}
-    >
-      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <div className="flex flex-col gap-0.5">
-          <h2 className="font-display text-lg font-medium leading-6">
-            {title}
-            {qualifier && (
-              <span className="font-normal text-tertiary-foreground">
-                {' '}
-                {qualifier}
-              </span>
-            )}
-          </h2>
-          {note && <p className="text-xs text-tertiary-foreground">{note}</p>}
-        </div>
-        {status}
-      </header>
-      {children}
-    </section>
-  )
-}
-
-/**
  * The figures beat: the numbers the rest of the card is about.
  *
  * Selection is what lets one card carry five figures without becoming five
