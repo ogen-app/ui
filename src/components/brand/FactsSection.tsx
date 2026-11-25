@@ -137,10 +137,18 @@ import {
  */
 export function FactsLedger({
   facts: ledger,
+  view: shownView,
+  onViewChange,
   onSave,
   onRemove,
 }: {
   facts: BrandFact[]
+  /**
+   * Which ledger is on screen, when the caller keeps it — the route does, in
+   * `?tab=`. Left out, the ledger keeps it itself.
+   */
+  view?: LedgerView
+  onViewChange?: (next: LedgerView) => void
   /** One row — added when it has no id, replaced when it has one. */
   onSave: (fact: BrandFact) => Promise<unknown>
   onRemove: (id: string) => Promise<unknown>
@@ -148,7 +156,9 @@ export function FactsLedger({
   const { t } = useTranslation()
   const today = todayISO()
   /** Which ledger is on screen. `'all'` is a view, never a value on a row. */
-  const [view, setView] = useState<LedgerView>('all')
+  const [ownView, setOwnView] = useState<LedgerView>('all')
+  const view = shownView ?? ownView
+  const setView = onViewChange ?? setOwnView
   /** What is typed in the box, unparsed — see `factMatches`. */
   const [query, setQuery] = useState('')
   /** The row open in the modal, and whether it is in the ledger yet. */
@@ -390,7 +400,7 @@ function LedgerSearch({
 }
 
 /** `'all'` is a view of the ledger, never a value stored on a row. */
-type LedgerView = 'all' | FactSubject
+export type LedgerView = 'all' | FactSubject
 
 /**
  * What the add button says, per ledger.

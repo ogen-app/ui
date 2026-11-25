@@ -1,13 +1,23 @@
-import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { brandSection } from '@/lib/brandSections'
+import { brandSection, type BrandSectionId } from '@/lib/brandSections'
 import { campaignToPayload } from '@/lib/campaignPayload'
 import { useBrand } from '@/hooks/useBrand'
 import { useCampaign, useUpdateCampaign } from '@/hooks/useCampaigns'
 import type { UpdateCampaignPayload } from '@/types/campaigns'
-import type { BrandAudience, BrandData, BrandVoice } from './types'
+import {
+  AudienceContent,
+  EntryRow,
+  EntryRows,
+  Facts,
+  Ruled,
+  Tick,
+  VoiceContent,
+} from './entry'
+import { audienceMark, voiceMark } from './entryMarks'
+import { rulesLine } from './format'
+import { useOpenBrand, type BrandPlace } from './places'
+import type { BrandData } from './types'
 
 /**
  * What this campaign draws on out of the workspace's Brand (§8, middle level).
@@ -44,11 +54,11 @@ import type { BrandAudience, BrandData, BrandVoice } from './types'
  * a grey face — and with one voice in the library that list was one grey row
  * that read as a statement, not a choice: "how do I change the voice?" The
  * header's `choice` is the card's own selector (`ui/card`), so it looks like
- * every other thing on a card that can be changed, and the body shows what the
- * pick means in the library card's own terms — the line, then the sample or
- * the three consequences in a ruled block — so the campaign and Foundation
- * describe a voice the same way. Unset is a named option, "Workspace default —
- * <name>", rather than clicking the chosen row again to clear it.
+ * every other thing on a card that can be changed, and the body is the pick as
+ * the hub draws it — its mark, its line, the ruled run and the facts, and a
+ * caret into the entry — so the campaign and Foundation describe a voice the
+ * same way. Unset is a named option, "Workspace default (<name>)", rather than
+ * clicking the chosen row again to clear it.
  *
  * **It saves on the spot**, not through the page's Save button, following
  * `PlatformsControl` — a selection that sat dirty until an unrelated Save would
@@ -58,7 +68,7 @@ import type { BrandAudience, BrandData, BrandVoice } from './types'
  */
 export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const open = useOpenBrand()
   const { data: brand, isLoading } = useBrand()
   const { data: campaign } = useCampaign(campaignId)
   const { mutate: update } = useUpdateCampaign({
@@ -75,14 +85,8 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
       onSet={(refs) =>
         update({ id: campaignId, payload: campaignToPayload(campaign, refs) })
       }
-      onManage={(section) =>
-        void navigate({
-          to:
-            section === 'voices'
-              ? '/foundation/voices'
-              : '/foundation/audiences',
-        })
-      }
+      onOpenSection={open.section}
+      onOpenPlace={open.place}
     />
   )
 }
@@ -91,15 +95,21 @@ export function CampaignBrandCard({ campaignId }: { campaignId: string }) {
 const UNSET = 'unset'
 
 /**
- * The two cards, from what they show rather than from the queries — so the
- * design harness draws exactly what Strategy does.
+ * The two cards, from what they show rather than from the queries.
+ *
+ * Each pick is drawn as the hub's row for it — the entry's mark, its name, its
+ * line, the ruled run and the facts — with the caret of its own that opens the
+ * entry, so a voice reads the same on a campaign as it does in Foundation.
+ * The facts here are about the binding rather than the library: where the pick
+ * came from, and how far it reaches.
  */
 export function CampaignBrandCards({
   brand,
   voiceId,
   audienceId,
   onSet,
-  onManage,
+  onOpenSection,
+  onOpenPlace,
 }: {
   brand: BrandData
   voiceId: string | null
@@ -107,12 +117,13 @@ export function CampaignBrandCards({
   onSet: (
     refs: Pick<UpdateCampaignPayload, 'brand_voice_id' | 'brand_audience_id'>,
   ) => void
-  onManage: (section: 'voices' | 'audiences') => void
+  onOpenSection: (section: BrandSectionId) => void
+  onOpenPlace: (place: BrandPlace) => void
 }) {
   const { t } = useTranslation()
 
   const empty = brand.voices.length === 0 && brand.audiences.length === 0
-  if (empty) return <NothingToPickFrom onOpen={() => onManage('voices')} />
+  if (empty) return <NothingToPickFrom onOpen={() => onOpenSection('voices')} />
 
   const voices = brandSection('voices')
   const audiences = brandSection('audiences')
@@ -152,12 +163,36 @@ export function CampaignBrandCards({
         }}
         capped
       >
-        <p className="text-sm">{t('brand.binding.campaignVoiceHint')}</p>
-        {shownVoice && <VoicePreview voice={shownVoice} />}
-        <Manage
-          label={t('brand.binding.manageVoices')}
-          onClick={() => onManage('voices')}
-        />
+        <EntryRows>
+          {shownVoice ? (
+            <EntryRow
+              mark={voiceMark(t, shownVoice)}
+              name={shownVoice.name}
+              onOpen={() =>
+                onOpenPlace({ section: 'voices', id: shownVoice.id })
+              }
+            >
+              <VoiceContent
+                t={t}
+                voice={shownVoice}
+                facts={[
+                  rulesLine(t, shownVoice.rules),
+                  voice
+                    ? t('brand.binding.chosenHere')
+                    : t('brand.binding.voiceInherited'),
+                  t('brand.binding.voiceReach'),
+                ]}
+              />
+            </EntryRow>
+          ) : (
+            <EntryRow
+              mark={<Tick done={false} />}
+              name={t('brand.binding.noVoice')}
+            >
+              <Ruled empty={t('brand.binding.noVoiceRun')} />
+            </EntryRow>
+          )}
+        </EntryRows>
       </Card>
       <Card
         icon={audiences.icon}
@@ -178,76 +213,39 @@ export function CampaignBrandCards({
         }}
         capped
       >
-        <p className="text-sm">{t('brand.binding.campaignAudienceHint')}</p>
-        {audience && <AudiencePreview audience={audience} />}
-        <Manage
-          label={t('brand.binding.manageAudiences')}
-          onClick={() => onManage('audiences')}
-        />
+        <EntryRows>
+          {audience ? (
+            <EntryRow
+              mark={audienceMark(audience)}
+              name={audience.name}
+              onOpen={() =>
+                onOpenPlace({ section: 'audiences', id: audience.id })
+              }
+            >
+              <AudienceContent
+                t={t}
+                audience={audience}
+                facts={[
+                  t('brand.binding.chosenHere'),
+                  t('brand.binding.audienceReach'),
+                ]}
+              />
+            </EntryRow>
+          ) : (
+            // No star and no fallback: the workspace default stops at voices
+            // (`resolveAudience`), so nothing picked means nobody in
+            // particular, and the card says so rather than going blank.
+            <EntryRow
+              mark={<Tick done={false} />}
+              name={t('brand.binding.noAudience')}
+            >
+              <Ruled empty={t('brand.binding.noAudienceRun')} />
+              <Facts items={[t('brand.binding.audienceNoDefault')]} />
+            </EntryRow>
+          )}
+        </EntryRows>
       </Card>
     </>
-  )
-}
-
-/**
- * The picked voice as its library card describes it: when to use it, then a
- * sample in the ruled block — the thing that actually tells two voices apart.
- */
-function VoicePreview({ voice }: { voice: BrandVoice }) {
-  const { t } = useTranslation()
-  return (
-    <div className="flex flex-col gap-2 text-sm leading-5">
-      {voice.whenToUse && <p>{voice.whenToUse}</p>}
-      <div className="border-l-2 border-quaternary pl-3">
-        {voice.samples[0] ? (
-          <p className="line-clamp-4 whitespace-pre-line">{voice.samples[0]}</p>
-        ) : (
-          <p className="text-tertiary-foreground">
-            {t('brand.voices.noSamples')}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/** The picked audience the same way: who, then the three consequences. */
-function AudiencePreview({ audience }: { audience: BrandAudience }) {
-  const { t } = useTranslation()
-  const lines = [
-    [t('brand.audiences.readsOn'), audience.readsOn],
-    [t('brand.audiences.scrollsPast'), audience.scrollsPastWhen],
-    [t('brand.audiences.believesWhen'), audience.believesWhen],
-  ] as const
-  return (
-    <div className="flex flex-col gap-2 text-sm leading-5">
-      {audience.who && <p>{audience.who}</p>}
-      <dl className="flex flex-col gap-1.5 border-l-2 border-quaternary pl-3">
-        {lines.map(([label, value]) => (
-          <div key={label} className="flex gap-3">
-            <dt className="w-36 shrink-0 text-tertiary-foreground">{label}</dt>
-            <dd className="min-w-0">
-              {value || (
-                <span className="text-tertiary-foreground">
-                  {t('brand.audiences.notSaid')}
-                </span>
-              )}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  )
-}
-
-/** Where the entries themselves are written — the campaign only picks. */
-function Manage({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <div>
-      <Button type="button" variant="outline" size="sm" onClick={onClick}>
-        {label}
-      </Button>
-    </div>
   )
 }
 

@@ -1,10 +1,12 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PageColumns } from '@/components/page-primitives/PageColumns'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { BrandOverview } from '@/components/brand/BrandOverview'
 import { BrandPage } from '@/components/brand/detail'
+import { useOpenBrand } from '@/components/brand/places'
+import { useUsedBy } from '@/components/brand/usedBy'
 import { StrategyCampaigns } from '@/components/strategy/StrategyCampaigns'
 import { useBrand } from '@/hooks/useBrand'
 import { useFacts } from '@/hooks/useFacts'
@@ -50,8 +52,12 @@ export const Route = createFileRoute('/_authenticated/foundation/')({
 
 function BrandOverviewPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const open = useOpenBrand()
   const brand = useBrand()
+  const usedBy = {
+    voices: useUsedBy('voices', brand.data),
+    audiences: useUsedBy('audiences', brand.data),
+  }
   // Both are views over the brand the hub already has — neither adds a wait.
   const { facts } = useFacts()
   const stance = useGuardrailsStance()
@@ -80,7 +86,9 @@ function BrandOverviewPage() {
                 isError: series.isError,
               })}
               stance={stance}
-              onOpen={(id) => navigate({ to: `/foundation/${id}` })}
+              usedBy={usedBy}
+              onOpen={open.section}
+              onOpenPlace={open.place}
             />
           </PageColumns>
         </ScrollArea>

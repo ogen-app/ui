@@ -13,15 +13,22 @@ export const brand: Translation['brand'] = {
   binding: {
     voice: 'Voz',
     audience: 'Audiencia',
-    campaignVoiceHint:
-      'Cada publicación de esta campaña se escribe con esta voz. Una publicación puede elegir otra, en la propia publicación.',
-    campaignAudienceHint:
-      'Cada publicación de esta campaña se dirige a estas personas. Una publicación puede dirigirse a otras, en la propia publicación.',
-    workspaceDefault: 'Predeterminada del espacio — {{name}}',
-    manageVoices: 'Editar voces',
-    manageAudiences: 'Editar audiencias',
+    workspaceDefault: 'Predeterminada del espacio ({{name}})',
     noVoice: 'Sin voz',
     noAudience: 'Sin audiencia',
+    chosenHere: 'Elegida para esta campaña',
+    voiceInherited:
+      'La predeterminada del espacio, hasta que esta campaña elija una',
+    voiceReach:
+      'Cada publicación de aquí se escribe en ella; una publicación aún puede elegir otra',
+    audienceReach:
+      'Cada publicación de aquí se escribe para ellos; una publicación aún puede dirigirse a otra persona',
+    audienceNoDefault:
+      'Una audiencia no tiene predeterminada en el espacio: no se da nada por supuesto',
+    noVoiceRun:
+      'Escrita sin ninguna voz en particular. Elige una, o haz que una sea la predeterminada del espacio.',
+    noAudienceRun:
+      'Escrita para nadie en particular. Elige para quién son estas publicaciones.',
     sourcePost: 'Definida en esta publicación',
     sourceCampaign: 'De la campaña',
     sourceLibrary: 'La predeterminada del espacio de trabajo',
@@ -137,6 +144,15 @@ export const brand: Translation['brand'] = {
     separator: ', ',
   },
 
+  entry: {
+    soundsLike: 'Suena como',
+    readsOn: 'Lee en',
+    scrollsPastWhen: 'Pasa de largo cuando',
+    believesWhen: 'Te cree cuando',
+    noSamples: 'Aún no hay muestras. Escribirá como si no tuviera voz.',
+    notDescribed: 'Aún no se ha dicho nada de ellos.',
+  },
+
   shell: {
     default: 'predeterminada',
     chipMore: '+{{count}} más',
@@ -151,6 +167,7 @@ export const brand: Translation['brand'] = {
     },
     originPostCount_one: '{{count}} publicación',
     originPostCount_other: '{{count}} publicaciones',
+    originWithDetail: '{{origin}} ({{detail}})',
     offer: {
       dismiss: 'No volver a ofrecer esto',
       title: 'Rellénalo con lo que ya tienes',
@@ -640,8 +657,6 @@ export const brand: Translation['brand'] = {
         closing: 'Acaba con la línea más afilada, no con un resumen.',
       },
     },
-    noSamples:
-      'Sin ejemplos. Esta voz tiene un nombre y nada detrás: generará exactamente lo mismo que no tener voz alguna.',
     thin: 'a partir de {{count}} empieza a funcionar',
     postsBehind: '{{count}} se podrían rehacer',
     defaultBacked:

@@ -173,13 +173,18 @@ describe('the voices library in Spanish', () => {
   it('describes a voice from the catalogue, not from a frozen label map', () => {
     render(<VoicesSection voices={[VOICE]} />)
 
-    // `rulesLine`: five enums, none of which is printed raw any more.
-    expect(screen.getByText(/neutra, nosotros, sin emojis/)).toBeInTheDocument()
-    expect(screen.queryByText(/neutral, we, no emoji/)).not.toBeInTheDocument()
+    // `rulesLine`: five enums, none of which is printed raw any more. A fact
+    // starts with a capital however its parts were written, hence `i`.
+    expect(
+      screen.getByText(/neutra, nosotros, sin emojis/i),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/neutral, we, no emoji/i)).not.toBeInTheDocument()
 
     // `sampleCount` + `usageLine`, joined by the catalogue's own separator.
-    expect(screen.getByText(/sin ejemplos, nunca usada/)).toBeInTheDocument()
-    expect(screen.queryByText(/no samples, never used/)).not.toBeInTheDocument()
+    expect(screen.getByText(/sin ejemplos, nunca usada/i)).toBeInTheDocument()
+    expect(
+      screen.queryByText(/no samples, never used/i),
+    ).not.toBeInTheDocument()
   })
 
   it('offers the starters in Spanish', () => {

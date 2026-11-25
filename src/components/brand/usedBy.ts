@@ -27,11 +27,12 @@ const NAMES = 3
  */
 export function useUsedBy(
   section: 'voices' | 'audiences',
-  brand: BrandData,
+  /** Absent while the brand is still loading — and so is the answer. */
+  brand: BrandData | undefined,
 ): Map<string, string> | undefined {
   const { t, i18n } = useTranslation()
   const { data: campaigns } = useCampaigns()
-  if (!campaigns) return undefined
+  if (!campaigns || !brand) return undefined
 
   const chosen = new Map<string, string[]>()
   const inherited = new Map<string, string[]>()

@@ -9,6 +9,7 @@ import {
 import { PlusIcon, XIcon } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import type { GuardrailPart } from './places'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -248,7 +249,11 @@ export function GuardrailsEditor({
         </Card>
       )}
 
-      <Card title={t('brand.guardrails.mayClaim')} capped>
+      <Card
+        id={'may-claim' satisfies GuardrailPart}
+        title={t('brand.guardrails.mayClaim')}
+        capped
+      >
         <p className="text-sm">{t('brand.guardrails.mayClaimHint')}</p>
         <StatementList
           items={draft.mayClaim}
@@ -258,7 +263,11 @@ export function GuardrailsEditor({
         />
       </Card>
 
-      <Card title={t('brand.guardrails.neverClaim')} capped>
+      <Card
+        id={'never-claim' satisfies GuardrailPart}
+        title={t('brand.guardrails.neverClaim')}
+        capped
+      >
         <p className="text-sm">{t('brand.guardrails.neverClaimHint')}</p>
         {draft.neverClaim.length === 0 && (
           <p className="border-l-2 border-destructive pl-3 text-sm leading-5 text-tertiary-foreground">
@@ -274,7 +283,11 @@ export function GuardrailsEditor({
         />
       </Card>
 
-      <Card title={t('brand.guardrails.bannedWords')} capped>
+      <Card
+        id={'banned-words' satisfies GuardrailPart}
+        title={t('brand.guardrails.bannedWords')}
+        capped
+      >
         <p className="text-sm">{t('brand.guardrails.bannedWordsHint')}</p>
         <WordField
           words={draft.bannedWords}
@@ -282,7 +295,11 @@ export function GuardrailsEditor({
         />
       </Card>
 
-      <Card title={t('brand.guardrails.disclaimer')} capped>
+      <Card
+        id={'disclaimer' satisfies GuardrailPart}
+        title={t('brand.guardrails.disclaimer')}
+        capped
+      >
         <p className="text-sm">{t('brand.guardrails.disclaimerHint')}</p>
         <Textarea
           value={draft.disclaimer}

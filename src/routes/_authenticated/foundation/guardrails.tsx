@@ -1,11 +1,12 @@
-import { useState, type ReactNode } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { useEffect, useState, type ReactNode } from 'react'
+import { createFileRoute, useLocation } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { BrandBackButton, BrandPage } from '@/components/brand/detail'
 import { GuardrailsEditor } from '@/components/brand/GuardrailsEditor'
+import { GUARDRAIL_PARTS, type GuardrailPart } from '@/components/brand/places'
 import {
   useBrand,
   useDeleteGuardrails,
@@ -51,6 +52,16 @@ function GuardrailsPage() {
   const save = useSaveGuardrails()
   const remove = useDeleteGuardrails()
   const [deletions, setDeletions] = useState(0)
+  const { hash } = useLocation()
+  const ready = Boolean(data)
+
+  // A row on the hub or on a campaign's Strategy lands on one card
+  // (`#never-claim`). The card only exists once the brand has loaded, so the
+  // scroll waits for it rather than for the navigation.
+  useEffect(() => {
+    if (!ready || !GUARDRAIL_PARTS.includes(hash as GuardrailPart)) return
+    document.getElementById(hash)?.scrollIntoView({ block: 'start' })
+  }, [ready, hash])
 
   const backButton = <BrandBackButton />
   const header = <PageHeader back={backButton} />
