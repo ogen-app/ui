@@ -26,7 +26,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground hover:bg-primary-foreground hover:text-primary ' +
+          'border bg-primary text-primary-foreground hover:border-primary-foreground hover:bg-primary-foreground hover:text-primary ' +
           'data-[active=true]:bg-secondary data-[active=true]:inset-ring-[2px] data-[active=true]:inset-ring-ring ' +
           'data-[active=true]:hover:text-primary-foreground data-[active=true]:hover:bg-primary ' +
           '[&_[data-spinner-container]]:bg-primary [&_[data-spinner]]:bg-primary-foreground/20 [&_[data-spinner]:before]:bg-primary-foreground ' +
@@ -59,13 +59,13 @@ const buttonVariants = cva(
           'data-[active=true]:bg-quaternary data-[active=true]:border-quaternary ' +
           'data-[loading]:text-primary-foreground/0 [&_[data-spinner]]:bg-primary-foreground/20 [&_[data-spinner]:before]:bg-primary-foreground',
         secondary:
-          'bg-primary text-primary-foreground hover:bg-secondary ' +
+          'border bg-primary text-primary-foreground hover:bg-secondary ' +
           'data-[active=true]:bg-secondary ' +
           '[&_[data-spinner-container]]:bg-primary [&_[data-spinner]]:bg-primary-foreground/20 [&_[data-spinner]:before]:bg-primary-foreground',
-        // A filled button for a white surface. `secondary` is `bg-primary`,
-        // which *is* white — right on the grey app canvas, invisible inside a
-        // modal. This is the same weight one step darker, so a dialog's
-        // actions read as objects rather than as words.
+        // A filled button for a white surface. `default` and `secondary` are
+        // `bg-primary`, which *is* white — a body on the grey app canvas, only
+        // their border inside a modal. This is the same weight one step
+        // darker, so a dialog's actions read as filled objects.
         neutral:
           'bg-tertiary text-primary-foreground hover:bg-quaternary ' +
           'data-[active=true]:bg-quaternary ' +
@@ -90,7 +90,7 @@ const buttonVariants = cva(
         // mark and the label. It hovers to a grey rather than to `default`'s
         // black, which the gradient cannot be read on.
         gradient:
-          'bg-primary hover:bg-secondary data-[active=true]:bg-secondary ' +
+          'border bg-primary hover:bg-secondary data-[active=true]:bg-secondary ' +
           '[&_[data-spinner-container]]:bg-primary [&_[data-spinner]]:bg-sweep-to/20 [&_[data-spinner]:before]:bg-sweep-to',
         ghost:
           'bg-transparent text-secondary-foreground hover:text-primary-foreground ' +
