@@ -302,6 +302,7 @@ export const brand = {
       gateOff: 'Your plan does not include reading a brand.',
       unavailable:
         'Reading a brand is not available right now. Try again in a minute.',
+      assetFailed: "That file couldn't be read. Upload it again.",
       failed: "That didn't start. Try again in a minute.",
     },
     page: {

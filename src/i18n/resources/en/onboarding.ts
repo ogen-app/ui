@@ -72,6 +72,8 @@ export const onboarding = {
       never: 'what they never say',
     },
     retry: 'Read again',
+    /** A document that couldn't be read is chosen again, not re-read. */
+    uploadAgain: 'Upload again',
     answered_one: '{{formatted}} answer',
     answered_other: '{{formatted}} answers',
     continue: 'Continue',

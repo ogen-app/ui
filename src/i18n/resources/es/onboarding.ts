@@ -73,6 +73,7 @@ export const onboarding: Translation['onboarding'] = {
       never: 'lo que nunca dicen',
     },
     retry: 'Leer de nuevo',
+    uploadAgain: 'Subir de nuevo',
     answered_one: '{{formatted}} respuesta',
     answered_other: '{{formatted}} respuestas',
     continue: 'Continuar',

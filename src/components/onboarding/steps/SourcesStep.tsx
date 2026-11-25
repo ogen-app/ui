@@ -33,7 +33,8 @@ import {
  * Where one thing Ogen was given stands. A document is `uploading` first;
  * everything is `reading` from the moment it is added, for about a minute.
  * `failed` is an upload the server refused, `readFailed` a source it could
- * not read — which can be read again.
+ * not read — a website or the answers are read again, a document is chosen
+ * again: the same file would fail the same way.
  */
 export type SourceStatus =
   'uploading' | 'reading' | 'read' | 'readFailed' | 'failed'
@@ -542,6 +543,7 @@ function SourceRow({
       }
       onRemove={onRemove}
       onRetry={onRetry}
+      retryLabel={doc ? t('onboarding.sources.uploadAgain') : undefined}
     />
   )
 }
@@ -558,6 +560,7 @@ function AddedRow({
   detail,
   onRemove,
   onRetry,
+  retryLabel,
 }: {
   icon: typeof GlobeIcon
   title: string
@@ -566,6 +569,8 @@ function AddedRow({
   detail?: string
   onRemove: () => void
   onRetry: () => void
+  /** The retry's own words, when it is not a read again. */
+  retryLabel?: string
 }) {
   const { t } = useTranslation()
   return (
@@ -601,7 +606,7 @@ function AddedRow({
         </span>
         {status === 'readFailed' && (
           <Button variant="ghost" size="sm" onClick={onRetry}>
-            {t('onboarding.sources.retry')}
+            {retryLabel ?? t('onboarding.sources.retry')}
           </Button>
         )}
         <Button

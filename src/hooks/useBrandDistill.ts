@@ -86,7 +86,12 @@ export function useStarterQuestions() {
 
 /** Why a request was refused before it became a run, as this client words it. */
 export type DistillRefusal =
-  'invalidUrl' | 'scrapingUnavailable' | 'gateOff' | 'unavailable' | 'failed'
+  | 'invalidUrl'
+  | 'scrapingUnavailable'
+  | 'gateOff'
+  | 'unavailable'
+  | 'assetFailed'
+  | 'failed'
 
 export function refusalOf(err: unknown): DistillRefusal | null {
   if (!(err instanceof ApiError)) return 'failed'
@@ -99,6 +104,9 @@ export function refusalOf(err: unknown): DistillRefusal | null {
       return 'gateOff'
     case 'distill_unavailable':
       return 'unavailable'
+    // The file itself failed ingest: no read of it can work, only a new upload.
+    case 'asset_failed':
+      return 'assetFailed'
     // A plan limit is the global toast's to word (CON-295), and a run already
     // open is not a refusal at all — the page goes to it.
     case 'entitlement_exceeded':

@@ -221,6 +221,7 @@ export const brand: Translation['brand'] = {
       gateOff: 'Tu plan no incluye leer una marca.',
       unavailable:
         'Leer una marca no está disponible ahora mismo. Vuelve a intentarlo en un minuto.',
+      assetFailed: 'Ese archivo no se ha podido leer. Vuelve a subirlo.',
       failed: 'No se ha podido empezar. Vuelve a intentarlo en un minuto.',
     },
     page: {

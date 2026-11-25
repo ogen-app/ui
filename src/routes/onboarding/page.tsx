@@ -409,6 +409,18 @@ function Sources({
   const [error, setError] = useState<string | undefined>()
   const [composing, setComposing] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  // A document that couldn't be read is chosen again rather than re-read: the
+  // read the next chosen file replaces, and, by pending id, the reads being
+  // replaced — hidden behind their new upload's card until its read lands,
+  // and back if it is refused.
+  const replaceTarget = useRef<string | null>(null)
+  const [replacing, setReplacing] = useState<Record<string, string>>({})
+  const unreplace = (id: string) =>
+    setReplacing((all) => {
+      const rest = { ...all }
+      delete rest[id]
+      return rest
+    })
   // Sources taken back before they became reads, by their pending id: an
   // upload lands in Assets unread, a read that lands anyway is stopped.
   const withdrawn = useRef(new Set<string>())
@@ -544,10 +556,12 @@ function Sources({
     )
   }
 
-  const upload = (file: File) => {
+  /** Uploads a document and reads it; `replaces` is a read it stands in for. */
+  const upload = (file: File, replaces?: string) => {
     setError(undefined)
     const id = `doc-${crypto.randomUUID()}`
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+    if (replaces) setReplacing((all) => ({ ...all, [id]: replaces }))
     setPending((all) => [
       ...all,
       {
@@ -570,9 +584,15 @@ function Sources({
         // Read as soon as it lands; the read waits out the ingest.
         mark(id, 'reading')
         addRead({ assetId: result.asset_id }, id).then(
-          () => settle(id),
+          () => {
+            settle(id)
+            if (!replaces) return
+            removeRead(replaces).catch(refuse)
+            unreplace(id)
+          },
           (err: unknown) => {
             settle(id)
+            unreplace(id)
             refuse(err)
           },
         )
@@ -624,26 +644,43 @@ function Sources({
       // here only leaves it unread.
       withdrawn.current.add(id)
       settle(id)
+      // Taking back a file chosen again takes back the one it replaced.
+      const replaced = replacing[id]
+      if (replaced) {
+        removeRead(replaced).catch(refuse)
+        unreplace(id)
+      }
       return
     }
     removeRead(id).catch(refuse)
   }
 
-  /** A source that couldn't be read, read again — stopped, and added anew. */
+  /**
+   * A source that couldn't be read, tried again. A website or the answers are
+   * added anew, and the failed read is taken out once the new one has started
+   * — a refusal leaves its card where it was. A document is chosen again: its
+   * file failed ingest or held nothing to read, and the server refuses to
+   * read a failed file twice (`asset_failed`).
+   */
   const retry = (readId: string) => {
     const read = reads.find((r) => r.id === readId)
+    if (read?.kind === 'asset') {
+      replaceTarget.current = readId
+      fileInput.current?.click()
+      return
+    }
     const url = read?.website?.url ?? typed[readId]
     const source: DistillReadRequest | null =
       read?.kind === 'website' && url
         ? { websiteUrl: url.startsWith('http') ? url : `https://${url}` }
-        : read?.kind === 'asset' && read.sources[0]
-          ? { assetId: read.sources[0].assetId }
-          : read?.kind === 'answers'
-            ? { answers: read.answers }
-            : null
+        : read?.kind === 'answers'
+          ? { answers: read.answers }
+          : null
     if (!source) return
-    removeRead(readId)
-      .then(() => addRead(source, `retry-${readId}`, typed[readId]))
+    // A failed read does not count against the run's sources, so the new one
+    // is admitted beside it.
+    addRead(source, `retry-${readId}`, typed[readId])
+      .then(() => removeRead(readId))
       .catch(refuse)
   }
 
@@ -703,8 +740,10 @@ function Sources({
     else later()
   }
 
+  const replaced = new Set(Object.values(replacing))
   const shown: OnboardingSource[] = [
     ...reads.flatMap((read): OnboardingSource[] => {
+      if (replaced.has(read.id)) return []
       const status = readStatus(read)
       const added = status === 'read' ? addedText(t, read.coverage) : undefined
       if (read.kind === 'website') {
@@ -755,7 +794,12 @@ function Sources({
         hidden
         accept=".pdf,.doc,.docx,.md,.markdown,.txt"
         onChange={(e) => {
-          Array.from(e.target.files ?? []).forEach(upload)
+          // A document chosen again replaces its card with the first file.
+          const replaces = replaceTarget.current ?? undefined
+          replaceTarget.current = null
+          Array.from(e.target.files ?? []).forEach((file, i) =>
+            upload(file, i === 0 ? replaces : undefined),
+          )
           e.target.value = ''
         }}
       />
@@ -782,7 +826,11 @@ function Sources({
         onRetry={(id) =>
           retry(id === ANSWERS_ID && answersRead ? answersRead.id : id)
         }
-        onChooseFiles={() => fileInput.current?.click()}
+        onChooseFiles={() => {
+          // Not a replacement, even if a chosen-again file was cancelled.
+          replaceTarget.current = null
+          fileInput.current?.click()
+        }}
         onAnswers={(a) => {
           if (Object.keys(a).length > 0) addAnswers(a)
           else if (answersRead) removeRead(answersRead.id).catch(refuse)
