@@ -389,7 +389,7 @@ function AssessLink({
       <GradientMark
         icon={SparkleIcon}
         weight="bold"
-        className="mr-1 inline size-3.5 align-[-2px]"
+        className="mr-1 size-3.5"
       />
       <span className="text-sweep">
         {assessment ? t('posts.quality.reassess') : t('posts.quality.assess')}

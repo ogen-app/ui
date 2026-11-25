@@ -580,11 +580,11 @@ function LinkOut({
   return (
     <TextButton
       tone="quiet"
-      className="inline-flex items-center gap-1.5 self-center pt-2 text-control"
+      className="self-center pt-2 text-control"
       onClick={onClick}
     >
       {children}
-      <ArrowRightIcon size={14} aria-hidden />
+      <ArrowRightIcon size={14} className="ml-1.5" aria-hidden />
     </TextButton>
   )
 }

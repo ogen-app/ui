@@ -8,8 +8,12 @@ import { cn } from '@/lib'
  * 46, Read the whole, Clear all — rather than drawn as a button. It takes the
  * line's size, so it sits in a 12px caption or a 14px sentence alike, and has
  * no box, height or padding of its own, and is inline, so it wraps with the
- * sentence it ends. With an icon beside the words, add
- * `inline-flex items-center gap-1`; to truncate, add `truncate`.
+ * sentence it ends. An icon beside the words rides the line like a glyph —
+ * inline, centred on the letters — so give it only its space: `mr-1` before
+ * the words, `ml-1` after. Never make the button `inline-flex`: an inline
+ * flex box takes its baseline from its first item, and an icon's is its
+ * bottom edge, so the words drop below the line around them. To truncate,
+ * add `truncate`.
  *
  * One look, in three tones:
  * - `accent` (the default) — the action the line offers: teal, medium,
@@ -26,7 +30,10 @@ const textButtonVariants = cva(
   'cursor-pointer text-left outline-none ' +
     'underline-offset-2 hover:underline focus-visible:underline ' +
     'disabled:cursor-default disabled:no-underline disabled:opacity-50 ' +
-    "[&_svg:not([class*='size-'])]:size-3.5 [&_svg]:shrink-0",
+    "[&_svg:not([class*='size-'])]:size-3.5 [&_svg]:shrink-0 " +
+    // In a line of text the icon is a glyph: inline, and lowered from the
+    // baseline so it centres on the letters at 12px and at 14px alike.
+    '[&>svg]:inline [&>svg]:align-[-0.2em]',
   {
     variants: {
       tone: {

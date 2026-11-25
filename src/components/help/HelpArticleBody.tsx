@@ -93,12 +93,12 @@ function Embed({ value }: { value: HelpBlock }) {
         <h2 className="text-base font-semibold">{article.title}</h2>
         <TextButton
           tone="quiet"
-          className="inline-flex shrink-0 items-center gap-1 text-xs"
+          className="shrink-0 text-xs"
           onClick={() => push(article.key)}
           aria-label={t('help.embed.openLabel', { title: article.title })}
         >
           {t('help.embed.open')}
-          <ArrowSquareOutIcon className="size-3.5" />
+          <ArrowSquareOutIcon className="ml-1 size-3.5" />
         </TextButton>
       </div>
       <div className="space-y-3">
