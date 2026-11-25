@@ -8,7 +8,7 @@ import { createBillingPortalLink, getBilling } from './billing'
  * CON-324.
  *
  * What is worth asserting here is mostly *restraint*. The screen this backs is
- * a report and a door — Lemon Squeezy is the merchant of record, so the address,
+ * a report and a door — Polar is the merchant of record, so the address,
  * the tax id, the card and the cancellation all live in their portal. These
  * tests are what stops that boundary being crossed one convenient field at a
  * time.

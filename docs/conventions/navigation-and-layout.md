@@ -167,7 +167,8 @@ keep it accurate when these rules change.
     and a Foundation section, with About.
     Activity, with Needs you sticky beside the day cards: the live
     warnings (`workspaceWarnings`, alert and risk only), never unread
-    notifications, which the feed marks read on sight.
+    notifications, which the feed marks read on sight. Workspace Settings,
+    with Plan & billing sticky beside the workspace's own cards.
   - **`PageGrid` — a dashboard.** Cards in rows, each in a `GridCell` asking
     for a named share: `full`, `wide` (⅔), `half`, `narrow` (⅓) of a six-track
     grid from 60rem; from 40rem every share short of `full` is a half, so a

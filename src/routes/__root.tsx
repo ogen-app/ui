@@ -149,7 +149,7 @@ async function seedActiveWorkspace(): Promise<void> {
 }
 
 /**
- * Pins the tab to the workspace Lemon Squeezy's checkout came back for
+ * Pins the tab to the workspace Polar's checkout came back for
  * (`/plans?billing=return&workspace=…`, CON-328).
  *
  * The active workspace is per tab, and checkout returns in a tab that has

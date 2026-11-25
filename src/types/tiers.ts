@@ -44,7 +44,7 @@ export type Tier = TierVersion & {
   entitlements: Record<string, RawEntitlement>
   /**
    * Whether the tier can be bought now: billing is on and at least one of its
-   * prices has a Lemon Squeezy variant behind it (CON-325). A tier that is
+   * prices has a Polar product behind it (CON-325). A tier that is
    * published but not yet sellable is listed and cannot be chosen.
    */
   available: boolean
@@ -69,7 +69,7 @@ export type PlanChange =
   | { kind: 'checkout'; checkout: PlanCheckout }
   | { kind: 'changed'; plan: WorkspacePlan }
 
-/** A Lemon Squeezy checkout, minted for this click. */
+/** A Polar checkout, minted for this click. */
 export type PlanCheckout = {
   /** Signed and short-lived — opened on the click, never stored or cached. */
   url: string

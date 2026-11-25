@@ -11,7 +11,7 @@ import { canManageWorkspace, type Workspace } from '@/types/workspace'
 import { ReadOnlyField } from './SettingsRow'
 
 /**
- * The current workspace's own settings: name, slug, time zone.
+ * The current workspace's own settings: name and slug.
  *
  * The name registers with the page-level save context rather than submitting
  * itself, so one Save button covers the card — the same arrangement the
@@ -44,23 +44,14 @@ function WorkspaceSectionComponent() {
       capped
     >
       {/* Same two-column body as the platform rows, so the fields line up
-          and stretch across the card. */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8">
-        <NameField workspace={workspace} />
-      </div>
+          and stretch across the card: the name and the slug it was made
+          from, side by side. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+        <NameField workspace={workspace} />
         <ReadOnlyField
           label={t('workspaceSettings.workspace.slugLabel')}
           value={workspace.slug}
           description={t('workspaceSettings.workspace.slugNote')}
-        />
-        {/* Not a control yet, and shown rather than hidden because "what time
-            zone am I scheduling in" is a question the calendar makes people
-            ask. */}
-        <ReadOnlyField
-          label={t('workspaceSettings.workspace.timeZoneLabel')}
-          value="UTC"
-          description={t('workspaceSettings.workspace.timeZoneNote')}
         />
       </div>
     </Card>

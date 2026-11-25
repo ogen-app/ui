@@ -254,7 +254,7 @@ export type TierVersionPrice = {
   /** ISO 3166, or `null` for the default price of this currency and interval. */
   countryCode: string | null
   /**
-   * Whether this row can be bought right now — a Lemon Squeezy variant is
+   * Whether this row can be bought right now — a Polar product is
    * mapped to it and billing is on (CON-325). Only the price list says; the
    * plan read leaves it `true`, because a price somebody already holds is not
    * on offer either way.
