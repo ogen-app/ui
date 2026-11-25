@@ -59,10 +59,15 @@ export type ConnectTarget = {
 }
 
 /** The choice awaiting the user, keyed by an opaque single-use connection id. */
+/** Where a connect comes back to — setup after signup; Settings when absent. */
+export type ConnectReturn = 'onboarding'
+
 export type PendingConnection = {
   /** Zernio's platform id (`linkedin`, `facebook`, …), not our internal one. */
   platform: string
   options: ConnectTarget[]
+  /** Where to go once a target is picked: `''` for Settings. */
+  returnTo?: '' | ConnectReturn
 }
 
 export type ZernioErrorCode =

@@ -9,7 +9,7 @@ import {
   triggerZernioSync,
 } from '@/services/api/zernio'
 import { PLATFORMS_KEY } from '@/hooks/usePlatforms'
-import { ZernioError } from '@/types/integrations'
+import { ZernioError, type ConnectReturn } from '@/types/integrations'
 import { toast } from '@/stores/toastStore'
 
 export const ZERNIO_HEALTH_KEY = ['zernio', 'health'] as const
@@ -35,14 +35,15 @@ export function useZernioAccounts() {
   })
 }
 
-export function useCreateConnectLink() {
+/** `returnTo` sends the consent back to setup rather than to Settings. */
+export function useCreateConnectLink(returnTo?: ConnectReturn) {
   return useMutation({
     // The connect modal is already open and showing this mutation's state; it
     // renders the failure in place, through `connectErrorMessage`, which maps
     // the typed Zernio errors (rate limit, disabled, degraded) to copy a
     // generic toast couldn't.
     meta: { errorToast: false },
-    mutationFn: (platform: string) => createConnectLink(platform),
+    mutationFn: (platform: string) => createConnectLink(platform, returnTo),
   })
 }
 

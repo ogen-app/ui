@@ -67,6 +67,7 @@ const BRAND: BrandData = {
   guardrails: null,
   look: null,
   templates: [],
+  positioning: null,
   facts: [],
   guardrailsStance: NO_STANCE,
 }

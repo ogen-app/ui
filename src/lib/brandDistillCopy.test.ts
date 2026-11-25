@@ -49,6 +49,7 @@ describe('savedSentence', () => {
               audiences: [{ proposalId: 'a1', id: '2' }],
               guardrails: ['g:mayClaim:1', 'g:neverClaim:1', 'g:bannedWords:1'],
               facts: [{ proposalId: 'f1', id: '3' }],
+              positioning: [],
             },
             skipped: [
               { proposalId: 'f2', reason: 'duplicate' },

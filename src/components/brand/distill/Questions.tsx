@@ -125,7 +125,13 @@ export function GapQuestions({
             placeholder={t('brand.distill.gaps.placeholder')}
             number={i + 1}
             question={q.text}
-            why={[brandSectionCopy(t, q.section).label, q.why]
+            why={[
+              // Positioning is not a section of the brand's own yet.
+              q.section === 'positioning'
+                ? t('brand.distill.review.positioning.title')
+                : brandSectionCopy(t, q.section).label,
+              q.why,
+            ]
               .filter(Boolean)
               .join(t('brand.distill.gaps.whyJoin'))}
             value={values[q.id] ?? ''}

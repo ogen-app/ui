@@ -165,6 +165,7 @@ export async function getBrand(): Promise<BrandData> {
   >('/api/brand', 'Unable to load the brand')
   return {
     ...brand,
+    positioning: brand.positioning ?? null,
     voices: brand.voices.map(voiceFromWire),
     facts: brand.facts.map(factFromWire),
   }

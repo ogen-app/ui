@@ -87,6 +87,7 @@ function proposal(overrides: Partial<DistillProposal> = {}): DistillProposal {
         evidence: [],
       },
     ],
+    positioning: { statement: null, differentiators: [] },
     questions: [],
     coverage: {},
     dropped: { ungrounded: 0, duplicate: 0, limit: 0 },
@@ -162,6 +163,74 @@ describe('buildCommit', () => {
   })
 })
 
+describe('positioning', () => {
+  const positioned = (current: string | null) =>
+    proposal({
+      positioning: {
+        statement: {
+          ...line('p:statement', 'The only roaster that names the farm.'),
+          current,
+        },
+        differentiators: [
+          line('p:differentiators:0', 'Every bag names its farm.'),
+        ],
+      },
+    })
+
+  it('sends the statement and the differentiators when there is none of yours', () => {
+    const body = buildCommit(positioned(null), EMPTY_REVIEW)
+    expect(body.positioning).toEqual({
+      statement: {
+        proposalId: 'p:statement',
+        text: 'The only roaster that names the farm.',
+      },
+      differentiators: [
+        {
+          proposalId: 'p:differentiators:0',
+          text: 'Every bag names its farm.',
+        },
+      ],
+    })
+    expect(
+      buildCommit(positioned(null), toggleDropped(EMPTY_REVIEW, 'p:statement'))
+        .positioning.statement,
+    ).toBeUndefined()
+  })
+
+  it('keeps your statement unless the one read is explicitly picked', () => {
+    const p = positioned('We roast light.')
+    expect(buildCommit(p, EMPTY_REVIEW).positioning.statement).toBeUndefined()
+    expect(
+      buildCommit(p, { ...EMPTY_REVIEW, statement: 'site' }).positioning
+        .statement?.proposalId,
+    ).toBe('p:statement')
+    // A choice, not a keep-or-drop: only the differentiator is counted.
+    expect(keptTally(p, EMPTY_REVIEW).total).toBe(7)
+  })
+
+  it('is something to save on its own', () => {
+    const all = [
+      'v1',
+      'a1',
+      'g:mayClaim:1',
+      'g:neverClaim:1',
+      'g:bannedWords:1',
+      'f1',
+      'p:statement',
+    ]
+    const review = all.reduce(toggleDropped, EMPTY_REVIEW)
+    expect(commitIsEmpty(buildCommit(positioned(null), review))).toBe(false)
+    expect(
+      commitIsEmpty(
+        buildCommit(
+          positioned(null),
+          toggleDropped(review, 'p:differentiators:0'),
+        ),
+      ),
+    ).toBe(true)
+  })
+})
+
 describe('keptTally', () => {
   it('counts every keep-or-drop decision, not the disclaimer choice', () => {
     expect(keptTally(proposal(), EMPTY_REVIEW)).toEqual({ kept: 6, total: 6 })
@@ -207,6 +276,9 @@ function run(overrides: Partial<DistillRun>): DistillRun {
   return {
     id: 'r1',
     status: 'collecting',
+    incremental: false,
+    coverage: {},
+    reads: [],
     parentRunId: null,
     childRunId: null,
     website: null,
@@ -224,7 +296,13 @@ function run(overrides: Partial<DistillRun>): DistillRun {
 }
 
 describe('the steps a run is shown as', () => {
-  const website = { url: 'https://acme.com', mapped: true, pagesFound: 84 }
+  const website = {
+    url: 'https://acme.com',
+    mapped: true,
+    pagesFound: 84,
+    siteName: '',
+    faviconUrl: null,
+  }
   const source = {
     assetId: 'a',
     title: 'About',

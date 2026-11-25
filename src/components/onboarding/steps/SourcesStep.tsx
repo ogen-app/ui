@@ -31,16 +31,12 @@ import {
 
 /**
  * Where one thing Ogen was given stands. A document is `uploading` first;
- * everything is `reading` from the moment it is added, for about a minute,
- * and `stopped` only if the person went on before it finished.
- *
- * Against the API as it is (`readsOnAdd` off), only a document is read on
- * its own — its ingest — and the website and the answers are `queued` for
- * the one brand read Continue starts. `failed` is an upload the server
- * refused.
+ * everything is `reading` from the moment it is added, for about a minute.
+ * `failed` is an upload the server refused, `readFailed` a source it could
+ * not read — which can be read again.
  */
 export type SourceStatus =
-  'uploading' | 'reading' | 'read' | 'stopped' | 'queued' | 'failed'
+  'uploading' | 'reading' | 'read' | 'readFailed' | 'failed'
 
 /**
  * One thing Ogen reads. A document is uploaded the moment it is chosen
@@ -58,7 +54,11 @@ export type SourceInput =
       pages?: number
     }
 
-export type OnboardingSource = SourceInput & { status: SourceStatus }
+export type OnboardingSource = SourceInput & {
+  status: SourceStatus
+  /** What reading it added — the needs it went towards — once it is read. */
+  added?: string
+}
 
 /** The id `onRetry` takes for the answers, which are not a source. */
 export const ANSWERS_ID = 'answers'
@@ -101,6 +101,7 @@ export function SourcesStep({
   questions,
   answers,
   answersStatus,
+  answersAdded,
   onAdd,
   onRemove,
   onRetry,
@@ -110,7 +111,6 @@ export function SourcesStep({
   onRead,
   onStop,
   onLater,
-  readsOnAdd = true,
   starting,
   error,
 }: {
@@ -121,10 +121,12 @@ export function SourcesStep({
   answers: Record<string, string>
   /** How the answers' read stands; `null` while there are none. */
   answersStatus: SourceStatus | null
+  /** What the answers added, once they are read. */
+  answersAdded?: string
   /** Starts reading what was added; the caller sets its status. */
   onAdd: (source: SourceInput) => void
   onRemove: (id: string) => void
-  /** Reads a stopped source again — `ANSWERS_ID` for the answers. */
+  /** Reads a source that could not be read again — `ANSWERS_ID` for the answers. */
   onRetry: (id: string) => void
   onChooseFiles: () => void
   /** Replaces the answers; `{}` takes them back. */
@@ -136,16 +138,9 @@ export function SourcesStep({
   onStop: () => void
   /** On without a read; the brand is read later from Foundation. */
   onLater: () => void
-  /**
-   * Whether each source is read the moment it is added (the design). Off,
-   * Continue starts one read over everything, documents still ingesting
-   * included — the API's shape — so there is nothing to stop and nothing to
-   * ask about.
-   */
-  readsOnAdd?: boolean
-  /** The read is being asked for. */
+  /** The brand is being asked for. */
   starting?: boolean
-  /** Why the read did not start, said where the hint is. */
+  /** Why a source or the brand could not be read, said where the hint is. */
   error?: string
 }) {
   const { t } = useTranslation()
@@ -162,13 +157,11 @@ export function SourcesStep({
   ]
   const reading = statuses.some(busy)
   const anyRead = statuses.includes('read')
-  const onContinue = !readsOnAdd
-    ? onRead
-    : reading
-      ? () => setAsking(true)
-      : anyRead
-        ? onRead
-        : onLater
+  const onContinue = reading
+    ? () => setAsking(true)
+    : anyRead
+      ? onRead
+      : onLater
   // Asking only holds while something is still being read: a read finishing
   // under the question answers it, and the next add starts unasked.
   if (asking && !reading) setAsking(false)
@@ -186,11 +179,7 @@ export function SourcesStep({
   return (
     <StepCard
       title={t('onboarding.sources.title', { name })}
-      lead={t(
-        readsOnAdd
-          ? 'onboarding.sources.lead'
-          : 'onboarding.sources.leadTogether',
-      )}
+      lead={t('onboarding.sources.lead')}
       footer={
         <StepFooter
           onBack={onBack}
@@ -213,9 +202,7 @@ export function SourcesStep({
                 />
                 {error}
               </span>
-            ) : !given ? undefined : !readsOnAdd ? (
-              t('onboarding.sources.togetherHint')
-            ) : reading ? (
+            ) : !given ? undefined : reading ? (
               t('onboarding.sources.readingHint')
             ) : anyRead ? (
               t('onboarding.sources.readHint')
@@ -231,12 +218,14 @@ export function SourcesStep({
                   {t('onboarding.sources.stop.go')}
                 </Button>
               </div>
-            ) : error ? (
-              // The read could not start — no scraper, the read switched off,
-              // a server that did not answer. Setup must not end there: the
-              // brand can be read from Foundation later.
+            ) : error && anyRead && !reading ? (
+              // The brand could not be read from what was — no scraper, the
+              // read switched off, a server that did not answer. Setup must
+              // not end there: the brand can be read from Foundation later.
+              // A source that could not be added is not this: its error is
+              // the note, and the way on is the usual one.
               <div className="flex gap-2">
-                <Button variant="ghost" loading={starting} onClick={onContinue}>
+                <Button variant="ghost" loading={starting} onClick={onRead}>
                   {t('onboarding.sources.tryAgain')}
                 </Button>
                 <Button variant="accent" onClick={onLater}>
@@ -272,7 +261,10 @@ export function SourcesStep({
                 icon={ChatCircleTextIcon}
                 title={t('onboarding.sources.questions.title')}
                 status={answersStatus}
-                detail={t('onboarding.sources.answered', counted(answered))}
+                detail={
+                  answersAdded ??
+                  t('onboarding.sources.answered', counted(answered))
+                }
                 onRemove={() => onAnswers({})}
                 onRetry={() => onRetry(ANSWERS_ID)}
               />
@@ -543,9 +535,10 @@ function SourceRow({
       title={doc ? source.name : source.url}
       status={source.status}
       detail={
-        doc && source.pages
+        source.added ??
+        (doc && source.pages
           ? t('onboarding.sources.pages', counted(source.pages))
-          : undefined
+          : undefined)
       }
       onRemove={onRemove}
       onRetry={onRetry}
@@ -569,7 +562,7 @@ function AddedRow({
   icon: typeof GlobeIcon
   title: string
   status: SourceStatus
-  /** What was read — pages, answers — shown once it has been. */
+  /** What reading it added, shown once it has been read. */
   detail?: string
   onRemove: () => void
   onRetry: () => void
@@ -588,7 +581,7 @@ function AddedRow({
           className={cn(HINT_TEXT, 'flex shrink-0 items-center gap-1.5')}
           aria-live="polite"
         >
-          {status === 'failed' && (
+          {(status === 'failed' || status === 'readFailed') && (
             <WarningIcon
               aria-hidden
               weight="fill"
@@ -606,7 +599,7 @@ function AddedRow({
             ? (detail ?? t('onboarding.sources.done'))
             : t(`onboarding.sources.${status}`)}
         </span>
-        {status === 'stopped' && (
+        {status === 'readFailed' && (
           <Button variant="ghost" size="sm" onClick={onRetry}>
             {t('onboarding.sources.retry')}
           </Button>

@@ -25,9 +25,18 @@ afterEach(() => useBrandDistillStore.setState({ saved: null }))
 const READING: DistillRun = {
   id: 'r1',
   status: 'collecting',
+  incremental: false,
+  coverage: {},
+  reads: [],
   parentRunId: null,
   childRunId: null,
-  website: { url: 'https://acme-roasters.com', mapped: true, pagesFound: 84 },
+  website: {
+    url: 'https://acme-roasters.com',
+    mapped: true,
+    pagesFound: 84,
+    siteName: 'Acme Roasters',
+    faviconUrl: null,
+  },
   sources: [
     {
       assetId: 'a1',
@@ -96,6 +105,7 @@ describe('a brand read in Spanish', () => {
               { proposalId: 'f1', id: '2' },
               { proposalId: 'f2', id: '3' },
             ],
+            positioning: [],
           },
           skipped: [{ proposalId: 'f3', reason: 'duplicate' }],
         },
