@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { LightbulbIcon } from '@phosphor-icons/react'
+import {
+  LightbulbIcon,
+  PencilSimpleLineIcon,
+  StackIcon,
+} from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { IdeaPostForm } from '@/components/ideas/IdeaPostForm'
 import { useCompileIdeas, useDraftIdeas } from '@/hooks/useIdeaPosts'
@@ -18,7 +22,8 @@ export const IDEA_SLOT_HEIGHT = 52
  * pointer it offers its two verbs — COMPILE into a planned post (theses
  * only), or DRAFT a full body — each through the Ideas list's form, which
  * asks for the platforms with the idea's own preset (CON-470). The posts take
- * the slot's day.
+ * the slot's day. Two Ogen verbs in one line are black words, each with its
+ * own icon, never a pair of button bodies.
  *
  * Without a pointer to hover with, a tap focuses the card and that reveals the
  * verbs; until then the overlay takes no taps, so a first touch can never
@@ -104,11 +109,12 @@ export function IdeaSlotCard({
           onSubmit={({ platformIds }) => compile.mutate(request(platformIds))}
         >
           <Button
-            variant="outline"
+            variant="ghost"
             size="xs"
-            className="bg-primary"
+            className="text-foreground"
             disabled={busy}
           >
+            <StackIcon />
             {t('ideas.lifecycle.compile')}
           </Button>
         </IdeaPostForm>
@@ -117,7 +123,13 @@ export function IdeaSlotCard({
           {...form}
           onSubmit={({ platformIds }) => draft.mutate(request(platformIds))}
         >
-          <Button variant="defaultInverted" size="xs" disabled={busy}>
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-foreground"
+            disabled={busy}
+          >
+            <PencilSimpleLineIcon />
             {t('ideas.lifecycle.draft')}
           </Button>
         </IdeaPostForm>
