@@ -987,13 +987,14 @@
 
   /* The sweep on glyphs. Transparent text for the same reason as the
      shimmer below; an icon cannot be clipped this way, so `GradientMark`
-     paints its mark with an SVG gradient on the same tokens. */
+     paints its mark with an SVG gradient on the same tokens.
+     Words go blue to green only: the orange tip, right on a mark, lands on a
+     label's last letters ("Assess quali|ty") and reads as a smudge. */
   .text-sweep {
     background-image: linear-gradient(
       90deg,
       var(--sweep-from),
-      var(--sweep-to) 75%,
-      var(--sweep-splash)
+      var(--sweep-to)
     );
     background-clip: text;
     -webkit-background-clip: text;

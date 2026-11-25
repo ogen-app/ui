@@ -383,11 +383,13 @@ function AssessLink({
   return (
     // Inline, not a flex box: the words carry the baseline, so the link sits
     // on its heading's line; the mark rides the text like a glyph.
-    <TextButton className="shrink-0" onClick={onAssess}>
+    // At the heading's 12px: a link bigger than the heading it answers
+    // outweighs it.
+    <TextButton className="shrink-0 text-xs" onClick={onAssess}>
       <GradientMark
         icon={SparkleIcon}
         weight="bold"
-        className="mr-1.5 inline size-4 align-[-3px]"
+        className="mr-1 inline size-3.5 align-[-2px]"
       />
       <span className="text-sweep">
         {assessment ? t('posts.quality.reassess') : t('posts.quality.assess')}
