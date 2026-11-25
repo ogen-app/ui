@@ -41,9 +41,8 @@ function setup(props: Partial<Parameters<typeof WorkspaceScopeBar>[0]> = {}) {
   return { onSelectedChange }
 }
 
-/** The platform marks — the buttons that carry a pressed state. */
-const marks = () =>
-  screen.queryAllByRole('button').filter((b) => b.hasAttribute('aria-pressed'))
+/** The platform marks — the switches that say whether each is counted. */
+const marks = () => screen.queryAllByRole('switch')
 
 describe('WorkspaceScopeBar', () => {
   it('shows the one connected platform as a mark, not a filter', () => {
@@ -69,13 +68,13 @@ describe('WorkspaceScopeBar', () => {
     // drawn as off would say the opposite of what the figures are showing.
     expect(marks()).toHaveLength(3)
     for (const mark of marks()) {
-      expect(mark).toHaveAttribute('aria-pressed', 'true')
+      expect(mark).toHaveAttribute('aria-checked', 'true')
     }
   })
 
   it('narrows to the first platform chosen', async () => {
     const { onSelectedChange } = setup()
-    await userEvent.click(screen.getByRole('button', { name: /LinkedIn/ }))
+    await userEvent.click(screen.getByRole('switch', { name: /LinkedIn/ }))
 
     // Not "everything but LinkedIn": from the whole workspace the useful first
     // move is towards one platform.
@@ -84,7 +83,7 @@ describe('WorkspaceScopeBar', () => {
 
   it('adds a second platform to the first', async () => {
     const { onSelectedChange } = setup({ selected: ['linkedin'] })
-    await userEvent.click(screen.getByRole('button', { name: /Instagram/ }))
+    await userEvent.click(screen.getByRole('switch', { name: /Instagram/ }))
 
     expect(onSelectedChange).toHaveBeenCalledWith(['linkedin', 'instagram'])
   })
@@ -93,7 +92,7 @@ describe('WorkspaceScopeBar', () => {
     setup({ selected: ['linkedin', 'facebook'] })
 
     const pressed = marks().filter(
-      (m) => m.getAttribute('aria-pressed') === 'true',
+      (m) => m.getAttribute('aria-checked') === 'true',
     )
     expect(pressed).toHaveLength(2)
     expect(pressed[0]).toHaveAccessibleName(/LinkedIn/)
@@ -102,14 +101,14 @@ describe('WorkspaceScopeBar', () => {
 
   it('takes a chosen platform back out', async () => {
     const { onSelectedChange } = setup({ selected: ['linkedin', 'facebook'] })
-    await userEvent.click(screen.getByRole('button', { name: /Facebook/ }))
+    await userEvent.click(screen.getByRole('switch', { name: /Facebook/ }))
 
     expect(onSelectedChange).toHaveBeenCalledWith(['linkedin'])
   })
 
   it('returns to everything when the last chosen one is pressed again', async () => {
     const { onSelectedChange } = setup({ selected: ['linkedin'] })
-    await userEvent.click(screen.getByRole('button', { name: /LinkedIn/ }))
+    await userEvent.click(screen.getByRole('switch', { name: /LinkedIn/ }))
 
     // Without this the only way out of a filter is to guess which other control
     // clears it — and a filter left on is a filtered screenshot read as the
@@ -119,7 +118,7 @@ describe('WorkspaceScopeBar', () => {
 
   it('reads every platform chosen as none chosen', async () => {
     const { onSelectedChange } = setup({ selected: ['linkedin', 'facebook'] })
-    await userEvent.click(screen.getByRole('button', { name: /Instagram/ }))
+    await userEvent.click(screen.getByRole('switch', { name: /Instagram/ }))
 
     // Sent as the full list it would leave out a platform connected tomorrow,
     // in a view that looks like the whole workspace.
@@ -139,7 +138,7 @@ describe('WorkspaceScopeBar', () => {
     })
 
     for (const mark of marks()) {
-      expect(mark).toHaveAttribute('aria-pressed', 'true')
+      expect(mark).toHaveAttribute('aria-checked', 'true')
     }
     expect(
       screen.queryByRole('button', { name: 'All platforms' }),
