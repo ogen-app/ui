@@ -40,12 +40,21 @@ export const brand = {
   binding: {
     voice: 'Voice',
     audience: 'Audience',
-    campaignVoiceHint:
-      'The voice this campaign writes in. Posts open in it and can be changed one by one; leave it unset to use the workspace default.',
-    campaignAudienceHint:
-      'Who this campaign is written to. A post that addresses somebody else says so on the post.',
+    workspaceDefault: 'Workspace default ({{name}})',
     noVoice: 'No voice',
     noAudience: 'No audience',
+    chosenHere: 'Chosen for this campaign',
+    voiceInherited: 'The workspace default, until this campaign picks one',
+    voiceReach:
+      'Every post here is written in it; one post can still pick another',
+    audienceReach:
+      'Every post here is written to them; one post can still address somebody else',
+    audienceNoDefault:
+      'An audience has no workspace default: nothing is assumed',
+    noVoiceRun:
+      'Written in no voice in particular. Pick one, or make one the workspace default.',
+    noAudienceRun:
+      'Written to no one in particular. Pick who these posts are for.',
     sourcePost: 'Set on this post',
     sourceCampaign: 'From the campaign',
     sourceLibrary: "The workspace's default",
@@ -178,12 +187,38 @@ export const brand = {
     usageDrafts: '{{count}} in draft',
     usageNever: 'never used',
     /**
+     * Which campaigns use a voice or an audience (`useUsedBy`). A voice a
+     * campaign does not choose is the workspace default's, and says so;
+     * `{{campaigns}}` is a joined list of names, the last item possibly
+     * `usedByMore`.
+     */
+    usedByChosen: 'Chosen by {{campaigns}}',
+    usedByDefault: 'The default for {{campaigns}}',
+    usedByBoth: 'Chosen by {{chosen}}; the default for {{inherited}}',
+    usedByNone: 'No campaign uses it',
+    usedByMore_one: '{{count}} more',
+    usedByMore_other: '{{count}} more',
+    /**
      * How the parts of a fact are joined — a comma and a space in English.
      * On the catalogue rather than in the helper because the separator is a
      * property of the language, and a hard-coded `', '` is the same class of
      * bug as a hard-coded date format.
      */
     separator: ', ',
+  },
+
+  /**
+   * The parts every voice, audience and series is drawn from (`entry.tsx`):
+   * the few words in weight a ruled run opens on, and what the run says while
+   * there is nothing to run on from.
+   */
+  entry: {
+    soundsLike: 'Sounds like',
+    readsOn: 'Reads on',
+    scrollsPastWhen: 'Scrolls past when',
+    believesWhen: 'Believes you when',
+    noSamples: 'No samples yet. It will write as if it had no voice.',
+    notDescribed: 'Nothing said about them yet.',
   },
 
   /** The furniture every Brand screen is built from — `shell.tsx`. */
@@ -203,6 +238,8 @@ export const brand = {
     /** The detail beside `origin.posts` — how many posts it was learned from. */
     originPostCount_one: '{{count}} post',
     originPostCount_other: '{{count}} posts',
+    /** Where it came from, the detail in brackets: "From a template (Dry wit)". */
+    originWithDetail: '{{origin}} ({{detail}})',
     offer: {
       dismiss: "Don't offer this again",
       title: 'Fill this in from what you already have',
@@ -327,6 +364,7 @@ export const brand = {
       thin: 'too little text',
       timedOut: 'took too long',
       failed: "couldn't be read",
+      title: 'Progress',
       leave:
         'This takes a few minutes. You can leave — it carries on, and Ogen lets you know when it is ready to look at. Nothing is saved to your Foundation until you say so.',
       pagesLand:
@@ -345,8 +383,11 @@ export const brand = {
       disclaimer: 'the disclaimer',
       facts_one: '{{count}} fact',
       facts_other: '{{count}} facts',
+      positioning_one: '{{count}} line on what sets you apart',
+      positioning_other: '{{count}} lines on what sets you apart',
     },
     summary: {
+      title: 'Summary',
       fromPages_one: 'From {{count}} page of {{site}}',
       fromPages_other: 'From {{count}} pages of {{site}}',
       fromFile: 'From {{title}}',
@@ -410,18 +451,20 @@ export const brand = {
     },
     questions: {
       title: 'A handful of questions',
+      cardTitle: 'Questions',
       intro:
         'Answer what you can and skip the rest. Ogen drafts voices, audiences, guardrails and facts from your words, and you review them before anything is saved — the same as reading a website.',
       placeholder: 'Skip, or say it in a line or two',
       unavailable: "The questions couldn't be loaded. Try again in a minute.",
       answered: '{{answered}} of {{count}} answered',
       draft: 'Draft it',
-      /** The server's seven starter questions, by their stable ids. */
+      /** The server's eight starter questions, by their stable ids. */
       starter: {
         q_offer: 'What do you sell, and who buys it?',
         q_three_words: 'Three words a customer would use about you.',
         q_never_post: 'A sentence you would never post.',
         q_not_for: 'Who are you not for?',
+        q_apart: 'What do you do that the alternatives don’t?',
         q_proof: 'What can you prove?',
         q_legal: 'What does legal not let you say?',
         q_disclaimer: 'The disclaimer you already run, if any.',
@@ -477,6 +520,15 @@ export const brand = {
       useTheirs: 'Use the one from the site',
       writtenHereOn: 'Written here · {{date}}',
       disclaimerRule: 'Nothing is replaced unless you pick the site’s.',
+      positioning: {
+        title: 'What sets you apart',
+        statement: 'Statement',
+        differentiators: 'What backs it up',
+        differs:
+          'Ogen read a different statement from yours. Keep yours unless you choose it.',
+        useRead: 'Use the one Ogen read',
+        rule: 'Nothing is replaced unless you pick the one Ogen read.',
+      },
       factColumns: {
         statement: 'Statement',
         about: 'About',
@@ -647,16 +699,8 @@ export const brand = {
     /** The confirmations. `{{name}}` is the entry's own, always the user's words. */
     deleted: '{{name}} was deleted.',
     guardrailsDeleted: 'The guardrails were deleted.',
-    /** The side column's first card: what the section is for. */
+    /** The side column's card: what the section is for. */
     about: 'About',
-    /** The side column's second card: each campaign, and what it picks here. */
-    usedBy: {
-      title: 'Used by',
-      empty: 'No campaigns yet.',
-      noVoice: 'No voice',
-      noAudience: 'No audience',
-      defaultVoice: '{{voice}} (default)',
-    },
   },
 
   /** The visual half — `LookSection.tsx`. */
@@ -726,8 +770,6 @@ export const brand = {
         closing: 'Ends on the sharpest line, not on a summary.',
       },
     },
-    noSamples:
-      'No samples. This voice has a name and nothing behind it — it will generate exactly what no voice at all would.',
     thin: '{{count}} is where it starts working',
     postsBehind: '{{count}} could be redone',
     defaultBacked:
@@ -1123,14 +1165,10 @@ export const brand = {
       stay: 'Keep editing',
       discard: 'Discard',
     },
-    /**
-     * The fork note's first sentence. `<name>` is the starter's name, set in
-     * the foreground colour — a `<Trans>` rather than three JSX fragments,
-     * because where the emphasis falls inside a sentence is the translator's
-     * decision and not the layout's.
-     */
+    /** The fork note: its title names the starter, its body begins with this. */
+    forkedTitle: 'Started from {{name}}',
     forkedFrom:
-      'Started from <name>{{name}}</name>, and copied rather than linked — ours changing will never change yours.',
+      'Copied rather than linked — ours changing will never change yours.',
     danger: {
       title: 'Danger zone',
       /**

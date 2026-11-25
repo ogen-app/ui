@@ -80,7 +80,7 @@ type Interval = TierVersionPrice['interval']
  *    no prices, no interval, and a click switches the tier in place.
  *
  * What a click does is the server's call: no live subscription and it mints a
- * Lemon Squeezy checkout, opened in a new tab synchronously on the click (a
+ * Polar checkout, opened in a new tab synchronously on the click (a
  * tab opened after the request has lost the gesture and is blocked); a live
  * one and it changes the plan in place, after a confirmation that states what
  * this click costs.

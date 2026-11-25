@@ -12,9 +12,6 @@ export const workspaceSettings: Translation['workspaceSettings'] = {
     slugNote:
       'Se genera a partir del nombre al crearlo; cambiar el nombre del espacio no lo modifica.',
     switch: 'Cambiar',
-    timeZoneLabel: 'Zona horaria',
-    timeZoneNote:
-      'Por ahora todo se programa en UTC; las zonas horarias por espacio llegan con CON-94.',
   },
   people: {
     title: 'Personas',

@@ -46,7 +46,7 @@ export const tiers = {
     unavailable: 'Not available yet',
     noneOnSale: 'No plan is on sale right now.',
     vatNote:
-      'Prices exclude VAT. Lemon Squeezy sells Ogen as merchant of record and adds it at checkout.',
+      'Prices exclude VAT. Polar sells Ogen as merchant of record and adds it at checkout.',
     /**
      * A tester's complimentary workspace (CON-402): the same ledger with no
      * money on it. These replace the title, the price block and the VAT note.
@@ -71,31 +71,31 @@ export const tiers = {
     compEndedBody:
       'Thanks for testing Ogen. Choose a plan to keep going — nothing you made has been touched.',
   },
-  /** Waiting for Lemon Squeezy to confirm a subscription (CON-328). */
+  /** Waiting for Polar to confirm a subscription (CON-328). */
   checkout: {
     confirmingTitle: 'Confirming your subscription',
     confirmingBody:
-      'Lemon Squeezy has your details. {{workspace}} opens as soon as they confirm — usually a few seconds.',
+      'Polar has your details. {{workspace}} opens as soon as they confirm — usually a few seconds.',
     stepCheckout: 'Checkout completed',
-    stepConfirm: 'Waiting for Lemon Squeezy to confirm',
+    stepConfirm: 'Waiting for Polar to confirm',
     stepOpen: 'Opening {{workspace}}',
     openedTitle: 'Finish checking out in the new tab',
     /** Said only when checkout itself says the free month was applied. */
     openedTrial: 'Your first month is free — nothing is charged today.',
     openedCharged: "You're charged when you complete the checkout.",
     openedBody:
-      'This page carries on by itself once Lemon Squeezy confirms, and opens {{workspace}}.',
+      'This page carries on by itself once Polar confirms, and opens {{workspace}}.',
     reopen: 'Open checkout again',
     back: 'Choose another plan',
     slowTitle: 'Taking longer than usual',
     slowBody:
-      "Leave this open, or come back later — you won't be charged twice. Your receipt from Lemon Squeezy has the order reference.",
+      "Leave this open, or come back later — you won't be charged twice. Your receipt from Polar has the order reference.",
     subscribed: "You're on {{name}}.",
   },
   /** Confirming an in-place plan change on a workspace that already pays. */
   changeDialog: {
     title: 'Move to {{name}}?',
-    body: 'Lemon Squeezy works out the difference: a move up starts today, a move down waits for the end of the period you have paid for.',
+    body: 'Polar works out the difference: a move up starts today, a move down waits for the end of the period you have paid for.',
     trialBody:
       'This ends the free month on {{name}} today, and {{target}} is charged now.',
     cancel: 'Cancel',
@@ -103,9 +103,9 @@ export const tiers = {
     confirm: 'Move to {{name}}',
     blockedTitle: 'Not during the free month',
     blockedBody:
-      "{{name}} can't be changed until its free month ends on {{when}}. Choose again then, or end the free month in Lemon Squeezy and come back.",
+      "{{name}} can't be changed until its free month ends on {{when}}. Choose again then, or end the free month in Polar and come back.",
     blockedBodyBare:
-      "{{name}} can't be changed until its free month ends. End it in Lemon Squeezy, or choose again once it has.",
+      "{{name}} can't be changed until its free month ends. End it in Polar, or choose again once it has.",
     nothingCharged: "Nothing was charged, and you're still on {{name}}.",
     ok: 'OK',
   },
@@ -115,9 +115,9 @@ export const tiers = {
       "That plan can't be chosen any more. Reload the page to see what's on offer.",
     notAvailable: "That plan isn't on sale right now.",
     notChangeable:
-      "This subscription can't be changed from here. Manage it in Lemon Squeezy.",
+      "This subscription can't be changed from here. Manage it in Polar.",
     duringTrial: "Your plan can't be changed during the free month.",
-    provider: "Lemon Squeezy didn't answer. Try again in a moment.",
+    provider: "Polar didn't answer. Try again in a moment.",
     unavailable: "Billing isn't available right now.",
   },
   /** The Plan & billing card (CON-328). */
@@ -127,7 +127,7 @@ export const tiers = {
   billingUnavailable:
     "Billing details aren't available right now, so there's nothing to manage from here.",
   sandbox: 'Sandbox',
-  noPortal: "There's nothing at Lemon Squeezy to manage yet.",
+  noPortal: "There's nothing at Polar to manage yet.",
   priceExclVat: '{{price}}, excl. VAT',
   perMonth: '{{price}} / month',
   perYear: '{{price}} / year',
@@ -384,7 +384,7 @@ export const tiers = {
    * "none on file" under a plan somebody is paying for reads as *we lost your
    * card*: alarming, and untrue. It is held, elsewhere, by the seller.
    */
-  cardWithProvider: 'Your payment method is held by Lemon Squeezy.',
+  cardWithProvider: 'Your payment method is held by Polar.',
   /** The free-tier line: a statement about money, not about a missing card. */
   noSubscription: 'Nothing is being charged for this workspace.',
   /**
@@ -397,14 +397,14 @@ export const tiers = {
   ownersOnly: 'Only workspace owners can see billing details.',
 
   /**
-   * The one place the provider is named, and it has to be named: Lemon
-   * Squeezy is the seller of record, so it is the name on the customer's
+   * The one place the provider is named, and it has to be named: Polar is
+   * the seller of record, so it is the name on the customer's
    * statement and on the invoice. The sentence exists to answer the question
    * this card will be asked — where do I change my VAT number — whose answer
    * is a place rather than a field.
    */
   providerHolds:
-    'Your payment method, billing address, tax ID, invoices and cancellation are handled by Lemon Squeezy, which sells Ogen as merchant of record.',
+    'Your payment method, billing address, tax ID, invoices and cancellation are handled by Polar, which sells Ogen as merchant of record.',
   /** The row title says what is managed, the way SWITCH sits under a name. */
   managePortal: 'Manage',
   portalFailed: 'The billing portal could not be opened.',
@@ -433,10 +433,9 @@ export const tiers = {
    * The provider is named in both: the card is not held here, so "update your
    * payment method" without saying where is an instruction with no address.
    */
-  paymentRetrying:
-    'The last payment failed, and Lemon Squeezy will try it again.',
+  paymentRetrying: 'The last payment failed, and Polar will try it again.',
   paymentStopped:
-    'The last payment failed and will not be retried — update your payment method with Lemon Squeezy to keep this plan.',
+    'The last payment failed and will not be retried — update your payment method with Polar to keep this plan.',
 
   currentPlan: 'Current plan',
   currentBadge: 'Current',
@@ -511,7 +510,7 @@ export const tiers = {
     tag: 'Beta access',
     sentence: 'Complimentary — nothing to pay.',
     payment:
-      "No card on file, and none is needed while this workspace has complimentary beta access. If it ends, you'll be asked to choose a plan and Lemon Squeezy will take your payment details then.",
+      "No card on file, and none is needed while this workspace has complimentary beta access. If it ends, you'll be asked to choose a plan and Polar will take your payment details then.",
   },
   changeCancelled: 'That change has been called off.',
 

@@ -30,7 +30,7 @@ type Props = {
 /**
  * Confirming a plan change on a workspace that already pays (CON-328).
  *
- * A checkout needs no confirmation — Lemon Squeezy's own page is one. An
+ * A checkout needs no confirmation — Polar's own page is one. An
  * in-place change does: it is charged, or scheduled, the moment the server
  * answers, and the one thing the reader cannot know from the price list is
  * what *this* click costs them now.

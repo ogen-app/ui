@@ -31,8 +31,6 @@ export const onboarding = {
   sources: {
     title: 'What can Ogen read about {{name}}?',
     lead: 'Ogen learns how they sound from what already exists. Add whatever you have; each one is read as soon as it is added, and none of it is required.',
-    leadTogether:
-      'Ogen learns how they sound from what already exists. Add whatever you have; none of it is required.',
     website: {
       title: 'Website',
       body: 'Ogen reads up to 10 of its pages.',
@@ -61,9 +59,18 @@ export const onboarding = {
     uploading: 'Uploading',
     reading: 'Reading, about a minute',
     done: 'Read',
-    stopped: 'Stopped',
-    queued: 'Read when you continue',
     failed: 'Couldn’t be uploaded',
+    readFailed: 'Couldn’t be read',
+    added: 'Adds {{needs}}',
+    addedNothing: 'Read, nothing new',
+    /** What one source went towards, as a phrase inside `added`. */
+    adds: {
+      apart: 'what sets them apart',
+      voice: 'tone of voice',
+      audience: 'who they talk to',
+      onlyThey: 'things only they can say',
+      never: 'what they never say',
+    },
     retry: 'Read again',
     answered_one: '{{formatted}} answer',
     answered_other: '{{formatted}} answers',
@@ -72,11 +79,13 @@ export const onboarding = {
       'Each takes about a minute. You can wait here, or add more while you do.',
     readHint:
       'Next you see what Ogen took from them. Nothing goes into the brand until you review it.',
-    togetherHint:
-      'Continue reads all of it together, in a minute or two. Nothing goes into the brand until you review it.',
     later: 'Do this later',
     tryAgain: 'Try again',
     withoutRead: 'Continue without reading',
+    nothingRead:
+      'Nothing you added gave Ogen anything to read. Add a document or answer a few questions.',
+    stillReading:
+      'Ogen is still reading one of these. Wait for it, or remove it.',
     stop: {
       body: 'Ogen is still reading. Going on now stops it, and the sheet on the right is not filled in from what you added. You can read it again from Foundation later.',
       keep: 'Keep reading',

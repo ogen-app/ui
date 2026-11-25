@@ -1,16 +1,19 @@
 import { useState, type ReactNode } from 'react'
 import { useSearch } from '@tanstack/react-router'
 import { Trans, useTranslation } from 'react-i18next'
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
 import {
-  CheckCircleIcon,
-  FigmaLogoIcon,
-  WarningIcon,
-} from '@phosphor-icons/react'
+  Alert02Icon,
+  CheckmarkCircle02Icon,
+  FigmaIcon,
+} from '@hugeicons/core-free-icons'
 
 import { Logo } from '@/components/Logo'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { WorkspaceMark } from '@/components/layout/WorkspaceMark'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   useAnswerFigmaPairing,
   useFigmaPairing,
@@ -58,36 +61,31 @@ export default function FigmaConnectPage() {
   if (expired) {
     return (
       <Shell title={t('integrations.figma.connect.expired.title')}>
-        <Card>
-          <p className="text-sm text-secondary-foreground">
-            {t('integrations.figma.connect.expired.body')}
-          </p>
-        </Card>
+        <p className="text-sm">
+          {t('integrations.figma.connect.expired.body')}
+        </p>
       </Shell>
     )
   }
 
   if (approve.isSuccess) {
     return (
-      <Shell title={t('integrations.figma.connect.success.title')}>
-        <Card className="flex items-start gap-3">
-          <CheckCircleIcon
-            weight="fill"
-            aria-hidden
-            className="mt-0.5 size-5 shrink-0 text-positive"
+      <Shell
+        title={t('integrations.figma.connect.success.title')}
+        icon={CheckmarkCircle02Icon}
+        tone="var(--positive)"
+      >
+        <p className="text-sm">
+          <Trans
+            i18nKey="integrations.figma.connect.success.body"
+            values={{ workspace: approve.variables.workspaceName }}
+            components={{
+              strong: (
+                <strong className="font-medium text-primary-foreground" />
+              ),
+            }}
           />
-          <p className="text-sm text-secondary-foreground">
-            <Trans
-              i18nKey="integrations.figma.connect.success.body"
-              values={{ workspace: approve.variables.workspaceName }}
-              components={{
-                strong: (
-                  <strong className="font-medium text-primary-foreground" />
-                ),
-              }}
-            />
-          </p>
-        </Card>
+        </p>
       </Shell>
     )
   }
@@ -95,11 +93,7 @@ export default function FigmaConnectPage() {
   if (deny.isSuccess) {
     return (
       <Shell title={t('integrations.figma.connect.denied.title')}>
-        <Card>
-          <p className="text-sm text-secondary-foreground">
-            {t('integrations.figma.connect.denied.body')}
-          </p>
-        </Card>
+        <p className="text-sm">{t('integrations.figma.connect.denied.body')}</p>
       </Shell>
     )
   }
@@ -107,11 +101,9 @@ export default function FigmaConnectPage() {
   if (answered) {
     return (
       <Shell title={t('integrations.figma.connect.answered.title')}>
-        <Card>
-          <p className="text-sm text-secondary-foreground">
-            {t('integrations.figma.connect.answered.body')}
-          </p>
-        </Card>
+        <p className="text-sm">
+          {t('integrations.figma.connect.answered.body')}
+        </p>
       </Shell>
     )
   }
@@ -119,19 +111,18 @@ export default function FigmaConnectPage() {
   if (pairing.isError) {
     return (
       <Shell title={t('integrations.figma.connect.loadFailed.title')}>
-        <Card className="flex flex-col gap-4">
-          <p className="text-sm text-secondary-foreground">
-            {t('integrations.figma.connect.loadFailed.body')}
-          </p>
-          <Button
-            type="button"
-            variant="neutral"
-            className="self-start"
-            onClick={() => void pairing.refetch()}
-          >
-            {t('common.tryAgain')}
-          </Button>
-        </Card>
+        <p className="text-sm">
+          {t('integrations.figma.connect.loadFailed.body')}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="self-start"
+          onClick={() => void pairing.refetch()}
+        >
+          {t('common.tryAgain')}
+        </Button>
       </Shell>
     )
   }
@@ -139,9 +130,10 @@ export default function FigmaConnectPage() {
   if (!pairing.data) {
     return (
       <Shell title={t('integrations.figma.connect.title')}>
-        <Card className="text-sm text-tertiary-foreground">
-          {t('common.loading')}
-        </Card>
+        <div className="flex flex-col gap-3" aria-hidden>
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
       </Shell>
     )
   }
@@ -212,13 +204,18 @@ function Consent({
         ) : null
       }
     >
-      <Card className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6">
         {/* What is asking. The label is the plugin's own word for itself —
             usually the Figma user's name — which is exactly why it is shown
             with where and when it asked, rather than on its own. */}
         <div className="flex items-center gap-4">
-          <span className="flex size-12 shrink-0 items-center justify-center bg-secondary">
-            <FigmaLogoIcon aria-hidden className="size-6" />
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary">
+            <HugeiconsIcon
+              icon={FigmaIcon}
+              size={20}
+              strokeWidth={1.5}
+              aria-hidden
+            />
           </span>
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-base font-medium">{label}</span>
@@ -248,11 +245,13 @@ function Consent({
             the whole flow's phishing defence rests on, so nobody gets to close
             it for good. */}
         {chosen && (
-          <div className="flex items-start gap-3 bg-warning/10 px-4 py-3 text-sm text-primary-foreground">
-            <WarningIcon
-              weight="fill"
+          <div className="flex items-start gap-3 rounded-md bg-warning/10 px-4 py-3 text-sm text-primary-foreground">
+            <HugeiconsIcon
+              icon={Alert02Icon}
+              size={16}
+              strokeWidth={1.5}
               aria-hidden
-              className="mt-0.5 size-4 shrink-0 text-warning"
+              className="mt-0.5 shrink-0 text-warning"
             />
             <p>
               <Trans
@@ -271,7 +270,8 @@ function Consent({
           <div className="flex justify-end gap-2">
             <Button
               type="button"
-              variant="neutral"
+              variant="outline"
+              size="sm"
               disabled={busy || !chosen}
               onClick={() => chosen && onDeny(chosen)}
             >
@@ -280,6 +280,7 @@ function Consent({
             <Button
               type="button"
               variant="defaultInverted"
+              size="sm"
               loading={busy}
               disabled={!chosen}
               onClick={() => chosen && onApprove(chosen)}
@@ -293,7 +294,7 @@ function Consent({
             </p>
           )}
         </div>
-      </Card>
+      </div>
     </Shell>
   )
 }
@@ -321,9 +322,7 @@ function WorkspacePicker({
   const { t } = useTranslation()
 
   if (loading) {
-    return (
-      <p className="text-sm text-tertiary-foreground">{t('common.loading')}</p>
-    )
+    return <Skeleton className="h-12 w-full" aria-hidden />
   }
   if (failed || !chosen) {
     return (
@@ -349,7 +348,7 @@ function WorkspacePicker({
               aria-checked={selected}
               onClick={() => onChoose(w.id)}
               className={cn(
-                'flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors',
+                'flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left transition-colors',
                 'hover:bg-secondary disabled:pointer-events-none disabled:opacity-50',
                 selected && 'bg-secondary',
               )}
@@ -357,7 +356,7 @@ function WorkspacePicker({
               <WorkspaceMark
                 id={w.id}
                 name={w.name}
-                className="size-8 rounded-none text-xs"
+                className="size-8 rounded-sm text-xs"
               />
               <span
                 className={cn(
@@ -368,10 +367,12 @@ function WorkspacePicker({
                 {w.name}
               </span>
               {selected && (
-                <CheckCircleIcon
-                  weight="fill"
+                <HugeiconsIcon
+                  icon={CheckmarkCircle02Icon}
+                  size={16}
+                  strokeWidth={1.5}
                   aria-hidden
-                  className="size-4 shrink-0 text-positive"
+                  className="shrink-0 text-positive"
                 />
               )}
             </button>
@@ -382,27 +383,32 @@ function WorkspacePicker({
   )
 }
 
-/** The page around every state: logo, one heading, a 480px column. */
+/**
+ * The page around every state: the logo, and one card that names it. A door
+ * into the app rather than a page in it, so centred like the sign-in screens,
+ * and its heading is the card's — `h1`, since nothing above it names the page.
+ */
 function Shell({
   title,
+  icon,
+  tone,
   children,
   footer,
 }: {
   title: string
+  icon?: IconSvgElement
+  tone?: string
   children: ReactNode
   footer?: ReactNode
 }) {
   return (
     <PageContainer variant="fullscreen">
       <div className="flex flex-1 items-center justify-center px-4 py-12">
-        <div className="flex w-full max-w-[480px] flex-col gap-8">
-          <div className="flex flex-col items-center gap-5 text-center">
-            <Logo className="size-12" />
-            <h1 className="font-display text-[2rem] leading-12 font-medium tracking-tight">
-              {title}
-            </h1>
-          </div>
-          {children}
+        <div className="flex w-full max-w-[480px] flex-col items-center gap-8">
+          <Logo className="size-12" />
+          <Card heading="h1" title={title} icon={icon} tone={tone}>
+            {children}
+          </Card>
         </div>
       </div>
       {footer && (
@@ -411,20 +417,6 @@ function Shell({
         </div>
       )}
     </PageContainer>
-  )
-}
-
-function Card({
-  className,
-  children,
-}: {
-  className?: string
-  children: ReactNode
-}) {
-  return (
-    <section className={cn('w-full bg-primary px-8 py-6', className)}>
-      {children}
-    </section>
   )
 }
 

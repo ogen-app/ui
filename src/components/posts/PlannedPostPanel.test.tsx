@@ -53,7 +53,7 @@ describe('a planned post', () => {
     const askFor = vi.fn()
     useAssistantStore.setState({ askFor })
     render(<PlannedPostPanel post={planned} />)
-    expect(screen.getByText('No body yet.')).toBeTruthy()
+    expect(screen.getByText('No body yet')).toBeTruthy()
     fireEvent.click(screen.getByText('Write the post'))
     expect(askFor).toHaveBeenCalledWith(
       'post:p1',

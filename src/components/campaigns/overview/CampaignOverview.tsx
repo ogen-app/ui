@@ -781,7 +781,7 @@ function NeedsList({
               <Skeleton className="h-10 w-full" />
             </>
           ) : rows.length === 0 ? (
-            <p className="flex items-center gap-2 text-sm text-secondary-foreground">
+            <p className="flex items-center gap-2 text-sm">
               <HugeiconsIcon
                 icon={Tick02Icon}
                 size={16}

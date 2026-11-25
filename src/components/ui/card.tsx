@@ -28,7 +28,8 @@ import { cn } from '@/lib'
  *   the door and lifts on hover, or only the heading is, when rows inside open
  *   on their own (a link can't sit inside a link).
  * - an `action`: one button — the AI, a move, a destructive step. White with
- *   a border, or black when it is the card's point (`accent`); never grey.
+ *   a border, or black when it is the card's point (`accent`) — teal with
+ *   the white mark when that point is handed to Ogen; never grey.
  *   Labels are in sentence case. A destructive one is white with its
  *   icon in the danger colour, so it always carries an icon. Never a
  *   submit: saving is automatic.
@@ -68,7 +69,10 @@ export type CardAction = {
   label: string
   /** A Hugeicon, or `'ogen'` for Ogen's mark when the action is Ogen's. */
   icon?: IconSvgElement | 'ogen'
-  /** Black rather than white: the one action the card is for. */
+  /**
+   * Filled rather than white: the one action the card is for. Black, or
+   * the brand's teal with the white mark when `icon` is `'ogen'`.
+   */
   accent?: boolean
   /**
    * Ogen does it, and it is the card's whole offer ("Fix with Ogen"):
@@ -217,14 +221,26 @@ export type CardProps = {
     }
 )
 
+/**
+ * The caret a door draws — the card's, and every row that opens something
+ * (`LineItem`, `brand/entry`'s rows): one icon, one size, one weight, so a row
+ * and the card it sits in never point in two different hands. Colour and the
+ * hover are the caller's, because the group that hovers is.
+ */
+export function DoorCaret({ className }: { className?: string }) {
+  return (
+    <HugeiconsIcon
+      icon={ArrowRight01Icon}
+      size={16}
+      strokeWidth={2}
+      className={cn('shrink-0', className)}
+      aria-hidden
+    />
+  )
+}
+
 const Caret = () => (
-  <HugeiconsIcon
-    icon={ArrowRight01Icon}
-    size={16}
-    strokeWidth={2}
-    className="ml-auto shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-    aria-hidden
-  />
+  <DoorCaret className="ml-auto text-tertiary-foreground group-hover:text-primary-foreground" />
 )
 
 function End({
@@ -264,19 +280,33 @@ function End({
           {label}
         </GradientButton>
       )
+    // The card's point handed to Ogen is the brand's teal with the mark in
+    // white; any other point is black.
+    const ogensPoint = accent && icon === 'ogen'
     return (
       <Button
         type="button"
         size="sm"
         variant={
-          destructive ? 'destructive' : accent ? 'defaultInverted' : 'outline'
+          destructive
+            ? 'destructive'
+            : ogensPoint
+              ? 'accent'
+              : accent
+                ? 'defaultInverted'
+                : 'outline'
         }
         onClick={onClick}
         disabled={disabled}
         loading={loading}
       >
         {icon === 'ogen' ? (
-          <Logo variant="mark" />
+          <Logo
+            variant="mark"
+            className={
+              ogensPoint ? '[&_path:first-of-type]:fill-primary' : undefined
+            }
+          />
         ) : (
           icon && <HugeiconsIcon icon={icon} strokeWidth={1.5} />
         )}
@@ -457,6 +487,9 @@ export function Card({
     'flex w-full min-w-0 flex-col gap-4 rounded-md border border-border bg-primary p-6',
     capped && 'max-w-content',
     scrolls && 'min-h-0 flex-1 overflow-hidden',
+    // A card with an id is somewhere a link lands (`#never-claim`): clear of
+    // the bar a scrolled page pins over its top.
+    id && 'scroll-mt-16',
   )
 
   // Edge to edge, so the scroll bar sits on the card's border.

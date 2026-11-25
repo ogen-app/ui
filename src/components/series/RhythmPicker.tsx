@@ -68,13 +68,16 @@ export function RhythmPicker({
   disabled,
   id,
   variant = 'primary',
+  size,
   className,
 }: {
   value: SeriesRhythm | null
   onChange: (rhythm: SeriesRhythm | null) => void
   disabled?: boolean
   id?: string
-  variant?: 'default' | 'ghost' | 'primary' | 'inline'
+  variant?: 'default' | 'ghost' | 'primary' | 'inline' | 'button'
+  /** The trigger's height — `sm` for the button variant on a card or a dialog. */
+  size?: 'default' | 'sm' | 'lg'
   className?: string
 }) {
   const { t } = useTranslation()
@@ -115,6 +118,7 @@ export function RhythmPicker({
         id={id}
         className={className}
         variant={variant}
+        size={size}
         value={current}
         elements={elements}
         disabled={disabled}
@@ -124,6 +128,7 @@ export function RhythmPicker({
         <TextSelect
           className={className}
           variant={variant}
+          size={size}
           ariaLabel={t('series.rhythm.everyLabel')}
           value={String(every)}
           elements={EVERY.map((n) => ({
@@ -142,6 +147,7 @@ export function RhythmPicker({
         <TextSelect
           className={className}
           variant={variant}
+          size={size}
           ariaLabel={t('series.rhythm.dayLabel')}
           value={value.weekday ?? ANY_DAY}
           elements={[

@@ -7,6 +7,7 @@ import {
   LibraryEntry,
   StarterCard,
 } from '@/components/brand/shell'
+import { seriesRun } from '@/components/brand/entryMarks'
 import { seriesMetaLine, supplyLine } from './format'
 import { SERIES_STARTERS, seriesStarterCopy } from './starters'
 import type { ContentSeries } from '@/types/series'
@@ -84,9 +85,7 @@ function SeriesEmpty({ onStart }: { onStart?: (starterId: string) => void }) {
   const { tone } = brandSection('series')
   return (
     <Card title={t('series.library.starterGroupTitle')} capped>
-      <p className="text-sm text-secondary-foreground">
-        {t('series.library.starterGroupBody')}
-      </p>
+      <p className="text-sm">{t('series.library.starterGroupBody')}</p>
       <div className="grid gap-3">
         {SERIES_STARTERS.map((starter) => {
           const copy = seriesStarterCopy(t, starter)
@@ -118,13 +117,14 @@ function SeriesCard({
 
   return (
     <LibraryEntry
+      section="series"
       onOpen={onOpen ? () => onOpen(series.id) : undefined}
       name={series.name}
       line={series.promise}
       // The recipe, quoted rather than summarised. It is the object's whole
       // content, and a card that showed only its presence would be the filing
       // cabinet this feature is trying not to be.
-      substance={series.recipe}
+      run={seriesRun(t, series)}
       empty={t('series.library.noRecipe')}
       facts={[
         seriesMetaLine(t, series, { withFormat: formats }),

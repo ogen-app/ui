@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { PageError } from '@/components/page-primitives/PageError'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { BrandBackButton, BrandPage } from '@/components/brand/detail'
 import { FactsLedger } from '@/components/brand/FactsSection'
+import type { FactSubject } from '@/components/brand/facts'
 import { useFactMutations, useFacts } from '@/hooks/useFacts'
 import { toast } from '@/stores/toastStore'
 
@@ -20,11 +21,23 @@ import { toast } from '@/stores/toastStore'
  * Each fact is its own row on the server (CON-316), written one at a time
  * through `useFactMutations`.
  */
+const SUBJECTS: FactSubject[] = ['us', 'problem', 'opportunity']
+
+/**
+ * `?tab=` is the ledger on screen, so a row on the hub or on a campaign's
+ * Strategy can open it on its own tab, and a reload keeps it. Absent is All.
+ */
 export const Route = createFileRoute('/_authenticated/foundation/facts')({
+  validateSearch: (search: Record<string, unknown>): { tab?: FactSubject } =>
+    SUBJECTS.includes(search.tab as FactSubject)
+      ? { tab: search.tab as FactSubject }
+      : {},
   component: FactsPage,
 })
 
 function FactsPage() {
+  const { tab } = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
   const { facts, isPending, isError } = useFacts()
   const { save, remove } = useFactMutations()
 
@@ -65,6 +78,13 @@ function FactsPage() {
           is what a bar reading "Saved" used to be for. */}
       <FactsLedger
         facts={facts}
+        view={tab ?? 'all'}
+        onViewChange={(next) =>
+          navigate({
+            search: next === 'all' ? {} : { tab: next },
+            replace: true,
+          })
+        }
         onSave={(fact) =>
           save(fact).then(() => toast.success('The ledger is saved.'))
         }

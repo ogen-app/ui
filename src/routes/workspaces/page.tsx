@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
-import { CheckCircleIcon, PlusIcon } from '@phosphor-icons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  ArrowRight01Icon,
+  CheckmarkCircle02Icon,
+} from '@hugeicons/core-free-icons'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
-import { Button } from '@/components/ui/button'
+import { NewCard } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Logo } from '@/components/Logo'
 import { WorkspaceMark } from '@/components/layout/WorkspaceMark.tsx'
 import { CreateWorkspaceDialog } from '@/components/workspace-settings/CreateWorkspaceDialog'
@@ -25,9 +30,12 @@ import { TextButton } from '@/components/ui/text-button'
  * and drops its cache, so it is over in a frame, and the other tabs never
  * notice.
  *
- * A 480px column of identical cards, one per workspace. The logo, the title
+ * A 480px column of identical cards, one per workspace, and the app's
+ * `NewCard` after them for the one that isn't there yet. The logo, the title
  * and the account line stay off the cards: they address the page, and the
- * cards are reserved for the things you can actually pick.
+ * cards are reserved for the things you can actually pick. Centred, unlike
+ * the app's pages, because it is a door into the app rather than a page in
+ * it — the sign-in screens' layout, not the app's.
  */
 export default function WorkspacesPage() {
   const navigate = useNavigate()
@@ -68,19 +76,19 @@ export default function WorkspacesPage() {
             </h1>
           </div>
 
-          {/* One card per workspace, cut to the same pattern as the account
-              card above — the only thing that changes between them is what
-              they say. The list is short, so each option gets the weight of a
-              card rather than a row. */}
+          {/* One card per workspace — the only thing that changes between
+              them is what they say. The list is short, so each option gets
+              the weight of a card rather than a row. */}
           {/* `awaiting`, not `isLoading` — see `lib/fetched`. */}
           {awaiting(query) ? (
-            <Card className="mt-8 text-sm text-tertiary-foreground">
-              {t('common.loading')}
-            </Card>
+            <div className="mt-8 flex flex-col gap-2" aria-hidden>
+              <Skeleton className="h-20 w-full rounded-md" />
+              <Skeleton className="h-20 w-full rounded-md" />
+            </div>
           ) : isError || !workspaces ? (
-            <Card className="mt-8 text-sm text-destructive">
+            <p role="alert" className="mt-8 text-sm text-destructive">
               {t('workspaces.loadFailed')}
-            </Card>
+            </p>
           ) : (
             <ul className="page-content-motion mt-8 flex flex-col gap-2">
               {workspaces.map((w) => (
@@ -96,17 +104,13 @@ export default function WorkspacesPage() {
             </ul>
           )}
 
-          <Button
-            type="button"
-            variant="secondary"
-            size="xl"
-            className="mt-2 w-full px-10"
-            onClick={() => setCreateOpen(true)}
-            disabled={isPending}
-          >
-            <PlusIcon />
-            <span>{t('workspaces.create')}</span>
-          </Button>
+          <div className="mt-2">
+            <NewCard
+              label={t('workspaces.create')}
+              hint={t('workspaces.createHint')}
+              onClick={() => setCreateOpen(true)}
+            />
+          </div>
         </div>
       </div>
 
@@ -139,20 +143,6 @@ export default function WorkspacesPage() {
   )
 }
 
-function Card({
-  className,
-  children,
-}: {
-  className?: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className={cn('w-full bg-primary px-10 py-6', className)}>
-      {children}
-    </section>
-  )
-}
-
 function WorkspaceCard({
   workspace,
   active,
@@ -172,18 +162,19 @@ function WorkspaceCard({
       onClick={onSelect}
       disabled={busy}
       className={cn(
-        'flex w-full cursor-pointer items-center gap-4 bg-primary px-10 py-6 text-left transition-colors',
-        'hover:bg-secondary disabled:pointer-events-none disabled:opacity-50',
+        'group flex w-full cursor-pointer items-center gap-4 rounded-md border border-border bg-primary p-6 text-left transition-shadow duration-150',
+        'hover:shadow-lg disabled:pointer-events-none disabled:opacity-50',
       )}
     >
-      {/* Same slot as the account card's avatar: square, 48px, unrounded. */}
       <WorkspaceMark
         id={workspace.id}
         name={workspace.name}
-        className="size-12 rounded-none text-base"
+        className="size-10 rounded-md text-sm"
       />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-sm font-regular">{workspace.name}</span>
+        <span className="truncate font-display text-lg font-medium tracking-tight">
+          {workspace.name}
+        </span>
         <span className="truncate text-xs text-tertiary-foreground">
           {t(ROLE_LABEL_KEYS[workspace.role])} ·{' '}
           {t('workspaces.memberCount', { count: workspace.member_count })}
@@ -191,12 +182,27 @@ function WorkspaceCard({
       </span>
       {/* The tab's own workspace is marked, not styled differently: the row it
           sits in stays identical to every other one. */}
-      {active ? (
-        <span className="flex shrink-0 items-center gap-1 text-xs text-primary-foreground">
-          <CheckCircleIcon weight="fill" className="size-3.5 text-positive" />
+      {active && (
+        <span className="flex shrink-0 items-center gap-1.5 text-sm text-tertiary-foreground">
+          <HugeiconsIcon
+            icon={CheckmarkCircle02Icon}
+            size={16}
+            strokeWidth={1.5}
+            className="text-positive"
+            aria-hidden
+          />
           {t('workspaces.current')}
         </span>
-      ) : null}
+      )}
+      {/* A door, as every card that opens something has: the caret, and the
+          lift on hover. */}
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        size={16}
+        strokeWidth={2}
+        className="shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
+        aria-hidden
+      />
     </button>
   )
 }

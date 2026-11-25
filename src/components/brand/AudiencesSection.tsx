@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Card, NewCard } from '@/components/ui/card'
 import { brandSection } from '@/lib/brandSections'
 import { usageLine } from './format'
+import { audienceRun } from './entryMarks'
 import { BrandLibrary, LibraryEntry, OriginLine, StarterCard } from './shell'
 import { AUDIENCE_STARTERS, audienceStarterCopy } from './starters'
 import type { BrandAudience } from './types'
@@ -34,8 +35,11 @@ export function AudiencesSection({
   onAdd,
   onOpen,
   onStart,
+  usedBy,
 }: {
   audiences: BrandAudience[]
+  /** Each audience's "Chosen by …" line (`useUsedBy`), once the campaigns load. */
+  usedBy?: Map<string, string>
   /** Describe one from nothing. */
   onAdd?: () => void
   onOpen?: (id: string) => void
@@ -69,7 +73,12 @@ export function AudiencesSection({
         <AudiencesEmpty onStart={onStart} />
       ) : (
         audiences.map((audience) => (
-          <AudienceCard key={audience.id} audience={audience} onOpen={onOpen} />
+          <AudienceCard
+            key={audience.id}
+            audience={audience}
+            usedBy={usedBy?.get(audience.id)}
+            onOpen={onOpen}
+          />
         ))
       )}
     </BrandLibrary>
@@ -86,9 +95,7 @@ function AudiencesEmpty({
   const { tone } = brandSection('audiences')
   return (
     <Card title={t('brand.audiences.starterGroupTitle')} capped>
-      <p className="text-sm text-secondary-foreground">
-        {t('brand.audiences.starterGroupBody')}
-      </p>
+      <p className="text-sm">{t('brand.audiences.starterGroupBody')}</p>
       <div className="grid gap-3">
         {AUDIENCE_STARTERS.map((starter) => {
           const copy = audienceStarterCopy(t, starter)
@@ -110,58 +117,30 @@ function AudiencesEmpty({
 
 function AudienceCard({
   audience,
+  usedBy,
   onOpen,
 }: {
   audience: BrandAudience
+  usedBy?: string
   onOpen?: (id: string) => void
 }) {
   const { t } = useTranslation()
   return (
     <LibraryEntry
+      section="audiences"
       onOpen={onOpen ? () => onOpen(audience.id) : undefined}
       name={audience.name}
       line={audience.who}
-      // The consequences, as a definition list rather than prose. The labels
-      // are what force the concrete answer: a fantasy audience can be
-      // described at length and still leave all three of these blank, and on
-      // a full-width card that emptiness is three visible gaps rather than a
-      // shorter paragraph — which is why the list is always drawn.
-      substance={
-        <dl className="flex flex-col gap-1.5">
-          <Consequence
-            label={t('brand.audiences.readsOn')}
-            value={audience.readsOn}
-          />
-          <Consequence
-            label={t('brand.audiences.scrollsPast')}
-            value={audience.scrollsPastWhen}
-          />
-          <Consequence
-            label={t('brand.audiences.believesWhen')}
-            value={audience.believesWhen}
-          />
-        </dl>
-      }
+      // The consequences, as one run: where they read, what loses them, what
+      // they need before they believe you. Only the ones that are said — an
+      // audience with none says so in the run's place.
+      run={audienceRun(t, audience)}
+      empty={t('brand.entry.notDescribed')}
       facts={[
         usageLine(t, audience.usage),
+        usedBy,
         <OriginLine key="origin" origin={audience.origin} />,
       ]}
     />
-  )
-}
-
-function Consequence({ label, value }: { label: string; value: string }) {
-  const { t } = useTranslation()
-  return (
-    <div className="flex gap-3">
-      <dt className="w-36 shrink-0 text-tertiary-foreground">{label}</dt>
-      <dd className="min-w-0">
-        {value || (
-          <span className="text-tertiary-foreground">
-            {t('brand.audiences.notSaid')}
-          </span>
-        )}
-      </dd>
-    </div>
   )
 }

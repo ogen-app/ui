@@ -113,10 +113,7 @@ export function AudienceEditor({
       <AudienceIntro name={audience?.name} />
 
       {starter && !audience && (
-        <ForkedNote
-          icon={starter.icon}
-          title={audienceStarterCopy(t, starter).title}
-        >
+        <ForkedNote name={audienceStarterCopy(t, starter).title}>
           {t('brand.audiences.editor.forkedNote')}
         </ForkedNote>
       )}
@@ -201,7 +198,7 @@ function ConsequencesCard({
 
   return (
     <Card title={t('brand.audiences.editor.consequences')} capped>
-      <div className="flex flex-col gap-1 text-sm text-secondary-foreground">
+      <div className="flex flex-col gap-1 text-sm">
         {summary ? (
           <span>
             <span className="text-primary-foreground">

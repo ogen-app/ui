@@ -13,12 +13,22 @@ export const brand: Translation['brand'] = {
   binding: {
     voice: 'Voz',
     audience: 'Audiencia',
-    campaignVoiceHint:
-      'La voz en la que escribe esta campaña. Las publicaciones se abren con ella y pueden cambiarse una a una; déjala sin definir para usar la del espacio de trabajo.',
-    campaignAudienceHint:
-      'A quién se dirige esta campaña. Una publicación que se dirija a otra persona lo indica en la propia publicación.',
+    workspaceDefault: 'Predeterminada del espacio ({{name}})',
     noVoice: 'Sin voz',
     noAudience: 'Sin audiencia',
+    chosenHere: 'Elegida para esta campaña',
+    voiceInherited:
+      'La predeterminada del espacio, hasta que esta campaña elija una',
+    voiceReach:
+      'Cada publicación de aquí se escribe en ella; una publicación aún puede elegir otra',
+    audienceReach:
+      'Cada publicación de aquí se escribe para ellos; una publicación aún puede dirigirse a otra persona',
+    audienceNoDefault:
+      'Una audiencia no tiene predeterminada en el espacio: no se da nada por supuesto',
+    noVoiceRun:
+      'Escrita sin ninguna voz en particular. Elige una, o haz que una sea la predeterminada del espacio.',
+    noAudienceRun:
+      'Escrita para nadie en particular. Elige para quién son estas publicaciones.',
     sourcePost: 'Definida en esta publicación',
     sourceCampaign: 'De la campaña',
     sourceLibrary: 'La predeterminada del espacio de trabajo',
@@ -125,7 +135,22 @@ export const brand: Translation['brand'] = {
     usagePublished: '{{count}} publicadas',
     usageDrafts: '{{count}} en borrador',
     usageNever: 'nunca usada',
+    usedByChosen: 'Elegida por {{campaigns}}',
+    usedByDefault: 'Predeterminada en {{campaigns}}',
+    usedByBoth: 'Elegida por {{chosen}}; predeterminada en {{inherited}}',
+    usedByNone: 'Ninguna campaña la usa',
+    usedByMore_one: '{{count}} más',
+    usedByMore_other: '{{count}} más',
     separator: ', ',
+  },
+
+  entry: {
+    soundsLike: 'Suena como',
+    readsOn: 'Lee en',
+    scrollsPastWhen: 'Pasa de largo cuando',
+    believesWhen: 'Te cree cuando',
+    noSamples: 'Aún no hay muestras. Escribirá como si no tuviera voz.',
+    notDescribed: 'Aún no se ha dicho nada de ellos.',
   },
 
   shell: {
@@ -142,6 +167,7 @@ export const brand: Translation['brand'] = {
     },
     originPostCount_one: '{{count}} publicación',
     originPostCount_other: '{{count}} publicaciones',
+    originWithDetail: '{{origin}} ({{detail}})',
     offer: {
       dismiss: 'No volver a ofrecer esto',
       title: 'Rellénalo con lo que ya tienes',
@@ -251,6 +277,7 @@ export const brand: Translation['brand'] = {
       thin: 'demasiado poco texto',
       timedOut: 'tardó demasiado',
       failed: 'no se pudo leer',
+      title: 'Progreso',
       leave:
         'Esto tarda unos minutos. Puedes irte: sigue en marcha, y Ogen te avisa cuando esté listo para revisarlo. No se guarda nada en tus Fundamentos hasta que tú lo digas.',
       pagesLand:
@@ -268,8 +295,11 @@ export const brand: Translation['brand'] = {
       disclaimer: 'el aviso legal',
       facts_one: '{{count}} dato',
       facts_other: '{{count}} datos',
+      positioning_one: '{{count}} línea sobre lo que te distingue',
+      positioning_other: '{{count}} líneas sobre lo que te distingue',
     },
     summary: {
+      title: 'Resumen',
       fromPages_one: 'A partir de {{count}} página de {{site}}',
       fromPages_other: 'A partir de {{count}} páginas de {{site}}',
       fromFile: 'A partir de {{title}}',
@@ -340,6 +370,7 @@ export const brand: Translation['brand'] = {
     },
     questions: {
       title: 'Unas cuantas preguntas',
+      cardTitle: 'Preguntas',
       intro:
         'Responde lo que puedas y sáltate el resto. Ogen redacta voces, audiencias, límites y datos a partir de tus palabras, y tú los revisas antes de que se guarde nada, igual que al leer un sitio web.',
       placeholder: 'Sáltala, o dilo en una o dos líneas',
@@ -352,6 +383,7 @@ export const brand: Translation['brand'] = {
         q_three_words: 'Tres palabras que un cliente usaría sobre ti.',
         q_never_post: 'Una frase que nunca publicarías.',
         q_not_for: '¿Para quién no eres?',
+        q_apart: '¿Qué haces tú que las alternativas no hacen?',
         q_proof: '¿Qué puedes demostrar?',
         q_legal: '¿Qué no te deja decir el departamento legal?',
         q_disclaimer: 'El aviso legal que ya usas, si lo hay.',
@@ -409,6 +441,15 @@ export const brand: Translation['brand'] = {
       useTheirs: 'Usar el del sitio',
       writtenHereOn: 'Escrito aquí · {{date}}',
       disclaimerRule: 'No se sustituye nada salvo que elijas el del sitio.',
+      positioning: {
+        title: 'Lo que te distingue',
+        statement: 'Declaración',
+        differentiators: 'Lo que la respalda',
+        differs:
+          'Ogen ha leído una declaración distinta de la tuya. Conserva la tuya salvo que elijas la otra.',
+        useRead: 'Usar la que ha leído Ogen',
+        rule: 'No se sustituye nada salvo que elijas la que ha leído Ogen.',
+      },
       factColumns: {
         statement: 'Afirmación',
         about: 'Sobre',
@@ -555,13 +596,6 @@ export const brand: Translation['brand'] = {
     deleted: 'Se eliminó {{name}}.',
     guardrailsDeleted: 'Se eliminaron los límites.',
     about: 'Acerca de',
-    usedBy: {
-      title: 'Lo usan',
-      empty: 'Aún no hay campañas.',
-      noVoice: 'Sin voz',
-      noAudience: 'Sin audiencia',
-      defaultVoice: '{{voice}} (predeterminada)',
-    },
   },
 
   look: {
@@ -623,8 +657,6 @@ export const brand: Translation['brand'] = {
         closing: 'Acaba con la línea más afilada, no con un resumen.',
       },
     },
-    noSamples:
-      'Sin ejemplos. Esta voz tiene un nombre y nada detrás: generará exactamente lo mismo que no tener voz alguna.',
     thin: 'a partir de {{count}} empieza a funcionar',
     postsBehind: '{{count}} se podrían rehacer',
     defaultBacked:
@@ -973,8 +1005,9 @@ export const brand: Translation['brand'] = {
       stay: 'Seguir editando',
       discard: 'Descartar',
     },
+    forkedTitle: 'Partió de {{name}}',
     forkedFrom:
-      'Partió de <name>{{name}}</name>, y se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
+      'Se copió en lugar de enlazarse: si cambiamos la nuestra, la tuya no cambia.',
     danger: {
       title: 'Zona de peligro',
       delete: 'Eliminar {{noun}}',

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from '@tanstack/react-router'
 import { BrandSectionCards } from '@/components/brand/BrandOverview'
+import { useOpenBrand } from '@/components/brand/places'
 import { useBrand } from '@/hooks/useBrand'
 import { useFacts } from '@/hooks/useFacts'
 import { useGuardrailsStance } from '@/hooks/useGuardrailsStance'
@@ -19,7 +19,7 @@ import { fetched } from '@/lib/fetched'
  * cards, and opening one goes to Strategy for all campaigns, where it is edited.
  */
 export function FromTheWorkspace({ children }: { children?: ReactNode }) {
-  const navigate = useNavigate()
+  const open = useOpenBrand()
   const brand = useBrand()
   const { facts } = useFacts()
   const stance = useGuardrailsStance()
@@ -32,7 +32,8 @@ export function FromTheWorkspace({ children }: { children?: ReactNode }) {
         brand={fetched(brand)}
         facts={facts}
         stance={stance}
-        onOpen={(id) => navigate({ to: `/foundation/${id}` })}
+        onOpen={open.section}
+        onOpenPlace={open.place}
       />
     </div>
   )

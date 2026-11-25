@@ -25,6 +25,11 @@ const datePickerTriggerVariants = cva(
           'bg-input rounded-none border-b-1 border-quaternary px-4 shadow-none data-[state=open]:border-foreground focus-visible:border-foreground aria-invalid:border-destructive',
         // The calendar glyph alone, for a date that is already printed beside
         // it — a row's own meta line — so the trigger only has to say "change".
+        // The date as an outline button, for a date that is the control's
+        // whole meaning — a phase's end — where a glyph alone said "a
+        // calendar" and nothing about what it changes.
+        button:
+          'w-auto justify-start rounded-md border border-quaternary px-2.5 hover:border-foreground data-[state=open]:border-foreground focus-visible:ring-2 focus-visible:ring-ring',
         icon: 'w-auto aspect-square justify-center rounded-md text-tertiary-foreground hover:bg-secondary hover:text-foreground data-[state=open]:bg-secondary focus-visible:ring-2 focus-visible:ring-ring',
       },
       size: {

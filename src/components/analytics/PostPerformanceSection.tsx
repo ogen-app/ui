@@ -91,5 +91,5 @@ function Note({ body }: { body: string }) {
 }
 
 function Body({ children }: { children: string }) {
-  return <p className="text-sm text-secondary-foreground">{children}</p>
+  return <p className="text-sm">{children}</p>
 }

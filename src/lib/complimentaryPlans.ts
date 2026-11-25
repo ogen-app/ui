@@ -14,7 +14,7 @@ import type { Tier } from '@/types/tiers'
  *
  * The server's comp branch (CON-333 §6.6) moves the workspace to any tier
  * whose version is active and purchasable, and runs before billing is even
- * consulted. So `Tier.available` — "Lemon Squeezy can sell this now" — is not
+ * consulted. So `Tier.available` — "Polar can sell this now" — is not
  * the question: it reads false for every tier while billing is off, which is
  * exactly when testers most need to switch. `offered` is already the
  * purchasable list.

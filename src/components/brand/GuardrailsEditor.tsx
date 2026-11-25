@@ -9,6 +9,7 @@ import {
 import { PlusIcon, XIcon } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import type { GuardrailPart } from './places'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -215,10 +216,7 @@ export function GuardrailsEditor({
           is, within a second, and the warning is about reading every line of
           what just arrived, which takes longer than that. */}
       {forkedFrom && (
-        <ForkedNote
-          icon={forkedFrom.icon}
-          title={guardrailStarterCopy(t, forkedFrom).title}
-        >
+        <ForkedNote name={guardrailStarterCopy(t, forkedFrom).title}>
           {t('brand.guardrails.forkedNote')}
         </ForkedNote>
       )}
@@ -229,9 +227,7 @@ export function GuardrailsEditor({
           keystroke — see the note on starters above. */}
       {!guardrails && !dirty && (
         <Card title={t('brand.guardrails.starterGroupTitle')} capped>
-          <p className="text-sm text-secondary-foreground">
-            {t('brand.guardrails.starterGroupBody')}
-          </p>
+          <p className="text-sm">{t('brand.guardrails.starterGroupBody')}</p>
           <div className="grid gap-3">
             {GUARDRAIL_STARTERS.map((starter) => {
               const starterCopy = guardrailStarterCopy(t, starter)
@@ -253,10 +249,12 @@ export function GuardrailsEditor({
         </Card>
       )}
 
-      <Card title={t('brand.guardrails.mayClaim')} capped>
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.guardrails.mayClaimHint')}
-        </p>
+      <Card
+        id={'may-claim' satisfies GuardrailPart}
+        title={t('brand.guardrails.mayClaim')}
+        capped
+      >
+        <p className="text-sm">{t('brand.guardrails.mayClaimHint')}</p>
         <StatementList
           items={draft.mayClaim}
           onChange={(mayClaim) => set('mayClaim', mayClaim)}
@@ -265,10 +263,12 @@ export function GuardrailsEditor({
         />
       </Card>
 
-      <Card title={t('brand.guardrails.neverClaim')} capped>
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.guardrails.neverClaimHint')}
-        </p>
+      <Card
+        id={'never-claim' satisfies GuardrailPart}
+        title={t('brand.guardrails.neverClaim')}
+        capped
+      >
+        <p className="text-sm">{t('brand.guardrails.neverClaimHint')}</p>
         {draft.neverClaim.length === 0 && (
           <p className="border-l-2 border-destructive pl-3 text-sm leading-5 text-tertiary-foreground">
             {t('brand.guardrails.neverClaimEmpty')}
@@ -283,20 +283,24 @@ export function GuardrailsEditor({
         />
       </Card>
 
-      <Card title={t('brand.guardrails.bannedWords')} capped>
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.guardrails.bannedWordsHint')}
-        </p>
+      <Card
+        id={'banned-words' satisfies GuardrailPart}
+        title={t('brand.guardrails.bannedWords')}
+        capped
+      >
+        <p className="text-sm">{t('brand.guardrails.bannedWordsHint')}</p>
         <WordField
           words={draft.bannedWords}
           onChange={(bannedWords) => set('bannedWords', bannedWords)}
         />
       </Card>
 
-      <Card title={t('brand.guardrails.disclaimer')} capped>
-        <p className="text-sm text-secondary-foreground">
-          {t('brand.guardrails.disclaimerHint')}
-        </p>
+      <Card
+        id={'disclaimer' satisfies GuardrailPart}
+        title={t('brand.guardrails.disclaimer')}
+        capped
+      >
+        <p className="text-sm">{t('brand.guardrails.disclaimerHint')}</p>
         <Textarea
           value={draft.disclaimer}
           onChange={(e) => set('disclaimer', e.target.value)}
@@ -349,7 +353,7 @@ function StanceCard() {
 
   return (
     <Card title="Nothing to restrict?" capped>
-      <p className="text-sm text-secondary-foreground">
+      <p className="text-sm">
         Some workspaces have no claims worth guarding — no regulated product, no
         figures, nothing a post could promise. Saying so is a different answer
         from leaving this empty, and the difference is what the rest of the app

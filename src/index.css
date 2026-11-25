@@ -584,6 +584,7 @@
   --brand-templates: oklch(0.54 0.11 214); /* cyan */
   --brand-facts: oklch(0.5 0.12 190); /* teal */
   --brand-series: oklch(0.53 0.13 100); /* olive */
+  --brand-positioning: oklch(0.52 0.14 305); /* purple */
 
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);

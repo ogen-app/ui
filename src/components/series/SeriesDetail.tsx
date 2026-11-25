@@ -16,8 +16,8 @@ import type { ContentSeries } from '@/types/series'
  * The body never runs without data, for `BrandDetail`'s reason: a library
  * drawn while the fetch is in flight is an empty library that is a lie.
  *
- * Its side column is the About card alone — see `BrandSectionAside` for why
- * there is no Used by yet.
+ * Its cards go without the "Chosen by" line voices and audiences print —
+ * see `useUsedBy` for why.
  */
 export function SeriesDetail({
   children,

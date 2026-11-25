@@ -11,7 +11,6 @@ import {
 } from '@phosphor-icons/react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
-import { LineItem, type LineItemIndicator } from '@/components/ui/line-item'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate, formatList } from '@/lib/intl'
@@ -33,16 +32,20 @@ import {
   todayISO,
   type BrandFact,
 } from './facts'
-import { defaultVoiceLabel, sampleCount, usageLine } from './format'
-import { DefaultStar, WholeBrandOffer, readByStatus } from './shell'
+import {
+  AudienceContent,
+  EntryRow,
+  EntryRows,
+  Tick,
+  VoiceContent,
+} from './entry'
+import { audienceMark, seriesMark, voiceMark } from './entryMarks'
+import { rulesLine, sampleCount, usageLine } from './format'
+import type { BrandPlace } from './places'
+import { OriginLine, WholeBrandOffer, readByStatus } from './shell'
 import { OfferRoutes } from './distill/OfferRoutes'
 import { SavedCard } from './distill/SavedCard'
-import {
-  EXPECTED_RATIOS,
-  MIN_VOICE_SAMPLES,
-  type BrandData,
-  type GuardrailsStance,
-} from './types'
+import { EXPECTED_RATIOS, type BrandData, type GuardrailsStance } from './types'
 
 /**
  * Brand's main screen: what is in each section, and the way into it.
@@ -64,8 +67,8 @@ import {
  * Three rules, and they came out of being told the first version was off-style:
  *
  * 1. **It is built from the app's own furniture** — `Card` for the block,
- *    `LineItem` for the rows, the same components the rest of the app is made
- *    of. The first version invented a card, and
+ *    `entry.tsx`'s rows inside it, the same parts the library one level down
+ *    and a campaign's Strategy are made of. The first version invented a card, and
  *    an invented card is how a new section announces that it was built by
  *    somebody who had not looked at the rest of the app.
  * 2. **It lists what is there, one row each, ticked when there is something
@@ -102,12 +105,20 @@ import {
 /** A screen given no series has none to show. */
 const READY_NONE: Fetched<ContentSeries[]> = { status: 'ready', data: [] }
 
+/** Which campaigns use each voice and each audience — `useUsedBy`. */
+export type HubUsedBy = {
+  voices?: Map<string, string>
+  audiences?: Map<string, string>
+}
+
 export function BrandOverview({
   brand,
   facts = [],
   series = READY_NONE,
   stance,
+  usedBy,
   onOpen,
+  onOpenPlace,
 }: {
   /** Every section, as the one query they come from — `useBrand`. */
   brand: Fetched<BrandData>
@@ -139,7 +150,11 @@ export function BrandOverview({
    * what it is given.
    */
   stance?: GuardrailsStance
+  usedBy?: HubUsedBy
+  /** The card's heading: the section. */
   onOpen?: (id: BrandSectionId) => void
+  /** A row: the one thing it names, inside its section. */
+  onOpenPlace?: (place: BrandPlace) => void
 }) {
   const { t } = useTranslation()
 
@@ -151,26 +166,23 @@ export function BrandOverview({
 
   /**
    * What one card has to draw, which is its own query's state rather than the
-   * screen's — the shape `Fetched` is for. Every card is the same query today;
-   * it stays per-card because a section whose contents come from somewhere else
-   * is a thing this screen has had before and will have again, and the card is
-   * the right size for that failure.
+   * screen's — the shape `Fetched` is for. Every card but the series' is the
+   * same query; it stays per-card because the card is the right size for that
+   * failure.
    */
-  const contents = (section: BrandSectionInfo): Fetched<SectionContents> => {
+  const contents = (section: BrandSectionInfo): Fetched<ReactNode> => {
     if (brand.status !== 'ready') return brand
     if (section.id === 'series' && series.status !== 'ready') return series
     return {
       status: 'ready',
-      data: {
-        rows: sectionRows(
-          t,
-          section.id,
-          brand.data,
-          facts,
-          series.status === 'ready' ? series.data : [],
-          stance,
-        ),
-      },
+      data: sectionBody(t, section.id, {
+        data: brand.data,
+        facts,
+        series: series.status === 'ready' ? series.data : [],
+        stance,
+        usedBy,
+        open: onOpenPlace,
+      }),
     }
   }
 
@@ -221,12 +233,14 @@ export function BrandSectionCards({
   facts = [],
   stance,
   onOpen,
+  onOpenPlace,
 }: {
   sections: BrandSectionId[]
   brand: Fetched<BrandData>
   facts?: BrandFact[]
   stance?: GuardrailsStance
   onOpen?: (id: BrandSectionId) => void
+  onOpenPlace?: (place: BrandPlace) => void
 }) {
   const { t } = useTranslation()
   return (
@@ -242,16 +256,13 @@ export function BrandSectionCards({
               ? brand
               : {
                   status: 'ready',
-                  data: {
-                    rows: sectionRows(
-                      t,
-                      section.id,
-                      brand.data,
-                      facts,
-                      [],
-                      stance,
-                    ),
-                  },
+                  data: sectionBody(t, section.id, {
+                    data: brand.data,
+                    facts,
+                    series: [],
+                    stance,
+                    open: onOpenPlace,
+                  }),
                 }
           }
           onOpen={onOpen}
@@ -261,69 +272,14 @@ export function BrandSectionCards({
   )
 }
 
-/** What a card draws once its query has answered: rows, or Sources' tally. */
-type SectionContents = { rows: BrandRow[] }
-
-/**
- * One thing a section holds, as one row — **and every row on this screen is
- * built the same way**, which is the point of the shape rather than a
- * coincidence of it.
- *
- * The cards had drifted into four grammars. A voice row was a name, a
- * description, a counts line and a star with the word "default" beside it in
- * the right margin; an audience row was three of those four; a guardrail row
- * was a label with a bare number opposite it, set in a different size and a
- * different colour from either. Five type treatments down one column, and the
- * eye has to work out for each card which of them it is reading.
- *
- * So there is one row now and it has four slots, in one order:
- *
- * 1. **A mark**, always — see `mark`.
- * 2. **A label**: what this thing is called.
- * 3. **Details**: one line saying what it actually is, or what its absence
- *    costs. Same size and colour on every card.
- * 4. **Meta**: the counts, on the third line and never in the right margin. A
- *    margin number has to be short enough to fit, which is what produced a bare
- *    `3` in a column where every other row ended in a word.
- *
- * Nothing carries a right margin any more. `LineItem`'s `trailing` slot is
- * where the last two type styles were living, and the one thing it held that
- * was worth keeping — the default star — belongs at the front of the row
- * instead, where the tick it replaces was.
- */
-type BrandRow = {
-  key: string
-  /**
-   * The 16px slot at the head of the row, and never empty.
-   *
-   * A tick for a slot that is either filled or not, the section's own glyph for
-   * a row that is a *kind* of thing rather than a task (the guardrail lists,
-   * the fact kinds — where an empty circle would have meant "unticked" about
-   * something nobody ticks), and the default star where an entry is the one the
-   * app falls back to.
-   */
-  mark: LineItemIndicator
-  label: string
-  /** One line under the label: what this thing actually is. */
-  details?: string
-  /** The counts, on a third line — samples, usage, coverage, dates. */
-  meta?: string
-}
-
 /**
  * One section, and the way into it.
  *
- * **The whole card opens the section.** It was a card with an `OPEN VOICES`
- * button in the corner while the tab bar existed, which was fine when the bar
- * was the real way in and the button a shortcut. With the bar gone the card is
- * the only door, and a door the size of a card should not have a handle the
- * size of a word — the target is now the card, which is also the thing the eye
- * is already on when it finishes reading the rows.
- *
- * It is deliberately the same gesture as a library entry one level down: a
- * white block that lifts on hover, with a caret on the heading line.
- * Two levels of this screen open things the same way, so learning it once is
- * enough. Hover lifts rather than tints, as a door card does.
+ * **The heading opens the section; each row opens its own thing** — a voice,
+ * one card of the guardrails, the ledger on one tab — with a caret of its own,
+ * the card's (`DoorCaret`). A link can't sit inside a link, so while the card
+ * holds rows that are doors only its heading is one; an empty card has no rows
+ * and the whole of it is the door, the way a library entry one level down is.
  */
 function SectionCard({
   section,
@@ -332,12 +288,13 @@ function SectionCard({
 }: {
   section: BrandSectionInfo
   /**
-   * The card's own material, and whether it has arrived. The frame around it —
-   * hue, heading, caret, the door — is drawn from the section table and needs
-   * no fetch at all, which is what makes waiting and failing card-sized
-   * problems rather than screen-sized ones.
+   * The card's own material, and whether it has arrived — `null` once it has
+   * and there is nothing in it. The frame around it (hue, heading, caret, the
+   * door) is drawn from the section table and needs no fetch at all, which is
+   * what makes waiting and failing card-sized problems rather than
+   * screen-sized ones.
    */
-  contents: Fetched<SectionContents>
+  contents: Fetched<ReactNode>
   onOpen?: (id: BrandSectionId) => void
 }) {
   const { t } = useTranslation()
@@ -358,9 +315,16 @@ function SectionCard({
     status: readByStatus(t, section.readBy),
     capped: true,
   }
+  const rows = contents.status === 'ready' && contents.data !== null
   const body = <CardContents contents={contents} whenEmpty={copy.whenEmpty} />
   return onOpen ? (
-    <Card {...frame} door={{ kind: 'card', onOpen: () => onOpen(section.id) }}>
+    <Card
+      {...frame}
+      door={{
+        kind: rows ? 'header' : 'card',
+        onOpen: () => onOpen(section.id),
+      }}
+    >
       {body}
     </Card>
   ) : (
@@ -387,7 +351,7 @@ function CardContents({
   contents,
   whenEmpty,
 }: {
-  contents: Fetched<SectionContents>
+  contents: Fetched<ReactNode>
   /** The section's own line for "there is nothing in here yet". */
   whenEmpty: string
 }) {
@@ -403,168 +367,153 @@ function CardContents({
   }
 
   if (contents.status === 'error') {
-    return (
-      <p className="text-sm text-secondary-foreground">
-        {t('brand.overview.unreadable')}
-      </p>
-    )
+    return <p className="text-sm">{t('brand.overview.unreadable')}</p>
   }
 
-  const { rows } = contents.data
+  return contents.data ?? <p className="text-sm">{whenEmpty}</p>
+}
 
-  if (rows.length === 0) {
-    return <p className="text-sm text-secondary-foreground">{whenEmpty}</p>
-  }
-
-  return (
-    <ul className="flex flex-col">
-      {rows.map((row) => (
-        <li key={row.key}>
-          {/* `entry` on every row, including the ones that name a slot rather
-              than a library entry. The variant used to be chosen per row from
-              whether it happened to carry counts, which made the type on a
-              card depend on how much the card had to say. */}
-          <LineItem
-            variant="entry"
-            indicator={row.mark}
-            label={row.label}
-            details={row.details}
-            meta={row.meta}
-          />
-        </li>
-      ))}
-    </ul>
-  )
+type BodyInput = {
+  data: BrandData
+  facts: BrandFact[]
+  series: ContentSeries[]
+  stance?: GuardrailsStance
+  usedBy?: HubUsedBy
+  open?: (place: BrandPlace) => void
 }
 
 /**
- * What each section holds, as rows.
+ * What each section holds, as rows — or `null`, which is the empty state: the
+ * card falls back to the section's `whenEmpty` line rather than drawing an
+ * empty list. That is why the singletons answer `null` when absent instead of
+ * four unticked rows: "guardrails exist and none of them are written" and
+ * "there are no guardrails" are different findings.
  *
- * An empty list is the empty state — the card falls back to the section's
- * `whenEmpty` line rather than drawing an empty `<ul>`. That is why the
- * singletons return `[]` when absent instead of four unticked rows: "guardrails
- * exist and none of them are written" and "there are no guardrails" are
- * different findings, and four empty rows would say the first when the second
- * is true.
+ * Two kinds of row, and the split is the design:
+ *
+ * - **Voices and audiences are whole entries** — the mark, the name, the line,
+ *   the ruled run and the facts, the library's card one level down drawn as a
+ *   row (`VoiceContent`, `AudienceContent`) and ruled apart from the next.
+ * - **Everything else is one line** — the mark, the name, and the count or the
+ *   rhythm under it. A series' recipe, a guardrail's list and a ledger's
+ *   statements are each too long to preview and are what the door is for.
+ *
+ * The mark is a tick for an entry that is either backed or not, the default
+ * star where an entry is the one the app falls back to, and the kind's own
+ * glyph for a row that is a *kind* of thing rather than a task (the guardrail
+ * lists, the ledgers) — where an empty circle would have meant "unticked"
+ * about something nobody ticks. Deliberately no red but where the finding is
+ * the absence itself.
  */
-function sectionRows(
+function sectionBody(
   t: TFunction,
   id: BrandSectionId,
-  data: BrandData,
-  facts: BrandFact[],
-  series: ContentSeries[],
-  stance?: GuardrailsStance,
-): BrandRow[] {
+  { data, facts, series, stance, usedBy, open }: BodyInput,
+): ReactNode {
+  const door = (place: BrandPlace) => (open ? () => open(place) : undefined)
+  const line = (rows: OneLine[]) =>
+    rows.length === 0 ? null : (
+      <EntryRows divided={false}>
+        {rows.map((row) => (
+          <EntryRow
+            key={row.key}
+            mark={row.mark}
+            name={row.name}
+            meta={row.meta}
+            onOpen={row.place ? door(row.place) : undefined}
+          />
+        ))}
+      </EntryRows>
+    )
+
   switch (id) {
     case 'voices':
-      return data.voices.map((voice) => {
-        // The samples are the voice, so they are what the tick is about. A
-        // named voice with nothing behind it generates exactly what no voice
-        // would, and it is the failure this row exists to make visible.
-        const backed = voice.samples.length >= MIN_VOICE_SAMPLES
-        return {
-          key: voice.id,
-          // The star stands *in place of* the tick rather than beside it in
-          // the margin, and it says both things at once: filled and green when
-          // the default has what it takes to be one, hollow when it has not.
-          // A default voice with nothing behind it is the worst state this
-          // library has — everything falls back to an entry that changes
-          // nothing — and it is now legible without reading a word.
-          mark: voice.isDefault
-            ? {
-                kind: 'custom',
-                node: (
-                  <DefaultStar
-                    backed={backed}
-                    label={defaultVoiceLabel(t, voice)}
-                    word={false}
-                  />
-                ),
-              }
-            : { kind: 'task', done: backed },
-          label: voice.name,
-          // No description when there is nothing to describe it by, rather than
-          // a sentence explaining the absence. Three template voices in a row
-          // each explaining their own emptiness reads as a rendering bug — the
-          // same failure the guardrail rails had — and the row already says it
-          // twice over: an empty tick, and `no samples, never used` below.
-          details: voice.summary || undefined,
-          meta: [
-            sampleCount(t, voice.samples.length),
-            usageLine(t, voice.usage),
-          ].join(t('brand.facts.separator')),
-        }
-      })
+      if (data.voices.length === 0) return null
+      return (
+        <EntryRows>
+          {data.voices.map((voice) => (
+            <EntryRow
+              key={voice.id}
+              mark={voiceMark(t, voice)}
+              name={voice.name}
+              onOpen={door({ section: 'voices', id: voice.id })}
+            >
+              <VoiceContent
+                t={t}
+                voice={voice}
+                facts={[
+                  rulesLine(t, voice.rules),
+                  [
+                    sampleCount(t, voice.samples.length),
+                    usageLine(t, voice.usage),
+                  ].join(t('brand.facts.separator')),
+                  usedBy?.voices?.get(voice.id),
+                  <OriginLine key="origin" origin={voice.origin} />,
+                ]}
+              />
+            </EntryRow>
+          ))}
+        </EntryRows>
+      )
 
-    // The tick is the recipe, for the same reason an audience's is the three
-    // consequence lines: a named series with no instruction behind it is a
-    // grouping key wearing the clothes of a standing order, and that gap is
-    // exactly what this row exists to show. It is not a refusal — a series
-    // saves without one and still groups — which is why the row is unticked
-    // rather than absent.
-    case 'series':
-      return series.map((entry) => ({
-        key: entry.id,
-        mark: { kind: 'task', done: Boolean(entry.recipe.trim()) },
-        label: entry.name,
-        details: entry.promise || undefined,
-        // `isFeatureEnabled` rather than the hook: this is a plain function,
-        // which is exactly the case that accessor exists for. Formats are a
-        // separate flag, so a series carrying one written while it was on must
-        // not print it while it is off.
-        meta: seriesMetaLine(t, entry, {
-          withFormat: isFeatureEnabled('content-formats'),
-        }),
-      }))
-
-    // No star on these rows, and the voices above have one — the workspace
-    // default stops at voices. See `resolveAudience` in `binding.ts`.
     case 'audiences':
-      return data.audiences.map((audience) => ({
-        key: audience.id,
-        // Named is not described. The tick is the three consequence lines,
-        // because those are what make an audience usable rather than a label.
-        mark: {
-          kind: 'task',
-          done: Boolean(
-            audience.readsOn &&
-            audience.scrollsPastWhen &&
-            audience.believesWhen,
-          ),
-        },
-        label: audience.name,
-        details: audience.summary || undefined,
-        meta: usageLine(t, audience.usage),
-      }))
+      if (data.audiences.length === 0) return null
+      return (
+        <EntryRows>
+          {data.audiences.map((audience) => (
+            <EntryRow
+              key={audience.id}
+              mark={audienceMark(audience)}
+              name={audience.name}
+              onOpen={door({ section: 'audiences', id: audience.id })}
+            >
+              <AudienceContent
+                t={t}
+                audience={audience}
+                facts={[
+                  usageLine(t, audience.usage),
+                  usedBy?.audiences?.get(audience.id),
+                  <OriginLine key="origin" origin={audience.origin} />,
+                ]}
+              />
+            </EntryRow>
+          ))}
+        </EntryRows>
+      )
+
+    case 'series':
+      return line(
+        series.map((entry) => ({
+          key: entry.id,
+          mark: seriesMark(entry),
+          name: entry.name,
+          // `isFeatureEnabled` rather than the hook: this is a plain function,
+          // which is exactly the case that accessor exists for. Formats are a
+          // separate flag, so a series carrying one written while it was on
+          // must not print it while it is off.
+          meta: seriesMetaLine(t, entry, {
+            withFormat: isFeatureEnabled('content-formats'),
+          }),
+          place: { section: 'series', id: entry.id },
+        })),
+      )
 
     case 'facts': {
-      if (facts.length === 0) return []
+      if (facts.length === 0) return null
       const tally = factTally(facts, todayISO())
       // One line per ledger — what this business knows about itself, what it
-      // knows is wrong out there, and what it thinks that leaves open. The
-      // breakdown used to be by `FACT_KIND`, and that is the wrong axis for
-      // this card: how checkable a statement is matters while somebody is
-      // writing it, and a card on the hub answers *what has this workspace
-      // written down*. The kinds are a column on the table and a picker in the
-      // modal, which is where they are read.
-      //
-      // All three are drawn even at zero, the way the guardrails card draws
-      // `Never claim` when it is empty: a ledger with twelve facts about
-      // itself and no problems on file is writing about nobody, and that is
-      // only visible if the empty line is there to read.
-      const rows: BrandRow[] = FACT_SUBJECTS.map((subject) => ({
+      // knows is wrong out there, and what it thinks that leaves open — each
+      // opening the ledger on its own tab. All three are drawn even at zero,
+      // the way the guardrails card draws `Never claim` when it is empty: a
+      // ledger with twelve facts about itself and no problems on file is
+      // writing about nobody, and that is only visible if the empty line is
+      // there to read.
+      const rows: OneLine[] = FACT_SUBJECTS.map((subject) => ({
         key: subject.id,
-        // The subject's own glyph, not a tick: these rows are a breakdown of
-        // what is in the ledger, and there is nothing about "5 problems" that
-        // is either done or not done.
         mark: glyph(subject.icon),
-        label: subject.plural,
-        // No `details`: the line under a voice or an audience says what *that
-        // entry* is, and the equivalent here would be the definition of the
-        // axis — three sentences of vocabulary on a card whose job is to say
-        // how big the ledger is. They belong beside the picker that sets it,
-        // and that is where they are.
+        name: subject.plural,
         meta: statedCount(t, countBySubject(facts, subject.id)),
+        place: { section: 'facts', tab: subject.id },
       }))
       // The only row here that can be bad, so it is the only one that is not a
       // count of what exists. A ledger's size is not a finding; a statement the
@@ -576,20 +525,17 @@ function sectionRows(
             tally.expired > 0 ? WarningIcon : ClockCountdownIcon,
             true,
           ),
-          label: tally.expired > 0 ? 'Past its date' : 'Needs re-checking',
-          details:
-            tally.expired > 0
-              ? 'Still being repeated in everything generated here.'
-              : 'Expires soon — cheap to confirm now, wrong the moment it lapses.',
+          name: tally.expired > 0 ? 'Past its date' : 'Needs re-checking',
           meta: [
             tally.expired > 0 ? `${tally.expired} expired` : null,
             tally.due > 0 ? `${tally.due} within a month` : null,
           ]
             .filter(Boolean)
             .join(', '),
+          place: { section: 'facts' },
         })
       }
-      return rows
+      return line(rows)
     }
 
     case 'guardrails': {
@@ -600,70 +546,66 @@ function sectionRows(
       // empty state, which is written as an unfinished to-do. See `GuardrailsStance`.
       if (!g) {
         return stance?.none
-          ? [
+          ? line([
               {
                 key: 'stance',
                 mark: glyph(ShieldCheckIcon),
-                label: 'Nothing to restrict, deliberately',
-                details:
-                  'Somebody looked at this and decided the workspace has no claims worth guarding.',
+                name: 'Nothing to restrict, deliberately',
                 meta: decidedLine(stance.decidedAt),
               },
-            ]
-          : []
+            ])
+          : null
       }
-      return [
+      // Each row lands on its own card of the guardrails page.
+      return line([
         {
           key: 'may',
           mark: glyph(SealCheckIcon),
-          label: t('brand.overview.guardrails.mayClaim'),
-          details:
-            g.mayClaim.length === 0
-              ? t('brand.overview.guardrails.mayClaimEmpty')
-              : undefined,
+          name: t('brand.overview.guardrails.mayClaim'),
           meta: statedCount(t, g.mayClaim.length),
+          place: { section: 'guardrails', part: 'may-claim' },
         },
         {
           key: 'never',
           mark: glyph(ProhibitIcon, g.neverClaim.length === 0),
-          label: t('brand.overview.guardrails.neverClaim'),
-          details:
-            g.neverClaim.length === 0
-              ? t('brand.overview.guardrails.neverClaimEmpty')
-              : undefined,
+          name: t('brand.overview.guardrails.neverClaim'),
           meta: statedCount(t, g.neverClaim.length),
+          place: { section: 'guardrails', part: 'never-claim' },
         },
         {
           key: 'banned',
           mark: glyph(TextAaIcon),
-          label: t('brand.overview.guardrails.bannedWords'),
+          name: t('brand.overview.guardrails.bannedWords'),
           meta:
             g.bannedWords.length > 0
               ? t('brand.overview.bannedWordCount', {
                   count: g.bannedWords.length,
                 })
               : t('brand.overview.none'),
+          place: { section: 'guardrails', part: 'banned-words' },
         },
         {
           key: 'disclaimer',
           mark: glyph(ChatTeardropTextIcon),
-          label: t('brand.overview.guardrails.disclaimer'),
-          details: g.disclaimer.trim() || undefined,
+          name: t('brand.overview.guardrails.disclaimer'),
           meta: g.disclaimer.trim()
             ? t('brand.overview.written')
             : t('brand.overview.none'),
+          place: { section: 'guardrails', part: 'disclaimer' },
         },
-      ]
+      ])
     }
 
+    // Look and templates are not offered (`SHOWN_BRAND_SECTIONS`); their rows
+    // open nothing until their screens are.
     case 'look': {
       const l = data.look
-      if (!l) return []
-      return [
+      if (!l) return null
+      return line([
         {
           key: 'logos',
-          mark: { kind: 'task', done: l.logos.length > 0 },
-          label: t('brand.look.logoSlot'),
+          mark: <Tick done={l.logos.length > 0} />,
+          name: t('brand.look.logoSlot'),
           meta:
             l.logos.length > 0
               ? t('brand.overview.logosWithJobs', { count: l.logos.length })
@@ -671,8 +613,8 @@ function sectionRows(
         },
         {
           key: 'palette',
-          mark: { kind: 'task', done: l.palette.length > 0 },
-          label: t('brand.look.paletteSlot'),
+          mark: <Tick done={l.palette.length > 0} />,
+          name: t('brand.look.paletteSlot'),
           meta:
             l.palette.length > 0
               ? t('brand.overview.coloursWithRoles', {
@@ -682,8 +624,8 @@ function sectionRows(
         },
         {
           key: 'type',
-          mark: { kind: 'task', done: l.typefaces.length > 0 },
-          label: t('brand.look.typeSlot'),
+          mark: <Tick done={l.typefaces.length > 0} />,
+          name: t('brand.look.typeSlot'),
           // The customer's own typeface names, joined the way the language
           // joins a list rather than by a hard-coded comma.
           meta:
@@ -693,38 +635,42 @@ function sectionRows(
         },
         {
           key: 'imagery',
-          mark: { kind: 'task', done: l.referenceImages.length > 0 },
-          label: t('brand.look.referenceSlot'),
+          mark: <Tick done={l.referenceImages.length > 0} />,
+          name: t('brand.look.referenceSlot'),
           meta: countOrNone(t, l.referenceImages.length),
         },
-      ]
+      ])
     }
 
     case 'templates':
-      return data.templates.map((template) => {
-        const have = new Set(template.ratios.map((r) => r.ratio))
-        const covered = EXPECTED_RATIOS.filter((r) => have.has(r)).length
-        return {
-          key: template.id,
-          // One PNG per ratio is the price of not reflowing, so a missing ratio
-          // is not cosmetic — it is the set being unusable wherever that ratio
-          // is what gets posted.
-          mark: { kind: 'task', done: covered === EXPECTED_RATIOS.length },
-          label: template.name,
-          details: template.isDefault
-            ? t('brand.overview.templates.isDefault')
-            : template.platforms.length > 0
-              ? t('brand.overview.templates.forPlatforms', {
-                  platforms: formatList(template.platforms),
-                })
-              : t('brand.overview.templates.unreachable'),
-          meta: t('brand.overview.templates.ratios', {
-            covered,
-            total: EXPECTED_RATIOS.length,
-          }),
-        }
-      })
+      return line(
+        data.templates.map((template) => {
+          const have = new Set(template.ratios.map((r) => r.ratio))
+          const covered = EXPECTED_RATIOS.filter((r) => have.has(r)).length
+          return {
+            key: template.id,
+            // One PNG per ratio is the price of not reflowing, so a missing
+            // ratio is not cosmetic — it is the set being unusable wherever
+            // that ratio is what gets posted.
+            mark: <Tick done={covered === EXPECTED_RATIOS.length} />,
+            name: template.name,
+            meta: t('brand.overview.templates.ratios', {
+              covered,
+              total: EXPECTED_RATIOS.length,
+            }),
+          }
+        }),
+      )
   }
+}
+
+/** A one-line row: the mark, the name, a count under it, and where it goes. */
+type OneLine = {
+  key: string
+  mark: ReactNode
+  name: string
+  meta?: string
+  place?: BrandPlace
 }
 
 /**
@@ -734,19 +680,16 @@ function sectionRows(
  * sit at the same weight down the column — except where the finding is the
  * absence itself, which is the one place this screen spends a colour.
  */
-function glyph(Glyph: Icon, alarming = false): LineItemIndicator {
-  return {
-    kind: 'custom',
-    node: (
-      <Glyph
-        className={cn(
-          'size-4',
-          alarming ? 'text-destructive' : 'text-senary-foreground',
-        )}
-        aria-hidden
-      />
-    ),
-  }
+function glyph(Glyph: Icon, alarming = false): ReactNode {
+  return (
+    <Glyph
+      className={cn(
+        'size-4',
+        alarming ? 'text-destructive' : 'text-senary-foreground',
+      )}
+      aria-hidden
+    />
+  )
 }
 
 /** When the decision was taken — the whole content of a stance. */

@@ -22,7 +22,7 @@ import type { BrandData } from './types'
  * The same two columns as the Strategy hub above it (`PageColumns`, the side
  * one sticky), so going in keeps the frame and only changes what is in it:
  * the section's entries in the main column, and beside them what the section
- * is for and who it reaches (`BrandSectionAside`). The intro card used to open
+ * is for (`BrandSectionAside`). The intro card used to open
  * the main column and carry the section's name; that put a paragraph of
  * explanation between the header and the list every visit, and left most of a
  * wide screen empty beside a 740px column.
@@ -115,7 +115,6 @@ export function BrandDetail({
         <BrandSectionAside
           section={section}
           empty={data ? isSectionEmpty(section, data) : false}
-          brand={data}
         />
       }
     >

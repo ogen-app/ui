@@ -69,7 +69,7 @@ export function FailedRun({ run }: { run: DistillRun }) {
       })}
       capped
     >
-      <p className="text-sm text-secondary-foreground">
+      <p className="text-sm">
         {nothingToRead
           ? t(`brand.distill.failed.nothingBody.${route}` as const, {
               count: run.sources.length,
@@ -143,9 +143,7 @@ function SourceOutcome({ source }: { source: DistillSource }) {
         aria-hidden
         className="size-4 shrink-0 text-senary-foreground"
       />
-      <span className="min-w-0 flex-1 truncate text-sm text-secondary-foreground">
-        {name}
-      </span>
+      <span className="min-w-0 flex-1 truncate text-sm">{name}</span>
       <span className="shrink-0 text-xs text-tertiary-foreground">
         {t(`brand.distill.failed.source.${outcomeOf(source)}` as const)}
       </span>
@@ -201,7 +199,7 @@ export function ClosedRun({ run }: { run: DistillRun }) {
       }}
       capped
     >
-      <p className="text-sm text-secondary-foreground">
+      <p className="text-sm">
         {committed && when
           ? t('brand.distill.closed.committed.bodyOn', { date: when })
           : t(`brand.distill.closed.${closedKind(run)}.body` as const)}

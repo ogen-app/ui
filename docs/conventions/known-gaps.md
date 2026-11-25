@@ -76,14 +76,16 @@ but nobody has tried it on a large workspace yet, and a calendar that opens
 slowly is the first thing that would show it.
 
 **Brand from what you have is live, unflagged** (CON-400; the
-`brand-distill` flag was deleted 2026-10-23). The hub's offer reads a brand off the website, a document or seven
+`brand-distill` flag was deleted 2026-10-23). The hub's offer reads a brand off the website, a document or eight
 questions (`/api/brand/distills`, CON-399, merged in ogen#230), the run
 lives at `/foundation/read/:runId` for its whole life, and the review commits
 only what is kept. Two rules to keep: **the review is the client's until the
 commit** (`stores/brandDistillStore`, `sessionStorage`, keyed by `proposalId`
-so a gap-question round's child run inherits it), and **the disclaimer is the
-one thing a commit replaces**, so it is sent only on an explicit pick
-(`lib/brandDistill.buildCommit`). Uploads from the offer carry
+so a gap-question round's child run inherits it), and **the disclaimer and the
+positioning statement are the two things a commit replaces**, so each is sent
+only on an explicit pick when the workspace already has one
+(`lib/brandDistill.buildCommit`). Positioning (CON-513) is proposed, reviewed
+and committed here; there is no editor for it on Foundation yet. Uploads from the offer carry
 `purpose=brand_source`. Still owed: the live pass against the merged API — a
 website read end to end, a document read with an upload in flight, the
 questions route, a gap-question round carrying a drop to the child run, a

@@ -1,16 +1,15 @@
-import { LightbulbIcon } from '@phosphor-icons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Idea01Icon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
-import { Logo } from '@/components/Logo'
+import { Card } from '@/components/ui/card'
 import { usePostIdeas } from '@/hooks/useIdeaPosts'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { Post } from '@/types/posts'
-import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 
 /**
  * What a planned post is waiting for (CON-449): it holds a title and its
- * theses, compiled from ideas, and no body yet — on purpose. WRITE THE POST
+ * theses, compiled from ideas, and no body yet — on purpose. Write the post
  * asks the post's own assistant to write it, filled into the composer and
  * never sent, the same rule as every other prefill: the user gets the last
  * word. Once a body lands the server moves the post to draft and this goes.
@@ -33,24 +32,19 @@ export function PlannedPostPanel({ post }: { post: Post }) {
     )
   }
 
+  // Ogen's action, and the card's point: teal, with the mark in white.
   return (
-    <div className="flex items-center gap-6 border border-dashed border-quinary-foreground bg-primary px-6 py-5">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="text-sm font-medium text-foreground">
-          {t('ideas.lifecycle.noBody')}
-        </p>
-        <p className="text-sm text-secondary-foreground">
-          {t('ideas.lifecycle.noBodyHint')}
-        </p>
-      </div>
-      <Button variant="accent" onClick={write}>
-        <Logo
-          variant="mark"
-          className="size-4 shrink-0 [&_path:first-of-type]:fill-primary"
-        />
-        {t('ideas.lifecycle.write')}
-      </Button>
-    </div>
+    <Card
+      title={t('ideas.lifecycle.noBody')}
+      action={{
+        label: t('ideas.lifecycle.write'),
+        icon: 'ogen',
+        accent: true,
+        onClick: write,
+      }}
+    >
+      <p className="text-sm">{t('ideas.lifecycle.noBodyHint')}</p>
+    </Card>
   )
 }
 
@@ -64,42 +58,39 @@ export function BuiltFromIdeas({ postId }: { postId: string }) {
   // A failed read is said as such, not drawn as a post built from nothing.
   if (ideas.isError) {
     return (
-      <section className="flex items-center gap-4 bg-primary px-10 py-6">
-        <p className="min-w-0 flex-1 text-sm text-secondary-foreground">
-          {t('ideas.lifecycle.builtFromFailed')}
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={ideas.isFetching}
-          onClick={() => void ideas.refetch()}
-        >
-          {ideas.isFetching ? t('common.trying') : t('common.tryAgain')}
-        </Button>
-      </section>
+      <Card
+        title={t('ideas.lifecycle.builtFromTitle')}
+        action={{
+          label: ideas.isFetching ? t('common.trying') : t('common.tryAgain'),
+          disabled: ideas.isFetching,
+          onClick: () => void ideas.refetch(),
+        }}
+      >
+        <p className="text-sm">{t('ideas.lifecycle.builtFromFailed')}</p>
+      </Card>
     )
   }
   const list = ideas.data ?? []
   if (list.length === 0) return null
   return (
-    <section className="flex flex-col bg-primary px-10 py-6">
-      <SmallHeading as="h2" className="mb-2">
-        {t('ideas.lifecycle.builtFrom', { count: list.length })}
-      </SmallHeading>
-      <ul className="flex flex-col">
+    <Card title={t('ideas.lifecycle.builtFrom', { count: list.length })}>
+      <ul className="-mb-2.5 flex flex-col">
         {list.map((idea) => (
           <li
             key={idea.id}
             className="flex items-center gap-2 border-t border-border py-2.5 text-sm text-foreground"
           >
-            <LightbulbIcon
+            <HugeiconsIcon
+              icon={Idea01Icon}
+              size={16}
+              strokeWidth={1.5}
               aria-hidden
-              className="size-4 shrink-0 text-tertiary-foreground"
+              className="shrink-0 text-tertiary-foreground"
             />
             <span className="min-w-0 truncate">{idea.title}</span>
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   )
 }

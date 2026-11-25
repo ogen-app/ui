@@ -15,7 +15,7 @@ type Props = {
   workspace: string
   /**
    * The checkout this tab opened in another one, or `null` when this tab *is*
-   * the return from Lemon Squeezy (`?billing=return`).
+   * the return from Polar (`?billing=return`).
    */
   opened: PlanCheckout | null
   /** Back to the plans, from a checkout opened and then abandoned. */
@@ -32,7 +32,7 @@ type Props = {
  * page refetches the plan and moves on only once the plan shows a live
  * subscription. So this screen is honest about the step in between.
  *
- * It has two entrances. A tab that came *back* from Lemon Squeezy shows the
+ * It has two entrances. A tab that came *back* from Polar shows the
  * three steps with the middle one running. A tab that *opened* checkout in a
  * new one says what that checkout will charge — trusting the server's `trial`
  * flag over the badge that was clicked, because the free-month mark can move

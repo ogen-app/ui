@@ -66,7 +66,7 @@ type Props = {
  * card.
  *
  * **There is no billing screen behind this, and there shouldn't be.** Ogen
- * sells through Lemon Squeezy as merchant of record, so the payment method, the
+ * sells through Polar as merchant of record, so the payment method, the
  * billing address, the tax id, the invoices and the cancellation all live in
  * their hosted portal — validated against the record they bill and legally
  * answerable for it. What is left for us to state is a plan, a card's last four
@@ -128,7 +128,7 @@ export function PlanBillingCard({
           <SettingsRow
             title={t('tiers.paymentMethod')}
             badges={
-              // Lemon Squeezy's sandbox: nothing on this card is really
+              // Polar's sandbox: nothing on this card is really
               // charged. Beside the payment row rather than the plan, because
               // it qualifies the money, not what the workspace may do.
               billing?.testMode ? (
@@ -308,7 +308,7 @@ export function PlanBanner({
             one line of prose with a box drawn round part of it, and centring a
             padded box against text sits it a pixel or two high — the kind of
             misalignment you see without being able to name. */}
-        <span className="flex flex-wrap items-baseline gap-2 text-sm text-secondary-foreground">
+        <span className="flex flex-wrap items-baseline gap-2 text-sm">
           {complimentary ? (
             <Tag>{t('tiers.comp.tag')}</Tag>
           ) : (
@@ -316,11 +316,7 @@ export function PlanBanner({
           )}
           <span>{secondLine}</span>
         </span>
-        {failureLine && (
-          <span className="text-sm text-secondary-foreground">
-            {failureLine}
-          </span>
-        )}
+        {failureLine && <span className="text-sm">{failureLine}</span>}
       </span>
       <div className="ml-auto flex shrink-0 items-center gap-1 pl-3">
         {/* A scheduled downgrade can be called off from where it is stated.
@@ -374,7 +370,7 @@ function PaymentLine({
   const tone = 'text-primary-foreground'
 
   if (!subscription) return <p className={tone}>{t('tiers.noSubscription')}</p>
-  // What it costs, net — Lemon Squeezy adds VAT for the buyer's country, so a
+  // What it costs, net — Polar adds VAT for the buyer's country, so a
   // bare figure would be smaller than the invoice (CON-328).
   const price = subscription.price ? (
     <span className="text-tertiary-foreground">

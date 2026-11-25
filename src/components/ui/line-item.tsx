@@ -1,11 +1,8 @@
 import { cloneElement, isValidElement } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { Slot } from '@radix-ui/react-slot'
-import {
-  CaretRightIcon,
-  CheckCircleIcon,
-  CircleIcon,
-} from '@phosphor-icons/react'
+import { CheckCircleIcon, CircleIcon } from '@phosphor-icons/react'
+import { DoorCaret } from '@/components/ui/card'
 import { cn } from '@/lib'
 
 /**
@@ -167,9 +164,7 @@ export function LineItem({
             'text-tertiary-foreground group-hover:text-primary-foreground',
         )}
       >
-        {showChevron && (
-          <CaretRightIcon className="size-4" weight="bold" aria-hidden />
-        )}
+        {showChevron && <DoorCaret />}
       </span>
     </>
   )

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { disconnectZernioAccount } from './zernio'
+import { createConnectLink, disconnectZernioAccount } from './zernio'
 import { ZernioError } from '@/types/integrations'
 
 /**
@@ -102,5 +102,21 @@ describe('disconnectZernioAccount', () => {
 
     expect(err.code).toBe('unknown')
     expect(err.message).toBe('Unable to disconnect the account')
+  })
+})
+
+describe('createConnectLink', () => {
+  it('asks to come back to setup only when told to', async () => {
+    const link = { platform: 'x', connectUrl: 'https://z', expiresAt: '' }
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(jsonResponse(200, link)))
+    vi.stubGlobal('fetch', fetchMock)
+    await createConnectLink('x', 'onboarding')
+    await createConnectLink('x')
+    const body = (i: number) =>
+      JSON.parse(String((fetchMock.mock.calls[i][1] as RequestInit).body))
+    expect(body(0)).toEqual({ platform: 'x', returnTo: 'onboarding' })
+    expect(body(1)).toEqual({ platform: 'x' })
   })
 })

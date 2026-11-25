@@ -16,7 +16,9 @@ export const series = {
     starterGroupTitle: 'Three to start from',
     starterGroupBody:
       'Each one is a worked example of the part that is hard to invent from a blank form — the recipe. Take one, rewrite it until it is yours.',
-    noRecipe: 'No recipe yet — this groups posts, but nothing builds from it.',
+    noRecipe: 'No recipe yet. It groups posts, and writes nothing on its own.',
+    /** The few words the recipe's run opens on: "To make one, pick the…". */
+    toMakeOne: 'To make one,',
   },
   rhythm: {
     occasional: 'Occasional',
@@ -65,24 +67,27 @@ export const series = {
   },
   campaign: {
     title: 'Series',
-    /**
-     * Under the card's heading on Strategy. Deliberately says nothing about
-     * where the goal it spends is printed — the card moved once already
-     * (CON-305) and a sentence naming its neighbour would move with it.
-     */
-    hint: 'What this campaign makes again and again, and how often. The slots they claim come out of its post goal.',
-    empty:
-      'This campaign runs none. Pick one up and every period it will claim its slots automatically.',
-    addPlaceholder: 'Add a series',
-    writeOne: 'Write one',
-    localOnly: 'this campaign only',
-    promote: 'To library',
-    promoteHint:
-      'Move this into the workspace library so other campaigns can run it too.',
-    remove: 'Stop running {{name}}',
-    claim_one: '{{formatted}} post',
-    claim_other: '{{formatted}} posts',
+    empty: 'No series runs here. Every post is planned one at a time.',
+    /** The card's button, and the add dialog's confirm. */
+    add: 'Add series',
+    addTitle: 'Add a series',
+    addNoLibrary:
+      'The workspace has no series yet. Write one, and this campaign can run it.',
+    addNone: 'Every series in the workspace already runs here.',
+    writeNew: 'Write a new series',
+    cancel: 'Cancel',
+    howOften: 'How often',
+    /** In a run's row, after its rhythm: "Every Tuesday, 24 posts in this campaign". */
+    claim_one: '{{formatted}} post in this campaign',
+    claim_other: '{{formatted}} posts in this campaign',
     claimsNone: 'no fixed slots',
+    localOnly: 'only in this campaign',
+    madeHere: 'Made in this campaign',
+    stop: 'Stop running',
+    edit: 'Edit series',
+    /** A series made inside this campaign, moved into the workspace library. */
+    promote: 'Add to library',
+    done: 'Done',
   },
   detail: {
     back: 'Back to series',

@@ -26,7 +26,7 @@ export const tiers: Translation['tiers'] = {
     unavailable: 'Aún no disponible',
     noneOnSale: 'Ahora mismo no hay ningún plan a la venta.',
     vatNote:
-      'Los precios no incluyen IVA. Lemon Squeezy vende Ogen como comerciante registrado y lo añade al pagar.',
+      'Los precios no incluyen IVA. Polar vende Ogen como comerciante registrado y lo añade al pagar.',
     compTitle: 'Elige el plan que quieras',
     compLead: '{{workspace}} tiene acceso gratuito a la beta.',
     compTryAny:
@@ -48,34 +48,34 @@ export const tiers: Translation['tiers'] = {
   checkout: {
     confirmingTitle: 'Confirmando tu suscripción',
     confirmingBody:
-      'Lemon Squeezy ya tiene tus datos. {{workspace}} se abre en cuanto lo confirmen; suele tardar unos segundos.',
+      'Polar ya tiene tus datos. {{workspace}} se abre en cuanto lo confirmen; suele tardar unos segundos.',
     stepCheckout: 'Pago completado',
-    stepConfirm: 'Esperando la confirmación de Lemon Squeezy',
+    stepConfirm: 'Esperando la confirmación de Polar',
     stepOpen: 'Abriendo {{workspace}}',
     openedTitle: 'Termina el pago en la pestaña nueva',
     openedTrial: 'Tu primer mes es gratis: hoy no se cobra nada.',
     openedCharged: 'Se te cobra al completar el pago.',
     openedBody:
-      'Esta página continúa sola en cuanto Lemon Squeezy lo confirme y abre {{workspace}}.',
+      'Esta página continúa sola en cuanto Polar lo confirme y abre {{workspace}}.',
     reopen: 'Volver a abrir el pago',
     back: 'Elegir otro plan',
     slowTitle: 'Está tardando más de lo normal',
     slowBody:
-      'Deja esta página abierta o vuelve más tarde: no se te cobrará dos veces. El recibo de Lemon Squeezy tiene la referencia del pedido.',
+      'Deja esta página abierta o vuelve más tarde: no se te cobrará dos veces. El recibo de Polar tiene la referencia del pedido.',
     subscribed: 'Ya tienes {{name}}.',
   },
   changeDialog: {
     title: '¿Pasar a {{name}}?',
-    body: 'Lemon Squeezy calcula la diferencia: subir de plan empieza hoy; bajar espera al final del periodo que ya has pagado.',
+    body: 'Polar calcula la diferencia: subir de plan empieza hoy; bajar espera al final del periodo que ya has pagado.',
     trialBody:
       'Esto termina hoy el mes gratis de {{name}} y se cobra {{target}} ahora.',
     cancel: 'Cancelar',
     confirm: 'Pasar a {{name}}',
     blockedTitle: 'No durante el mes gratis',
     blockedBody:
-      '{{name}} no se puede cambiar hasta que termine su mes gratis el {{when}}. Vuelve a elegir entonces, o termina el mes gratis en Lemon Squeezy y vuelve.',
+      '{{name}} no se puede cambiar hasta que termine su mes gratis el {{when}}. Vuelve a elegir entonces, o termina el mes gratis en Polar y vuelve.',
     blockedBodyBare:
-      '{{name}} no se puede cambiar hasta que termine su mes gratis. Termínalo en Lemon Squeezy o vuelve a elegir cuando acabe.',
+      '{{name}} no se puede cambiar hasta que termine su mes gratis. Termínalo en Polar o vuelve a elegir cuando acabe.',
     nothingCharged: 'No se ha cobrado nada y sigues en {{name}}.',
     ok: 'Aceptar',
   },
@@ -84,9 +84,9 @@ export const tiers: Translation['tiers'] = {
       'Ese plan ya no se puede elegir. Recarga la página para ver lo que hay disponible.',
     notAvailable: 'Ese plan no está a la venta ahora mismo.',
     notChangeable:
-      'Esta suscripción no se puede cambiar desde aquí. Gestiónala en Lemon Squeezy.',
+      'Esta suscripción no se puede cambiar desde aquí. Gestiónala en Polar.',
     duringTrial: 'No puedes cambiar de plan durante el mes gratis.',
-    provider: 'Lemon Squeezy no respondió. Inténtalo de nuevo en un momento.',
+    provider: 'Polar no respondió. Inténtalo de nuevo en un momento.',
     unavailable: 'La facturación no está disponible ahora mismo.',
   },
   freeUntil: 'Gratis hasta el {{when}}; después, {{price}}.',
@@ -95,7 +95,7 @@ export const tiers: Translation['tiers'] = {
   billingUnavailable:
     'Los datos de facturación no están disponibles ahora mismo, así que no hay nada que gestionar desde aquí.',
   sandbox: 'Pruebas',
-  noPortal: 'Todavía no hay nada que gestionar en Lemon Squeezy.',
+  noPortal: 'Todavía no hay nada que gestionar en Polar.',
   priceExclVat: '{{price}}, IVA no incluido',
   perMonth: '{{price}} / mes',
   perYear: '{{price}} / año',
@@ -256,7 +256,7 @@ export const tiers: Translation['tiers'] = {
   billingTitle: 'Plan y facturación',
   paymentMethod: 'Método de pago y datos de facturación',
   cardEnding: 'terminada en {{last4}}',
-  cardWithProvider: 'Tu método de pago lo guarda Lemon Squeezy.',
+  cardWithProvider: 'Tu método de pago lo guarda Polar.',
   noSubscription: 'No se está cobrando nada por este espacio.',
   accessEnds: 'El acceso termina el {{when}}.',
   accessEnded: 'El acceso terminó el {{when}}.',
@@ -264,7 +264,7 @@ export const tiers: Translation['tiers'] = {
     'Solo los propietarios del espacio pueden ver los datos de facturación.',
 
   providerHolds:
-    'Tu método de pago, tu dirección de facturación, tu NIF/CIF, tus facturas y la cancelación los gestiona Lemon Squeezy, que vende Ogen como comerciante registrado.',
+    'Tu método de pago, tu dirección de facturación, tu NIF/CIF, tus facturas y la cancelación los gestiona Polar, que vende Ogen como comerciante registrado.',
   managePortal: 'Gestionar',
   portalFailed: 'No se ha podido abrir el portal de facturación.',
 
@@ -274,10 +274,9 @@ export const tiers: Translation['tiers'] = {
   statusExpired: 'Caducado',
   statusUnpaid: 'Sin pagar',
 
-  paymentRetrying:
-    'El último pago ha fallado y Lemon Squeezy volverá a intentarlo.',
+  paymentRetrying: 'El último pago ha fallado y Polar volverá a intentarlo.',
   paymentStopped:
-    'El último pago ha fallado y no se volverá a intentar: actualiza tu método de pago en Lemon Squeezy para conservar este plan.',
+    'El último pago ha fallado y no se volverá a intentar: actualiza tu método de pago en Polar para conservar este plan.',
 
   currentPlan: 'Plan actual',
   currentBadge: 'Actual',
@@ -314,7 +313,7 @@ export const tiers: Translation['tiers'] = {
     tag: 'Acceso beta',
     sentence: 'Gratuito: no hay nada que pagar.',
     payment:
-      'No hay ninguna tarjeta guardada, y no hace falta mientras este espacio tenga acceso gratuito a la beta. Si termina, te pediremos que elijas un plan y Lemon Squeezy te pedirá los datos de pago entonces.',
+      'No hay ninguna tarjeta guardada, y no hace falta mientras este espacio tenga acceso gratuito a la beta. Si termina, te pediremos que elijas un plan y Polar te pedirá los datos de pago entonces.',
   },
   changeCancelled: 'Se ha anulado ese cambio.',
 

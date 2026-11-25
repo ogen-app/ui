@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, renderHook, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import {
   afterAll,
   afterEach,
@@ -222,16 +228,29 @@ describe('in Spanish', () => {
       />,
     )
 
-    // Four weeks of a weekly series, per row — the arithmetic the share line
-    // under the post goal sums, and the only number this card states.
-    expect(await screen.findByText('4 publicaciones')).toBeInTheDocument()
-    expect(screen.getByText('Aporta su propio tema')).toBeInTheDocument()
-    expect(screen.getByText('Escribir una')).toBeInTheDocument()
-    // The words that would still be here if any of this were a literal.
-    expect(screen.queryByText('4 posts')).not.toBeInTheDocument()
+    // Four weeks of a weekly series, on the run's row — the arithmetic the
+    // share line under the post goal sums, and the only number this card
+    // states.
     expect(
-      screen.queryByText('Supplies its own subject'),
+      await screen.findByText(/4 publicaciones en esta campaña/),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Añadir serie')).toBeInTheDocument()
+    // The words that would still be here if any of this were a literal.
+    expect(
+      screen.queryByText(/4 posts in this campaign/),
     ).not.toBeInTheDocument()
+    expect(screen.queryByText('Add series')).not.toBeInTheDocument()
+
+    // The row's caret opens the run: the recipe it runs on, how often here,
+    // and the way out — none of them on the row any more.
+    fireEvent.click(screen.getByRole('link', { name: /Resumen semanal/ }))
+    expect(
+      await screen.findByText(/empieza por lo más importante/),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Aporta su propio tema')).toBeInTheDocument()
+    expect(screen.getByText('Con qué frecuencia')).toBeInTheDocument()
+    expect(screen.getByText('Dejar de ejecutar')).toBeInTheDocument()
+    expect(screen.queryByText('Stop running')).not.toBeInTheDocument()
   })
 
   it('states the plan in Spanish, including the oversubscribed case', () => {

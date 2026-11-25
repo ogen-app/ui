@@ -13,6 +13,8 @@ import { cn } from '@/lib'
 import { formatList } from '@/lib/intl'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { siteHost } from '@/lib/brandDistill'
+import { brandSection } from '@/lib/brandSections'
+import { Facts, Ruled } from './entry'
 import type { BrandConsumer, BrandOrigin } from './types'
 
 /**
@@ -79,7 +81,7 @@ export function Gap({
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-md border border-dashed border-quaternary p-4">
-      <p className="text-sm text-secondary-foreground">{what}</p>
+      <p className="text-sm">{what}</p>
       {offers.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {offers.map((offer, i) => (
@@ -199,7 +201,7 @@ export function WholeBrandOffer({
           rule that Spanish does not follow. `i18n.language` is passed rather
           than read inside, so the switch that re-renders this component is
           the same one that changes the join. */}
-      <p className="text-sm text-secondary-foreground">
+      <p className="text-sm">
         {t('brand.shell.offer.body', {
           fills: formatList(fills, 'conjunction', i18n.language),
         })}
@@ -209,14 +211,6 @@ export function WholeBrandOffer({
     </Card>
   )
 }
-
-/**
- * The measure every Brand screen is set to. The Overview's cards sit on it, so
- * a section opened from one of them has to as well — otherwise going in shifts
- * the column under you, and so does the editor a level below that: opening an
- * entry would move the column the entry was just sitting on.
- */
-export const COLUMN = 'w-full max-w-content'
 
 /**
  * A library section rendered as its own screen: a stack of full-width entries
@@ -261,70 +255,61 @@ export function BrandLibrary({
  * as a bare list. Each was defensible, and side by side down the hub's three
  * sections they read as three designers. So one order, one set of type:
  *
- * 1. **The name**, display size, with the default star beside it when there is
- *    one — the only mark allowed on the heading line.
- * 2. **One line** under it, secondary: what somebody picks this one for.
- * 3. **The substance**, in a ruled block — the thing that makes this entry
- *    different from its siblings (a sample, the three consequence lines, the
- *    recipe). Text is clamped to four lines, because a card is a preview and
- *    the editor is one click away. When there is none, the same block says so
- *    in tertiary, in the same place, so an empty entry is the same card with
- *    different words rather than a shorter one.
- * 4. **The facts**, bulleted at the foot, in the line-under-the-name colour.
+ * 1. **The name**, display size, under the section's glyph in its hue, with
+ *    the default star beside it when there is one.
+ * 2. **One line** under it: what somebody picks this one for.
+ * 3. **The run**, ruled (`entry.tsx`'s `Ruled`): the few words that open it in
+ *    weight, and the entry's substance running on from them — "Sounds like…",
+ *    "Reads on…", "To make one,…". Clamped, because a card is a preview and the
+ *    editor is one click away; empty says so in the same place.
+ * 4. **The facts**, bulleted at the foot (`Facts`) — the campaigns that use it
+ *    among them (`useUsedBy`).
+ *
+ * All of it in the body's colour, black: a card ranks its lines by size,
+ * weight and place, and grey body text read as disabled (2026-11-23).
  */
 export function LibraryEntry({
+  section,
   name,
   status,
   line,
-  substance,
+  run,
   empty,
   facts,
   onOpen,
 }: {
+  section: 'voices' | 'audiences' | 'series'
   name: string
   /** On the name's baseline — in practice the default star. */
   status?: CardStatus
   line?: string
-  /** A string is clamped to four lines; a node is drawn as given. */
-  substance?: ReactNode
-  /** What the ruled block says while there is no substance. */
-  empty?: string
+  /** The ruled run; null says `empty` in its place. */
+  run: ReactNode
+  empty: string
   facts: ReactNode[]
   onOpen?: () => void
 }) {
+  const info = brandSection(section)
+  const frame = {
+    icon: info.icon,
+    tone: info.tone,
+    title: name,
+    status,
+    capped: true,
+  }
   const body = (
     <>
-      {line ? (
-        <p className="text-sm leading-5 text-secondary-foreground">{line}</p>
-      ) : null}
-
-      <div className="border-l-2 border-quaternary pl-3 text-sm leading-5">
-        {typeof substance === 'string' ? (
-          <p className="line-clamp-4 whitespace-pre-line">{substance}</p>
-        ) : substance ? (
-          substance
-        ) : (
-          <p className="text-tertiary-foreground">{empty}</p>
-        )}
-      </div>
-
-      {/* A list rather than stacked lines, because a fact wraps on a narrow
-          column and without markers the wrapped half reads as another fact. */}
-      <ul className="flex list-disc flex-col gap-0.5 pl-4 text-sm leading-5 text-secondary-foreground">
-        {facts.map((fact, i) => (
-          <li key={i}>{fact}</li>
-        ))}
-      </ul>
+      {line ? <p className="text-sm leading-5">{line}</p> : null}
+      <Ruled empty={empty}>{run}</Ruled>
+      <Facts items={facts} />
     </>
   )
   return onOpen ? (
-    <Card title={name} status={status} door={{ kind: 'card', onOpen }} capped>
+    <Card {...frame} door={{ kind: 'card', onOpen }}>
       {body}
     </Card>
   ) : (
-    <Card title={name} status={status} capped>
-      {body}
-    </Card>
+    <Card {...frame}>{body}</Card>
   )
 }
 
@@ -391,7 +376,7 @@ export function StarterCard({
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-base font-medium">{title}</span>
-        <span className="text-sm text-secondary-foreground">{body}</span>
+        <span className="text-sm">{body}</span>
       </span>
       {caret && (
         <Caret
@@ -586,8 +571,8 @@ export function OriginLine({
   // Four of the details are the customer's own words — a template's name,
   // their site, a document's title, a post's title — and stay exactly as they
   // are. Only the post count is a sentence of ours, and it is the only one
-  // that needs counting. The site is its host alone: "Read off the website ·
-  // acme-roasters.com" is the line, and a scheme and a trailing slash are noise
+  // that needs counting. The site is its host alone: "Read off the website
+  // (acme-roasters.com)" is the line, and a scheme and a trailing slash are noise
   // in it. Answers have no detail — the origin is the whole fact.
   const detail =
     origin.kind === 'template'
@@ -602,10 +587,13 @@ export function OriginLine({
               ? origin.fromPost
               : null
 
+  const said = t(`brand.shell.origin.${origin.kind}` as const)
+  // The detail in brackets, never after a dot: this is one bullet in a list.
   return (
     <p className={className}>
-      {t(`brand.shell.origin.${origin.kind}` as const)}
-      {detail && <span> · {detail}</span>}
+      {detail
+        ? t('brand.shell.originWithDetail', { origin: said, detail })
+        : said}
     </p>
   )
 }

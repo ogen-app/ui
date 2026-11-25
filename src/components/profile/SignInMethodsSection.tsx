@@ -226,10 +226,7 @@ function MethodRow({
       {(note || noteExtra) && (
         // One live region per row, so a refusal replaces the line it
         // contradicts instead of sitting beside it.
-        <p
-          role="status"
-          className="max-w-150 pl-13 text-sm text-secondary-foreground"
-        >
+        <p role="status" className="max-w-150 pl-13 text-sm">
           {note}
           {note && noteExtra ? ' ' : null}
           {noteExtra}

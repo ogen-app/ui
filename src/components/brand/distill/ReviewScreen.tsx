@@ -1,7 +1,9 @@
-import { ChatCircleTextIcon } from '@phosphor-icons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { BubbleChatQuestionIcon } from '@hugeicons/core-free-icons'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { PageActionBar } from '@/components/page-primitives/PageActionBar'
 import {
   useAnswerDistill,
@@ -27,7 +29,7 @@ import {
 import type { DistillProposal, DistillRun } from '@/types/brandDistill'
 import type { BrandData } from '../types'
 import { GapQuestions } from './Questions'
-import { FactsReview, GuardrailsReview } from './ReviewLines'
+import { FactsReview, GuardrailsReview, PositioningReview } from './ReviewLines'
 import { AudiencesReview, VoicesReview, type SourceNoun } from './ReviewEntries'
 import { TextButton } from '@/components/ui/text-button'
 
@@ -67,6 +69,7 @@ export function ReviewScreen({
 
   const route = runRoute(run)
   const g = proposal.guardrails
+  const p = proposal.positioning
   const hasGuardrails =
     g.mayClaim.length + g.neverClaim.length + g.bannedWords.length > 0 ||
     g.disclaimer !== null
@@ -102,6 +105,13 @@ export function ReviewScreen({
           )
         }}
       />
+      {(p.statement !== null || p.differentiators.length > 0) && (
+        <PositioningReview
+          proposal={proposal}
+          currentWrittenAt={brand?.positioning?.updatedAt ?? null}
+          {...ctx}
+        />
+      )}
       {proposal.voices.length > 0 && (
         <VoicesReview
           voices={proposal.voices}
@@ -235,7 +245,12 @@ function Summary({
   const route = runRoute(run)
   const g = proposal.guardrails
   const lines = g.mayClaim.length + g.neverClaim.length + (g.disclaimer ? 1 : 0)
+  const positioning =
+    (proposal.positioning.statement ? 1 : 0) +
+    proposal.positioning.differentiators.length
   const parts = [
+    positioning > 0 &&
+      t('brand.distill.count.positioning', { count: positioning }),
     proposal.voices.length > 0 &&
       t('brand.distill.count.voices', { count: proposal.voices.length }),
     proposal.audiences.length > 0 &&
@@ -278,14 +293,14 @@ function Summary({
   const questions = proposal.questions.length
 
   return (
-    <section className="flex w-full max-w-content flex-col gap-3 bg-primary px-6 py-6">
-      <p className="text-base leading-6">
+    <Card capped title={t('brand.distill.summary.title')}>
+      <p className="text-sm">
         {parts.length > 0
           ? t('brand.distill.summary.proposes', { from, what })
           : t('brand.distill.summary.nothing', { from })}
       </p>
       {leftOut.length > 0 && (
-        <p className="text-sm leading-5 text-secondary-foreground">
+        <p className="text-sm leading-5">
           {t('brand.distill.summary.leftOut', {
             what: formatList(leftOut, 'conjunction', i18n.language),
           })}
@@ -293,9 +308,12 @@ function Summary({
       )}
       {questions > 0 && (
         <p className="flex items-start gap-2 border-t border-quaternary pt-3 text-sm leading-5">
-          <ChatCircleTextIcon
+          <HugeiconsIcon
+            icon={BubbleChatQuestionIcon}
+            size={16}
+            strokeWidth={1.5}
             aria-hidden
-            className="mt-0.5 size-4 shrink-0 text-accent"
+            className="mt-0.5 shrink-0 text-accent"
           />
           <span>
             {t(`brand.distill.summary.gaps.${route}` as const, {
@@ -307,7 +325,7 @@ function Summary({
           </span>
         </p>
       )}
-    </section>
+    </Card>
   )
 }
 
