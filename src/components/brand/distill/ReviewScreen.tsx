@@ -31,6 +31,7 @@ import type { BrandData } from '../types'
 import { GapQuestions } from './Questions'
 import { FactsReview, GuardrailsReview, PositioningReview } from './ReviewLines'
 import { AudiencesReview, VoicesReview, type SourceNoun } from './ReviewEntries'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * What a finished read proposes, before any of it is saved (CON-400 boards
@@ -318,13 +319,9 @@ function Summary({
             {t(`brand.distill.summary.gaps.${route}` as const, {
               count: questions,
             })}{' '}
-            <button
-              type="button"
-              onClick={onOpenQuestions}
-              className="cursor-pointer font-medium text-accent hover:underline"
-            >
+            <TextButton onClick={onOpenQuestions}>
               {t('brand.distill.summary.answer', { count: questions })}
-            </button>
+            </TextButton>
           </span>
         </p>
       )}

@@ -138,7 +138,7 @@ export function AppAuth({ title, subtitle, form, bottomNav }: AppAuthProps) {
                         exactly where being logged out without explanation is
                         most alarming. */}
                     {subtitle && (
-                      <div className="text-[13px] pt-1 leading-4 text-secondary-foreground">
+                      <div className="text-sm pt-1 leading-4 text-secondary-foreground">
                         {subtitle}
                       </div>
                     )}
@@ -154,7 +154,7 @@ export function AppAuth({ title, subtitle, form, bottomNav }: AppAuthProps) {
                 box, which was enough to make the card permanently scrollable
                 with a screenful of empty space above it. */}
             {bottomNav && (
-              <div className="shrink-0 mt-auto text-[13px] leading-5 text-secondary-foreground">
+              <div className="shrink-0 mt-auto text-sm leading-5 text-secondary-foreground">
                 {bottomNav}
               </div>
             )}

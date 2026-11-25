@@ -14,7 +14,7 @@ export function MatchSnippet({ match }: { match: AssetTextMatch }) {
   const { t } = useTranslation()
   const parts = snippetParts(match.snippet)
   return (
-    <span className="text-[13px] leading-5 text-secondary-foreground">
+    <span className="text-sm leading-5 text-secondary-foreground">
       {match.source_label && (
         <span className="mr-1.5 text-tertiary-foreground">
           {t('content.filter.matchAt', { place: match.source_label })}

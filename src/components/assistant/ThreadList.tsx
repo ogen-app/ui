@@ -26,6 +26,7 @@ import type {
   AssistantThread,
   ThreadSubject,
 } from '@/types/assistant'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * Every thread the workspace has talked in, so a run started on one campaign
@@ -135,12 +136,12 @@ export function ThreadList() {
                       {threadName(row)}
                     </span>
                     {row.summary?.archived && (
-                      <span className="shrink-0 bg-tertiary px-[3px] py-[2px] text-[10px] font-semibold tracking-[0.08em] text-tertiary-foreground">
+                      <span className="shrink-0 bg-tertiary px-[3px] py-[2px] text-xs font-semibold tracking-[0.08em] text-tertiary-foreground">
                         {t('assistant.list.archived')}
                       </span>
                     )}
                     {row.id === currentThreadId && (
-                      <span className="shrink-0 bg-accent/10 px-[3px] py-[2px] text-[10px] font-semibold tracking-[0.08em] text-accent">
+                      <span className="shrink-0 bg-accent/10 px-[3px] py-[2px] text-xs font-semibold tracking-[0.08em] text-accent">
                         {t('assistant.list.current')}
                       </span>
                     )}
@@ -250,13 +251,7 @@ function ListError({ t, onRetry }: { t: TFunction; onRetry: () => void }) {
   return (
     <p className="flex items-center justify-center gap-2 py-3 text-sm text-tertiary-foreground">
       {t('assistant.list.loadFailed')}
-      <button
-        type="button"
-        onClick={onRetry}
-        className="cursor-pointer text-foreground underline-offset-2 hover:underline"
-      >
-        {t('common.tryAgain')}
-      </button>
+      <TextButton onClick={onRetry}>{t('common.tryAgain')}</TextButton>
     </p>
   )
 }

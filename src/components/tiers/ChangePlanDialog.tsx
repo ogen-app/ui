@@ -71,7 +71,7 @@ export function ChangePlanDialog({
                 })
               : t('tiers.changeDialog.blockedBodyBare', { name: held.name })}
           </p>
-          <p className="text-[13px] text-tertiary-foreground">
+          <p className="text-xs text-tertiary-foreground">
             {t('tiers.changeDialog.nothingCharged', { name: held.name })}
           </p>
           <div className="flex justify-end gap-2">
@@ -115,7 +115,7 @@ export function ChangePlanDialog({
         </p>
         {amount && (
           <div className="flex items-baseline justify-between gap-4 rounded-md bg-secondary px-4 py-3">
-            <span className="text-[13px] text-tertiary-foreground">{name}</span>
+            <span className="text-xs text-tertiary-foreground">{name}</span>
             <span className="text-sm font-medium">
               {t('tiers.priceExclVat', { price: amount })}
             </span>

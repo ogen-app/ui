@@ -47,6 +47,7 @@ import { AssetList } from './AssetList'
 import { AssetViewBar } from './AssetViewBar'
 import { DeleteDocumentsDialog } from './DeleteDocumentsDialog'
 import { TagDocumentsDialog } from './TagDocumentsDialog'
+import { TextButton } from '@/components/ui/text-button'
 
 type Props = {
   /** The campaign whose documents these are, or null for the whole workspace. */
@@ -575,25 +576,24 @@ function SelectionLine({
           : t('content.selection.count', { count })}
       </span>
       {allMatching ? (
-        <button
-          type="button"
+        <TextButton
+          tone="quiet"
+          className="truncate text-sm/5"
           onClick={onClear}
-          className="cursor-pointer truncate text-sm/5 text-secondary-foreground outline-none hover:text-foreground hover:underline focus-visible:underline"
         >
           {t('content.selection.clearAll')}
-        </button>
+        </TextButton>
       ) : canWiden ? (
-        <button
-          type="button"
+        <TextButton
+          className="truncate text-sm/5"
           onClick={onWiden}
           disabled={resolving}
-          className="cursor-pointer truncate text-sm/5 font-medium text-accent outline-none hover:underline focus-visible:underline disabled:opacity-60"
         >
           {t('content.selection.selectAll', {
             count: total,
             formatted: n(total),
           })}
-        </button>
+        </TextButton>
       ) : (
         elsewhere > 0 && (
           <span className="truncate text-sm/5 text-secondary-foreground">

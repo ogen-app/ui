@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -32,6 +33,7 @@ import type { AssetListItem } from '@/types/assetList'
 import type { DistillRun } from '@/types/brandDistill'
 import { StarterCard } from '../shell'
 import { GroupLabel } from './parts'
+import { TextButton } from '@/components/ui/text-button'
 
 type Route = 'website' | 'document' | 'questions'
 
@@ -131,13 +133,9 @@ export function OfferRoutes() {
                 ·
               </span>
             )}
-            <button
-              type="button"
-              onClick={() => choose(route)}
-              className="cursor-pointer font-medium text-accent hover:underline"
-            >
+            <TextButton onClick={() => choose(route)}>
               {t(`brand.shell.offer.${route}.title`)}
-            </button>
+            </TextButton>
           </span>
         ))}
       </p>
@@ -266,10 +264,14 @@ function WebsiteRoute({
         </Button>
         <Button
           type="submit"
-          variant="defaultInverted"
+          variant="accent"
           loading={busy}
           disabled={url.trim() === ''}
         >
+          <Logo
+            variant="mark"
+            className="size-4 shrink-0 [&_path:first-of-type]:fill-primary"
+          />
           {t('brand.distill.website.read')}
         </Button>
       </div>
@@ -472,11 +474,15 @@ function DocumentRoute({
             {t('brand.distill.cancel')}
           </Button>
           <Button
-            variant="defaultInverted"
+            variant="accent"
             loading={busy || waiting}
             disabled={count === 0}
             onClick={read}
           >
+            <Logo
+              variant="mark"
+              className="size-4 shrink-0 [&_path:first-of-type]:fill-primary"
+            />
             {t('brand.distill.document.read', { count })}
           </Button>
         </div>

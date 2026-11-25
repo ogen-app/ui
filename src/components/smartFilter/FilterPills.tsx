@@ -18,6 +18,8 @@ import type {
   SmartToken,
 } from '@/lib/smartFilter'
 import { AddDetail, ClausePanel, ClauseWords } from './FilterParts'
+import { TextButton } from '@/components/ui/text-button'
+import { Button } from '@/components/ui/button'
 
 type Opened<Field> = { field: Field; negated: boolean }
 
@@ -223,14 +225,15 @@ export function FilterPills<F, Field extends string>({
                 {words}
               </button>
             )}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xsIcon"
+              className="shrink-0"
               onClick={() => removeToken(token)}
               aria-label={t('sentence.remove', { clause: plain })}
-              className="flex size-4 shrink-0 cursor-pointer items-center justify-center text-secondary-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-accent"
             >
               <XIcon className="size-3" />
-            </button>
+            </Button>
           </span>
         )
       })}
@@ -263,13 +266,9 @@ export function FilterPills<F, Field extends string>({
         <span className={cn('flex items-center gap-3', !inline && 'ml-auto')}>
           {trailing}
           {clearable && narrowed && (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="cursor-pointer text-secondary-foreground outline-none hover:text-foreground focus-visible:underline"
-            >
+            <TextButton tone="quiet" onClick={clearAll}>
               {t('sentence.clearAll')}
-            </button>
+            </TextButton>
           )}
         </span>
       )}

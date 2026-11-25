@@ -10,6 +10,7 @@ import { useWorkspaceMembers } from '@/hooks/useWorkspaces'
 import { cn } from '@/lib'
 import { identityAbbr, identityColorVar } from '@/lib/identity'
 import { useAuthStore } from '@/stores/authStore'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * The prompts the field opens with, one picked per visit (CON-388). Each says
@@ -150,7 +151,7 @@ export function IdeaCapture({
       <div className="flex min-w-0 items-start gap-3 py-[7px] pr-[7px] pl-3">
         <span
           aria-hidden
-          className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-primary"
+          className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-mark font-semibold text-primary"
           style={{ background: identityColorVar(writer.id ?? writer.name) }}
         >
           {identityAbbr(writer.name)}
@@ -244,22 +245,18 @@ export function IdeaCapture({
               <span className="min-w-0 truncate">
                 {t('ideas.capture.unsaved', { title: draft.title })}
               </span>
-              <button
-                type="button"
-                onClick={() => retry(draft)}
-                className="shrink-0 cursor-pointer font-medium text-foreground underline underline-offset-3"
-              >
+              <TextButton className="shrink-0" onClick={() => retry(draft)}>
                 {t('ideas.capture.retry')}
-              </button>
-              <button
-                type="button"
+              </TextButton>
+              <TextButton
+                tone="quiet"
+                className="shrink-0"
                 onClick={() =>
                   setUnsaved((all) => all.filter((d) => d.id !== draft.id))
                 }
-                className="shrink-0 cursor-pointer text-secondary-foreground underline underline-offset-3"
               >
                 {t('ideas.capture.dismiss')}
-              </button>
+              </TextButton>
             </p>
           ))}
         </div>

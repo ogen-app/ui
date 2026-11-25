@@ -32,7 +32,7 @@ export function PlannedPostPanel({ post }: { post: Post }) {
     )
   }
 
-  // Ogen's action, and the card's point: black, with the mark.
+  // Ogen's action, and the card's point: teal, with the mark in white.
   return (
     <Card
       title={t('ideas.lifecycle.noBody')}

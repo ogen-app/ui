@@ -86,7 +86,7 @@ export function AssetBar({
 
       <div className="ml-auto flex min-w-0 items-center gap-2">
         {typeof lens === 'string' ? (
-          <span className="truncate text-[13px] text-tertiary-foreground">
+          <span className="truncate text-xs text-tertiary-foreground">
             {lens}
           </span>
         ) : (

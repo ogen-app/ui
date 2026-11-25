@@ -41,7 +41,7 @@ type CampaignTabBarProps = {
  */
 function TabCount({ value }: { value: number }) {
   return (
-    <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-sm bg-primary-foreground/8 px-1 font-mono text-[10px] leading-none">
+    <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-sm bg-primary-foreground/8 px-1 font-mono text-mark leading-none">
       {value}
     </span>
   )

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useFormContext } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 
@@ -8,7 +9,6 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextSelect } from '@/components/ui/text-select'
-import { cn } from '@/lib'
 import {
   WEEKDAY_TOKENS,
   isValidClock,
@@ -16,28 +16,26 @@ import {
 } from '@/lib/campaignScheduling'
 import { describeTimeZone, timeZoneNames } from '@/lib/timeZones'
 import type { StrategyFormValues } from './schema'
+import { ToggleTile } from '@/components/ui/toggle-tile'
+import { formatDate } from '@/lib/intl'
 
 // The server's own token order is Monday-first, which is also how a publishing
 // week reads even where the calendar starts on Sunday — so the picker walks the
-// tokens as they come.
-const DAY_LABELS: Record<WeekdayToken, string> = {
-  mon: 'Mon',
-  tue: 'Tue',
-  wed: 'Wed',
-  thu: 'Thu',
-  fri: 'Fri',
-  sat: 'Sat',
-  sun: 'Sun',
-}
-
-const DAY_NAMES: Record<WeekdayToken, string> = {
-  mon: 'Monday',
-  tue: 'Tuesday',
-  wed: 'Wednesday',
-  thu: 'Thursday',
-  fri: 'Friday',
-  sat: 'Saturday',
-  sun: 'Sunday',
+// tokens as they come. Their names are `Intl`'s, in the app's language:
+// 1 January 2024 was a Monday.
+function dayName(
+  token: WeekdayToken,
+  weekday: 'short' | 'long',
+  locale: string,
+): string {
+  const offset = WEEKDAY_TOKENS.indexOf(token)
+  return (
+    formatDate(
+      new Date(Date.UTC(2024, 0, 1 + offset)),
+      { weekday, timeZone: 'UTC' },
+      locale,
+    ) ?? token
+  )
 }
 
 const SPREAD_OPTIONS = [
@@ -57,6 +55,7 @@ const SPREAD_OPTIONS = [
  * places each generated draft.
  */
 export function SchedulingCard() {
+  const { i18n } = useTranslation()
   const form = useFormContext<StrategyFormValues>()
   const publishingTime = form.watch('publishing_time')
   const timezone = form.watch('timezone')
@@ -197,22 +196,13 @@ export function SchedulingCard() {
           {WEEKDAY_TOKENS.map((token) => {
             const on = enabledDays.has(token)
             return (
-              <button
+              <ToggleTile
                 key={token}
-                type="button"
-                role="switch"
-                aria-checked={on}
-                aria-label={DAY_NAMES[token]}
-                onClick={() => toggleDay(token)}
-                className={cn(
-                  'flex h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border',
-                  'px-2 text-[13px] font-medium',
-                  'transition-colors cursor-pointer',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  on
-                    ? 'border-transparent bg-tertiary text-foreground'
-                    : 'border-senary-foreground bg-transparent text-tertiary-foreground line-through',
-                )}
+                on={on}
+                onToggle={() => toggleDay(token)}
+                aria-label={dayName(token, 'long', i18n.language)}
+                label={dayName(token, 'short', i18n.language)}
+                className="flex-col gap-1"
               >
                 {/* A tick on a day that publishes and a cross on one that is
                     skipped: the strike-through alone read as a day that was
@@ -223,8 +213,7 @@ export function SchedulingCard() {
                   strokeWidth={1.5}
                   aria-hidden
                 />
-                {DAY_LABELS[token]}
-              </button>
+              </ToggleTile>
             )
           })}
         </div>
@@ -233,7 +222,7 @@ export function SchedulingCard() {
         <p className="text-xs text-tertiary-foreground">
           {skipped.length === 0
             ? 'Publishing on every day of the week.'
-            : `Skipping ${skipped.map((t) => DAY_NAMES[t]).join(', ')}.`}
+            : `Skipping ${skipped.map((d) => dayName(d, 'long', i18n.language)).join(', ')}.`}
         </p>
       </div>
     </Card>

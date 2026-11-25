@@ -8,6 +8,7 @@ import {
   WarningCircleIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { TextButton, textButtonVariants } from '@/components/ui/text-button'
 import { Calendar } from '@/components/ui/calendar'
 import {
   DropdownMenu,
@@ -105,7 +106,10 @@ export function SchedulingDetails({
               href={liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex shrink-0 items-center gap-1.5 text-sm text-primary-foreground underline underline-offset-4"
+              className={cn(
+                textButtonVariants(),
+                'flex shrink-0 items-center gap-1.5 text-sm',
+              )}
             >
               {t('posts.publishedLink.view')}
               <ArrowSquareOutIcon className="size-3.5 shrink-0" />
@@ -115,14 +119,9 @@ export function SchedulingDetails({
         {unlinked && (
           <>
             <Dot />
-            <Button
-              variant="link"
-              size="excluded"
-              className="shrink-0 text-sm underline underline-offset-4"
-              onClick={onAddPostLink}
-            >
+            <TextButton className="shrink-0 text-sm" onClick={onAddPostLink}>
               {t('posts.publishedLink.add')}
-            </Button>
+            </TextButton>
           </>
         )}
       </span>

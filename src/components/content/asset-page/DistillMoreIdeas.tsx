@@ -20,6 +20,7 @@ import {
 } from '@/lib/ideaDistill'
 import type { AssetAnalysis, IdeaDistillRun } from '@/types/assetAnalysis'
 import { DistillIdeasModal, type DistillDraft } from './DistillIdeasModal'
+import { TextButton } from '@/components/ui/text-button'
 
 type Distill = ReturnType<typeof useIdeaDistill>
 
@@ -125,7 +126,7 @@ export function DistillMoreIdeas({
           disabled={reason !== null}
           aria-describedby={reason ? reasonId : undefined}
           onClick={() => openWith()}
-          className="disabled:opacity-50"
+          className="text-foreground disabled:opacity-50"
         >
           <HugeiconsIcon icon={AiChemistry02Icon} size={16} aria-hidden />
           {t('assetInsights.distill.action')}
@@ -187,14 +188,13 @@ function OutcomeRow({
 }) {
   const { t } = useTranslation()
   const tryAgain = run && (
-    <button
-      type="button"
+    <TextButton
+      className="text-sm"
       disabled={pending}
       onClick={() => onTryAgain(run)}
-      className="cursor-pointer text-sm font-medium text-accent hover:underline disabled:cursor-default disabled:opacity-50"
     >
       {t('assetInsights.distill.tryAgain')}
-    </button>
+    </TextButton>
   )
   const seePlans = (
     <Link
@@ -292,7 +292,7 @@ function StatusRow({
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-sm/6 font-medium text-foreground">{title}</p>
         {body && (
-          <p className="text-[13px]/[19px] text-secondary-foreground">{body}</p>
+          <p className="text-sm/[19px] text-secondary-foreground">{body}</p>
         )}
       </div>
       {action && <span className="flex h-6 items-center">{action}</span>}

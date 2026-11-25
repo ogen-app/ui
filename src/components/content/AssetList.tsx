@@ -32,6 +32,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useUploadStore, type UploadItem } from '@/stores/uploadStore'
 import type { AssetGroupCount, AssetListItem } from '@/types/assetList'
 import { AssetListRow, StateRing } from './AssetListRow'
+import { Button } from '@/components/ui/button'
 
 type Props = {
   /** The list's head (`CardHead`), its first item and the edge it pins by. */
@@ -296,26 +297,26 @@ function UploadCard({ file }: { file: UploadItem }) {
         {/* Not for a file this client refused before sending it — the same
             file fails the same check again. */}
         {failed && file.kind !== null && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="rowIcon"
             aria-label={t('content.list.retryUpload', { name: file.filename })}
             onClick={() => retry(file.id)}
-            className="flex size-6 cursor-pointer items-center justify-center rounded-button text-secondary-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ArrowsClockwiseIcon className="size-4" />
-          </button>
+          </Button>
         )}
         {failed && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="rowIcon"
             aria-label={t('content.list.dismissUpload', {
               name: file.filename,
             })}
             onClick={() => remove(file.id)}
-            className="flex size-6 cursor-pointer items-center justify-center rounded-button text-secondary-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
             <XIcon className="size-4" />
-          </button>
+          </Button>
         )}
       </span>
     </li>

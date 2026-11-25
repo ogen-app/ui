@@ -90,7 +90,7 @@ export function WorkspaceResults({
 }
 
 /** A figure's own type: Plex Mono, regular, so columns of them line up. */
-const FIGURE = 'font-mono text-[13px] font-normal tabular-nums'
+const FIGURE = 'font-mono text-sm font-normal tabular-nums'
 
 /** A label and its value on a hairline; amber when it is the bad news. */
 function Line({
@@ -122,7 +122,7 @@ function Line({
         {value}
       </span>
       {detail && (
-        <span className="max-w-[45%] shrink-0 truncate text-[12.5px] text-tertiary-foreground">
+        <span className="max-w-[45%] shrink-0 truncate text-xs text-tertiary-foreground">
           {detail}
         </span>
       )}
@@ -132,7 +132,7 @@ function Line({
 
 function CiteFooter({ children }: { children: ReactNode }) {
   return (
-    <p className="border-t border-border pt-2.5 text-[12.5px] text-tertiary-foreground">
+    <p className="border-t border-border pt-2.5 text-xs text-tertiary-foreground">
       {children}
     </p>
   )
@@ -295,9 +295,7 @@ function ActivityCard({ activity: a }: { activity: ActivityRange }) {
               : t('assistant.workspace.activity.failedUntitled')}
           </span>
           {p.reason && (
-            <span className="text-[12.5px] text-tertiary-foreground">
-              {p.reason}
-            </span>
+            <span className="text-xs text-tertiary-foreground">{p.reason}</span>
           )}
         </ResultRow>
       ))}
@@ -310,7 +308,7 @@ function ActivityCard({ activity: a }: { activity: ActivityRange }) {
               </span>
               <span
                 className={cn(
-                  'truncate text-[12.5px]',
+                  'truncate text-xs',
                   d.failed > 0
                     ? 'text-warning-ink'
                     : 'text-tertiary-foreground',
@@ -334,14 +332,14 @@ function ActivityCard({ activity: a }: { activity: ActivityRange }) {
         days.length <= 7 &&
         a.days.length > 0 &&
         nothing.length > 0 && (
-          <p className="pt-2.5 text-[12.5px] text-secondary-foreground">
+          <p className="pt-2.5 text-xs text-secondary-foreground">
             {t('assistant.workspace.activity.nothingDays', {
               days: formatList(nothing.map((d) => weekday(d))),
             })}
           </p>
         )}
       {quiet && (
-        <p className="pt-2.5 text-[12.5px] text-secondary-foreground">
+        <p className="pt-2.5 text-xs text-secondary-foreground">
           {next
             ? t('assistant.workspace.activity.quietNext', {
                 when: t('assistant.workspace.activity.nextAt', {
@@ -393,13 +391,13 @@ function Tiles({
         >
           <span
             className={cn(
-              'font-mono text-[22px] leading-none font-normal tabular-nums',
+              'font-mono text-xl leading-none font-normal tabular-nums',
               tile.warn ? 'text-warning-ink' : 'text-foreground',
             )}
           >
             {formatNumber(tile.value)}
           </span>
-          <span className="text-[11.5px] leading-tight text-secondary-foreground">
+          <span className="text-xs leading-tight text-secondary-foreground">
             {tile.label}
           </span>
         </div>
@@ -457,7 +455,7 @@ function DigestCard({ digest: d }: { digest: WeeklyDigest }) {
         <p className="pb-2 text-sm text-secondary-foreground">{d.lede}</p>
       )}
       {d.empty && (
-        <ResultRow className="text-[12.5px] text-tertiary-foreground">
+        <ResultRow className="text-xs text-tertiary-foreground">
           {t('assistant.workspace.digest.empty')}
         </ResultRow>
       )}
@@ -465,9 +463,7 @@ function DigestCard({ digest: d }: { digest: WeeklyDigest }) {
         <ResultRow key={i} className="flex flex-col gap-0.5 text-sm">
           <span className="text-warning-ink">{a.text}</span>
           {a.detail && (
-            <span className="text-[12.5px] text-tertiary-foreground">
-              {a.detail}
-            </span>
+            <span className="text-xs text-tertiary-foreground">{a.detail}</span>
           )}
         </ResultRow>
       ))}
@@ -492,7 +488,7 @@ function DigestCard({ digest: d }: { digest: WeeklyDigest }) {
             />
           )}
           {d.publishing.nextWeek && (
-            <ResultRow className="text-[12.5px] text-tertiary-foreground">
+            <ResultRow className="text-xs text-tertiary-foreground">
               {d.publishing.nextWeek}
             </ResultRow>
           )}
@@ -524,7 +520,7 @@ function DigestCard({ digest: d }: { digest: WeeklyDigest }) {
             />
           ))}
           {d.campaigns.summary && (
-            <ResultRow className="text-[12.5px] text-tertiary-foreground">
+            <ResultRow className="text-xs text-tertiary-foreground">
               {d.campaigns.summary}
             </ResultRow>
           )}
@@ -548,7 +544,7 @@ function DigestCard({ digest: d }: { digest: WeeklyDigest }) {
               figure
             />
           ) : (
-            <ResultRow className="text-[12.5px] text-secondary-foreground">
+            <ResultRow className="text-xs text-secondary-foreground">
               {[d.ideas.waiting, d.ideas.summary].filter(Boolean).join(' · ')}
             </ResultRow>
           )}
@@ -557,7 +553,7 @@ function DigestCard({ digest: d }: { digest: WeeklyDigest }) {
       {d.team && (
         <>
           <Group>{t('assistant.workspace.digest.team')}</Group>
-          <ResultRow className="text-[12.5px] text-secondary-foreground">
+          <ResultRow className="text-xs text-secondary-foreground">
             {d.team}
           </ResultRow>
         </>
@@ -601,7 +597,7 @@ function EmailedCard({ emailed: e }: { emailed: DigestSent }) {
             })}
           </span>
           {s.reason === 'not_member' && (
-            <span className="text-[12.5px] text-tertiary-foreground">
+            <span className="text-xs text-tertiary-foreground">
               {t('assistant.workspace.emailed.invite')}
             </span>
           )}
@@ -650,7 +646,7 @@ function EmailedCard({ emailed: e }: { emailed: DigestSent }) {
         <span className="text-sm text-foreground">
           {formatList(e.sent.map((r) => r.name || r.email))}
         </span>
-        <span className="text-[12.5px] text-tertiary-foreground">
+        <span className="text-xs text-tertiary-foreground">
           {t('assistant.workspace.digest.weekOf', { week: weekOf(e.from) })}
         </span>
       </ResultRow>
@@ -863,14 +859,14 @@ function HistoryCard({ history: h }: { history: PostHistory }) {
       }
     >
       {h.entries.length === 0 && (
-        <ResultRow className="text-[12.5px] text-tertiary-foreground">
+        <ResultRow className="text-xs text-tertiary-foreground">
           {t('assistant.workspace.history.none')}
         </ResultRow>
       )}
       {h.entries.map((e, i) => (
         <Fragment key={`${e.at}-${i}`}>
           {i === noteAt && (
-            <p className="border-t border-border py-2.5 text-[12.5px] text-secondary-foreground">
+            <p className="border-t border-border py-2.5 text-xs text-secondary-foreground">
               {note}
             </p>
           )}
@@ -883,16 +879,12 @@ function HistoryCard({ history: h }: { history: PostHistory }) {
             >
               {entryWhat(t, e, tz)}
             </span>
-            <span
-              className={cn(FIGURE, 'text-[12px] text-tertiary-foreground')}
-            >
+            <span className={cn(FIGURE, 'text-xs text-tertiary-foreground')}>
               {entryWhen(e.at, tz)}
             </span>
-            <span className="text-[12.5px] text-tertiary-foreground">
-              {by(e)}
-            </span>
+            <span className="text-xs text-tertiary-foreground">{by(e)}</span>
             {e.version ? (
-              <span className="text-right text-[12.5px] text-tertiary-foreground">
+              <span className="text-right text-xs text-tertiary-foreground">
                 {t('assistant.workspace.history.versionTag', { n: e.version })}
               </span>
             ) : (
@@ -902,7 +894,7 @@ function HistoryCard({ history: h }: { history: PostHistory }) {
         </Fragment>
       ))}
       {h.more && (
-        <ResultRow className="text-[12.5px] text-tertiary-foreground">
+        <ResultRow className="text-xs text-tertiary-foreground">
           {t('assistant.workspace.history.more')}
         </ResultRow>
       )}
@@ -1128,7 +1120,7 @@ function AutoPublishCard({
       }
       action={<UndoAction t={t} undoId={c.undoId} undo={undo} />}
     >
-      <ResultRow className="text-[12.5px] text-tertiary-foreground">
+      <ResultRow className="text-xs text-tertiary-foreground">
         {c.scheduledUnaffected > 0
           ? t(
               'assistant.workspace.autoPublish.keep',

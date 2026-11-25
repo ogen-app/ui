@@ -5,6 +5,7 @@ import { Section } from './InsightSection'
 import { Bullets } from './MeetingNotes'
 import { summaryHasMore } from '@/lib/assetAnalysis'
 import { SummaryLead, SummaryText } from './SummaryText'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * The reading (CON-369): the summary's lead, then the key points — and the
@@ -54,16 +55,15 @@ export function ReadingSummary({
           </p>
         )}
         {more && (
-          <button
-            type="button"
+          <TextButton
+            className="text-sm"
             aria-expanded={whole}
             onClick={() => setWhole((w) => !w)}
-            className="cursor-pointer text-sm font-medium text-accent hover:underline"
           >
             {whole
               ? t('assetInsights.cards.readLess')
               : t('assetInsights.cards.readWhole')}
-          </button>
+          </TextButton>
         )}
       </div>
       {note}

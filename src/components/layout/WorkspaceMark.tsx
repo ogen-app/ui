@@ -28,7 +28,7 @@ export function WorkspaceMark({
       aria-hidden="true"
       style={{ backgroundColor: identityColorVar(id) }}
       className={cn(
-        'flex size-6 shrink-0 items-center justify-center font-grotesk text-[10px] font-bold leading-none uppercase text-primary',
+        'flex size-6 shrink-0 items-center justify-center font-grotesk text-mark font-bold leading-none uppercase text-primary',
         className,
       )}
     >

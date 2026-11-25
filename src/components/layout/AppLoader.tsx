@@ -58,7 +58,7 @@ export function AppLoader({ isLoading, title, message }: AppLoaderProps) {
           {title}
         </span>
         {message && (
-          <p className="text-[14px] leading-[24px] text-tertiary-foreground">
+          <p className="text-sm leading-[24px] text-tertiary-foreground">
             {message}
           </p>
         )}

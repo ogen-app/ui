@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BubbleChatQuestionIcon } from '@hugeicons/core-free-icons'
 import { useTranslation } from 'react-i18next'
+import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -146,11 +147,15 @@ export function GapQuestions({
           {t(`brand.distill.gaps.note.${route}` as const)}
         </p>
         <Button
-          variant="defaultInverted"
+          variant="accent"
           loading={busy}
           disabled={answers.length === 0}
           onClick={() => onAsk(answers)}
         >
+          <Logo
+            variant="mark"
+            className="size-4 shrink-0 [&_path:first-of-type]:fill-primary"
+          />
           {t('brand.distill.gaps.ask')}
         </Button>
       </div>

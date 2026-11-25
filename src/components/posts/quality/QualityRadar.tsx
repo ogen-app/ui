@@ -107,10 +107,10 @@ export function QualityRadar({
   return (
     <section className="flex flex-col gap-3">
       <div className="relative grid grid-cols-2 gap-4 pr-8">
-        <span className="text-right font-grotesk text-[11px] font-semibold uppercase tracking-[0.06em] text-tertiary-foreground">
+        <span className="text-right font-grotesk text-xs font-semibold uppercase tracking-[0.06em] text-tertiary-foreground">
           {t('posts.quality.radar.writing')}
         </span>
-        <span className="truncate font-grotesk text-[11px] font-semibold uppercase tracking-[0.06em] text-tertiary-foreground">
+        <span className="truncate font-grotesk text-xs font-semibold uppercase tracking-[0.06em] text-tertiary-foreground">
           {platformName
             ? t('posts.quality.radar.channel', { platform: platformName })
             : t('posts.quality.radar.channelGeneric')}
@@ -219,7 +219,7 @@ export function QualityRadar({
                 style={{ paintOrder: 'stroke' }}
                 strokeWidth={3}
                 strokeLinejoin="round"
-                className="fill-tertiary-foreground stroke-primary text-[9.5px]"
+                className="fill-tertiary-foreground stroke-primary text-mark"
               >
                 {score}
               </text>

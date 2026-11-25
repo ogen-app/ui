@@ -36,7 +36,7 @@ export function SheetStage({
   return (
     <div className="flex w-full flex-col border-b border-quaternary bg-primary">
       <div className="relative overflow-hidden px-5 pt-6" aria-hidden>
-        <table className="w-full table-fixed border-collapse text-[11px]">
+        <table className="w-full table-fixed border-collapse text-xs">
           <thead>
             <tr className="bg-secondary text-secondary-foreground">
               <th className="w-7 border border-quaternary" />

@@ -589,7 +589,7 @@ be judged from a screenshot of any of them.
   on the section's own tab. §9's rule survives at index length.
 
 - **An entry row is three lines, not a line with numbers in the margin.** Name
-  in semibold, description a step down at 13px and capped at two lines, counts
+  in semibold, description at the reading size (`text-sm`) and capped at two lines, counts
   on a third line at the same size, set back. The description sits near label
   size because it is what you compare *between* rows rather than a footnote to
   the name — but not *at* label size, or the row has no top line. The counts had

@@ -311,7 +311,7 @@ function TaskRow({
                 // knocked-out black would be the loudest thing on a screen
                 // whose job is the titles.
                 <Avatar className="size-6">
-                  <AvatarFallback className="bg-quaternary text-[10px] font-medium text-tertiary-foreground">
+                  <AvatarFallback className="bg-quaternary text-mark font-medium text-tertiary-foreground">
                     {identityAbbr(assigneeName ?? '')}
                   </AvatarFallback>
                 </Avatar>
@@ -368,7 +368,7 @@ function TaskRow({
                 card: the lightest rule the palette has, and 8px either side of
                 it. The two things it separates belong to each other. */}
             <div className="flex items-center justify-between gap-3 border-t border-quaternary pt-2">
-              <p className="min-w-0 text-[13px] leading-5 text-tertiary-foreground">
+              <p className="min-w-0 text-xs leading-5 text-tertiary-foreground">
                 {record}
               </p>
               {/* A bin rather than the words: the row underneath is one line,

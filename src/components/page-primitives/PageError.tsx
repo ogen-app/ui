@@ -33,7 +33,7 @@ export function PageError({
       <div className="flex-1 flex h-0 items-center justify-center gap-4">
         {children ?? (
           <div className="flex flex-col gap-4 items-center justify-stretch max-w-xl px-4">
-            <span className="text-[11px] leading-4 font-medium font-sans tracking-[0.03em] text-tertiary-foreground">
+            <span className="text-xs leading-4 font-medium font-sans tracking-[0.03em] text-tertiary-foreground">
               {subHeader}
             </span>
             <span className="text-[2rem] leading-[46px] font-medium font-display tracking-tight">
@@ -43,7 +43,7 @@ export function PageError({
                 On a page with nothing else to read, this sentence is the whole
                 explanation, and at that size and weight it was closer to a
                 watermark than to copy. */}
-            <p className="text-[16px] leading-7 text-secondary-foreground">
+            <p className="text-base leading-7 text-secondary-foreground">
               {message}
             </p>
             {action && <div className="mt-4">{action}</div>}

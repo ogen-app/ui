@@ -9,6 +9,7 @@ import {
 
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
+import { GradientButton } from '@/components/ui/gradient-button'
 import type { StatusTone } from '@/components/ui/status-badge'
 import { TextSelect } from '@/components/ui/text-select'
 import { cn } from '@/lib'
@@ -27,7 +28,8 @@ import { cn } from '@/lib'
  *   the door and lifts on hover, or only the heading is, when rows inside open
  *   on their own (a link can't sit inside a link).
  * - an `action`: one button — the AI, a move, a destructive step. White with
- *   a border, or black when it is the card's point (`accent`); never grey.
+ *   a border, or black when it is the card's point (`accent`) — teal with
+ *   the white mark when that point is handed to Ogen; never grey.
  *   Labels are in sentence case. A destructive one is white with its
  *   icon in the danger colour, so it always carries an icon. Never a
  *   submit: saving is automatic.
@@ -67,8 +69,17 @@ export type CardAction = {
   label: string
   /** A Hugeicon, or `'ogen'` for Ogen's mark when the action is Ogen's. */
   icon?: IconSvgElement | 'ogen'
-  /** Black rather than white: the one action the card is for. */
+  /**
+   * Filled rather than white: the one action the card is for. Black, or
+   * the brand's teal with the white mark when `icon` is `'ogen'`.
+   */
   accent?: boolean
+  /**
+   * Ogen does it, and it is the card's whole offer ("Fix with Ogen"):
+   * `GradientButton`, the mark and the words in the sweep. The rows under it
+   * keep the plain button with the mark.
+   */
+  gradient?: boolean
   onClick: () => void
   disabled?: boolean
   /** The button's own spinner, while what it started is running. */
@@ -247,21 +258,55 @@ function End({
 }) {
   const { t } = useTranslation()
   if (action) {
-    const { label, icon, accent, onClick, disabled, loading, destructive } =
-      action
+    const {
+      label,
+      icon,
+      accent,
+      gradient,
+      onClick,
+      disabled,
+      loading,
+      destructive,
+    } = action
+    if (gradient)
+      return (
+        <GradientButton
+          type="button"
+          size="sm"
+          onClick={onClick}
+          disabled={disabled}
+          loading={loading}
+        >
+          {label}
+        </GradientButton>
+      )
+    // The card's point handed to Ogen is the brand's teal with the mark in
+    // white; any other point is black.
+    const ogensPoint = accent && icon === 'ogen'
     return (
       <Button
         type="button"
         size="sm"
         variant={
-          destructive ? 'destructive' : accent ? 'defaultInverted' : 'outline'
+          destructive
+            ? 'destructive'
+            : ogensPoint
+              ? 'accent'
+              : accent
+                ? 'defaultInverted'
+                : 'outline'
         }
         onClick={onClick}
         disabled={disabled}
         loading={loading}
       >
         {icon === 'ogen' ? (
-          <Logo variant="mark" />
+          <Logo
+            variant="mark"
+            className={
+              ogensPoint ? '[&_path:first-of-type]:fill-primary' : undefined
+            }
+          />
         ) : (
           icon && <HugeiconsIcon icon={icon} strokeWidth={1.5} />
         )}
@@ -290,14 +335,15 @@ function End({
     )
   if (onDismiss)
     return (
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="rowIcon"
+        className="-m-1"
         onClick={onDismiss}
         aria-label={dismissLabel ?? t('common.close')}
-        className="-m-1 cursor-pointer p-1 text-tertiary-foreground hover:text-foreground"
       >
         <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.5} />
-      </button>
+      </Button>
     )
   return null
 }

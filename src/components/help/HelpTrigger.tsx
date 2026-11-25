@@ -1,6 +1,7 @@
 import { Question } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
+import { Button } from '@/components/ui/button'
 import { useFeatureFlag } from '@/config/featureFlags'
 import { useHelpIndex } from '@/hooks/useHelp'
 import type { HelpTopic } from '@/lib/helpTopics'
@@ -30,17 +31,16 @@ export function HelpTrigger({
   if (!enabled || !articleKey) return null
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="rowIcon"
       onClick={() => open(articleKey)}
       aria-label={t('help.trigger.label')}
       title={t('help.trigger.label')}
-      className={cn(
-        'text-tertiary-foreground hover:text-foreground inline-flex size-5 cursor-pointer items-center justify-center rounded-full transition-colors',
-        className,
-      )}
+      // 24px to press, 20px in the line: the heading beside it keeps its height.
+      className={cn('-m-0.5 rounded-full', className)}
     >
-      <Question size={14} weight="bold" />
-    </button>
+      <Question />
+    </Button>
   )
 }

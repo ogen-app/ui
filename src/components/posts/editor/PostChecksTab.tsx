@@ -30,6 +30,8 @@ import { QualityInlineSummary } from '../quality/QualityInlineSummary'
 import type { PostEvaluation } from '@/types/quality'
 import type { PostStatus } from '@/types/posts'
 import { SmallHeading } from '@/components/page-primitives/SmallHeading'
+import { TextButton } from '@/components/ui/text-button'
+import { GradientMark } from '@/components/ui/gradient-button'
 
 type Props = {
   checks: PostCheck[]
@@ -154,7 +156,7 @@ export function PostChecksTab({
               showChecks && 'border-t border-border pt-5',
             )}
           >
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-baseline justify-between gap-3">
               <SmallHeading as="h3">
                 {t('posts.quality.inlineHeading')}
               </SmallHeading>
@@ -379,16 +381,20 @@ function AssessLink({
   }
 
   return (
-    <button
-      type="button"
-      onClick={onAssess}
-      className="flex shrink-0 items-center gap-1.5 text-tertiary-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
-    >
-      <SparkleIcon className="size-4" />
-      <span>
+    // Inline, not a flex box: the words carry the baseline, so the link sits
+    // on its heading's line; the mark rides the text like a glyph.
+    // At the heading's 12px: a link bigger than the heading it answers
+    // outweighs it.
+    <TextButton className="shrink-0 text-xs" onClick={onAssess}>
+      <GradientMark
+        icon={SparkleIcon}
+        weight="bold"
+        className="mr-1 size-3.5"
+      />
+      <span className="text-sweep">
         {assessment ? t('posts.quality.reassess') : t('posts.quality.assess')}
       </span>
-    </button>
+    </TextButton>
   )
 }
 

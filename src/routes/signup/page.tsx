@@ -54,7 +54,7 @@ function InviteScreen({ token }: { token: string }) {
       <AppAuth
         title={t('auth.testerInvite.title')}
         form={
-          <p className="text-[13px] leading-5 text-secondary-foreground">
+          <p className="text-sm leading-5 text-secondary-foreground">
             {t('common.loading')}
           </p>
         }
@@ -116,10 +116,7 @@ function InviteScreen({ token }: { token: string }) {
 /** Board 1B: the reason sits under the heading, and both ways in stay open. */
 function MismatchNotice({ email }: { email: string }) {
   return (
-    <p
-      role="alert"
-      className="flex gap-2 text-[13px] leading-5 text-destructive"
-    >
+    <p role="alert" className="flex gap-2 text-sm leading-5 text-destructive">
       <WarningCircleIcon size={16} className="mt-0.5 shrink-0" aria-hidden />
       <span>
         <Trans
@@ -195,7 +192,7 @@ function SignedIn({ token, invited }: { token: string; invited: string }) {
       subtitle={user?.email}
       form={
         <div className="flex flex-col gap-6">
-          <p className="text-[13px] leading-5 text-secondary-foreground">
+          <p className="text-sm leading-5 text-secondary-foreground">
             {t('auth.testerInvite.signedInBody', { email: invited })}
           </p>
           <div className="flex flex-col gap-2">
@@ -239,7 +236,7 @@ function PrivateBeta() {
       title={t('auth.privateBeta.title')}
       subtitle={t('auth.privateBeta.body')}
       form={
-        <p className="flex gap-3 text-[13px] leading-5 text-secondary-foreground">
+        <p className="flex gap-3 text-sm leading-5 text-secondary-foreground">
           <EnvelopeSimpleIcon
             size={16}
             className="mt-0.5 shrink-0"

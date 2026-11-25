@@ -48,7 +48,7 @@ const TabsList = React.forwardRef<
 TabsList.displayName = TabsPrimitive.List.displayName
 
 const tabsTriggerVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap text-[11px] lg:text-[13px] font-medium ring-inset transition-all focus-visible:outline-none aria-invalid:ring-destructive/20 disabled:pointer-events-none disabled:opacity-50 cursor-pointer hover:text-foreground',
+  'inline-flex items-center justify-center whitespace-nowrap text-control font-medium ring-inset transition-all focus-visible:outline-none aria-invalid:ring-destructive/20 disabled:pointer-events-none disabled:opacity-50 cursor-pointer hover:text-foreground',
   {
     variants: {
       variant: {
@@ -61,11 +61,11 @@ const tabsTriggerVariants = cva(
           'rounded-t-md font-sans tracking-[.03em] border-b-3 pt-[3px] border-transparent px-2 lg:px-4 h-full ' +
           'data-[state=active]:border-primary-foreground data-[state=active]:text-foreground',
         switcher:
-          'rounded-none text-xs px-4 h-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ',
+          'rounded-none text-control px-4 h-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ',
         // Each segment mirrors the default Button: 32px tall, same radius and
         // type; the active one takes the button's white-on-black surface.
         segmented:
-          'h-8 rounded-md px-4 text-[13px]/4 text-secondary-foreground ' +
+          'h-8 rounded-md px-4 text-control text-secondary-foreground ' +
           'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground',
       },
       size: {

@@ -81,7 +81,7 @@ function InvitePage() {
         title={t('auth.invite.brokenTitle')}
         subtitle={t('auth.invite.brokenSubtitle')}
         form={
-          <p className="text-[13px] leading-5 text-secondary-foreground">
+          <p className="text-sm leading-5 text-secondary-foreground">
             {/* The link sits mid-sentence, so the sentence stays one key and
                 `<Trans>` places the anchor — translations move it. */}
             <Trans
@@ -107,7 +107,7 @@ function InvitePage() {
       <AppAuth
         title={t('auth.invite.title')}
         form={
-          <p className="text-[13px] leading-5 text-secondary-foreground">
+          <p className="text-sm leading-5 text-secondary-foreground">
             {t('common.loading')}
           </p>
         }

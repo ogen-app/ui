@@ -602,20 +602,21 @@ function WordField({
       {words.map((word) => (
         <span
           key={word}
-          className="inline-flex items-center gap-1.5 rounded-full bg-quaternary py-0.5 pl-2.5 pr-1 text-[12px] font-medium text-primary-foreground"
+          className="inline-flex items-center gap-1.5 rounded-full bg-quaternary py-0.5 pl-2.5 pr-1 text-xs font-medium text-primary-foreground"
         >
           {word}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xsIcon"
+            className="rounded-full"
             onClick={(e) => {
               e.stopPropagation()
               onChange(words.filter((w) => w !== word))
             }}
             aria-label={t('brand.guardrails.removeWord', { word })}
-            className="flex size-4 cursor-pointer items-center justify-center rounded-full hover:bg-foreground/10"
           >
             <XIcon className="size-3" />
-          </button>
+          </Button>
         </span>
       ))}
       <input
@@ -644,7 +645,7 @@ function WordField({
             onChange(words.slice(0, -1))
           }
         }}
-        className="min-w-[10ch] flex-1 bg-transparent text-[14px] font-medium outline-none placeholder:text-tertiary-foreground"
+        className="min-w-[10ch] flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-tertiary-foreground"
       />
     </div>
   )

@@ -6,6 +6,7 @@ import type { PlatformOption } from './types'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { formatDate, formatList } from '@/lib/intl'
 import { useAnalyticsHighlightStore } from '@/stores/analyticsHighlightStore'
+import { ToggleTile, toggleTileVariants } from '@/components/ui/toggle-tile'
 
 /** The picker's value for a range the address names. */
 const CUSTOM = 'custom'
@@ -199,12 +200,8 @@ function PlatformMark({
     platform: platform.label,
     accounts,
   })
-  // The period picker's box (`Picker`): 1px border, 6px/10px padding and a
-  // 16px line, so the two sit at one height in the header and read as one row
-  // of controls. The count rides inside rather than as a badge, as a button's
-  // label would.
-  const shape =
-    'inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium tabular-nums transition-colors'
+  // As tall as the period picker beside it (`Picker`), so the two read as
+  // one row of controls. The count rides inside, as a button's label would.
   const body = (
     <>
       {Icon ? (
@@ -231,25 +228,17 @@ function PlatformMark({
   )
 
   return onSelect ? (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={on}
-      title={title}
-      className={cn(
-        shape,
-        on
-          ? 'border-border bg-primary text-foreground hover:bg-secondary'
-          : 'border-border bg-transparent text-quaternary-foreground hover:bg-secondary',
-      )}
-    >
+    <ToggleTile size="sm" on={on} onToggle={onSelect} title={title}>
       {body}
-    </button>
+    </ToggleTile>
   ) : (
     // The only network connected: in the numbers, with nothing to press.
     <span
       title={title}
-      className={cn(shape, 'border-border bg-primary text-foreground')}
+      className={cn(
+        toggleTileVariants({ size: 'sm', on: true }),
+        'cursor-default hover:bg-tertiary',
+      )}
     >
       {body}
     </span>

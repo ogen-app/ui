@@ -15,6 +15,7 @@ import {
   type Sheet,
   type SheetRow,
 } from '@/lib/sheetChunks'
+import { TextButton } from '@/components/ui/text-button'
 
 /** How many pages a citation may pull in on its own before it waits. */
 const MAX_CITATION_PAGES = 10
@@ -146,7 +147,7 @@ export function SheetView({
                   aria-selected={active}
                   onClick={() => onSelect(s.name)}
                   className={cn(
-                    'flex h-8 cursor-pointer items-center gap-2 rounded-md px-3 text-[13px] font-medium',
+                    'flex h-8 cursor-pointer items-center gap-2 rounded-md px-3 text-control font-medium',
                     active
                       ? 'bg-primary-foreground text-primary'
                       : 'bg-tertiary text-secondary-foreground hover:text-foreground',
@@ -193,21 +194,13 @@ export function SheetView({
           </span>
           <span className="flex shrink-0 items-center gap-4">
             {onBack && (
-              <button
-                type="button"
-                onClick={onBack}
-                className="cursor-pointer font-medium text-accent hover:underline"
-              >
+              <TextButton onClick={onBack}>
                 {t('assetInsights.sheet.backToIdea')}
-              </button>
+              </TextButton>
             )}
-            <button
-              type="button"
-              onClick={onClearCited}
-              className="cursor-pointer font-medium text-accent hover:underline"
-            >
+            <TextButton onClick={onClearCited}>
               {t('assetInsights.sheet.clear')}
-            </button>
+            </TextButton>
           </span>
         </div>
       )}

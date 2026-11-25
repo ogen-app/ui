@@ -479,7 +479,7 @@ function ThreadPostPicker({
           })}
           className={cn(
             'flex w-32 items-center justify-between gap-1 px-1.5 py-1 cursor-pointer',
-            'bg-tertiary hover:bg-quaternary text-[11px] text-tertiary-foreground',
+            'bg-tertiary hover:bg-quaternary text-xs text-tertiary-foreground',
           )}
         >
           <span className="truncate">
@@ -611,7 +611,7 @@ function MediaTile({
           ) : (
             <ImageBrokenIcon className="size-6" />
           )}
-          <span className="text-[11px]">
+          <span className="text-xs">
             {kind === 'pdf'
               ? `${attachment.page_count || '?'} pages`
               : kind === 'video'
@@ -621,7 +621,7 @@ function MediaTile({
         </div>
       )}
 
-      <span className="absolute left-1 top-1 bg-primary/90 px-1 text-[11px] text-tertiary-foreground">
+      <span className="absolute left-1 top-1 bg-primary/90 px-1 text-xs text-tertiary-foreground">
         {index + 1}
       </span>
 
@@ -645,7 +645,7 @@ function MediaTile({
         </Tooltip>
       )}
 
-      <span className="absolute inset-x-0 bottom-0 truncate bg-primary/90 px-1 py-0.5 text-[11px] text-tertiary-foreground">
+      <span className="absolute inset-x-0 bottom-0 truncate bg-primary/90 px-1 py-0.5 text-xs text-tertiary-foreground">
         {kind === 'pdf'
           ? `PDF · ${formatBytes(attachment.size_bytes)}`
           : kind === 'video'

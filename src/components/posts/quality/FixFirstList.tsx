@@ -78,7 +78,7 @@ export function FixFirstList({
   return (
     <section className="flex flex-col gap-1">
       <header className="flex items-baseline justify-between gap-3">
-        <h3 className="text-[15px] font-semibold text-foreground">
+        <h3 className="text-sm font-semibold text-foreground">
           {t('posts.quality.fixFirst.title')}
           {suggestions.length > 0 && (
             <span className="ml-1.5 font-normal text-tertiary-foreground tabular-nums">
@@ -105,7 +105,7 @@ export function FixFirstList({
             const picked = chosen === i
             const quote =
               status === 'whole' ? (
-                <span className="block bg-tertiary px-2.5 py-1.5 text-[13px]/[1.45] text-foreground">
+                <span className="block bg-tertiary px-2.5 py-1.5 text-sm/[1.45] text-foreground">
                   <Trans
                     i18nKey="posts.quality.fixFirst.wholePost"
                     components={{
@@ -119,7 +119,7 @@ export function FixFirstList({
                 // language's own.
                 <span
                   className={cn(
-                    'block px-2.5 py-1.5 text-[13px]/[1.45] text-foreground italic transition-colors duration-200',
+                    'block px-2.5 py-1.5 text-sm/[1.45] text-foreground italic transition-colors duration-200',
                     picked ? 'bg-primary' : 'bg-tertiary',
                   )}
                 >
@@ -181,7 +181,7 @@ export function FixFirstList({
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      'px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] transition-colors duration-200',
+                      'px-1.5 py-0.5 text-xs font-bold uppercase tracking-[0.08em] transition-colors duration-200',
                       picked
                         ? SEVERITY_SOLID[severity]
                         : SEVERITY_CLASS[severity],

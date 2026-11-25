@@ -3,6 +3,7 @@ import { cn } from '@/lib'
 import { FIT_CRITERIA, fitLevelStrength, fitRows } from '@/lib/ideaFit'
 import { isWaiting, type Idea, type IdeaVerdict } from '@/lib/ideas'
 import { formatDate } from '@/lib/intl'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * The idea card's parts (CON-387), shared by every list that draws one: the
@@ -106,7 +107,7 @@ export function FitSection({
             <li
               key={row.key}
               className={cn(
-                'grid items-start gap-x-3 text-[12.5px]/[18px]',
+                'grid items-start gap-x-3 text-xs/[18px]',
                 compact
                   ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-0.5'
                   : 'grid-cols-[minmax(0,1fr)_auto] gap-y-0.5 @md:grid-cols-[8.5rem_auto_minmax(0,1fr)] @md:gap-y-0',
@@ -123,7 +124,7 @@ export function FitSection({
               >
                 <span
                   aria-hidden
-                  className="-mt-px flex size-5 items-center justify-center rounded-full font-mono text-[11px] font-semibold text-secondary-foreground"
+                  className="-mt-px flex size-5 items-center justify-center rounded-full font-mono text-mark font-semibold text-secondary-foreground"
                   style={{ background: tone }}
                 >
                   {row.level}
@@ -150,7 +151,7 @@ export function FitSection({
                 )}
               >
                 {row.hint && (
-                  <span className="mr-1 inline-block rounded-full bg-border px-1.5 text-[11.5px]/[18px] font-medium text-foreground">
+                  <span className="mr-1 inline-block rounded-full bg-border px-1.5 text-xs/[18px] font-medium text-foreground">
                     {row.hint}
                   </span>
                 )}
@@ -200,14 +201,13 @@ export function AnswerRecord({
         ? t('ideas.record.returns', { at: day(idea.remindAt) })
         : t(`ideas.record.${current}`, { at: day(idea.decidedAt) })}
       {' · '}
-      <button
-        type="button"
+      <TextButton
+        tone="quiet"
         disabled={pending}
         onClick={() => onAnswer(null)}
-        className="cursor-pointer underline decoration-quinary underline-offset-3 hover:decoration-foreground disabled:cursor-default disabled:opacity-60"
       >
         {t('ideas.action.undecide')}
-      </button>
+      </TextButton>
     </>
   )
 }

@@ -163,7 +163,7 @@ function Column({
             {tier.name}
           </h2>
           {popular && (
-            <span className="shrink-0 rounded-[2px] border border-primary-foreground-elevated px-2 py-1 text-[11px] font-medium leading-none tracking-[0.1em]">
+            <span className="shrink-0 rounded-[2px] border border-primary-foreground-elevated px-2 py-1 text-xs font-medium leading-none tracking-[0.1em]">
               {t('tiers.ledger.mostPopular')}
             </span>
           )}
@@ -174,7 +174,7 @@ function Column({
         <div className="flex flex-col gap-3">
           <p
             className={cn(
-              'min-h-4 text-[11px] font-medium leading-4 tracking-[0.1em]',
+              'min-h-4 text-xs font-medium leading-4 tracking-[0.1em]',
               sub,
             )}
           >
@@ -199,7 +199,7 @@ function Column({
       <div className="flex grow flex-col p-7 pt-6">
         <p
           className={cn(
-            'pb-3 text-[11px] font-medium leading-4 tracking-[0.1em]',
+            'pb-3 text-xs font-medium leading-4 tracking-[0.1em]',
             sub,
           )}
         >
@@ -216,7 +216,7 @@ function Column({
                   : 'border-tertiary',
               )}
             >
-              <dt className={cn('min-w-0 text-[13px]', sub)}>
+              <dt className={cn('min-w-0 text-sm', sub)}>
                 {featureLabel(t, key)}
               </dt>
               <dd className="shrink-0 text-right">
@@ -286,7 +286,7 @@ function Price({
         </span>
         <span className={cn('text-sm', sub)}>{t('tiers.ledger.perMonth')}</span>
       </p>
-      <p className={cn('text-[13px]', sub)}>
+      <p className={cn('text-sm', sub)}>
         {interval === 'year'
           ? t('tiers.ledger.billedYearly', { total: money(major) })
           : t('tiers.ledger.billedMonthly')}
@@ -410,9 +410,7 @@ function Allowance({
     )
   }
   if (value.kind === 'unlimited') {
-    return (
-      <span className="text-[13px] font-medium">{t('tiers.unlimited')}</span>
-    )
+    return <span className="text-sm font-medium">{t('tiers.unlimited')}</span>
   }
   const write = (amount: number) => formatNumber(amount, {}, i18n.language)
   const written = isByteKey(featureKey)

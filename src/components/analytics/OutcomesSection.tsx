@@ -203,7 +203,7 @@ function GoalDetail({ goal }: { goal: Goal }) {
         />
       )}
 
-      <Basis className="text-[13px] text-foreground">
+      <Basis className="text-sm text-foreground">
         {goal.target
           ? t(
               goal.target.per === 'week'

@@ -16,6 +16,7 @@ import { countIdeas, isWaiting, type Idea } from '@/lib/ideas'
 import { ideaFromWire } from '@/services/api/ideas'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { DistillMoreIdeas } from './DistillMoreIdeas'
+import { ChipButton } from '@/components/ui/chip'
 
 /**
  * The ideas one lens distilled (CON-364), as the Ideas list's cards
@@ -191,18 +192,12 @@ function Piles({
   return (
     <div className="mt-2 flex flex-wrap gap-2">
       {VERDICT_ORDER.filter((v) => counts[v] > 0).map((v) => (
-        <button
+        <ChipButton
+          pressed={active === v}
           key={v}
-          type="button"
           aria-pressed={active === v}
           aria-label={`${counts[v]} ${t(`assetInsights.ideas.pile.${v}`)}`}
           onClick={() => onChoose(v)}
-          className={cn(
-            'flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs tabular-nums transition-colors',
-            active === v
-              ? 'border-accent bg-accent/10 text-foreground'
-              : 'border-quaternary text-secondary-foreground hover:border-tertiary-foreground hover:text-foreground',
-          )}
         >
           <HugeiconsIcon
             icon={VERDICT_ICON[v]}
@@ -223,7 +218,7 @@ function Piles({
             {counts[v]}
           </span>
           {t(`assetInsights.ideas.pile.${v}`)}
-        </button>
+        </ChipButton>
       ))}
       {trailing}
     </div>
@@ -246,21 +241,19 @@ function FreshChip({
 }) {
   const { t } = useTranslation()
   return (
-    <button
-      type="button"
+    <ChipButton
+      pressed={active}
+      className={cn(
+        'font-semibold text-accent',
+        !active && 'border-transparent bg-accent/10 hover:border-accent',
+      )}
       aria-pressed={active}
       aria-label={t('assetInsights.distill.freshLabel', { count })}
       onClick={onToggle}
-      className={cn(
-        'flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-semibold tabular-nums text-accent transition-colors',
-        active
-          ? 'border-accent bg-accent/10'
-          : 'border-transparent bg-accent/10 hover:border-accent',
-      )}
     >
       <span aria-hidden className="size-1.5 rounded-full bg-accent" />
       {t('assetInsights.distill.fresh', { count })}
-    </button>
+    </ChipButton>
   )
 }
 

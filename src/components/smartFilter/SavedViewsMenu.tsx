@@ -29,6 +29,7 @@ import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib'
 import { formatNumber } from '@/lib/intl'
 import { SAVED_VIEW_NAME_MAX, type SavedView } from '@/services/api/savedViews'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * A list's smart groups (CON-388 §5; Assets since CON-392) as one dropdown
@@ -115,7 +116,7 @@ export function SavedViewsMenu({
             // A ghost button opening the sentence's line (CON-391). Its 17px
             // inset puts the icon's centre at 26px — over the select-all box
             // in the rows' 20px inset, and so over every row's.
-            className="flex h-[34px] shrink-0 cursor-pointer items-center gap-2 pr-2.5 pl-[17px] text-[15px] font-medium outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent data-[state=open]:bg-secondary"
+            className="flex h-[34px] shrink-0 cursor-pointer items-center gap-2 pr-2.5 pl-[17px] text-sm font-medium outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-accent data-[state=open]:bg-secondary"
           >
             <HugeiconsIcon
               icon={FilterMailSquareIcon}
@@ -440,30 +441,27 @@ export function GroupActions({
   onRevert: () => void
 }) {
   const { t } = useTranslation()
-  const action =
-    'cursor-pointer text-[13px] font-medium whitespace-nowrap text-foreground outline-none hover:underline focus-visible:underline disabled:opacity-50'
   return (
     <span className="inline-flex items-center gap-3.5">
       {canEdit && (
-        <button
-          type="button"
-          className={action}
+        <TextButton
+          className="whitespace-nowrap text-control"
           onClick={onSaveChanges}
           disabled={busy}
         >
           {t('savedViews.saveChanges')}
-        </button>
+        </TextButton>
       )}
-      <button type="button" className={action} onClick={onSaveAs}>
+      <TextButton className="whitespace-nowrap text-control" onClick={onSaveAs}>
         {t('savedViews.saveAsNew')}
-      </button>
-      <button
-        type="button"
-        className={cn(action, 'font-normal text-secondary-foreground')}
+      </TextButton>
+      <TextButton
+        tone="quiet"
+        className="whitespace-nowrap text-control"
         onClick={onRevert}
       >
         {t('savedViews.revert')}
-      </button>
+      </TextButton>
     </span>
   )
 }

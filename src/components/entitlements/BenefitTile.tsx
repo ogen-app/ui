@@ -111,7 +111,7 @@ export function BenefitTile({ feature }: { feature: TierFeature }) {
         <span className="text-sm font-medium">
           {benefitTitle(t, feature, i18n.language)}
         </span>
-        <span className="truncate text-[13px] text-tertiary-foreground">
+        <span className="truncate text-xs text-tertiary-foreground">
           {t(`tiers.paywall.benefit.${feature.key}.description`)}
         </span>
       </span>

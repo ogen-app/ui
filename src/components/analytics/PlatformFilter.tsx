@@ -4,6 +4,7 @@ import { cn } from '@/lib'
 import { Picker } from './ComparisonBar'
 import type { Period, PlatformOption } from './types'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
+import { ToggleTile } from '@/components/ui/toggle-tile'
 
 /**
  * The bar that says what is being counted, and over what window.
@@ -184,27 +185,21 @@ function PlatformMark({
   }
 
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={on}
+    <ToggleTile
+      size="square"
+      on={on}
+      onToggle={onToggle}
       title={t('analytics.scopeBar.platformAccounts', {
         platform: platform.label,
         accounts,
       })}
-      className={cn(
-        'relative flex size-10 items-center justify-center rounded-md transition-colors',
-        on
-          ? 'bg-secondary outline outline-1 outline-foreground'
-          : 'border border-border text-quaternary-foreground hover:bg-secondary',
-      )}
     >
       {mark}
       {/* The count rides the mark rather than sitting in a summary line: it is
           read at the same moment as the platform it qualifies. */}
       <span
         className={cn(
-          'absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[10px] font-medium tabular-nums ring-2 ring-primary',
+          'absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-mark font-medium tabular-nums ring-2 ring-primary',
           on
             ? 'bg-foreground text-primary'
             : 'bg-quaternary text-tertiary-foreground',
@@ -218,6 +213,6 @@ function PlatformMark({
           accounts,
         })}
       </span>
-    </button>
+    </ToggleTile>
   )
 }

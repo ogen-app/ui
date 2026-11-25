@@ -130,6 +130,10 @@ Most of these are load-bearing — see `docs/technical-decisions.md` for the why
   Colors only via semantic tokens (`bg-primary`, `text-tertiary-foreground` —
   never `bg-white`, palette steps, or raw hex/oklch): see
   [`docs/colors.md`](./docs/colors.md).
+- **Text is 14 when read and 12 when glanced at** (`text-sm`, `text-xs`);
+  `text-control` (13), `text-mark` and `text-figure` each have one job, and no
+  size is written by hand (`text-[13px]`): see
+  [`docs/technical-decisions.md#type-scale`](./docs/technical-decisions.md#type-scale).
 - **Two form systems by design:** lightweight `useFormValidation` for auth
   forms, full RHF + `ui/form.tsx` for feature forms.
 - **Button labels are sentence case, everywhere** — `Delete campaign`,

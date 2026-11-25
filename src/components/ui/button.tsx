@@ -15,7 +15,7 @@ const buttonIconContext = { weight: 'bold' as const }
 
 const buttonVariants = cva(
   'relative inline-flex items-center cursor-pointer whitespace-nowrap shrink-0 outline-none ' +
-    'gap-2 rounded-button text-[13px]/4 font-medium select-none transition-all ' +
+    'gap-2 rounded-button text-control font-medium select-none transition-all ' +
     'disabled:pointer-events-none ' +
     // Icon sizing is owned by the `size` variant below (16px everywhere except
     // the 16px-tall xsIcon); an explicit `size-*` on the icon still wins.
@@ -26,7 +26,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground hover:bg-primary-foreground hover:text-primary ' +
+          'border bg-primary text-primary-foreground hover:border-primary-foreground hover:bg-primary-foreground hover:text-primary ' +
           'data-[active=true]:bg-secondary data-[active=true]:inset-ring-[2px] data-[active=true]:inset-ring-ring ' +
           'data-[active=true]:hover:text-primary-foreground data-[active=true]:hover:bg-primary ' +
           '[&_[data-spinner-container]]:bg-primary [&_[data-spinner]]:bg-primary-foreground/20 [&_[data-spinner]:before]:bg-primary-foreground ' +
@@ -59,13 +59,13 @@ const buttonVariants = cva(
           'data-[active=true]:bg-quaternary data-[active=true]:border-quaternary ' +
           'data-[loading]:text-primary-foreground/0 [&_[data-spinner]]:bg-primary-foreground/20 [&_[data-spinner]:before]:bg-primary-foreground',
         secondary:
-          'bg-primary text-primary-foreground hover:bg-secondary ' +
+          'border bg-primary text-primary-foreground hover:bg-secondary ' +
           'data-[active=true]:bg-secondary ' +
           '[&_[data-spinner-container]]:bg-primary [&_[data-spinner]]:bg-primary-foreground/20 [&_[data-spinner]:before]:bg-primary-foreground',
-        // A filled button for a white surface. `secondary` is `bg-primary`,
-        // which *is* white — right on the grey app canvas, invisible inside a
-        // modal. This is the same weight one step darker, so a dialog's
-        // actions read as objects rather than as words.
+        // A filled button for a white surface. `default` and `secondary` are
+        // `bg-primary`, which *is* white — a body on the grey app canvas, only
+        // their border inside a modal. This is the same weight one step
+        // darker, so a dialog's actions read as filled objects.
         neutral:
           'bg-tertiary text-primary-foreground hover:bg-quaternary ' +
           'data-[active=true]:bg-quaternary ' +
@@ -77,20 +77,16 @@ const buttonVariants = cva(
         accent:
           'bg-accent text-primary hover:bg-accent/90 ' +
           'data-[active=true]:bg-accent/90 ' +
-          '[&_[data-spinner-container]]:bg-accent [&_[data-spinner]]:bg-primary/20 [&_[data-spinner]:before]:bg-primary',
-        // `accent` with the sweep in place of the teal, for the one action a
-        // screen that already speaks in the sweep is selling. Blue to green
-        // only: white on the orange tip falls short of legible.
-        sweep:
-          'bg-linear-to-r from-sweep-from to-sweep-to text-primary hover:opacity-90 ' +
-          'data-[active=true]:opacity-90 ' +
-          '[&_[data-spinner-container]]:bg-sweep-to [&_[data-spinner]]:bg-primary/20 [&_[data-spinner]:before]:bg-primary',
+          '[&_[data-spinner-container]]:bg-accent [&_[data-spinner]]:bg-primary/20 [&_[data-spinner]:before]:bg-primary ' +
+          // Disabled, it greys the way `defaultInverted` does: a teal that
+          // cannot be pressed would still read as the one to press.
+          'disabled:bg-senary',
         // Accented without a fill: the default surface, with the ink drawn by
         // `GradientButton` (ui/gradient-button), which puts the sweep on the
         // mark and the label. It hovers to a grey rather than to `default`'s
         // black, which the gradient cannot be read on.
         gradient:
-          'bg-primary hover:bg-secondary data-[active=true]:bg-secondary ' +
+          'border bg-primary hover:bg-secondary data-[active=true]:bg-secondary ' +
           '[&_[data-spinner-container]]:bg-primary [&_[data-spinner]]:bg-sweep-to/20 [&_[data-spinner]:before]:bg-sweep-to',
         ghost:
           'bg-transparent text-secondary-foreground hover:text-primary-foreground ' +
@@ -127,8 +123,20 @@ const buttonVariants = cva(
         default: "h-10 px-4 [&_svg:not([class*='size-'])]:size-4",
         defaultIcon:
           "h-10 p-0 w-10 justify-center [&_svg:not([class*='size-'])]:size-4",
-        xsIcon: "h-4 p-0 justify-center [&_svg:not([class*='size-'])]:size-3",
+        // The × inside a chip or a pill: 16px square, a 12px glyph.
+        xsIcon:
+          "h-4 w-4 p-0 justify-center [&_svg:not([class*='size-'])]:size-3",
+        // An icon button in a line of text or a card's head — close, refresh —
+        // where a 32px box would push the line taller than its words.
+        rowIcon:
+          "h-6 w-6 p-0 justify-center [&_svg:not([class*='size-'])]:size-4",
+        // A small card's own action (a calendar slot's Compile and Draft),
+        // where 32px would be taller than the card's lines.
+        xs: "h-6 px-2 gap-1 [&_svg:not([class*='size-'])]:size-3.5",
         sm: "h-8 px-3 [&_svg:not([class*='size-'])]:size-4",
+        // The top bar's buttons (Help, Work with Ogen): 36px, centred on the
+        // 56px bar with the switcher beside them.
+        bar: "h-9 px-3 [&_svg:not([class*='size-'])]:size-4",
         smIcon:
           "h-8 p-0 w-8 justify-center [&_svg:not([class*='size-'])]:size-4",
         lg: "h-10 px-4 [&_svg:not([class*='size-'])]:size-4",

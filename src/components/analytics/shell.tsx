@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * The furniture the analytics sections sit in — and the contract every card on
@@ -172,12 +173,7 @@ export function Todos({
           className="flex items-baseline justify-between gap-3 border-b border-border py-2 last:border-0"
         >
           <span className="text-sm">{item.text}</span>
-          <button
-            type="button"
-            className="shrink-0 text-xs font-medium underline underline-offset-2"
-          >
-            {item.action}
-          </button>
+          <TextButton className="shrink-0 text-xs">{item.action}</TextButton>
         </li>
       ))}
     </ul>

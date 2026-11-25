@@ -516,7 +516,7 @@ function WeekPostRow({
       trailing={
         <>
           {post.manual && (
-            <span className="text-[11px] font-semibold tracking-[0.06em] text-warning-ink">
+            <span className="text-xs font-semibold tracking-[0.06em] text-warning-ink">
               {t('campaignOverview.week.manual')}
             </span>
           )}
@@ -769,7 +769,7 @@ function NeedsList({
             askable
               ? {
                   label: t('campaignOverview.problems.fixAll'),
-                  icon: 'ogen',
+                  gradient: true,
                   onClick: handlers.askAll,
                 }
               : undefined
@@ -1172,7 +1172,7 @@ function StepMark({ n, done }: { n: number; done: boolean }) {
     )
   }
   return (
-    <span className="flex size-4 items-center justify-center rounded-full border border-border text-[10px] leading-none font-semibold text-secondary-foreground tabular-nums">
+    <span className="flex size-4 items-center justify-center rounded-full border border-border text-mark leading-none font-semibold text-secondary-foreground tabular-nums">
       {formatNumber(n)}
     </span>
   )

@@ -1,3 +1,4 @@
+import { Segmented } from '@/components/ui/segmented'
 import { TextSelect } from '@/components/ui/text-select'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib'
@@ -60,6 +61,7 @@ export function ComparisonBar({
       )}
     >
       <Segmented
+        size="sm"
         value={axis}
         onChange={onAxisChange}
         options={[
@@ -114,44 +116,6 @@ export function ComparisonBar({
  * "Side by side" comes into scope the switch comes back and {@link
  * ComparisonBar} is what it comes back into.
  */
-
-/**
- * A one-of-N switch, for a choice small enough that every option can be on
- * screen at once. Exported because a card can own one — the post card decides
- * whether its charts show a running total or what arrived in each bucket — and
- * a mode switch inside a card should be the same control as a mode switch above
- * the page.
- */
-export function Segmented<T extends string>({
-  value,
-  onChange,
-  options,
-}: {
-  value: T
-  onChange: (value: T) => void
-  options: { value: T; label: string }[]
-}) {
-  return (
-    <div className="inline-flex rounded-md bg-quaternary p-0.5">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          onClick={() => onChange(o.value)}
-          aria-pressed={value === o.value}
-          className={cn(
-            'rounded-[5px] px-3 py-1.5 text-xs font-medium transition-colors',
-            value === o.value
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-secondary-foreground hover:text-foreground',
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  )
-}
 
 /**
  * A native select wearing the app's clothes. A real implementation would reach

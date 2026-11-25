@@ -38,7 +38,7 @@ export function StatusWord({
   return (
     <p
       className={cn(
-        'text-[10.5px] font-semibold uppercase tracking-[0.12em]',
+        'text-xs font-semibold uppercase tracking-[0.12em]',
         STATUS_TONE[tone],
       )}
     >
@@ -138,7 +138,7 @@ export function SourcesLine({
       ? t(UNGROUNDED_REASON[grounding.reason as keyof typeof UNGROUNDED_REASON])
       : (grounding.note ?? t('assistant.sources.generalKnowledge')))
   return (
-    <p className="border-t border-border pt-2.5 text-[12.5px]">
+    <p className="border-t border-border pt-2.5 text-xs">
       <span className="mr-2 text-secondary-foreground">
         {label ?? t('assistant.sources.label')}
       </span>
@@ -192,7 +192,7 @@ export function ResolvedLine({
   ran?: boolean
 }) {
   return (
-    <p className="flex items-start gap-1.5 text-[12.5px] text-tertiary-foreground">
+    <p className="flex items-start gap-1.5 text-xs text-tertiary-foreground">
       {ran ? (
         <CheckIcon
           aria-hidden

@@ -109,7 +109,7 @@ function CalendarActions({
           {hasUnscheduled && (
             // Knocked out of the filled body in the page's colour. The 1px
             // nudge centres it on the body, which sits below the rings.
-            <span className="absolute inset-0 flex translate-y-[1px] items-center justify-center text-[10px]/none font-semibold tabular-nums text-background">
+            <span className="absolute inset-0 flex translate-y-[1px] items-center justify-center text-mark/none font-semibold tabular-nums text-background">
               {unscheduledCount}
             </span>
           )}
@@ -136,7 +136,7 @@ function CalendarActions({
         >
           <span
             ref={labelRef}
-            className="block w-max whitespace-nowrap pl-2 text-[13px]/4 font-medium"
+            className="block w-max whitespace-nowrap pl-2 text-control font-medium"
           >
             {t('calendar.unscheduled')}
           </span>

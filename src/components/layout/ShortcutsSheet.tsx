@@ -24,7 +24,7 @@ type GoRow = {
 /** A key, drawn as a tile. */
 function Key({ children }: { children: string }) {
   return (
-    <kbd className="inline-flex h-6 min-w-6 items-center justify-center bg-secondary px-1.5 font-sans text-[13px] font-medium text-foreground">
+    <kbd className="inline-flex h-6 min-w-6 items-center justify-center bg-secondary px-1.5 font-sans text-control font-medium text-foreground">
       {children}
     </kbd>
   )
@@ -62,7 +62,7 @@ function Row({
   note?: string
 }) {
   return (
-    <li className="flex h-10 items-center justify-between gap-4 text-[15px] text-foreground">
+    <li className="flex h-10 items-center justify-between gap-4 text-sm text-foreground">
       <span className="min-w-0 truncate">
         {label}
         {note && (
@@ -158,7 +158,7 @@ export function ShortcutsSheet() {
     >
       <div className="grid grid-cols-1 gap-x-11 gap-y-6 md:grid-cols-2">
         <Group heading={t('shortcuts.goTo')}>
-          <p className="text-[13px] text-secondary-foreground">
+          <p className="text-sm text-secondary-foreground">
             {t('shortcuts.goHint')}
           </p>
           <ul>
@@ -199,14 +199,14 @@ export function ShortcutsSheet() {
               </ul>
             </Group>
           ) : (
-            <p className="text-[13px] text-secondary-foreground">
+            <p className="text-sm text-secondary-foreground">
               {t('shortcuts.campaignNote')}
             </p>
           )}
         </div>
       </div>
 
-      <p className="mt-6 flex items-center gap-1.5 text-[13px] text-secondary-foreground">
+      <p className="mt-6 flex items-center gap-1.5 text-sm text-secondary-foreground">
         <Trans
           i18nKey="shortcuts.foot"
           components={{ k1: <Key>?</Key>, k2: <Key>esc</Key> }}

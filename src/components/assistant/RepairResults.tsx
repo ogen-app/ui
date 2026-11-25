@@ -453,7 +453,7 @@ function PlanCard({
           </ResultRow>
         ))}
         {more > 0 && (
-          <ResultRow className="text-[12.5px] text-secondary-foreground">
+          <ResultRow className="text-xs text-secondary-foreground">
             {t('assistant.repair.plan.more', counted(more))}
           </ResultRow>
         )}
@@ -533,7 +533,7 @@ function PlanGrid({
               key={day}
               className="flex min-h-12 flex-col items-center gap-1 bg-primary p-1"
             >
-              <span className="text-[10px] text-secondary-foreground">
+              <span className="text-xs text-secondary-foreground">
                 {formatDate(day, { weekday: 'narrow', timeZone: 'UTC' })}
               </span>
               {kept.map((l) => (
@@ -567,7 +567,7 @@ function PlanGrid({
     <div className="mt-2 flex flex-col gap-2">
       {row(t('assistant.repair.plan.before'), false)}
       {row(t('assistant.repair.plan.after'), true)}
-      <p className="flex items-center gap-3 text-[11px] text-secondary-foreground">
+      <p className="flex items-center gap-3 text-xs text-secondary-foreground">
         <span className="flex items-center gap-1">
           <span
             aria-hidden
@@ -662,7 +662,7 @@ function MovedCard({
         />
       )}
       {moved.skipped.length > 0 && (
-        <ResultRow className="text-[12.5px] text-secondary-foreground">
+        <ResultRow className="text-xs text-secondary-foreground">
           {t('assistant.repair.moved.skipped', counted(moved.skipped.length))}
         </ResultRow>
       )}
@@ -675,7 +675,7 @@ function MovedRow({ title, sub }: { title: ReactNode; sub: ReactNode }) {
   return (
     <ResultRow className="flex flex-col">
       <span className="text-sm text-foreground">{title}</span>
-      <span className="text-[12.5px] text-secondary-foreground">{sub}</span>
+      <span className="text-xs text-secondary-foreground">{sub}</span>
     </ResultRow>
   )
 }
@@ -784,7 +784,7 @@ function ChangedCard({
             />
           ) : (
             rulesLine(post) && (
-              <ResultRow className="text-[12.5px] text-secondary-foreground">
+              <ResultRow className="text-xs text-secondary-foreground">
                 {rulesLine(post)}
               </ResultRow>
             )
@@ -837,15 +837,12 @@ function ChangedCard({
             </Fragment>
           ))}
       {change.withdrawing > 0 && (
-        <ResultRow className="text-[12.5px] text-warning-ink">
+        <ResultRow className="text-xs text-warning-ink">
           {t('assistant.repair.withdrawing', counted(change.withdrawing))}
         </ResultRow>
       )}
       {change.skipped.map((s) => (
-        <ResultRow
-          key={s.postId}
-          className="text-[12.5px] text-secondary-foreground"
-        >
+        <ResultRow key={s.postId} className="text-xs text-secondary-foreground">
           {t('assistant.repair.skipped', { reason: s.reason })}
         </ResultRow>
       ))}
@@ -916,7 +913,7 @@ function RevisedCard({
           </span>
           <span
             className={cn(
-              'text-[12.5px]',
+              'text-xs',
               revised.versioned
                 ? 'text-secondary-foreground'
                 : 'text-warning-ink',
@@ -970,7 +967,7 @@ function VoiceChangedCard({
           <span className="text-sm text-foreground">
             {voiceLine(t, change)}
           </span>
-          <span className="text-[12.5px] text-secondary-foreground">
+          <span className="text-xs text-secondary-foreground">
             {t('assistant.repair.voiceChanged.copyKept')}
           </span>
         </span>

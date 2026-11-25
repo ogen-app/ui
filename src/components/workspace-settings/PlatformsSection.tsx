@@ -177,7 +177,7 @@ function ChipGroup({
       <SmallHeading as="h3">{label}</SmallHeading>
       {items.length === 0 ? (
         <div className="h-10 py-1 border-b border-transparent flex items-center gap-2 flex-wrap">
-          <span className="text-[13px] leading-4 text-primary-foreground">
+          <span className="text-sm leading-4 text-primary-foreground">
             {emptyText}
           </span>
         </div>

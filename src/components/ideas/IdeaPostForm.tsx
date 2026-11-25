@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -14,6 +15,7 @@ import { counted, formatDate, formatNumber } from '@/lib/intl'
 import { cn } from '@/lib/styles'
 import type { IdeaPlan } from '@/lib/ideas'
 import { SmallHeading } from '@/components/page-primitives/SmallHeading'
+import { TextButton } from '@/components/ui/text-button'
 
 export type IdeaPostAnswer = {
   /** Empty when the campaign is unknown: the ideas' plans decide. */
@@ -179,7 +181,7 @@ function FormBody({
 
   return (
     <div className="flex flex-col">
-      <p className="px-4 pt-3.5 pb-2.5 text-[15.5px]/6 font-medium text-foreground">
+      <p className="px-4 pt-3.5 pb-2.5 text-base/6 font-medium text-foreground">
         {title && ideaCount === 1
           ? t(`ideas.lifecycle.form.${verb}Named`, { title })
           : verb === 'compile'
@@ -189,22 +191,18 @@ function FormBody({
 
       <Group heading={t('ideas.lifecycle.form.platforms')}>
         {platforms === null ? (
-          <p className="text-[13px]/5 text-secondary-foreground">
+          <p className="text-sm text-secondary-foreground">
             {t('ideas.lifecycle.form.noCampaign')}
           </p>
         ) : campaign.isError ? (
-          <p className="text-[13px]/5 text-secondary-foreground">
+          <p className="text-sm text-secondary-foreground">
             {t('ideas.lifecycle.form.platformsFailed')}{' '}
-            <button
-              type="button"
-              onClick={() => void campaign.refetch()}
-              className="cursor-pointer font-medium text-foreground hover:underline"
-            >
+            <TextButton onClick={() => void campaign.refetch()}>
               {t('ideas.lifecycle.form.retry')}
-            </button>
+            </TextButton>
           </p>
         ) : campaign.isPending ? null : platforms.length === 0 ? (
-          <p className="text-[13px]/5 text-secondary-foreground">
+          <p className="text-sm text-secondary-foreground">
             {t('ideas.lifecycle.form.noPlatforms')}
           </p>
         ) : (
@@ -219,7 +217,7 @@ function FormBody({
               ].filter(Boolean)
               return (
                 <li key={id}>
-                  <label className="flex cursor-pointer items-start gap-2.5 py-1.5 text-[13.5px]">
+                  <label className="flex cursor-pointer items-start gap-2.5 py-1.5 text-sm">
                     <Checkbox
                       className="mt-0.5"
                       checked={ticked.includes(id)}
@@ -253,7 +251,7 @@ function FormBody({
                 role="radio"
                 aria-checked={together === all}
                 onClick={() => setTogether(all)}
-                className="flex cursor-pointer items-start gap-2.5 py-1.5 text-left text-[13.5px] outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="flex cursor-pointer items-start gap-2.5 py-1.5 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <span
                   aria-hidden
@@ -288,7 +286,7 @@ function FormBody({
 
       {verb === 'compile' ? (
         <Group heading={t('ideas.lifecycle.form.result')}>
-          <p className="text-[13px]/5 text-foreground">
+          <p className="text-sm text-foreground">
             {t('ideas.lifecycle.form.compileResult')}
           </p>
           {/* From a slot the planned posts take its day; otherwise none. */}
@@ -298,7 +296,7 @@ function FormBody({
         </Group>
       ) : (
         <Group heading={t('ideas.lifecycle.form.when')}>
-          <p className="text-[13px]/5 text-foreground">
+          <p className="text-sm text-foreground">
             {day
               ? dayLabel(day)
               : known && dated === ideaCount
@@ -327,22 +325,22 @@ function FormBody({
 
       <div className="flex items-center gap-4 border-t border-border px-4 py-3">
         <Button
-          variant="defaultInverted"
+          variant="accent"
           size="sm"
           disabled={blocked}
           onClick={() =>
             onSubmit({ platformIds: platforms ? ticked : [], together })
           }
         >
+          <Logo
+            variant="mark"
+            className="size-4 shrink-0 [&_path:first-of-type]:fill-primary"
+          />
           {confirm}
         </Button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="cursor-pointer text-xs font-semibold tracking-[0.06em] text-secondary-foreground hover:text-foreground"
-        >
+        <TextButton tone="quiet" className="text-xs" onClick={onCancel}>
           {t('ideas.lifecycle.form.cancel')}
-        </button>
+        </TextButton>
       </div>
     </div>
   )

@@ -132,7 +132,7 @@ export function AuthGoogleSignupForm({ token, pending }: Props) {
         <GoogleMark className="size-4" />
         <a
           href={googleStartUrl()}
-          className="shrink-0 text-[13px] leading-5 font-medium text-secondary-foreground transition-colors hover:text-primary-foreground"
+          className="shrink-0 text-control leading-5 font-medium text-secondary-foreground transition-colors hover:text-primary-foreground"
         >
           {t('auth.googleSignup.notYou')}
         </a>
@@ -193,7 +193,7 @@ export function AuthGoogleSignupForm({ token, pending }: Props) {
           {refusal?.startOver && (
             <a
               href={googleStartUrl()}
-              className="text-primary-foreground text-[13px] font-medium"
+              className="text-primary-foreground text-control font-medium"
             >
               {t('auth.googleSignup.startOver')}
             </a>

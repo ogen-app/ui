@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageBrokenIcon, SparkleIcon } from '@phosphor-icons/react'
+import { ImageBrokenIcon } from '@phosphor-icons/react'
 import { Alert02Icon, RefreshIcon } from '@hugeicons/core-free-icons'
 import { AssetIngestState } from '@/components/content/AssetIngestState'
 import { AssetStateFrame } from '@/components/content/AssetStateFrame'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/Logo'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -244,10 +245,11 @@ function ImageForm({ asset, onChange, onDirty }: Props) {
           <Button
             variant="ghost"
             size="sm"
+            className="text-foreground"
             onClick={handleRegenerate}
             loading={regenerate.isPending}
           >
-            <SparkleIcon />
+            <Logo variant="mark" className="size-4 shrink-0" />
             <span>{t('content.image.altRegenerate')}</span>
           </Button>
         </div>

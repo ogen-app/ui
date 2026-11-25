@@ -48,7 +48,7 @@ export function PlanSummary({
   return (
     <div className="flex flex-col gap-4 min-w-0">
       <div className="flex flex-col gap-1 min-w-0">
-        <span className="text-[13px] text-tertiary-foreground">
+        <span className="text-xs text-tertiary-foreground">
           {t('tiers.currentPlan')}
         </span>
         <div className="flex items-center gap-3 min-w-0">
@@ -63,7 +63,7 @@ export function PlanSummary({
           one (CON-243). "On this plan since —" is worse than no line at all.
         */}
         {tier.effectiveFrom && (
-          <p className="text-[13px] text-tertiary-foreground">
+          <p className="text-xs text-tertiary-foreground">
             {t('tiers.since', {
               when: formatDay(tier.effectiveFrom, i18n.language),
             })}

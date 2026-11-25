@@ -20,6 +20,7 @@ import { formatNumber } from '@/lib/intl'
 import type { SheetSummary } from '@/lib/sheetChunks'
 import type { AssetAnalysis } from '@/types/assetAnalysis'
 import { ValueLine, ValueLines } from './ValueLines'
+import { TextButton } from '@/components/ui/text-button'
 
 /** How many mentions show before "+N more". */
 const FIRST_MENTIONS = 12
@@ -111,13 +112,12 @@ export function WhatItCovers({
       </SettingList>
       {hidden > 0 && (
         // Under the values, where the next one would have started.
-        <button
-          type="button"
+        <TextButton
+          className="ml-[calc(6.5rem+1rem+1.375rem)] self-start text-sm"
           onClick={() => setShowAll(true)}
-          className="ml-[calc(6.5rem+1rem+1.375rem)] cursor-pointer self-start text-sm font-medium text-accent hover:underline"
         >
           {t('assetInsights.moreMentions', { count: hidden })}
-        </button>
+        </TextButton>
       )}
     </div>
   )

@@ -53,7 +53,7 @@ export function AccountAvatar({
           // as a plain load error and silently drops us to the initial.
           <AvatarImage src={src} alt="" referrerPolicy="no-referrer" />
         )}
-        <AvatarFallback className={cn(size === 'xs' && 'text-[9px]')}>
+        <AvatarFallback className={cn(size === 'xs' && 'text-mark')}>
           {initial}
         </AvatarFallback>
       </Avatar>

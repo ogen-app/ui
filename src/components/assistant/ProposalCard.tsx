@@ -127,7 +127,7 @@ export function ProposalCard({
                 })}
         </ResolvedLine>
         {proposal.error && (
-          <p className="text-[12.5px] text-warning-ink">{proposal.error}</p>
+          <p className="text-xs text-warning-ink">{proposal.error}</p>
         )}
       </div>
     )
@@ -196,12 +196,12 @@ export function ProposalCard({
                 {/* What the option costs, then — on the recommended one —
                     why it is the one to pick (CON-483). */}
                 {option.description && (
-                  <span className="text-[12.5px] text-secondary-foreground">
+                  <span className="text-xs text-secondary-foreground">
                     {option.description}
                   </span>
                 )}
                 {why && (
-                  <span className="text-[12.5px] text-tertiary-foreground">
+                  <span className="text-xs text-tertiary-foreground">
                     {why}
                   </span>
                 )}
@@ -243,7 +243,7 @@ export function ProposalCard({
       {/* Why the choice is being asked, or why an option isn't offered
           (CON-483): the card's footnote, under the options. */}
       {choice && card?.footnote && (
-        <p className="border-t border-border pt-2.5 text-[12.5px] text-secondary-foreground">
+        <p className="border-t border-border pt-2.5 text-xs text-secondary-foreground">
           {card.footnote}
         </p>
       )}
@@ -329,7 +329,7 @@ function OptionInput({
             }}
             placeholder={label}
             aria-label={label}
-            className="min-w-0 flex-1 bg-transparent text-[12.5px] text-foreground outline-none placeholder:text-tertiary-foreground"
+            className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-tertiary-foreground"
           />
         </span>
         <TextAction type="submit" disabled={disabled || !trimmed}>
@@ -337,7 +337,7 @@ function OptionInput({
         </TextAction>
       </div>
       {(invalid || error) && (
-        <p className="text-[12.5px] text-warning-ink">
+        <p className="text-xs text-warning-ink">
           {invalid ? t('assistant.proposal.badLink') : error}
         </p>
       )}
@@ -385,7 +385,7 @@ function StaleCard({
           </ResultRow>
         ))}
         {proposal.error && (
-          <ResultRow className="text-[12.5px] text-warning-ink">
+          <ResultRow className="text-xs text-warning-ink">
             {proposal.error}
           </ResultRow>
         )}
@@ -437,7 +437,7 @@ function ExpiredCard({
           <span className="text-sm text-foreground">
             {t('assistant.proposal.expiredCard.nothing')}
           </span>
-          <span className="text-[12.5px] text-secondary-foreground">
+          <span className="text-xs text-secondary-foreground">
             {t('assistant.proposal.expiredCard.hint')}
           </span>
         </span>
@@ -501,8 +501,8 @@ function Details({
                   className={
                     // Posts a removal leaves, flagged (CON-483).
                     row.kind === 'posts'
-                      ? 'text-[12.5px] text-warning-ink'
-                      : 'text-[12.5px] text-secondary-foreground'
+                      ? 'text-xs text-warning-ink'
+                      : 'text-xs text-secondary-foreground'
                   }
                 >
                   {row.note}
@@ -510,7 +510,7 @@ function Details({
               )}
             </span>
             {label && (
-              <span className="shrink-0 text-[12.5px] text-secondary-foreground">
+              <span className="shrink-0 text-xs text-secondary-foreground">
                 {t(label)}
               </span>
             )}
@@ -537,12 +537,12 @@ function Details({
         </ul>
       )}
       {card.footnote && (
-        <p className="border-t border-border pt-2.5 text-[12.5px] text-secondary-foreground">
+        <p className="border-t border-border pt-2.5 text-xs text-secondary-foreground">
           {card.footnote}
         </p>
       )}
       {widen && (
-        <div className="flex flex-col gap-0.5 border-t border-border pt-2.5 text-[12.5px] text-secondary-foreground">
+        <div className="flex flex-col gap-0.5 border-t border-border pt-2.5 text-xs text-secondary-foreground">
           {widen.note && <span>{widen.note}</span>}
           <span>
             <TextAction

@@ -71,7 +71,7 @@ export function AddPostAction({ campaignId }: { campaignId: string | null }) {
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                     {campaign.name.trim() || t('nav.untitledCampaign')}
                   </span>
-                  <span className="shrink-0 text-[13px] text-tertiary-foreground tabular-nums">
+                  <span className="shrink-0 text-xs text-tertiary-foreground tabular-nums">
                     {campaignWindow(campaign)}
                   </span>
                   <CaretRightIcon

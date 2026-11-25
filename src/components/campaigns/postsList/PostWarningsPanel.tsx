@@ -53,7 +53,7 @@ export function PostWarningsPanel({
           <p className="text-base font-medium text-foreground">
             {formatTitle(post.title)}
           </p>
-          <p className="text-[13px] text-tertiary-foreground">
+          <p className="text-xs text-tertiary-foreground">
             {[
               post.campaign?.name,
               postStatusLabel(t, post.status),
@@ -80,7 +80,7 @@ export function PostWarningsPanel({
                 <span className="text-sm font-medium text-foreground">
                   {t(`postsTable.warnings.kind.${w.kind}.title`)}
                 </span>
-                <span className="text-[13px] text-secondary-foreground">
+                <span className="text-sm text-secondary-foreground">
                   {t(`postsTable.warnings.kind.${w.kind}.detail`)}
                 </span>
               </div>

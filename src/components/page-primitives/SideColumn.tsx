@@ -126,7 +126,7 @@ function TabButton<Id extends string>({
           />
         )}
       </span>
-      <span className="max-w-full truncate px-0.5 text-[11px]/3.5">
+      <span className="max-w-full truncate px-0.5 text-xs/3.5">
         {tab.label}
       </span>
     </button>

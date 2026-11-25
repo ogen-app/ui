@@ -47,6 +47,7 @@ import { useAssistantStore } from '@/stores/assistantStore'
 import { useViewContextStore } from '@/stores/viewContextStore'
 import { cn } from '@/lib/styles'
 import { StatusWord } from './blocks'
+import { ChipButton } from '@/components/ui/chip'
 
 /**
  * `key` names the starter's label and draft under `assistant.starter`.
@@ -594,17 +595,15 @@ export function StarterChips({
           text: t(`assistant.starter.${key}.text`),
         })),
       ].map(({ icon: Icon, key, label, text }) => (
-        <button
+        <ChipButton
           key={key}
-          type="button"
           disabled={disabled}
           onClick={() => onPick(text)}
           title={text}
-          className="flex items-center gap-1.5 rounded-full bg-tertiary px-3 py-1.5 text-[12.5px] text-secondary-foreground transition-colors cursor-pointer hover:bg-quaternary hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
         >
           <Icon className="size-3.5 shrink-0 text-tertiary-foreground" />
           {label}
-        </button>
+        </ChipButton>
       ))}
     </div>
   )

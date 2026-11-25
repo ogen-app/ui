@@ -24,7 +24,7 @@ export function StateCitation({
   const parts = cites.flatMap((cite) => citedPart(t, state, cite) ?? [])
   if (parts.length === 0) return null
   return (
-    <p className="border-t border-border pt-2 text-[12.5px] text-tertiary-foreground">
+    <p className="border-t border-border pt-2 text-xs text-tertiary-foreground">
       {t('assistant.campaignState.readFrom')}
       <span className="ml-2 text-secondary-foreground">
         {parts.join(' · ')}
@@ -124,8 +124,8 @@ export function SourcesCard({
           <span
             className={
               item.status === 'ready'
-                ? 'text-[12.5px] text-tertiary-foreground'
-                : 'text-[12.5px] text-warning-ink'
+                ? 'text-xs text-tertiary-foreground'
+                : 'text-xs text-warning-ink'
             }
           >
             {t(`assistant.campaignState.sources.${item.status}`)}

@@ -262,7 +262,7 @@ function SecureAccountPage() {
             <FormError message={submitMessage} />
             <Link
               to={signedIn ? '/' : '/auth/login'}
-              className="self-center text-[13px] leading-5 text-secondary-foreground font-medium hover:text-primary-foreground"
+              className="self-center text-control leading-5 text-secondary-foreground font-medium hover:text-primary-foreground"
             >
               {t('auth.secureAccount.wasMe')}
             </Link>
@@ -361,7 +361,7 @@ function SignInDetails({
   return (
     <dl
       aria-label={t('auth.secureAccount.detailsLabel')}
-      className="flex flex-col gap-3 border border-border p-4 text-[13px] leading-5"
+      className="flex flex-col gap-3 border border-border p-4 text-sm leading-5"
     >
       <DetailRow label={t('auth.secureAccount.whenLabel')}>
         {when ?? alert.login_at}
@@ -407,9 +407,7 @@ function DetailRow({
 
 function Sentence({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[13px] leading-5 text-secondary-foreground">
-      {children}
-    </p>
+    <p className="text-sm leading-5 text-secondary-foreground">{children}</p>
   )
 }
 

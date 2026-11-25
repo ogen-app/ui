@@ -1436,6 +1436,38 @@ live entirely in `src/index.css` via `@theme inline`. Z-index is centralized in
 inline-`zIndex` rule exists because Tailwind's JIT can't compile a templated
 `z-${…}` class.
 
+## One type scale, and three named sizes outside it {#type-scale}
+
+**Decision.** Text is `text-sm` (14/20) when it is read — a row's name, a
+paragraph, a field's value — and `text-xs` (12/16) when it is glanced at: a
+row's meta, a count, a caption, a small heading, a tag. Colour usually says
+which: secondary or primary text is read, tertiary text is glanced at.
+Headings and figures above that use the stock steps (`text-base` to
+`text-4xl`) and `text-display`. Three sizes are named in `src/index.css`,
+each for one job:
+
+- `text-control` (13/16): the words on a control — a button, a tab, a
+  field's label, a dropdown button, a chip, a toggle in a bar — and a table's
+  cells (`.table-text`). That includes a button built by hand (the bar's
+  Help and Work with Ogen) and the list head's Filter, Views, Group and Sort.
+  A row is not a control: the rail's rows and a menu's items stay at 14, the
+  chrome's own rule (`Button`'s `menu` variant).
+- `text-mark` (10px): a letter or figure drawn inside a fixed-size mark — an
+  initial in a 24px square, a count on an icon, a chart's tick. Never words.
+- `text-figure` (44px): the one big number a card is about (a price, a
+  score).
+
+No size is written by hand (`text-[13px]`). The exceptions are the platform
+previews (`posts/preview/`), which copy each network's own type, and the
+status footer's 140px watermark.
+
+**Why.** By 2026-11 the app held ~330 hand-set sizes in ten values (12.5px
+and 13px alone were 233), so two screens could say the same kind of thing a
+pixel apart. Controls kept 13px as their own size rather than joining 12 or
+14: a button label reads as a control, not as a row's text or its meta.
+Each new size is also listed in `lib/styles.ts`, or `cn()` files it as a
+colour and drops it beside one.
+
 ## Centralized credentials & the SaaS multi-tenancy transition
 
 **Decision.** Ogen is moving to multi-tenant SaaS with **naive pooled

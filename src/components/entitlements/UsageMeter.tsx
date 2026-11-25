@@ -56,7 +56,7 @@ export function UsageMeter({ usage, format, className }: Props) {
           })
 
   return (
-    <span className={cn('text-[13px] text-tertiary-foreground', className)}>
+    <span className={cn('text-xs text-tertiary-foreground', className)}>
       {text}
     </span>
   )

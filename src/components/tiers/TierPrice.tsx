@@ -26,7 +26,7 @@ export function TierPrice({
 
   const figure = cn(
     size === 'large' &&
-      'font-display text-[44px] leading-none font-medium tracking-tight text-foreground',
+      'font-display text-figure leading-none font-medium tracking-tight text-foreground',
   )
   if (rate.amount === 0) {
     return <span className={figure}>{t('tiers.priceFree')}</span>

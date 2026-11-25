@@ -28,7 +28,7 @@ export function OutlineStage({
         {fileName && <span className="truncate">{fileName}</span>}
       </div>
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-medium text-secondary-foreground">
+        <p className="text-xs font-medium text-secondary-foreground">
           {outline.kind === 'slides'
             ? t('assetInsights.outline.slides')
             : t('assetInsights.outline.contents')}
@@ -38,7 +38,7 @@ export function OutlineStage({
             <li
               key={i}
               className={cn(
-                'flex min-w-0 items-baseline gap-2 text-[13px]',
+                'flex min-w-0 items-baseline gap-2 text-sm',
                 item.depth === 0
                   ? 'font-medium text-foreground'
                   : 'text-secondary-foreground',

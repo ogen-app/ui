@@ -128,8 +128,8 @@ function Rule({
         {sample}
       </span>
       <div className="flex min-w-0 flex-col gap-0.5">
-        <dt className="text-[13px] font-semibold text-foreground">{title}</dt>
-        <dd className="text-[13px]/[1.45] text-secondary-foreground">{body}</dd>
+        <dt className="text-sm font-semibold text-foreground">{title}</dt>
+        <dd className="text-sm/[1.45] text-secondary-foreground">{body}</dd>
       </div>
     </div>
   )
@@ -227,7 +227,7 @@ function CornerSample() {
       <text
         x="2"
         y="21"
-        className="fill-foreground font-display text-[16px] font-medium"
+        className="fill-foreground font-display text-base font-medium"
       >
         6
       </text>

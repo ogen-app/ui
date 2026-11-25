@@ -44,6 +44,7 @@ import { AssetKindMark } from './AssetKindMark'
 import { FitRing } from './FitRing'
 import { MatchSnippet } from './MatchSnippet'
 import { VERDICT_ICON } from './verdictIcons'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * One document on the Assets list, as a card (design/ideas-cards): its own
@@ -178,7 +179,7 @@ function AssetListRowComponent({
             <CampaignMark
               id={held[0].id}
               name={held[0].name}
-              className="size-4 shrink-0 text-[10px]"
+              className="size-4 shrink-0 text-mark"
             />
             <span className="truncate">{held[0].name}</span>
             {held.length > 1 && (
@@ -350,9 +351,7 @@ function Details({
     ) : state === 'noIdeas' ? (
       <span className="flex shrink-0 items-center gap-1.5">
         {t('content.list.noIdeas')}
-        <button
-          type="button"
-          className="cursor-pointer font-medium text-foreground outline-none hover:underline focus-visible:underline disabled:opacity-50"
+        <TextButton
           disabled={retry.isPending}
           onClick={() =>
             retry.mutate(null, {
@@ -364,7 +363,7 @@ function Details({
           }
         >
           {t('content.list.analyseAgain')}
-        </button>
+        </TextButton>
       </span>
     ) : null,
   )
@@ -555,7 +554,7 @@ function WaitingIdeas({
       >
         {analyses.isPending || ideas.length === 0 ? (
           <div className="px-3 py-1">
-            <p className="px-1 py-2.5 text-[12.5px]/5 text-secondary-foreground">
+            <p className="px-1 py-2.5 text-xs/5 text-secondary-foreground">
               {analyses.isPending
                 ? t('content.list.otherIdeasLoading')
                 : t('content.list.otherIdeasNone')}
@@ -569,9 +568,7 @@ function WaitingIdeas({
                 className="grid grid-cols-[20px_minmax(0,1fr)_auto] gap-x-3 border-t border-quaternary px-1 py-2.5 first:border-t-0"
               >
                 <FitRing score={idea.fit_score} />
-                <span className="text-[12.5px]/5 text-foreground">
-                  {idea.title}
-                </span>
+                <span className="text-xs/5 text-foreground">{idea.title}</span>
                 <VerdictMark verdict={ideaVerdictKey(idea, now)} />
                 {idea.note && (
                   <span className="col-span-2 col-start-2 mt-0.5 line-clamp-2 text-xs/[17px] text-secondary-foreground">

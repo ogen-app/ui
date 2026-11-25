@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { LightbulbIcon } from '@phosphor-icons/react'
+import {
+  LightbulbIcon,
+  PencilSimpleLineIcon,
+  StackIcon,
+} from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { IdeaPostForm } from '@/components/ideas/IdeaPostForm'
 import { useCompileIdeas, useDraftIdeas } from '@/hooks/useIdeaPosts'
 import { cn } from '@/lib/styles'
 import type { IdeaSlot } from '@/services/api/ideaPosts'
 import { SeriesMark } from '@/components/series/SeriesMark'
+import { Button } from '@/components/ui/button'
 
 /** The slot's fixed height, which the week's ladder reserves per slot. */
 export const IDEA_SLOT_HEIGHT = 52
@@ -17,7 +22,8 @@ export const IDEA_SLOT_HEIGHT = 52
  * pointer it offers its two verbs — COMPILE into a planned post (theses
  * only), or DRAFT a full body — each through the Ideas list's form, which
  * asks for the platforms with the idea's own preset (CON-470). The posts take
- * the slot's day.
+ * the slot's day. Two Ogen verbs in one line are black words, each with its
+ * own icon, never a pair of button bodies.
  *
  * Without a pointer to hover with, a tap focuses the card and that reveals the
  * verbs; until then the overlay takes no taps, so a first touch can never
@@ -70,7 +76,7 @@ export function IdeaSlotCard({
       className="group relative shrink-0 overflow-hidden border border-dashed border-quinary-foreground px-2 py-1.5 outline-none"
       style={{ height: IDEA_SLOT_HEIGHT }}
     >
-      <p className="flex items-center gap-1 text-[10px] font-semibold tracking-[0.08em] text-tertiary-foreground">
+      <p className="flex items-center gap-1 text-xs font-semibold tracking-[0.08em] text-tertiary-foreground">
         <LightbulbIcon aria-hidden className="size-3 shrink-0" />
         {t('ideas.lifecycle.slot')}
         {showCampaign && slot.campaign_name && (
@@ -102,26 +108,30 @@ export function IdeaSlotCard({
           {...form}
           onSubmit={({ platformIds }) => compile.mutate(request(platformIds))}
         >
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-foreground"
             disabled={busy}
-            className="cursor-pointer border border-border bg-primary px-2 py-1 text-[11px] font-medium tracking-[0.03em] text-foreground hover:border-foreground disabled:cursor-default disabled:text-quinary-foreground"
           >
+            <StackIcon />
             {t('ideas.lifecycle.compile')}
-          </button>
+          </Button>
         </IdeaPostForm>
         <IdeaPostForm
           verb="draft"
           {...form}
           onSubmit={({ platformIds }) => draft.mutate(request(platformIds))}
         >
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-foreground"
             disabled={busy}
-            className="cursor-pointer bg-primary-foreground px-2 py-1 text-[11px] font-medium tracking-[0.03em] text-primary disabled:cursor-default disabled:opacity-50"
           >
+            <PencilSimpleLineIcon />
             {t('ideas.lifecycle.draft')}
-          </button>
+          </Button>
         </IdeaPostForm>
       </div>
     </div>

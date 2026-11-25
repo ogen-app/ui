@@ -278,7 +278,7 @@ function growth(n: number): string {
 /** The card's last line: what it read over, where sources sit elsewhere. */
 function CiteFooter({ line }: { line: string }) {
   return (
-    <p className="border-t border-border pt-2.5 text-[12.5px] text-secondary-foreground">
+    <p className="border-t border-border pt-2.5 text-xs text-secondary-foreground">
       {line}
     </p>
   )
@@ -287,7 +287,7 @@ function CiteFooter({ line }: { line: string }) {
 /** A read the model words alone, cited on one line. */
 function CitedLine({ what, line }: { what: string; line: string }) {
   return (
-    <p className="text-[12.5px] text-secondary-foreground">
+    <p className="text-xs text-secondary-foreground">
       <span className="text-foreground">{what}</span> {line}
     </p>
   )
@@ -370,7 +370,7 @@ const MEASURE_OF: Record<string, MeasureId> = {
 }
 
 /** A figure's own type: Plex Mono, regular, so columns of them line up. */
-const FIGURE = 'font-mono text-[13px] font-normal tabular-nums'
+const FIGURE = 'font-mono text-sm font-normal tabular-nums'
 
 function Figure({
   label,
@@ -392,7 +392,7 @@ function Figure({
         <span
           className={cn(
             FIGURE,
-            'w-16 shrink-0 text-right text-[12.5px]',
+            'w-16 shrink-0 text-right text-xs',
             change.down ? 'text-warning-ink' : 'text-secondary-foreground',
           )}
         >
@@ -400,7 +400,7 @@ function Figure({
         </span>
       )}
       {sub && (
-        <span className="shrink-0 text-[12.5px] text-secondary-foreground">
+        <span className="shrink-0 text-xs text-secondary-foreground">
           {sub}
         </span>
       )}
@@ -891,7 +891,7 @@ function PostRows({ list }: { list: PostsList }) {
           {p.title || t('assistant.analytics.untitled')}
         </span>
         {p.publishedAt && (
-          <span className="text-[12.5px] text-secondary-foreground">
+          <span className="text-xs text-secondary-foreground">
             {day(p.publishedAt)}
           </span>
         )}
@@ -1018,7 +1018,7 @@ function CompareCard({
             })
       }
     >
-      <div className="flex gap-3 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-secondary-foreground">
+      <div className="flex gap-3 pb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-secondary-foreground">
         <span className="min-w-0 flex-1" />
         <span className="w-16 shrink-0 truncate text-right">{first}</span>
         <span className="w-16 shrink-0 truncate text-right">{second}</span>
@@ -1054,7 +1054,7 @@ function CompareCard({
             <span
               className={cn(
                 FIGURE,
-                'w-16 shrink-0 text-right text-[12.5px]',
+                'w-16 shrink-0 text-right text-xs',
                 m.change < 0 ? 'text-warning-ink' : 'text-secondary-foreground',
               )}
             >
@@ -1065,7 +1065,7 @@ function CompareCard({
       })}
       <CiteFooter line={footer} />
       {lengths && lengths[0] !== lengths[1] && (
-        <p className="pt-2 text-[12.5px] text-secondary-foreground">
+        <p className="pt-2 text-xs text-secondary-foreground">
           {t('assistant.analytics.compare.lengths', {
             first: formatNumber(lengths[0]),
             second: formatNumber(lengths[1]),
@@ -1113,7 +1113,7 @@ export function TrailRows({ trail }: { trail: TrailStep[] }) {
         )}
       </span>
       {step.noTrail ? (
-        <span className="text-[12.5px] text-secondary-foreground">
+        <span className="text-xs text-secondary-foreground">
           {t('assistant.analytics.more.ownWords')}
         </span>
       ) : (
@@ -1192,7 +1192,7 @@ function TrailLine({
 }) {
   return (
     <span
-      className="flex items-center gap-2 text-[12.5px] text-secondary-foreground"
+      className="flex items-center gap-2 text-xs text-secondary-foreground"
       style={{ paddingLeft: `${depth * 16}px` }}
     >
       <span className="flex size-3.5 shrink-0 items-center justify-center">
@@ -1266,7 +1266,7 @@ function MoreLikeTheseCard({ more }: { more: MoreLikeThese }) {
             <ResultRow key={idea.id} className="flex flex-col gap-0.5 text-sm">
               <span className="text-foreground">{idea.title}</span>
               {idea.angle && (
-                <span className="text-[12.5px] text-secondary-foreground">
+                <span className="text-xs text-secondary-foreground">
                   {idea.angle}
                 </span>
               )}

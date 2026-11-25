@@ -6,7 +6,7 @@ import {
   useHelpIndex,
   usePageHelpArticle,
 } from '@/hooks/useHelp'
-import { Button } from '@/components/ui/button'
+import { GradientButton } from '@/components/ui/gradient-button'
 import { useLocale } from '@/hooks/useLocale'
 import { Spinner } from '@/components/ui/spinner'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
@@ -20,6 +20,7 @@ import { selectActivePanel, useSettingsStore } from '@/stores/settingsStore'
 import { awaiting } from '@/lib/fetched'
 import type { HelpBlock, HelpEmbeddedArticle } from '@/types/help'
 import { SmallHeading } from '@/components/page-primitives/SmallHeading'
+import { TextButton } from '@/components/ui/text-button'
 
 /**
  * The help centre (CON-173): a right-rail panel, opened from Help in the bar
@@ -230,9 +231,9 @@ function HelpEmptyState({
         <p className="text-foreground text-sm font-medium">{title}</p>
         <p className="text-tertiary-foreground text-sm">{body}</p>
       </div>
-      <Button variant="outline" size="sm" onClick={onAction}>
+      <GradientButton size="sm" onClick={onAction}>
         {action}
-      </Button>
+      </GradientButton>
     </div>
   )
 }
@@ -257,16 +258,16 @@ function Trail({
   const { t } = useTranslation()
   if (previousKey) {
     return (
-      <button
-        type="button"
+      <TextButton
+        tone="quiet"
+        className="-ml-1 flex min-w-0 items-center gap-1 px-1 py-0.5 text-xs"
         onClick={onBack}
-        className="text-tertiary-foreground hover:text-foreground -ml-1 flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-xs"
       >
         <ArrowLeftIcon className="size-3.5 shrink-0" />
         <span className="truncate">
           <ArticleTitle articleKey={previousKey} fallback={t('help.back')} />
         </span>
-      </button>
+      </TextButton>
     )
   }
   if (!category) return null

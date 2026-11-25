@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { ModalContainer } from '@/components/ui/modal'
 import { TagsInput } from '@/components/ui/tags-input'
-import { cn } from '@/lib'
 import type { Tag } from '@/types/content'
+import { ChipButton } from '@/components/ui/chip'
 
 type Props = {
   /** How many documents the tags are being filed onto. */
@@ -112,18 +112,12 @@ export function TagDocumentsDialog({
                 {present.map(({ tag, count: on }) => {
                   const marked = remove.includes(tag.id)
                   return (
-                    <button
+                    <ChipButton
+                      crossed={marked}
                       key={tag.id}
-                      type="button"
                       disabled={saving}
                       onClick={() => toggleRemove(tag.id)}
                       aria-pressed={marked}
-                      className={cn(
-                        'inline-flex items-center gap-1.5 border px-2 py-1 text-[13px]/4',
-                        marked
-                          ? 'border-destructive text-destructive line-through'
-                          : 'border-tertiary bg-secondary text-primary-foreground',
-                      )}
                     >
                       <span className="max-w-40 truncate">{tag.name}</span>
                       {on !== null && (
@@ -135,7 +129,7 @@ export function TagDocumentsDialog({
                         </span>
                       )}
                       {marked && <XIcon className="size-3 shrink-0" />}
-                    </button>
+                    </ChipButton>
                   )
                 })}
               </div>

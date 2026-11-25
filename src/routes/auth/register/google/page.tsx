@@ -74,7 +74,7 @@ function GoogleSignupPage() {
         pending.data ? (
           <AuthGoogleSignupForm token={token} pending={pending.data} />
         ) : (
-          <p className="text-[13px] leading-5 text-secondary-foreground">
+          <p className="text-sm leading-5 text-secondary-foreground">
             {t('common.loading')}
           </p>
         )

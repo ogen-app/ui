@@ -129,7 +129,7 @@ export function UiActionRows({
           >
             {change && <WindowChange action={change.action} />}
             {action.type === 'open_connect' && action.connect && (
-              <p className="pt-2.5 text-[12.5px] text-secondary-foreground">
+              <p className="pt-2.5 text-xs text-secondary-foreground">
                 {!action.connect.reconnect && inCampaign
                   ? t('assistant.uiAction.connectCampaignNote', {
                       platform: platformName(action.connect.platform),
@@ -192,7 +192,7 @@ function WindowChange({ action }: { action: UIAction }) {
   const after = words.parts(windowOf(action))
   return changedControls(action).map((control) => (
     <ResultRow key={control} className="flex items-baseline gap-3 text-sm">
-      <span className="w-20 shrink-0 text-[12.5px] text-secondary-foreground">
+      <span className="w-20 shrink-0 text-xs text-secondary-foreground">
         {t(`assistant.uiAction.window.${control}`)}
       </span>
       <span className="min-w-0 flex-1 truncate">

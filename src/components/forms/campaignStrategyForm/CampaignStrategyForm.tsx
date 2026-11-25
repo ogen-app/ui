@@ -446,7 +446,7 @@ export function CampaignStrategyForm({ campaign }: Props) {
                   {t('campaigns.strategy.removedByAssistant', {
                     what: removal.removed,
                   })}
-                  <span className="text-[12.5px] text-secondary-foreground">
+                  <span className="text-xs text-secondary-foreground">
                     {t('campaigns.strategy.undoInThread')}
                   </span>
                 </p>

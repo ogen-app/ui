@@ -113,7 +113,7 @@ export function AccountRow({
             aria-hidden
             className="flex shrink-0 items-center gap-2.5 text-tertiary-foreground transition-colors group-hover:text-primary-foreground"
           >
-            <span className="text-[13px]/4 font-medium">
+            <span className="text-control font-medium">
               {t('campaigns.accounts.activate')}
             </span>
             <PlusIcon className="size-4" weight="bold" />

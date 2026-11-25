@@ -277,7 +277,7 @@ function DraftsCard({
         return (
           <ResultRow key={post.id} className="flex flex-col gap-0.5">
             <span className="text-sm text-foreground">{post.title}</span>
-            <span className="text-[12.5px] text-tertiary-foreground">
+            <span className="text-xs text-tertiary-foreground">
               {[post.platform, type].filter(Boolean).join(' · ')}
             </span>
           </ResultRow>
@@ -324,26 +324,26 @@ function platforms(
       {kept.map((post) => (
         <ResultRow key={post.id} className="flex flex-col gap-0.5">
           <span className="text-sm text-foreground">{post.title}</span>
-          <span className="text-[12.5px] text-tertiary-foreground">
+          <span className="text-xs text-tertiary-foreground">
             {[post.platform, post.postType].filter(Boolean).join(' · ')}
           </span>
         </ResultRow>
       ))}
       {left - kept.length > 0 && (
-        <p className="pt-2.5 text-[12.5px] text-tertiary-foreground">
+        <p className="pt-2.5 text-xs text-tertiary-foreground">
           {t('assistant.answered.notMade.more', counted(left - kept.length))}
         </p>
       )}
       {left > 0 && (
         <ResultRow>
-          <p className="text-[12.5px] text-warning-ink">
+          <p className="text-xs text-warning-ink">
             {t('assistant.result.keptNote', counted(left))}
           </p>
         </ResultRow>
       )}
       {unscheduled > 0 && (
         <ResultRow>
-          <p className="text-[12.5px] text-secondary-foreground">
+          <p className="text-xs text-secondary-foreground">
             {t('assistant.result.unscheduled', counted(unscheduled))}
           </p>
         </ResultRow>
@@ -466,7 +466,7 @@ function brief(
               <span className="text-sm text-foreground">
                 {known ? t(`assistant.result.briefField.${known}`) : field}
               </span>
-              <span className="text-[12.5px] whitespace-pre-line text-secondary-foreground">
+              <span className="text-xs whitespace-pre-line text-secondary-foreground">
                 {value}
               </span>
             </ResultRow>
@@ -525,7 +525,7 @@ export function UndoNote({
       {state === 'undone' ? (
         <ResolvedLine>{undone ?? t('assistant.undo.undone')}</ResolvedLine>
       ) : (
-        <p className="text-[12.5px] text-warning">
+        <p className="text-xs text-warning">
           {state === 'changed'
             ? (changed ?? t('assistant.undo.changed'))
             : t('assistant.undo.gone')}

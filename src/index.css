@@ -202,6 +202,25 @@
      32px leading sits inside the header's 40px row. Generates `text-display`. */
   --text-display: 1.5rem;
   --text-display--line-height: 2rem;
+  /* The type scale. Text is 14/20 (`text-sm`) when it is read and 12/16
+     (`text-xs`) when it is glanced at: a row's meta, a count, a caption, a
+     small heading. Above them, headings and figures use the stock steps
+     (`text-base` to `text-2xl`) and `text-display`. Three named sizes sit
+     outside that, each for one job only:
+     - `text-control`, 13/16: the words on a control — a button, a tab, a
+       field's label, a dropdown button, a chip — and a table's cells.
+     - `text-mark`, 10px: the letter or figure drawn inside a fixed-size mark
+       (an initial in a 24px square, a count on an icon). Never for words.
+     - `text-figure`, 44px: the one big number a card is about (a price, a
+       score).
+     No other size is written by hand (`text-[13px]`). The platform previews
+     are the exception: they copy each network's own type. */
+  --text-control: 0.8125rem;
+  --text-control--line-height: 1rem;
+  --text-mark: 0.625rem;
+  --text-mark--line-height: 1;
+  --text-figure: 2.75rem;
+  --text-figure--line-height: 1;
 
   /* Radius */
   --radius-sm: calc(var(--radius) + 0px);
@@ -682,15 +701,15 @@
   /* Common table text styles */
   .table-text {
     font-weight: 400;
-    font-size: 13px;
-    line-height: 16px;
+    font-size: var(--text-control);
+    line-height: var(--text-control--line-height);
     white-space: nowrap;
   }
 
   .table-text-accented {
     font-weight: 600;
-    font-size: 13px;
-    line-height: 16px;
+    font-size: var(--text-control);
+    line-height: var(--text-control--line-height);
     white-space: nowrap;
   }
 
@@ -969,13 +988,14 @@
 
   /* The sweep on glyphs. Transparent text for the same reason as the
      shimmer below; an icon cannot be clipped this way, so `GradientMark`
-     paints its mark with an SVG gradient on the same tokens. */
+     paints its mark with an SVG gradient on the same tokens.
+     Words go blue to green only: the orange tip, right on a mark, lands on a
+     label's last letters ("Assess quali|ty") and reads as a smudge. */
   .text-sweep {
     background-image: linear-gradient(
       90deg,
       var(--sweep-from),
-      var(--sweep-to) 75%,
-      var(--sweep-splash)
+      var(--sweep-to)
     );
     background-clip: text;
     -webkit-background-clip: text;

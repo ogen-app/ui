@@ -18,6 +18,8 @@ import type {
   ValueOption,
 } from '@/lib/smartFilter'
 import { SmallHeading } from '@/components/page-primitives/SmallHeading'
+import { TextButton } from '@/components/ui/text-button'
+import { Segmented } from '@/components/ui/segmented'
 
 /**
  * The parts of a list's filter that `FilterPills` is built from: a pill's
@@ -261,15 +263,15 @@ export function AddDetail<F, Field extends string>({
 
   if (!adding)
     return (
-      <button
-        type="button"
+      <TextButton
+        tone="quiet"
+        className="flex h-6 items-center gap-1 px-1 whitespace-nowrap"
         data-add
         onClick={onStart}
-        className="flex h-6 cursor-pointer items-center gap-1 px-1 whitespace-nowrap text-secondary-foreground outline-none hover:text-foreground focus-visible:underline"
       >
         <PlusIcon className="size-3 self-center" aria-hidden />
         {t('sentence.add')}
-      </button>
+      </TextButton>
     )
 
   let index = -1
@@ -355,7 +357,7 @@ export function AddDetail<F, Field extends string>({
         </div>
         <div
           aria-hidden
-          className="flex items-center gap-3 border-t border-quaternary px-3.5 py-1.5 text-[11px] text-tertiary-foreground"
+          className="flex items-center gap-3 border-t border-quaternary px-3.5 py-1.5 text-xs text-tertiary-foreground"
         >
           {(
             [
@@ -536,29 +538,18 @@ export function ClausePanel<F, Field extends string>({
       </p>
 
       {labels && (
-        <div
-          role="radiogroup"
+        <Segmented
+          size="sm"
+          fill
+          className="mx-3.5 mb-2 w-auto"
           aria-label={question}
-          className="mx-3.5 mb-2 flex border border-quaternary"
-        >
-          {[false, true].map((n) => (
-            <button
-              key={String(n)}
-              type="button"
-              role="radio"
-              aria-checked={n === negated}
-              onClick={() => negate(n)}
-              className={cn(
-                'flex-1 cursor-pointer py-1.5 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-accent',
-                n === negated
-                  ? 'bg-secondary font-medium text-foreground'
-                  : 'text-secondary-foreground hover:text-foreground',
-              )}
-            >
-              {n ? labels[1] : labels[0]}
-            </button>
-          ))}
-        </div>
+          value={negated ? 'not' : 'is'}
+          onChange={(v) => negate(v === 'not')}
+          options={[
+            { value: 'is', label: labels[0] },
+            { value: 'not', label: labels[1] },
+          ]}
+        />
       )}
 
       {kind === 'search' || kind === 'substrings' ? (
@@ -601,25 +592,15 @@ export function ClausePanel<F, Field extends string>({
         />
       )}
 
-      <div className="flex items-center justify-between border-t border-quaternary px-3.5 py-2 text-[13px]">
+      <div className="flex items-center justify-between border-t border-quaternary px-3.5 py-2 text-control">
         {token ? (
-          <button
-            type="button"
-            onClick={remove}
-            className="cursor-pointer text-secondary-foreground outline-none hover:text-foreground focus-visible:underline"
-          >
+          <TextButton tone="quiet" onClick={remove}>
             {t('sentence.removeDetail')}
-          </button>
+          </TextButton>
         ) : (
           <span />
         )}
-        <button
-          type="button"
-          onClick={onClose}
-          className="cursor-pointer font-medium text-foreground outline-none focus-visible:underline"
-        >
-          {t('sentence.done')}
-        </button>
+        <TextButton onClick={onClose}>{t('sentence.done')}</TextButton>
       </div>
     </div>
   )
@@ -657,12 +638,12 @@ function ChoiceStep({
           placeholder={findLabel}
           aria-label={findLabel}
           autoFocus
-          className="mx-3.5 mb-1.5 h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-[13px] outline-none focus:border-foreground"
+          className="mx-3.5 mb-1.5 h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-control outline-none focus:border-foreground"
         />
       )}
       <div className="max-h-72 overflow-y-auto pb-1">
         {shown.length === 0 ? (
-          <p className="px-3.5 py-2 text-[13px] text-tertiary-foreground">
+          <p className="px-3.5 py-2 text-xs text-tertiary-foreground">
             {options.length
               ? t('content.filter.nothingMatches')
               : t('sentence.noValues')}
@@ -897,7 +878,7 @@ function TextStep({
         aria-label={placeholder}
         maxLength={max}
         autoFocus
-        className="h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-[13px] outline-none focus:border-foreground"
+        className="h-[34px] border-b border-quaternary bg-input-secondary px-2.5 text-control outline-none focus:border-foreground"
       />
       {!ready && trimmed.length > 0 && (
         <p className="text-xs text-tertiary-foreground">
