@@ -3,6 +3,7 @@ import { StarIcon } from '@hugeicons/core-free-icons'
 import { Card, NewCard } from '@/components/ui/card'
 import { brandSection } from '@/lib/brandSections'
 import { rulesLine, sampleCount, usageLine } from './format'
+import { voiceRun } from './entryMarks'
 import { BrandLibrary, LibraryEntry, OriginLine, StarterCard } from './shell'
 import { VOICE_STARTERS, voiceStarterCopy } from './starters'
 import { MIN_VOICE_SAMPLES, type BrandVoice } from './types'
@@ -186,6 +187,7 @@ function VoiceCard({
 
   return (
     <LibraryEntry
+      section="voices"
       onOpen={onOpen ? () => onOpen(voice.id) : undefined}
       name={voice.name}
       // The star is green once the voice has the samples behind it that make
@@ -205,12 +207,12 @@ function VoiceCard({
       line={voice.whenToUse}
       // The sample carries the card: it is the one thing that tells one voice
       // from another, which a description cannot.
-      substance={voice.samples[0]}
-      empty={t('brand.voices.noSamples')}
+      run={voiceRun(t, voice)}
+      empty={t('brand.entry.noSamples')}
       facts={[
         rulesLine(t, voice.rules),
         facts.join(t('brand.facts.separator')),
-        ...(usedBy ? [usedBy] : []),
+        usedBy,
         <OriginLine key="origin" origin={voice.origin} />,
       ]}
     />

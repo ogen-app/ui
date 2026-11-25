@@ -1,5 +1,5 @@
-import { screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import { i18next } from '@/i18n'
 import { brandSectionCopy, SHOWN_BRAND_SECTIONS } from '@/lib/brandSections'
 import { BrandOverview } from './BrandOverview'
@@ -113,5 +113,50 @@ describe('the Foundation hub', () => {
     // same nothing.
     expect(screen.queryByText(label('voices'))).not.toBeInTheDocument()
     expect(skeletons()).toBeGreaterThan(0)
+  })
+
+  it('opens the entry a row names, and the section from its heading', async () => {
+    const onOpen = vi.fn()
+    const onOpenPlace = vi.fn()
+    await renderWithProviders(
+      <BrandOverview
+        brand={{
+          status: 'ready',
+          data: {
+            ...BRAND,
+            guardrails: {
+              mayClaim: [],
+              neverClaim: ['That a result is guaranteed.'],
+              bannedWords: [],
+              disclaimer: '',
+              facts: [],
+              updatedAt: '2026-01-01T00:00:00.000Z',
+            },
+          },
+        }}
+        onOpen={onOpen}
+        onOpenPlace={onOpenPlace}
+      />,
+    )
+
+    // A row is a door of its own: the voice, and one card of the guardrails.
+    fireEvent.click(screen.getByRole('link', { name: new RegExp(VOICE.name) }))
+    expect(onOpenPlace).toHaveBeenCalledWith({ section: 'voices', id: 'v1' })
+
+    fireEvent.click(
+      screen.getByRole('link', {
+        name: new RegExp(i18next.t('brand.overview.guardrails.neverClaim')),
+      }),
+    )
+    expect(onOpenPlace).toHaveBeenCalledWith({
+      section: 'guardrails',
+      part: 'never-claim',
+    })
+
+    // With rows that open, only the heading opens the section.
+    fireEvent.click(
+      screen.getByRole('button', { name: new RegExp(label('voices')) }),
+    )
+    expect(onOpen).toHaveBeenCalledWith('voices')
   })
 })

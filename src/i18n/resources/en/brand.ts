@@ -40,15 +40,21 @@ export const brand = {
   binding: {
     voice: 'Voice',
     audience: 'Audience',
-    campaignVoiceHint:
-      'Every post in this campaign is written in this voice. One post can still pick another, on the post.',
-    campaignAudienceHint:
-      'Every post in this campaign is written to these people. One post can still address somebody else, on the post.',
-    workspaceDefault: 'Workspace default — {{name}}',
-    manageVoices: 'Edit voices',
-    manageAudiences: 'Edit audiences',
+    workspaceDefault: 'Workspace default ({{name}})',
     noVoice: 'No voice',
     noAudience: 'No audience',
+    chosenHere: 'Chosen for this campaign',
+    voiceInherited: 'The workspace default, until this campaign picks one',
+    voiceReach:
+      'Every post here is written in it; one post can still pick another',
+    audienceReach:
+      'Every post here is written to them; one post can still address somebody else',
+    audienceNoDefault:
+      'An audience has no workspace default: nothing is assumed',
+    noVoiceRun:
+      'Written in no voice in particular. Pick one, or make one the workspace default.',
+    noAudienceRun:
+      'Written to no one in particular. Pick who these posts are for.',
     sourcePost: 'Set on this post',
     sourceCampaign: 'From the campaign',
     sourceLibrary: "The workspace's default",
@@ -201,6 +207,20 @@ export const brand = {
     separator: ', ',
   },
 
+  /**
+   * The parts every voice, audience and series is drawn from (`entry.tsx`):
+   * the few words in weight a ruled run opens on, and what the run says while
+   * there is nothing to run on from.
+   */
+  entry: {
+    soundsLike: 'Sounds like',
+    readsOn: 'Reads on',
+    scrollsPastWhen: 'Scrolls past when',
+    believesWhen: 'Believes you when',
+    noSamples: 'No samples yet. It will write as if it had no voice.',
+    notDescribed: 'Nothing said about them yet.',
+  },
+
   /** The furniture every Brand screen is built from — `shell.tsx`. */
   shell: {
     /** The word beside the star. Lower case is deliberate — it sits in a row of facts. */
@@ -218,6 +238,8 @@ export const brand = {
     /** The detail beside `origin.posts` — how many posts it was learned from. */
     originPostCount_one: '{{count}} post',
     originPostCount_other: '{{count}} posts',
+    /** Where it came from, the detail in brackets: "From a template (Dry wit)". */
+    originWithDetail: '{{origin}} ({{detail}})',
     offer: {
       dismiss: "Don't offer this again",
       title: 'Fill this in from what you already have',
@@ -748,8 +770,6 @@ export const brand = {
         closing: 'Ends on the sharpest line, not on a summary.',
       },
     },
-    noSamples:
-      'No samples. This voice has a name and nothing behind it — it will generate exactly what no voice at all would.',
     thin: '{{count}} is where it starts working',
     postsBehind: '{{count}} could be redone',
     defaultBacked:

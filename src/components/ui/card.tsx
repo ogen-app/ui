@@ -210,14 +210,26 @@ export type CardProps = {
     }
 )
 
+/**
+ * The caret a door draws — the card's, and every row that opens something
+ * (`LineItem`, `brand/entry`'s rows): one icon, one size, one weight, so a row
+ * and the card it sits in never point in two different hands. Colour and the
+ * hover are the caller's, because the group that hovers is.
+ */
+export function DoorCaret({ className }: { className?: string }) {
+  return (
+    <HugeiconsIcon
+      icon={ArrowRight01Icon}
+      size={16}
+      strokeWidth={2}
+      className={cn('shrink-0', className)}
+      aria-hidden
+    />
+  )
+}
+
 const Caret = () => (
-  <HugeiconsIcon
-    icon={ArrowRight01Icon}
-    size={16}
-    strokeWidth={2}
-    className="ml-auto shrink-0 text-tertiary-foreground group-hover:text-primary-foreground"
-    aria-hidden
-  />
+  <DoorCaret className="ml-auto text-tertiary-foreground group-hover:text-primary-foreground" />
 )
 
 function End({
@@ -429,6 +441,9 @@ export function Card({
     'flex w-full min-w-0 flex-col gap-4 rounded-md border border-border bg-primary p-6',
     capped && 'max-w-content',
     scrolls && 'min-h-0 flex-1 overflow-hidden',
+    // A card with an id is somewhere a link lands (`#never-claim`): clear of
+    // the bar a scrolled page pins over its top.
+    id && 'scroll-mt-16',
   )
 
   // Edge to edge, so the scroll bar sits on the card's border.

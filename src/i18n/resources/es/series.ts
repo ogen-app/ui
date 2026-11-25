@@ -10,7 +10,8 @@ export const series: Translation['series'] = {
     starterGroupBody:
       'Cada una es un ejemplo trabajado de lo más difícil de inventar desde un formulario en blanco: la receta. Toma una y reescríbela hasta que sea tuya.',
     noRecipe:
-      'Aún sin receta: esto agrupa publicaciones, pero nada se construye a partir de ello.',
+      'Aún no tiene receta. Agrupa publicaciones y no escribe nada por sí sola.',
+    toMakeOne: 'Para hacer una,',
   },
   rhythm: {
     occasional: 'Ocasional',
@@ -52,19 +53,25 @@ export const series: Translation['series'] = {
   },
   campaign: {
     title: 'Series',
-    hint: 'Lo que esta campaña hace una y otra vez, y con qué frecuencia. Las publicaciones que reclaman salen de su objetivo.',
     empty:
-      'Esta campaña no ejecuta ninguna. Añade una y reservará sus huecos en cada período automáticamente.',
-    addPlaceholder: 'Añadir una serie',
-    writeOne: 'Escribir una',
-    localOnly: 'solo esta campaña',
-    promote: 'A la biblioteca',
-    promoteHint:
-      'Lleva esta serie a la biblioteca del espacio de trabajo para que otras campañas también puedan ejecutarla.',
-    remove: 'Dejar de ejecutar {{name}}',
-    claim_one: '{{formatted}} publicación',
-    claim_other: '{{formatted}} publicaciones',
+      'Aquí no se ejecuta ninguna serie. Cada publicación se planifica una a una.',
+    add: 'Añadir serie',
+    addTitle: 'Añadir una serie',
+    addNoLibrary:
+      'El espacio de trabajo aún no tiene series. Escribe una y esta campaña podrá ejecutarla.',
+    addNone: 'Todas las series del espacio de trabajo ya se ejecutan aquí.',
+    writeNew: 'Escribir una serie nueva',
+    cancel: 'Cancelar',
+    howOften: 'Con qué frecuencia',
+    claim_one: '{{formatted}} publicación en esta campaña',
+    claim_other: '{{formatted}} publicaciones en esta campaña',
     claimsNone: 'sin huecos fijos',
+    localOnly: 'solo en esta campaña',
+    madeHere: 'Creada en esta campaña',
+    stop: 'Dejar de ejecutar',
+    edit: 'Editar serie',
+    promote: 'Añadir a la biblioteca',
+    done: 'Hecho',
   },
   detail: {
     back: 'Volver a series',
