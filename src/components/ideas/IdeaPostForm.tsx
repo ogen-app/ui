@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -324,13 +325,17 @@ function FormBody({
 
       <div className="flex items-center gap-4 border-t border-border px-4 py-3">
         <Button
-          variant="defaultInverted"
+          variant="accent"
           size="sm"
           disabled={blocked}
           onClick={() =>
             onSubmit({ platformIds: platforms ? ticked : [], together })
           }
         >
+          <Logo
+            variant="mark"
+            className="size-4 shrink-0 [&_path:first-of-type]:fill-primary"
+          />
           {confirm}
         </Button>
         <TextButton tone="quiet" className="text-xs" onClick={onCancel}>

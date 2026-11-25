@@ -77,7 +77,10 @@ const buttonVariants = cva(
         accent:
           'bg-accent text-primary hover:bg-accent/90 ' +
           'data-[active=true]:bg-accent/90 ' +
-          '[&_[data-spinner-container]]:bg-accent [&_[data-spinner]]:bg-primary/20 [&_[data-spinner]:before]:bg-primary',
+          '[&_[data-spinner-container]]:bg-accent [&_[data-spinner]]:bg-primary/20 [&_[data-spinner]:before]:bg-primary ' +
+          // Disabled, it greys the way `defaultInverted` does: a teal that
+          // cannot be pressed would still read as the one to press.
+          'disabled:bg-senary',
         // Accented without a fill: the default surface, with the ink drawn by
         // `GradientButton` (ui/gradient-button), which puts the sweep on the
         // mark and the label. It hovers to a grey rather than to `default`'s

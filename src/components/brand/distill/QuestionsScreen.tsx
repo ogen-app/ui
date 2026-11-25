@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -64,11 +65,15 @@ export function QuestionsScreen() {
             })}
           </span>
           <Button
-            variant="defaultInverted"
+            variant="accent"
             loading={request.isPending}
             disabled={answers.length === 0}
             onClick={() => request.mutate({ answers })}
           >
+            <Logo
+              variant="mark"
+              className="size-4 shrink-0 [&_path:first-of-type]:fill-primary"
+            />
             {t('brand.distill.questions.draft')}
           </Button>
         </div>
