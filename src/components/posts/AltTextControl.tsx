@@ -19,24 +19,26 @@ type Props = {
 }
 
 /**
- * The line under an image tile that says whether it is described, and opens
- * the description. Under the tile rather than on it, like the thread picker:
- * the tile's corners are spoken for, and "no alt text" has to be readable as
- * words — a glyph would not say which of the three states the image is in.
+ * The line under an image tile: the image's description itself, in italics,
+ * or "No alt text" — and pressing it opens the description. Under the tile
+ * rather than on it, like the thread picker: the tile's corners are spoken
+ * for. A caption rather than a warning (2026-11-25): the Checks tab is where
+ * a missing description is raised, so the line only says what is there.
  */
 export function AltTextControl({ attachment, limit, frozen, onSave }: Props) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const state = altTextState(attachment)
 
+  const missing = state === 'missing'
+  const words = missing
+    ? t('posts.media.altText.missing')
+    : attachment.alt_text.trim()
+  const caption =
+    'w-32 truncate px-1.5 py-1 text-left text-xs italic text-tertiary-foreground'
+
   // Nothing to read on a frozen post with no description, so nothing to open.
-  if (frozen && state === 'missing') {
-    return (
-      <span className="w-32 px-1.5 py-1 text-xs text-tertiary-foreground">
-        {t('posts.media.altText.state.missing')}
-      </span>
-    )
-  }
+  if (frozen && missing) return <span className={caption}>{words}</span>
 
   return (
     <>
@@ -46,18 +48,14 @@ export function AltTextControl({ attachment, limit, frozen, onSave }: Props) {
         aria-label={t(
           frozen ? 'posts.media.altText.view' : 'posts.media.altText.edit',
         )}
+        title={missing ? undefined : words}
         className={cn(
-          'flex w-32 items-center gap-1.5 px-1.5 py-1 cursor-pointer text-xs',
-          'bg-tertiary hover:bg-quaternary',
-          state === 'missing' ? 'text-warning' : 'text-tertiary-foreground',
+          caption,
+          'cursor-pointer outline-none hover:text-foreground focus-visible:text-foreground',
+          !missing && 'text-secondary-foreground',
         )}
       >
-        <span className="shrink-0 border border-current px-0.5 text-mark font-medium leading-tight">
-          ALT
-        </span>
-        <span className="truncate">
-          {t(`posts.media.altText.state.${state}`)}
-        </span>
+        {words}
       </button>
       {open && (
         <AltTextDialog

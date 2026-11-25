@@ -298,11 +298,7 @@ export const posts: Translation['posts'] = {
      * Descripción accesible de una imagen, que se publica con ella.
      */
     altText: {
-      state: {
-        missing: 'Sin texto alternativo',
-        generated: 'Auto · revisar',
-        written: 'Texto alternativo',
-      },
+      missing: 'Sin texto alternativo',
       edit: 'Editar texto alternativo',
       view: 'Ver texto alternativo',
       title: 'Texto alternativo',

@@ -441,11 +441,7 @@ export const posts = {
      * which publishes as-is until someone reads it.
      */
     altText: {
-      state: {
-        missing: 'No alt text',
-        generated: 'Auto · review',
-        written: 'Alt text',
-      },
+      missing: 'No alt text',
       edit: 'Edit alt text',
       view: 'View alt text',
       title: 'Alt text',
