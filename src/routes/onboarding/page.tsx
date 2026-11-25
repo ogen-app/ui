@@ -587,10 +587,16 @@ function Sources({
           () => {
             settle(id)
             if (!replaces) return
-            removeRead(replaces).catch(refuse)
+            remove(replaces)
             unreplace(id)
           },
           (err: unknown) => {
+            // The file failed before its read was added: the card stays,
+            // as one to choose again, standing in for what it replaced.
+            if (refusalOf(err) === 'assetFailed') {
+              mark(id, 'readFailed')
+              return
+            }
             settle(id)
             unreplace(id)
             refuse(err)
@@ -644,10 +650,11 @@ function Sources({
       // here only leaves it unread.
       withdrawn.current.add(id)
       settle(id)
-      // Taking back a file chosen again takes back the one it replaced.
+      // Taking back a file chosen again takes back what it replaced — a
+      // read, or a card that was itself refused.
       const replaced = replacing[id]
       if (replaced) {
-        removeRead(replaced).catch(refuse)
+        remove(replaced)
         unreplace(id)
       }
       return
@@ -664,7 +671,7 @@ function Sources({
    */
   const retry = (readId: string) => {
     const read = reads.find((r) => r.id === readId)
-    if (read?.kind === 'asset') {
+    if (read?.kind === 'asset' || pending.some((p) => p.id === readId)) {
       replaceTarget.current = readId
       fileInput.current?.click()
       return
@@ -775,7 +782,7 @@ function Sources({
       }
       return []
     }),
-    ...pending,
+    ...pending.filter((p) => !replaced.has(p.id)),
   ]
   const answers =
     pendingAnswers ?? (answersRead ? answerValues(answersRead) : {})
