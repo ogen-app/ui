@@ -12,7 +12,7 @@ import { searchText } from '@/lib/searchText'
 const plansSearchSchema = z.object({
   /** A tier to preselect — from the marketing link, through signup (CON-328). */
   plan: searchText,
-  /** `return` when Lemon Squeezy's checkout sends the buyer back. */
+  /** `return` when Polar's checkout sends the buyer back. */
   billing: searchText,
   /** The workspace that checkout was for; `__root.tsx` pins the tab to it. */
   workspace: searchText,

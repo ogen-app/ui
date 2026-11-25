@@ -37,7 +37,7 @@ keep it accurate when these rules change.
   `/plans` is the Ledger with no money on it (`lib/complimentaryPlans`: one
   label, a free in-place SWITCH TO, no interval, no popular column), the
   Plan & billing card says "Beta access", and the paywall shows no price.
-  `Tier.available` is not consulted there — it is "Lemon Squeezy can sell
+  `Tier.available` is not consulted there — it is "Polar can sell
   this", false for everything while billing is off, and the comp branch runs
   before billing. Signing up with an invite is `/signup?invite=<token>`; the
   invite-only switch (`/api/signup-config`) governs strangers only, and its
@@ -106,7 +106,7 @@ Five things about the reads that are each a thing not to undo:
   mark can move between page load and click.
 
 **Changing plan is `POST /api/workspace/plan`, and the server picks the
-outcome** (CON-325). No live subscription: 202 with a Lemon Squeezy checkout,
+outcome** (CON-325). No live subscription: 202 with a Polar checkout,
 opened in a tab created synchronously on the click (a `window.open` after the
 `await` is blocked). A live one: 200 with the plan body — an upgrade now, a
 downgrade at the end of the paid period, and choosing the tier already held
@@ -148,8 +148,8 @@ column per tier on one top line, the most popular inverted, and under every
 column the *same* allowance rows with the figure on the right in Plex Mono — the
 columns are the comparison, so there is no second table.
 
-**Ogen sells through Lemon Squeezy as merchant of record, so the app holds no
-billing fields.** Lemon Squeezy is the legal seller: it takes the card, holds
+**Ogen sells through Polar as merchant of record, so the app holds no
+billing fields.** Polar is the legal seller: it takes the card, holds
 the billing address and tax id, works out and remits VAT/GST, and issues the
 invoice. Every editable billing field therefore already has a hosted, PCI-scoped
 form we neither write nor answer for — so our side is a *report and a door*. No
@@ -158,8 +158,8 @@ can disagree with the invoice. **And no billing screen**: what is left to state
 is a plan, a card's last four and one sentence naming where the rest lives,
 which is a card in Workspace Settings. Prices are net and every one on screen
 says "excl. VAT"; a `test_mode` workspace shows a Sandbox badge. The door is
-`POST /api/billing/portal`, which mints a **signed link that expires within the
-day** — never cache, store or put it in a `href` at render time, and open the
+`POST /api/billing/portal`, which mints a **signed link that expires within
+the hour** — never cache, store or put it in a `href` at render time, and open the
 tab synchronously on the click (`useOpenBillingPortal`).
 
 **The call sites are wired** (CON-232). Twelve of the fourteen keys are consulted at the control they govern;

@@ -12,9 +12,6 @@ export const workspaceSettings = {
       "Set from the name at creation; renaming the workspace won't change it.",
     /** The way out of this card — every field in it describes one workspace. */
     switch: 'Switch',
-    timeZoneLabel: 'Time zone',
-    timeZoneNote:
-      'Everything is scheduled in UTC for now; per-workspace time zones land with CON-94.',
   },
   people: {
     title: 'People',
@@ -82,7 +79,7 @@ export const workspaceSettings = {
     title: 'Platform Settings',
     empty:
       'No platforms connected yet — pick one under “Connect Platforms” below.',
-    contentTypes: 'Available Content Types',
+    contentTypes: 'Available content types',
     contentTypesEmpty: 'None',
     needsReconnect: 'Needs reconnecting',
     reconnectDialog: {

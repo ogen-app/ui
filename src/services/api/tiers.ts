@@ -33,7 +33,7 @@ import type { PlanChange, Tier } from '@/types/tiers'
  * depends on the caller:
  *
  * - **`available`** — billing is on and at least one of the tier's prices has a
- *   Lemon Squeezy variant behind it. A tier can be published and not yet
+ *   Polar product behind it. A tier can be published and not yet
  *   sellable; it is listed and cannot be chosen. Per price row as well, because
  *   a yearly price can lag the monthly one.
  * - **`free_trial`** — the one tier an operator has marked in Harbor as
@@ -57,8 +57,8 @@ import type { PlanChange, Tier } from '@/types/tiers'
  *     200 …the /api/me/entitlements body…
  *
  * Owner only. **Which answer comes back is the server's decision**, made off
- * whether the workspace has a live subscription: none, and it mints a Lemon
- * Squeezy checkout (202); one, and it changes the plan in place (200) — an
+ * whether the workspace has a live subscription: none, and it mints a Polar
+ * checkout (202); one, and it changes the plan in place (200) — an
  * upgrade now, a downgrade at the end of the paid period, and choosing the tier
  * already held calls off a pending downgrade. `price_id` picks the interval and
  * defaults to the monthly price.

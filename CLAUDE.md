@@ -303,7 +303,7 @@ Loaded automatically in `src/components/entitlements`, `src/components/tiers`.
 - Checkout's redirect proves nothing.
 - The marketing entry is `/signup?plan=<tier_id>`.
 - `/plans` deliberately sits outside `_authenticated`.
-- Ogen sells through Lemon Squeezy as merchant of record, so the app holds no billing fields.
+- Ogen sells through Polar as merchant of record, so the app holds no billing fields.
 - Selling is one behaviour, not eleven.
 - Being refused is the half that is live, and it is not behind the flag.
 - A gate points at the key the server charges, not at the one the control looks like it costs.

@@ -17,7 +17,7 @@ import type {
  *
  * ## Why there are only two endpoints
  *
- * Ogen sells through **Lemon Squeezy as merchant of record**. Lemon Squeezy is
+ * Ogen sells through **Polar as merchant of record**. Polar is
  * the legal seller: it takes the card, holds the billing address and tax id,
  * calculates and remits VAT/GST/sales tax, and issues the invoice in its own
  * name. Every editable billing field therefore already has a form — a hosted,
@@ -26,7 +26,7 @@ import type {
  *
  * So this API reads, and hands out a door. It does not accept a billing
  * address, a tax id, a card, or a cancellation, because each of those would be
- * a second copy of a record Lemon Squeezy bills against and can disagree with
+ * a second copy of a record Polar bills against and can disagree with
  * the invoice the customer receives. **Answering the question this raised: no,
  * the app does not need address or VAT fields, and should not have them.**
  *
@@ -56,10 +56,10 @@ import type {
  * an empty object: the screen says something different for "no subscription"
  * than for "a subscription with nothing filled in".
  *
- * **`status` is Lemon Squeezy's own vocabulary** (`on_trial`, `active`,
- * `past_due`, `cancelled`, `paused`, `expired`, `unpaid`), passed through
- * rather than mapped. It arrives on their webhooks; a translation table in the
- * middle is a place for the two to drift. An unrecognised value narrows to
+ * **`status` is Ogen's own vocabulary** (`on_trial`, `active`,
+ * `past_due`, `cancelled`, `paused`, `expired`, `unpaid`): the server maps the
+ * provider's statuses into it (CON-523), so it survives a change of provider
+ * and is passed through here rather than mapped a second time. An unrecognised value narrows to
  * `unknown` here, never to `active`.
  *
  * **`renews_at` and `ends_at` are both sent, and only one is set.** A cancelled
@@ -70,7 +70,7 @@ import type {
  * whose subscription predates the provider, or that has none. The screen has to
  * render without the button rather than show one that goes nowhere.
  *
- * **`test_mode` is Lemon Squeezy's sandbox.** While it is on, nothing is really
+ * **`test_mode` is Polar's sandbox.** While it is on, nothing is really
  * charged and the card says so with a small badge — a staging workspace that
  * looks exactly like a paying one is how a test card ends up in a screenshot
  * somebody believes. Prices on this read are net; the card says "excl. VAT".
@@ -79,7 +79,7 @@ import type {
  *     200 {"url": "https://…", "expires_at": "2026-08-23T09:00:00Z"}
  *
  * A signed link into the provider's hosted portal, minted per request. Owner
- * only. Lemon Squeezy's expire 24 hours after issue, which is why this is a
+ * only. Polar's customer sessions last about an hour, which is why this is a
  * `POST` that mints one rather than a field on the payload above: a portal URL
  * that rode along on a cached `GET` is one that has expired by the time
  * somebody clicks it, and one that sat in a Query cache is a signed session

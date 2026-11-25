@@ -75,7 +75,7 @@ describe('complimentaryColumns', () => {
     expect(columns.every((c) => c.label === 'freeWhileTesting')).toBe(true)
   })
 
-  it('still offers a tier Lemon Squeezy cannot sell — billing may be off', () => {
+  it('still offers a tier Polar cannot sell — billing may be off', () => {
     // `available` is "sellable now"; the comp branch runs before billing.
     const columns = complimentaryColumns(
       [tier('starter', false), tier('pro', false)],

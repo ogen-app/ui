@@ -4,6 +4,7 @@ import type { TFunction } from 'i18next'
 import { ArrowsClockwiseIcon, PlugsIcon } from '@phosphor-icons/react'
 import type { PublisherAccount } from '@/types/campaigns'
 import { AccountAvatar } from '@/components/ui/account-avatar'
+import { SmallHeading } from '@/components/page-primitives/SmallHeading'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
 import { ModalContainer } from '@/components/ui/modal'
@@ -170,9 +171,10 @@ function ChipGroup({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[13px] font-normal text-input-label h-4">
-        {label}
-      </span>
+      {/* A heading over the chips, the same as the People card's
+          "Workspace members" — not a field label, since nothing here is a
+          field. */}
+      <SmallHeading as="h3">{label}</SmallHeading>
       {items.length === 0 ? (
         <div className="h-10 py-1 border-b border-transparent flex items-center gap-2 flex-wrap">
           <span className="text-[13px] leading-4 text-primary-foreground">

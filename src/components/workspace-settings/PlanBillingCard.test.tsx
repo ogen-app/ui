@@ -138,9 +138,7 @@ describe('PlanBillingCard', () => {
     // changed for no reason.
     at(NOW)
     const retrying = await render({ billing: billed('past_due') })
-    expect(
-      screen.getByText(/Lemon Squeezy will try it again/),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/Polar will try it again/)).toBeInTheDocument()
     retrying.unmount()
 
     await render({ billing: billed('unpaid') })
@@ -167,7 +165,7 @@ describe('PlanBillingCard', () => {
     })
 
     expect(
-      screen.getByText('Your payment method is held by Lemon Squeezy.'),
+      screen.getByText('Your payment method is held by Polar.'),
     ).toBeInTheDocument()
     expect(screen.queryByText(/on file/)).not.toBeInTheDocument()
   })

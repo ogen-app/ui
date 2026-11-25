@@ -1,15 +1,15 @@
 /**
  * What the workspace pays, and where it goes to change that (CON-232).
  *
- * Deliberately thin, and it stays thin. Ogen sells through **Lemon Squeezy as
- * merchant of record**, which means Lemon Squeezy — not us — is the legal
+ * Deliberately thin, and it stays thin. Ogen sells through **Polar as
+ * merchant of record**, which means Polar — not us — is the legal
  * seller: it takes the card, holds the billing address and tax id, works out
  * and remits VAT/GST/sales tax, and issues the invoice. So the money lives
  * there and this app only ever *reports* it.
  *
  * The rule that follows, and the reason this file is short: **no field a
  * customer could edit belongs here.** No address, no tax id, no card. Every one
- * of those has a form already, in Lemon Squeezy's own hosted portal, which is
+ * of those has a form already, in Polar's own hosted portal, which is
  * validated against the record they actually bill and are legally answerable
  * for. A second copy on our screens would be a copy that can disagree with the
  * invoice — and it would put payment details through a form we own, which is
@@ -24,7 +24,7 @@
  */
 
 /**
- * Where a subscription is in its life, as Lemon Squeezy names it.
+ * Where a subscription is in its life, as Polar names it.
  *
  * The provider's vocabulary rather than one of our own: these arrive on
  * webhooks and every mapping we invented in between would be a place for the
@@ -87,7 +87,7 @@ export type BillingAccount = {
    */
   portal: boolean
   /**
-   * Lemon Squeezy's sandbox is on: nothing here is really charged. Shown as a
+   * Polar's sandbox is on: nothing here is really charged. Shown as a
    * small badge beside the card, never hidden — see `services/api/billing.ts`.
    */
   testMode: boolean
@@ -96,8 +96,8 @@ export type BillingAccount = {
 /**
  * A link into the provider's hosted portal.
  *
- * **Signed and short-lived** — Lemon Squeezy's expire 24 hours after they are
- * issued. So this is fetched at the moment of the click and never cached,
+ * **Signed and short-lived** — Polar's customer sessions last about an
+ * hour. So this is fetched at the moment of the click and never cached,
  * stored, logged or put in a link's `href` at render time. A portal URL sitting
  * in a Query cache is a URL that has expired by the time somebody uses it, and
  * one in a bookmark or a shared screenshot is a session somebody else can open.
