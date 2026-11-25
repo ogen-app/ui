@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { cn } from '@/lib'
 
 type LogoProps = {
@@ -8,21 +9,34 @@ type LogoProps = {
    * `mark` — just the mark, drawn in currentColor on whatever is behind it.
    */
   variant?: 'square' | 'mark'
+  /**
+   * The mark's paint in place of `currentColor` — a `url(#…)` to a gradient
+   * given in `defs` (`GradientLogo`, ui/gradient-button). `mark` only.
+   */
+  paint?: string
+  /** Paint servers for `paint`, drawn inside the svg. */
+  defs?: ReactNode
+  'aria-hidden'?: boolean
 }
 
 export function Logo({
   className,
   loading = false,
   variant = 'square',
+  paint,
+  defs,
+  'aria-hidden': ariaHidden,
 }: LogoProps) {
-  const markColor = variant === 'square' ? '#FFFFFF' : 'currentColor'
+  const markColor = variant === 'square' ? '#FFFFFF' : (paint ?? 'currentColor')
   return (
     <svg
       viewBox="0 0 1000 1000"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn(className)}
+      aria-hidden={ariaHidden}
     >
+      {defs && <defs>{defs}</defs>}
       {variant === 'square' && (
         <rect width="1000" height="1000" fill="currentColor" />
       )}

@@ -7,6 +7,21 @@ import {
 import { SparkleIcon, type Icon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/Logo'
+
+function sweepId(id: string) {
+  return `sweep-${id.replace(/[^a-zA-Z0-9-]/g, '')}`
+}
+
+function Sweep({ id }: { id: string }) {
+  return (
+    <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" style={{ stopColor: 'var(--sweep-from)' }} />
+      <stop offset="0.75" style={{ stopColor: 'var(--sweep-to)' }} />
+      <stop offset="1" style={{ stopColor: 'var(--sweep-splash)' }} />
+    </linearGradient>
+  )
+}
 
 /**
  * A Phosphor mark painted with the blue-to-green sweep, tipped with orange.
@@ -21,17 +36,34 @@ export function GradientMark({
   icon: Mark = SparkleIcon,
   ...props
 }: { icon?: Icon } & ComponentPropsWithoutRef<Icon>) {
-  const gradient = `sweep-${useId().replace(/[^a-zA-Z0-9-]/g, '')}`
+  const gradient = sweepId(useId())
   return (
     <Mark color={`url(#${gradient})`} aria-hidden {...props}>
       <defs>
-        <linearGradient id={gradient} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" style={{ stopColor: 'var(--sweep-from)' }} />
-          <stop offset="0.75" style={{ stopColor: 'var(--sweep-to)' }} />
-          <stop offset="1" style={{ stopColor: 'var(--sweep-splash)' }} />
-        </linearGradient>
+        <Sweep id={gradient} />
       </defs>
     </Mark>
+  )
+}
+
+/** Ogen's own mark in the sweep — what an action Ogen does carries. */
+export function GradientLogo({
+  className,
+  loading,
+}: {
+  className?: string
+  loading?: boolean
+}) {
+  const gradient = sweepId(useId())
+  return (
+    <Logo
+      variant="mark"
+      loading={loading}
+      paint={`url(#${gradient})`}
+      defs={<Sweep id={gradient} />}
+      className={className ?? 'size-4 shrink-0'}
+      aria-hidden
+    />
   )
 }
 
@@ -47,16 +79,13 @@ export function GradientMark({
 export const GradientButton = forwardRef<
   HTMLButtonElement,
   Omit<ComponentProps<typeof Button>, 'variant'> & {
-    /** The leading mark; a sparkle unless the control has its own icon. */
+    /** The leading mark; Ogen's own unless the control has its own icon. */
     icon?: Icon
   }
 >(function GradientButton({ icon, children, ...props }, ref) {
   return (
     <Button ref={ref} variant="gradient" {...props}>
-      {/* A control's own icon keeps the weight every button gives it; only
-          the stand-in sparkle, which has no plain version to match, is
-          filled. */}
-      <GradientMark icon={icon} weight={icon ? undefined : 'fill'} />
+      {icon ? <GradientMark icon={icon} /> : <GradientLogo />}
       <span className="text-sweep">{children}</span>
     </Button>
   )
