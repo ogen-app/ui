@@ -126,7 +126,7 @@ export function DistillMoreIdeas({
           disabled={reason !== null}
           aria-describedby={reason ? reasonId : undefined}
           onClick={() => openWith()}
-          className="disabled:opacity-50"
+          className="text-foreground disabled:opacity-50"
         >
           <HugeiconsIcon icon={AiChemistry02Icon} size={16} aria-hidden />
           {t('assetInsights.distill.action')}

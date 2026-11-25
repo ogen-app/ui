@@ -6,7 +6,7 @@ import {
   useHelpIndex,
   usePageHelpArticle,
 } from '@/hooks/useHelp'
-import { Button } from '@/components/ui/button'
+import { GradientButton } from '@/components/ui/gradient-button'
 import { useLocale } from '@/hooks/useLocale'
 import { Spinner } from '@/components/ui/spinner'
 import { RailPanel } from '@/components/page-primitives/RailPanel'
@@ -231,9 +231,9 @@ function HelpEmptyState({
         <p className="text-foreground text-sm font-medium">{title}</p>
         <p className="text-tertiary-foreground text-sm">{body}</p>
       </div>
-      <Button variant="outline" size="sm" onClick={onAction}>
+      <GradientButton size="sm" onClick={onAction}>
         {action}
-      </Button>
+      </GradientButton>
     </div>
   )
 }

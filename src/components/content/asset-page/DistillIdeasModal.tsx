@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/Logo'
 import { Label } from '@/components/ui/label'
 import { Segmented } from '@/components/ui/segmented'
 import { ModalContainer } from '@/components/ui/modal'
@@ -161,10 +162,14 @@ export function DistillIdeasModal({
           </Button>
           <Button
             type="submit"
-            variant="defaultInverted"
+            variant="accent"
             disabled={tooLong}
             loading={pending}
           >
+            <Logo
+              variant="mark"
+              className="size-4 shrink-0 [&_path:first-of-type]:fill-primary"
+            />
             {t('assetInsights.distill.modal.submit', { count: draft.count })}
           </Button>
         </div>

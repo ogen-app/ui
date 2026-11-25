@@ -9,6 +9,7 @@ import {
   WarningIcon,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { GradientButton } from '@/components/ui/gradient-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { StatusBadge } from '@/components/ui/status-badge'
@@ -304,15 +305,14 @@ function AssessButton({
   disabled?: boolean
 }) {
   return (
-    <Button
+    <GradientButton
       type="button"
-      variant="outline"
+      icon={SparkleIcon}
       onClick={onAssess}
       disabled={disabled}
     >
-      <SparkleIcon />
-      <span>{label}</span>
-    </Button>
+      {label}
+    </GradientButton>
   )
 }
 

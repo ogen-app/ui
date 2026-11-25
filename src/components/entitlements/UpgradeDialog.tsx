@@ -426,7 +426,7 @@ function OfferColumn({
               // The one action on this screen worth colouring. The rocket rides
               // the far edge, where it points the way the click goes.
               <Button
-                variant="sweep"
+                variant="accent"
                 size="lg"
                 className="w-full justify-between"
                 onClick={onUpgrade}

@@ -9,6 +9,7 @@ import {
 
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
+import { GradientButton } from '@/components/ui/gradient-button'
 import type { StatusTone } from '@/components/ui/status-badge'
 import { TextSelect } from '@/components/ui/text-select'
 import { cn } from '@/lib'
@@ -69,6 +70,12 @@ export type CardAction = {
   icon?: IconSvgElement | 'ogen'
   /** Black rather than white: the one action the card is for. */
   accent?: boolean
+  /**
+   * Ogen does it, and it is the card's whole offer ("Fix with Ogen"):
+   * `GradientButton`, the mark and the words in the sweep. The rows under it
+   * keep the plain button with the mark.
+   */
+  gradient?: boolean
   onClick: () => void
   disabled?: boolean
   /** The button's own spinner, while what it started is running. */
@@ -235,8 +242,28 @@ function End({
 }) {
   const { t } = useTranslation()
   if (action) {
-    const { label, icon, accent, onClick, disabled, loading, destructive } =
-      action
+    const {
+      label,
+      icon,
+      accent,
+      gradient,
+      onClick,
+      disabled,
+      loading,
+      destructive,
+    } = action
+    if (gradient)
+      return (
+        <GradientButton
+          type="button"
+          size="sm"
+          onClick={onClick}
+          disabled={disabled}
+          loading={loading}
+        >
+          {label}
+        </GradientButton>
+      )
     return (
       <Button
         type="button"

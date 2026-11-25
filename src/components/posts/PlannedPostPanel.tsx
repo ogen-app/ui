@@ -1,6 +1,7 @@
 import { LightbulbIcon } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/Logo'
 import { usePostIdeas } from '@/hooks/useIdeaPosts'
 import { threadIdFor, useAssistantStore } from '@/stores/assistantStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -42,7 +43,11 @@ export function PlannedPostPanel({ post }: { post: Post }) {
           {t('ideas.lifecycle.noBodyHint')}
         </p>
       </div>
-      <Button variant="defaultInverted" onClick={write}>
+      <Button variant="accent" onClick={write}>
+        <Logo
+          variant="mark"
+          className="size-4 shrink-0 [&_path:first-of-type]:fill-primary"
+        />
         {t('ideas.lifecycle.write')}
       </Button>
     </div>

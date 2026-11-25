@@ -769,7 +769,7 @@ function NeedsList({
             askable
               ? {
                   label: t('campaignOverview.problems.fixAll'),
-                  icon: 'ogen',
+                  gradient: true,
                   onClick: handlers.askAll,
                 }
               : undefined

@@ -20,7 +20,12 @@ import {
 } from '@/components/ideas/IdeaPostForm'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Note01Icon } from '@hugeicons/core-free-icons'
-import { CaretDownIcon, PlusIcon } from '@phosphor-icons/react'
+import {
+  CaretDownIcon,
+  PencilSimpleLineIcon,
+  PlusIcon,
+  StackIcon,
+} from '@phosphor-icons/react'
 import { KIND_ICON } from '@/components/content/AssetKindMark'
 import { KIND_TONE } from '@/components/content/kindTone'
 import { NoMatches } from '@/components/smartFilter/NoMatches'
@@ -1392,9 +1397,11 @@ function SelectionActions({
         <Button
           variant="ghost"
           size="sm"
+          className="text-foreground"
           disabled={busy || tooMany}
           title={tooManyTitle}
         >
+          <StackIcon />
           {t('ideas.lifecycle.compile')}
         </Button>
       </IdeaPostForm>
@@ -1409,9 +1416,11 @@ function SelectionActions({
         <Button
           variant="ghost"
           size="sm"
+          className="text-foreground"
           disabled={busy || tooMany}
           title={tooManyTitle}
         >
+          <PencilSimpleLineIcon />
           {t('ideas.lifecycle.draft')}
         </Button>
       </IdeaPostForm>

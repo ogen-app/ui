@@ -1,6 +1,5 @@
 import { useFormContext } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { SparklesIcon } from '@hugeicons/core-free-icons'
 
 import { Card, type CardAction } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -109,7 +108,7 @@ function useGenerateBriefAction(campaign: Campaign): CardAction {
       posture.state === 'complete'
         ? t('campaigns.strategy.messaging.improveBrief')
         : t('campaigns.strategy.messaging.generateBrief'),
-    icon: SparklesIcon,
+    icon: 'ogen',
     onClick: ask,
   }
 }
