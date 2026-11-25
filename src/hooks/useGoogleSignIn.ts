@@ -10,7 +10,6 @@ import {
 } from '@/services/api/googleAuth'
 import { queryClient } from '@/lib/queryClient'
 import { useAuthStore } from '@/stores/authStore'
-import { owesOnboardingAfterSignup } from './useOnboarding'
 
 export const AUTH_PROVIDERS_KEY = ['auth', 'providers'] as const
 export const AUTH_METHODS_KEY = ['account', 'auth-methods'] as const
@@ -55,11 +54,10 @@ export function useCompleteGoogleSignup(token: string, inviteToken?: string) {
     meta: { errorToast: false },
     mutationFn: (tenantName: string) =>
       completeGoogleSignup(token, tenantName, inviteToken),
-    // Awaited before the form navigates — see `useSignup`.
-    onSuccess: async ({ user }) => {
+    // The server starts setup — see `useSignup`.
+    onSuccess: ({ user }) => {
       invalidateSession()
       setUser(user)
-      await owesOnboardingAfterSignup()
     },
   })
 }

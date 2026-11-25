@@ -1,6 +1,7 @@
 import {
   ZernioError,
   type ConnectLinkResponse,
+  type ConnectReturn,
   type PendingConnection,
   type ZernioAccountsResponse,
   type ZernioErrorCode,
@@ -28,13 +29,19 @@ export async function listZernioAccounts(): Promise<ZernioAccountsResponse> {
   return (await res.json()) as ZernioAccountsResponse
 }
 
+/**
+ * A link to the platform's consent screen. `returnTo` is where the browser
+ * comes back to afterwards: Settings by default, or setup after signup — a
+ * fixed list on the server, so it can't be used as an open redirect.
+ */
 export async function createConnectLink(
   platform: string,
+  returnTo?: ConnectReturn,
 ): Promise<ConnectLinkResponse> {
   const res = await scopedFetch(`${BASE}/connect-links`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ platform }),
+    body: JSON.stringify(returnTo ? { platform, returnTo } : { platform }),
   })
   // The plan's `connected_accounts` cap (CON-324): an `EntitlementError`, so
   // the modal can answer it with the upgrade callout instead of prose.

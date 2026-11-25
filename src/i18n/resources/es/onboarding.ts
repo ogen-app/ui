@@ -33,8 +33,6 @@ export const onboarding: Translation['onboarding'] = {
   sources: {
     title: '¿Qué puede leer Ogen sobre {{name}}?',
     lead: 'Ogen aprende cómo suenan a partir de lo que ya existe. Añade lo que tengas; cada cosa se lee en cuanto la añades, y nada es obligatorio.',
-    leadTogether:
-      'Ogen aprende cómo suenan a partir de lo que ya existe. Añade lo que tengas; nada es obligatorio.',
     website: {
       title: 'Sitio web',
       body: 'Ogen lee hasta 10 de sus páginas.',
@@ -63,9 +61,17 @@ export const onboarding: Translation['onboarding'] = {
     uploading: 'Subiendo',
     reading: 'Leyendo, cerca de un minuto',
     done: 'Leído',
-    stopped: 'Detenido',
-    queued: 'Se lee al continuar',
     failed: 'No se pudo subir',
+    readFailed: 'No se pudo leer',
+    added: 'Aporta {{needs}}',
+    addedNothing: 'Leído, nada nuevo',
+    adds: {
+      apart: 'qué los distingue',
+      voice: 'tono de voz',
+      audience: 'a quién se dirigen',
+      onlyThey: 'lo que solo ellos pueden decir',
+      never: 'lo que nunca dicen',
+    },
     retry: 'Leer de nuevo',
     answered_one: '{{formatted}} respuesta',
     answered_other: '{{formatted}} respuestas',
@@ -74,11 +80,12 @@ export const onboarding: Translation['onboarding'] = {
       'Cada uno tarda cerca de un minuto. Puedes esperar aquí o añadir más mientras tanto.',
     readHint:
       'Después verás qué ha sacado Ogen de ellos. Nada entra en la marca hasta que lo revises.',
-    togetherHint:
-      'Al continuar, Ogen lo lee todo junto, en uno o dos minutos. Nada entra en la marca hasta que lo revises.',
     later: 'Hacerlo más tarde',
     tryAgain: 'Reintentar',
     withoutRead: 'Continuar sin leer',
+    nothingRead:
+      'Nada de lo que añadiste le ha dado a Ogen algo que leer. Añade un documento o responde a unas preguntas.',
+    stillReading: 'Ogen todavía está leyendo uno de estos. Espera o quítalo.',
     stop: {
       body: 'Ogen todavía está leyendo. Si sigues ahora, la lectura se detiene y la hoja de la derecha no se completa con lo que añadiste. Puedes volver a leerlo desde Fundamentos más tarde.',
       keep: 'Seguir leyendo',

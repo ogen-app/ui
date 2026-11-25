@@ -220,38 +220,6 @@ const FEATURE_FLAGS = {
    * series' own `content_format` (CON-330) and analytics grouped by format.
    */
   'content-formats': false,
-
-  /**
-   * Setup after signup (`/onboarding`): who the workspace is for, what Ogen
-   * can read about them, the brand read off it, and the accounts it posts to
-   * — then the Campaigns list's empty state, where the first campaign is made
-   * the ordinary way.
-   *
-   * **What is real**: the documents upload as `brand_source` and show their
-   * ingest; the website, the documents and the answers go to one brand read
-   * (`POST /api/brand/distills`), reviewed and committed as on Foundation; the
-   * accounts connect through Zernio. Whether setup is still owed is a
-   * workspace setting (`onboarding`, `services/api/onboarding.ts`) written
-   * `pending` at signup — the root guard sends a pending workspace here, and
-   * the `/flags` panel puts it back to pending.
-   *
-   * **Waiting on**:
-   * - **a read per source.** The design reads each source the moment it is
-   *   added, so the sheet fills while the person is still adding. The API
-   *   has one run per workspace over everything at once, so the website and
-   *   the answers wait for Continue, and nothing can be stopped on its own.
-   * - **an onboarding state of the API's own.** The setting is a key in
-   *   `/api/settings`, which any member can overwrite; a column on the
-   *   tenant (`setup_status`, with who finished it and when) is the real
-   *   thing, and is what would let the server send a welcome nudge to a
-   *   workspace that skipped.
-   * - **the business's name and favicon off the website**, for the brand
-   *   step's "the website says" and the sheet's mark. Neither is on the run.
-   * - **OAuth coming back to setup.** Zernio's connect always returns to
-   *   `/workspace-settings`; the guard bounces it here, which loses the
-   *   multi-target picker's way back (it returns to Settings, then here).
-   */
-  onboarding: false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

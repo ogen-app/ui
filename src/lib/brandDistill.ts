@@ -239,9 +239,12 @@ export type DistillReview = {
   facts: Record<string, Partial<FactDraft>>
   /**
    * Whose disclaimer wins. `yours` until somebody explicitly picks the site's
-   * — the one place a commit replaces something the workspace already had.
+   * — one of the two places a commit replaces something the workspace
+   * already had.
    */
   disclaimer: 'yours' | 'site'
+  /** Whose positioning statement wins — the other place, on the same rule. */
+  statement: 'yours' | 'site'
 }
 
 export const EMPTY_REVIEW: DistillReview = {
@@ -251,6 +254,7 @@ export const EMPTY_REVIEW: DistillReview = {
   lines: {},
   facts: {},
   disclaimer: 'yours',
+  statement: 'yours',
 }
 
 export function isDropped(review: DistillReview, id: string): boolean {
@@ -321,9 +325,15 @@ export function disclaimerIsChoice(proposal: DistillProposal): boolean {
   return Boolean(proposal.guardrails.disclaimer?.current?.trim())
 }
 
+/** Whether the positioning statement is a choice, on the disclaimer's rule. */
+export function statementIsChoice(proposal: DistillProposal): boolean {
+  return Boolean(proposal.positioning.statement?.current?.trim())
+}
+
 /** Every keep-or-drop decision in a proposal, as ids. */
 function decidableIds(proposal: DistillProposal): string[] {
   const g = proposal.guardrails
+  const p = proposal.positioning
   return [
     ...proposal.voices.map((v) => v.proposalId),
     ...proposal.audiences.map((a) => a.proposalId),
@@ -334,6 +344,10 @@ function decidableIds(proposal: DistillProposal): string[] {
       ? [g.disclaimer.proposalId]
       : []),
     ...proposal.facts.map((f) => f.proposalId),
+    ...(p.statement && !statementIsChoice(proposal)
+      ? [p.statement.proposalId]
+      : []),
+    ...p.differentiators.map((d) => d.proposalId),
   ]
 }
 
@@ -374,6 +388,14 @@ export function buildCommit(
     (disclaimerIsChoice(proposal)
       ? review.disclaimer === 'site'
       : !isDropped(review, disclaimer.proposalId))
+  const statement = proposal.positioning.statement
+  const statementText = statement ? lineText(statement, review) : ''
+  const sendStatement =
+    statement &&
+    statementText.trim() !== '' &&
+    (statementIsChoice(proposal)
+      ? review.statement === 'site'
+      : !isDropped(review, statement.proposalId))
 
   return {
     voices: kept(proposal.voices)
@@ -413,20 +435,35 @@ export function buildCommit(
         ...factDraft(f, review),
       }))
       .filter((f) => f.statement.trim() !== ''),
+    positioning: {
+      ...(sendStatement && statement
+        ? {
+            statement: {
+              proposalId: statement.proposalId,
+              text: statementText,
+            },
+          }
+        : {}),
+      differentiators: lines(proposal.positioning.differentiators),
+    },
   }
 }
 
 /** Whether a commit body would save anything at all. */
 export function commitIsEmpty(commit: DistillCommit): boolean {
   const g = commit.guardrails
+  const p = commit.positioning
   return (
     commit.voices.length +
       commit.audiences.length +
       commit.facts.length +
       g.mayClaim.length +
       g.neverClaim.length +
-      g.bannedWords.length ===
-      0 && !g.disclaimer
+      g.bannedWords.length +
+      p.differentiators.length ===
+      0 &&
+    !g.disclaimer &&
+    !p.statement
   )
 }
 

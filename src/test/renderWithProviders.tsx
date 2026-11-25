@@ -59,7 +59,8 @@ export async function renderWithProviders(
   // Every destination the components under test navigate to, so a successful
   // submit lands somewhere real and `router.state.location` reads back as the
   // app would. `/workspace-settings` is where the connect flow returns
-  // (CON-217) — both the picker's Cancel link and its success navigation.
+  // (CON-217) — both the picker's Cancel link and its success navigation —
+  // and `/onboarding` where it returns for a connect started in setup.
   for (const other of [
     '/',
     '/auth/login/',
@@ -67,6 +68,7 @@ export async function renderWithProviders(
     '/signup/',
     '/plans/',
     '/workspace-settings',
+    '/onboarding',
   ]) {
     if (other === path) continue
     routes.push(

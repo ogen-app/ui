@@ -11,7 +11,11 @@ import { Card } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
 import { usePendingConnection, useSelectPendingTarget } from '@/hooks/useZernio'
 import { getPlatformByZernioId } from '@/lib/platformDictionary'
-import { ZernioError, type ConnectTarget } from '@/types/integrations'
+import {
+  ZernioError,
+  type ConnectReturn,
+  type ConnectTarget,
+} from '@/types/integrations'
 import { cn } from '@/lib'
 import { connectErrorMessage } from './connectPlatform'
 
@@ -32,13 +36,27 @@ import { connectErrorMessage } from './connectPlatform'
  *
  * One target never reaches here. The backend attaches those itself, so the
  * common connect stays a single authorization with nothing else to click.
+ *
+ * A connect started from setup after signup goes back there, not to Settings:
+ * the pending connection says so (`returnTo`), and so does the redirect's own
+ * `?returnTo=`, which is what the way back reads before the pending one loads.
  */
-export function ConnectPicker({ connectionId }: { connectionId: string }) {
+export function ConnectPicker({
+  connectionId,
+  returnTo,
+}: {
+  connectionId: string
+  returnTo?: ConnectReturn
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { data, isPending, error } = usePendingConnection(connectionId)
   const select = useSelectPendingTarget(connectionId)
   const [chosen, setChosen] = useState<string | null>(null)
+  const back: Back =
+    (data?.returnTo ?? returnTo) === 'onboarding'
+      ? '/onboarding'
+      : '/workspace-settings'
 
   const platform = data ? getPlatformByZernioId(data.platform) : undefined
   const platformName = platform?.name ?? data?.platform ?? ''
@@ -46,13 +64,13 @@ export function ConnectPicker({ connectionId }: { connectionId: string }) {
   const submit = () => {
     if (!chosen || !data) return
     select.mutate(chosen, {
-      // Back to the accounts page by the same door every other connect uses:
-      // `?connected=` is what shows the confirmation and waits for the account
-      // to be mirrored, and this one has no more claim to a bespoke ending
-      // than the zero-click case does.
+      // Back by the same door every other connect uses: `?connected=` is
+      // what shows the confirmation and waits for the account to be mirrored,
+      // and this one has no more claim to a bespoke ending than the
+      // zero-click case does.
       onSuccess: () =>
         void navigate({
-          to: '/workspace-settings',
+          to: back,
           search: { connected: data.platform },
           replace: true,
         }),
@@ -60,7 +78,10 @@ export function ConnectPicker({ connectionId }: { connectionId: string }) {
   }
 
   return (
-    <PickerFrame title={t('workspaceSettings.connect.picker.title')}>
+    <PickerFrame
+      title={t('workspaceSettings.connect.picker.title')}
+      back={back}
+    >
       {isPending ? (
         // Deliberately not on a card, and wordless. A card is a container for
         // content and there is none yet; the word "Loading" under a title that
@@ -76,14 +97,17 @@ export function ConnectPicker({ connectionId }: { connectionId: string }) {
         // a list of options that no longer exist, would invite a second click
         // on a dead choice.
         <Card title={t('workspaceSettings.connect.picker.nothingTitle')}>
-          <PickerFailure error={error ?? select.error} />
+          <PickerFailure error={error ?? select.error} back={back} />
         </Card>
       ) : !data || data.options.length === 0 ? (
         // Rare: the backend redirects `no_targets` to the accounts page before
         // it ever gets this far. Reachable only if the account's last page
         // disappeared between the list and this render.
         <Card title={t('workspaceSettings.connect.picker.nothingTitle')}>
-          <Explanation body={t('workspaceSettings.connect.picker.empty')} />
+          <Explanation
+            body={t('workspaceSettings.connect.picker.empty')}
+            back={back}
+          />
         </Card>
       ) : (
         <Card
@@ -146,7 +170,7 @@ export function ConnectPicker({ connectionId }: { connectionId: string }) {
                 })}
               </Button>
               <Button size="sm" variant="outline" asChild>
-                <Link to="/workspace-settings">
+                <Link to={back}>
                   {t('workspaceSettings.connect.picker.cancel')}
                 </Link>
               </Button>
@@ -157,6 +181,9 @@ export function ConnectPicker({ connectionId }: { connectionId: string }) {
     </PickerFrame>
   )
 }
+
+/** Where the picker goes back to: Settings, or setup after signup. */
+type Back = '/workspace-settings' | '/onboarding'
 
 /**
  * One selectable target.
@@ -245,10 +272,11 @@ function isGone(error: unknown): boolean {
  * integration switched off mid-flow, a network failure — keeps the server's
  * own reason, which says more than a generic apology would.
  */
-function PickerFailure({ error }: { error: unknown }) {
+function PickerFailure({ error, back }: { error: unknown; back: Back }) {
   const { t } = useTranslation()
   return (
     <Explanation
+      back={back}
       body={
         isGone(error)
           ? t('workspaceSettings.connect.picker.expired')
@@ -258,13 +286,13 @@ function PickerFailure({ error }: { error: unknown }) {
   )
 }
 
-function Explanation({ body }: { body: string }) {
+function Explanation({ body, back }: { body: string; back: Back }) {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col items-start gap-4">
       <p className="text-sm">{body}</p>
       <Button size="sm" variant="outline" asChild>
-        <Link to="/workspace-settings">
+        <Link to={back}>
           {t('workspaceSettings.connect.picker.backToAccounts')}
         </Link>
       </Button>
@@ -281,9 +309,11 @@ function Explanation({ body }: { body: string }) {
  */
 function PickerFrame({
   title,
+  back,
   children,
 }: {
   title: string
+  back: Back
   children: React.ReactNode
 }) {
   const { t } = useTranslation()
@@ -299,7 +329,7 @@ function PickerFrame({
               asChild
               aria-label={t('workspaceSettings.connect.picker.back')}
             >
-              <Link to="/workspace-settings">
+              <Link to={back}>
                 <CaretLeftIcon className="size-5" />
               </Link>
             </Button>

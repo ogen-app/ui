@@ -279,6 +279,17 @@ export type BrandLook = {
   updatedAt: string
 }
 
+/**
+ * What sets the brand apart: one statement and the differences that back it
+ * (at most ten). A singleton, null until set — by a brand read's commit, for
+ * now; there is no editor for it yet.
+ */
+export type BrandPositioning = {
+  statement: string
+  differentiators: string[]
+  updatedAt: string
+}
+
 /** `1:1`, `4:5`, `9:16`, `16:9` — one asset each, which is the whole trick. */
 export type TemplateRatio = {
   ratio: string
@@ -341,6 +352,7 @@ export type BrandData = {
   guardrails: BrandGuardrails | null
   look: BrandLook | null
   templates: BrandTemplate[]
+  positioning: BrandPositioning | null
   /**
    * The facts ledger, one row per fact (CON-316). Always a list, oldest first,
    * **expired facts included**: the ledger shows everything and only generation

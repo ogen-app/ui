@@ -1,12 +1,11 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import { isFeatureEnabled } from '@/config/featureFlags'
+import { createFileRoute } from '@tanstack/react-router'
 import { searchTextOf } from '@/lib/searchText'
 import OnboardingPage from './page'
 
 export type OnboardingSearch = {
-  /** A platform Zernio just connected, carried over from Settings. */
+  /** A platform Zernio just connected — its callback lands here. */
   connected?: string
-  /** Why a connect failed, carried over the same way. */
+  /** Why a connect failed, from the same callback. */
   connect_error?: string
 }
 
@@ -15,9 +14,6 @@ export type OnboardingSearch = {
 // the person straight back from. Auth, and whether setup is owed at all, are
 // guarded in `__root.tsx`.
 export const Route = createFileRoute('/onboarding/')({
-  beforeLoad: () => {
-    if (!isFeatureEnabled('onboarding')) throw redirect({ to: '/' })
-  },
   validateSearch: (search: Record<string, unknown>): OnboardingSearch => ({
     connected: searchTextOf(search.connected),
     connect_error: searchTextOf(search.connect_error),
