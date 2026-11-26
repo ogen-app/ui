@@ -220,20 +220,6 @@ const FEATURE_FLAGS = {
    * series' own `content_format` (CON-330) and analytics grouped by format.
    */
   'content-formats': false,
-
-  /**
-   * Text search on the posts (CON-534): `text=` in the posts filter — a
-   * "mentioning …" clause on both posts lists, typed into the filter line's
-   * Add, and a search field in both calendars' header, which otherwise carry
-   * no filter. The assistant's `set_filter` fills either.
-   *
-   * **Waiting on** CON-475: `text=` on `GET /api/posts` and `GET
-   * /api/campaigns/:id/posts` (one phrase, a case-insensitive substring of the
-   * title, the content or any thread segment; trimmed; over 200 characters a
-   * 400 `invalid_filter`), and on `viewresolve` reading it. With the flag off
-   * the address drops `text`, so nothing is ever asked with it.
-   */
-  'posts-text-search': false,
 } as const satisfies Record<string, boolean>
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS

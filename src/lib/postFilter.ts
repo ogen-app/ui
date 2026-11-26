@@ -1,4 +1,3 @@
-import { isFeatureEnabled } from '@/config/featureFlags'
 import type { ValueFilter } from '@/lib/assetFilter'
 import type { FieldKind, FilterModel, SmartToken } from '@/lib/smartFilter'
 import type { PostStatus } from '@/types/posts'
@@ -21,8 +20,7 @@ import type { PostStatus } from '@/types/posts'
  *
  * `text` (CON-534) is one phrase the server finds in a post's title, content
  * or thread segments. It is the only part of the filter the calendars carry
- * (`parseCalendarSearch`), and it is behind `posts-text-search`: with the flag
- * off the address drops it.
+ * (`parseCalendarSearch`).
  *
  * Nothing here filters anything. It only says what to ask.
  */
@@ -153,11 +151,9 @@ function day(raw: unknown): string | undefined {
 
 /**
  * A search as the server reads it — trimmed, a blank one none at all — and
- * cut to what it takes. Undefined with the flag off, so the address never
- * carries one the app can't show.
+ * cut to what it takes.
  */
 function searchText(raw: unknown): string | undefined {
-  if (!isFeatureEnabled('posts-text-search')) return undefined
   const text = raw === undefined || raw === null ? '' : String(raw).trim()
   return text ? text.slice(0, POST_TEXT_MAX).trim() : undefined
 }
@@ -403,11 +399,7 @@ export const POST_FILTER_MODEL: FilterModel<PostFilter, PostFilterField> = {
   tokensOf: postTokensOf,
   withToken: withPostToken,
   withoutToken: withoutPostToken,
-  // Read when the Add field is typed in, so a flag forced on in this
-  // browser takes without a reload.
-  get freeText(): readonly PostFilterField[] {
-    return isFeatureEnabled('posts-text-search') ? ['text'] : []
-  },
+  freeText: ['text'],
   searchMin: 1,
   textMax: POST_TEXT_MAX,
 }

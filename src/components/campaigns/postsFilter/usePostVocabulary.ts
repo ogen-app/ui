@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaign, useCampaigns } from '@/hooks/useCampaigns'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { previousDay, startOfDay } from '@/lib/assetFilter'
@@ -52,14 +51,7 @@ export function usePostVocabulary(campaignId: string | null) {
       }
     return [...merged].map(([id, types]) => ({ id, post_types: [...types] }))
   }, [campaignId, campaign.data, campaigns])
-  const textSearch = useFeatureFlag('posts-text-search')
-  const fields = useMemo(
-    () =>
-      (campaignId ? CAMPAIGN_POST_FILTER_FIELDS : POST_FILTER_FIELDS).filter(
-        (field) => textSearch || field !== 'text',
-      ),
-    [campaignId, textSearch],
-  )
+  const fields = campaignId ? CAMPAIGN_POST_FILTER_FIELDS : POST_FILTER_FIELDS
 
   /** Every post type the campaign's platforms take, each worded once. */
   const postTypes = useMemo(() => {

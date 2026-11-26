@@ -1,6 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { isFeatureEnabled } from '@/config/featureFlags'
 import { kindCount, screenName } from '@/lib/assistantView'
 import { postStatusLabel } from '@/lib/postStatusLabel'
 import type { PostStatus } from '@/types/posts'
@@ -334,10 +333,7 @@ function postFilterDetail(
   if (!POST_SCREENS.includes(action.screen) || !action.filter) return undefined
   const q = new URLSearchParams(action.filter)
   const list = (key: string) => (q.get(key) ?? '').split(',').filter(Boolean)
-  // With the flag off the address dropped the search, so it isn't worded.
-  const text = isFeatureEnabled('posts-text-search')
-    ? (q.get('text')?.trim() ?? '')
-    : ''
+  const text = q.get('text')?.trim() ?? ''
   const parts = [
     ...list('status').map((s) =>
       postStatusLabel(t, s as PostStatus).toLowerCase(),

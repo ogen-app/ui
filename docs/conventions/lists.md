@@ -90,7 +90,7 @@ keep it accurate when these rules change.
   workspace's alike: `lib/postFilter`, the endpoints' own params (`status`,
   `platform` — the post's platform sqid —, `post_type`, `scheduled=yes|no`,
   `scheduled_after`/`scheduled_before` as days, `tz` only beside a date,
-  and `text` — CON-534, behind `posts-text-search` — one phrase the server
+  and `text` — CON-534, unflagged — one phrase the server
   finds in a title, the content or a thread segment, typed into Add as a
   "mentioning …" clause), in the list's address. **A calendar's only filter
   is the search** (CON-534; until then, 2026-11-23, none): a field in its
@@ -99,8 +99,7 @@ keep it accurate when these rules change.
   typing rests and replaced by a search set elsewhere. An assistant
   `set_filter` on a calendar that is only a search, or clears one, stays
   there; anything more lands on the posts list — the campaign's, or `/posts`
-  from the workspace calendar (`filterLandsOnList`). With the flag off the
-  address drops `text` and every calendar filter goes where it went before.
+  from the workspace calendar (`filterLandsOnList`).
   A search nothing matches on a calendar says so with one way out
   (`PostsSearchNoMatches`), never the empty campaign's invitation. `GET /api/posts` takes the same params plus
   `campaign_id`, so the workspace's pages add a Campaign field

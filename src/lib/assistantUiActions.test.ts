@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   addSourceSearch,
   connectSearch,
@@ -9,16 +9,6 @@ import {
   searchFromFilter,
   windowCampaign,
 } from './assistantUiActions'
-
-const flags = vi.hoisted(() => ({ textSearch: false }))
-vi.mock('@/config/featureFlags', () => ({
-  isFeatureEnabled: (flag: string) =>
-    flag === 'posts-text-search' ? flags.textSearch : false,
-}))
-
-beforeEach(() => {
-  flags.textSearch = false
-})
 
 describe('destinationFor', () => {
   it('finds a workspace screen', () => {
@@ -158,7 +148,6 @@ describe('a set_window', () => {
   })
 
   it('keeps a search on the calendar and sends the rest to the list (CON-534)', () => {
-    flags.textSearch = true
     const calendar = {
       type: 'set_filter',
       screen: 'campaign.calendar',
@@ -194,24 +183,6 @@ describe('a set_window', () => {
         filter: 'text=pricing',
       }),
     ).toEqual({ to: '/calendar', params: {} })
-  })
-
-  it('sends every calendar filter where it went before, with the search off', () => {
-    expect(
-      destinationFor({
-        type: 'set_filter',
-        screen: 'campaign.calendar',
-        campaignId: 'c1',
-        filter: 'text=pricing',
-      })?.to,
-    ).toBe('/campaigns/$campaignId/list')
-    expect(
-      destinationFor({
-        type: 'set_filter',
-        screen: 'calendar',
-        filter: 'status=draft',
-      })?.to,
-    ).toBe('/calendar')
   })
 
   it('narrows to the window’s own campaign first', () => {

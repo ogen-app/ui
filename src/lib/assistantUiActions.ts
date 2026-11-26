@@ -1,4 +1,3 @@
-import { isFeatureEnabled } from '@/config/featureFlags'
 import type { ViewEntityKind, ViewScreen } from '@/lib/viewContext'
 
 /**
@@ -127,15 +126,12 @@ const DETAIL_PATHS: Partial<Record<ViewScreen, [string, string]>> = {
  * Whether a filter set on a calendar lands on its posts list instead. A
  * calendar carries the search and nothing else (CON-534), so a filter that
  * is a search, or clears one, stays; anything more is the list's, which
- * reads the same filter. Without `posts-text-search` every one goes, as
- * before the calendars had a search.
+ * reads the same filter.
  */
 export function filterLandsOnList(action: UIAction): boolean {
   if (action.type !== 'set_filter') return false
   if (action.screen !== 'campaign.calendar' && action.screen !== 'calendar')
     return false
-  if (!isFeatureEnabled('posts-text-search'))
-    return action.screen === 'campaign.calendar'
   return Object.keys(searchFromFilter(action.filter ?? '')).some(
     (key) => key !== 'text',
   )
