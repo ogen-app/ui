@@ -90,11 +90,11 @@ function WorkspaceCalendarView() {
   // `awaiting`, not `isLoading` — see `lib/fetched`. Same reasoning as the
   // campaign's calendar.
   const postsPending = awaiting(postsQuery)
-  // A new search keeps the last answer's cards up until its own arrives, as
-  // on a campaign's calendar.
+  // A new search keeps the last answer's cards up until its own arrives, and
+  // not past a failure, as on a campaign's calendar.
   const [lastAnswer, setLastAnswer] = useState<Post[] | undefined>(undefined)
   if (posts && lastAnswer !== posts) setLastAnswer(posts)
-  const rows = posts ?? lastAnswer ?? NO_POSTS
+  const rows = posts ?? (postsError ? undefined : lastAnswer) ?? NO_POSTS
   // A failed fetch is not an empty workspace — same rule as the campaign's
   // calendar. Cached rows from an earlier success still draw; only a fetch that
   // never answered is a failure here.

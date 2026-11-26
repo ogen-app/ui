@@ -81,7 +81,9 @@ function CalendarView() {
   const postsQuery = useCampaignPosts(campaignId, params)
   const { data: posts, isError: postsError } = postsQuery
   // A new search keeps the last answer's cards up until its own arrives,
-  // rather than emptying the grid at every pause in the typing.
+  // rather than emptying the grid at every pause in the typing — but not
+  // past a failure, whose message replaces the grid: the cards it hid must
+  // not reach the assistant or a tick.
   const [lastAnswer, setLastAnswer] = useState<{
     campaignId: string
     posts: Post[]
@@ -89,7 +91,9 @@ function CalendarView() {
   if (posts && lastAnswer?.posts !== posts) setLastAnswer({ campaignId, posts })
   const rows =
     posts ??
-    (lastAnswer?.campaignId === campaignId ? lastAnswer.posts : NO_POSTS)
+    (!postsError && lastAnswer?.campaignId === campaignId
+      ? lastAnswer.posts
+      : NO_POSTS)
   // A failed fetch is not an empty campaign: without this, an error left
   // `rows` empty with `postsPending` false, and the screen invited the user to
   // add their first post to a campaign that may hold dozens. Cached rows from
