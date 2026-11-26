@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib'
 import { POST_TEXT_MAX } from '@/lib/postFilter'
 
 /** How long typing rests before the address takes it. */
@@ -16,6 +17,10 @@ const SETTLE_MS = 300
  * keystroke is not a request. A search put there by anything else — the
  * assistant's `set_filter`, its UNDO, BACK — replaces what is in the field,
  * and drops a write still waiting, which would otherwise undo it.
+ *
+ * Below `lg` it is its icon until it is focused or holds a search: the
+ * header row it shares does not wrap, and a full field there pushed the
+ * calendar's own controls off a phone's screen.
  */
 export function PostsSearchField({
   value,
@@ -27,6 +32,7 @@ export function PostsSearchField({
   onChange: (next: string) => void
 }) {
   const { t } = useTranslation()
+  const id = useId()
   const [draft, setDraft] = useState(value)
   // What this field last wrote, to tell its own write coming back from one
   // made elsewhere.
@@ -62,14 +68,23 @@ export function PostsSearchField({
   }
 
   return (
-    <div className="flex h-8 w-52 items-center gap-1.5 border-b-2 border-quaternary bg-input-secondary pr-1 pl-2.5 focus-within:border-foreground">
-      <HugeiconsIcon
-        icon={Search01Icon}
-        strokeWidth={1.5}
-        aria-hidden
-        className="size-4 shrink-0 text-secondary-foreground"
-      />
+    <div
+      className={cn(
+        'flex h-8 w-52 items-center gap-1.5 overflow-hidden border-b-2 border-quaternary bg-input-secondary pr-1 pl-2 transition-[width] focus-within:border-foreground',
+        draft === '' ? 'max-lg:w-8 max-lg:focus-within:w-44' : 'max-lg:w-44',
+      )}
+    >
+      {/* The icon is the way in while the field is folded to it. */}
+      <label htmlFor={id} className="flex shrink-0 cursor-text">
+        <HugeiconsIcon
+          icon={Search01Icon}
+          strokeWidth={1.5}
+          aria-hidden
+          className="size-4 text-secondary-foreground"
+        />
+      </label>
       <Input
+        id={id}
         type="search"
         variant="search"
         inputSize="sm"
