@@ -157,10 +157,12 @@ contract is in `services/api/emailPreferences.ts` and asserted by its test.
 Flip the flag when the handler answers. See
 `docs/technical-decisions.md#email-preferences`.
 
-**Text search on the posts is built but flagged off** (`posts-text-search`,
-CON-534). The "mentioning …" clause on both posts lists and the search field
-on both calendars send `text=`, which `GET /api/posts` and `GET
-/api/campaigns/:id/posts` take only once CON-475 merges. Then the live pass: a
-substring finds "pricing" from `pric`, a thread's later segments match, `%` and
-`_` are literal, the assistant's "the posts about pricing" fills the box, and
-select-all on a searched list ticks what it shows — and only then the flag.
+**Text search on the posts shipped ahead of its API, unflagged** (CON-534,
+2026-11-26, by decision rather than by the flag rule). The "mentioning …"
+clause on both posts lists and the search field on both calendars send
+`text=`, which `GET /api/posts` and `GET /api/campaigns/:id/posts` take only
+once CON-475 merges — until then a search may answer with every post. Then the
+live pass: a substring finds "pricing" from `pric`, a thread's later segments
+match, `%` and `_` are literal, over 200 characters is a 400, the assistant's
+"the posts about pricing" fills the box, and select-all on a searched list
+ticks what it shows.

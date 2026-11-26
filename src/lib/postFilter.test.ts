@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   EMPTY_POST_FILTER,
   POST_FILTER_MODEL,
@@ -13,13 +13,6 @@ import {
   withPostToken,
   withoutPostToken,
 } from './postFilter'
-
-// The search is behind `posts-text-search`; on here unless a test says.
-const flags = vi.hoisted(() => ({ textSearch: true }))
-vi.mock('@/config/featureFlags', () => ({
-  isFeatureEnabled: (flag: string) =>
-    flag === 'posts-text-search' ? flags.textSearch : false,
-}))
 
 describe('parsePostListSearch (CON-472)', () => {
   it('keeps what the endpoint takes and drops what it would refuse', () => {
@@ -172,10 +165,6 @@ describe('the workspace’s campaign field and the grouping', () => {
 })
 
 describe('the search (CON-534)', () => {
-  beforeEach(() => {
-    flags.textSearch = true
-  })
-
   it('keeps one trimmed phrase, cut to what the server takes', () => {
     expect(parsePostListSearch({ text: '  pricing page ' })).toEqual({
       text: 'pricing page',
@@ -224,14 +213,5 @@ describe('the search (CON-534)', () => {
       }),
     ).toEqual({ text: 'pricing' })
     expect(parseCalendarSearch({ status: 'draft' })).toEqual({})
-  })
-
-  it('is dropped from the address with the flag off', () => {
-    flags.textSearch = false
-    expect(parsePostListSearch({ text: 'pricing', status: 'draft' })).toEqual({
-      status: 'draft',
-    })
-    expect(parseCalendarSearch({ text: 'pricing' })).toEqual({})
-    expect(POST_FILTER_MODEL.freeText).toEqual([])
   })
 })

@@ -29,7 +29,6 @@ import {
   startOfWeek,
 } from './date'
 import { formatDate } from '@/lib/intl'
-import { useFeatureFlag } from '@/config/featureFlags'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useAddPost } from '@/hooks/usePosts'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
@@ -95,7 +94,6 @@ export function CalendarHeader({
   // refusal already arrives as a sentence under the action's name (CON-295).
   const gate = useUpgradeGate('posts_total')
   const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings()
-  const textSearch = useFeatureFlag('posts-text-search')
 
   const handleViewSelect = (next: Granularity) => {
     if (next === view) return
@@ -151,9 +149,7 @@ export function CalendarHeader({
         title={range ?? undefined}
         actions={
           <div className="flex items-center gap-3">
-            {textSearch && (
-              <PostsSearchField value={search} onChange={onSearchChange} />
-            )}
+            <PostsSearchField value={search} onChange={onSearchChange} />
             <div className="flex items-center gap-0.5">
               <Button
                 variant="default"

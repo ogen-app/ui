@@ -340,7 +340,7 @@ and formats in `campaigns.md`.
 - Two operator-tunable server limits are mirrored on the client with nothing to sync them.
 - The help centre is on, read from Sanity.
 - The Profile marketing-email switch is built but flagged off.
-- Text search on the posts is built but flagged off.
+- Text search on the posts shipped unflagged, ahead of its API.
 
 ## Global rules
 
