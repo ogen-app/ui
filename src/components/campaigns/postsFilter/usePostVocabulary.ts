@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { useCampaign, useCampaigns } from '@/hooks/useCampaigns'
 import { usePlatformCatalog } from '@/hooks/usePlatforms'
 import { previousDay, startOfDay } from '@/lib/assetFilter'
@@ -51,7 +52,14 @@ export function usePostVocabulary(campaignId: string | null) {
       }
     return [...merged].map(([id, types]) => ({ id, post_types: [...types] }))
   }, [campaignId, campaign.data, campaigns])
-  const fields = campaignId ? CAMPAIGN_POST_FILTER_FIELDS : POST_FILTER_FIELDS
+  const textSearch = useFeatureFlag('posts-text-search')
+  const fields = useMemo(
+    () =>
+      (campaignId ? CAMPAIGN_POST_FILTER_FIELDS : POST_FILTER_FIELDS).filter(
+        (field) => textSearch || field !== 'text',
+      ),
+    [campaignId, textSearch],
+  )
 
   /** Every post type the campaign's platforms take, each worded once. */
   const postTypes = useMemo(() => {
@@ -96,6 +104,8 @@ export function usePostVocabulary(campaignId: string | null) {
           })
         case 'date':
           return day(value)
+        case 'text':
+          return value
       }
     },
     [t, campaigns, resolve, postTypes, day],
@@ -144,6 +154,7 @@ export function usePostVocabulary(campaignId: string | null) {
       }
       if (field === 'scheduled')
         return key('scheduled', { values: sentenceValue(field, values[0]) })
+      if (field === 'text') return key('text', { values: values[0] ?? '' })
       const list = formatList(
         values.map((v) => sentenceValue(field, v)),
         'disjunction',
@@ -185,6 +196,8 @@ export function usePostVocabulary(campaignId: string | null) {
         case 'date':
           // The endpoint takes days, not presets: a range is picked.
           return []
+        case 'text':
+          return []
       }
     },
     [valueLabel, campaigns, targets, postTypes],
@@ -196,7 +209,8 @@ export function usePostVocabulary(campaignId: string | null) {
   )
   const switchLabels = useCallback(
     (field: PostFilterField): [string, string] | null =>
-      field === 'scheduled'
+      // A search has no "not".
+      field === 'scheduled' || field === 'text'
         ? null
         : [
             t(`postsFilter.sentence.include.${field}`),
@@ -210,7 +224,9 @@ export function usePostVocabulary(campaignId: string | null) {
     [t],
   )
   const starter = useCallback(
-    (field: PostFilterField) => t(`postsFilter.sentence.starter.${field}`),
+    // A search is typed into Add, never started from the list.
+    (field: PostFilterField) =>
+      field === 'text' ? '' : t(`postsFilter.sentence.starter.${field}`),
     [t],
   )
   const starterHint = useCallback(
@@ -218,7 +234,10 @@ export function usePostVocabulary(campaignId: string | null) {
       field === 'status' ? t('postsFilter.sentence.starterHint.status') : null,
     [t],
   )
-  const textPlaceholder = useCallback(() => '', [])
+  const textPlaceholder = useCallback(
+    () => t('postsFilter.sentence.textPlaceholder'),
+    [t],
+  )
   const matches = useCallback(
     (count: number) =>
       t('postsFilter.sentence.posts', {

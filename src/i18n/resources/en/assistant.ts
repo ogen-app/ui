@@ -1496,6 +1496,8 @@ export const assistant = {
     /** What it filtered to, in grey: "drafts · Instagram". */
     setFilterDetail: 'Filtered {{screen}} <where>{{detail}}</where>',
     clearFilter: 'Cleared the filter on {{screen}}',
+    /** A search in a filter's words (CON-534): “pricing”. */
+    searchDetail: '“{{text}}”',
     select_one: 'Selected {{formatted}} on {{screen}}',
     select_other: 'Selected {{formatted}} on {{screen}}',
     /** `what` is a `kindCount`: "Selected 2 voices". */

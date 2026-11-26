@@ -8,6 +8,7 @@ import { useAssistantStore } from '@/stores/assistantStore'
 import { usePlatformCatalog, usePlatformViews } from '@/hooks/usePlatforms'
 import { focusedAccount } from '@/lib/platformFocus'
 import {
+  filterLandsOnList,
   sameDestination,
   windowCampaign,
   type UIAction,
@@ -217,12 +218,12 @@ function actionTitle(
   found: (connect: NonNullable<UIAction['connect']>) => boolean,
 ): React.ReactNode {
   const { action } = applied
-  // A filter set on the calendar landed on the posts list (`destinationFor`).
+  // A filter set on a calendar may have landed on the posts list
+  // (`destinationFor`).
+  // Both lists are "Posts".
   const screen = screenName(
     t,
-    action.type === 'set_filter' && action.screen === 'campaign.calendar'
-      ? 'campaign.list'
-      : action.screen,
+    filterLandsOnList(action) ? 'campaign.list' : action.screen,
   )
   const grey = (
     <span className="text-sm font-normal text-secondary-foreground" />
@@ -312,11 +313,16 @@ function actionTitle(
 }
 
 /** The posts screens, whose filter the row can word. */
-const POST_SCREENS: readonly string[] = ['campaign.list', 'campaign.calendar']
+const POST_SCREENS: readonly string[] = [
+  'campaign.list',
+  'campaign.calendar',
+  'calendar',
+]
 
 /**
- * A posts filter as a few words — statuses, platforms, post types — or
- * undefined for another screen's filter or one it can't word.
+ * A posts filter as a few words — statuses, platforms, post types, the
+ * search in quotes — or undefined for another screen's filter or one it
+ * can't word.
  */
 function postFilterDetail(
   t: TFunction,
@@ -333,6 +339,9 @@ function postFilterDetail(
     ),
     ...list('platform').map(platformName),
     ...list('post_type').map(postTypeName),
+    ...(q.get('text')?.trim()
+      ? [t('assistant.uiAction.searchDetail', { text: q.get('text')!.trim() })]
+      : []),
   ]
   return parts.length > 0 ? parts.join(' · ') : undefined
 }

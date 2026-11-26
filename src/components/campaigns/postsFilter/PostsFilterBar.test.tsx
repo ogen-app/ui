@@ -13,6 +13,12 @@ vi.mock('@/hooks/useCampaigns', async (importOriginal) => ({
     },
   }),
 }))
+// The search's clause is drawn only with `posts-text-search` on (CON-534).
+vi.mock('@/config/featureFlags', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/config/featureFlags')>()),
+  useFeatureFlag: (flag: string) => flag === 'posts-text-search',
+  isFeatureEnabled: (flag: string) => flag === 'posts-text-search',
+}))
 vi.mock('@/hooks/usePlatforms', () => ({
   usePlatformCatalog: () => ({
     resolve: (id: string) =>
@@ -91,6 +97,20 @@ describe('the posts filter in Spanish (CON-472)', () => {
       { wrapper: QueryWrapper },
     )
     expect(pills()).toContain('2 de 6')
+  })
+
+  it('quotes a search the Spanish way (CON-534)', () => {
+    render(
+      <PostsFilterBar
+        campaignId="c1"
+        filter={postFilterFromSearch({ text: 'precios' })}
+        onChange={() => {}}
+        total={1}
+        totalUnfiltered={6}
+      />,
+      { wrapper: QueryWrapper },
+    )
+    expect(pills()).toContain('que mencionan «precios»')
   })
 
   it('says a date range as scheduled, and holds the count while the list answers', () => {

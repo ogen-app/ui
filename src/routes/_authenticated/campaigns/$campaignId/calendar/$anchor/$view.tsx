@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
@@ -15,6 +15,7 @@ import {
 } from '@/components/campaigns/calendar/date'
 import { CalendarSelectionContext } from '@/components/campaigns/calendar/calendarSelection'
 import { BulkActionsBar } from '@/components/campaigns/BulkActionsBar'
+import { PostsSearchNoMatches } from '@/components/campaigns/postsFilter/PostsSearchNoMatches'
 import { useAddPost, useCampaignPosts } from '@/hooks/usePosts.ts'
 import { useBulkPostActions } from '@/hooks/useBulkPostActions'
 import {
@@ -23,6 +24,7 @@ import {
 } from '@/hooks/useAssistantContext'
 import { viewerTimeZone } from '@/lib/assetFilter'
 import { listFilter, type ViewPage } from '@/lib/viewContext'
+import { parseCalendarSearch } from '@/lib/postFilter'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useHotkeys } from '@/hooks/useHotkeys'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
@@ -46,7 +48,10 @@ export const Route = createFileRoute(
   '/_authenticated/campaigns/$campaignId/calendar/$anchor/$view',
 )({
   staticData: { help: 'calendar' },
-  beforeLoad: ({ params }) => {
+  // The search, and only the search (CON-534): the rest of the posts filter
+  // is the list's.
+  validateSearch: parseCalendarSearch,
+  beforeLoad: ({ params, search }) => {
     // Normalize malformed anchors / unsupported views to the current week.
     const parsed = parseAnchor(params.anchor)
     if (!parsed || !isGranularity(params.view)) {
@@ -57,6 +62,7 @@ export const Route = createFileRoute(
           anchor: formatAnchor(parsed ?? new Date()),
           view: 'week',
         },
+        search,
       })
     }
   },
@@ -65,14 +71,25 @@ export const Route = createFileRoute(
 
 function CalendarView() {
   const { campaignId, anchor, view } = Route.useParams()
+  const { text = '' } = Route.useSearch()
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [timeZone] = useState(viewerTimeZone)
-  // No filter here for now: the calendar draws every post of the campaign,
-  // and the filter lives on the posts list.
-  const postsQuery = useCampaignPosts(campaignId)
+  // The search is the calendar's whole filter (CON-534); the rest of it lives
+  // on the posts list.
+  const params = useMemo(() => (text ? { text } : undefined), [text])
+  const postsQuery = useCampaignPosts(campaignId, params)
   const { data: posts, isError: postsError } = postsQuery
-  const rows = posts ?? NO_POSTS
+  // A new search keeps the last answer's cards up until its own arrives,
+  // rather than emptying the grid at every pause in the typing.
+  const [lastAnswer, setLastAnswer] = useState<{
+    campaignId: string
+    posts: Post[]
+  } | null>(null)
+  if (posts && lastAnswer?.posts !== posts) setLastAnswer({ campaignId, posts })
+  const rows =
+    posts ??
+    (lastAnswer?.campaignId === campaignId ? lastAnswer.posts : NO_POSTS)
   // A failed fetch is not an empty campaign: without this, an error left
   // `rows` empty with `postsPending` false, and the screen invited the user to
   // add their first post to a campaign that may hold dozens. Cached rows from
@@ -114,7 +131,18 @@ function CalendarView() {
     navigate({
       to: '/campaigns/$campaignId/calendar/$anchor/$view',
       params: { campaignId, anchor: formatAnchor(d), view: granularity },
+      search: true,
     })
+  const handleSearchChange = useCallback(
+    (next: string) =>
+      void navigate({
+        to: '/campaigns/$campaignId/calendar/$anchor/$view',
+        params: { campaignId, anchor, view },
+        search: next ? { text: next } : {},
+        replace: true,
+      }),
+    [navigate, campaignId, anchor, view],
+  )
 
   // The same step the toolbar's arrows take, on the arrow keys. Unbounded in
   // both directions — a campaign's calendar has no first or last week, so
@@ -152,7 +180,8 @@ function CalendarView() {
   // chose, not on the range: that shifts when the stored first day of the
   // week arrives, which would clear an assistant's select on a cold mount
   // (CON-482).
-  const selectionScope = `${anchor}|${granularity}`
+  // A new search, too: ticks it hides would come back unasked.
+  const selectionScope = `${anchor}|${granularity}|${text}`
   const [scopeOfTicks, setScopeOfTicks] = useState(selectionScope)
   if (scopeOfTicks !== selectionScope) {
     setScopeOfTicks(selectionScope)
@@ -227,7 +256,7 @@ function CalendarView() {
   const page = useMemo<ViewPage>(() => {
     const visible = onScreen.map((p) => p.id)
     const out: ViewPage = {
-      filter: listFilter({ tz: timeZone }),
+      filter: listFilter({ ...params, tz: timeZone }),
       window: { from: range.from, to: range.to, campaignId },
     }
     if (visible.length > 0) out.visible = { kind: 'post', ids: visible }
@@ -240,12 +269,23 @@ function CalendarView() {
       out.selectionLabel = selectionLabel
     }
     return out
-  }, [onScreen, range, timeZone, campaignId, selectedPosts, selectionLabel])
+  }, [
+    onScreen,
+    range,
+    params,
+    timeZone,
+    campaignId,
+    selectedPosts,
+    selectionLabel,
+  ])
   useAssistantPage(page)
 
   // `awaiting`, not `isLoading` — see `lib/fetched`: the empty state is a
   // claim about the campaign, and a paused read is not an answer.
-  const campaignEmpty = !awaiting(postsQuery) && rows.length === 0
+  // A search that finds nothing says so; it is not an empty campaign.
+  const answered = !awaiting(postsQuery) && posts !== undefined
+  const campaignEmpty = answered && !text && posts.length === 0
+  const noMatches = answered && !!text && posts.length === 0
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0">
@@ -256,6 +296,8 @@ function CalendarView() {
         view={granularity}
         anchor={anchorDate}
         onAnchorChange={handleAnchorChange}
+        search={text}
+        onSearchChange={handleSearchChange}
       />
       <div className="flex flex-1 min-h-0 min-w-0 flex-col px-3 pt-3 lg:px-6">
         {settingsPending ? null : postsFailed ? (
@@ -270,6 +312,11 @@ function CalendarView() {
             variant={granularity}
             anchor={anchorDate}
             onAddPost={addPost}
+          />
+        ) : noMatches ? (
+          <PostsSearchNoMatches
+            text={text}
+            onClear={() => handleSearchChange('')}
           />
         ) : (
           <div

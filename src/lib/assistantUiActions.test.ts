@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addSourceSearch,
   connectSearch,
@@ -9,6 +9,16 @@ import {
   searchFromFilter,
   windowCampaign,
 } from './assistantUiActions'
+
+const flags = vi.hoisted(() => ({ textSearch: false }))
+vi.mock('@/config/featureFlags', () => ({
+  isFeatureEnabled: (flag: string) =>
+    flag === 'posts-text-search' ? flags.textSearch : false,
+}))
+
+beforeEach(() => {
+  flags.textSearch = false
+})
 
 describe('destinationFor', () => {
   it('finds a workspace screen', () => {
@@ -145,6 +155,63 @@ describe('a set_window', () => {
       to: '/campaigns/$campaignId/list',
       params: { campaignId: 'c1' },
     })
+  })
+
+  it('keeps a search on the calendar and sends the rest to the list (CON-534)', () => {
+    flags.textSearch = true
+    const calendar = {
+      type: 'set_filter',
+      screen: 'campaign.calendar',
+      campaignId: 'c1',
+    } as const
+    expect(
+      destinationFor({ ...calendar, filter: 'text=pricing&tz=UTC' }),
+    ).toEqual({
+      to: '/campaigns/$campaignId/calendar',
+      params: { campaignId: 'c1' },
+    })
+    // Clearing it is the calendar's too.
+    expect(destinationFor({ ...calendar, filter: '' })?.to).toBe(
+      '/campaigns/$campaignId/calendar',
+    )
+    expect(
+      destinationFor({ ...calendar, filter: 'text=pricing&status=draft' }),
+    ).toEqual({
+      to: '/campaigns/$campaignId/list',
+      params: { campaignId: 'c1' },
+    })
+    expect(
+      destinationFor({
+        type: 'set_filter',
+        screen: 'calendar',
+        filter: 'status=draft',
+      }),
+    ).toEqual({ to: '/posts', params: {} })
+    expect(
+      destinationFor({
+        type: 'set_filter',
+        screen: 'calendar',
+        filter: 'text=pricing',
+      }),
+    ).toEqual({ to: '/calendar', params: {} })
+  })
+
+  it('sends every calendar filter where it went before, with the search off', () => {
+    expect(
+      destinationFor({
+        type: 'set_filter',
+        screen: 'campaign.calendar',
+        campaignId: 'c1',
+        filter: 'text=pricing',
+      })?.to,
+    ).toBe('/campaigns/$campaignId/list')
+    expect(
+      destinationFor({
+        type: 'set_filter',
+        screen: 'calendar',
+        filter: 'status=draft',
+      })?.to,
+    ).toBe('/calendar')
   })
 
   it('narrows to the window’s own campaign first', () => {

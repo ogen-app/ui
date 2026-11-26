@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { PageContainer } from '@/components/page-primitives/PageContainer'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
+import { PostsSearchNoMatches } from '@/components/campaigns/postsFilter/PostsSearchNoMatches'
 import { CalendarHeader } from '@/components/campaigns/calendar/CalendarHeader'
 import { CalendarDrawer } from '@/components/campaigns/calendar/CalendarDrawer'
 import { MonthlyCalendar } from '@/components/campaigns/calendar/MonthlyCalendar'
@@ -19,6 +20,7 @@ import { useWorkspacePosts } from '@/hooks/usePosts'
 import { useRememberPostsPlace } from '@/hooks/usePostsPlace'
 import { WORKSPACE_PLACE } from '@/lib/postsPlace'
 import { awaiting } from '@/lib/fetched'
+import { parseCalendarSearch } from '@/lib/postFilter'
 import type { Post } from '@/types/posts'
 
 /** Stable identity for a grid with nothing in it yet. */
@@ -34,7 +36,9 @@ function isGranularity(value: string): value is CalendarGranularity {
 
 export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
   staticData: { help: 'calendar' },
-  beforeLoad: ({ params }) => {
+  // The search, and only the search (CON-534), as on a campaign's calendar.
+  validateSearch: parseCalendarSearch,
+  beforeLoad: ({ params, search }) => {
     // Normalize malformed anchors / unsupported views to the current week, as
     // the campaign's calendar does — including `list`, which is a real view
     // there and not one here.
@@ -46,6 +50,7 @@ export const Route = createFileRoute('/_authenticated/calendar/$anchor/$view')({
           anchor: formatAnchor(parsed ?? new Date()),
           view: 'week',
         },
+        search,
       })
     }
   },
@@ -78,12 +83,18 @@ function WorkspaceCalendarView() {
   const { anchor, view } = Route.useParams()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const postsQuery = useWorkspacePosts()
+  const { text = '' } = Route.useSearch()
+  const params = useMemo(() => (text ? { text } : undefined), [text])
+  const postsQuery = useWorkspacePosts(params)
   const { data: posts, isError: postsError } = postsQuery
   // `awaiting`, not `isLoading` — see `lib/fetched`. Same reasoning as the
   // campaign's calendar.
   const postsPending = awaiting(postsQuery)
-  const rows = posts ?? NO_POSTS
+  // A new search keeps the last answer's cards up until its own arrives, as
+  // on a campaign's calendar.
+  const [lastAnswer, setLastAnswer] = useState<Post[] | undefined>(undefined)
+  if (posts && lastAnswer !== posts) setLastAnswer(posts)
+  const rows = posts ?? lastAnswer ?? NO_POSTS
   // A failed fetch is not an empty workspace — same rule as the campaign's
   // calendar. Cached rows from an earlier success still draw; only a fetch that
   // never answered is a failure here.
@@ -107,7 +118,18 @@ function WorkspaceCalendarView() {
     navigate({
       to: '/calendar/$anchor/$view',
       params: { anchor: formatAnchor(d), view: granularity },
+      search: true,
     })
+  const handleSearchChange = useCallback(
+    (next: string) =>
+      void navigate({
+        to: '/calendar/$anchor/$view',
+        params: { anchor, view },
+        search: next ? { text: next } : {},
+        replace: true,
+      }),
+    [navigate, anchor, view],
+  )
 
   const Calendar = granularity === 'month' ? MonthlyCalendar : WeeklyCalendar
 
@@ -132,6 +154,8 @@ function WorkspaceCalendarView() {
           view={granularity}
           anchor={anchorDate}
           onAnchorChange={handleAnchorChange}
+          search={text}
+          onSearchChange={handleSearchChange}
         />
         <div className="page-content-motion grid overflow-hidden h-full px-3 lg:px-6 pt-3">
           <div className="flex flex-col h-full min-h-0 min-w-0">
@@ -139,6 +163,11 @@ function WorkspaceCalendarView() {
               <p className="px-6 py-8 text-sm text-tertiary-foreground">
                 {t('calendar.loadFailed')}
               </p>
+            ) : !postsPending && text && posts?.length === 0 ? (
+              <PostsSearchNoMatches
+                text={text}
+                onClear={() => handleSearchChange('')}
+              />
             ) : !postsPending && rows.length === 0 ? (
               // Only once the query has answered: an empty grid is the honest
               // way to wait for it. No add affordance, so the empty state says

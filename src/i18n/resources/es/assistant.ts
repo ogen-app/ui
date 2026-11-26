@@ -1375,6 +1375,7 @@ export const assistant: Translation['assistant'] = {
     setFilter: 'Filtró {{screen}}',
     setFilterDetail: 'Filtró {{screen}} <where>{{detail}}</where>',
     clearFilter: 'Quitó el filtro de {{screen}}',
+    searchDetail: '«{{text}}»',
     select_one: 'Seleccionó {{formatted}} en {{screen}}',
     select_other: 'Seleccionó {{formatted}} en {{screen}}',
     selectKind: 'Seleccionó {{what}}',
