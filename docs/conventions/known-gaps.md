@@ -156,3 +156,11 @@ token-gated unsubscribe pages, not a session-authenticated one, so
 contract is in `services/api/emailPreferences.ts` and asserted by its test.
 Flip the flag when the handler answers. See
 `docs/technical-decisions.md#email-preferences`.
+
+**Text search on the posts is built but flagged off** (`posts-text-search`,
+CON-534). The "mentioning …" clause on both posts lists and the search field
+on both calendars send `text=`, which `GET /api/posts` and `GET
+/api/campaigns/:id/posts` take only once CON-475 merges. Then the live pass: a
+substring finds "pricing" from `pric`, a thread's later segments match, `%` and
+`_` are literal, the assistant's "the posts about pricing" fills the box, and
+select-all on a searched list ticks what it shows — and only then the flag.

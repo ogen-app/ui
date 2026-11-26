@@ -5,6 +5,13 @@ export const postsFilter: Translation['postsFilter'] = {
   unknownPlatform: 'Una plataforma retirada',
   unknownCampaign: 'Una campaña archivada',
   nothingMatches: 'Ninguna publicación coincide con estos filtros',
+  search: {
+    placeholder: 'Buscar publicaciones',
+    label: 'Buscar en las publicaciones',
+    clear: 'Borrar la búsqueda',
+    nothingMatches: 'Ninguna publicación menciona «{{text}}»',
+    clearSearch: 'Borrar búsqueda',
+  },
   scheduled: {
     yes: 'Con fecha',
     no: 'Sin fecha',
@@ -23,6 +30,7 @@ export const postsFilter: Translation['postsFilter'] = {
       date: 'programadas <v>desde el {{values}}</v>',
       date_range: 'programadas <v>entre el {{from}} y el {{to}}</v>',
       date_not: 'programadas <v>antes del {{values}}</v>',
+      text: 'que mencionan <v>«{{values}}»</v>',
     },
     status: {
       planned: 'planificadas',
@@ -45,6 +53,7 @@ export const postsFilter: Translation['postsFilter'] = {
       post_type: 'Publicaciones en formato…',
       scheduled: 'Publicaciones…',
       date: 'Publicaciones programadas…',
+      text: 'Publicaciones que mencionan…',
     },
     include: {
       campaign_id: 'en',
@@ -72,6 +81,7 @@ export const postsFilter: Translation['postsFilter'] = {
       status: 'borradores, fallidas',
     },
     findCampaign: 'Buscar una campaña',
+    textPlaceholder: 'Palabras del título o del texto',
     posts_one: '{{formatted}} publicación',
     posts_other: '{{formatted}} publicaciones',
   },

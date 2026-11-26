@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { readCalendarPlace } from '@/hooks/usePostsPlace'
 import { WORKSPACE_PLACE } from '@/lib/postsPlace'
+import { parseCalendarSearch } from '@/lib/postFilter'
 
 /**
  * Bare `/calendar` → wherever the workspace calendar was last left, or the
@@ -12,10 +13,13 @@ import { WORKSPACE_PLACE } from '@/lib/postsPlace'
  * even if one had been remembered.
  */
 export const Route = createFileRoute('/_authenticated/calendar/')({
-  beforeLoad: () => {
+  // The search rides through the redirect (CON-534), as on a campaign's.
+  validateSearch: parseCalendarSearch,
+  beforeLoad: ({ search }) => {
     throw redirect({
       to: '/calendar/$anchor/$view',
       params: readCalendarPlace(WORKSPACE_PLACE),
+      search,
     })
   },
 })

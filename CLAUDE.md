@@ -199,7 +199,7 @@ Loaded automatically in `src/components/smartFilter`, `src/components/content`, 
 - The Campaigns list reads one batched query, never one per card.
 - The asset list is the server's answer to the URL, a page at a time.
 - The Ideas list is the server's answer to the URL too.
-- The posts lists read one filter, a campaign's and the workspace's; the calendars have none for now.
+- The posts lists read one filter, a campaign's and the workspace's; the calendars carry only its search.
 - The Ideas and Assets lists are cards on `listCards`' rules: tabs in the page header, and one pinned line for the filter, the arrangement and the selection.
 
 ### Posts — [`docs/conventions/posts.md`](./docs/conventions/posts.md)
@@ -340,6 +340,7 @@ and formats in `campaigns.md`.
 - Two operator-tunable server limits are mirrored on the client with nothing to sync them.
 - The help centre is on, read from Sanity.
 - The Profile marketing-email switch is built but flagged off.
+- Text search on the posts is built but flagged off.
 
 ## Global rules
 

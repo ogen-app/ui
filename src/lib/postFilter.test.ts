@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   EMPTY_POST_FILTER,
+  POST_FILTER_MODEL,
+  parseCalendarSearch,
   parseCampaignPostListSearch,
   parsePostListSearch,
   postFilterFromSearch,
@@ -11,6 +13,13 @@ import {
   withPostToken,
   withoutPostToken,
 } from './postFilter'
+
+// The search is behind `posts-text-search`; on here unless a test says.
+const flags = vi.hoisted(() => ({ textSearch: true }))
+vi.mock('@/config/featureFlags', () => ({
+  isFeatureEnabled: (flag: string) =>
+    flag === 'posts-text-search' ? flags.textSearch : false,
+}))
 
 describe('parsePostListSearch (CON-472)', () => {
   it('keeps what the endpoint takes and drops what it would refuse', () => {
@@ -159,5 +168,70 @@ describe('the workspace’s campaign field and the grouping', () => {
     expect(postGroupingFromSearch(parsePostListSearch({ group: 'tag' }))).toBe(
       'none',
     )
+  })
+})
+
+describe('the search (CON-534)', () => {
+  beforeEach(() => {
+    flags.textSearch = true
+  })
+
+  it('keeps one trimmed phrase, cut to what the server takes', () => {
+    expect(parsePostListSearch({ text: '  pricing page ' })).toEqual({
+      text: 'pricing page',
+    })
+    expect(parsePostListSearch({ text: '   ' })).toEqual({})
+    expect(parsePostListSearch({ text: 'a'.repeat(250) }).text).toHaveLength(
+      200,
+    )
+  })
+
+  it('is a clause of its own, last, and goes to the endpoint as it is', () => {
+    const filter = postFilterFromSearch(
+      parseCampaignPostListSearch({ status: 'draft', text: '50% off_now' }),
+    )
+    expect(postTokensOf(filter)).toEqual([
+      { field: 'status', negated: false, values: ['draft'] },
+      { field: 'text', negated: false, values: ['50% off_now'] },
+    ])
+    expect(postRequestParams(filter, 'UTC')).toEqual({
+      status: 'draft',
+      text: '50% off_now',
+    })
+    expect(withoutPostToken(filter, { field: 'text', negated: false })).toEqual(
+      { ...filter, text: '' },
+    )
+  })
+
+  it('is typed into Add as a search', () => {
+    expect(POST_FILTER_MODEL.kindOf('text')).toBe('search')
+    expect(POST_FILTER_MODEL.freeText).toEqual(['text'])
+    expect(
+      withPostToken(EMPTY_POST_FILTER, {
+        field: 'text',
+        negated: false,
+        values: [' launch '],
+      }).text,
+    ).toBe('launch')
+  })
+
+  it('is all a calendar carries', () => {
+    expect(
+      parseCalendarSearch({
+        text: 'pricing',
+        status: 'draft',
+        group: 'status',
+      }),
+    ).toEqual({ text: 'pricing' })
+    expect(parseCalendarSearch({ status: 'draft' })).toEqual({})
+  })
+
+  it('is dropped from the address with the flag off', () => {
+    flags.textSearch = false
+    expect(parsePostListSearch({ text: 'pricing', status: 'draft' })).toEqual({
+      status: 'draft',
+    })
+    expect(parseCalendarSearch({ text: 'pricing' })).toEqual({})
+    expect(POST_FILTER_MODEL.freeText).toEqual([])
   })
 })

@@ -14,6 +14,14 @@ export const postsFilter = {
   unknownPlatform: 'A removed platform',
   unknownCampaign: 'An archived campaign',
   nothingMatches: 'No posts match these filters',
+  /** The calendars' search field (CON-534). */
+  search: {
+    placeholder: 'Search posts',
+    label: 'Search the posts',
+    clear: 'Clear the search',
+    nothingMatches: 'No posts mention “{{text}}”',
+    clearSearch: 'Clear search',
+  },
   scheduled: {
     yes: 'With a date',
     no: 'Without a date',
@@ -33,6 +41,7 @@ export const postsFilter = {
       date: 'scheduled <v>from {{values}}</v>',
       date_range: 'scheduled <v>between {{from}} and {{to}}</v>',
       date_not: 'scheduled <v>before {{values}}</v>',
+      text: 'mentioning <v>“{{values}}”</v>',
     },
     status: {
       planned: 'planned',
@@ -55,6 +64,7 @@ export const postsFilter = {
       post_type: 'Posts in the format…',
       scheduled: 'Posts…',
       date: 'Posts scheduled…',
+      text: 'Posts mentioning…',
     },
     include: {
       campaign_id: 'in',
@@ -82,6 +92,7 @@ export const postsFilter = {
       status: 'drafts, failed',
     },
     findCampaign: 'Find a campaign',
+    textPlaceholder: 'Words in the title or the text',
     posts_one: '{{formatted}} post',
     posts_other: '{{formatted}} posts',
   },

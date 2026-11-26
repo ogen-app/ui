@@ -1,3 +1,4 @@
+import { isFeatureEnabled } from '@/config/featureFlags'
 import type { ValueFilter } from '@/lib/assetFilter'
 import type { FieldKind, FilterModel, SmartToken } from '@/lib/smartFilter'
 import type { PostStatus } from '@/types/posts'
@@ -18,6 +19,11 @@ import type { PostStatus } from '@/types/posts'
  * The endpoint answers with the whole match, unpaged and uncounted, so the
  * filter has no facets and the table still sorts on the client.
  *
+ * `text` (CON-534) is one phrase the server finds in a post's title, content
+ * or thread segments. It is the only part of the filter the calendars carry
+ * (`parseCalendarSearch`), and it is behind `posts-text-search`: with the flag
+ * off the address drops it.
+ *
  * Nothing here filters anything. It only says what to ask.
  */
 
@@ -29,6 +35,7 @@ export const POST_FILTER_FIELDS = [
   'post_type',
   'scheduled',
   'date',
+  'text',
 ] as const
 
 export type PostFilterField = (typeof POST_FILTER_FIELDS)[number]
@@ -37,6 +44,9 @@ export type PostFilterField = (typeof POST_FILTER_FIELDS)[number]
 export const CAMPAIGN_POST_FILTER_FIELDS = POST_FILTER_FIELDS.filter(
   (field) => field !== 'campaign_id',
 )
+
+/** The longest `text` the server takes; longer is a 400 (CON-475). */
+export const POST_TEXT_MAX = 200
 
 /** The fields that choose from a list of values, several at once. */
 const CHOICE_FIELDS = [
@@ -76,6 +86,8 @@ export type PostFilter = Record<ChoiceField, ValueFilter> & {
   after: string | null
   /** A `YYYY-MM-DD` day; exclusive, as the endpoint reads it. */
   before: string | null
+  /** One phrase, trimmed; empty is no search. */
+  text: string
 }
 
 export const EMPTY_POST_FILTER: PostFilter = {
@@ -86,6 +98,7 @@ export const EMPTY_POST_FILTER: PostFilter = {
   scheduled: null,
   after: null,
   before: null,
+  text: '',
 }
 
 /**
@@ -107,6 +120,7 @@ export type PostListSearch = Partial<
     | 'scheduled'
     | 'scheduled_after'
     | 'scheduled_before'
+    | 'text'
     | 'group',
     string
   >
@@ -138,7 +152,18 @@ function day(raw: unknown): string | undefined {
 }
 
 /**
- * The router's `validateSearch` for the posts list and the calendar: keeps
+ * A search as the server reads it — trimmed, a blank one none at all — and
+ * cut to what it takes. Undefined with the flag off, so the address never
+ * carries one the app can't show.
+ */
+function searchText(raw: unknown): string | undefined {
+  if (!isFeatureEnabled('posts-text-search')) return undefined
+  const text = raw === undefined || raw === null ? '' : String(raw).trim()
+  return text ? text.slice(0, POST_TEXT_MAX).trim() : undefined
+}
+
+/**
+ * The router's `validateSearch` for the posts lists: keeps
  * what the filter understands and drops the rest — a stale link should narrow
  * less, never fail. Statuses are the server's list; platforms and types are
  * ids it checks itself.
@@ -164,6 +189,8 @@ export function parsePostListSearch(
   if (after) out.scheduled_after = after
   if (before) out.scheduled_before = before
   if ((after || before) && out.scheduled === 'no') delete out.scheduled
+  const text = searchText(raw.text)
+  if (text) out.text = text
   const group = String(raw.group ?? '')
   if ((POST_GROUPS as readonly string[]).includes(group)) out.group = group
   return out
@@ -182,6 +209,18 @@ export function parseCampaignPostListSearch(
   delete out.campaign_id_not
   if (out.group === 'campaign') delete out.group
   return out
+}
+
+/**
+ * The calendars' `validateSearch`: the search and nothing else. A calendar
+ * draws every post of its days, and the rest of the filter is the lists'
+ * (`destinationFor` sends it there).
+ */
+export function parseCalendarSearch(
+  raw: Record<string, unknown>,
+): Pick<PostListSearch, 'text'> {
+  const text = searchText(raw.text)
+  return text ? { text } : {}
 }
 
 export function postGroupingFromSearch(search: PostListSearch): PostGrouping {
@@ -206,6 +245,7 @@ export function postFilterFromSearch(search: PostListSearch): PostFilter {
         : null,
     after: search.scheduled_after ?? null,
     before: search.scheduled_before ?? null,
+    text: search.text ?? '',
   }
 }
 
@@ -218,6 +258,7 @@ export function searchFromPostFilter(filter: PostFilter): PostListSearch {
   if (filter.scheduled) out.scheduled = filter.scheduled
   if (filter.after) out.scheduled_after = filter.after
   if (filter.before) out.scheduled_before = filter.before
+  if (filter.text) out.text = filter.text
   return out
 }
 
@@ -259,6 +300,11 @@ export function postTokensOf(filter: PostFilter): PostToken[] {
         tokens.push({ field, negated: false, values: [after, before] })
       else if (after) tokens.push({ field, negated: false, values: [after] })
       else if (before) tokens.push({ field, negated: true, values: [before] })
+      continue
+    }
+    if (field === 'text') {
+      if (filter.text)
+        tokens.push({ field, negated: false, values: [filter.text] })
       continue
     }
     const { any, not } = filter[field]
@@ -311,6 +357,10 @@ export function withPostToken(
     if (next.scheduled === 'no') next.scheduled = null
     return next
   }
+  if (field === 'text') {
+    next.text = values[0]?.trim() ?? ''
+    return next
+  }
   next[field] = negated
     ? { ...next[field], not: [...values] }
     : { ...next[field], any: [...values] }
@@ -332,6 +382,10 @@ export function withoutPostToken(
     next.before = null
     return next
   }
+  if (field === 'text') {
+    next.text = ''
+    return next
+  }
   next[field] = negated
     ? { ...next[field], not: [] }
     : { ...next[field], any: [] }
@@ -339,6 +393,7 @@ export function withoutPostToken(
 }
 
 function kindOf(field: PostFilterField): FieldKind {
+  if (field === 'text') return 'search'
   return field === 'date' ? 'date' : 'choice'
 }
 
@@ -348,8 +403,11 @@ export const POST_FILTER_MODEL: FilterModel<PostFilter, PostFilterField> = {
   tokensOf: postTokensOf,
   withToken: withPostToken,
   withoutToken: withoutPostToken,
-  // Text search on posts is CON-475.
-  freeText: [],
+  // Read when the Add field is typed in, so a flag forced on in this
+  // browser takes without a reload.
+  get freeText(): readonly PostFilterField[] {
+    return isFeatureEnabled('posts-text-search') ? ['text'] : []
+  },
   searchMin: 1,
-  textMax: 200,
+  textMax: POST_TEXT_MAX,
 }

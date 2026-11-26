@@ -89,11 +89,20 @@ keep it accurate when these rules change.
 - **The posts lists read one filter** (CON-472), a campaign's and the
   workspace's alike: `lib/postFilter`, the endpoints' own params (`status`,
   `platform` — the post's platform sqid —, `post_type`, `scheduled=yes|no`,
-  `scheduled_after`/`scheduled_before` as days, `tz` only beside a date), in
-  the list's address. **The calendars have no filter for now** (2026-11-23):
-  they draw every post, their address carries none, and an assistant
-  `set_filter` on `campaign.calendar` lands on the campaign's list
-  (`destinationFor`). `GET /api/posts` takes the same params plus
+  `scheduled_after`/`scheduled_before` as days, `tz` only beside a date,
+  and `text` — CON-534, behind `posts-text-search` — one phrase the server
+  finds in a title, the content or a thread segment, typed into Add as a
+  "mentioning …" clause), in the list's address. **A calendar's only filter
+  is the search** (CON-534; until then, 2026-11-23, none): a field in its
+  header, `text` alone in its address (`parseCalendarSearch`), kept as the
+  week, month and view change and through the redirects, written once the
+  typing rests and replaced by a search set elsewhere. An assistant
+  `set_filter` on a calendar that is only a search, or clears one, stays
+  there; anything more lands on the posts list — the campaign's, or `/posts`
+  from the workspace calendar (`filterLandsOnList`). With the flag off the
+  address drops `text` and every calendar filter goes where it went before.
+  A search nothing matches on a calendar says so with one way out
+  (`PostsSearchNoMatches`), never the empty campaign's invitation. `GET /api/posts` takes the same params plus
   `campaign_id`, so the workspace's pages add a Campaign field
   (`campaign_id`/`campaign_id_not`), offering the live campaigns and every
   platform and post type they take; a campaign's list drops it from the

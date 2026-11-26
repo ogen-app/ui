@@ -8,6 +8,7 @@ import {
   PlusSignIcon,
 } from '@hugeicons/core-free-icons'
 import { HeaderIcon } from './HeaderIcon'
+import { PostsSearchField } from '@/components/campaigns/postsFilter/PostsSearchField'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -28,6 +29,7 @@ import {
   startOfWeek,
 } from './date'
 import { formatDate } from '@/lib/intl'
+import { useFeatureFlag } from '@/config/featureFlags'
 import { useCalendarSettings } from '@/hooks/useCalendarSettings'
 import { useAddPost } from '@/hooks/usePosts'
 import { UpgradeDialog } from '@/components/entitlements/UpgradeDialog'
@@ -62,17 +64,27 @@ function formatWeekRange(weekStart: Date, locale: string): string {
  *
  * `campaignId: null` is the workspace calendar: no ADD POST in the header — a
  * post needs a campaign, so a day's own add asks which (`AddPostButton`).
+ *
+ * The search (CON-534) leads the controls: the only part of the posts filter
+ * a calendar carries, and kept in the address as the week, the month and the
+ * view change.
  */
 export function CalendarHeader({
   campaignId,
   view,
   anchor,
   onAnchorChange,
+  search,
+  onSearchChange,
 }: {
   campaignId: string | null
   view: Granularity
   anchor: Date
   onAnchorChange: (anchor: Date) => void
+  /** The `text=` in the address; empty for none. */
+  search: string
+  /** Stable — see `PostsSearchField`. */
+  onSearchChange: (next: string) => void
 }) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -83,6 +95,7 @@ export function CalendarHeader({
   // refusal already arrives as a sentence under the action's name (CON-295).
   const gate = useUpgradeGate('posts_total')
   const { firstDayOfWeek, isPending: settingsPending } = useCalendarSettings()
+  const textSearch = useFeatureFlag('posts-text-search')
 
   const handleViewSelect = (next: Granularity) => {
     if (next === view) return
@@ -94,11 +107,13 @@ export function CalendarHeader({
       navigate({
         to: '/calendar/$anchor/$view',
         params: { anchor: nextAnchor, view: next },
+        search: true,
       })
     } else {
       navigate({
         to: '/campaigns/$campaignId/calendar/$anchor/$view',
         params: { campaignId, anchor: nextAnchor, view: next },
+        search: true,
       })
     }
   }
@@ -136,6 +151,9 @@ export function CalendarHeader({
         title={range ?? undefined}
         actions={
           <div className="flex items-center gap-3">
+            {textSearch && (
+              <PostsSearchField value={search} onChange={onSearchChange} />
+            )}
             <div className="flex items-center gap-0.5">
               <Button
                 variant="default"

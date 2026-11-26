@@ -1,3 +1,4 @@
+import { isFeatureEnabled } from '@/config/featureFlags'
 import type { ViewEntityKind, ViewScreen } from '@/lib/viewContext'
 
 /**
@@ -122,15 +123,34 @@ const DETAIL_PATHS: Partial<Record<ViewScreen, [string, string]>> = {
   'foundation.series_item': ['/foundation/series/$seriesId', 'seriesId'],
 }
 
+/**
+ * Whether a filter set on a calendar lands on its posts list instead. A
+ * calendar carries the search and nothing else (CON-534), so a filter that
+ * is a search, or clears one, stays; anything more is the list's, which
+ * reads the same filter. Without `posts-text-search` every one goes, as
+ * before the calendars had a search.
+ */
+export function filterLandsOnList(action: UIAction): boolean {
+  if (action.type !== 'set_filter') return false
+  if (action.screen !== 'campaign.calendar' && action.screen !== 'calendar')
+    return false
+  if (!isFeatureEnabled('posts-text-search'))
+    return action.screen === 'campaign.calendar'
+  return Object.keys(searchFromFilter(action.filter ?? '')).some(
+    (key) => key !== 'text',
+  )
+}
+
 /** Where a screen is, from what the action says about it. */
 export function destinationFor(action: UIAction): Destination | null {
   const { screen, campaignId, focus } = action
   // A window set from a campaign's Analytics tab lands on the tab it names
   // (CON-498): the server sends another campaign's tab for another campaign,
   // and the workspace's dashboard for the whole workspace.
-  // The calendar has no filter for now, so a filter set on it lands on the
-  // campaign's posts list, which reads the same one.
-  if (action.type === 'set_filter' && screen === 'campaign.calendar') {
+  // A calendar's filter is its search; the rest of one set on it lands on
+  // the posts list, which reads the same filter.
+  if (filterLandsOnList(action)) {
+    if (screen === 'calendar') return { to: '/posts', params: {} }
     return campaignId
       ? { to: '/campaigns/$campaignId/list', params: { campaignId } }
       : null
