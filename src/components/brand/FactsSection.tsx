@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { LibrarySelectionBar } from '@/components/brand/librarySelection'
+import { LibrarySelectionLine } from '@/components/brand/librarySelection'
 import { RemoveFactsDialog } from '@/components/brand/RemoveFactsDialog'
 import { useLibrarySelection } from '@/components/brand/useLibrarySelection'
 import type { TFunction } from 'i18next'
@@ -281,10 +281,24 @@ export function FactsLedger({
           </p>
         ) : (
           <>
-            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 py-2">
-              <LedgerTabs view={view} onChange={setView} facts={ledger} />
-              <LedgerSearch value={query} onChange={setQuery} />
-            </div>
+            {/* While facts are ticked the line is the selection, as on the
+                other lists: in the tabs' place, as tall as the search, so
+                the table never moves and nothing floats over its foot. */}
+            {selection.ticked.size > 0 ? (
+              <div className="flex h-10 shrink-0 items-center py-2 box-content">
+                <LibrarySelectionLine
+                  kind="fact"
+                  selection={selection}
+                  onRemove={() => setConfirming([...selection.ticked])}
+                  busy={removing}
+                />
+              </div>
+            ) : (
+              <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 py-2">
+                <LedgerTabs view={view} onChange={setView} facts={ledger} />
+                <LedgerSearch value={query} onChange={setQuery} />
+              </div>
+            )}
             {shown.length === 0 && view !== 'all' && query.trim() === '' ? (
               // An empty *ledger* the table cannot speak for: the shared empty
               // state is about a filter somebody can relax, and a workspace with
@@ -321,15 +335,6 @@ export function FactsLedger({
             )}
           </>
         )}
-        {/* Over the table's foot rather than under it (CON-486): the table
-            scrolls inside itself, so a bar in the column would shrink it. */}
-        <LibrarySelectionBar
-          kind="fact"
-          selection={selection}
-          overlay
-          onRemove={() => setConfirming([...selection.ticked])}
-          busy={removing}
-        />
       </div>
 
       <RemoveFactsDialog

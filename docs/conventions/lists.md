@@ -80,7 +80,10 @@ keep it accurate when these rules change.
   half-ticked head box clears; a group's box fills its group; Shift extends
   a range; widening to every match is a separate, named step ("Select all
   46 ideas in …"); ticks survive switching piles and the head says how many
-  are elsewhere. The actions sit in the head rather than in a floating bar.
+  are elsewhere. The actions sit in the head rather than in a floating bar
+  — on every list that ticks (`page-primitives/SelectionLine`: the count,
+  one quiet word after it, then the actions as ghost buttons, each a verb of
+  its own rather than a menu; Delete red in its icon).
   Bulk delete is
   `POST /api/ideas/bulk-delete` in batches of 500, and select-all is
   `ids_only`, capped at 5,000. An analysed idea's words are read-only (409
@@ -115,11 +118,13 @@ keep it accurate when these rules change.
   the calendar sends the days on screen as its `window` (`calendarRange`),
   the cards in them as `visible`, and its ticks — a card's corner box, read
   through `CalendarSelectionContext` — as the selection. The calendar keeps
-  its toolbar while posts are ticked; the bulk bar floats over the grid's
-  foot, and a month day too busy for cards says how many of its posts are
+  its toolbar while posts are ticked, and having no list head, it is the one
+  place the selection floats: the posts list's line over the grid's foot
+  (`CalendarSelectionBar`), and a month day too busy for cards says how many of its posts are
   ticked (CON-486).
   Foundation's facts tick the same way (`useLibrarySelection`), as
-  something to ask about: the bar clears and REMOVEs, asking first through
+  something to ask about: while any is ticked the selection takes the tabs'
+  and search's line, clears and REMOVEs, asking first through
   `RemoveFactsDialog` — the row's trash asks the same way. A fact selection
   is held against the rows the tab and search show. Voices, audiences and
   series have no ticks and no bar (2026-11-23): each is a plain card that
@@ -144,8 +149,9 @@ keep it accurate when these rules change.
   on the workspace's list — by campaign, by name; `group` sits in the address
   beside the filter, survives it, and is never sent. The table draws a head
   per group (`VirtualTable`'s `groupOf`), which folds it; the rows under each
-  keep the table's sort. The bulk bar floats over the list's foot, as on the
-  calendar. **What is wrong with a post is one column of marks** after Status
+  keep the table's sort. While posts are ticked the filter line is the
+  selection (`PostSelectionLine`): how many, Clear, then Change date, Change
+  time, Unschedule and Delete. **What is wrong with a post is one column of marks** after Status
   (`lib/postWarnings`): read off the list payload alone — a failed or missed
   publish, no platform, no account it can publish as, outside its campaign's
   platforms or post types (CON-483), written without sources (CON-484) — and

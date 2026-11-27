@@ -14,7 +14,7 @@ import {
   postsInRange,
 } from '@/components/campaigns/calendar/date'
 import { CalendarSelectionContext } from '@/components/campaigns/calendar/calendarSelection'
-import { BulkActionsBar } from '@/components/campaigns/BulkActionsBar'
+import { CalendarSelectionBar } from '@/components/campaigns/BulkActionsBar'
 import { PostsSearchNoMatches } from '@/components/campaigns/postsFilter/PostsSearchNoMatches'
 import { useAddPost, useCampaignPosts } from '@/hooks/usePosts.ts'
 import { useBulkPostActions } from '@/hooks/useBulkPostActions'
@@ -350,8 +350,7 @@ function CalendarView() {
               )}
             </CalendarSelectionContext.Provider>
             {selectedPosts.length > 0 && (
-              <BulkActionsBar
-                floating
+              <CalendarSelectionBar
                 posts={selectedPosts}
                 onClear={() => setSelectedIds(new Set())}
                 onApply={applyPlan}

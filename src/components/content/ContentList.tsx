@@ -10,10 +10,12 @@ import { useTranslation } from 'react-i18next'
 import {
   FileTextIcon,
   GlobeSimpleIcon,
+  TrashIcon,
   UploadSimpleIcon,
 } from '@phosphor-icons/react'
 import { PageGridEmptyState } from '@/components/page-primitives/PageGridEmptyState'
 import { CardHead } from '@/components/page-primitives/listCards'
+import { SelectionLine } from '@/components/page-primitives/SelectionLine'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { FilterPills } from '@/components/smartFilter/FilterPills'
@@ -149,7 +151,8 @@ export function ContentList({
   onUpload,
   onAddWebPage,
 }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const n = (value: number) => formatNumber(value, {}, i18n.language)
   const { rows, total, totalUnfiltered, facets, groups, query } = list
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   /** The selection is every id the filter matches, not only loaded rows. */
@@ -390,19 +393,47 @@ export function ContentList({
           >
             {selecting ? (
               <SelectionLine
-                count={ticked.size}
-                allMatching={allMatching}
-                elsewhere={elsewhere}
-                canWiden={pageAll && !allMatching && total > onPage}
-                total={total}
-                resolving={resolving}
-                onWiden={() => void selectAllMatching()}
-                onClear={clearSelection}
+                status={
+                  allMatching
+                    ? t('content.selection.allSelected', {
+                        count: total,
+                        formatted: n(total),
+                      })
+                    : t('content.selection.count', { count: ticked.size })
+                }
+                clear={
+                  allMatching
+                    ? {
+                        label: t('content.selection.clearAll'),
+                        onClick: clearSelection,
+                      }
+                    : undefined
+                }
+                widen={
+                  pageAll && total > onPage
+                    ? {
+                        label: t('content.selection.selectAll', {
+                          count: total,
+                          formatted: n(total),
+                        }),
+                        onClick: () => void selectAllMatching(),
+                        disabled: resolving,
+                      }
+                    : undefined
+                }
+                note={
+                  elsewhere > 0
+                    ? t('content.selection.elsewhere', {
+                        count: elsewhere,
+                        formatted: n(elsewhere),
+                      })
+                    : undefined
+                }
               >
                 {/* Tag first: it is the reversible one, and a line whose
                     first action deletes is one people learn to approach
-                    carefully rather than use. Ghost, not the destructive red:
-                    the dialog behind DELETE is where the warning belongs. */}
+                    carefully rather than use. Delete is ghost like it, red in
+                    its icon only: the dialog behind it is the warning. */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -424,7 +455,8 @@ export function ContentList({
                     setConfirming({ ids, title: only?.title.trim() || null })
                   }}
                 >
-                  {t('content.selection.delete')}
+                  <TrashIcon className="text-destructive" />
+                  <span>{t('content.selection.delete')}</span>
                 </Button>
               </SelectionLine>
             ) : (
@@ -516,97 +548,6 @@ export function ContentList({
         onConfirm={() => void handleDeleteConfirmed()}
         deleting={deleting}
       />
-    </div>
-  )
-}
-
-/**
- * The list's head while something is ticked: how many, then — the
- * mail-client way — how many are ticked out of sight, or the named step that
- * widens a ticked page to every match, or the way out of every match; then
- * what can be done to them (`children`). The count is in tabular figures, so
- * the actions hold still while cards are ticked.
- *
- * Two actions, each a real operation rather than a menu of bulk edits
- * standing in for features: tagging (CON-279's bulk endpoint) and DELETE,
- * which asks first. In the head, pinned, rather than floating over the list's
- * foot: the head is where the selection is counted and widened, and it stays
- * in reach however far the list is scrolled.
- */
-function SelectionLine({
-  count,
-  allMatching,
-  elsewhere,
-  canWiden,
-  total,
-  resolving,
-  onWiden,
-  onClear,
-  children,
-}: {
-  count: number
-  allMatching: boolean
-  /** Ticked but not loaded — the assistant's choice, say. */
-  elsewhere: number
-  /** The whole page is ticked and the match holds more. */
-  canWiden: boolean
-  total: number
-  resolving: boolean
-  onWiden: () => void
-  onClear: () => void
-  children: ReactNode
-}) {
-  const { t, i18n } = useTranslation()
-  const n = (value: number) => formatNumber(value, {}, i18n.language)
-  return (
-    // One pill's height, like the line it stands in for; the actions' 32px
-    // buttons lean 2px past it either side rather than heighten the line.
-    <div className="flex h-7 min-w-0 flex-1 items-center gap-3">
-      <span
-        role="status"
-        aria-live="polite"
-        className="shrink-0 text-sm/5 font-medium whitespace-nowrap tabular-nums"
-      >
-        {allMatching
-          ? t('content.selection.allSelected', {
-              count: total,
-              formatted: n(total),
-            })
-          : t('content.selection.count', { count })}
-      </span>
-      {allMatching ? (
-        <button
-          type="button"
-          onClick={onClear}
-          className="cursor-pointer truncate text-sm/5 text-secondary-foreground outline-none hover:text-foreground hover:underline focus-visible:underline"
-        >
-          {t('content.selection.clearAll')}
-        </button>
-      ) : canWiden ? (
-        <button
-          type="button"
-          onClick={onWiden}
-          disabled={resolving}
-          className="cursor-pointer truncate text-sm/5 font-medium text-accent outline-none hover:underline focus-visible:underline disabled:opacity-60"
-        >
-          {t('content.selection.selectAll', {
-            count: total,
-            formatted: n(total),
-          })}
-        </button>
-      ) : (
-        elsewhere > 0 && (
-          <span className="truncate text-sm/5 text-secondary-foreground">
-            {t('content.selection.elsewhere', {
-              count: elsewhere,
-              formatted: n(elsewhere),
-            })}
-          </span>
-        )
-      )}
-      <div className="-my-0.5 ml-auto flex shrink-0 items-center gap-1">
-        {children}
-      </div>
     </div>
   )
 }

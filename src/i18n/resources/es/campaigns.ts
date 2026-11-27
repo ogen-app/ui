@@ -23,10 +23,8 @@ export const campaigns: Translation['campaigns'] = {
     allMatching_one: 'Seleccionada la {{formatted}} publicación que coincide',
     allMatching_other:
       'Seleccionadas las {{formatted}} publicaciones que coinciden',
-    when: 'Fecha y hora de publicación',
     changeDate: 'Cambiar la fecha',
     changeTime: 'Cambiar la hora',
-    status: 'Estado',
     unschedule: 'Desprogramar',
     delete: 'Eliminar',
     clear: 'Borrar selección',

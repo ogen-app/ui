@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { BulkActionsBar } from '@/components/campaigns/BulkActionsBar'
+import { PostSelectionLine } from '@/components/campaigns/BulkActionsBar'
 import { PostsEmptyState } from '@/components/campaigns/PostsEmptyState'
 import { PostsTable } from '@/components/tables/postsTable'
 import { PostsListFrame } from '@/components/campaigns/postsList/PostsListFrame'
@@ -221,26 +221,40 @@ function CampaignListView() {
           POST is the header's. */}
       {(filtered || (allPosts.data?.length ?? 0) > 0) && (
         <div className="shrink-0 pt-3 pb-2">
-          <PostsFilterBar
-            campaignId={campaignId}
-            filter={filter}
-            onChange={onFilterChange}
-            total={rows.length}
-            totalUnfiltered={totalUnfiltered}
-            showCount={filtered && !isLoading}
-            end={
-              <PostsGroupMenu
-                grouping={grouping}
-                onChange={onGroupingChange}
-                scoped
-              />
-            }
-            setByAssistant={
-              !!assistantFilter &&
-              assistantFilter.screen === 'campaign.list' &&
-              sameFilter(assistantFilter.filter, question)
-            }
-          />
+          {/* While posts are ticked the line is the selection and what can
+              be done to it, as on Ideas and Assets: in the filter's place,
+              so the table never moves, and never floating over its foot. */}
+          {selectedPosts.length > 0 ? (
+            <PostSelectionLine
+              posts={selectedPosts}
+              allMatching={filtered && selectedPosts.length === rows.length}
+              onClear={clearSelection}
+              onApply={applyPlan}
+              onDelete={deletePosts}
+              busy={busy}
+            />
+          ) : (
+            <PostsFilterBar
+              campaignId={campaignId}
+              filter={filter}
+              onChange={onFilterChange}
+              total={rows.length}
+              totalUnfiltered={totalUnfiltered}
+              showCount={filtered && !isLoading}
+              end={
+                <PostsGroupMenu
+                  grouping={grouping}
+                  onChange={onGroupingChange}
+                  scoped
+                />
+              }
+              setByAssistant={
+                !!assistantFilter &&
+                assistantFilter.screen === 'campaign.list' &&
+                sameFilter(assistantFilter.filter, question)
+              }
+            />
+          )}
         </div>
       )}
       {/* Gate on the query, not on `!posts`: the backend answers a campaign
@@ -288,19 +302,6 @@ function CampaignListView() {
               grouping={grouping}
             />
           </div>
-        )}
-        {/* Over the list's foot, as the Ideas bar sits over its list, so
-            ticking a row doesn't push the table down. */}
-        {selectedPosts.length > 0 && (
-          <BulkActionsBar
-            floating
-            posts={selectedPosts}
-            allMatching={filtered && selectedPosts.length === rows.length}
-            onClear={clearSelection}
-            onApply={applyPlan}
-            onDelete={deletePosts}
-            busy={busy}
-          />
         )}
       </div>
     </PostsListFrame>

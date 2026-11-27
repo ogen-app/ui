@@ -1,14 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CaretDownIcon, XIcon } from '@phosphor-icons/react'
+import { TrashIcon } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { SelectionLine } from '@/components/page-primitives/SelectionLine'
 import { BulkActionDialog, type BulkAction } from './BulkActionDialog'
 import { describeResult, type BulkPlan } from '@/lib/bulkPostEdits'
 import { counted } from '@/lib/intl'
@@ -26,38 +21,27 @@ type Props = {
   onDelete: (posts: Post[]) => Promise<number>
   busy?: boolean
   /**
-   * Every post the filter matches is ticked (CON-482): the bar says so, as
-   * the Ideas and Assets bars do, because that is what the assistant hears.
+   * Every post the filter matches is ticked (CON-482): the line says so, as
+   * the Ideas and Assets heads do, because that is what the assistant hears.
    */
   allMatching?: boolean
-  /**
-   * Floats over the foot of the grid instead of standing in for the toolbar —
-   * the calendar's form (CON-486), where the toolbar is the week's navigation
-   * and must stay while posts are ticked.
-   */
-  floating?: boolean
 }
 
 /**
- * What is selected on the left, the action groups in the middle, and the way
- * out on the right.
- *
- * On the list it replaces the posts toolbar while a selection is live, so the
- * table never moves. The white fill is the 40px band the toolbar's controls
- * occupy — the surrounding 8px stays transparent, so this row is exactly as
- * tall as the one it replaced and keeps the same gap above the table.
- *
- * On the calendar it floats: the toolbar there holds the week's arrows,
- * WEEK / MONTH and ADD POST, which a selection is no reason to take away.
+ * A campaign's ticked posts, in the line the filter stood in on the posts
+ * list (`SelectionLine`, the Ideas and Assets head): how many, the way out,
+ * and the four things that can be done to them — each a button of its own
+ * rather than a menu of menus, the way the other lists offer theirs. Delete
+ * is ghost like the rest and red in its icon; the dialog behind every one of
+ * them says what will happen before it does.
  */
-export function BulkActionsBar({
+export function PostSelectionLine({
   posts,
   onClear,
   onApply,
   onDelete,
   busy = false,
   allMatching = false,
-  floating = false,
 }: Props) {
   const { t } = useTranslation()
   const [action, setAction] = useState<BulkAction | null>(null)
@@ -80,77 +64,37 @@ export function BulkActionsBar({
     })
   }
 
-  return (
-    <div
-      className={
-        floating
-          ? // Over the grid's foot, centred, as the Ideas bar sits over its
-            // list; only the bar itself takes the pointer.
-            'pointer-events-none absolute inset-x-0 bottom-4 flex justify-center'
-          : 'py-2 shrink-0'
-      }
-      style={floating ? { zIndex: ZIndex.pageActionBar } : undefined}
+  const act = (id: BulkAction, label: string) => (
+    <Button
+      variant="ghost"
+      size="sm"
+      disabled={busy}
+      onClick={() => setAction(id)}
     >
-      <div
-        className={
-          floating
-            ? 'pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg'
-            : 'flex h-10 items-center gap-4 bg-primary px-4'
-        }
-      >
-        {/* Fixed width on the list, tabular figures: the count changes on
-            every tick and the actions beside it must not slide as it does. */}
-        <span
-          className={
-            floating
-              ? 'shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap'
-              : 'min-w-32 shrink-0 text-[13px]/4 font-medium tabular-nums whitespace-nowrap'
-          }
-        >
-          {allMatching
+      {id === 'delete' && <TrashIcon className="text-destructive" />}
+      <span>{label}</span>
+    </Button>
+  )
+
+  return (
+    <>
+      <SelectionLine
+        status={
+          allMatching
             ? t('campaigns.bulk.allMatching', counted(posts.length))
-            : t('campaigns.bulk.selected', counted(posts.length))}
-        </span>
-        {floating && (
-          <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
-        )}
-
-        <div
-          className={
-            floating
-              ? 'flex items-center gap-1'
-              : 'flex flex-1 items-center gap-2'
-          }
-        >
-          <ActionGroup
-            label={t('campaigns.bulk.when')}
-            disabled={busy}
-            items={[
-              { id: 'date', label: t('campaigns.bulk.changeDate') },
-              { id: 'time', label: t('campaigns.bulk.changeTime') },
-            ]}
-            onSelect={setAction}
-          />
-          <ActionGroup
-            label={t('campaigns.bulk.status')}
-            disabled={busy}
-            items={[
-              { id: 'unschedule', label: t('campaigns.bulk.unschedule') },
-              {
-                id: 'delete',
-                label: t('campaigns.bulk.delete'),
-                destructive: true,
-              },
-            ]}
-            onSelect={setAction}
-          />
-        </div>
-
-        <Button variant="ghost" onClick={onClear} disabled={busy}>
-          <XIcon />
-          <span>{t('campaigns.bulk.clear')}</span>
-        </Button>
-      </div>
+            : t('campaigns.bulk.selected', counted(posts.length))
+        }
+        clear={{
+          label: t('campaigns.bulk.clear'),
+          onClick: onClear,
+          disabled: busy,
+        }}
+      >
+        {act('date', t('campaigns.bulk.changeDate'))}
+        {act('time', t('campaigns.bulk.changeTime'))}
+        {act('unschedule', t('campaigns.bulk.unschedule'))}
+        {act('delete', t('campaigns.bulk.delete'))}
+      </SelectionLine>
 
       <BulkActionDialog
         action={action}
@@ -160,40 +104,25 @@ export function BulkActionsBar({
         onDelete={deletePosts}
         busy={busy}
       />
-    </div>
+    </>
   )
 }
 
-function ActionGroup({
-  label,
-  items,
-  onSelect,
-  disabled,
-}: {
-  label: string
-  items: { id: BulkAction; label: string; destructive?: boolean }[]
-  onSelect: (action: BulkAction) => void
-  disabled?: boolean
-}) {
+/**
+ * The same line on the calendar, floated over the grid's foot (CON-486): the
+ * calendar has no list head — its header is the week's navigation and its
+ * search, which a selection is no reason to take away — so the line comes to
+ * rest where the ticked cards are.
+ */
+export function CalendarSelectionBar(props: Props) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" disabled={disabled}>
-          <span>{label}</span>
-          <CaretDownIcon />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        {items.map((item) => (
-          <DropdownMenuItem
-            key={item.id}
-            variant={item.destructive ? 'destructive' : undefined}
-            onSelect={() => onSelect(item.id)}
-          >
-            {item.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center"
+      style={{ zIndex: ZIndex.pageActionBar }}
+    >
+      <div className="pointer-events-auto flex h-12 items-center bg-primary px-4 shadow-lg">
+        <PostSelectionLine {...props} />
+      </div>
+    </div>
   )
 }

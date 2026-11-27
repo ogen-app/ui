@@ -20,13 +20,14 @@ import {
 } from '@/components/ideas/IdeaPostForm'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Note01Icon } from '@hugeicons/core-free-icons'
-import { CaretDownIcon, PlusIcon } from '@phosphor-icons/react'
+import { CaretDownIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react'
 import { KIND_ICON } from '@/components/content/AssetKindMark'
 import { KIND_TONE } from '@/components/content/kindTone'
 import { NoMatches } from '@/components/smartFilter/NoMatches'
 import { PageHeader } from '@/components/page-primitives/PageHeader'
 import { PageLoader } from '@/components/page-primitives/PageLoader'
 import { PageError } from '@/components/page-primitives/PageError'
+import { SelectionLine } from '@/components/page-primitives/SelectionLine'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -140,7 +141,8 @@ export function IdeasQuerySurface({
   search: IdeaListSearch
   onSearchChange: (next: IdeaListSearch) => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const n = (value: number) => formatNumber(value, {}, i18n.language)
   // The clock and the zone the presets are read in, once a visit.
   const [now] = useState(() => new Date())
   const [timeZone] = useState(viewerTimeZone)
@@ -549,15 +551,41 @@ export function IdeasQuerySurface({
     >
       {selecting ? (
         <SelectionLine
-          count={ticked.size}
-          allMatching={allMatching}
-          elsewhere={elsewhere}
-          canWiden={pageAll && !allMatching && total > onPage}
-          total={total}
-          pileLabel={t(PILE_LABEL[pile])}
-          resolving={resolving}
-          onWiden={() => void selectAllMatching()}
-          onClear={clearSelection}
+          status={
+            allMatching
+              ? t('ideas.bulk.allIn', {
+                  count: total,
+                  formatted: n(total),
+                  pile: t(PILE_LABEL[pile]),
+                })
+              : t('ideas.bulk.count', { count: ticked.size })
+          }
+          clear={
+            allMatching
+              ? { label: t('ideas.bulk.clearAll'), onClick: clearSelection }
+              : undefined
+          }
+          widen={
+            pageAll && total > onPage
+              ? {
+                  label: t('ideas.bulk.selectAllIn', {
+                    count: total,
+                    formatted: n(total),
+                    pile: t(PILE_LABEL[pile]),
+                  }),
+                  onClick: () => void selectAllMatching(),
+                  disabled: resolving,
+                }
+              : undefined
+          }
+          note={
+            elsewhere > 0
+              ? t('ideas.bulk.elsewhere', {
+                  count: elsewhere,
+                  formatted: n(elsewhere),
+                })
+              : undefined
+          }
         >
           <SelectionActions
             count={ticked.size}
@@ -1270,94 +1298,6 @@ function sharedCampaign(rows: Idea[], ticked: Set<string>): string | null {
 const MAX_IDEAS_PER_POST = 10
 
 /**
- * The list's head while something is ticked: how many, then — the
- * mail-client way — how many are ticked elsewhere, or the named step that
- * widens a ticked page to every match, or the way out of every match; then
- * what can be done to them (`children`).
- */
-function SelectionLine({
-  count,
-  allMatching,
-  elsewhere,
-  canWiden,
-  total,
-  pileLabel,
-  resolving,
-  onWiden,
-  onClear,
-  children,
-}: {
-  count: number
-  allMatching: boolean
-  /** Ticked but not on screen: in another pile, or never loaded. */
-  elsewhere: number
-  /** The whole page is ticked and the pile holds more. */
-  canWiden: boolean
-  total: number
-  pileLabel: string
-  resolving: boolean
-  onWiden: () => void
-  onClear: () => void
-  children: React.ReactNode
-}) {
-  const { t, i18n } = useTranslation()
-  const n = (value: number) => formatNumber(value, {}, i18n.language)
-  return (
-    // One pill's height, like the line it stands in for; the actions' 32px
-    // buttons lean 2px past it either side rather than heighten the line.
-    <div className="flex h-7 min-w-0 flex-1 items-center gap-3">
-      <span
-        role="status"
-        aria-live="polite"
-        className="shrink-0 text-sm/5 font-medium whitespace-nowrap tabular-nums"
-      >
-        {allMatching
-          ? t('ideas.bulk.allIn', {
-              count: total,
-              formatted: n(total),
-              pile: pileLabel,
-            })
-          : t('ideas.bulk.count', { count })}
-      </span>
-      {allMatching ? (
-        <button
-          type="button"
-          onClick={onClear}
-          className="cursor-pointer truncate text-sm/5 text-secondary-foreground outline-none hover:text-foreground hover:underline focus-visible:underline"
-        >
-          {t('ideas.bulk.clearAll')}
-        </button>
-      ) : canWiden ? (
-        <button
-          type="button"
-          onClick={onWiden}
-          disabled={resolving}
-          className="cursor-pointer truncate text-sm/5 font-medium text-accent outline-none hover:underline focus-visible:underline disabled:opacity-60"
-        >
-          {t('ideas.bulk.selectAllIn', {
-            count: total,
-            formatted: n(total),
-            pile: pileLabel,
-          })}
-        </button>
-      ) : (
-        elsewhere > 0 && (
-          <span className="truncate text-sm/5 text-secondary-foreground">
-            {t('ideas.bulk.elsewhere', {
-              count: elsewhere,
-              formatted: n(elsewhere),
-            })}
-          </span>
-        )
-      )}
-      <div className="-my-0.5 ml-auto flex shrink-0 items-center gap-1">
-        {children}
-      </div>
-    </div>
-  )
-}
-
-/**
  * What can be done to the ticked ideas, in the list's head: make posts of
  * them (a planned post, or finished drafts — one to ten at a time), or
  * delete them, which asks first.
@@ -1424,7 +1364,8 @@ function SelectionActions({
         </Button>
       </IdeaPostForm>
       <Button variant="ghost" size="sm" onClick={onDelete} disabled={busy}>
-        {t('ideas.bulk.delete')}
+        <TrashIcon className="text-destructive" />
+        <span>{t('ideas.bulk.delete')}</span>
       </Button>
     </>
   )
