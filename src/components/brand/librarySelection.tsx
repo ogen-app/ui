@@ -1,79 +1,42 @@
 import { useTranslation } from 'react-i18next'
+import { TrashIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { ZIndex } from '@/config/zIndex'
-import { cn } from '@/lib'
+import { SelectionLine } from '@/components/page-primitives/SelectionLine'
 import { counted } from '@/lib/intl'
 import type { LibraryKind, LibrarySelection } from './useLibrarySelection'
 
 /**
- * How many entries are ticked, and CLEAR — at the foot of the column, where
- * the Ideas list's bar sits. Nothing renders while nothing is ticked.
- *
- * Two placements, neither of which moves the content when it appears
- * (CON-486). In a scrolling column it is sticky to the column's foot and
- * `-mt-12` takes back the room it would occupy, as the Ideas bar does. Over
- * the facts table, which scrolls inside itself, it floats over the table's
- * foot instead (`overlay`) — the page gives it a positioned box to sit in.
+ * How many entries are ticked, the way out, and what can be done to them —
+ * in the line the ledger's tabs and search stood in while nothing was ticked
+ * (`SelectionLine`, the Ideas and Assets head), so the table under it never
+ * moves and nothing floats over its foot.
  */
-export function LibrarySelectionBar({
+export function LibrarySelectionLine({
   kind,
   selection,
-  overlay = false,
   onRemove,
   busy = false,
 }: {
   kind: LibraryKind
   selection: LibrarySelection
-  overlay?: boolean
-  /**
-   * The facts ledger's REMOVE: the caller asks first, naming the count, and
-   * removes. The other libraries have no bulk verb — a selection there is
-   * something to ask the assistant about.
-   */
-  onRemove?: () => void
+  /** The facts ledger's REMOVE: the caller asks first, naming the count. */
+  onRemove: () => void
   busy?: boolean
 }) {
   const { t } = useTranslation()
-  const n = selection.ticked.size
-  if (n === 0) return null
   return (
-    <div
-      className={cn(
-        'pointer-events-none flex justify-center',
-        overlay ? 'absolute inset-x-0 bottom-4' : 'sticky bottom-4 -mt-12',
-      )}
-      style={{ zIndex: ZIndex.pageActionBar }}
+    <SelectionLine
+      status={t(`brand.selection.${kind}`, counted(selection.ticked.size))}
+      clear={{
+        label: t('brand.selection.clear'),
+        onClick: selection.clear,
+        disabled: busy,
+      }}
     >
-      <div className="pointer-events-auto flex h-12 items-center gap-3 bg-primary px-4 shadow-lg">
-        <span
-          role="status"
-          aria-live="polite"
-          className="text-[13px]/4 font-medium tabular-nums whitespace-nowrap"
-        >
-          {t(`brand.selection.${kind}`, counted(n))}
-        </span>
-        <span className="h-6 w-px shrink-0 bg-border" aria-hidden />
-        {onRemove && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-primary-foreground hover:text-destructive"
-            onClick={onRemove}
-            disabled={busy}
-          >
-            {t('brand.selection.remove')}
-          </Button>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-primary-foreground"
-          onClick={selection.clear}
-          disabled={busy}
-        >
-          {t('brand.selection.clear')}
-        </Button>
-      </div>
-    </div>
+      <Button variant="ghost" size="sm" onClick={onRemove} disabled={busy}>
+        <TrashIcon className="text-destructive" />
+        <span>{t('brand.selection.remove')}</span>
+      </Button>
+    </SelectionLine>
   )
 }

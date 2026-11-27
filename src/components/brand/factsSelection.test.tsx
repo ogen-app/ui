@@ -62,16 +62,20 @@ describe('the facts ledger’s selection (CON-486)', () => {
     useViewContextStore.setState({ request: null, page: null })
   })
 
-  it('lets go of ticks a search hides, so nothing unseen goes to the assistant', async () => {
+  it('puts the selection in the search’s place, and gives it back on Clear', async () => {
+    // The line is the selection while anything is ticked, as on the other
+    // lists — so no search can hide a tick that would still go to the
+    // assistant.
     await show()
     tick('The pool is heated to 29°C')
     expect(useViewContextStore.getState().page?.selection).toMatchObject({
       kind: 'fact',
       ids: ['f1'],
     })
-    fireEvent.change(screen.getByLabelText('Search the facts ledger'), {
-      target: { value: 'breakfast' },
-    })
+    expect(screen.getByText('1 fact selected')).toBeTruthy()
+    expect(screen.queryByLabelText('Search the facts ledger')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }))
+    expect(screen.getByLabelText('Search the facts ledger')).toBeTruthy()
     expect(useViewContextStore.getState().page?.selection).toBeUndefined()
   })
 
